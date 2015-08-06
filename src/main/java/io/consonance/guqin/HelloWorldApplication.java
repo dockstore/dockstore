@@ -19,6 +19,7 @@ package io.consonance.guqin;
 import io.consonance.guqin.resources.HelloWorldResource;
 import io.consonance.guqin.resources.TemplateHealthCheck;
 import io.dropwizard.Application;
+import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.swagger.jaxrs.config.BeanConfig;
@@ -52,6 +53,9 @@ public class HelloWorldApplication extends Application<HelloWorldConfiguration> 
         beanConfig.setBasePath("/api");
         beanConfig.setResourcePackage("io.consonance.guqin.resources");
         beanConfig.setScan(true);
+
+        // serve static html as well
+        bootstrap.addBundle(new AssetsBundle("/assets/", "/static/"));
     }
 
     @Override
