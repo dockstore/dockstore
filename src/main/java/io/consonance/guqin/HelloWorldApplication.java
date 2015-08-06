@@ -17,11 +17,13 @@
 package io.consonance.guqin;
 
 import io.consonance.guqin.resources.HelloWorldResource;
+import io.consonance.guqin.resources.QuayIOAuthenticationResource;
 import io.consonance.guqin.resources.TemplateHealthCheck;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+import io.dropwizard.views.ViewBundle;
 import io.swagger.jaxrs.config.BeanConfig;
 import io.swagger.jaxrs.listing.ApiListingResource;
 import io.swagger.jaxrs.listing.SwaggerSerializers;
@@ -56,6 +58,8 @@ public class HelloWorldApplication extends Application<HelloWorldConfiguration> 
 
         // serve static html as well
         bootstrap.addBundle(new AssetsBundle("/assets/", "/static/"));
+        // enable views
+        bootstrap.addBundle(new ViewBundle<HelloWorldConfiguration>());
     }
 
     @Override
@@ -63,6 +67,9 @@ public class HelloWorldApplication extends Application<HelloWorldConfiguration> 
 
         final HelloWorldResource resource = new HelloWorldResource(configuration.getTemplate(), configuration.getDefaultName());
         environment.jersey().register(resource);
+        final QuayIOAuthenticationResource resource2 = new QuayIOAuthenticationResource(configuration.getClientID(),
+                configuration.getRedirectURI());
+        environment.jersey().register(resource2);
 
         final TemplateHealthCheck healthCheck = new TemplateHealthCheck(configuration.getTemplate());
         environment.healthChecks().register("template", healthCheck);

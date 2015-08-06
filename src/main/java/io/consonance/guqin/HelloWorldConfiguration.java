@@ -11,6 +11,12 @@ public class HelloWorldConfiguration extends Configuration {
     @NotEmpty
     private String defaultName = "Stranger";
 
+    @NotEmpty
+    private String clientID;
+
+    @NotEmpty
+    private String redirectURI;
+
     @JsonProperty
     public String getTemplate() {
         return template;
@@ -29,5 +35,39 @@ public class HelloWorldConfiguration extends Configuration {
     @JsonProperty
     public void setDefaultName(String name) {
         this.defaultName = name;
+    }
+
+    /**
+     * @return the clientID
+     */
+    @JsonProperty
+    public String getClientID() {
+        return clientID;
+    }
+
+    /**
+     * @param clientID
+     *            the clientID to set
+     */
+    @JsonProperty
+    public void setClientID(String clientID) {
+        this.clientID = clientID;
+    }
+
+    /**
+     * @return the redirectURI
+     */
+    @JsonProperty
+    public String getRedirectURI() {
+        return redirectURI;
+    }
+
+    /**
+     * @param redirectURI
+     *            the redirectURI to set
+     */
+    @JsonProperty
+    public void setRedirectURI(String redirectURI) {
+        this.redirectURI = redirectURI;
     }
 }
