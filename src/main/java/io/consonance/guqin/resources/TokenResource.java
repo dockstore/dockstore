@@ -17,11 +17,12 @@
 package io.consonance.guqin.resources;
 
 import com.codahale.metrics.annotation.Timed;
-import com.google.common.base.Optional;
-import io.consonance.guqin.api.Saying;
+import io.consonance.guqin.core.Token;
+import io.consonance.guqin.jdbi.TokenDAO;
+import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.List;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -32,25 +33,34 @@ import javax.ws.rs.core.MediaType;
  *
  * @author dyuen
  */
-@Path("/hello-world")
-@Api(value = "/hello-world", description = "Hello world ops")
+@Path("/token")
+@Api(value = "/token", description = "token ops")
 @Produces(MediaType.APPLICATION_JSON)
-public class HelloWorldResource {
-    private final String template;
-    private final String defaultName;
-    private final AtomicLong counter;
+public class TokenResource {
+    private final TokenDAO dao;
 
-    public HelloWorldResource(String template, String defaultName) {
-        this.template = template;
-        this.defaultName = defaultName;
-        this.counter = new AtomicLong();
+    public TokenResource(TokenDAO dao) {
+        this.dao = dao;
     }
 
     @GET
-    @ApiOperation(value = "Say hello providing an optional name", notes = "More notes about this method", response = Saying.class)
     @Timed
-    public Saying sayHello(@QueryParam("name") Optional<String> name) {
-        final String value = String.format(template, name.or(defaultName));
-        return new Saying(counter.incrementAndGet(), value);
+    @UnitOfWork
+    @ApiOperation(value = "List all known tokens (this needs authentication)", notes = "More notes about this method", response = List.class)
+    public List<Token> listTokens() {
+        return dao.findAll();
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/quay.io")
+    @ApiOperation(value = "Add a new quay IO token", notes = "More notes about this method", response = Token.class)
+    public Token addQuayToken(@QueryParam("access_token") String accessToken) {
+        Token token = new Token();
+        token.setTokenSource("quay.io");
+        token.setContent(accessToken);
+        long create = dao.create(token);
+        return dao.findById(create);
     }
 }

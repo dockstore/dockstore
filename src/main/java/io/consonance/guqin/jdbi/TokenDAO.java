@@ -14,39 +14,31 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.consonance.guqin.core;
+package io.consonance.guqin.jdbi;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.annotations.ApiModel;
-import org.hibernate.validator.constraints.Length;
+import io.consonance.guqin.core.Token;
+import io.dropwizard.hibernate.AbstractDAO;
+import java.util.List;
+import org.hibernate.SessionFactory;
 
 /**
  *
  * @author dyuen
  */
-@ApiModel(value = "A Saying")
-public class Saying {
-    private final int contentLength = 3;
-    private long id;
-
-    @Length(max = contentLength)
-    private String content;
-
-    public Saying() {
+public class TokenDAO extends AbstractDAO<Token> {
+    public TokenDAO(SessionFactory factory) {
+        super(factory);
     }
 
-    public Saying(long id, String content) {
-        this.id = id;
-        this.content = content;
+    public Token findById(Long id) {
+        return get(id);
     }
 
-    @JsonProperty
-    public long getId() {
-        return id;
+    public long create(Token token) {
+        return persist(token).getId();
     }
 
-    @JsonProperty
-    public String getContent() {
-        return content;
+    public List<Token> findAll() {
+        return list(namedQuery("io.consonance.guqin.core.Token.findAll"));
     }
 }

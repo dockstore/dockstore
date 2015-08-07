@@ -16,11 +16,18 @@
  */
 package io.consonance.guqin;
 
+import io.consonance.guqin.core.Token;
+import io.consonance.guqin.jdbi.TokenDAO;
+import io.consonance.guqin.resources.DockerRepoResource;
 import io.consonance.guqin.resources.HelloWorldResource;
 import io.consonance.guqin.resources.QuayIOAuthenticationResource;
 import io.consonance.guqin.resources.TemplateHealthCheck;
+import io.consonance.guqin.resources.TokenResource;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
+import io.dropwizard.client.HttpClientBuilder;
+import io.dropwizard.db.DataSourceFactory;
+import io.dropwizard.hibernate.HibernateBundle;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.views.ViewBundle;
@@ -30,24 +37,34 @@ import io.swagger.jaxrs.listing.SwaggerSerializers;
 import java.util.EnumSet;
 import javax.servlet.DispatcherType;
 import javax.servlet.FilterRegistration;
+import org.apache.http.client.HttpClient;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 
 /**
  *
  * @author dyuen
  */
-public class HelloWorldApplication extends Application<HelloWorldConfiguration> {
+public class GuqinApplication extends Application<GuqinConfiguration> {
+
     public static void main(String[] args) throws Exception {
-        new HelloWorldApplication().run(args);
+        new GuqinApplication().run(args);
     }
+
+    private final HibernateBundle<GuqinConfiguration> hibernate = new HibernateBundle<GuqinConfiguration>(Token.class) {
+        @Override
+        public DataSourceFactory getDataSourceFactory(GuqinConfiguration configuration) {
+            return configuration.getDataSourceFactory();
+        }
+    };
 
     @Override
     public String getName() {
-        return "hello-world";
+        return "guqin";
     }
 
     @Override
-    public void initialize(Bootstrap<HelloWorldConfiguration> bootstrap) {
+    public void initialize(Bootstrap<GuqinConfiguration> bootstrap) {
+        // setup swagger
         BeanConfig beanConfig = new BeanConfig();
         beanConfig.setVersion("1.0.2");
         beanConfig.setSchemes(new String[] { "http" });
@@ -56,14 +73,17 @@ public class HelloWorldApplication extends Application<HelloWorldConfiguration> 
         beanConfig.setResourcePackage("io.consonance.guqin.resources");
         beanConfig.setScan(true);
 
+        // setup hibernate+postgres
+        bootstrap.addBundle(hibernate);
+
         // serve static html as well
         bootstrap.addBundle(new AssetsBundle("/assets/", "/static/"));
         // enable views
-        bootstrap.addBundle(new ViewBundle<HelloWorldConfiguration>());
+        bootstrap.addBundle(new ViewBundle<GuqinConfiguration>());
     }
 
     @Override
-    public void run(HelloWorldConfiguration configuration, Environment environment) {
+    public void run(GuqinConfiguration configuration, Environment environment) {
 
         final HelloWorldResource resource = new HelloWorldResource(configuration.getTemplate(), configuration.getDefaultName());
         environment.jersey().register(resource);
@@ -71,25 +91,20 @@ public class HelloWorldApplication extends Application<HelloWorldConfiguration> 
                 configuration.getRedirectURI());
         environment.jersey().register(resource2);
 
+        final TokenDAO dao = new TokenDAO(hibernate.getSessionFactory());
+        environment.jersey().register(new TokenResource(dao));
+
         final TemplateHealthCheck healthCheck = new TemplateHealthCheck(configuration.getTemplate());
         environment.healthChecks().register("template", healthCheck);
+
+        final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
+        environment.jersey().register(new DockerRepoResource(httpClient, dao));
 
         // swagger stuff
 
         // Swagger providers
         environment.jersey().register(ApiListingResource.class);
         environment.jersey().register(SwaggerSerializers.class);
-
-        // Swagger Scanner, which finds all the resources for @Api Annotations
-        // ScannerFactory.setScanner(new DefaultJaxrsScanner());
-
-        // // Add the reader, which scans the resources and extracts the resource information
-        // ClassReaders.setReader(new DefaultJaxrsApiReader());
-        //
-        // // Set the swagger config options
-        // SwaggerConfig config = ConfigFactory.config();
-        // config.setApiVersion("1.0.1");
-        // config.setBasePath("http://localhost:8000");
 
         // optional CORS support
         // Enable CORS headers

@@ -120,7 +120,7 @@
               <transformers>
                 <transformer />
                 <transformer>
-                  <mainClass>io.consonance.guqin.HelloWorldApplication</mainClass>
+                  <mainClass>io.consonance.guqin.GuqinApplication</mainClass>
                 </transformer>
               </transformers>
             </configuration>
@@ -182,6 +182,7 @@
               <usedDependencies>
                 <usedDependency>javax.ws.rs:jsr311-api</usedDependency>
                 <usedDependency>io.swagger:swagger-jersey2-jaxrs</usedDependency>
+                <usedDependency>io.dropwizard:dropwizard-views-freemarker</usedDependency>
               </usedDependencies>
             </configuration>
           </execution>
