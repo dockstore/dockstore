@@ -67,11 +67,13 @@ public class GuqinApplication extends Application<GuqinConfiguration> {
         // setup swagger
         BeanConfig beanConfig = new BeanConfig();
         beanConfig.setVersion("1.0.2");
+        beanConfig.setVersion("1.0.2");
         beanConfig.setSchemes(new String[] { "http" });
         beanConfig.setHost("localhost:8080");
         beanConfig.setBasePath("/api");
         beanConfig.setResourcePackage("io.consonance.guqin.resources");
         beanConfig.setScan(true);
+        beanConfig.setTitle("Swagger Remote Registry Prototype");
 
         // setup hibernate+postgres
         bootstrap.addBundle(hibernate);
