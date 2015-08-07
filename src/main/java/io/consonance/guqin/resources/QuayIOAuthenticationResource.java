@@ -28,8 +28,8 @@ import javax.ws.rs.core.MediaType;
  *
  * @author dyuen
  */
-@Path("/integration/quay.io")
-@Api(value = "/integration/quay.io", description = "Requests an auth token with quay.io")
+@Path("/integration.quay.io")
+@Api(value = "/integration.quay.io", description = "Requests an auth token with quay.io")
 @Produces(MediaType.TEXT_HTML)
 public class QuayIOAuthenticationResource {
     private final String clientID;

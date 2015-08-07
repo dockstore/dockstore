@@ -46,7 +46,7 @@ public class TokenResource {
     @GET
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "List all known tokens (this needs authentication)", notes = "More notes about this method", response = List.class)
+    @ApiOperation(value = "List all known tokens (this needs authentication)", notes = "More notes about this method", response = Token.class, responseContainer = "List")
     public List<Token> listTokens() {
         return dao.findAll();
     }

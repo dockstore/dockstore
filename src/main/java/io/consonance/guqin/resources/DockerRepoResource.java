@@ -42,8 +42,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author dyuen
  */
-@Path("/docker/repo")
-@Api(value = "/docker/repo", description = "Query about known docker repos")
+@Path("/docker.repo")
+@Api(value = "/docker.repo", description = "Query about known docker repos")
 @Produces(MediaType.APPLICATION_JSON)
 public class DockerRepoResource {
     private static final Logger LOG = LoggerFactory.getLogger(DockerRepoResource.class);
@@ -70,6 +70,7 @@ public class DockerRepoResource {
                 if (asString.isPresent()) {
                     builder.append(asString.get());
                 }
+                builder.append("\n");
             }
         }
         return builder.toString();
