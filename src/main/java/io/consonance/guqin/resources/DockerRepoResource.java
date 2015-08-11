@@ -19,22 +19,17 @@ package io.consonance.guqin.resources;
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Optional;
 import io.consonance.guqin.core.Token;
+import io.consonance.guqin.core.TokenType;
 import io.consonance.guqin.jdbi.TokenDAO;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import java.io.IOException;
 import java.util.List;
-import javax.validation.constraints.NotNull;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.HttpResponseException;
-import org.apache.http.client.ResponseHandler;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.BasicResponseHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,8 +59,8 @@ public class DockerRepoResource {
         List<Token> findAll = dao.findAll();
         StringBuilder builder = new StringBuilder();
         for (Token token : findAll) {
-            if (token.getTokenSource().equals("quay.io")) {
-                Optional<String> asString = this.asString("repository?public=false", token.getContent());
+            if (token.getTokenSource().equals(TokenType.QUAY_IO.toString())) {
+                Optional<String> asString = ResourceUtilities.asString(TARGET_URL + "repository?public=false", token.getContent(), client);
                 builder.append("Token: ").append(token.getId()).append("\n");
                 if (asString.isPresent()) {
                     builder.append(asString.get());
@@ -76,32 +71,4 @@ public class DockerRepoResource {
         return builder.toString();
     }
 
-    // from dropwizard example
-    Optional<String> asString(String input, String token) {
-        return getResponseAsString(buildHttpGet(input, token));
-    }
-
-    @NotNull
-    HttpGet buildHttpGet(String input, String token) {
-        HttpGet httpGet = new HttpGet(TARGET_URL + input);
-        httpGet.addHeader("Authorization", "Bearer " + token);
-        return httpGet;
-    }
-
-    Optional<String> getResponseAsString(HttpGet httpGet) {
-        Optional<String> result = Optional.absent();
-        try {
-            ResponseHandler<String> responseHandler = new BasicResponseHandler();
-            result = Optional.of(client.execute(httpGet, responseHandler));
-        } catch (HttpResponseException httpResponseException) {
-            LOG.error("getResponseAsString(): caught 'HttpResponseException' while processing request <" + httpGet.toString() + "> :=> <"
-                    + httpResponseException.getMessage() + ">");
-        } catch (IOException ioe) {
-            LOG.error("getResponseAsString(): caught 'IOException' while processing request <" + httpGet.toString() + "> :=> <"
-                    + ioe.getMessage() + ">");
-        } finally {
-            httpGet.releaseConnection();
-        }
-        return result;
-    }
 }

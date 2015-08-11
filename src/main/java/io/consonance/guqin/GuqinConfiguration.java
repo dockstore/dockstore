@@ -25,10 +25,19 @@ public class GuqinConfiguration extends Configuration {
     private String defaultName = "Stranger";
 
     @NotEmpty
-    private String clientID;
+    private String quayClientID;
 
     @NotEmpty
-    private String redirectURI;
+    private String githubClientID;
+
+    @NotEmpty
+    private String quayRedirectURI;
+
+    @NotEmpty
+    private String githubRedirectURI;
+
+    @NotEmpty
+    private String githubClientSecret;
 
     @JsonProperty("database")
     public DataSourceFactory getDataSourceFactory() {
@@ -61,37 +70,37 @@ public class GuqinConfiguration extends Configuration {
     }
 
     /**
-     * @return the clientID
+     * @return the quayClientID
      */
     @JsonProperty
-    public String getClientID() {
-        return clientID;
+    public String getQuayClientID() {
+        return quayClientID;
     }
 
     /**
-     * @param clientID
-     *            the clientID to set
+     * @param quayClientID
+     *            the quayClientID to set
      */
     @JsonProperty
-    public void setClientID(String clientID) {
-        this.clientID = clientID;
+    public void setQuayClientID(String quayClientID) {
+        this.quayClientID = quayClientID;
     }
 
     /**
-     * @return the redirectURI
+     * @return the quayRedirectURI
      */
     @JsonProperty
-    public String getRedirectURI() {
-        return redirectURI;
+    public String getQuayRedirectURI() {
+        return quayRedirectURI;
     }
 
     /**
-     * @param redirectURI
-     *            the redirectURI to set
+     * @param quayRedirectURI
+     *            the quayRedirectURI to set
      */
     @JsonProperty
-    public void setRedirectURI(String redirectURI) {
-        this.redirectURI = redirectURI;
+    public void setQuayRedirectURI(String quayRedirectURI) {
+        this.quayRedirectURI = quayRedirectURI;
     }
 
     /**
@@ -110,5 +119,56 @@ public class GuqinConfiguration extends Configuration {
     @JsonProperty("httpClient")
     public void setHttpClientConfiguration(HttpClientConfiguration httpClient) {
         this.httpClient = httpClient;
+    }
+
+    /**
+     * @return the githubClientID
+     */
+    @JsonProperty
+    public String getGithubClientID() {
+        return githubClientID;
+    }
+
+    /**
+     * @param githubClientID
+     *            the githubClientID to set
+     */
+    @JsonProperty
+    public void setGithubClientID(String githubClientID) {
+        this.githubClientID = githubClientID;
+    }
+
+    /**
+     * @return the githubRedirectURI
+     */
+    @JsonProperty
+    public String getGithubRedirectURI() {
+        return githubRedirectURI;
+    }
+
+    /**
+     * @param githubRedirectURI
+     *            the githubRedirectURI to set
+     */
+    @JsonProperty
+    public void setGithubRedirectURI(String githubRedirectURI) {
+        this.githubRedirectURI = githubRedirectURI;
+    }
+
+    /**
+     * @return the githubClientSecret
+     */
+    @JsonProperty
+    public String getGithubClientSecret() {
+        return githubClientSecret;
+    }
+
+    /**
+     * @param githubClientSecret
+     *            the githubClientSecret to set
+     */
+    @JsonProperty
+    public void setGithubClientSecret(String githubClientSecret) {
+        this.githubClientSecret = githubClientSecret;
     }
 }

@@ -19,6 +19,8 @@ package io.consonance.guqin;
 import io.consonance.guqin.core.Token;
 import io.consonance.guqin.jdbi.TokenDAO;
 import io.consonance.guqin.resources.DockerRepoResource;
+import io.consonance.guqin.resources.GitHubComAuthenticationResource;
+import io.consonance.guqin.resources.GitHubRepoResource;
 import io.consonance.guqin.resources.HelloWorldResource;
 import io.consonance.guqin.resources.QuayIOAuthenticationResource;
 import io.consonance.guqin.resources.TemplateHealthCheck;
@@ -88,18 +90,24 @@ public class GuqinApplication extends Application<GuqinConfiguration> {
 
         final HelloWorldResource resource = new HelloWorldResource(configuration.getTemplate(), configuration.getDefaultName());
         environment.jersey().register(resource);
-        final QuayIOAuthenticationResource resource2 = new QuayIOAuthenticationResource(configuration.getClientID(),
-                configuration.getRedirectURI());
+        final QuayIOAuthenticationResource resource2 = new QuayIOAuthenticationResource(configuration.getQuayClientID(),
+                configuration.getQuayRedirectURI());
         environment.jersey().register(resource2);
-
-        final TokenDAO dao = new TokenDAO(hibernate.getSessionFactory());
-        environment.jersey().register(new TokenResource(dao));
 
         final TemplateHealthCheck healthCheck = new TemplateHealthCheck(configuration.getTemplate());
         environment.healthChecks().register("template", healthCheck);
 
+        final TokenDAO dao = new TokenDAO(hibernate.getSessionFactory());
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
         environment.jersey().register(new DockerRepoResource(httpClient, dao));
+        environment.jersey().register(new GitHubRepoResource(httpClient, dao));
+
+        final GitHubComAuthenticationResource resource3 = new GitHubComAuthenticationResource(configuration.getGithubClientID(),
+                configuration.getGithubRedirectURI());
+        environment.jersey().register(resource3);
+
+        environment.jersey().register(
+                new TokenResource(dao, configuration.getGithubClientID(), configuration.getGithubClientSecret(), httpClient));
 
         // swagger stuff
 
