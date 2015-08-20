@@ -1,8 +1,6 @@
 # dockstore
 
-## dropwizard\_swagger
-
-Personal experiment with dropwizard 0.8.2 + swagger 1.5.0
+This is the prototype web service for the dockstore. The usage of this is to enumerate the docker containers (from quay.io and hopefully docker hub) and the workflows (from github) that are available to users of Collaboratory.
 
 ## Usage
 
