@@ -1,4 +1,4 @@
-<#-- @ftlvariable name="" type="io.consonance.guqin.resources.QuayIOAuthenticationResource.QuayIOView" -->
+<#-- @ftlvariable name="" type="io.consonance.webservice.resources.QuayIOAuthenticationResource.QuayIOView" -->
 <html>
     <body>
         <p>Client ID: ${parent.clientID?html}</p>

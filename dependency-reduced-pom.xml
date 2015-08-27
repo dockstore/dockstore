@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>io.consonance</groupId>
-  <artifactId>guqin</artifactId>
-  <name>guqin</name>
+  <groupId>io.collaboratory</groupId>
+  <artifactId>dockstore</artifactId>
+  <name>dockstore</name>
   <version>0.0.1-SNAPSHOT</version>
   <url>http://maven.apache.org</url>
   <licenses>
@@ -18,8 +18,8 @@
     <url>${github.url}</url>
   </scm>
   <organization>
-    <name>Consonance</name>
-    <url>https://github.com/Consonance</url>
+    <name>Collaboratory</name>
+    <url>http://labs.oicr.on.ca/ferretti-lab/collaboratory-core-1</url>
   </organization>
   <build>
     <pluginManagement>
@@ -120,7 +120,7 @@
               <transformers>
                 <transformer />
                 <transformer>
-                  <mainClass>io.consonance.guqin.GuqinApplication</mainClass>
+                  <mainClass>io.dockstore.webservice.DockstoreWebserviceApplication</mainClass>
                 </transformer>
               </transformers>
             </configuration>
@@ -335,9 +335,9 @@
     </repository>
   </distributionManagement>
   <properties>
-    <dropwizard.version>0.8.2</dropwizard.version>
+    <dropwizard.version>0.8.4</dropwizard.version>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <github.url>scm:git:git@github.com:Consonance/guqin.git</github.url>
+    <github.url>scm:git:git@github.com:CancerCollaboratory/dockstore.git</github.url>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 </project>

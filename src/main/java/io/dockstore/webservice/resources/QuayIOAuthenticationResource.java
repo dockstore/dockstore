@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.consonance.guqin.resources;
+package io.dockstore.webservice.resources;
 
 import io.dropwizard.views.View;
 import io.swagger.annotations.Api;
@@ -29,7 +29,7 @@ import javax.ws.rs.core.MediaType;
  * @author dyuen
  */
 @Path("/integration.quay.io")
-@Api(value = "/integration.quay.io", description = "Requests an auth token with quay.io")
+@Api(value = "/integration.quay.io")
 @Produces(MediaType.TEXT_HTML)
 public class QuayIOAuthenticationResource {
     private final String clientID;

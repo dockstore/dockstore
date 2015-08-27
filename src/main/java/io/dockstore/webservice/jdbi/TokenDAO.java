@@ -14,9 +14,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.consonance.guqin.jdbi;
+package io.dockstore.webservice.jdbi;
 
-import io.consonance.guqin.core.Token;
+import io.dockstore.webservice.core.Token;
 import io.dropwizard.hibernate.AbstractDAO;
 import java.util.List;
 import org.hibernate.SessionFactory;
@@ -39,6 +39,6 @@ public class TokenDAO extends AbstractDAO<Token> {
     }
 
     public List<Token> findAll() {
-        return list(namedQuery("io.consonance.guqin.core.Token.findAll"));
+        return list(namedQuery("io.consonance.webservice.core.Token.findAll"));
     }
 }

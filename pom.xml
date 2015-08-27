@@ -2,25 +2,25 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.consonance</groupId>
-    <artifactId>guqin</artifactId>
+    <groupId>io.collaboratory</groupId>
+    <artifactId>dockstore</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>guqin</name>
+    <name>dockstore</name>
     <url>http://maven.apache.org</url>
 
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <github.url>scm:git:git@github.com:Consonance/guqin.git</github.url>
-        <dropwizard.version>0.8.2</dropwizard.version>
+        <github.url>scm:git:git@github.com:CancerCollaboratory/dockstore.git</github.url>
+        <dropwizard.version>0.8.4</dropwizard.version>
     </properties>
 
     <organization>
-        <name>Consonance</name>
-        <url>https://github.com/Consonance</url>
+        <name>Collaboratory</name>
+	<url>http://labs.oicr.on.ca/ferretti-lab/collaboratory-core-1</url>
     </organization>
 
     <scm>
@@ -348,7 +348,7 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>4.3.5</version>
+            <version>4.5</version>
         </dependency>
         <dependency>
             <groupId>io.swagger</groupId>
@@ -383,7 +383,7 @@
         <dependency>
             <groupId>io.dropwizard</groupId>
             <artifactId>dropwizard-jetty</artifactId>
-            <version>0.8.2</version>
+            <version>${dropwizard.version}</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.mylyn.github</groupId>
@@ -522,7 +522,7 @@
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>io.consonance.guqin.GuqinApplication</mainClass>
+                                    <mainClass>io.dockstore.webservice.DockstoreWebserviceApplication</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>

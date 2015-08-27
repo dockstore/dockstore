@@ -14,39 +14,22 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.consonance.guqin.api;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.annotations.ApiModel;
-import org.hibernate.validator.constraints.Length;
+package io.dockstore.webservice.core;
 
 /**
  *
  * @author dyuen
  */
-@ApiModel(value = "A Saying")
-public class Saying {
-    private final int contentLength = 3;
-    private long id;
+public enum TokenType {
+    QUAY_IO("quay.io"), GITHUB_COM("github.com");
+    private final String friendlyName;
 
-    @Length(max = contentLength)
-    private String content;
-
-    public Saying() {
+    TokenType(String friendlyName) {
+        this.friendlyName = friendlyName;
     }
 
-    public Saying(long id, String content) {
-        this.id = id;
-        this.content = content;
-    }
-
-    @JsonProperty
-    public long getId() {
-        return id;
-    }
-
-    @JsonProperty
-    public String getContent() {
-        return content;
+    @Override
+    public String toString() {
+        return this.friendlyName;
     }
 }

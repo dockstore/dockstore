@@ -14,27 +14,39 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.consonance.guqin.resources;
+package io.dockstore.webservice.api;
 
-import com.codahale.metrics.health.HealthCheck;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.annotations.ApiModel;
+import org.hibernate.validator.constraints.Length;
 
 /**
  *
  * @author dyuen
  */
-public class TemplateHealthCheck extends HealthCheck {
-    private final String template;
+@ApiModel(value = "A Saying")
+public class Saying {
+    private final int contentLength = 3;
+    private long id;
 
-    public TemplateHealthCheck(String template) {
-        this.template = template;
+    @Length(max = contentLength)
+    private String content;
+
+    public Saying() {
     }
 
-    @Override
-    protected Result check() throws Exception {
-        final String saying = String.format(template, "TEST");
-        if (!saying.contains("TEST")) {
-            return Result.unhealthy("template doesn't include a name");
-        }
-        return Result.healthy();
+    public Saying(long id, String content) {
+        this.id = id;
+        this.content = content;
+    }
+
+    @JsonProperty
+    public long getId() {
+        return id;
+    }
+
+    @JsonProperty
+    public String getContent() {
+        return content;
     }
 }

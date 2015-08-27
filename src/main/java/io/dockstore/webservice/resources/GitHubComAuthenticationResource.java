@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.consonance.guqin.resources;
+package io.dockstore.webservice.resources;
 
 import io.dropwizard.views.View;
 import io.swagger.annotations.Api;
@@ -29,7 +29,7 @@ import javax.ws.rs.core.MediaType;
  * @author dyuen
  */
 @Path("/integration.github.com")
-@Api(value = "/integration.github.com", description = "Requests an auth token with github.com")
+@Api(value = "/integration.github.com")
 @Produces(MediaType.TEXT_HTML)
 public class GitHubComAuthenticationResource {
     private final String clientID;
@@ -41,7 +41,7 @@ public class GitHubComAuthenticationResource {
     }
 
     @GET
-    @ApiOperation(value = "Display an authorization link for github.com", notes = "More notes about this method", response = GithubComView.class)
+    @ApiOperation(value = "Display an authorization link for github.com", notes = "This is a stop-gap GUI for displaying a link that allows a user to start the OAuth 2 web flow", response = GithubComView.class)
     public GithubComView getView() {
         return new GithubComView();
     }
