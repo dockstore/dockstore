@@ -14,12 +14,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.consonance.guqin.resources;
+package io.dockstore.webservice.resources;
 
 import com.codahale.metrics.annotation.Timed;
-import io.consonance.guqin.core.Token;
-import io.consonance.guqin.core.TokenType;
-import io.consonance.guqin.jdbi.TokenDAO;
+import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenType;
+import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -28,6 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
 import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
@@ -47,7 +48,7 @@ import org.slf4j.LoggerFactory;
  * @author dyuen
  */
 @Path("/github.repo")
-@Api(value = "/github.repo", description = "Query about known github repos")
+@Api(value = "/github.repo")
 @Produces(MediaType.APPLICATION_JSON)
 public class GitHubRepoResource {
     private static final Logger LOG = LoggerFactory.getLogger(GitHubRepoResource.class);
@@ -61,9 +62,32 @@ public class GitHubRepoResource {
     }
 
     @GET
+    @Path("/listOwned")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "List all repos known via all registered tokens", notes = "More notes about this method", response = String.class)
+    @ApiOperation(value = "List repos owned by the logged-in user", notes = "This part needs to be fleshed out but the user "
+            + "can list only the repos they own by default", response = String.class)
+    public String listOwned() {
+        throw new UnsupportedOperationException();
+    }
+
+    @PUT
+    @Path("/refreshRepos")
+    @Timed
+    @UnitOfWork
+    @ApiOperation(value = "Refresh repos owned by the logged-in user", notes = "This part needs to be fleshed out but the user "
+            + "can trigger a sync on the repos they're associated with", response = String.class)
+    public String refreshOwned() {
+        throw new UnsupportedOperationException();
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @ApiOperation(value = "List all repos known via all registered tokens", notes = "List docker container repos currently known. "
+            + "Right now, tokens are used to synchronously talk to the quay.io API to list repos. "
+            + "Ultimately, we should cache this information and refresh either by user request or by time "
+            + "TODO: This should be a properly defined list of objects, it also needs admin authentication", response = String.class)
     public String getRepos() {
         List<Token> findAll = dao.findAll();
         StringBuilder builder = new StringBuilder();

@@ -14,22 +14,27 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.consonance.guqin.core;
+package io.dockstore.webservice.resources;
+
+import com.codahale.metrics.health.HealthCheck;
 
 /**
  *
  * @author dyuen
  */
-public enum TokenType {
-    QUAY_IO("quay.io"), GITHUB_COM("github.com");
-    private final String friendlyName;
+public class TemplateHealthCheck extends HealthCheck {
+    private final String template;
 
-    TokenType(String friendlyName) {
-        this.friendlyName = friendlyName;
+    public TemplateHealthCheck(String template) {
+        this.template = template;
     }
 
     @Override
-    public String toString() {
-        return this.friendlyName;
+    protected Result check() throws Exception {
+        final String saying = String.format(template, "TEST");
+        if (!saying.contains("TEST")) {
+            return Result.unhealthy("template doesn't include a name");
+        }
+        return Result.healthy();
     }
 }

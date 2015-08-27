@@ -14,17 +14,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.consonance.guqin;
+package io.dockstore.webservice;
 
-import io.consonance.guqin.core.Token;
-import io.consonance.guqin.jdbi.TokenDAO;
-import io.consonance.guqin.resources.DockerRepoResource;
-import io.consonance.guqin.resources.GitHubComAuthenticationResource;
-import io.consonance.guqin.resources.GitHubRepoResource;
-import io.consonance.guqin.resources.HelloWorldResource;
-import io.consonance.guqin.resources.QuayIOAuthenticationResource;
-import io.consonance.guqin.resources.TemplateHealthCheck;
-import io.consonance.guqin.resources.TokenResource;
+import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.jdbi.TokenDAO;
+import io.dockstore.webservice.resources.DockerRepoResource;
+import io.dockstore.webservice.resources.GitHubComAuthenticationResource;
+import io.dockstore.webservice.resources.GitHubRepoResource;
+import io.dockstore.webservice.resources.QuayIOAuthenticationResource;
+import io.dockstore.webservice.resources.TemplateHealthCheck;
+import io.dockstore.webservice.resources.TokenResource;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.client.HttpClientBuilder;
@@ -46,33 +45,34 @@ import org.eclipse.jetty.servlets.CrossOriginFilter;
  *
  * @author dyuen
  */
-public class GuqinApplication extends Application<GuqinConfiguration> {
+public class DockstoreWebserviceApplication extends Application<DockstoreWebserviceConfiguration> {
 
     public static void main(String[] args) throws Exception {
-        new GuqinApplication().run(args);
+        new DockstoreWebserviceApplication().run(args);
     }
 
-    private final HibernateBundle<GuqinConfiguration> hibernate = new HibernateBundle<GuqinConfiguration>(Token.class) {
+    private final HibernateBundle<DockstoreWebserviceConfiguration> hibernate = new HibernateBundle<DockstoreWebserviceConfiguration>(
+            Token.class) {
         @Override
-        public DataSourceFactory getDataSourceFactory(GuqinConfiguration configuration) {
+        public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
         }
     };
 
     @Override
     public String getName() {
-        return "guqin";
+        return "webservice";
     }
 
     @Override
-    public void initialize(Bootstrap<GuqinConfiguration> bootstrap) {
+    public void initialize(Bootstrap<DockstoreWebserviceConfiguration> bootstrap) {
         // setup swagger
         BeanConfig beanConfig = new BeanConfig();
         beanConfig.setVersion("1.0.2");
         beanConfig.setSchemes(new String[] { "http" });
         beanConfig.setHost("localhost:8080");
         beanConfig.setBasePath("/");
-        beanConfig.setResourcePackage("io.consonance.guqin.resources");
+        beanConfig.setResourcePackage("io.dockstore.webservice.resources");
         beanConfig.setScan(true);
         beanConfig.setTitle("Swagger Remote Registry Prototype");
 
@@ -82,14 +82,12 @@ public class GuqinApplication extends Application<GuqinConfiguration> {
         // serve static html as well
         bootstrap.addBundle(new AssetsBundle("/assets/", "/static/"));
         // enable views
-        bootstrap.addBundle(new ViewBundle<GuqinConfiguration>());
+        bootstrap.addBundle(new ViewBundle<DockstoreWebserviceConfiguration>());
     }
 
     @Override
-    public void run(GuqinConfiguration configuration, Environment environment) {
+    public void run(DockstoreWebserviceConfiguration configuration, Environment environment) {
 
-        final HelloWorldResource resource = new HelloWorldResource(configuration.getTemplate(), configuration.getDefaultName());
-        environment.jersey().register(resource);
         final QuayIOAuthenticationResource resource2 = new QuayIOAuthenticationResource(configuration.getQuayClientID(),
                 configuration.getQuayRedirectURI());
         environment.jersey().register(resource2);

@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.consonance.guqin.core;
+package io.dockstore.webservice.core;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
@@ -35,7 +35,7 @@ import javax.persistence.Table;
 @ApiModel(value = "A particular token that a user has submitted via OAuth")
 @Entity
 @Table(name = "token")
-@NamedQueries({ @NamedQuery(name = "io.consonance.guqin.core.Token.findAll", query = "SELECT t FROM Token t") })
+@NamedQueries({ @NamedQuery(name = "io.consonance.webservice.core.Token.findAll", query = "SELECT t FROM Token t") })
 public class Token {
 
     @Id
@@ -45,6 +45,9 @@ public class Token {
     private String tokenSource;
     @Column(nullable = false)
     private String content;
+
+    // TODO: tokens will need to be associated with a particular user
+    private String owner;
 
     public Token() {
     }
@@ -106,5 +109,21 @@ public class Token {
     @Override
     public int hashCode() {
         return Objects.hash(id, content);
+    }
+
+    /**
+     * @return the owner
+     */
+    @JsonProperty
+    public String getOwner() {
+        return owner;
+    }
+
+    /**
+     * @param owner
+     *            the owner to set
+     */
+    public void setOwner(String owner) {
+        this.owner = owner;
     }
 }

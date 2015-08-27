@@ -1,4 +1,4 @@
-<#-- @ftlvariable name="" type="io.consonance.guqin.resources.GitHubComAuthenticationResource.GithubComView" -->
+<#-- @ftlvariable name="" type="io.consonance.webservice.resources.GitHubComAuthenticationResource.GithubComView" -->
 <html>
     <body>
         <p>Client ID: ${parent.clientID?html}</p>

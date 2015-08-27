@@ -1,4 +1,4 @@
-package io.consonance.guqin;
+package io.dockstore.webservice;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dropwizard.Configuration;
@@ -8,7 +8,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotEmpty;
 
-public class GuqinConfiguration extends Configuration {
+public class DockstoreWebserviceConfiguration extends Configuration {
 
     @Valid
     @NotNull

@@ -2,5 +2,5 @@
  * Model objects
  * @since 1.0
  */
-package io.consonance.guqin.api;
+package io.dockstore.webservice.api;
 

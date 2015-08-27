@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.consonance.guqin.resources;
+package io.dockstore.webservice.resources;
 
 import com.google.common.base.Optional;
 import java.io.IOException;
