@@ -18,8 +18,10 @@ package io.dockstore.webservice.resources;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Optional;
+import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
+import io.dockstore.webservice.jdbi.ContainerDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
@@ -29,9 +31,14 @@ import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import org.apache.http.client.HttpClient;
 
+import org.json.simple.JSONObject;
+import org.json.simple.JSONArray;
+import org.json.simple.parser.ParseException;
+import org.json.simple.parser.JSONParser;
 /**
  *
  * @author dyuen
@@ -40,13 +47,16 @@ import org.apache.http.client.HttpClient;
 @Api(value = "/docker.repo")
 @Produces(MediaType.APPLICATION_JSON)
 public class DockerRepoResource {
-    private final TokenDAO dao;
+    private final TokenDAO tokenDAO;
+    private final ContainerDAO containerDAO;
     private final HttpClient client;
     public static final String TARGET_URL = "https://quay.io/api/v1/";
 
-    public DockerRepoResource(HttpClient client, TokenDAO dao) {
-        this.dao = dao;
+    public DockerRepoResource(HttpClient client, TokenDAO dao, ContainerDAO containerDAO) {
+        this.tokenDAO = dao;
         this.client = client;
+        
+        this.containerDAO = containerDAO;
     }
 
     @GET
@@ -77,7 +87,7 @@ public class DockerRepoResource {
             + "Ultimately, we should cache this information and refresh either by user request or by time "
             + "TODO: This should be a properly defined list of objects, it also needs admin authentication", response = String.class)
     public String getRepos() {
-        List<Token> findAll = dao.findAll();
+        List<Token> findAll = tokenDAO.findAll();
         StringBuilder builder = new StringBuilder();
         for (Token token : findAll) {
             if (token.getTokenSource().equals(TokenType.QUAY_IO.toString())) {
@@ -90,6 +100,53 @@ public class DockerRepoResource {
             }
         }
         return builder.toString();
+    }
+    
+    
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/registerContainer")
+    @ApiOperation(value = "Register a container",
+                  notes = "Register a container (public or private)",
+                  response = Container.class)
+    public Container registerContainer(@QueryParam("container_name") String name, @QueryParam("access_token") Long access_token){
+        Token token = tokenDAO.findById(access_token);
+        if (token.getTokenSource().equals(TokenType.QUAY_IO.toString())) {
+            Optional<String> asString = ResourceUtilities.asString(TARGET_URL + "repository?public=false", token.getContent(), client);
+            //System.out.println(asString.get());
+            
+            JSONParser parser = new JSONParser();
+            
+            try {
+            JSONObject obj = (JSONObject) parser.parse(asString.get());
+            JSONArray array = (JSONArray) obj.get("repositories");
+            
+            for (Object array1 : array) {
+                System.out.println(array1);
+                JSONObject repo = (JSONObject) array1;
+                
+                if (name == null ? (String)repo.get("name") == null : name.equals((String)repo.get("name"))){
+                    Container container = new Container();
+                    container.setToken(token.getId());
+                    container.setName(name);
+                    container.setNamespace((String) repo.get("namespace"));
+                    container.setDescription((String) repo.get("description"));
+                    container.setIsStarred((boolean) repo.get("is_starred"));
+                    container.setIsPublic((boolean) repo.get("is_public"));
+
+                    long create = containerDAO.create(container);
+                    return containerDAO.findById(create);
+                }
+            }
+
+            } catch(ParseException pe){
+                System.out.println("position: " + pe.getPosition());
+                System.out.println(pe);
+            }
+        }
+        
+        return null;
     }
 
 }
