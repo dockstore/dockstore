@@ -112,6 +112,7 @@ public class DockerRepoResource {
                   response = Container.class)
     public Container registerContainer(@QueryParam("container_name") String name, @QueryParam("access_token") Long access_token){
         Token token = tokenDAO.findById(access_token);
+        
         if (token.getTokenSource().equals(TokenType.QUAY_IO.toString())) {
             Optional<String> asString = ResourceUtilities.asString(TARGET_URL + "repository?public=false", token.getContent(), client);
             //System.out.println(asString.get());
@@ -119,26 +120,32 @@ public class DockerRepoResource {
             JSONParser parser = new JSONParser();
             
             try {
-            JSONObject obj = (JSONObject) parser.parse(asString.get());
-            JSONArray array = (JSONArray) obj.get("repositories");
-            
-            for (Object array1 : array) {
-                System.out.println(array1);
-                JSONObject repo = (JSONObject) array1;
-                
-                if (name == null ? (String)repo.get("name") == null : name.equals((String)repo.get("name"))){
-                    Container container = new Container();
-                    container.setToken(token.getId());
-                    container.setName(name);
-                    container.setNamespace((String) repo.get("namespace"));
-                    container.setDescription((String) repo.get("description"));
-                    container.setIsStarred((boolean) repo.get("is_starred"));
-                    container.setIsPublic((boolean) repo.get("is_public"));
+                JSONObject obj = (JSONObject) parser.parse(asString.get());
+                JSONArray array = (JSONArray) obj.get("repositories");
 
-                    long create = containerDAO.create(container);
-                    return containerDAO.findById(create);
+                for (Object array1 : array) {
+                    System.out.println(array1);
+                    JSONObject repo = (JSONObject) array1;
+                    
+                    List<Container> list = containerDAO.findByNameAndNamespace(name, (String)repo.get("namespace"));
+
+                    if (list.isEmpty()){
+                        if (name == null ? (String)repo.get("name") == null : name.equals((String)repo.get("name"))) {
+                            Container container = new Container();
+                            container.setToken(token.getId());
+                            container.setName(name);
+                            container.setNamespace((String) repo.get("namespace"));
+                            container.setDescription((String) repo.get("description"));
+                            container.setIsStarred((boolean) repo.get("is_starred"));
+                            container.setIsPublic((boolean) repo.get("is_public"));
+                            
+                            long create = containerDAO.create(container);
+                            return containerDAO.findById(create);
+                        }
+                    } else {
+                        System.out.println("Container already registered");
+                    }
                 }
-            }
 
             } catch(ParseException pe){
                 System.out.println("position: " + pe.getPosition());

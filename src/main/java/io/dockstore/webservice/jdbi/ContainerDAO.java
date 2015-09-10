@@ -18,6 +18,7 @@ package io.dockstore.webservice.jdbi;
 
 import io.dockstore.webservice.core.Container;
 import io.dropwizard.hibernate.AbstractDAO;
+import java.util.List;
 import org.hibernate.SessionFactory;
 
 /**
@@ -35,5 +36,9 @@ public class ContainerDAO extends AbstractDAO<Container> {
 
     public long create(Container container) {
         return persist(container).getId();
+    }
+    
+    public List<Container> findByNameAndNamespace(String name, String namespace) {
+        return list(namedQuery("io.consonance.webservice.core.Containers.findByNameAndNamespace").setString("name", name).setString("namespace", namespace));
     }
 }

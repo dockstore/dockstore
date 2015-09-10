@@ -34,7 +34,8 @@ import javax.persistence.Table;
 @ApiModel(value = "A registered container that a user has submitted")
 @Entity
 @Table(name = "container")
-@NamedQueries({ @NamedQuery(name = "io.consonance.webservice.core.Containers.findAll", query = "SELECT t FROM Container t") })
+@NamedQueries({ @NamedQuery(name = "io.consonance.webservice.core.Containers.findByNameAndNamespace",
+                            query = "SELECT c FROM Container c WHERE c.name = :name AND c.namespace = :namespace") })
 public class Container {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
