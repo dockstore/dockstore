@@ -81,6 +81,26 @@ public class Container {
         return name;
     }
     
+    @JsonProperty
+    public String getNamespace() {
+        return namespace;
+    }
+    
+    @JsonProperty
+    public boolean getIsStarred() {
+        return isStarred;
+    }
+    
+    @JsonProperty
+    public boolean getIsPublic() {
+        return isPublic;
+    }
+    
+    @JsonProperty
+    public String getDescription() {
+        return description;
+    }
+    
     /**
      * @param owner
      *            the owner to set
@@ -135,5 +155,21 @@ public class Container {
      */
     public void setIsPublic(boolean isPublic) {
         this.isPublic = isPublic;
+    }
+
+    /**
+     * @return the isPublic
+     */
+    @JsonProperty("is_public")
+    public boolean isIsPublic() {
+        return isPublic;
+    }
+
+    /**
+     * @return the isStarred
+     */
+    @JsonProperty("is_starred")
+    public boolean isIsStarred() {
+        return isStarred;
     }
 }

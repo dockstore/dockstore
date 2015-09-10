@@ -17,6 +17,7 @@
 package io.dockstore.webservice.resources;
 
 import com.codahale.metrics.annotation.Timed;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.Token;
@@ -24,10 +25,15 @@ import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.jdbi.ContainerDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dropwizard.hibernate.UnitOfWork;
+import io.dropwizard.jackson.Jackson;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import java.io.IOException;
+//import java.lang.reflect.Array;
 import java.util.List;
+//import java.util.Map;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -35,10 +41,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import org.apache.http.client.HttpClient;
 
-import org.json.simple.JSONObject;
-import org.json.simple.JSONArray;
-import org.json.simple.parser.ParseException;
-import org.json.simple.parser.JSONParser;
 /**
  *
  * @author dyuen
@@ -51,6 +53,19 @@ public class DockerRepoResource {
     private final ContainerDAO containerDAO;
     private final HttpClient client;
     public static final String TARGET_URL = "https://quay.io/api/v1/";
+    
+    private static final ObjectMapper MAPPER = Jackson.newObjectMapper();
+    
+    private static class RepoList {
+        private List<Container> repositories;
+        public void setRepositories(List<Container> repositories){
+            this.repositories = repositories;
+        }
+        
+        public List<Container> getRepositories(){
+            return this.repositories;
+        }
+    }
 
     public DockerRepoResource(HttpClient client, TokenDAO dao, ContainerDAO containerDAO) {
         this.tokenDAO = dao;
@@ -103,56 +118,39 @@ public class DockerRepoResource {
     }
     
     
-    @GET
+    @POST
     @Timed
     @UnitOfWork
     @Path("/registerContainer")
     @ApiOperation(value = "Register a container",
                   notes = "Register a container (public or private)",
                   response = Container.class)
-    public Container registerContainer(@QueryParam("container_name") String name, @QueryParam("access_token") Long access_token){
+    public Container registerContainer(@QueryParam("container_name") String name, @QueryParam("access_token") Long access_token) throws IOException{
         Token token = tokenDAO.findById(access_token);
-        
         if (token.getTokenSource().equals(TokenType.QUAY_IO.toString())) {
             Optional<String> asString = ResourceUtilities.asString(TARGET_URL + "repository?public=false", token.getContent(), client);
-            //System.out.println(asString.get());
             
-            JSONParser parser = new JSONParser();
-            
-            try {
-                JSONObject obj = (JSONObject) parser.parse(asString.get());
-                JSONArray array = (JSONArray) obj.get("repositories");
+            if (asString.isPresent()) {
+                RepoList repos = MAPPER.readValue(asString.get(), RepoList.class);
+                List<Container> containers = repos.getRepositories();
+                for (Container c : containers) {
 
-                for (Object array1 : array) {
-                    System.out.println(array1);
-                    JSONObject repo = (JSONObject) array1;
-                    
-                    List<Container> list = containerDAO.findByNameAndNamespace(name, (String)repo.get("namespace"));
+                    if (name == null ? (String) c.getName() == null : name.equals((String) c.getName())) {
+                        List<Container> list = containerDAO.findByNameAndNamespace(name, (String) c.getNamespace());
 
-                    if (list.isEmpty()){
-                        if (name == null ? (String)repo.get("name") == null : name.equals((String)repo.get("name"))) {
-                            Container container = new Container();
-                            container.setToken(token.getId());
-                            container.setName(name);
-                            container.setNamespace((String) repo.get("namespace"));
-                            container.setDescription((String) repo.get("description"));
-                            container.setIsStarred((boolean) repo.get("is_starred"));
-                            container.setIsPublic((boolean) repo.get("is_public"));
-                            
-                            long create = containerDAO.create(container);
+                        if (list.isEmpty()) {
+                            long create = containerDAO.create(c);
                             return containerDAO.findById(create);
+                        } else {
+                            System.out.println("Container already registered");
                         }
-                    } else {
-                        System.out.println("Container already registered");
                     }
-                }
 
-            } catch(ParseException pe){
-                System.out.println("position: " + pe.getPosition());
-                System.out.println(pe);
+                }
+            }else {
+                System.out.println("Received no repos from client");
             }
         }
-        
         return null;
     }
 
