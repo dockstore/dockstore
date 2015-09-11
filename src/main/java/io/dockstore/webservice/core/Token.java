@@ -35,7 +35,8 @@ import javax.persistence.Table;
 @ApiModel(value = "A particular token that a user has submitted via OAuth")
 @Entity
 @Table(name = "token")
-@NamedQueries({ @NamedQuery(name = "io.consonance.webservice.core.Token.findAll", query = "SELECT t FROM Token t") })
+@NamedQueries({ @NamedQuery(name = "io.consonance.webservice.core.Token.findAll", query = "SELECT t FROM Token t"),
+                @NamedQuery(name = "io.consonance.webservice.core.Token.findByContent", query = "SELECT t FROM Token t WHERE t.content = :content")})
 public class Token {
 
     @Id

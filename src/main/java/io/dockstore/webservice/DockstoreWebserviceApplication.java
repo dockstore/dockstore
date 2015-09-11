@@ -17,6 +17,8 @@
 package io.dockstore.webservice;
 
 import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.Container;
+import io.dockstore.webservice.jdbi.ContainerDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.resources.DockerRepoResource;
 import io.dockstore.webservice.resources.GitHubComAuthenticationResource;
@@ -52,13 +54,13 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     }
 
     private final HibernateBundle<DockstoreWebserviceConfiguration> hibernate = new HibernateBundle<DockstoreWebserviceConfiguration>(
-            Token.class) {
+            Token.class, Container.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
         }
     };
-
+    
     @Override
     public String getName() {
         return "webservice";
@@ -78,7 +80,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         // setup hibernate+postgres
         bootstrap.addBundle(hibernate);
-
+        
         // serve static html as well
         bootstrap.addBundle(new AssetsBundle("/assets/", "/static/"));
         // enable views
@@ -96,8 +98,9 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.healthChecks().register("template", healthCheck);
 
         final TokenDAO dao = new TokenDAO(hibernate.getSessionFactory());
+        final ContainerDAO containerDAO = new ContainerDAO(hibernate.getSessionFactory());
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
-        environment.jersey().register(new DockerRepoResource(httpClient, dao));
+        environment.jersey().register(new DockerRepoResource(httpClient, dao, containerDAO));
         environment.jersey().register(new GitHubRepoResource(httpClient, dao));
 
         final GitHubComAuthenticationResource resource3 = new GitHubComAuthenticationResource(configuration.getGithubClientID(),
