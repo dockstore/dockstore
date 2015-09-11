@@ -21,6 +21,7 @@ import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
+import io.dockstore.webservice.jdbi.EnduserDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
@@ -35,6 +36,7 @@ import java.util.Map;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -54,14 +56,16 @@ import org.apache.http.client.HttpClient;
 @Api(value = "/token", authorizations = { @Authorization(value = "dockstore_auth", scopes = { @AuthorizationScope(scope = "read:tokens", description = "read tokens") }) }, tags = "token")
 @Produces(MediaType.APPLICATION_JSON)
 public class TokenResource {
-    private final TokenDAO dao;
+    private final TokenDAO tokenDAO;
+    private final EnduserDAO enduserDAO;
     private static final String TARGET_URL = "https://github.com/";
     private final String githubClientID;
     private final String githubClientSecret;
     private final HttpClient client;
 
-    public TokenResource(TokenDAO dao, String githubClientID, String githubClientSecret, HttpClient client) {
-        this.dao = dao;
+    public TokenResource(TokenDAO tokenDAO, EnduserDAO enduserDAO, String githubClientID, String githubClientSecret, HttpClient client) {
+        this.tokenDAO = tokenDAO;
+        this.enduserDAO = enduserDAO;
         this.githubClientID = githubClientID;
         this.githubClientSecret = githubClientSecret;
         this.client = client;
@@ -81,7 +85,7 @@ public class TokenResource {
     @UnitOfWork
     @ApiOperation(value = "List all known tokens", notes = "List all tokens", response = Token.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
     public List<Token> listTokens() {
-        return dao.findAll();
+        return tokenDAO.findAll();
     }
 
     @GET
@@ -117,8 +121,8 @@ public class TokenResource {
         Token token = new Token();
         token.setTokenSource(TokenType.QUAY_IO.toString());
         token.setContent(accessToken);
-        long create = dao.create(token);
-        return dao.findById(create);
+        long create = tokenDAO.create(token);
+        return tokenDAO.findById(create);
     }
 
     @DELETE
@@ -145,11 +149,23 @@ public class TokenResource {
             Token token = new Token();
             token.setTokenSource(TokenType.GITHUB_COM.toString());
             token.setContent(split.get("access_token"));
-            long create = dao.create(token);
-            return dao.findById(create);
+            long create = tokenDAO.create(token);
+            return tokenDAO.findById(create);
         } else {
             throw new WebApplicationException("Could not retrieve github.com token based on code");
         }
 
+    }
+    
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/assignEnduser")
+    @ApiOperation(value = "Assign the token to a enduser", notes = "Temporary way to assign tokens to the endusers", response = Token.class)
+    public Token assignEndUser(@QueryParam("tokenId") Long tokenId, @QueryParam("enduser_id") Long enduserId){
+        Token token = tokenDAO.findById(tokenId);
+        token.setEnduserId(enduserId);
+        tokenDAO.update(token);
+        return token;
     }
 }

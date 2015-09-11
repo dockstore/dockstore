@@ -34,15 +34,17 @@ import javax.persistence.Table;
 @ApiModel(value = "A registered container that a user has submitted")
 @Entity
 @Table(name = "container")
-@NamedQueries({ @NamedQuery(name = "io.consonance.webservice.core.Containers.findByNameAndNamespace",
-                            query = "SELECT c FROM Container c WHERE c.name = :name AND c.namespace = :namespace") })
+@NamedQueries({ @NamedQuery(name = "io.consonance.webservice.core.Container.findByNameAndNamespace",
+                            query = "SELECT c FROM Container c WHERE c.name = :name AND c.namespace = :namespace"),
+                @NamedQuery(name = "io.consonance.webservice.core.Container.findByEnduserId", 
+                            query = "SELECT c FROM Container c WHERE c.enduserId = :enduserId")})
 public class Container {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
     
     @Column(nullable = false)
-    private long tokenID;
+    private long enduserId;
     @Column(nullable = false)
     private String name;
     @Column
@@ -54,15 +56,13 @@ public class Container {
     @Column
     private boolean isPublic;
     
-    private String owner;
-    
     
     public Container(){
     }
     
-    public Container(long id, long tokenID, String name){
+    public Container(long id, long enduserId, String name){
         this.id = id;
-        this.tokenID = tokenID;
+        this.enduserId = enduserId;
         this.name = name;
     }
     
@@ -72,8 +72,8 @@ public class Container {
     }
     
     @JsonProperty
-    public long getTokenID() {
-        return tokenID;
+    public long getEnduserId() {
+        return enduserId;
     }
     
     @JsonProperty
@@ -101,20 +101,13 @@ public class Container {
         return description;
     }
     
-    /**
-     * @param owner
-     *            the owner to set
-     */
-    public void setOwner(String owner) {
-        this.owner = owner;
-    }
     
     /**
-     * @param tokenID
-     *            the access token to set
+     * @param enduserId
+     *            the user ID to set
      */
-    public void setToken(long tokenID) {
-        this.tokenID = tokenID;
+    public void setEnduserId(long enduserId) {
+        this.enduserId = enduserId;
     }
     
     /**

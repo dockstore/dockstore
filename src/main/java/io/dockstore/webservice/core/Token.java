@@ -36,7 +36,8 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "token")
 @NamedQueries({ @NamedQuery(name = "io.consonance.webservice.core.Token.findAll", query = "SELECT t FROM Token t"),
-                @NamedQuery(name = "io.consonance.webservice.core.Token.findByContent", query = "SELECT t FROM Token t WHERE t.content = :content")})
+                @NamedQuery(name = "io.consonance.webservice.core.Token.findByContent", query = "SELECT t FROM Token t WHERE t.content = :content"),
+                @NamedQuery(name = "io.consonance.webservice.core.Token.findByEnduserId", query = "SELECT t FROM Token t WHERE t.enduserId = :enduserId")})
 public class Token {
 
     @Id
@@ -48,13 +49,15 @@ public class Token {
     private String content;
 
     // TODO: tokens will need to be associated with a particular user
-    private String owner;
+    @Column
+    private long enduserId;
 
     public Token() {
     }
 
-    public Token(long id, String tokenSource, String content) {
+    public Token(long id, long enduserId, String tokenSource, String content) {
         this.id = id;
+        this.enduserId = enduserId;
         this.tokenSource = tokenSource;
         this.content = content;
     }
@@ -113,18 +116,18 @@ public class Token {
     }
 
     /**
-     * @return the owner
+     * @return the userId
      */
     @JsonProperty
-    public String getOwner() {
-        return owner;
+    public long getEnduserId() {
+        return enduserId;
     }
 
     /**
-     * @param owner
-     *            the owner to set
+     * @param enduserId
+     *            the enduserId to set
      */
-    public void setOwner(String owner) {
-        this.owner = owner;
+    public void setEnduserId(long enduserId) {
+        this.enduserId = enduserId;
     }
 }

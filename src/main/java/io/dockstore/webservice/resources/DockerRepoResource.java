@@ -22,8 +22,10 @@ import com.google.common.base.Optional;
 import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
+//import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.ContainerDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
+import io.dockstore.webservice.jdbi.EnduserDAO;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.dropwizard.jackson.Jackson;
 import io.swagger.annotations.Api;
@@ -49,28 +51,32 @@ import org.apache.http.client.HttpClient;
 @Api(value = "/docker.repo")
 @Produces(MediaType.APPLICATION_JSON)
 public class DockerRepoResource {
+    private final EnduserDAO userDAO;
     private final TokenDAO tokenDAO;
     private final ContainerDAO containerDAO;
     private final HttpClient client;
     public static final String TARGET_URL = "https://quay.io/api/v1/";
-    
+
     private static final ObjectMapper MAPPER = Jackson.newObjectMapper();
-    
+
     private static class RepoList {
+
         private List<Container> repositories;
-        public void setRepositories(List<Container> repositories){
+
+        public void setRepositories(List<Container> repositories) {
             this.repositories = repositories;
         }
-        
-        public List<Container> getRepositories(){
+
+        public List<Container> getRepositories() {
             return this.repositories;
         }
     }
 
-    public DockerRepoResource(HttpClient client, TokenDAO dao, ContainerDAO containerDAO) {
-        this.tokenDAO = dao;
+    public DockerRepoResource(HttpClient client, EnduserDAO userDAO, TokenDAO tokenDAO, ContainerDAO containerDAO) {
+        this.userDAO = userDAO;
+        this.tokenDAO = tokenDAO;
         this.client = client;
-        
+
         this.containerDAO = containerDAO;
     }
 
@@ -116,42 +122,61 @@ public class DockerRepoResource {
         }
         return builder.toString();
     }
-    
-    
+
     @POST
     @Timed
     @UnitOfWork
     @Path("/registerContainer")
     @ApiOperation(value = "Register a container",
-                  notes = "Register a container (public or private)",
-                  response = Container.class)
-    public Container registerContainer(@QueryParam("container_name") String name, @QueryParam("access_token") Long access_token) throws IOException{
-        Token token = tokenDAO.findById(access_token);
-        if (token.getTokenSource().equals(TokenType.QUAY_IO.toString())) {
-            Optional<String> asString = ResourceUtilities.asString(TARGET_URL + "repository?public=false", token.getContent(), client);
-            
-            if (asString.isPresent()) {
-                RepoList repos = MAPPER.readValue(asString.get(), RepoList.class);
-                List<Container> containers = repos.getRepositories();
-                for (Container c : containers) {
+            notes = "Register a container (public or private)",
+            response = Container.class)
+    public Container registerContainer(@QueryParam("container_name") String name, @QueryParam("enduser_id") Long enduserId) throws IOException {
+//        User user = userDAO.findById(userId);
+        List<Token> tokens = tokenDAO.findByEnduserId(enduserId);
 
-                    if (name == null ? (String) c.getName() == null : name.equals((String) c.getName())) {
-                        List<Container> list = containerDAO.findByNameAndNamespace(name, (String) c.getNamespace());
+        for (Token token : tokens) {
+            if (token.getTokenSource().equals(TokenType.QUAY_IO.toString())) {
+                Optional<String> asString = ResourceUtilities.asString(TARGET_URL + "repository?public=false", token.getContent(), client);
 
-                        if (list.isEmpty()) {
-                            long create = containerDAO.create(c);
-                            return containerDAO.findById(create);
-                        } else {
-                            System.out.println("Container already registered");
+                if (asString.isPresent()) {
+                    RepoList repos = MAPPER.readValue(asString.get(), RepoList.class);
+                    List<Container> containers = repos.getRepositories();
+                    for (Container c : containers) {
+
+                        if (name == null ? (String) c.getName() == null : name.equals((String) c.getName())) {
+                            List<Container> list = containerDAO.findByNameAndNamespace(name, (String) c.getNamespace());
+
+                            if (list.isEmpty()) {
+                                c.setEnduserId(enduserId);
+                                long create = containerDAO.create(c);
+                                return containerDAO.findById(create);
+                            } else {
+                                System.out.println("Container already registered");
+                            }
                         }
-                    }
 
+                    }
+                } else {
+                    System.out.println("Received no repos from client");
                 }
-            }else {
-                System.out.println("Received no repos from client");
             }
         }
         return null;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/getRegisteredContainers")
+    @ApiOperation(value = "List all registered containers from a user",
+            notes = "",
+            response = RepoList.class)
+    public RepoList getRegisteredContainers(@QueryParam("enduser_id") Long enduserId) {
+        RepoList list = new RepoList();
+        List<Container> repositories = containerDAO.findByEnduserId(enduserId);
+        list.setRepositories(repositories);
+        
+        return list;
     }
 
 }

@@ -18,14 +18,17 @@ package io.dockstore.webservice;
 
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Container;
+import io.dockstore.webservice.core.Enduser;
 import io.dockstore.webservice.jdbi.ContainerDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
+import io.dockstore.webservice.jdbi.EnduserDAO;
 import io.dockstore.webservice.resources.DockerRepoResource;
 import io.dockstore.webservice.resources.GitHubComAuthenticationResource;
 import io.dockstore.webservice.resources.GitHubRepoResource;
 import io.dockstore.webservice.resources.QuayIOAuthenticationResource;
 import io.dockstore.webservice.resources.TemplateHealthCheck;
 import io.dockstore.webservice.resources.TokenResource;
+import io.dockstore.webservice.resources.EnduserResource;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.client.HttpClientBuilder;
@@ -54,7 +57,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     }
 
     private final HibernateBundle<DockstoreWebserviceConfiguration> hibernate = new HibernateBundle<DockstoreWebserviceConfiguration>(
-            Token.class, Container.class) {
+            Token.class, Container.class, Enduser.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
@@ -96,19 +99,21 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         final TemplateHealthCheck healthCheck = new TemplateHealthCheck(configuration.getTemplate());
         environment.healthChecks().register("template", healthCheck);
-
-        final TokenDAO dao = new TokenDAO(hibernate.getSessionFactory());
+        
+        final EnduserDAO enduserDAO = new EnduserDAO(hibernate.getSessionFactory());
+        final TokenDAO tokenDAO = new TokenDAO(hibernate.getSessionFactory());
         final ContainerDAO containerDAO = new ContainerDAO(hibernate.getSessionFactory());
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
-        environment.jersey().register(new DockerRepoResource(httpClient, dao, containerDAO));
-        environment.jersey().register(new GitHubRepoResource(httpClient, dao));
+        environment.jersey().register(new DockerRepoResource(httpClient, enduserDAO, tokenDAO, containerDAO));
+        environment.jersey().register(new GitHubRepoResource(httpClient, tokenDAO));
 
         final GitHubComAuthenticationResource resource3 = new GitHubComAuthenticationResource(configuration.getGithubClientID(),
                 configuration.getGithubRedirectURI());
         environment.jersey().register(resource3);
 
-        environment.jersey().register(
-                new TokenResource(dao, configuration.getGithubClientID(), configuration.getGithubClientSecret(), httpClient));
+        environment.jersey().register(new TokenResource(tokenDAO, enduserDAO, configuration.getGithubClientID(), configuration.getGithubClientSecret(), httpClient));
+        
+        environment.jersey().register(new EnduserResource(httpClient, enduserDAO));
 
         // swagger stuff
 

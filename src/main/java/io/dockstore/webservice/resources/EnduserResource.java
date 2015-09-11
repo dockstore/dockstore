@@ -1,0 +1,70 @@
+/*
+ * Copyright (C) 2015 Collaboratory
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+package io.dockstore.webservice.resources;
+
+import com.codahale.metrics.annotation.Timed;
+import io.dockstore.webservice.core.Enduser;
+import io.dockstore.webservice.jdbi.EnduserDAO;
+import io.dropwizard.hibernate.UnitOfWork;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.Authorization;
+import java.util.List;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
+import org.apache.http.client.HttpClient;
+
+/**
+ *
+ * @author xliu
+ */
+@Path("/enduser")
+@Api(value = "/enduser")
+@Produces(MediaType.APPLICATION_JSON)
+public class EnduserResource {
+    private final HttpClient client;
+    private final EnduserDAO enduserDAO;
+    
+    public EnduserResource(HttpClient client, EnduserDAO enduserDAO){
+        this.client = client;
+        this.enduserDAO = enduserDAO;
+    }
+    
+    @GET
+    @Timed
+    @UnitOfWork
+    @ApiOperation(value = "List all known users", notes = "List all users", response = Enduser.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
+    public List<Enduser> listUsers(){
+        return enduserDAO.findAll();
+    }
+    
+    @POST
+    @Timed
+    @UnitOfWork
+    @Path("/addEnduser")
+    @ApiOperation(value = "Add new user", notes = "Register a new user", response = Enduser.class)
+    public Enduser addUser(@QueryParam("username") String username){
+        Enduser user = new Enduser();
+        user.setUsername(username);
+        long create = enduserDAO.create(user);
+        return enduserDAO.findById(create);
+    }
+}
