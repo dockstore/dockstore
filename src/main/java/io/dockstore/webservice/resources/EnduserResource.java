@@ -22,11 +22,13 @@ import io.dockstore.webservice.jdbi.EnduserDAO;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import java.util.List;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
@@ -42,28 +44,38 @@ import org.apache.http.client.HttpClient;
 public class EnduserResource {
     private final HttpClient client;
     private final EnduserDAO enduserDAO;
-    
-    public EnduserResource(HttpClient client, EnduserDAO enduserDAO){
+
+    public EnduserResource(HttpClient client, EnduserDAO enduserDAO) {
         this.client = client;
         this.enduserDAO = enduserDAO;
     }
-    
+
     @GET
     @Timed
     @UnitOfWork
     @ApiOperation(value = "List all known users", notes = "List all users", response = Enduser.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
-    public List<Enduser> listUsers(){
+    public List<Enduser> listUsers() {
         return enduserDAO.findAll();
     }
-    
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/username/{username}")
+    @ApiOperation(value = "Get user", response = Enduser.class, authorizations = @Authorization(value = "api_key"))
+    public Enduser listUser(@ApiParam(value = "Username of user to return") @PathParam("username") String username) {
+        return enduserDAO.findByUsername(username);
+    }
+
     @POST
     @Timed
     @UnitOfWork
-    @Path("/addEnduser")
+    @Path("/RegisterEnduser")
     @ApiOperation(value = "Add new user", notes = "Register a new user", response = Enduser.class)
-    public Enduser addUser(@QueryParam("username") String username){
+    public Enduser registerUser(@QueryParam("username") String username, @QueryParam("password") String password) {
         Enduser user = new Enduser();
         user.setUsername(username);
+        user.setPassword(password);
         long create = enduserDAO.create(user);
         return enduserDAO.findById(create);
     }

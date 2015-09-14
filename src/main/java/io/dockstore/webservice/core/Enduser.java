@@ -34,43 +34,52 @@ import javax.persistence.Table;
 @ApiModel(value = "User")
 @Entity
 @Table(name = "enduser")
-@NamedQueries({ @NamedQuery(name = "io.consonance.webservice.core.Enduser.findAll", query = "SELECT t FROM Enduser t")})
+@NamedQueries({
+        @NamedQuery(name = "io.consonance.webservice.core.Enduser.findAll", query = "SELECT t FROM Enduser t"),
+        @NamedQuery(name = "io.consonance.webservice.core.Enduser.findByUsername", query = "SELECT t FROM Enduser t WHERE t.username = :username") })
 public class Enduser {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
-    
+
     @Column(nullable = false)
     private String username;
-    
+
+    @Column
+    private String passwordHash;
+
     @Column
     private boolean isAdmin;
-    
-    public Enduser(){
-        
+
+    public Enduser() {
+
     }
-    
+
     @JsonProperty
-    public long getId(){
+    public long getId() {
         return id;
     }
-    
+
     @JsonProperty
-    public String getUsername(){
+    public String getUsername() {
         return username;
     }
-    
+
     @JsonProperty
-    public boolean getIsAdmin(){
+    public boolean getIsAdmin() {
         return isAdmin;
     }
-    
-    public void setUsername(String username){
+
+    public void setUsername(String username) {
         this.username = username;
     }
 
     public void setIsAdmin(boolean isAdmin) {
         this.isAdmin = isAdmin;
     }
-    
+
+    public void setPassword(String password) {
+        this.passwordHash = password;
+    }
+
 }

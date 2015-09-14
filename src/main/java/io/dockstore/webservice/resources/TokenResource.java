@@ -96,7 +96,7 @@ public class TokenResource {
     @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid ID supplied"),
             @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = "Token not found") })
     public Token listToken(@ApiParam(value = "ID of token to return") @PathParam("tokenId") Long tokenId) {
-        throw new UnsupportedOperationException();
+        return tokenDAO.findById(tokenId);
     }
 
     @GET
@@ -156,13 +156,13 @@ public class TokenResource {
         }
 
     }
-    
+
     @PUT
     @Timed
     @UnitOfWork
     @Path("/assignEnduser")
     @ApiOperation(value = "Assign the token to a enduser", notes = "Temporary way to assign tokens to the endusers", response = Token.class)
-    public Token assignEndUser(@QueryParam("tokenId") Long tokenId, @QueryParam("enduser_id") Long enduserId){
+    public Token assignEndUser(@QueryParam("tokenId") Long tokenId, @QueryParam("enduser_id") Long enduserId) {
         Token token = tokenDAO.findById(tokenId);
         token.setEnduserId(enduserId);
         tokenDAO.update(token);

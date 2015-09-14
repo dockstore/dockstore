@@ -127,11 +127,10 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/registerContainer")
-    @ApiOperation(value = "Register a container",
-            notes = "Register a container (public or private)",
-            response = Container.class)
-    public Container registerContainer(@QueryParam("container_name") String name, @QueryParam("enduser_id") Long enduserId) throws IOException {
-//        User user = userDAO.findById(userId);
+    @ApiOperation(value = "Register a container", notes = "Register a container (public or private)", response = Container.class)
+    public Container registerContainer(@QueryParam("container_name") String name, @QueryParam("enduser_id") Long enduserId)
+            throws IOException {
+        // User user = userDAO.findById(userId);
         List<Token> tokens = tokenDAO.findByEnduserId(enduserId);
 
         for (Token token : tokens) {
@@ -168,14 +167,12 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/getRegisteredContainers")
-    @ApiOperation(value = "List all registered containers from a user",
-            notes = "",
-            response = RepoList.class)
+    @ApiOperation(value = "List all registered containers from a user", notes = "", response = RepoList.class)
     public RepoList getRegisteredContainers(@QueryParam("enduser_id") Long enduserId) {
         RepoList list = new RepoList();
         List<Container> repositories = containerDAO.findByEnduserId(enduserId);
         list.setRepositories(repositories);
-        
+
         return list;
     }
 

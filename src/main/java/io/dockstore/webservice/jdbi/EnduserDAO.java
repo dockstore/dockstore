@@ -19,6 +19,7 @@ package io.dockstore.webservice.jdbi;
 import io.dockstore.webservice.core.Enduser;
 import io.dropwizard.hibernate.AbstractDAO;
 import java.util.List;
+import org.hibernate.Query;
 import org.hibernate.SessionFactory;
 
 /**
@@ -29,16 +30,22 @@ public class EnduserDAO extends AbstractDAO<Enduser> {
     public EnduserDAO(SessionFactory factory) {
         super(factory);
     }
-    
+
     public Enduser findById(Long id) {
         return get(id);
     }
-    
+
     public long create(Enduser user) {
         return persist(user).getId();
     }
-    
+
     public List<Enduser> findAll() {
         return list(namedQuery("io.consonance.webservice.core.Enduser.findAll"));
+    }
+
+    public Enduser findByUsername(String username) {
+        Query query = namedQuery("io.consonance.webservice.core.Enduser.findByUsername").setParameter("username", username);
+        Enduser user = (Enduser) query.uniqueResult();
+        return user;
     }
 }
