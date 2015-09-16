@@ -21,7 +21,7 @@ import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
-import io.dockstore.webservice.jdbi.EnduserDAO;
+import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
@@ -57,13 +57,13 @@ import org.apache.http.client.HttpClient;
 @Produces(MediaType.APPLICATION_JSON)
 public class TokenResource {
     private final TokenDAO tokenDAO;
-    private final EnduserDAO enduserDAO;
+    private final UserDAO enduserDAO;
     private static final String TARGET_URL = "https://github.com/";
     private final String githubClientID;
     private final String githubClientSecret;
     private final HttpClient client;
 
-    public TokenResource(TokenDAO tokenDAO, EnduserDAO enduserDAO, String githubClientID, String githubClientSecret, HttpClient client) {
+    public TokenResource(TokenDAO tokenDAO, UserDAO enduserDAO, String githubClientID, String githubClientSecret, HttpClient client) {
         this.tokenDAO = tokenDAO;
         this.enduserDAO = enduserDAO;
         this.githubClientID = githubClientID;
@@ -162,9 +162,9 @@ public class TokenResource {
     @UnitOfWork
     @Path("/assignEnduser")
     @ApiOperation(value = "Assign the token to a enduser", notes = "Temporary way to assign tokens to the endusers", response = Token.class)
-    public Token assignEndUser(@QueryParam("tokenId") Long tokenId, @QueryParam("enduser_id") Long enduserId) {
+    public Token assignUser(@QueryParam("tokenId") Long tokenId, @QueryParam("user_id") Long userId) {
         Token token = tokenDAO.findById(tokenId);
-        token.setEnduserId(enduserId);
+        token.setUserId(userId);
         tokenDAO.update(token);
         return token;
     }

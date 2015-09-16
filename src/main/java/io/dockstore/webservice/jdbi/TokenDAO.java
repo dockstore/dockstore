@@ -34,11 +34,11 @@ public class TokenDAO extends AbstractDAO<Token> {
     public Token findById(Long id) {
         return get(id);
     }
-    
+
     public long create(Token token) {
         return persist(token).getId();
     }
-    
+
     public long update(Token token) {
         return persist(token).getId();
     }
@@ -46,8 +46,8 @@ public class TokenDAO extends AbstractDAO<Token> {
     public List<Token> findAll() {
         return list(namedQuery("io.consonance.webservice.core.Token.findAll"));
     }
-    
-    public List<Token> findByEnduserId(long enduserId){
-        return list(namedQuery("io.consonance.webservice.core.Token.findByEnduserId").setParameter("enduserId", enduserId));
+
+    public List<Token> findByUserId(long userId) {
+        return list(namedQuery("io.consonance.webservice.core.Token.findByUserId").setParameter("userId", userId));
     }
 }

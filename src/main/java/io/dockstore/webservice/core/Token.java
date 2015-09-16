@@ -38,7 +38,7 @@ import javax.persistence.Table;
 @NamedQueries({
         @NamedQuery(name = "io.consonance.webservice.core.Token.findAll", query = "SELECT t FROM Token t"),
         @NamedQuery(name = "io.consonance.webservice.core.Token.findByContent", query = "SELECT t FROM Token t WHERE t.content = :content"),
-        @NamedQuery(name = "io.consonance.webservice.core.Token.findByEnduserId", query = "SELECT t FROM Token t WHERE t.enduserId = :enduserId") })
+        @NamedQuery(name = "io.consonance.webservice.core.Token.findByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId") })
 public class Token {
 
     @Id
@@ -51,14 +51,14 @@ public class Token {
 
     // TODO: tokens will need to be associated with a particular user
     @Column
-    private long enduserId;
+    private long userId;
 
     public Token() {
     }
 
-    public Token(long id, long enduserId, String tokenSource, String content) {
+    public Token(long id, long userId, String tokenSource, String content) {
         this.id = id;
-        this.enduserId = enduserId;
+        this.userId = userId;
         this.tokenSource = tokenSource;
         this.content = content;
     }
@@ -120,15 +120,15 @@ public class Token {
      * @return the userId
      */
     @JsonProperty
-    public long getEnduserId() {
-        return enduserId;
+    public long getUserId() {
+        return userId;
     }
 
     /**
      * @param enduserId
-     *            the enduserId to set
+     *            the userId to set
      */
-    public void setEnduserId(long enduserId) {
-        this.enduserId = enduserId;
+    public void setUserId(long userId) {
+        this.userId = userId;
     }
 }

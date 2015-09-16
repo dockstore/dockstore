@@ -18,17 +18,19 @@ package io.dockstore.webservice;
 
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Container;
-import io.dockstore.webservice.core.Enduser;
+import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.jdbi.ContainerDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
-import io.dockstore.webservice.jdbi.EnduserDAO;
+import io.dockstore.webservice.jdbi.UserDAO;
+import io.dockstore.webservice.jdbi.GroupDAO;
 import io.dockstore.webservice.resources.DockerRepoResource;
 import io.dockstore.webservice.resources.GitHubComAuthenticationResource;
 import io.dockstore.webservice.resources.GitHubRepoResource;
 import io.dockstore.webservice.resources.QuayIOAuthenticationResource;
 import io.dockstore.webservice.resources.TemplateHealthCheck;
 import io.dockstore.webservice.resources.TokenResource;
-import io.dockstore.webservice.resources.EnduserResource;
+import io.dockstore.webservice.resources.UserResource;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.client.HttpClientBuilder;
@@ -57,13 +59,13 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     }
 
     private final HibernateBundle<DockstoreWebserviceConfiguration> hibernate = new HibernateBundle<DockstoreWebserviceConfiguration>(
-            Token.class, Container.class, Enduser.class) {
+            Token.class, Container.class, User.class, Group.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
         }
     };
-    
+
     @Override
     public String getName() {
         return "webservice";
@@ -83,7 +85,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         // setup hibernate+postgres
         bootstrap.addBundle(hibernate);
-        
+
         // serve static html as well
         bootstrap.addBundle(new AssetsBundle("/assets/", "/static/"));
         // enable views
@@ -99,21 +101,24 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         final TemplateHealthCheck healthCheck = new TemplateHealthCheck(configuration.getTemplate());
         environment.healthChecks().register("template", healthCheck);
-        
-        final EnduserDAO enduserDAO = new EnduserDAO(hibernate.getSessionFactory());
+
+        final UserDAO userDAO = new UserDAO(hibernate.getSessionFactory());
         final TokenDAO tokenDAO = new TokenDAO(hibernate.getSessionFactory());
         final ContainerDAO containerDAO = new ContainerDAO(hibernate.getSessionFactory());
+        final GroupDAO groupDAO = new GroupDAO(hibernate.getSessionFactory());
+
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
-        environment.jersey().register(new DockerRepoResource(httpClient, enduserDAO, tokenDAO, containerDAO));
+        environment.jersey().register(new DockerRepoResource(httpClient, userDAO, tokenDAO, containerDAO));
         environment.jersey().register(new GitHubRepoResource(httpClient, tokenDAO));
 
         final GitHubComAuthenticationResource resource3 = new GitHubComAuthenticationResource(configuration.getGithubClientID(),
                 configuration.getGithubRedirectURI());
         environment.jersey().register(resource3);
 
-        environment.jersey().register(new TokenResource(tokenDAO, enduserDAO, configuration.getGithubClientID(), configuration.getGithubClientSecret(), httpClient));
-        
-        environment.jersey().register(new EnduserResource(httpClient, enduserDAO));
+        environment.jersey().register(new TokenResource(tokenDAO, userDAO, configuration.getGithubClientID(), configuration.getGithubClientSecret(),
+                        httpClient));
+
+        environment.jersey().register(new UserResource(httpClient, userDAO, groupDAO));
 
         // swagger stuff
 

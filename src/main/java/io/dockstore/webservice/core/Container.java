@@ -34,17 +34,16 @@ import javax.persistence.Table;
 @ApiModel(value = "A registered container that a user has submitted")
 @Entity
 @Table(name = "container")
-@NamedQueries({ @NamedQuery(name = "io.consonance.webservice.core.Container.findByNameAndNamespace",
-                            query = "SELECT c FROM Container c WHERE c.name = :name AND c.namespace = :namespace"),
-                @NamedQuery(name = "io.consonance.webservice.core.Container.findByEnduserId", 
-                            query = "SELECT c FROM Container c WHERE c.enduserId = :enduserId")})
+@NamedQueries({
+        @NamedQuery(name = "io.consonance.webservice.core.Container.findByNameAndNamespace", query = "SELECT c FROM Container c WHERE c.name = :name AND c.namespace = :namespace"),
+        @NamedQuery(name = "io.consonance.webservice.core.Container.findByUserId", query = "SELECT c FROM Container c WHERE c.userId = :userId") })
 public class Container {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
-    
+
     @Column(nullable = false)
-    private long enduserId;
+    private long userId;
     @Column(nullable = false)
     private String name;
     @Column
@@ -55,61 +54,59 @@ public class Container {
     private boolean isStarred;
     @Column
     private boolean isPublic;
-    
-    
-    public Container(){
+
+    public Container() {
     }
-    
-    public Container(long id, long enduserId, String name){
+
+    public Container(long id, long userId, String name) {
         this.id = id;
-        this.enduserId = enduserId;
+        this.userId = userId;
         this.name = name;
     }
-    
+
     @JsonProperty
     public long getId() {
         return id;
     }
-    
+
     @JsonProperty
-    public long getEnduserId() {
-        return enduserId;
+    public long getUserId() {
+        return userId;
     }
-    
+
     @JsonProperty
     public String getName() {
         return name;
     }
-    
+
     @JsonProperty
     public String getNamespace() {
         return namespace;
     }
-    
+
     @JsonProperty
     public boolean getIsStarred() {
         return isStarred;
     }
-    
+
     @JsonProperty
     public boolean getIsPublic() {
         return isPublic;
     }
-    
+
     @JsonProperty
     public String getDescription() {
         return description;
     }
-    
-    
+
     /**
      * @param enduserId
      *            the user ID to set
      */
-    public void setEnduserId(long enduserId) {
-        this.enduserId = enduserId;
+    public void setUserId(long userId) {
+        this.userId = userId;
     }
-    
+
     /**
      * @param name
      *            the repo name to set
@@ -117,7 +114,7 @@ public class Container {
     public void setName(String name) {
         this.name = name;
     }
-    
+
     /**
      * @param namespace
      *            the repo name to set
@@ -125,7 +122,7 @@ public class Container {
     public void setNamespace(String namespace) {
         this.namespace = namespace;
     }
-    
+
     /**
      * @param description
      *            the repo name to set
@@ -133,7 +130,7 @@ public class Container {
     public void setDescription(String description) {
         this.description = description;
     }
-    
+
     /**
      * @param isStarred
      *            the repo name to set
@@ -141,7 +138,7 @@ public class Container {
     public void setIsStarred(boolean isStarred) {
         this.isStarred = isStarred;
     }
-    
+
     /**
      * @param isPublic
      *            the repo name to set

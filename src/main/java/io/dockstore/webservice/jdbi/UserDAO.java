@@ -16,34 +16,36 @@
  */
 package io.dockstore.webservice.jdbi;
 
-import io.dockstore.webservice.core.Container;
+import io.dockstore.webservice.core.User;
 import io.dropwizard.hibernate.AbstractDAO;
 import java.util.List;
+import org.hibernate.Query;
 import org.hibernate.SessionFactory;
 
 /**
  *
  * @author xliu
  */
-public class ContainerDAO extends AbstractDAO<Container> {
-    public ContainerDAO(SessionFactory factory) {
+public class UserDAO extends AbstractDAO<User> {
+    public UserDAO(SessionFactory factory) {
         super(factory);
     }
 
-    public Container findById(Long id) {
+    public User findById(Long id) {
         return get(id);
     }
 
-    public long create(Container container) {
-        return persist(container).getId();
+    public long create(User user) {
+        return persist(user).getId();
     }
 
-    public List<Container> findByNameAndNamespace(String name, String namespace) {
-        return list(namedQuery("io.consonance.webservice.core.Container.findByNameAndNamespace").setString("name", name).setString(
-                "namespace", namespace));
+    public List<User> findAll() {
+        return list(namedQuery("io.consonance.webservice.core.User.findAll"));
     }
 
-    public List<Container> findByUserId(long userId) {
-        return list(namedQuery("io.consonance.webservice.core.Container.findByUserId").setParameter("userId", userId));
+    public User findByUsername(String username) {
+        Query query = namedQuery("io.consonance.webservice.core.User.findByUsername").setParameter("username", username);
+        User user = (User) query.uniqueResult();
+        return user;
     }
 }

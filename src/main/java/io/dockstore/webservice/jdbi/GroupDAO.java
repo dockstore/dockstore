@@ -16,36 +16,29 @@
  */
 package io.dockstore.webservice.jdbi;
 
-import io.dockstore.webservice.core.Enduser;
+import io.dockstore.webservice.core.Group;
 import io.dropwizard.hibernate.AbstractDAO;
 import java.util.List;
-import org.hibernate.Query;
 import org.hibernate.SessionFactory;
 
 /**
  *
  * @author xliu
  */
-public class EnduserDAO extends AbstractDAO<Enduser> {
-    public EnduserDAO(SessionFactory factory) {
+public class GroupDAO extends AbstractDAO<Group> {
+    public GroupDAO(SessionFactory factory) {
         super(factory);
     }
 
-    public Enduser findById(Long id) {
+    public Group findById(Long id) {
         return get(id);
     }
 
-    public long create(Enduser user) {
-        return persist(user).getId();
+    public List<Group> findAll() {
+        return list(namedQuery("io.consonance.webservice.core.Group.findAll"));
     }
 
-    public List<Enduser> findAll() {
-        return list(namedQuery("io.consonance.webservice.core.Enduser.findAll"));
-    }
-
-    public Enduser findByUsername(String username) {
-        Query query = namedQuery("io.consonance.webservice.core.Enduser.findByUsername").setParameter("username", username);
-        Enduser user = (Enduser) query.uniqueResult();
-        return user;
+    public long create(Group group) {
+        return persist(group).getId();
     }
 }

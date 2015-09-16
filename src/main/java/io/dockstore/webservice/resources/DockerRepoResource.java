@@ -25,7 +25,7 @@ import io.dockstore.webservice.core.TokenType;
 //import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.ContainerDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
-import io.dockstore.webservice.jdbi.EnduserDAO;
+import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.dropwizard.jackson.Jackson;
 import io.swagger.annotations.Api;
@@ -51,7 +51,7 @@ import org.apache.http.client.HttpClient;
 @Api(value = "/docker.repo")
 @Produces(MediaType.APPLICATION_JSON)
 public class DockerRepoResource {
-    private final EnduserDAO userDAO;
+    private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
     private final ContainerDAO containerDAO;
     private final HttpClient client;
@@ -72,7 +72,7 @@ public class DockerRepoResource {
         }
     }
 
-    public DockerRepoResource(HttpClient client, EnduserDAO userDAO, TokenDAO tokenDAO, ContainerDAO containerDAO) {
+    public DockerRepoResource(HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ContainerDAO containerDAO) {
         this.userDAO = userDAO;
         this.tokenDAO = tokenDAO;
         this.client = client;
@@ -128,10 +128,10 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/registerContainer")
     @ApiOperation(value = "Register a container", notes = "Register a container (public or private)", response = Container.class)
-    public Container registerContainer(@QueryParam("container_name") String name, @QueryParam("enduser_id") Long enduserId)
+    public Container registerContainer(@QueryParam("container_name") String name, @QueryParam("enduser_id") Long userId)
             throws IOException {
         // User user = userDAO.findById(userId);
-        List<Token> tokens = tokenDAO.findByEnduserId(enduserId);
+        List<Token> tokens = tokenDAO.findByUserId(userId);
 
         for (Token token : tokens) {
             if (token.getTokenSource().equals(TokenType.QUAY_IO.toString())) {
@@ -146,7 +146,7 @@ public class DockerRepoResource {
                             List<Container> list = containerDAO.findByNameAndNamespace(name, (String) c.getNamespace());
 
                             if (list.isEmpty()) {
-                                c.setEnduserId(enduserId);
+                                c.setUserId(userId);
                                 long create = containerDAO.create(c);
                                 return containerDAO.findById(create);
                             } else {
@@ -168,9 +168,9 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/getRegisteredContainers")
     @ApiOperation(value = "List all registered containers from a user", notes = "", response = RepoList.class)
-    public RepoList getRegisteredContainers(@QueryParam("enduser_id") Long enduserId) {
+    public RepoList getRegisteredContainers(@QueryParam("user_id") Long userId) {
         RepoList list = new RepoList();
-        List<Container> repositories = containerDAO.findByEnduserId(enduserId);
+        List<Container> repositories = containerDAO.findByUserId(userId);
         list.setRepositories(repositories);
 
         return list;
