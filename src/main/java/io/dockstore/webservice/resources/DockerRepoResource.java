@@ -51,6 +51,7 @@ import org.apache.http.client.HttpClient;
 @Api(value = "/docker.repo")
 @Produces(MediaType.APPLICATION_JSON)
 public class DockerRepoResource {
+
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
     private final ContainerDAO containerDAO;
@@ -128,8 +129,7 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/registerContainer")
     @ApiOperation(value = "Register a container", notes = "Register a container (public or private)", response = Container.class)
-    public Container registerContainer(@QueryParam("container_name") String name, @QueryParam("enduser_id") Long userId)
-            throws IOException {
+    public Container registerContainer(@QueryParam("container_name") String name, @QueryParam("enduser_id") Long userId) throws IOException {
         // User user = userDAO.findById(userId);
         List<Token> tokens = tokenDAO.findByUserId(userId);
 
@@ -174,6 +174,24 @@ public class DockerRepoResource {
         list.setRepositories(repositories);
 
         return list;
+    }
+
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/shareWithUser")
+    @ApiOperation(value = "User shares a container with a chosen user", notes = "Needs to be fleshed out.")
+    public void shareWithUser(@QueryParam("container_id") Long containerId, @QueryParam("user_id") Long userId) {
+
+    }
+
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/shareWithGroup")
+    @ApiOperation(value = "User shares a container with a chosen group", notes = "Needs to be fleshed out.")
+    public void shareWithGroup(@QueryParam("container_id") Long containerId, @QueryParam("group_id") Long groupId) {
+
     }
 
 }

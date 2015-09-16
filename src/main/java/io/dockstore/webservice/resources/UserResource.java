@@ -155,7 +155,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/addUserToGroup")
-    @ApiOperation(value = "Add a user to a group", response = String.class)
+    @ApiOperation(value = "Add a user to a group", notes = "Does not work. Need to add group to user. This is because the user is defined as the 'owner'. It can be implemented the other way around.", response = String.class)
     public String addUserToGroup(@QueryParam("user_id") Long userId, @QueryParam("group_id") Long groupId) {
         User user = userDAO.findById(userId);
         Group group = groupDAO.findById(groupId);
