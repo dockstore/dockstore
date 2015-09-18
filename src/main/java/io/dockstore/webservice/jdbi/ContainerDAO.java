@@ -46,4 +46,8 @@ public class ContainerDAO extends AbstractDAO<Container> {
     public List<Container> findByUserId(long userId) {
         return list(namedQuery("io.consonance.webservice.core.Container.findByUserId").setParameter("userId", userId));
     }
+
+    public List<Container> findAll() {
+        return list(namedQuery("io.consonance.webservice.core.Container.findAll"));
+    }
 }

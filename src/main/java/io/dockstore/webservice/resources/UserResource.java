@@ -28,7 +28,6 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -108,9 +107,7 @@ public class UserResource {
     @ApiOperation(value = "Get groups that the user belongs to", response = Group.class)
     public List<Group> getGroupsFromUser(@QueryParam("user_id") Long userId) {
         User user = userDAO.findById(userId);
-        Set<Group> groups = user.getGroups();
-        List grouplist = new ArrayList();
-        grouplist.addAll(groups);
+        List grouplist = new ArrayList(user.getGroups());
         return grouplist;
     }
 
@@ -121,9 +118,7 @@ public class UserResource {
     @ApiOperation(value = "Get users that belongs to a group", response = User.class)
     public List<User> getUsersFromGroup(@QueryParam("group_id") Long groupId) {
         Group group = groupDAO.findById(groupId);
-        Set<User> users = group.getUsers();
-        List userlist = new ArrayList();
-        userlist.addAll(users);
+        List userlist = new ArrayList(group.getUsers());
         return userlist;
 
     }

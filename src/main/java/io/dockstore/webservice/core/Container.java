@@ -36,7 +36,8 @@ import javax.persistence.Table;
 @Table(name = "container")
 @NamedQueries({
         @NamedQuery(name = "io.consonance.webservice.core.Container.findByNameAndNamespace", query = "SELECT c FROM Container c WHERE c.name = :name AND c.namespace = :namespace"),
-        @NamedQuery(name = "io.consonance.webservice.core.Container.findByUserId", query = "SELECT c FROM Container c WHERE c.userId = :userId") })
+        @NamedQuery(name = "io.consonance.webservice.core.Container.findByUserId", query = "SELECT c FROM Container c WHERE c.userId = :userId"),
+        @NamedQuery(name = "io.consonance.webservice.core.Container.findAll", query = "Select c From Container c") })
 public class Container {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -54,6 +55,12 @@ public class Container {
     private boolean isStarred;
     @Column
     private boolean isPublic;
+    @Column
+    private Integer lastModified;
+    @Column
+    private String registry;
+    @Column
+    private String gitUrl;
 
     public Container() {
     }
@@ -62,6 +69,13 @@ public class Container {
         this.id = id;
         this.userId = userId;
         this.name = name;
+    }
+
+    public void update(Container container) {
+        this.description = container.getDescription();
+        this.isPublic = container.getIsPublic();
+        this.isStarred = container.getIsStarred();
+        this.lastModified = container.getLastModified();
     }
 
     @JsonProperty
@@ -97,6 +111,38 @@ public class Container {
     @JsonProperty
     public String getDescription() {
         return description;
+    }
+
+    @JsonProperty("last_modified")
+    public Integer getLastModified() {
+        return lastModified;
+    }
+
+    @JsonProperty
+    public String getRegistry() {
+        return registry;
+    }
+
+    @JsonProperty
+    public String getGitUrl() {
+        return gitUrl;
+    }
+
+    public void setGitUrl(String gitUrl) {
+        this.gitUrl = gitUrl;
+    }
+
+    public String getRepositoryPath() {
+        StringBuilder builder = new StringBuilder();
+        if (this.registry == "quay.io") {
+            builder.append("quay.io/");
+        }
+        builder.append(this.namespace).append("/").append(this.name);
+        return builder.toString();
+    }
+
+    public void setId(long id) {
+        this.id = id;
     }
 
     /**
@@ -148,6 +194,18 @@ public class Container {
     }
 
     /**
+     * @param lastModified
+     *            the lastModified to set
+     */
+    public void setLastModified(Integer lastModified) {
+        this.lastModified = lastModified;
+    }
+
+    public void setRegistry(String registry) {
+        this.registry = registry;
+    }
+
+    /**
      * @return the isPublic
      */
     @JsonProperty("is_public")
@@ -162,4 +220,5 @@ public class Container {
     public boolean isIsStarred() {
         return isStarred;
     }
+
 }
