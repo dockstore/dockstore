@@ -32,3 +32,6 @@ This is the prototype web service for the dockstore. The usage of this is to enu
 1. we need to define how this interacts with a single sign-on service
    1. in general, users should be able to list their own information (such as tokens and repos)
    2. only admin users (or our other services) should be able to list all information  
+1. items from Brian
+   2. you need better directions for filling in the yml settings file
+   3. you should create a Dockerfile for this so I can deploy with Docker, this will make testing much easier
