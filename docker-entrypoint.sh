@@ -11,7 +11,7 @@ trap "echo TRAPed signal" HUP INT QUIT KILL TERM
 /docker-entrypoint.sh &
 
 # todo put the web service startup here
-java -jar /gitroot/target/dockstore-*-SNAPSHOT.jar server /hello-world.yml
+java -jar /gitroot/target/dockstore-*-SNAPSHOT.jar server /hello-world.yml &
 
 echo "[hit enter key to exit] or run 'docker stop <container>'"
 read
@@ -21,5 +21,6 @@ echo "stopping postgres"
 #/usr/sbin/apachectl stop
 # not sure if this is right
 gosu postgres pg_ctl -D "$PGDATA" -m fast -w stop
+pkill java
 
 echo "exited $0"
