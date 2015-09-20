@@ -9,7 +9,7 @@ trap "echo TRAPed signal" HUP INT QUIT KILL TERM
 #/usr/sbin/apachectl start
 # the entrypoint provided by the base Postgres container
 echo "Starting Postgres"
-bash /docker-entrypoint.sh &
+bash /docker-entrypoint.sh postgres &
 sleep 10
 
 # todo put the web service startup here

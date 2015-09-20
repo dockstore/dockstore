@@ -1,10 +1,10 @@
 template: Hello, %s!
 defaultName: Stranger
-clientID: <fill me in> 
-redirectURI: http://<fill me in>:8080/static/quay_callback.htm
-githubClientID: <fill me in> 
+quayClientID: <fill me in>
+quayRedirectURI: http://<fill me in>:8080/static/quay_callback.htm
+githubClientID: <fill me in>
 githubClientSecret: <fill me in>
-githubRedirectURI: http://<fill me in>:8080/token/github.com        
+githubRedirectURI: http://<fill me in>:8080/token/github.com
 
 httpClient:
   timeout: 5500ms
