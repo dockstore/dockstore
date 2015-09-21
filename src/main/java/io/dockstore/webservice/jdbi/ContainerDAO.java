@@ -38,9 +38,9 @@ public class ContainerDAO extends AbstractDAO<Container> {
         return persist(container).getId();
     }
 
-    public List<Container> findByNameAndNamespace(String name, String namespace) {
-        return list(namedQuery("io.consonance.webservice.core.Container.findByNameAndNamespace").setString("name", name).setString(
-                "namespace", namespace));
+    public List<Container> findByNameAndNamespaceAndRegistry(String name, String namespace, String registry) {
+        return list(namedQuery("io.consonance.webservice.core.Container.findByNameAndNamespaceAndRegistry").setString("name", name)
+                .setString("namespace", namespace).setString("registry", registry));
     }
 
     public List<Container> findByUserId(long userId) {

@@ -22,6 +22,7 @@ import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.GroupDAO;
 import io.dropwizard.hibernate.UnitOfWork;
+import io.dropwizard.views.View;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -49,11 +50,14 @@ public class UserResource {
     private final HttpClient client;
     private final UserDAO userDAO;
     private final GroupDAO groupDAO;
+    private final String githubClientID;
 
-    public UserResource(HttpClient client, UserDAO userDAO, GroupDAO groupDAO) {
+    public UserResource(HttpClient client, UserDAO userDAO, GroupDAO groupDAO, String githubClientID) {
         this.client = client;
         this.userDAO = userDAO;
         this.groupDAO = groupDAO;
+        this.githubClientID = githubClientID;
+
     }
 
     @POST
@@ -158,6 +162,55 @@ public class UserResource {
         group.addUser(user);
 
         return "Hello";
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/registerGithub")
+    @ApiOperation(value = "", response = GithubRegisterView.class)
+    public GithubRegisterView registerGithub() {
+        return getView();
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/getView")
+    @ApiOperation(value = "", response = GithubRegisterView.class)
+    public GithubRegisterView getView() {
+        return new GithubRegisterView();
+    }
+
+    @POST
+    @Timed
+    @UnitOfWork
+    @Path("/registerGithubRedirect")
+    public User registerGithubRedirect() {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * @return the clientID
+     */
+    public String getGithubClientID() {
+        return githubClientID;
+    }
+
+    public class GithubRegisterView extends View {
+        private final UserResource parent;
+
+        public GithubRegisterView() {
+            super("github.register.auth.view.ftl");
+            this.parent = UserResource.this;
+        }
+
+        /**
+         * @return the parent
+         */
+        public UserResource getParent() {
+            return parent;
+        }
     }
 
 }

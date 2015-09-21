@@ -35,7 +35,7 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "container")
 @NamedQueries({
-        @NamedQuery(name = "io.consonance.webservice.core.Container.findByNameAndNamespace", query = "SELECT c FROM Container c WHERE c.name = :name AND c.namespace = :namespace"),
+        @NamedQuery(name = "io.consonance.webservice.core.Container.findByNameAndNamespaceAndRegistry", query = "SELECT c FROM Container c WHERE c.name = :name AND c.namespace = :namespace AND c.registry = :registry"),
         @NamedQuery(name = "io.consonance.webservice.core.Container.findByUserId", query = "SELECT c FROM Container c WHERE c.userId = :userId"),
         @NamedQuery(name = "io.consonance.webservice.core.Container.findAll", query = "Select c From Container c") })
 public class Container {
@@ -61,6 +61,8 @@ public class Container {
     private String registry;
     @Column
     private String gitUrl;
+    @Column
+    private boolean isRegistered;
 
     public Container() {
     }
@@ -126,6 +128,11 @@ public class Container {
     @JsonProperty
     public String getGitUrl() {
         return gitUrl;
+    }
+
+    @JsonProperty("is_registered")
+    public boolean getIsRegistered() {
+        return isRegistered;
     }
 
     public void setGitUrl(String gitUrl) {
@@ -203,6 +210,10 @@ public class Container {
 
     public void setRegistry(String registry) {
         this.registry = registry;
+    }
+
+    public void setIsRegistered(boolean isRegistered) {
+        this.isRegistered = isRegistered;
     }
 
     /**

@@ -58,6 +58,12 @@ public class User {
     @Column
     private boolean isAdmin;
 
+    @Column
+    private String dockerRepo;
+
+    @Column
+    private String gitRepo;
+
     @ManyToMany(cascade = CascadeType.ALL)
     @JoinTable(name = "endusergroup", joinColumns = { @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "groupid", nullable = false, updatable = false, referencedColumnName = "id") })
     private Set<Group> groups = new HashSet<>(0);
