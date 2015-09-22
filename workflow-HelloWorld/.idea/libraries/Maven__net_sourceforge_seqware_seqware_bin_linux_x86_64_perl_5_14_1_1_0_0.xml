@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: net.sourceforge.seqware:seqware-bin-linux-x86-64-perl-5.14.1:1.0.0">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/net/sourceforge/seqware/seqware-bin-linux-x86-64-perl-5.14.1/1.0.0/seqware-bin-linux-x86-64-perl-5.14.1-1.0.0.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/net/sourceforge/seqware/seqware-bin-linux-x86-64-perl-5.14.1/1.0.0/seqware-bin-linux-x86-64-perl-5.14.1-1.0.0-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/net/sourceforge/seqware/seqware-bin-linux-x86-64-perl-5.14.1/1.0.0/seqware-bin-linux-x86-64-perl-5.14.1-1.0.0-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
