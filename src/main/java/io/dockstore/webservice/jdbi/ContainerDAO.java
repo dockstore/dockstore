@@ -50,4 +50,9 @@ public class ContainerDAO extends AbstractDAO<Container> {
     public List<Container> findAll() {
         return list(namedQuery("io.consonance.webservice.core.Container.findAll"));
     }
+
+    public List<Container> searchPattern(String pattern) {
+        pattern = "%" + pattern + "%";
+        return list(namedQuery("io.consonance.webservice.core.Container.searchPattern").setParameter("pattern", pattern));
+    }
 }

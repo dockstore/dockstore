@@ -407,7 +407,7 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/searchContainers")
     @ApiOperation(value = "Search for matching registered containers", notes = "Search on the name (full path name) and description.", response = Container.class)
-    public List<Container> searchContainers(@QueryParam("group_id") String word) {
-        throw new UnsupportedOperationException();
+    public List<Container> searchContainers(@QueryParam("pattern") String word) {
+        return containerDAO.searchPattern(word);
     }
 }
