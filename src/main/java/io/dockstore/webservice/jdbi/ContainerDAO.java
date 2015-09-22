@@ -37,8 +37,22 @@ public class ContainerDAO extends AbstractDAO<Container> {
     public long create(Container container) {
         return persist(container).getId();
     }
-    
-    public List<Container> findByNameAndNamespace(String name, String namespace) {
-        return list(namedQuery("io.consonance.webservice.core.Containers.findByNameAndNamespace").setString("name", name).setString("namespace", namespace));
+
+    public List<Container> findByNameAndNamespaceAndRegistry(String name, String namespace, String registry) {
+        return list(namedQuery("io.consonance.webservice.core.Container.findByNameAndNamespaceAndRegistry").setString("name", name)
+                .setString("namespace", namespace).setString("registry", registry));
+    }
+
+    public List<Container> findByUserId(long userId) {
+        return list(namedQuery("io.consonance.webservice.core.Container.findByUserId").setParameter("userId", userId));
+    }
+
+    public List<Container> findAll() {
+        return list(namedQuery("io.consonance.webservice.core.Container.findAll"));
+    }
+
+    public List<Container> searchPattern(String pattern) {
+        pattern = "%" + pattern + "%";
+        return list(namedQuery("io.consonance.webservice.core.Container.searchPattern").setParameter("pattern", pattern));
     }
 }

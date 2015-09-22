@@ -34,15 +34,18 @@ import javax.persistence.Table;
 @ApiModel(value = "A registered container that a user has submitted")
 @Entity
 @Table(name = "container")
-@NamedQueries({ @NamedQuery(name = "io.consonance.webservice.core.Containers.findByNameAndNamespace",
-                            query = "SELECT c FROM Container c WHERE c.name = :name AND c.namespace = :namespace") })
+@NamedQueries({
+        @NamedQuery(name = "io.consonance.webservice.core.Container.findByNameAndNamespaceAndRegistry", query = "SELECT c FROM Container c WHERE c.name = :name AND c.namespace = :namespace AND c.registry = :registry"),
+        @NamedQuery(name = "io.consonance.webservice.core.Container.findByUserId", query = "SELECT c FROM Container c WHERE c.userId = :userId"),
+        @NamedQuery(name = "io.consonance.webservice.core.Container.findAll", query = "Select c From Container c"),
+        @NamedQuery(name = "io.consonance.webservice.core.Container.searchPattern", query = "SELECT c FROM Container c WHERE (c.name LIKE :pattern) OR (c.namespace LIKE :pattern) OR (c.registry LIKE :pattern) OR (c.description LIKE :pattern)") })
 public class Container {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
-    
+
     @Column(nullable = false)
-    private long tokenID;
+    private long userId;
     @Column(nullable = false)
     private String name;
     @Column
@@ -53,70 +56,111 @@ public class Container {
     private boolean isStarred;
     @Column
     private boolean isPublic;
-    
-    private String owner;
-    
-    
-    public Container(){
+    @Column
+    private Integer lastModified;
+    @Column
+    private String registry;
+    @Column
+    private String gitUrl;
+    @Column
+    private boolean isRegistered;
+
+    public Container() {
     }
-    
-    public Container(long id, long tokenID, String name){
+
+    public Container(long id, long userId, String name) {
         this.id = id;
-        this.tokenID = tokenID;
+        this.userId = userId;
         this.name = name;
     }
-    
+
+    public void update(Container container) {
+        this.description = container.getDescription();
+        this.isPublic = container.getIsPublic();
+        this.isStarred = container.getIsStarred();
+        this.lastModified = container.getLastModified();
+    }
+
     @JsonProperty
     public long getId() {
         return id;
     }
-    
+
     @JsonProperty
-    public long getTokenID() {
-        return tokenID;
+    public long getUserId() {
+        return userId;
     }
-    
+
     @JsonProperty
     public String getName() {
         return name;
     }
-    
+
     @JsonProperty
     public String getNamespace() {
         return namespace;
     }
-    
+
     @JsonProperty
     public boolean getIsStarred() {
         return isStarred;
     }
-    
+
     @JsonProperty
     public boolean getIsPublic() {
         return isPublic;
     }
-    
+
     @JsonProperty
     public String getDescription() {
         return description;
     }
-    
-    /**
-     * @param owner
-     *            the owner to set
-     */
-    public void setOwner(String owner) {
-        this.owner = owner;
+
+    @JsonProperty("last_modified")
+    public Integer getLastModified() {
+        return lastModified;
     }
-    
-    /**
-     * @param tokenID
-     *            the access token to set
-     */
-    public void setToken(long tokenID) {
-        this.tokenID = tokenID;
+
+    @JsonProperty
+    public String getRegistry() {
+        return registry;
     }
-    
+
+    @JsonProperty
+    public String getGitUrl() {
+        return gitUrl;
+    }
+
+    @JsonProperty("is_registered")
+    public boolean getIsRegistered() {
+        return isRegistered;
+    }
+
+    public void setGitUrl(String gitUrl) {
+        this.gitUrl = gitUrl;
+    }
+
+    public String getRepositoryPath() {
+        StringBuilder builder = new StringBuilder();
+        if (this.registry == "quay.io") {
+            builder.append("quay.io/");
+        }
+        builder.append(this.namespace).append("/").append(this.name);
+        return builder.toString();
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    /**
+     * @param enduserId
+     *            the user ID to set
+     */
+    public void setUserId(long userId) {
+        this.userId = userId;
+    }
+
     /**
      * @param name
      *            the repo name to set
@@ -124,7 +168,7 @@ public class Container {
     public void setName(String name) {
         this.name = name;
     }
-    
+
     /**
      * @param namespace
      *            the repo name to set
@@ -132,7 +176,7 @@ public class Container {
     public void setNamespace(String namespace) {
         this.namespace = namespace;
     }
-    
+
     /**
      * @param description
      *            the repo name to set
@@ -140,7 +184,7 @@ public class Container {
     public void setDescription(String description) {
         this.description = description;
     }
-    
+
     /**
      * @param isStarred
      *            the repo name to set
@@ -148,13 +192,29 @@ public class Container {
     public void setIsStarred(boolean isStarred) {
         this.isStarred = isStarred;
     }
-    
+
     /**
      * @param isPublic
      *            the repo name to set
      */
     public void setIsPublic(boolean isPublic) {
         this.isPublic = isPublic;
+    }
+
+    /**
+     * @param lastModified
+     *            the lastModified to set
+     */
+    public void setLastModified(Integer lastModified) {
+        this.lastModified = lastModified;
+    }
+
+    public void setRegistry(String registry) {
+        this.registry = registry;
+    }
+
+    public void setIsRegistered(boolean isRegistered) {
+        this.isRegistered = isRegistered;
     }
 
     /**
@@ -172,4 +232,5 @@ public class Container {
     public boolean isIsStarred() {
         return isStarred;
     }
+
 }

@@ -35,8 +35,10 @@ import javax.persistence.Table;
 @ApiModel(value = "A particular token that a user has submitted via OAuth")
 @Entity
 @Table(name = "token")
-@NamedQueries({ @NamedQuery(name = "io.consonance.webservice.core.Token.findAll", query = "SELECT t FROM Token t"),
-                @NamedQuery(name = "io.consonance.webservice.core.Token.findByContent", query = "SELECT t FROM Token t WHERE t.content = :content")})
+@NamedQueries({
+        @NamedQuery(name = "io.consonance.webservice.core.Token.findAll", query = "SELECT t FROM Token t"),
+        @NamedQuery(name = "io.consonance.webservice.core.Token.findByContent", query = "SELECT t FROM Token t WHERE t.content = :content"),
+        @NamedQuery(name = "io.consonance.webservice.core.Token.findByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId") })
 public class Token {
 
     @Id
@@ -48,13 +50,15 @@ public class Token {
     private String content;
 
     // TODO: tokens will need to be associated with a particular user
-    private String owner;
+    @Column
+    private long userId;
 
     public Token() {
     }
 
-    public Token(long id, String tokenSource, String content) {
+    public Token(long id, long userId, String tokenSource, String content) {
         this.id = id;
+        this.userId = userId;
         this.tokenSource = tokenSource;
         this.content = content;
     }
@@ -113,18 +117,18 @@ public class Token {
     }
 
     /**
-     * @return the owner
+     * @return the userId
      */
     @JsonProperty
-    public String getOwner() {
-        return owner;
+    public long getUserId() {
+        return userId;
     }
 
     /**
-     * @param owner
-     *            the owner to set
+     * @param enduserId
+     *            the userId to set
      */
-    public void setOwner(String owner) {
-        this.owner = owner;
+    public void setUserId(long userId) {
+        this.userId = userId;
     }
 }
