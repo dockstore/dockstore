@@ -122,6 +122,7 @@ public class DockerRepoResource {
                             if (list.size() == 1) {
                                 ownedContainers.add(list.get(0));
                             } else {
+                                c.setRegistry(tokenType);
                                 ownedContainers.add(c);
                             }
 
@@ -215,6 +216,7 @@ public class DockerRepoResource {
                             if (list.size() == 1) {
                                 containerList.add(list.get(0));
                             } else {
+                                c.setRegistry(tokenType);
                                 containerList.add(c);
                             }
 
@@ -241,8 +243,8 @@ public class DockerRepoResource {
         List<Token> tokens = tokenDAO.findByUserId(userId);
 
         for (Token token : tokens) {
-            String tokenSource = token.getTokenSource();
-            if (tokenSource.equals(TokenType.QUAY_IO.toString())) {
+            String tokenType = token.getTokenSource();
+            if (tokenType.equals(TokenType.QUAY_IO.toString())) {
                 Optional<String> asString = ResourceUtilities.asString(TARGET_URL + "repository?last_modified=true&public=false",
                         token.getContent(), client);
 
@@ -253,7 +255,7 @@ public class DockerRepoResource {
 
                         if (name == null ? (String) c.getName() == null : name.equals((String) c.getName())) {
                             String namespace = (String) c.getNamespace();
-                            List<Container> list = containerDAO.findByNameAndNamespaceAndRegistry(name, namespace, tokenSource);
+                            List<Container> list = containerDAO.findByNameAndNamespaceAndRegistry(name, namespace, tokenType);
 
                             if (list.isEmpty()) {
                                 String repo = namespace + "/" + name;
@@ -277,10 +279,13 @@ public class DockerRepoResource {
                                     System.out.println(gitURL);
                                 }
 
+                                String path = tokenType + "/" + namespace + "/" + name;
+
                                 c.setUserId(userId);
-                                c.setRegistry("quay.io");
+                                c.setRegistry(tokenType);
                                 c.setGitUrl(gitURL);
                                 c.setIsRegistered(true);
+                                c.setPath(path);
                                 long create = containerDAO.create(c);
                                 return containerDAO.findById(create);
                             } else {

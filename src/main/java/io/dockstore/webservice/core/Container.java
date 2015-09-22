@@ -38,7 +38,7 @@ import javax.persistence.Table;
         @NamedQuery(name = "io.consonance.webservice.core.Container.findByNameAndNamespaceAndRegistry", query = "SELECT c FROM Container c WHERE c.name = :name AND c.namespace = :namespace AND c.registry = :registry"),
         @NamedQuery(name = "io.consonance.webservice.core.Container.findByUserId", query = "SELECT c FROM Container c WHERE c.userId = :userId"),
         @NamedQuery(name = "io.consonance.webservice.core.Container.findAll", query = "Select c From Container c"),
-        @NamedQuery(name = "io.consonance.webservice.core.Container.searchPattern", query = "SELECT c FROM Container c WHERE (c.name LIKE :pattern) OR (c.namespace LIKE :pattern) OR (c.registry LIKE :pattern) OR (c.description LIKE :pattern)") })
+        @NamedQuery(name = "io.consonance.webservice.core.Container.searchPattern", query = "SELECT c FROM Container c WHERE (c.path LIKE :pattern) OR (c.registry LIKE :pattern) OR (c.description LIKE :pattern)") })
 public class Container {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -51,6 +51,10 @@ public class Container {
     @Column
     private String namespace;
     @Column
+    private String registry;
+    @Column
+    private String path;
+    @Column
     private String description;
     @Column
     private boolean isStarred;
@@ -58,8 +62,6 @@ public class Container {
     private boolean isPublic;
     @Column
     private Integer lastModified;
-    @Column
-    private String registry;
     @Column
     private String gitUrl;
     @Column
@@ -102,6 +104,27 @@ public class Container {
     }
 
     @JsonProperty
+    public String getRegistry() {
+        return registry;
+    }
+
+    @JsonProperty("path")
+    public String getPath() {
+        String repositoryPath;
+        if (this.path == null) {
+            StringBuilder builder = new StringBuilder();
+            if (this.registry.equals(TokenType.QUAY_IO.toString())) {
+                builder.append("quay.io/");
+            }
+            builder.append(this.namespace).append("/").append(this.name);
+            repositoryPath = builder.toString();
+        } else {
+            repositoryPath = this.path;
+        }
+        return repositoryPath;
+    }
+
+    @JsonProperty
     public boolean getIsStarred() {
         return isStarred;
     }
@@ -122,11 +145,6 @@ public class Container {
     }
 
     @JsonProperty
-    public String getRegistry() {
-        return registry;
-    }
-
-    @JsonProperty
     public String getGitUrl() {
         return gitUrl;
     }
@@ -138,15 +156,6 @@ public class Container {
 
     public void setGitUrl(String gitUrl) {
         this.gitUrl = gitUrl;
-    }
-
-    public String getRepositoryPath() {
-        StringBuilder builder = new StringBuilder();
-        if (this.registry == "quay.io") {
-            builder.append("quay.io/");
-        }
-        builder.append(this.namespace).append("/").append(this.name);
-        return builder.toString();
     }
 
     public void setId(long id) {
@@ -215,6 +224,10 @@ public class Container {
 
     public void setIsRegistered(boolean isRegistered) {
         this.isRegistered = isRegistered;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
     }
 
     /**
