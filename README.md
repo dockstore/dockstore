@@ -41,7 +41,15 @@ In the case of this prototype the descriptors (`Collab.json` and `Collab.cwl`) a
 
 It's a standard SeqWare workflow, designed to be built and run inside the Whitestar SeqWare Docker container.  To build it, you just build the Docker image:
 
+    # Dockerhub
     docker build -t collaboratory/workflow-helloworld:1.0.0 .
+    # Quay.io
+    docker build -t cancer_collaboratory/workflow-helloworld:1.0.0 .
+
+The respective locations on DockerHub and Quay.io:
+
+* [docker pull quay.io/cancer_collaboratory/workflow-helloworld](https://quay.io/repository/cancer_collaboratory/workflow-helloworld)
+* [docker pull collaboratory/workflow-helloworld](https://hub.docker.com/r/collaboratory/workflow-helloworld/)
 
 ## Other Examples in CWL
 
