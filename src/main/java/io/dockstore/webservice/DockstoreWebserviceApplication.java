@@ -118,7 +118,9 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(
                 new TokenResource(tokenDAO, userDAO, configuration.getGithubClientID(), configuration.getGithubClientSecret(), httpClient));
 
-        environment.jersey().register(new UserResource(httpClient, userDAO, groupDAO, configuration.getGithubClientID()));
+        environment.jersey().register(
+                new UserResource(httpClient, tokenDAO, userDAO, groupDAO, configuration.getGithubClientID(), configuration
+                        .getGithubClientSecret()));
 
         // swagger stuff
 

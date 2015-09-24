@@ -33,7 +33,9 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 //import java.lang.reflect.Array;
 import java.util.List;
@@ -51,6 +53,13 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import org.apache.http.client.HttpClient;
+import org.eclipse.egit.github.core.Repository;
+import org.eclipse.egit.github.core.RepositoryContents;
+import org.eclipse.egit.github.core.User;
+import org.eclipse.egit.github.core.client.GitHubClient;
+import org.eclipse.egit.github.core.service.ContentsService;
+import org.eclipse.egit.github.core.service.RepositoryService;
+import org.eclipse.egit.github.core.service.UserService;
 
 /**
  *
@@ -230,6 +239,7 @@ public class DockerRepoResource {
             }
         }
         // return builder.toString();
+        System.out.println(builder.toString());
         return containerList;
     }
 
@@ -414,5 +424,65 @@ public class DockerRepoResource {
     @ApiOperation(value = "Search for matching registered containers", notes = "Search on the name (full path name) and description.", response = Container.class)
     public List<Container> searchContainers(@QueryParam("pattern") String word) {
         return containerDAO.searchPattern(word);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/getCollabFile")
+    @ApiOperation(value = "Get the corresponding collab.json and/or cwl file on Github", response = String.class)
+    public String getCollabFile(@QueryParam("container name") String containerName) {
+        List<Container> containers = containerDAO.findByPath(containerName);
+
+        StringBuilder builder = new StringBuilder();
+        if (!containers.isEmpty()) {
+            Container container = containers.get(0);
+            List<Token> tokens = tokenDAO.findByUserId(container.getUserId());
+
+            for (Token token : tokens) {
+                if (token.getTokenSource().equals(TokenType.GITHUB_COM.toString())) {
+
+                    GitHubClient githubClient = new GitHubClient();
+                    githubClient.setOAuth2Token(token.getContent());
+                    try {
+                        UserService uService = new UserService(githubClient);
+                        RepositoryService service = new RepositoryService(githubClient);
+                        ContentsService cService = new ContentsService(githubClient);
+                        User user = uService.getUser();
+                        // builder.append("Token: ").append(token.getId()).append(" is ").append(user.getName()).append(" login is ")
+                        // .append(user.getLogin()).append("\n");
+                        for (Repository repo : service.getRepositories(user.getLogin())) {
+                            System.out.println(repo.getGitUrl());
+                            System.out.println(repo.getHtmlUrl());
+                            System.out.println(repo.getSshUrl());
+                            System.out.println(repo.getUrl());
+                            System.out.println(container.getGitUrl());
+                            if (repo.getSshUrl().equals(container.getGitUrl())) {
+                                try {
+                                    List<RepositoryContents> contents = cService.getContents(repo, "collab.json");
+                                    // odd, throws exceptions if file does not exist
+                                    if (!(contents == null || contents.isEmpty())) {
+                                        // builder.append("\tRepo: ").append(repo.getName()).append(" has a collab.json \n");
+                                        String encoded = contents.get(0).getContent().replace("\n", "");
+                                        byte[] decode = Base64.getDecoder().decode(encoded);
+                                        builder.append(new String(decode, StandardCharsets.UTF_8));
+                                    }
+                                } catch (IOException ex) {
+                                    builder.append("Repo: ").append(repo.getName()).append(" has no collab.json \n");
+                                }
+                            }
+                        }
+                    } catch (IOException ex) {
+                        builder.append("Token ignored due to IOException: ").append(token.getId()).append("\n");
+                    }
+                }
+            }
+        } else {
+            builder.append(containerName).append(" is not registered");
+        }
+
+        String ret = builder.toString();
+        // System.out.println(ret);
+        return ret;
     }
 }

@@ -17,27 +17,38 @@
 package io.dockstore.webservice.resources;
 
 import com.codahale.metrics.annotation.Timed;
+import com.google.common.base.Optional;
+import com.google.common.base.Splitter;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Group;
+import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.GroupDAO;
+import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.dropwizard.views.View;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
-//import javax.ws.rs.core.Response;
 import org.apache.http.client.HttpClient;
+import org.eclipse.egit.github.core.client.GitHubClient;
+//import org.eclipse.egit.github.core.service.ContentsService;
+//import org.eclipse.egit.github.core.service.RepositoryService;
+import org.eclipse.egit.github.core.service.UserService;
 
 /**
  *
@@ -50,14 +61,20 @@ public class UserResource {
     private final HttpClient client;
     private final UserDAO userDAO;
     private final GroupDAO groupDAO;
+    private final TokenDAO tokenDAO;
     private final String githubClientID;
+    private final String githubClientSecret;
 
-    public UserResource(HttpClient client, UserDAO userDAO, GroupDAO groupDAO, String githubClientID) {
+    private static final String TARGET_URL = "https://github.com/";
+
+    public UserResource(HttpClient client, TokenDAO tokenDAO, UserDAO userDAO, GroupDAO groupDAO, String githubClientID,
+            String githubClientSecret) {
         this.client = client;
         this.userDAO = userDAO;
         this.groupDAO = groupDAO;
+        this.tokenDAO = tokenDAO;
         this.githubClientID = githubClientID;
-
+        this.githubClientSecret = githubClientSecret;
     }
 
     @POST
@@ -169,25 +186,53 @@ public class UserResource {
     @UnitOfWork
     @Path("/registerGithub")
     @ApiOperation(value = "", response = GithubRegisterView.class)
+    @Produces(MediaType.TEXT_HTML)
     public GithubRegisterView registerGithub() {
-        return getView();
+        return new GithubRegisterView();
     }
 
     @GET
     @Timed
     @UnitOfWork
-    @Path("/getView")
-    @ApiOperation(value = "", response = GithubRegisterView.class)
-    public GithubRegisterView getView() {
-        return new GithubRegisterView();
-    }
-
-    @POST
-    @Timed
-    @UnitOfWork
     @Path("/registerGithubRedirect")
-    public User registerGithubRedirect() {
-        throw new UnsupportedOperationException();
+    @ApiOperation(value = "", response = User.class)
+    public User registerGithubRedirect(@QueryParam("code") String code) {
+        Optional<String> asString = ResourceUtilities.asString(TARGET_URL + "login/oauth/access_token?code=" + code + "&client_id="
+                + githubClientID + "&client_secret=" + githubClientSecret, null, client);
+
+        String accessToken;
+        if (asString.isPresent()) {
+            Map<String, String> split = Splitter.on('&').trimResults().withKeyValueSeparator("=").split(asString.get());
+            accessToken = split.get("access_token");
+        } else {
+            throw new WebApplicationException("Could not retrieve github.com token based on code");
+        }
+
+        GitHubClient githubClient = new GitHubClient();
+        githubClient.setOAuth2Token(accessToken);
+        try {
+            UserService uService = new UserService(githubClient);
+            // RepositoryService service = new RepositoryService(githubClient);
+            // ContentsService cService = new ContentsService(githubClient);
+            org.eclipse.egit.github.core.User githubUser = uService.getUser();
+
+            String githubLogin = githubUser.getLogin();
+
+            User user = new User();
+            user.setUsername(githubLogin);
+            long userID = userDAO.create(user);
+
+            Token token = new Token();
+            token.setTokenSource(TokenType.GITHUB_COM.toString());
+            token.setContent(accessToken);
+            token.setUserId(userID);
+            tokenDAO.create(token);
+
+            return userDAO.findById(userID);
+
+        } catch (IOException ex) {
+            throw new WebApplicationException("Token ignored due to IOException");
+        }
     }
 
     /**

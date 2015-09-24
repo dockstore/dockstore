@@ -37,7 +37,8 @@ import javax.persistence.Table;
 @NamedQueries({
         @NamedQuery(name = "io.consonance.webservice.core.Container.findByNameAndNamespaceAndRegistry", query = "SELECT c FROM Container c WHERE c.name = :name AND c.namespace = :namespace AND c.registry = :registry"),
         @NamedQuery(name = "io.consonance.webservice.core.Container.findByUserId", query = "SELECT c FROM Container c WHERE c.userId = :userId"),
-        @NamedQuery(name = "io.consonance.webservice.core.Container.findAll", query = "Select c From Container c"),
+        @NamedQuery(name = "io.consonance.webservice.core.Container.findAll", query = "SELECT c FROM Container c"),
+        @NamedQuery(name = "io.consonance.webservice.core.Container.findByPath", query = "SELECT c FROM Container c WHERE c.path = :path"),
         @NamedQuery(name = "io.consonance.webservice.core.Container.searchPattern", query = "SELECT c FROM Container c WHERE (c.path LIKE :pattern) OR (c.registry LIKE :pattern) OR (c.description LIKE :pattern)") })
 public class Container {
     @Id

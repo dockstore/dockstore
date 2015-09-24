@@ -43,6 +43,10 @@ public class TokenDAO extends AbstractDAO<Token> {
         return persist(token).getId();
     }
 
+    public void delete(Token token) {
+
+    }
+
     public List<Token> findAll() {
         return list(namedQuery("io.consonance.webservice.core.Token.findAll"));
     }
