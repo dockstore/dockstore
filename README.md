@@ -15,13 +15,13 @@ Some items TBD as this prototype is integrated into Consonance:
 
 The launcher Java program is just a proof of concept.  The code will eventually be folded into the Consonance worker daemon which needs to do the items below in addition to interacting with the consonance queue to pull orders.  This launcher below is a simplification and just focuses on constructing a command and dealing with inputs/outputs as a prototype.
 
-1) pulls over config file to `~/.consonance/launcher.config`, uses same mechanism as other config files but needs to be done first, see below
-1) makes a working directory in `/datastore/launcher-<uuid>` (from the config file above, assumes `/datastore` is the big disk)
-1) pulls over 0 or more files that were associated with this workflow order to `/datastore/launcher-<uuid>/configs`, these will be used by the workflow itself. These will come from a web service endpoint in Consonance rather than external sources like inputs below. This is how we get a SeqWare INI file for example.
-1) make `/datastore/launcher-<uuid>/working` to be used as the working directory for the command and `/datastore/launcher-<uuid>/inputs` for all the file inputs
-1) download all the inputs, these will come from S3, HTTP/S, SFTP, FTP, ICGCObjectStore, etc, put them in locations within `/datastore/launcher-<uuid>/inputs`
-1) construct the command, this includes `-v` for all config and input files, `-v` for the working directory /datastore/launcher-<uuid>/working, the `docker run <image_id:version>` parts of the command along with the actual command being run.
-1) run the command, noting success/failure, stderr/stdout going to `/datastore/launcher-<uuid>/logs`
+0. pulls over config file to `~/.consonance/launcher.config`, uses same mechanism as other config files but needs to be done first, see below
+0. makes a working directory in `/datastore/launcher-<uuid>` (from the config file above, assumes `/datastore` is the big disk)
+0. pulls over 0 or more files that were associated with this workflow order to `/datastore/launcher-<uuid>/configs`, these will be used by the workflow itself. These will come from a web service endpoint in Consonance rather than external sources like inputs below. This is how we get a SeqWare INI file for example.
+0. make `/datastore/launcher-<uuid>/working` to be used as the working directory for the command and `/datastore/launcher-<uuid>/inputs` for all the file inputs
+0. download all the inputs, these will come from S3, HTTP/S, SFTP, FTP, ICGCObjectStore, etc, put them in locations within `/datastore/launcher-<uuid>/inputs`
+0. construct the command, this includes `-v` for all config and input files, `-v` for the working directory /datastore/launcher-<uuid>/working, the `docker run <image_id:version>` parts of the command along with the actual command being run.
+0. run the command, noting success/failure, stderr/stdout going to `/datastore/launcher-<uuid>/logs`
 
 The command is constructed for this HelloWorld tool:
 
@@ -39,16 +39,13 @@ In the case of this prototype the descriptors (`Collab.json` and `Collab.cwl`) a
 
 ## The Workflow
 
-It's a standard SeqWare workflow, designed to be built and run inside the Whitestar SeqWare Docker container.  To build it, you just build the Docker image:
+It's a standard SeqWare workflow, designed to be built and run inside the Whitestar SeqWare Docker container.  To build it locally, you just build the Docker image:
 
-    # Dockerhub
     docker build -t collaboratory/workflow-helloworld:1.0.0 .
-    # Quay.io
-    docker build -t cancer_collaboratory/workflow-helloworld:1.0.0 .
 
-The respective locations on DockerHub and Quay.io:
+The locations on DockerHub and Quay.io:
 
-* [docker pull quay.io/cancer_collaboratory/workflow-helloworld](https://quay.io/repository/cancer_collaboratory/workflow-helloworld)
+* [docker pull quay.io/collaboratory/workflow-helloworld](https://quay.io/repository/collaboratory/workflow-helloworld)
 * [docker pull collaboratory/workflow-helloworld](https://hub.docker.com/r/collaboratory/workflow-helloworld/)
 
 ## Other Examples in CWL
