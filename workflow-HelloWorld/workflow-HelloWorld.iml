@@ -10,9 +10,6 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="Maven: io.seqware:seqware-bin-linux-x86-64-jre-7.0.51:1.0.0" level="project" />
-    <orderEntry type="library" name="Maven: net.sourceforge.seqware:seqware-bin-linux-x86-64-cat-5.67:1.0.0" level="project" />
-    <orderEntry type="library" name="Maven: net.sourceforge.seqware:seqware-bin-linux-x86-64-echo-5.67:1.0.0" level="project" />
-    <orderEntry type="library" name="Maven: net.sourceforge.seqware:seqware-bin-linux-x86-64-perl-5.14.1:1.0.0" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: com.github.seqware:seqware-distribution:full:1.1.1" level="project" />
   </component>
 </module>

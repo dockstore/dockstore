@@ -31,21 +31,6 @@
             <version>1.0.0</version>
         </dependency>
         <dependency>
-            <groupId>net.sourceforge.seqware</groupId>
-            <artifactId>seqware-bin-linux-x86-64-cat-5.67</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>net.sourceforge.seqware</groupId>
-            <artifactId>seqware-bin-linux-x86-64-echo-5.67</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>net.sourceforge.seqware</groupId>
-            <artifactId>seqware-bin-linux-x86-64-perl-5.14.1</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
             <groupId>com.github.seqware</groupId>
             <artifactId>seqware-distribution</artifactId>
             <version>${seqware-version}</version>

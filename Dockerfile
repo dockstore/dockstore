@@ -16,9 +16,9 @@ RUN apt-get -m update && apt-get install -y apt-utils tar git curl nano wget dia
 # LEFT OFF WITH: need to install the s3 command line tools
 
 # Build the workflow
-COPY DELLY /home/seqware/DELLY
-RUN chown -R seqware /home/seqware/DELLY
+COPY workflow-HelloWorld /home/seqware/workflow-HelloWorld
+RUN chown -R seqware /home/seqware/workflow-HelloWorld
 USER seqware
-WORKDIR /home/seqware/DELLY/
+WORKDIR /home/seqware/workflow-HelloWorld/
 RUN mvn clean install
 CMD ["/bin/bash"]
