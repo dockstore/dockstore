@@ -45,8 +45,8 @@ It's a standard SeqWare workflow, designed to be built and run inside the Whites
 
 The locations on DockerHub and Quay.io:
 
-* [docker pull quay.io/collaboratory/workflow-helloworld](https://quay.io/repository/collaboratory/workflow-helloworld)
-* [docker pull collaboratory/workflow-helloworld](https://hub.docker.com/r/collaboratory/workflow-helloworld/)
+* [docker pull quay.io/collaboratory/workflow-helloworld:1.0.0](https://quay.io/repository/collaboratory/workflow-helloworld)
+* [docker pull collaboratory/workflow-helloworld:1.0.0](https://hub.docker.com/r/collaboratory/workflow-helloworld/)
 
 ## Other Examples in CWL
 

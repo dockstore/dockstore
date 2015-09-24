@@ -33,6 +33,17 @@
         "storage_gb": 512,
         "description": "these parameters are used to locate a VM with appropriate resources"
       },
+      "images": [
+        "quay.io/collaboratory/workflow-helloworld:1.0.0",
+        "collaboratory/workflow-helloworld:1.0.0",
+        "pancancer/pancancer_upload_download:1.5"
+      ],
+      "services": [
+        {
+          "image": "postgres:9.4",
+          "command": "postgres"
+        }
+      ]
       "tests": [
         "echo 'test1' > test1.txt",
         "echo 'test2' > test2.txt"
