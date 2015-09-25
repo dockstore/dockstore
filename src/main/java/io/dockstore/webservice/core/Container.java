@@ -16,15 +16,20 @@
  */
 package io.dockstore.webservice.core;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import io.swagger.annotations.ApiModel;
+import java.util.Set;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 /**
@@ -40,6 +45,7 @@ import javax.persistence.Table;
         @NamedQuery(name = "io.consonance.webservice.core.Container.findAll", query = "SELECT c FROM Container c"),
         @NamedQuery(name = "io.consonance.webservice.core.Container.findByPath", query = "SELECT c FROM Container c WHERE c.path = :path"),
         @NamedQuery(name = "io.consonance.webservice.core.Container.searchPattern", query = "SELECT c FROM Container c WHERE (c.path LIKE :pattern) OR (c.registry LIKE :pattern) OR (c.description LIKE :pattern)") })
+@JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class, property = "@id")
 public class Container {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -67,6 +73,9 @@ public class Container {
     private String gitUrl;
     @Column
     private boolean isRegistered;
+
+    @OneToMany(fetch = FetchType.EAGER, mappedBy = "container")
+    private Set<Tag> tags;
 
     public Container() {
     }
@@ -153,6 +162,14 @@ public class Container {
     @JsonProperty("is_registered")
     public boolean getIsRegistered() {
         return isRegistered;
+    }
+
+    public Set<Tag> getTags() {
+        return tags;
+    }
+
+    public void setTags(Set<Tag> tags) {
+        this.tags = tags;
     }
 
     public void setGitUrl(String gitUrl) {

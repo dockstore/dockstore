@@ -16,6 +16,7 @@
  */
 package io.dockstore.webservice;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.User;
@@ -110,8 +111,10 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final GroupDAO groupDAO = new GroupDAO(hibernate.getSessionFactory());
         final TagDAO tagDAO = new TagDAO(hibernate.getSessionFactory());
 
+        final ObjectMapper mapper = environment.getObjectMapper();
+
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
-        environment.jersey().register(new DockerRepoResource(httpClient, userDAO, tokenDAO, containerDAO, tagDAO));
+        environment.jersey().register(new DockerRepoResource(mapper, httpClient, userDAO, tokenDAO, containerDAO, tagDAO));
         environment.jersey().register(new GitHubRepoResource(httpClient, tokenDAO));
 
         final GitHubComAuthenticationResource resource3 = new GitHubComAuthenticationResource(configuration.getGithubClientID(),

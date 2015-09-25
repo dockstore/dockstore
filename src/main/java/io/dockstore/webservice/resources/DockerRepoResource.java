@@ -30,7 +30,6 @@ import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.hibernate.UnitOfWork;
-import io.dropwizard.jackson.Jackson;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -79,9 +78,7 @@ public class DockerRepoResource {
     private final HttpClient client;
     public static final String TARGET_URL = "https://quay.io/api/v1/";
 
-    private static final ObjectMapper MAPPER = Jackson.newObjectMapper();
-
-    public static final int GIT_URL_INDEX = 3;
+    private final ObjectMapper objectMapper;
 
     private static class RepoList {
 
@@ -96,7 +93,9 @@ public class DockerRepoResource {
         }
     }
 
-    public DockerRepoResource(HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ContainerDAO containerDAO, TagDAO tagDAO) {
+    public DockerRepoResource(ObjectMapper mapper, HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ContainerDAO containerDAO,
+            TagDAO tagDAO) {
+        this.objectMapper = mapper;
         this.userDAO = userDAO;
         this.tokenDAO = tokenDAO;
         this.tagDAO = tagDAO;
@@ -123,7 +122,7 @@ public class DockerRepoResource {
                 if (asString.isPresent()) {
                     RepoList repos;
                     try {
-                        repos = MAPPER.readValue(asString.get(), RepoList.class);
+                        repos = objectMapper.readValue(asString.get(), RepoList.class);
                         List<Container> containers = repos.getRepositories();
                         // ownedContainers.addAll(containers);
 
@@ -169,7 +168,7 @@ public class DockerRepoResource {
                 if (asString.isPresent()) {
                     RepoList repos;
                     try {
-                        repos = MAPPER.readValue(asString.get(), RepoList.class);
+                        repos = objectMapper.readValue(asString.get(), RepoList.class);
                         allRepos.addAll(repos.getRepositories());
                     } catch (IOException ex) {
                         Logger.getLogger(DockerRepoResource.class.getName()).log(Level.SEVERE, null, ex);
@@ -205,6 +204,7 @@ public class DockerRepoResource {
         List<Token> findAll = tokenDAO.findAll();
         StringBuilder builder = new StringBuilder();
         List<Container> containerList = new ArrayList<>(0);
+
         for (Token token : findAll) {
             String tokenType = token.getTokenSource();
             if (tokenType.equals(TokenType.QUAY_IO.toString())) {
@@ -216,10 +216,13 @@ public class DockerRepoResource {
 
                     RepoList repos;
                     try {
-                        repos = MAPPER.readValue(asString.get(), RepoList.class);
+                        // Deserialize JSON to a RepoList object and get the list of containers
+                        repos = objectMapper.readValue(asString.get(), RepoList.class);
                         List<Container> containers = repos.getRepositories();
-                        // containerList.addAll(containers);
 
+                        // see if the container is registered,
+                        // if registered, replace the container in the list with the registered one
+                        // else use the deserialized container from the http request
                         for (Container c : containers) {
                             String name = c.getName();
                             String namespace = c.getNamespace();
@@ -250,9 +253,10 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/registerContainer")
-    @ApiOperation(value = "Register a container", notes = "Register a container (public or private). Assumes that user is using quay.io and github", response = Container.class)
-    public Container registerContainer(@QueryParam("container_name") String name, @QueryParam("enduser_id") Long userId) throws IOException {
-        // User user = userDAO.findById(userId);
+    @ApiOperation(value = "Register a container", notes = "Register a container (public or private). Assumes that user is using quay.io and github. Include quay.io in path if using quay.io", response = Container.class)
+    public Container registerContainer(@QueryParam("repository") String name, @QueryParam("enduser_id") Long userId) throws IOException {
+        // String[] pathItems = name.split("/");
+
         List<Token> tokens = tokenDAO.findByUserId(userId);
 
         for (Token token : tokens) {
@@ -262,7 +266,7 @@ public class DockerRepoResource {
                         token.getContent(), client);
 
                 if (asString.isPresent()) {
-                    RepoList repos = MAPPER.readValue(asString.get(), RepoList.class);
+                    RepoList repos = objectMapper.readValue(asString.get(), RepoList.class);
                     List<Container> containers = repos.getRepositories();
                     for (Container c : containers) {
 
@@ -275,12 +279,13 @@ public class DockerRepoResource {
                                 Optional<String> asStringBuilds = ResourceUtilities.asString(TARGET_URL + "repository/" + repo + "/build/",
                                         token.getContent(), client);
                                 String gitURL = "";
+                                // Set<Tag> containerTags = new HashSet<>();
+                                ArrayList<String> tags = null;
 
                                 if (asStringBuilds.isPresent()) {
                                     String json = asStringBuilds.get();
 
-                                    // System.out.println(json);
-
+                                    // parse json using Gson to get the git url of repository
                                     Gson gson = new Gson();
                                     Map<String, ArrayList> map = new HashMap<>();
                                     map = (Map<String, ArrayList>) gson.fromJson(json, map.getClass());
@@ -291,13 +296,8 @@ public class DockerRepoResource {
                                     gitURL = map2.get("trigger_metadata").get("git_url");
                                     System.out.println(gitURL);
 
-                                    ArrayList<String> tags = (ArrayList<String>) map2.get("tags");
-                                    for (String tag : tags) {
-                                        System.out.println(tag);
-                                        Tag newTag = new Tag();
-                                        newTag.setVersion(tag);
-                                        tagDAO.create(newTag);
-                                    }
+                                    // create Tag objects for each tag
+                                    tags = (ArrayList<String>) map2.get("tags");
                                 }
 
                                 String path = tokenType + "/" + namespace + "/" + name;
@@ -307,8 +307,20 @@ public class DockerRepoResource {
                                 c.setGitUrl(gitURL);
                                 c.setIsRegistered(true);
                                 c.setPath(path);
+                                // c.setTags(containerTags);
                                 long create = containerDAO.create(c);
-                                return containerDAO.findById(create);
+
+                                Container container = containerDAO.findById(create);
+
+                                for (String tag : tags) {
+                                    System.out.println(tag);
+                                    Tag newTag = new Tag();
+                                    newTag.setVersion(tag);
+                                    newTag.setContainer(container);
+                                    tagDAO.create(newTag);
+                                }
+
+                                return container;
                             } else {
                                 System.out.println("Container already registered");
                             }
