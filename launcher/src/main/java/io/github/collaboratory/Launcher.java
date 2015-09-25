@@ -39,6 +39,11 @@ public class Launcher {
         // now read the JSON file
         json = parseDescriptor(line.getOptionValue("descriptor"));
 
+        // LEFT OFF HERE!
+
+        // setup directories
+        setupDirectories(json);
+
         // pull Docker images
         pullDockerImages(json);
 
@@ -58,23 +63,29 @@ public class Launcher {
         pushOutputFiles(json);
     }
 
-    private void pushOutputFiles(Object json) {
+    private void setupDirectories(Object json) {
+        //TODO
+    }
 
+    private void pushOutputFiles(Object json) {
+        //TODO
     }
 
     private void runCommand(Object json) {
-
+        //TODO
     }
 
     private void constructCommand(Object json) {
-
+        //TODO
     }
 
     private void pullFiles(String data, Object json) {
-
+        //TODO
     }
 
     private void pullDockerImages(Object json) {
+
+        System.out.println("PULLING DOCKER CONTAINERS...");
 
         // list of images to pull
         HashMap<String, String> imagesHash = new HashMap<String, String>();
@@ -90,7 +101,7 @@ public class Launcher {
 
         // pull the images
         for(String image : imagesHash.keySet()) {
-            System.out.println("CMD: docker pull "+image);
+            System.out.println("CMD: docker pull " + image);
         }
     }
 
@@ -107,7 +118,7 @@ public class Launcher {
             e.printStackTrace();
         }
 
-        return(null);
+        return(obj);
     }
 
     private HierarchicalINIConfiguration getINIConfig(String configFile) {
