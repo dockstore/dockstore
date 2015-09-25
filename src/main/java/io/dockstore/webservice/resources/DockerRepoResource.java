@@ -21,10 +21,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
 import io.dockstore.webservice.core.Container;
+import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 //import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.ContainerDAO;
+import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.hibernate.UnitOfWork;
@@ -73,6 +75,7 @@ public class DockerRepoResource {
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
     private final ContainerDAO containerDAO;
+    private final TagDAO tagDAO;
     private final HttpClient client;
     public static final String TARGET_URL = "https://quay.io/api/v1/";
 
@@ -93,9 +96,10 @@ public class DockerRepoResource {
         }
     }
 
-    public DockerRepoResource(HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ContainerDAO containerDAO) {
+    public DockerRepoResource(HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ContainerDAO containerDAO, TagDAO tagDAO) {
         this.userDAO = userDAO;
         this.tokenDAO = tokenDAO;
+        this.tagDAO = tagDAO;
         this.client = client;
 
         this.containerDAO = containerDAO;
@@ -151,8 +155,7 @@ public class DockerRepoResource {
     @Path("/refreshRepos")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "Refresh repos owned by the logged-in user", notes = "This part needs to be fleshed out but the user "
-            + "can trigger a sync on the repos they're associated with", response = Container.class)
+    @ApiOperation(value = "Refresh repos owned by the logged-in user", notes = "Updates some metadata", response = Container.class)
     public List<Container> refreshRepos(@QueryParam("user_id") Long userId) {
         List<Container> currentRepos = containerDAO.findByUserId(userId);
         List<Container> allRepos = new ArrayList<>(0);
@@ -287,6 +290,14 @@ public class DockerRepoResource {
 
                                     gitURL = map2.get("trigger_metadata").get("git_url");
                                     System.out.println(gitURL);
+
+                                    ArrayList<String> tags = (ArrayList<String>) map2.get("tags");
+                                    for (String tag : tags) {
+                                        System.out.println(tag);
+                                        Tag newTag = new Tag();
+                                        newTag.setVersion(tag);
+                                        tagDAO.create(newTag);
+                                    }
                                 }
 
                                 String path = tokenType + "/" + namespace + "/" + name;
@@ -384,7 +395,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/getBuilds")
-    @ApiOperation(value = "Get the list of repository builds.", notes = "For TESTING purposes. Also useful for getting more information about the repository.", response = String.class)
+    @ApiOperation(value = "Get the list of repository builds.", notes = "For TESTING purposes. Also useful for getting more information about the repository.\n Enter full path without quay.io", response = String.class)
     public String getBuilds(@QueryParam("repository") String repo, @QueryParam("userId") long userId) {
 
         List<Token> tokens = tokenDAO.findByUserId(userId);
@@ -403,10 +414,18 @@ public class DockerRepoResource {
                     map = (Map<String, ArrayList>) gson.fromJson(json, map.getClass());
 
                     Map<String, Map<String, String>> map2 = new HashMap<>();
-                    map2 = (Map<String, Map<String, String>>) map.get("builds").get(0);
 
-                    String gitURL = map2.get("trigger_metadata").get("git_url");
-                    System.out.println(gitURL);
+                    if (!map.get("builds").isEmpty()) {
+                        map2 = (Map<String, Map<String, String>>) map.get("builds").get(0);
+
+                        String gitURL = map2.get("trigger_metadata").get("git_url");
+                        System.out.println(gitURL);
+
+                        ArrayList<String> tags = (ArrayList<String>) map2.get("tags");
+                        for (String tag : tags) {
+                            System.out.println(tag);
+                        }
+                    }
 
                     builder.append(asString.get());
                 }
@@ -430,9 +449,9 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/getCollabFile")
-    @ApiOperation(value = "Get the corresponding collab.json and/or cwl file on Github", response = String.class)
-    public String getCollabFile(@QueryParam("container name") String containerName) {
-        List<Container> containers = containerDAO.findByPath(containerName);
+    @ApiOperation(value = "Get the corresponding collab.json and/or cwl file on Github", notes = "Enter full path of container (add quay.io if using quay.io)", response = String.class)
+    public String getCollabFile(@QueryParam("repository") String repository) {
+        List<Container> containers = containerDAO.findByPath(repository);
 
         StringBuilder builder = new StringBuilder();
         if (!containers.isEmpty()) {
@@ -465,7 +484,8 @@ public class DockerRepoResource {
                                         // builder.append("\tRepo: ").append(repo.getName()).append(" has a collab.json \n");
                                         String encoded = contents.get(0).getContent().replace("\n", "");
                                         byte[] decode = Base64.getDecoder().decode(encoded);
-                                        builder.append(new String(decode, StandardCharsets.UTF_8));
+                                        String content = new String(decode, StandardCharsets.UTF_8);
+                                        builder.append(content);
                                     }
                                 } catch (IOException ex) {
                                     builder.append("Repo: ").append(repo.getName()).append(" has no collab.json \n");
@@ -478,7 +498,7 @@ public class DockerRepoResource {
                 }
             }
         } else {
-            builder.append(containerName).append(" is not registered");
+            builder.append(repository).append(" is not registered");
         }
 
         String ret = builder.toString();

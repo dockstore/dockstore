@@ -16,48 +16,29 @@
  */
 package io.dockstore.webservice.core;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import io.swagger.annotations.ApiModel;
-import java.util.HashSet;
-import java.util.Set;
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.ManyToMany;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
 /**
  *
  * @author xliu
  */
-@ApiModel(value = "Group")
+@ApiModel(value = "A particular token that a user has submitted via OAuth")
 @Entity
-@Table(name = "usergroup")
-@NamedQueries({ @NamedQuery(name = "io.consonance.webservice.core.Group.findAll", query = "SELECT t FROM Group t") })
-@JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class, property = "@id")
-public class Group {
+@Table(name = "tag")
+public class Tag {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", unique = true, nullable = false)
     private long id;
 
-    @Column(nullable = false)
-    private String name;
-
-    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, mappedBy = "groups")
-    private Set<User> users;
-
-    public Group() {
-        this.users = new HashSet<>(0);
-    }
+    @Column
+    private String version;
 
     @JsonProperty
     public long getId() {
@@ -65,20 +46,12 @@ public class Group {
     }
 
     @JsonProperty
-    public String getName() {
-        return name;
+    public String getVersion() {
+        return version;
     }
 
-    public Set<User> getUsers() {
-        return users;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void addUser(User user) {
-        users.add(user);
+    public void setVersion(String version) {
+        this.version = version;
     }
 
 }

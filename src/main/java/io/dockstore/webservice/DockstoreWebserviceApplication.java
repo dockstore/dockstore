@@ -20,10 +20,12 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Group;
+import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.jdbi.ContainerDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.GroupDAO;
+import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.resources.DockerRepoResource;
 import io.dockstore.webservice.resources.GitHubComAuthenticationResource;
 import io.dockstore.webservice.resources.GitHubRepoResource;
@@ -59,7 +61,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     }
 
     private final HibernateBundle<DockstoreWebserviceConfiguration> hibernate = new HibernateBundle<DockstoreWebserviceConfiguration>(
-            Token.class, Container.class, User.class, Group.class) {
+            Token.class, Container.class, User.class, Group.class, Tag.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
@@ -106,9 +108,10 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final TokenDAO tokenDAO = new TokenDAO(hibernate.getSessionFactory());
         final ContainerDAO containerDAO = new ContainerDAO(hibernate.getSessionFactory());
         final GroupDAO groupDAO = new GroupDAO(hibernate.getSessionFactory());
+        final TagDAO tagDAO = new TagDAO(hibernate.getSessionFactory());
 
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
-        environment.jersey().register(new DockerRepoResource(httpClient, userDAO, tokenDAO, containerDAO));
+        environment.jersey().register(new DockerRepoResource(httpClient, userDAO, tokenDAO, containerDAO, tagDAO));
         environment.jersey().register(new GitHubRepoResource(httpClient, tokenDAO));
 
         final GitHubComAuthenticationResource resource3 = new GitHubComAuthenticationResource(configuration.getGithubClientID(),
