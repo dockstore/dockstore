@@ -23,6 +23,20 @@ The launcher Java program is just a proof of concept.  The code will eventually 
 0. construct the command, this includes `-v` for all config and input files, `-v` for the working directory /datastore/launcher-<uuid>/working, the `docker run <image_id:version>` parts of the command along with the actual command being run.
 0. run the command, noting success/failure, stderr/stdout going to `/datastore/launcher-<uuid>/logs`
 
+### Running the Launcher
+
+To run the Launcher:
+
+    java -cp <launcher.jar> io.github.collaboratory.Launcher --config <path_to_launcher.config> --decriptor <path_to_json_descriptor>
+
+### The Config file
+
+```
+
+```
+
+### Resulting Docker Command
+
 The command is constructed for this HelloWorld tool:
 
     docker run -v $ref_file_1:$ref_file_1.destination -v $ref_file_2:$ref_file_2.destination dockerId '$cmd'
