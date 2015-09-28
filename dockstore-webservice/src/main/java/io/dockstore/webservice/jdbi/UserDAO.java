@@ -40,11 +40,11 @@ public class UserDAO extends AbstractDAO<User> {
     }
 
     public List<User> findAll() {
-        return list(namedQuery("io.consonance.webservice.core.User.findAll"));
+        return list(namedQuery("io.dockstore.webservice.core.User.findAll"));
     }
 
     public User findByUsername(String username) {
-        Query query = namedQuery("io.consonance.webservice.core.User.findByUsername").setParameter("username", username);
+        Query query = namedQuery("io.dockstore.webservice.core.User.findByUsername").setParameter("username", username);
         User user = (User) query.uniqueResult();
         return user;
     }

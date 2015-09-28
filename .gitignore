@@ -13,3 +13,4 @@ hs_err_pid*
 /target/
 dependency-reduced-pom.xml
 hello-world.yml
+/dockstore-webservice/target/

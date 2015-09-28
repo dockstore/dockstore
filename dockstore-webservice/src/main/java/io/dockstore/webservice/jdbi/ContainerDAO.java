@@ -39,24 +39,24 @@ public class ContainerDAO extends AbstractDAO<Container> {
     }
 
     public List<Container> findByNameAndNamespaceAndRegistry(String name, String namespace, String registry) {
-        return list(namedQuery("io.consonance.webservice.core.Container.findByNameAndNamespaceAndRegistry").setString("name", name)
+        return list(namedQuery("io.dockstore.webservice.core.Container.findByNameAndNamespaceAndRegistry").setString("name", name)
                 .setString("namespace", namespace).setString("registry", registry));
     }
 
     public List<Container> findByUserId(long userId) {
-        return list(namedQuery("io.consonance.webservice.core.Container.findByUserId").setParameter("userId", userId));
+        return list(namedQuery("io.dockstore.webservice.core.Container.findByUserId").setParameter("userId", userId));
     }
 
     public List<Container> findAll() {
-        return list(namedQuery("io.consonance.webservice.core.Container.findAll"));
+        return list(namedQuery("io.dockstore.webservice.core.Container.findAll"));
     }
 
     public List<Container> searchPattern(String pattern) {
         pattern = "%" + pattern + "%";
-        return list(namedQuery("io.consonance.webservice.core.Container.searchPattern").setParameter("pattern", pattern));
+        return list(namedQuery("io.dockstore.webservice.core.Container.searchPattern").setParameter("pattern", pattern));
     }
 
     public Container findByPath(String path) {
-        return uniqueResult(namedQuery("io.consonance.webservice.core.Container.findByPath").setParameter("path", path));
+        return uniqueResult(namedQuery("io.dockstore.webservice.core.Container.findByPath").setParameter("path", path));
     }
 }
