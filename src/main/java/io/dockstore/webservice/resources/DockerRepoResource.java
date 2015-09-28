@@ -41,8 +41,6 @@ import java.util.HashMap;
 //import java.lang.reflect.Array;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.ws.rs.DELETE;
 //import java.util.Map;
 import javax.ws.rs.GET;
@@ -62,6 +60,9 @@ import org.eclipse.egit.github.core.service.ContentsService;
 import org.eclipse.egit.github.core.service.RepositoryService;
 import org.eclipse.egit.github.core.service.UserService;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  *
  * @author dyuen
@@ -79,6 +80,8 @@ public class DockerRepoResource {
     public static final String TARGET_URL = "https://quay.io/api/v1/";
 
     private final ObjectMapper objectMapper;
+
+    private static final Logger LOG = LoggerFactory.getLogger(DockerRepoResource.class);
 
     private static class RepoList {
 
@@ -140,7 +143,8 @@ public class DockerRepoResource {
                         }
 
                     } catch (IOException ex) {
-                        Logger.getLogger(DockerRepoResource.class.getName()).log(Level.SEVERE, null, ex);
+                        // Logger.getLogger(DockerRepoResource.class.getName()).log(Level.SEVERE, null, ex);
+                        LOG.info("Exception: " + ex);
                     }
                 }
             }
@@ -170,7 +174,8 @@ public class DockerRepoResource {
                         repos = objectMapper.readValue(asString.get(), RepoList.class);
                         allRepos.addAll(repos.getRepositories());
                     } catch (IOException ex) {
-                        Logger.getLogger(DockerRepoResource.class.getName()).log(Level.SEVERE, null, ex);
+                        // Logger.getLogger(DockerRepoResource.class.getName()).log(Level.SEVERE, null, ex);
+                        LOG.info("Exception: " + ex);
                     }
                 }
             }
@@ -180,10 +185,10 @@ public class DockerRepoResource {
             for (Container oldContainer : currentRepos) {
                 if (newContainer.getName().equals(oldContainer.getName())
                         && newContainer.getNamespace().equals(oldContainer.getNamespace())) {
-                    System.out.println("container " + oldContainer.getId() + " is being updated ...");
+                    LOG.info("container " + oldContainer.getId() + " is being updated ...");
                     oldContainer.update(newContainer);
                     containerDAO.create(oldContainer);
-                    System.out.println("container " + oldContainer.getId() + " is updated");
+                    LOG.info("container " + oldContainer.getId() + " is updated");
                 }
             }
         }
@@ -236,7 +241,8 @@ public class DockerRepoResource {
 
                         }
                     } catch (IOException ex) {
-                        Logger.getLogger(DockerRepoResource.class.getName()).log(Level.SEVERE, null, ex);
+                        // Logger.getLogger(DockerRepoResource.class.getName()).log(Level.SEVERE, null, ex);
+                        LOG.info("Exception: " + ex);
                     }
 
                 }
@@ -244,7 +250,7 @@ public class DockerRepoResource {
             }
         }
         // return builder.toString();
-        System.out.println(builder.toString());
+        LOG.info(builder.toString());
         return containerList;
     }
 
@@ -299,7 +305,7 @@ public class DockerRepoResource {
                                     map2 = (Map<String, Map<String, String>>) map.get("builds").get(0);
 
                                     gitURL = map2.get("trigger_metadata").get("git_url");
-                                    System.out.println(gitURL);
+                                    LOG.info(gitURL);
 
                                     tags = (ArrayList<String>) map2.get("tags");
                                 }
@@ -320,7 +326,7 @@ public class DockerRepoResource {
                                 // Note: adding them to container will not store it in the instance, need to get the object again if the
                                 // list of tags are wanted.
                                 for (String tag : tags) {
-                                    System.out.println(tag);
+                                    LOG.info("Creating tag: " + tag);
                                     Tag newTag = new Tag();
                                     newTag.setVersion(tag);
                                     newTag.setContainer(container);
@@ -329,13 +335,13 @@ public class DockerRepoResource {
 
                                 return container;
                             } else {
-                                System.out.println("Container already registered");
+                                LOG.info("Container already registered");
                             }
                         }
 
                     }
                 } else {
-                    System.out.println("Received no repos from client");
+                    LOG.info("Received no repos from client");
                 }
             }
         }
@@ -451,11 +457,11 @@ public class DockerRepoResource {
                         map2 = (Map<String, Map<String, String>>) map.get("builds").get(0);
 
                         String gitURL = map2.get("trigger_metadata").get("git_url");
-                        System.out.println(gitURL);
+                        LOG.info(gitURL);
 
                         ArrayList<String> tags = (ArrayList<String>) map2.get("tags");
                         for (String tag : tags) {
-                            System.out.println(tag);
+                            LOG.info(tag);
                         }
                     }
 
@@ -503,11 +509,11 @@ public class DockerRepoResource {
                         // builder.append("Token: ").append(token.getId()).append(" is ").append(user.getName()).append(" login is ")
                         // .append(user.getLogin()).append("\n");
                         for (Repository repo : service.getRepositories(user.getLogin())) {
-                            System.out.println(repo.getGitUrl());
-                            System.out.println(repo.getHtmlUrl());
-                            System.out.println(repo.getSshUrl());
-                            System.out.println(repo.getUrl());
-                            System.out.println(container.getGitUrl());
+                            // LOG.info(repo.getGitUrl());
+                            // LOG.info(repo.getHtmlUrl());
+                            // LOG.info(repo.getSshUrl());
+                            // LOG.info(repo.getUrl());
+                            // LOG.info(container.getGitUrl());
                             if (repo.getSshUrl().equals(container.getGitUrl())) {
                                 try {
                                     List<RepositoryContents> contents = cService.getContents(repo, "collab.json");
@@ -538,7 +544,7 @@ public class DockerRepoResource {
         }
 
         String ret = builder.toString();
-        // System.out.println(ret);
+        // LOG.info(ret);
         return ret;
     }
 }
