@@ -108,8 +108,7 @@ public class DockerRepoResource {
     @Path("/listOwned")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "List repos owned by the logged-in user", notes = "This part needs to be fleshed out but the user "
-            + "can list only the repos they own by default", response = Container.class)
+    @ApiOperation(value = "List repos owned by the logged-in user", notes = "Lists all registered and unregistered containers owned by the user", response = Container.class)
     public List<Container> listOwned(@QueryParam("enduser_id") Long userId) {
         List<Token> tokens = tokenDAO.findByUserId(userId);
         List<Container> ownedContainers = new ArrayList<>(0);
@@ -262,6 +261,7 @@ public class DockerRepoResource {
         for (Token token : tokens) {
             String tokenType = token.getTokenSource();
             if (tokenType.equals(TokenType.QUAY_IO.toString())) {
+                // Get the list of containers that belong to the user.
                 Optional<String> asString = ResourceUtilities.asString(TARGET_URL + "repository?last_modified=true&public=false",
                         token.getContent(), client);
 
@@ -270,22 +270,27 @@ public class DockerRepoResource {
                     List<Container> containers = repos.getRepositories();
                     for (Container c : containers) {
 
+                        // Check to see if the requested container even exists
                         if (name == null ? (String) c.getName() == null : name.equals((String) c.getName())) {
                             String namespace = (String) c.getNamespace();
+
+                            // first check to see if the container is already registered in our database.
                             List<Container> list = containerDAO.findByNameAndNamespaceAndRegistry(name, namespace, tokenType);
 
                             if (list.isEmpty()) {
                                 String repo = namespace + "/" + name;
+
+                                // Get the list of builds from the container.
+                                // Builds contain information such as the Git URL and tags
                                 Optional<String> asStringBuilds = ResourceUtilities.asString(TARGET_URL + "repository/" + repo + "/build/",
                                         token.getContent(), client);
                                 String gitURL = "";
-                                // Set<Tag> containerTags = new HashSet<>();
                                 ArrayList<String> tags = null;
 
                                 if (asStringBuilds.isPresent()) {
                                     String json = asStringBuilds.get();
 
-                                    // parse json using Gson to get the git url of repository
+                                    // parse json using Gson to get the git url of repository and the list of tags
                                     Gson gson = new Gson();
                                     Map<String, ArrayList> map = new HashMap<>();
                                     map = (Map<String, ArrayList>) gson.fromJson(json, map.getClass());
@@ -296,7 +301,6 @@ public class DockerRepoResource {
                                     gitURL = map2.get("trigger_metadata").get("git_url");
                                     System.out.println(gitURL);
 
-                                    // create Tag objects for each tag
                                     tags = (ArrayList<String>) map2.get("tags");
                                 }
 
@@ -312,6 +316,9 @@ public class DockerRepoResource {
 
                                 Container container = containerDAO.findById(create);
 
+                                // create Tag objects and add them to the container.
+                                // Note: adding them to container will not store it in the instance, need to get the object again if the
+                                // list of tags are wanted.
                                 for (String tag : tags) {
                                     System.out.println(tag);
                                     Tag newTag = new Tag();
@@ -336,6 +343,7 @@ public class DockerRepoResource {
     }
 
     @DELETE
+    @UnitOfWork
     @Path("/unregisterContainer/{containerId}")
     @ApiOperation(value = "Deletes a container")
     public Container unregisterContainer(
@@ -347,7 +355,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/getUserRegisteredContainers")
-    @ApiOperation(value = "List all registered containers from a user", notes = "", response = Container.class)
+    @ApiOperation(value = "List all registered containers from a user", notes = "Get user's registered containers only", response = Container.class)
     public List<Container> getUserRegisteredContainers(@QueryParam("user_id") Long userId) {
         List<Container> repositories = containerDAO.findByUserId(userId);
         return repositories;
@@ -355,10 +363,22 @@ public class DockerRepoResource {
 
     @GET
     @Timed
+    @UnitOfWork
     @Path("getAllRegisteredContainers")
+    @ApiOperation(value = "List all registered containers", notes = "", response = Container.class)
     public List<Container> getAllRegisteredContainers() {
         List<Container> repositories = containerDAO.findAll();
         return repositories;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("getRegisteredContainer")
+    @ApiOperation(value = "Get a registered container", notes = "Lists info of container. Enter full path (include quay.io in path)", response = Container.class)
+    public Container getRegisteredContainer(@QueryParam("user_id") String path) {
+        Container repository = containerDAO.findByPath(path);
+        return repository;
     }
 
     @PUT
@@ -463,16 +483,16 @@ public class DockerRepoResource {
     @Path("/getCollabFile")
     @ApiOperation(value = "Get the corresponding collab.json and/or cwl file on Github", notes = "Enter full path of container (add quay.io if using quay.io)", response = String.class)
     public String getCollabFile(@QueryParam("repository") String repository) {
-        List<Container> containers = containerDAO.findByPath(repository);
+        Container container = containerDAO.findByPath(repository);
+        boolean hasGithub = false;
 
         StringBuilder builder = new StringBuilder();
-        if (!containers.isEmpty()) {
-            Container container = containers.get(0);
+        if (container != null) {
             List<Token> tokens = tokenDAO.findByUserId(container.getUserId());
 
             for (Token token : tokens) {
                 if (token.getTokenSource().equals(TokenType.GITHUB_COM.toString())) {
-
+                    hasGithub = true;
                     GitHubClient githubClient = new GitHubClient();
                     githubClient.setOAuth2Token(token.getContent());
                     try {
@@ -509,6 +529,10 @@ public class DockerRepoResource {
                     }
                 }
             }
+            if (!hasGithub) {
+                builder.append("Github is not setup");
+            }
+
         } else {
             builder.append(repository).append(" is not registered");
         }
