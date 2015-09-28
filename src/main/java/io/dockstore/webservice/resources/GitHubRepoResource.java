@@ -124,6 +124,9 @@ public class GitHubRepoResource {
                 }
             }
         }
-        return builder.toString();
+
+        String ret = builder.toString();
+        // System.out.println(ret);
+        return ret;
     }
 }

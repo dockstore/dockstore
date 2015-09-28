@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Consonance
+ * Copyright (C) 2015 Collaboratory
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,42 +16,25 @@
  */
 package io.dockstore.webservice.jdbi;
 
-import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.Tag;
 import io.dropwizard.hibernate.AbstractDAO;
-import java.util.List;
-//import org.hibernate.Query;
 import org.hibernate.SessionFactory;
 
 /**
  *
- * @author dyuen
+ * @author xliu
  */
-public class TokenDAO extends AbstractDAO<Token> {
-    public TokenDAO(SessionFactory factory) {
-        super(factory);
+public class TagDAO extends AbstractDAO<Tag> {
+
+    public TagDAO(SessionFactory sessionFactory) {
+        super(sessionFactory);
     }
 
-    public Token findById(Long id) {
+    public Tag findById(Long id) {
         return get(id);
     }
 
-    public long create(Token token) {
+    public long create(Tag token) {
         return persist(token).getId();
-    }
-
-    public long update(Token token) {
-        return persist(token).getId();
-    }
-
-    public void delete(Token token) {
-
-    }
-
-    public List<Token> findAll() {
-        return list(namedQuery("io.consonance.webservice.core.Token.findAll"));
-    }
-
-    public List<Token> findByUserId(long userId) {
-        return list(namedQuery("io.consonance.webservice.core.Token.findByUserId").setParameter("userId", userId));
     }
 }
