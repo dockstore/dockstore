@@ -96,6 +96,8 @@
     
     <modules>
         <module>dockstore-webservice</module>
+        <module>dockstore-client</module>
+        <module>swagger-java-client</module>
     </modules>
 
     <build>

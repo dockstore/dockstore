@@ -5,6 +5,7 @@
     <artifactId>dockstore-webservice</artifactId>
 
     <name>dockstore-webservice</name>
+    <packaging>jar</packaging>
     
     <parent>
         <version>0.0.1-SNAPSHOT</version>
