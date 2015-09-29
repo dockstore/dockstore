@@ -15,7 +15,7 @@ Some items TBD as this prototype is integrated into Consonance:
 
 The launcher Java program is just a proof of concept.  The code will eventually be folded into the Consonance worker daemon which needs to do the items below in addition to interacting with the consonance queue to pull orders.  This launcher below is a simplification and just focuses on constructing a command and dealing with inputs/outputs as a prototype.
 
-0. pulls over config file to `~/.consonance/launcher.config`, uses same mechanism as other config files but needs to be done first, see below
+0. pulls over config file to `~/.consonance/launcher.config`, uses same mechanism as other config files but needs to be done first, see below. For this demo it assumes the config file is provided on the command line.
 0. makes a working directory in `/datastore/launcher-<uuid>` (from the config file above, assumes `/datastore` is the big disk)
 0. pulls over 0 or more files that were associated with this workflow order to `/datastore/launcher-<uuid>/configs`, these will be used by the workflow itself. These will come from a web service endpoint in Consonance rather than external sources like inputs below. This is how we get a SeqWare INI file for example.
 0. make `/datastore/launcher-<uuid>/working` to be used as the working directory for the command and `/datastore/launcher-<uuid>/inputs` for all the file inputs
