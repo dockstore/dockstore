@@ -82,3 +82,7 @@ Here are some example Docker-based workflows in CWL (with Dockerfiles) from 7Bri
 
 * https://github.com/ntijanic/gatk-cocleaning-tool
 * https://github.com/ntijanic/muse-tool
+
+## TODO
+
+* services needs to be fleshed out
