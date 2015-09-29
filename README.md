@@ -15,19 +15,16 @@ Some items TBD as this prototype is integrated into Consonance:
 
 The launcher Java program is just a proof of concept.  The code will eventually be folded into the Consonance worker daemon which needs to do the items below in addition to interacting with the consonance queue to pull orders.  This launcher below is a simplification and just focuses on constructing a command and dealing with inputs/outputs as a prototype.
 
-0. pulls over config file to `~/.consonance/launcher.config`, uses same mechanism as other config files but needs to be done first, see below
-0. makes a working directory in `/datastore/launcher-<uuid>` (from the config file above, assumes `/datastore` is the big disk)
-0. pulls over 0 or more files that were associated with this workflow order to `/datastore/launcher-<uuid>/configs`, these will be used by the workflow itself. These will come from a web service endpoint in Consonance rather than external sources like inputs below. This is how we get a SeqWare INI file for example.
-0. make `/datastore/launcher-<uuid>/working` to be used as the working directory for the command and `/datastore/launcher-<uuid>/inputs` for all the file inputs
+0. pulls over config file to `~/.consonance/launcher.config`, uses same mechanism as other config files but needs to be done first, see below. For this demo it assumes the config file is provided on the command line.
+0. makes a working directory in `/datastore/launcher-<uuid>` (from the config file above, this demo assumes `/datastore` is the big disk to use here but it could be any path)
+0. pulls over 0 or more files that were associated with this workflow order to `/datastore/launcher-<uuid>/configs`, these will be used by the workflow itself. These will come from a web service endpoint in Consonance rather than external sources like inputs below. This is how we get a SeqWare INI file for example. For this demo launcher this functionality will be skipped since it lacks a queue/web service to talk to. 
+0. make `/datastore/launcher-<uuid>/working` to be used as the working directory for the command, `/datastore/launcher-<uuid>/inputs` for all the file inputs, and `/datastore/launcher-<uuid>/logs` for logs
+0. pull down all the Docker images referenced in the descriptor
+0. start services referenced in the descriptor, this functionality does not yet exist
 0. download all the inputs, these will come from S3, HTTP/S, SFTP, FTP, ICGCObjectStore, etc, put them in locations within `/datastore/launcher-<uuid>/inputs`
 0. construct the command, this includes `-v` for all config and input files, `-v` for the working directory /datastore/launcher-<uuid>/working, the `docker run <image_id:version>` parts of the command along with the actual command being run.
 0. run the command, noting success/failure, stderr/stdout going to `/datastore/launcher-<uuid>/logs`
-
-### Running the Launcher
-
-To run the Launcher:
-
-    java -cp <launcher.jar> io.github.collaboratory.Launcher --config <path_to_launcher.config> --decriptor <path_to_json_descriptor>
+0. collect and provision output files to their destination referenced in `~/.consonance/launcher.config`
 
 ### The Config file
 
@@ -53,11 +50,13 @@ Standard maven build in the launcher directory:
 
     mvn clean install
 
-### Running
+### Running the Launcher
 
-You can run the Launcher with:
+To run the Launcher:
 
-    java -jar target/uber-io.github.collaboratory.launcher-1.0.0.jar --config ../launcher.ini --descriptor ../collab.json
+    java -jar <launcher.jar> --config <path_to_launcher.config> --decriptor <path_to_json_descriptor>
+    # for example:
+    java -jar launcher/target/uber-io.github.collaboratory.launcher-1.0.0.jar --config launcher.ini --descriptor collab.json
 
 ## The Descriptor
 
@@ -80,3 +79,9 @@ Here are some example Docker-based workflows in CWL (with Dockerfiles) from 7Bri
 
 * https://github.com/ntijanic/gatk-cocleaning-tool
 * https://github.com/ntijanic/muse-tool
+
+## TODO
+
+* services needs to be fleshed out
+* tests need to be fleshed out
+* there is no real error checking, for production system will need to handle errors correctly/robustly.
