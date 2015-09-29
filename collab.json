@@ -53,6 +53,7 @@
           "description": "this describes a large reference file that does not change between runs",
           "id": "ref_file_1",
           "path": "8e888694-9c56-4529-a750-d6bfbd4a74e7.txt",
+          "url": "",
           "type": "file",
           "format": "text"
         },

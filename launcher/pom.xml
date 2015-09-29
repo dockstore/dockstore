@@ -24,7 +24,34 @@
             <artifactId>json-simple</artifactId>
             <version>1.1.1</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>2.4</version>
+        </dependency>
+        <dependency>
+            <groupId>com.intridea.io</groupId>
+            <artifactId>vfs-s3</artifactId>
+            <version>2.3.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-vfs2</artifactId>
+            <version>2.1.1660580.2</version>
+        </dependency>
     </dependencies>
+
+    <repositories>
+        <repository>
+            <id>vfs-s3.repository</id>
+            <name>vfs-s3 project repository</name>
+            <url>http://dl.bintray.com/content/abashev/vfs-s3</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+
     <build>
         <plugins>
             <plugin>
