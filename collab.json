@@ -14,6 +14,7 @@
           "description": "this describes an input file that should be provided before execution",
           "id": "hello-input",
           "path": "hello-input.txt",
+          "url": "https://raw.githubusercontent.com/CancerCollaboratory/dockstore-descriptor/develop/launcher/data/hello-input.txt",
           "type": "file",
           "format": "text"
         }

@@ -65,6 +65,8 @@ public class Launcher {
         // pull input files
         pullFiles("INPUT", json, fileMap);
 
+        // LEFT OFF HERE: need to work on the Docker command construction next
+
         // construct command
         constructCommand(json);
 
@@ -137,7 +139,10 @@ public class Launcher {
 
                 // output
                 String filePath = (String) ((JSONObject) file).get("path");
-                String uuidPath = globalWorkingDir + "/inputs/" + UUID.randomUUID().toString();
+                File filePathObj = new File(filePath);
+                String newDirectory = globalWorkingDir + "/inputs/" + UUID.randomUUID().toString();
+                execute("mkdir -p "+newDirectory);
+                String uuidPath = newDirectory + "/" + filePathObj.getName();
 
                 // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and https://commons.apache.org/proper/commons-vfs/filesystems.html
                 FileSystemManager fsManager = null;
