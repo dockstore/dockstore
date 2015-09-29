@@ -58,12 +58,6 @@ Standard maven build in the launcher directory:
 
     mvn clean install
 
-### Running
-
-You can run the Launcher with:
-
-    java -jar target/uber-io.github.collaboratory.launcher-1.0.0.jar --config ../launcher.ini --descriptor ../collab.json
-
 ## The Descriptor
 
 In the case of this prototype the descriptors (`Collab.json` and `Collab.cwl`) are runtime descriptors.  So they contain fully resolvable entries.  We will need to think about how a general, non-runtime descriptor works that would be used during the registration process in the Dockstore.  The simplest approach might be to simply have them both be the same format but the one submitted with a registration request is considered the default values to use if a runtime descriptor is missing anything.
