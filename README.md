@@ -26,14 +26,6 @@ The launcher Java program is just a proof of concept.  The code will eventually 
 0. run the command, noting success/failure, stderr/stdout going to `/datastore/launcher-<uuid>/logs`
 0. collect and provision output files to their destination referenced in `~/.consonance/launcher.config`
 
-### Running the Launcher
-
-To run the Launcher:
-
-    java -jar <launcher.jar> --config <path_to_launcher.config> --decriptor <path_to_json_descriptor>
-    # for example:
-    java -jar launcher/target/uber-io.github.collaboratory.launcher-1.0.0.jar --config launcher.ini --descriptor collab.json
-
 ### The Config file
 
 ```
@@ -57,6 +49,14 @@ And the various `$` field are filled in for local values within the docker conta
 Standard maven build in the launcher directory:
 
     mvn clean install
+
+### Running the Launcher
+
+To run the Launcher:
+
+    java -jar <launcher.jar> --config <path_to_launcher.config> --decriptor <path_to_json_descriptor>
+    # for example:
+    java -jar launcher/target/uber-io.github.collaboratory.launcher-1.0.0.jar --config launcher.ini --descriptor collab.json
 
 ## The Descriptor
 
