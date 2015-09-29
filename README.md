@@ -17,7 +17,7 @@ The launcher Java program is just a proof of concept.  The code will eventually 
 
 0. pulls over config file to `~/.consonance/launcher.config`, uses same mechanism as other config files but needs to be done first, see below. For this demo it assumes the config file is provided on the command line.
 0. makes a working directory in `/datastore/launcher-<uuid>` (from the config file above, assumes `/datastore` is the big disk)
-0. pulls over 0 or more files that were associated with this workflow order to `/datastore/launcher-<uuid>/configs`, these will be used by the workflow itself. These will come from a web service endpoint in Consonance rather than external sources like inputs below. This is how we get a SeqWare INI file for example.
+0. pulls over 0 or more files that were associated with this workflow order to `/datastore/launcher-<uuid>/configs`, these will be used by the workflow itself. These will come from a web service endpoint in Consonance rather than external sources like inputs below. This is how we get a SeqWare INI file for example. For this demo launcher this functionality will be skipped since it lacks a queue/web service to talk to. 
 0. make `/datastore/launcher-<uuid>/working` to be used as the working directory for the command and `/datastore/launcher-<uuid>/inputs` for all the file inputs
 0. download all the inputs, these will come from S3, HTTP/S, SFTP, FTP, ICGCObjectStore, etc, put them in locations within `/datastore/launcher-<uuid>/inputs`
 0. construct the command, this includes `-v` for all config and input files, `-v` for the working directory /datastore/launcher-<uuid>/working, the `docker run <image_id:version>` parts of the command along with the actual command being run.
