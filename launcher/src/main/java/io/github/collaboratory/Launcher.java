@@ -6,11 +6,13 @@ import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.configuration.SubnodeConfiguration;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.commons.vfs2.*;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
 import java.io.*;
+import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
@@ -27,10 +29,16 @@ public class Launcher {
     CommandLine line = null;
     HierarchicalINIConfiguration config = null;
     Object json = null;
+    HashMap<String, HashMap<String, String>> fileMap = null;
+    String globalWorkingDir = null;
 
     public Launcher(String [ ] args) {
 
+        // logging
         log = LogFactory.getLog(this.getClass());
+
+        // hashmap for files
+        fileMap = new HashMap<String, HashMap<String, String>>();
 
         // create the command line parser
         parser = setupCommandLineParser();
@@ -52,10 +60,10 @@ public class Launcher {
         pullDockerImages(json);
 
         // pull data files
-        pullFiles("DATA", json);
+        pullFiles("DATA", json, fileMap);
 
         // pull input files
-        pullFiles("INPUT", json);
+        pullFiles("INPUT", json, fileMap);
 
         // construct command
         constructCommand(json);
@@ -75,6 +83,7 @@ public class Launcher {
         // make UUID
         UUID uuid = UUID.randomUUID();
         // setup directories
+        globalWorkingDir = workingDir+"/launcher-"+uuid.toString();
         execute("mkdir -p "+workingDir+"/launcher-"+uuid.toString());
         execute("mkdir -p "+workingDir+"/launcher-"+uuid.toString()+"/configs");
         execute("mkdir -p "+workingDir+"/launcher-"+uuid.toString()+"/working");
@@ -94,9 +103,11 @@ public class Launcher {
         //TODO
     }
 
-    private void pullFiles(String data, Object json) {
+    private void pullFiles(String data, Object json, HashMap<String, HashMap<String, String>> fileMap) {
 
         log.info("DOWNLOADING "+data+" FILES...");
+
+        // working dir
 
         // just figure out which files from the JSON are we pulling
         String type = null;
@@ -106,16 +117,53 @@ public class Launcher {
             type = "inputs";
         }
 
-        // get list of files
-        JSONArray files = (JSONArray) ((JSONObject) json).get(type);
-        for (Object file : files) {
+        log.info("TYPE: "+type);
 
-            String filePath = (String) ((JSONObject) file).get("path");
-            String fileURL = (String) ((JSONObject) file).get("");
+        // for each tool
+        // TODO: really this launcher will operate off of a request for a particular tool whereas the collab.json can define multiple tools
+        // TODO: really don't want to process inputs for all tools!  Just the one going to be called
+        JSONArray tools = (JSONArray) ((JSONObject) json).get("tools");
+        for (Object tool : tools) {
 
-            // imagesHash.put(image.toString(), image.toString());
-            log.info("FILE: ");
+            // get list of files
+            JSONArray files = (JSONArray) ((JSONObject) tool).get(type);
 
+            log.info("files: " + files);
+
+            for (Object file : files) {
+
+                // input
+                String fileURL = (String) ((JSONObject) file).get("url");
+
+                // output
+                String filePath = (String) ((JSONObject) file).get("path");
+                String uuidPath = globalWorkingDir + "/inputs/" + UUID.randomUUID().toString();
+
+                // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and https://commons.apache.org/proper/commons-vfs/filesystems.html
+                FileSystemManager fsManager = null;
+                try {
+
+                    // trigger a copy from the URL to a local file path that's a UUID to avoid collision
+                    fsManager = VFS.getManager();
+                    FileObject src = fsManager.resolveFile(fileURL);
+                    FileObject dest = fsManager.resolveFile(new File(uuidPath).getAbsolutePath());
+                    dest.copyFrom(src, Selectors.SELECT_SELF);
+
+                    // now add this info to a hash so I can later reconstruct a docker -v command
+                    HashMap<String, String> new1 = new HashMap<String, String>();
+                    new1.put("local_path", uuidPath);
+                    new1.put("docker_path", filePath);
+                    new1.put("url", fileURL);
+                    fileMap.put(filePath, new1);
+
+                } catch (FileSystemException e) {
+                    e.printStackTrace();
+                    log.error(e.getMessage());
+                }
+
+                log.info("FILE: LOCAL: " + filePath + " URL: " + fileURL);
+
+            }
         }
 
     }
