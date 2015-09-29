@@ -27,7 +27,9 @@ The launcher Java program is just a proof of concept.  The code will eventually 
 
 To run the Launcher:
 
-    java -cp <launcher.jar> io.github.collaboratory.Launcher --config <path_to_launcher.config> --decriptor <path_to_json_descriptor>
+    java -jar <launcher.jar> --config <path_to_launcher.config> --decriptor <path_to_json_descriptor>
+    # for example:
+    java -jar launcher/target/uber-io.github.collaboratory.launcher-1.0.0.jar --config launcher.ini --descriptor collab.json
 
 ### The Config file
 
