@@ -8,7 +8,7 @@
       "name": "HelloWorldTool",
       "version": "1.0.0",
       "description": "Markdown description text here",
-      "command": "cat $hello-input > $hello-output && ls $ref_file_2 >> $hello-output && head -20 $ref_file_2 >> $hello-output",
+      "command": "cat ${inputs.hello-input} > ${outputs.hello-output} && ls ${data.ref_file_2} >> ${outputs.hello-output} && head -20 ${data.ref_file_2} >> ${outputs.hello-output}",
       "inputs": [
         {
           "description": "this describes an input file that should be provided before execution",

@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: com.github.seqware:seqware-pipeline:1.0.13">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/github/seqware/seqware-pipeline/1.0.13/seqware-pipeline-1.0.13.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/com/github/seqware/seqware-pipeline/1.0.13/seqware-pipeline-1.0.13-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/github/seqware/seqware-pipeline/1.0.13/seqware-pipeline-1.0.13-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

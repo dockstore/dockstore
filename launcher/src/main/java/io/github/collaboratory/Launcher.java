@@ -1,5 +1,8 @@
 package io.github.collaboratory;
 
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
 import org.apache.commons.cli.*;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
@@ -13,10 +16,7 @@ import org.json.simple.parser.JSONParser;
 
 import java.io.*;
 import java.io.FileNotFoundException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Created by boconnor on 9/24/15.
@@ -102,7 +102,51 @@ public class Launcher {
     }
 
     private void constructCommand(Object json) {
-        //TODO
+
+        log.info("CONSTRUCTING COMMAND: ");
+
+        // TODO: this doesn't deal with multi-tools properly
+        JSONArray tools = (JSONArray) ((JSONObject) json).get("tools");
+        for (Object tool : tools) {
+            // get list of files
+            String commandTemplate = (String) ((JSONObject) tool).get("command");
+
+            // construct a HashMap with data and inputs documented in
+            Map<String, Object> root = new HashMap<>();
+
+            // inputs
+            JSONArray files = (JSONArray) ((JSONObject) tool).get("inputs");
+            for (Object file : files) {
+
+                Map<String, String> latest = new HashMap<>();
+                root.put("latestProduct", latest);
+                latest.put("url", "products/greenmouse.html");
+                latest.put("name", "green mouse");
+                
+            }
+
+            Configuration cfg = new Configuration(Configuration.VERSION_2_3_22);
+            try {
+                Template temp = cfg.getTemplate("test.ftl");
+
+                Template t = new Template("templateName", new StringReader(commandTemplate), cfg);
+
+                Writer out = new StringWriter();
+                t.process(root, out);
+
+                String transformedTemplate = out.toString();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+                log.error(e.getMessage());
+            } catch (TemplateException e) {
+                e.printStackTrace();
+                log.error(e.getMessage());
+            }
+
+            log.info("CMD TO RUN: "+commandTemplate);
+        }
+
     }
 
     private void pullFiles(String data, Object json, HashMap<String, HashMap<String, String>> fileMap) {
