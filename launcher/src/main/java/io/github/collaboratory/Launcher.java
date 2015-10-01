@@ -7,6 +7,7 @@ import org.apache.commons.cli.*;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.configuration.SubnodeConfiguration;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.vfs2.*;
@@ -16,6 +17,7 @@ import org.json.simple.parser.JSONParser;
 
 import java.io.*;
 import java.io.FileNotFoundException;
+import java.nio.charset.Charset;
 import java.util.*;
 
 /**
@@ -72,6 +74,7 @@ public class Launcher {
         runCommand(json, fileMap, workingDir, command);
 
         // push output files
+        // LEFT OFF HERE
         pushOutputFiles(json);
     }
 
@@ -91,7 +94,7 @@ public class Launcher {
         execute("mkdir -p "+workingDir+"/launcher-"+uuid.toString()+"/logs");
         execute("mkdir -p "+workingDir+"/launcher-"+uuid.toString()+"/outputs");
 
-        return(workingDir+"/launcher-"+uuid.toString());
+        return(new File(workingDir+"/launcher-"+uuid.toString()).getAbsolutePath());
 
     }
 
@@ -112,7 +115,11 @@ public class Launcher {
 
             StringBuilder sb = new StringBuilder();
 
+            ArrayList<String> sba = new ArrayList<>();
+            // TODO: probably want the bare minimum env vars so 'bash -lc' is not ideal
             sb.append("docker run ");
+            sba.add("docker");
+            sba.add("run");
 
             // deal with data
             JSONArray files = (JSONArray) ((JSONObject) tool).get("data");
@@ -124,6 +131,9 @@ public class Launcher {
                     containerPath = containerWorkingPath + "/" + containerPath;
                 }
                 sb.append("-v " + localPath + ":" + containerPath + " ");
+                sba.add("-v");
+                sba.add(localPath+":"+containerPath);
+
             }
             // deal with inputs
             files = (JSONArray) ((JSONObject) tool).get("inputs");
@@ -135,22 +145,36 @@ public class Launcher {
                     containerPath = containerWorkingPath + "/" + containerPath;
                 }
                 sb.append("-v " + localPath + ":" + containerPath + " ");
+                sba.add("-v");
+                sba.add(localPath+":"+containerPath);
             }
 
             // deal with outputs
             sb.append("-v " + workingDir + "/outputs:" + containerOutputPath + " ");
+            sba.add("-v");
+            sba.add(workingDir + "/outputs:" + containerOutputPath);
 
             // docker image to run and command
-            sb.append(image + " " + command);
+            sb.append(image + " /bin/bash -c '" + command + "'");
+            sba.add(image);
+            sba.add("/bin/bash");
+            sba.add("-c");
+            sba.add(command);
 
             // execute the constructed command
-            log.info("DOCKER CMD TO RUN: "+sb.toString());
+            log.info("DOCKER CMD TO RUN: " + sb.toString());
+
+            // FIXME: not working!
+            //execute(sb.toString());
+            // had to switch to this style instead
+            executeArr(sba);
+
         }
 
     }
 
     private void pushOutputFiles(Object json) {
-        //TODO
+        // LEFT OFF HERE
     }
 
 
@@ -268,7 +292,8 @@ public class Launcher {
                 File filePathObj = new File(filePath);
                 String newDirectory = globalWorkingDir + "/inputs/" + UUID.randomUUID().toString();
                 execute("mkdir -p "+newDirectory);
-                String uuidPath = newDirectory + "/" + filePathObj.getName();
+                File newDirectoryFile = new File(newDirectory);
+                String uuidPath = newDirectoryFile.getAbsolutePath() + "/" + filePathObj.getName();
 
                 // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and https://commons.apache.org/proper/commons-vfs/filesystems.html
                 FileSystemManager fsManager = null;
@@ -405,8 +430,31 @@ public class Launcher {
 
     private void execute (String command) {
         try {
-            log.info("CMD: "+command);
-            Runtime.getRuntime().exec(command).waitFor();
+            log.info("CMD: " + command);
+            Process p = Runtime.getRuntime().exec(command);
+            p.waitFor();
+            log.info("CMD RETURN CODE: " + p.exitValue());
+            log.info("CMD STDERR:"+ IOUtils.toString(p.getErrorStream(), Charset.defaultCharset()));
+            log.info("CMD STDOUT:"+ IOUtils.toString(p.getInputStream(), Charset.defaultCharset()));
+
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            log.error(e.getMessage());
+        } catch (IOException e) {
+            e.printStackTrace();
+            log.error(e.getMessage());
+        }
+    }
+
+    private void executeArr (ArrayList<String> command) {
+        try {
+            //log.info("CMD: " + command);
+            Process p = Runtime.getRuntime().exec(command.toArray(new String[0]));
+            p.waitFor();
+            log.info("CMD RETURN CODE: " + p.exitValue());
+            log.info("CMD STDERR:"+ IOUtils.toString(p.getErrorStream(), Charset.defaultCharset()));
+            log.info("CMD STDOUT:"+ IOUtils.toString(p.getInputStream(), Charset.defaultCharset()));
+
         } catch (InterruptedException e) {
             e.printStackTrace();
             log.error(e.getMessage());
