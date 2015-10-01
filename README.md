@@ -95,4 +95,3 @@ Here are some example Docker-based workflows in CWL (with Dockerfiles) from 7Bri
 * services needs to be fleshed out
 * tests need to be fleshed out
 * there is no real error checking, for production system will need to handle errors correctly/robustly.
-* need to figure out how to pass in auth info for Commons VFS, see http://commons.apache.org/proper/commons-vfs/filesystems.html and https://github.com/abashev/vfs-s3/tree/branch-2.3.x
