@@ -16,6 +16,11 @@
  */
 package io.dockstore.client;
 
+import io.swagger.client.ApiClient;
+import io.swagger.client.ApiException;
+import io.swagger.client.Configuration;
+import io.swagger.client.api.DockerrepoApi;
+import io.swagger.client.model.ARegisteredContainerThatAUserHasSubmitted;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -25,6 +30,9 @@ import java.util.List;
  * @author xliu
  */
 public class Client {
+    private static ApiClient defaultApiClient;
+    private static DockerrepoApi dockerrepoApi;
+
     private static void out(String format, Object... args) {
         System.out.println(String.format(format, args));
     }
@@ -62,8 +70,11 @@ public class Client {
         out("LIST COMMAND");
     }
 
-    private static void search(List<String> args) {
+    private static void search(List<String> args) throws ApiException {
         out("SEARCH COMMAND");
+        String pattern = args.get(0);
+        ARegisteredContainerThatAUserHasSubmitted container = dockerrepoApi.searchContainers(pattern);
+        out(container.toString());
     }
 
     private static void publish(List<String> args) {
@@ -78,8 +89,11 @@ public class Client {
         out("CWL COMMAND");
     }
 
-    public static void main(String[] argv) {
+    public static void main(String[] argv) throws ApiException {
         List<String> args = new ArrayList<>(Arrays.asList(argv));
+
+        defaultApiClient = Configuration.getDefaultApiClient();
+        dockerrepoApi = new DockerrepoApi(defaultApiClient);
 
         if (isHelp(args, true)) {
             out("");
@@ -98,7 +112,6 @@ public class Client {
             out("  info        :  print detailed information about a particular container");
             out("");
             out("  cwl         :  returns the Common Workflow Language tool definition for this Docker image ");
-            out("");
             out("                 which enables integration with Global Alliance compliant systems");
             out("------------------");
         } else {
