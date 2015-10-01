@@ -65,7 +65,7 @@
           "description": "this describes a large reference file that does not change between runs",
           "id": "ref_file_2",
           "path": "/big-data-files/b4cdad91-676a-446c-a635-57453f17617a.txt",
-          "url": "https://raw.githubusercontent.com/CancerCollaboratory/dockstore-descriptor/develop/launcher/data/b4cdad91-676a-446c-a635-57453f17617a.txt"
+          "url": "https://raw.githubusercontent.com/CancerCollaboratory/dockstore-descriptor/develop/launcher/data/b4cdad91-676a-446c-a635-57453f17617a.txt",
           "type": "file",
           "format": "text"
         }
