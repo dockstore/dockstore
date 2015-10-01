@@ -109,7 +109,7 @@ public class Launcher {
         JSONArray tools = (JSONArray) ((JSONObject) json).get("tools");
         for (Object tool : tools) {
 
-            // get command 
+            // get command
             String commandTemplate = (String) ((JSONObject) tool).get("command");
 
             // construct a HashMap with data and inputs documented in
@@ -122,41 +122,26 @@ public class Launcher {
             root.put("container_working_path", (String) ((JSONObject) tool).get("container_working_path"));
 
             // inputs
-            Map<String, Map> inputsHash = new HashMap<>();
+            Map<String, String> inputsHash = new HashMap<>();
             JSONArray files = (JSONArray) ((JSONObject) tool).get("inputs");
             for (Object file : files) {
-
-                Map<String, String> fileHash = new HashMap<>();
-                fileHash.put("url", (String) ((JSONObject)file).get("url"));
-                fileHash.put("path", (String) ((JSONObject)file).get("path"));
-                inputsHash.put((String) ((JSONObject)file).get("id"), fileHash);
-                
+                inputsHash.put((String) ((JSONObject)file).get("id"), (String) ((JSONObject)file).get("path"));
             }
             root.put("inputs", inputsHash);
 
             // data files
-            Map<String, Map> dataHash = new HashMap<>();
+            Map<String, String> dataHash = new HashMap<>();
             files = (JSONArray) ((JSONObject) tool).get("data");
             for (Object file : files) {
-
-                Map<String, String> fileHash = new HashMap<>();
-                fileHash.put("url", (String) ((JSONObject)file).get("url"));
-                fileHash.put("path", (String) ((JSONObject)file).get("path"));
-                dataHash.put((String) ((JSONObject) file).get("id"), fileHash);
-
+                dataHash.put((String) ((JSONObject) file).get("id"), (String) ((JSONObject)file).get("path"));
             }
             root.put("data", dataHash);
 
             // outputs
-            Map<String, Map> outputsHash = new HashMap<>();
+            Map<String, String> outputsHash = new HashMap<>();
             files = (JSONArray) ((JSONObject) tool).get("outputs");
             for (Object file : files) {
-
-                Map<String, String> fileHash = new HashMap<>();
-                fileHash.put("url", (String) ((JSONObject)file).get("url"));
-                fileHash.put("path", (String) ((JSONObject)file).get("path"));
-                outputsHash.put((String) ((JSONObject) file).get("id"), fileHash);
-
+                outputsHash.put((String) ((JSONObject) file).get("id"), (String) ((JSONObject)file).get("path"));
             }
             root.put("outputs", outputsHash);
 
@@ -164,14 +149,17 @@ public class Launcher {
             Configuration cfg = new Configuration(Configuration.VERSION_2_3_22);
 
             // now process the command line
+            String finalCmd = null;
             try {
 
-                Template t = new Template("templateName", new StringReader(commandTemplate), cfg);
+                Template t = new Template("commandTemplate", new StringReader(commandTemplate), cfg);
 
                 Writer out = new StringWriter();
                 t.process(root, out);
 
-                String transformedTemplate = out.toString();
+                finalCmd = out.toString();
+
+                log.info("FINAL COMMAND: "+finalCmd);
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -181,7 +169,8 @@ public class Launcher {
                 log.error(e.getMessage());
             }
 
-            log.info("CMD TO RUN: "+commandTemplate);
+            log.info("CMD TEMPLATE: "+commandTemplate);
+            log.info("CMD TO RUN: "+finalCmd);
         }
 
     }
