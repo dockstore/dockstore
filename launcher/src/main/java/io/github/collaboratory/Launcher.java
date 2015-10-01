@@ -108,28 +108,63 @@ public class Launcher {
         // TODO: this doesn't deal with multi-tools properly
         JSONArray tools = (JSONArray) ((JSONObject) json).get("tools");
         for (Object tool : tools) {
-            // get list of files
+
+            // get command 
             String commandTemplate = (String) ((JSONObject) tool).get("command");
 
             // construct a HashMap with data and inputs documented in
             Map<String, Object> root = new HashMap<>();
 
+            // container output path
+            root.put("container_output_path", (String) ((JSONObject) tool).get("container_output_path"));
+
+            // container working path
+            root.put("container_working_path", (String) ((JSONObject) tool).get("container_working_path"));
+
             // inputs
+            Map<String, Map> inputsHash = new HashMap<>();
             JSONArray files = (JSONArray) ((JSONObject) tool).get("inputs");
             for (Object file : files) {
 
                 Map<String, String> fileHash = new HashMap<>();
-
-                fileHash.put("url", "products/greenmouse.html");
-                fileHash.put("path", "green mouse");
-                root.put("latestProduct", fileHash);
+                fileHash.put("url", (String) ((JSONObject)file).get("url"));
+                fileHash.put("path", (String) ((JSONObject)file).get("path"));
+                inputsHash.put((String) ((JSONObject)file).get("id"), fileHash);
                 
             }
+            root.put("inputs", inputsHash);
 
+            // data files
+            Map<String, Map> dataHash = new HashMap<>();
+            files = (JSONArray) ((JSONObject) tool).get("data");
+            for (Object file : files) {
+
+                Map<String, String> fileHash = new HashMap<>();
+                fileHash.put("url", (String) ((JSONObject)file).get("url"));
+                fileHash.put("path", (String) ((JSONObject)file).get("path"));
+                dataHash.put((String) ((JSONObject) file).get("id"), fileHash);
+
+            }
+            root.put("data", dataHash);
+
+            // outputs
+            Map<String, Map> outputsHash = new HashMap<>();
+            files = (JSONArray) ((JSONObject) tool).get("outputs");
+            for (Object file : files) {
+
+                Map<String, String> fileHash = new HashMap<>();
+                fileHash.put("url", (String) ((JSONObject)file).get("url"));
+                fileHash.put("path", (String) ((JSONObject)file).get("path"));
+                outputsHash.put((String) ((JSONObject) file).get("id"), fileHash);
+
+            }
+            root.put("outputs", outputsHash);
+
+            // config object for template
             Configuration cfg = new Configuration(Configuration.VERSION_2_3_22);
 
+            // now process the command line
             try {
-                Template temp = cfg.getTemplate("test.ftl");
 
                 Template t = new Template("templateName", new StringReader(commandTemplate), cfg);
 
