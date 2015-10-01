@@ -60,6 +60,14 @@ To run the Launcher:
     # another example for testing
     rm -rf datastore && cd launcher && mvn clean install && cd - && java -jar launcher/target/uber-io.github.collaboratory.launcher-1.0.0.jar --config launcher.ini --descriptor collab.json
 
+The above will fail with an `AmazonS3Exception: Access Denied` since the collab.json points to an output location on S3 (`s3://oicr.temp/testing-launcher` specifically).  So you need to include your Amazon keys as env vars to be picked up by the API we're using to do uploads.  The correct command would be (of course fill in your own values here):
+
+    export AWS_ACCESS_KEY=AAAAAAA
+    export AWS_SECRET_KEY=SSSSSSS
+    rm -rf datastore && cd launcher && mvn clean install && cd - && java -jar launcher/target/uber-io.github.collaboratory.launcher-1.0.0.jar --config launcher.ini --descriptor collab.json
+
+If you change the `collab.json` to point to other destinations (like SFTP) you will need to pass in auth params in a similar way, see the [VFS Docs](http://commons.apache.org/proper/commons-vfs/api.html).
+
 ## The Descriptor
 
 In the case of this prototype the descriptors (`Collab.json` and `Collab.cwl`) are runtime descriptors.  So they contain fully resolvable entries.  We will need to think about how a general, non-runtime descriptor works that would be used during the registration process in the Dockstore.  The simplest approach might be to simply have them both be the same format but the one submitted with a registration request is considered the default values to use if a runtime descriptor is missing anything.
