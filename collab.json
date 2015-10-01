@@ -27,7 +27,7 @@
           "description": "this describes an output file that should be saved after execution",
           "id": "hello_output",
           "path": "hello-output.txt",
-          "url": "s3://mybucketname/path/hello-output.txt",
+          "url": "s3://oicr.temp/testing-launcher/hello-output.txt",
           "type": "file",
           "format": "text"
         }
