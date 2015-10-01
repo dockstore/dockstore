@@ -11,6 +11,7 @@
       "command": "cat ${container_working_path}/${inputs.hello_input} > ${container_output_path}/${outputs.hello_output} && ls ${container_working_path}/${data.ref_file_1} >> ${container_output_path}/${outputs.hello_output} && head -20 ${data.ref_file_2} >> ${container_output_path}/${outputs.hello_output}",
       "container_output_path" : "/outputs",
       "container_working_path" : "/working",
+      "image_name" : "quay.io/collaboratory/workflow-helloworld:1.0.0",
       "inputs": [
         {
           "description": "this describes an input file that should be provided before execution",
