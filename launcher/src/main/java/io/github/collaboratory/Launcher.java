@@ -75,7 +75,7 @@ public class Launcher {
 
         // push output files
         // LEFT OFF HERE
-        pushOutputFiles(json);
+        pushOutputFiles(json, fileMap, workingDir);
     }
 
     private String setupDirectories(Object json) {
@@ -173,8 +173,52 @@ public class Launcher {
 
     }
 
-    private void pushOutputFiles(Object json) {
-        // LEFT OFF HERE
+    private void pushOutputFiles(Object json, HashMap<String, HashMap<String, String>> fileMap, String workingDir) {
+
+        log.info("UPLOADING FILES...");
+
+        // for each tool
+        // TODO: really this launcher will operate off of a request for a particular tool whereas the collab.json can define multiple tools
+        // TODO: really don't want to process inputs for all tools!  Just the one going to be called
+        JSONArray tools = (JSONArray) ((JSONObject) json).get("tools");
+        for (Object tool : tools) {
+
+            // get list of files
+            JSONArray files = (JSONArray) ((JSONObject) tool).get("outputs");
+
+            log.info("files: " + files);
+
+            for (Object file : files) {
+
+                // output
+                String fileURL = (String) ((JSONObject) file).get("url");
+
+                // input
+                String filePath = (String) ((JSONObject) file).get("path");
+                String fileId = (String) ((JSONObject) file).get("id");
+                // TODO: would be best to have output files here in this data structure rather than construct the path below
+                //String localFilePath = fileMap.get(fileId).get("local_path");
+                String localFilePath = workingDir + "/outputs/" + filePath;
+
+                // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and https://commons.apache.org/proper/commons-vfs/filesystems.html
+                FileSystemManager fsManager = null;
+                try {
+
+                    // trigger a copy from the URL to a local file path that's a UUID to avoid collision
+                    fsManager = VFS.getManager();
+                    FileObject dest = fsManager.resolveFile(fileURL);
+                    FileObject src = fsManager.resolveFile(new File(localFilePath).getAbsolutePath());
+                    dest.copyFrom(src, Selectors.SELECT_SELF);
+
+                } catch (FileSystemException e) {
+                    e.printStackTrace();
+                    log.error(e.getMessage());
+                }
+
+                log.info("FILE: LOCAL PATH: " + localFilePath + " DOCKER PATH: " + filePath + " DEST URL: " + fileURL);
+
+            }
+        }
     }
 
 
