@@ -54,7 +54,7 @@ public class Launcher {
         json = parseDescriptor(line.getOptionValue("descriptor"));
 
         // setup directories
-        setupDirectories(json);
+        String workingDir = setupDirectories(json);
 
         // pull Docker images
         pullDockerImages(json);
@@ -65,19 +65,17 @@ public class Launcher {
         // pull input files
         pullFiles("INPUT", json, fileMap);
 
-        // LEFT OFF HERE: need to work on the Docker command construction next
-
         // construct command
-        constructCommand(json);
+        String command = constructCommand(json);
 
         // run command
-        runCommand(json);
+        runCommand(json, fileMap, workingDir, command);
 
         // push output files
         pushOutputFiles(json);
     }
 
-    private void setupDirectories(Object json) {
+    private String setupDirectories(Object json) {
 
         log.info("MAKING DIRECTORIES...");
         // directory to use, typically a large, encrypted filesystem
@@ -88,22 +86,79 @@ public class Launcher {
         globalWorkingDir = workingDir+"/launcher-"+uuid.toString();
         execute("mkdir -p "+workingDir+"/launcher-"+uuid.toString());
         execute("mkdir -p "+workingDir+"/launcher-"+uuid.toString()+"/configs");
-        execute("mkdir -p "+workingDir+"/launcher-"+uuid.toString()+"/working");
+        execute("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/working");
         execute("mkdir -p "+workingDir+"/launcher-"+uuid.toString()+"/inputs");
         execute("mkdir -p "+workingDir+"/launcher-"+uuid.toString()+"/logs");
+        execute("mkdir -p "+workingDir+"/launcher-"+uuid.toString()+"/outputs");
+
+        return(workingDir+"/launcher-"+uuid.toString());
+
+    }
+
+    private void runCommand(Object json, HashMap<String, HashMap<String, String>> fileMap, String workingDir, String command) {
+
+        // TODO: this doesn't deal with multi-tools properly
+        JSONArray tools = (JSONArray) ((JSONObject) json).get("tools");
+        for (Object tool : tools) {
+
+            // container output path
+            String containerOutputPath = (String) ((JSONObject) tool).get("container_output_path");
+
+            // container working path
+            String containerWorkingPath = (String) ((JSONObject) tool).get("container_working_path");
+
+            // image to actually use
+            String image = (String) ((JSONObject) tool).get("image_name");
+
+            StringBuilder sb = new StringBuilder();
+
+            sb.append("docker run ");
+
+            // deal with data
+            JSONArray files = (JSONArray) ((JSONObject) tool).get("data");
+            for (Object file : files) {
+                String fileId = (String) ((JSONObject) file).get("id");
+                String containerPath = (String) ((JSONObject) file).get("path");
+                String localPath = fileMap.get(fileId).get("local_path");
+                if (!containerPath.startsWith("/")) {
+                    containerPath = containerWorkingPath + "/" + containerPath;
+                }
+                sb.append("-v " + localPath + ":" + containerPath + " ");
+            }
+            // deal with inputs
+            files = (JSONArray) ((JSONObject) tool).get("inputs");
+            for (Object file : files) {
+                String fileId = (String) ((JSONObject) file).get("id");
+                String containerPath = (String) ((JSONObject) file).get("path");
+                String localPath = fileMap.get(fileId).get("local_path");
+                if (!containerPath.startsWith("/")) {
+                    containerPath = containerWorkingPath + "/" + containerPath;
+                }
+                sb.append("-v " + localPath + ":" + containerPath + " ");
+            }
+
+            // deal with outputs
+            sb.append("-v " + workingDir + "/outputs:" + containerOutputPath + " ");
+
+            // docker image to run and command
+            sb.append(image + " " + command);
+
+            // execute the constructed command
+            log.info("DOCKER CMD TO RUN: "+sb.toString());
+        }
+
     }
 
     private void pushOutputFiles(Object json) {
         //TODO
     }
 
-    private void runCommand(Object json) {
-        //TODO
-    }
 
-    private void constructCommand(Object json) {
+    private String constructCommand(Object json) {
 
         log.info("CONSTRUCTING COMMAND: ");
+
+        String finalCmd = null;
 
         // TODO: this doesn't deal with multi-tools properly
         JSONArray tools = (JSONArray) ((JSONObject) json).get("tools");
@@ -149,7 +204,6 @@ public class Launcher {
             Configuration cfg = new Configuration(Configuration.VERSION_2_3_22);
 
             // now process the command line
-            String finalCmd = null;
             try {
 
                 Template t = new Template("commandTemplate", new StringReader(commandTemplate), cfg);
@@ -173,6 +227,7 @@ public class Launcher {
             log.info("CMD TO RUN: "+finalCmd);
         }
 
+        return(finalCmd);
     }
 
     private void pullFiles(String data, Object json, HashMap<String, HashMap<String, String>> fileMap) {
@@ -209,6 +264,7 @@ public class Launcher {
 
                 // output
                 String filePath = (String) ((JSONObject) file).get("path");
+                String fileId = (String) ((JSONObject) file).get("id");
                 File filePathObj = new File(filePath);
                 String newDirectory = globalWorkingDir + "/inputs/" + UUID.randomUUID().toString();
                 execute("mkdir -p "+newDirectory);
@@ -229,7 +285,7 @@ public class Launcher {
                     new1.put("local_path", uuidPath);
                     new1.put("docker_path", filePath);
                     new1.put("url", fileURL);
-                    fileMap.put(filePath, new1);
+                    fileMap.put(fileId, new1);
 
                 } catch (FileSystemException e) {
                     e.printStackTrace();
