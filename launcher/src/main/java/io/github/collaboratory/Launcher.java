@@ -118,14 +118,16 @@ public class Launcher {
             JSONArray files = (JSONArray) ((JSONObject) tool).get("inputs");
             for (Object file : files) {
 
-                Map<String, String> latest = new HashMap<>();
-                root.put("latestProduct", latest);
-                latest.put("url", "products/greenmouse.html");
-                latest.put("name", "green mouse");
+                Map<String, String> fileHash = new HashMap<>();
+
+                fileHash.put("url", "products/greenmouse.html");
+                fileHash.put("path", "green mouse");
+                root.put("latestProduct", fileHash);
                 
             }
 
             Configuration cfg = new Configuration(Configuration.VERSION_2_3_22);
+
             try {
                 Template temp = cfg.getTemplate("test.ftl");
 
