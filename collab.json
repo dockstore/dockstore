@@ -8,7 +8,9 @@
       "name": "HelloWorldTool",
       "version": "1.0.0",
       "description": "Markdown description text here",
-      "command": "cat ${inputs.hello-input} > ${outputs.hello-output} && ls ${data.ref_file_2} >> ${outputs.hello-output} && head -20 ${data.ref_file_2} >> ${outputs.hello-output}",
+      "command": "cat ${container_working_path}/${inputs.hello-input} > ${container_output_path}/${outputs.hello-output} && ls ${container_working_path}/${data.ref_file_1} >> ${container_output_path}/${outputs.hello-output} && head -20 ${data.ref_file_2} >> ${container_output_path}/${outputs.hello-output}",
+      "container_output_path" : "/outputs",
+      "container_working_path" : "/working",
       "inputs": [
         {
           "description": "this describes an input file that should be provided before execution",
@@ -24,6 +26,7 @@
           "description": "this describes an output file that should be saved after execution",
           "id": "hello-output",
           "path": "hello-output.txt",
+          "url": "s3://mybucketname/path/hello-output.txt"
           "type": "file",
           "format": "text"
         }
@@ -61,7 +64,7 @@
         {
           "description": "this describes a large reference file that does not change between runs",
           "id": "ref_file_2",
-          "path": "b4cdad91-676a-446c-a635-57453f17617a.txt",
+          "path": "/big-data-files/b4cdad91-676a-446c-a635-57453f17617a.txt",
           "url": "https://raw.githubusercontent.com/CancerCollaboratory/dockstore-descriptor/develop/launcher/data/b4cdad91-676a-446c-a635-57453f17617a.txt"
           "type": "file",
           "format": "text"
