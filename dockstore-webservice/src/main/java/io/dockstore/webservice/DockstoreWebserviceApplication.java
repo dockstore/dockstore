@@ -45,7 +45,11 @@ import io.dropwizard.views.ViewBundle;
 import io.swagger.jaxrs.config.BeanConfig;
 import io.swagger.jaxrs.listing.ApiListingResource;
 import io.swagger.jaxrs.listing.SwaggerSerializers;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.util.EnumSet;
+import java.util.Enumeration;
 import javax.servlet.DispatcherType;
 import javax.servlet.FilterRegistration;
 import org.apache.http.client.HttpClient;
@@ -76,11 +80,27 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
     @Override
     public void initialize(Bootstrap<DockstoreWebserviceConfiguration> bootstrap) {
+        String ip = "localhost";
+        try {
+            NetworkInterface ni = NetworkInterface.getByName("eth0");
+            Enumeration<InetAddress> inetAddresses = ni.getInetAddresses();
+
+            while (inetAddresses.hasMoreElements()) {
+                InetAddress ia = inetAddresses.nextElement();
+                if (!ia.isLinkLocalAddress()) {
+                    System.out.println("IP: " + ia.getHostAddress());
+                    ip = ia.getHostAddress();
+                }
+            }
+        } catch (SocketException ex) {
+            System.out.println("SocketException: " + ex);
+        }
+
         // setup swagger
         BeanConfig beanConfig = new BeanConfig();
         beanConfig.setVersion("1.0.2");
         beanConfig.setSchemes(new String[] { "http" });
-        beanConfig.setHost("localhost:8080");
+        beanConfig.setHost(ip + ":8080");
         beanConfig.setBasePath("/");
         beanConfig.setResourcePackage("io.dockstore.webservice.resources");
         beanConfig.setScan(true);
@@ -122,7 +142,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(resource3);
 
         environment.jersey().register(
-                new TokenResource(tokenDAO, userDAO, configuration.getGithubClientID(), configuration.getGithubClientSecret(), httpClient));
+                new TokenResource(mapper, tokenDAO, userDAO, configuration.getGithubClientID(), configuration.getGithubClientSecret(),
+                        httpClient));
 
         environment.jersey().register(
                 new UserResource(httpClient, tokenDAO, userDAO, groupDAO, configuration.getGithubClientID(), configuration

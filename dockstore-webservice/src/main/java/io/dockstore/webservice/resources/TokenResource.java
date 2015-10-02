@@ -17,10 +17,12 @@
 package io.dockstore.webservice.resources;
 
 import com.codahale.metrics.annotation.Timed;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
+import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dropwizard.hibernate.UnitOfWork;
@@ -31,6 +33,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import io.swagger.annotations.AuthorizationScope;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import javax.ws.rs.DELETE;
@@ -45,6 +48,8 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
+import org.eclipse.egit.github.core.client.GitHubClient;
+import org.eclipse.egit.github.core.service.UserService;
 
 /**
  * The token resource handles operations with tokens. Tokens are needed to talk with the quay.io and github APIs. In addition, they will be
@@ -62,13 +67,28 @@ public class TokenResource {
     private final String githubClientID;
     private final String githubClientSecret;
     private final HttpClient client;
+    private final ObjectMapper objectMapper;
 
-    public TokenResource(TokenDAO tokenDAO, UserDAO enduserDAO, String githubClientID, String githubClientSecret, HttpClient client) {
+    public TokenResource(ObjectMapper mapper, TokenDAO tokenDAO, UserDAO enduserDAO, String githubClientID, String githubClientSecret,
+            HttpClient client) {
+        this.objectMapper = mapper;
         this.tokenDAO = tokenDAO;
         this.enduserDAO = enduserDAO;
         this.githubClientID = githubClientID;
         this.githubClientSecret = githubClientSecret;
         this.client = client;
+    }
+
+    private static class QuayUser {
+        private String username;
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
+        public String getUsername() {
+            return this.username;
+        }
     }
 
     @GET
@@ -118,6 +138,16 @@ public class TokenResource {
             + "Once a user has approved permissions for Collaboratory"
             + "Their browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addQuayToken(@QueryParam("access_token") String accessToken) {
+        // Optional<String> asString = ResourceUtilities.asString(TARGET_URL + "user", accessToken, client);
+        // if (asString.isPresent()) {
+        // try {
+        // System.out.println(asString.get());
+        // QuayUser quayUser = objectMapper.readValue(asString.get(), QuayUser.class);
+        // System.out.println(quayUser.getUsername());
+        // } catch (IOException ex) {
+        // System.out.println(ex);
+        // }
+        // }
         Token token = new Token();
         token.setTokenSource(TokenType.QUAY_IO.toString());
         token.setContent(accessToken);
@@ -144,17 +174,42 @@ public class TokenResource {
     public Token addGithubToken(@QueryParam("code") String code) {
         Optional<String> asString = ResourceUtilities.asString(TARGET_URL + "login/oauth/access_token?code=" + code + "&client_id="
                 + githubClientID + "&client_secret=" + githubClientSecret, null, client);
+        String accessToken;
         if (asString.isPresent()) {
             Map<String, String> split = Splitter.on('&').trimResults().withKeyValueSeparator("=").split(asString.get());
-            Token token = new Token();
-            token.setTokenSource(TokenType.GITHUB_COM.toString());
-            token.setContent(split.get("access_token"));
-            long create = tokenDAO.create(token);
-            return tokenDAO.findById(create);
+            accessToken = split.get("access_token");
         } else {
             throw new WebApplicationException("Could not retrieve github.com token based on code");
         }
 
+        GitHubClient githubClient = new GitHubClient();
+        githubClient.setOAuth2Token(accessToken);
+        long userID = 0;
+        try {
+            UserService uService = new UserService(githubClient);
+            org.eclipse.egit.github.core.User githubUser = uService.getUser();
+
+            String githubLogin = githubUser.getLogin();
+
+            User user = enduserDAO.findByUsername(githubLogin);
+            if (user == null) {
+                user = new User();
+                user.setUsername(githubLogin);
+                userID = enduserDAO.create(user);
+            } else {
+                userID = user.getId();
+            }
+
+        } catch (IOException ex) {
+            throw new WebApplicationException("Token ignored due to IOException");
+        }
+
+        Token token = new Token();
+        token.setTokenSource(TokenType.GITHUB_COM.toString());
+        token.setContent(accessToken);
+        token.setUserId(userID);
+        long create = tokenDAO.create(token);
+        return tokenDAO.findById(create);
     }
 
     @PUT
