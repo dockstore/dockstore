@@ -34,7 +34,7 @@ import javax.persistence.Table;
  *
  * @author xliu
  */
-@ApiModel(value = "A particular token that a user has submitted via OAuth")
+@ApiModel(value = "A particular tag that a user has submitted via OAuth")
 @Entity
 @Table(name = "tag")
 @JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class, property = "@id")
