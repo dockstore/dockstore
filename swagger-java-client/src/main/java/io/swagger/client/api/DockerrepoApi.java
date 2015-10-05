@@ -16,7 +16,7 @@ import java.io.File;
 import java.util.Map;
 import java.util.HashMap;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-09-29T10:53:03.112-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-05T11:00:25.557-04:00")
 public class DockerrepoApi {
   private ApiClient apiClient;
 
@@ -40,9 +40,9 @@ public class DockerrepoApi {
   /**
    * List all repos known via all registered tokens
    * List docker container repos currently known. Right now, tokens are used to synchronously talk to the quay.io API to list repos. Ultimately, we should cache this information and refresh either by user request or by time TODO: This should be a properly defined list of objects, it also needs admin authentication
-   * @return ARegisteredContainerThatAUserHasSubmitted
+   * @return List<ARegisteredContainerThatAUserHasSubmitted>
    */
-  public ARegisteredContainerThatAUserHasSubmitted getRepos () throws ApiException {
+  public List<ARegisteredContainerThatAUserHasSubmitted> getRepos () throws ApiException {
     Object postBody = null;
     
     // create path and map variables
@@ -72,7 +72,7 @@ public class DockerrepoApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<ARegisteredContainerThatAUserHasSubmitted>() {};
+    TypeRef returnType = new TypeRef<List<ARegisteredContainerThatAUserHasSubmitted>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -80,9 +80,9 @@ public class DockerrepoApi {
   /**
    * List all registered containers
    * 
-   * @return ARegisteredContainerThatAUserHasSubmitted
+   * @return List<ARegisteredContainerThatAUserHasSubmitted>
    */
-  public ARegisteredContainerThatAUserHasSubmitted getAllRegisteredContainers () throws ApiException {
+  public List<ARegisteredContainerThatAUserHasSubmitted> getAllRegisteredContainers () throws ApiException {
     Object postBody = null;
     
     // create path and map variables
@@ -112,7 +112,7 @@ public class DockerrepoApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<ARegisteredContainerThatAUserHasSubmitted>() {};
+    TypeRef returnType = new TypeRef<List<ARegisteredContainerThatAUserHasSubmitted>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -209,10 +209,10 @@ public class DockerrepoApi {
   /**
    * Get a registered container
    * Lists info of container. Enter full path (include quay.io in path)
-   * @param userId 
+   * @param repository 
    * @return ARegisteredContainerThatAUserHasSubmitted
    */
-  public ARegisteredContainerThatAUserHasSubmitted getRegisteredContainer (String userId) throws ApiException {
+  public ARegisteredContainerThatAUserHasSubmitted getRegisteredContainer (String repository) throws ApiException {
     Object postBody = null;
     
     // create path and map variables
@@ -224,7 +224,7 @@ public class DockerrepoApi {
     Map<String, Object> formParams = new HashMap<String, Object>();
 
     
-    queryParams.addAll(apiClient.parameterToPairs("", "user_id", userId));
+    queryParams.addAll(apiClient.parameterToPairs("", "repository", repository));
     
 
     
@@ -307,9 +307,9 @@ public class DockerrepoApi {
    * List all registered containers from a user
    * Get user&#39;s registered containers only
    * @param userId 
-   * @return ARegisteredContainerThatAUserHasSubmitted
+   * @return List<ARegisteredContainerThatAUserHasSubmitted>
    */
-  public ARegisteredContainerThatAUserHasSubmitted getUserRegisteredContainers (Long userId) throws ApiException {
+  public List<ARegisteredContainerThatAUserHasSubmitted> getUserRegisteredContainers (Long userId) throws ApiException {
     Object postBody = null;
     
     // create path and map variables
@@ -341,7 +341,7 @@ public class DockerrepoApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<ARegisteredContainerThatAUserHasSubmitted>() {};
+    TypeRef returnType = new TypeRef<List<ARegisteredContainerThatAUserHasSubmitted>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -350,9 +350,9 @@ public class DockerrepoApi {
    * List repos owned by the logged-in user
    * Lists all registered and unregistered containers owned by the user
    * @param enduserId 
-   * @return ARegisteredContainerThatAUserHasSubmitted
+   * @return List<ARegisteredContainerThatAUserHasSubmitted>
    */
-  public ARegisteredContainerThatAUserHasSubmitted listOwned (Long enduserId) throws ApiException {
+  public List<ARegisteredContainerThatAUserHasSubmitted> listOwned (Long enduserId) throws ApiException {
     Object postBody = null;
     
     // create path and map variables
@@ -384,7 +384,7 @@ public class DockerrepoApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<ARegisteredContainerThatAUserHasSubmitted>() {};
+    TypeRef returnType = new TypeRef<List<ARegisteredContainerThatAUserHasSubmitted>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -393,9 +393,9 @@ public class DockerrepoApi {
    * Refresh repos owned by the logged-in user
    * Updates some metadata
    * @param userId 
-   * @return ARegisteredContainerThatAUserHasSubmitted
+   * @return List<ARegisteredContainerThatAUserHasSubmitted>
    */
-  public ARegisteredContainerThatAUserHasSubmitted refreshRepos (Long userId) throws ApiException {
+  public List<ARegisteredContainerThatAUserHasSubmitted> refreshRepos (Long userId) throws ApiException {
     Object postBody = null;
     
     // create path and map variables
@@ -427,7 +427,7 @@ public class DockerrepoApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<ARegisteredContainerThatAUserHasSubmitted>() {};
+    TypeRef returnType = new TypeRef<List<ARegisteredContainerThatAUserHasSubmitted>>() {};
     return apiClient.invokeAPI(path, "PUT", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -482,9 +482,9 @@ public class DockerrepoApi {
    * Search for matching registered containers
    * Search on the name (full path name) and description.
    * @param pattern 
-   * @return ARegisteredContainerThatAUserHasSubmitted
+   * @return List<ARegisteredContainerThatAUserHasSubmitted>
    */
-  public ARegisteredContainerThatAUserHasSubmitted searchContainers (String pattern) throws ApiException {
+  public List<ARegisteredContainerThatAUserHasSubmitted> searchContainers (String pattern) throws ApiException {
     Object postBody = null;
     
     // create path and map variables
@@ -516,7 +516,7 @@ public class DockerrepoApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<ARegisteredContainerThatAUserHasSubmitted>() {};
+    TypeRef returnType = new TypeRef<List<ARegisteredContainerThatAUserHasSubmitted>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }

@@ -30,6 +30,7 @@ import java.util.List;
  * @author xliu
  */
 public class Client {
+
     private static ApiClient defaultApiClient;
     private static DockerrepoApi dockerrepoApi;
 
@@ -66,27 +67,101 @@ public class Client {
         kill("dockstore: '%s %s' is not a dockstore command. See 'dockstore %s --help'.", cmd, sub, cmd);
     }
 
-    private static void list(List<String> args) {
-        out("LIST COMMAND");
+    private static void printContainerList(List<ARegisteredContainerThatAUserHasSubmitted> containers) {
+        out("MATCHING CONTAINERS");
+        out("-------------------");
+        out("NAME                          DESCRIPTION                      GitHub Repo                  On Dockstore?      Collab.json    AUTOMATED");
+        for (ARegisteredContainerThatAUserHasSubmitted container : containers) {
+            String format = "%-30s%-30s%-29s";
+            out(format, container.getName(), container.getDescription(), container.getGitUrl());
+        }
     }
 
-    private static void search(List<String> args) throws ApiException {
-        out("SEARCH COMMAND");
+    private static void list(List<String> args) {
+        try {
+            List<ARegisteredContainerThatAUserHasSubmitted> containers = dockerrepoApi.getAllRegisteredContainers();
+            printContainerList(containers);
+        } catch (ApiException ex) {
+            out("Exception: " + ex);
+        }
+    }
+
+    private static void search(List<String> args) {
         String pattern = args.get(0);
-        ARegisteredContainerThatAUserHasSubmitted container = dockerrepoApi.searchContainers(pattern);
-        out(container.toString());
+        try {
+            List<ARegisteredContainerThatAUserHasSubmitted> containers = dockerrepoApi.searchContainers(pattern);
+
+            printContainerList(containers);
+        } catch (ApiException ex) {
+            out("Exception: " + ex);
+        }
     }
 
     private static void publish(List<String> args) {
-        out("PUBLISH COMMAND");
+        if (args.isEmpty()) {
+            list(args);
+        } else {
+            String first = args.get(0);
+            if (first.equals("-h") || first.equals("--help")) {
+                publishHelp();
+            } else {
+                System.out.println("publish..");
+            }
+        }
+    }
+
+    private static void publishHelp() {
+        out("");
+        out("HELP FOR DOCKSTORE");
+        out("------------------");
+        out("See http://dockstore.io for more information");
+        out("");
+        out("dockstore publish  :  lists the current and potential containers to share");
+        out("");
+        out("");
+        out("dockstore publish <contianer_id>  : registers that container for use by others in the dockstore");
     }
 
     private static void info(List<String> args) {
-        out("INFO COMMAND");
+        String path = args.get(0);
+        try {
+            ARegisteredContainerThatAUserHasSubmitted container = dockerrepoApi.getRegisteredContainer(path);
+            if (container == null) {
+                out("Container " + path + " not found!");
+            } else {
+                out("");
+                out("DESCRIPTION:");
+                out(container.getDescription());
+                out("AUTHOR:");
+                out(container.getNamespace());
+                out("DATE UPLOADED:");
+                out("");
+                out("TAGS");
+                out("");
+                out("GIT REPO:");
+                out(container.getGitUrl());
+                out("QUAY.IO REPO:");
+                out("http://quay.io/repository/" + container.getNamespace() + "/" + container.getName());
+                out(container.toString());
+            }
+        } catch (ApiException ex) {
+            out("Exception: " + ex);
+        }
     }
 
     private static void cwl(List<String> args) {
-        out("CWL COMMAND");
+        String path = args.get(0);
+
+        try {
+            String collab = dockerrepoApi.getCollabFile(path);
+            if (!collab.isEmpty()) {
+                out(collab);
+            } else {
+                out("No collab file found.");
+            }
+        } catch (ApiException ex) {
+            out("Exception: " + ex);
+        }
     }
 
     public static void main(String[] argv) throws ApiException {
