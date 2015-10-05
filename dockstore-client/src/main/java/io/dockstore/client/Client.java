@@ -20,7 +20,8 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;
 import io.swagger.client.api.DockerrepoApi;
-import io.swagger.client.model.ARegisteredContainerThatAUserHasSubmitted;
+import io.swagger.client.model.Container;
+//import io.swagger.client.model.Tag;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -67,11 +68,11 @@ public class Client {
         kill("dockstore: '%s %s' is not a dockstore command. See 'dockstore %s --help'.", cmd, sub, cmd);
     }
 
-    private static void printContainerList(List<ARegisteredContainerThatAUserHasSubmitted> containers) {
+    private static void printContainerList(List<Container> containers) {
         out("MATCHING CONTAINERS");
         out("-------------------");
         out("NAME                          DESCRIPTION                      GitHub Repo                  On Dockstore?      Collab.json    AUTOMATED");
-        for (ARegisteredContainerThatAUserHasSubmitted container : containers) {
+        for (Container container : containers) {
             String format = "%-30s%-30s%-29s";
             out(format, container.getName(), container.getDescription(), container.getGitUrl());
         }
@@ -79,7 +80,7 @@ public class Client {
 
     private static void list(List<String> args) {
         try {
-            List<ARegisteredContainerThatAUserHasSubmitted> containers = dockerrepoApi.getAllRegisteredContainers();
+            List<Container> containers = dockerrepoApi.getAllRegisteredContainers();
             printContainerList(containers);
         } catch (ApiException ex) {
             out("Exception: " + ex);
@@ -89,7 +90,7 @@ public class Client {
     private static void search(List<String> args) {
         String pattern = args.get(0);
         try {
-            List<ARegisteredContainerThatAUserHasSubmitted> containers = dockerrepoApi.searchContainers(pattern);
+            List<Container> containers = dockerrepoApi.searchContainers(pattern);
 
             printContainerList(containers);
         } catch (ApiException ex) {
@@ -125,25 +126,38 @@ public class Client {
     private static void info(List<String> args) {
         String path = args.get(0);
         try {
-            ARegisteredContainerThatAUserHasSubmitted container = dockerrepoApi.getRegisteredContainer(path);
-            if (container == null) {
-                out("Container " + path + " not found!");
-            } else {
-                out("");
-                out("DESCRIPTION:");
-                out(container.getDescription());
-                out("AUTHOR:");
-                out(container.getNamespace());
-                out("DATE UPLOADED:");
-                out("");
-                out("TAGS");
-                out("");
-                out("GIT REPO:");
-                out(container.getGitUrl());
-                out("QUAY.IO REPO:");
-                out("http://quay.io/repository/" + container.getNamespace() + "/" + container.getName());
-                out(container.toString());
-            }
+            out(dockerrepoApi.getRegisteredContainer(path).toString());
+            // out(dockerrepoApi.getRegisteredContainer(path).getTags().toString());
+            // Container container = dockerrepoApi.getRegisteredContainer(path);
+            // if (container == null) {
+            // out("Container " + path + " not found!");
+            // } else {
+            // out("");
+            // out("DESCRIPTION:");
+            // out(container.getDescription());
+            // out("AUTHOR:");
+            // out(container.getNamespace());
+            // out("DATE UPLOADED:");
+            // out("");
+            // out("TAGS");
+            //
+            // List<Tag> tags = container.getTags();
+            // int tagSize = tags.size();
+            // if (tagSize > 0) {
+            // out(tags.get(0).getVersion());
+            // for (int i = 1; i < tagSize; i++) {
+            // out(", " + tags.get(i).getVersion());
+            // }
+            // } else {
+            // out("");
+            // }
+            //
+            // out("GIT REPO:");
+            // out(container.getGitUrl());
+            // out("QUAY.IO REPO:");
+            // out("http://quay.io/repository/" + container.getNamespace() + "/" + container.getName());
+            // // out(container.toString());
+            // }
         } catch (ApiException ex) {
             out("Exception: " + ex);
         }

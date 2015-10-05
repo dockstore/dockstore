@@ -32,7 +32,7 @@ import javax.persistence.Table;
  *
  * @author dyuen
  */
-@ApiModel(value = "A particular token that a user has submitted via OAuth")
+@ApiModel(value = "Token")
 @Entity
 @Table(name = "token")
 @NamedQueries({ @NamedQuery(name = "io.dockstore.webservice.core.Token.findAll", query = "SELECT t FROM Token t"),

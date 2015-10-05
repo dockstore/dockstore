@@ -121,13 +121,14 @@ public class DockerRepoResource {
         for (Token token : tokens) {
             String tokenType = token.getTokenSource();
             if (tokenType.equals(TokenType.QUAY_IO.toString())) {
-                Optional<String> asString = ResourceUtilities.asString(TARGET_URL + "repository?last_modified=true&public=false",
-                        token.getContent(), client);
+                String url = TARGET_URL + "repository?last_modified=true&public=false";
+                Optional<String> asString = ResourceUtilities.asString(url, token.getContent(), client);
 
                 if (asString.isPresent()) {
                     RepoList repos;
                     try {
                         repos = objectMapper.readValue(asString.get(), RepoList.class);
+                        LOG.info("RESOURCE CALL: " + url);
                         List<Container> containers = repos.getRepositories();
                         // ownedContainers.addAll(containers);
 
@@ -168,13 +169,14 @@ public class DockerRepoResource {
 
         for (Token token : tokens) {
             if (token.getTokenSource().equals(TokenType.QUAY_IO.toString())) {
-                Optional<String> asString = ResourceUtilities.asString(TARGET_URL + "repository?last_modified=true&public=false",
-                        token.getContent(), client);
+                String url = TARGET_URL + "repository?last_modified=true&public=false";
+                Optional<String> asString = ResourceUtilities.asString(url, token.getContent(), client);
 
                 if (asString.isPresent()) {
                     RepoList repos;
                     try {
                         repos = objectMapper.readValue(asString.get(), RepoList.class);
+                        LOG.info("RESOURCE CALL: " + url);
                         allRepos.addAll(repos.getRepositories());
                     } catch (IOException ex) {
                         // Logger.getLogger(DockerRepoResource.class.getName()).log(Level.SEVERE, null, ex);
@@ -215,11 +217,12 @@ public class DockerRepoResource {
         for (Token token : findAll) {
             String tokenType = token.getTokenSource();
             if (tokenType.equals(TokenType.QUAY_IO.toString())) {
-                Optional<String> asString = ResourceUtilities.asString(TARGET_URL + "repository?last_modified=true&public=false",
-                        token.getContent(), client);
+                String url = TARGET_URL + "repository?last_modified=true&public=false";
+                Optional<String> asString = ResourceUtilities.asString(url, token.getContent(), client);
                 builder.append("Token: ").append(token.getId()).append("\n");
                 if (asString.isPresent()) {
                     builder.append(asString.get());
+                    LOG.info("RESOURCE CALL: " + url);
 
                     RepoList repos;
                     try {
@@ -236,6 +239,8 @@ public class DockerRepoResource {
                             List<Container> list = containerDAO.findByNameAndNamespaceAndRegistry(name, namespace, tokenType);
 
                             if (list.size() == 1) {
+                                Container container = list.get(0);
+                                container.getTags();
                                 containerList.add(list.get(0));
                             } else {
                                 c.setRegistry(tokenType);
@@ -253,7 +258,7 @@ public class DockerRepoResource {
             }
         }
         // return builder.toString();
-        LOG.info(builder.toString());
+        // LOG.info(builder.toString());
         return containerList;
     }
 
@@ -290,11 +295,12 @@ public class DockerRepoResource {
             String tokenType = token.getTokenSource();
             if (repoRegistry.equals(TokenType.QUAY_IO.toString()) && tokenType.equals(TokenType.QUAY_IO.toString())) {
                 // Get the list of containers that belong to the user.
-                Optional<String> asString = ResourceUtilities.asString(TARGET_URL + "repository?last_modified=true&public=false",
-                        token.getContent(), client);
+                String url = TARGET_URL + "repository?last_modified=true&public=false";
+                Optional<String> asString = ResourceUtilities.asString(url, token.getContent(), client);
 
                 if (asString.isPresent()) {
                     RepoList repos = objectMapper.readValue(asString.get(), RepoList.class);
+                    LOG.info("RESOURCE CALL: " + url);
                     List<Container> containers = repos.getRepositories();
                     for (Container c : containers) {
 
@@ -309,13 +315,14 @@ public class DockerRepoResource {
 
                                 // Get the list of builds from the container.
                                 // Builds contain information such as the Git URL and tags
-                                Optional<String> asStringBuilds = ResourceUtilities.asString(TARGET_URL + "repository/" + repo + "/build/",
-                                        token.getContent(), client);
+                                String urlBuilds = TARGET_URL + "repository/" + repo + "/build/";
+                                Optional<String> asStringBuilds = ResourceUtilities.asString(urlBuilds, token.getContent(), client);
                                 String gitURL = "";
                                 ArrayList<String> tags = null;
 
                                 if (asStringBuilds.isPresent()) {
                                     String json = asStringBuilds.get();
+                                    LOG.info("RESOURCE CALL: " + urlBuilds);
 
                                     // parse json using Gson to get the git url of repository and the list of tags
                                     Gson gson = new Gson();
@@ -350,11 +357,11 @@ public class DockerRepoResource {
                                     LOG.info("Creating tag: " + tag);
                                     Tag newTag = new Tag();
                                     newTag.setVersion(tag);
-                                    newTag.setContainer(container);
-                                    tagDAO.create(newTag);
+                                    // newTag.setContainer(container);
+                                    long tagId = tagDAO.create(newTag);
+                                    newTag = tagDAO.findById(tagId);
+                                    container.addTag(newTag);
                                 }
-
-                                container = containerDAO.findById(create);
 
                                 return container;
                             } else {
@@ -442,10 +449,12 @@ public class DockerRepoResource {
 
         for (Token token : tokens) {
             if (token.getTokenSource().equals(TokenType.QUAY_IO.toString())) {
-                Optional<String> asString = ResourceUtilities.asString(TARGET_URL + "repository/" + repo, token.getContent(), client);
+                String url = TARGET_URL + "repository/" + repo;
+                Optional<String> asString = ResourceUtilities.asString(url, token.getContent(), client);
 
                 if (asString.isPresent()) {
                     builder.append(asString.get());
+                    LOG.info("RESOURCE CALL: " + url);
                 }
                 builder.append("\n");
             }
@@ -466,11 +475,12 @@ public class DockerRepoResource {
 
         for (Token token : tokens) {
             if (token.getTokenSource().equals(TokenType.QUAY_IO.toString())) {
-                Optional<String> asString = ResourceUtilities.asString(TARGET_URL + "repository/" + repo + "/build/", token.getContent(),
-                        client);
+                String url = TARGET_URL + "repository/" + repo + "/build/";
+                Optional<String> asString = ResourceUtilities.asString(url, token.getContent(), client);
 
                 if (asString.isPresent()) {
                     String json = asString.get();
+                    LOG.info("RESOURCE CALL: " + url);
 
                     Gson gson = new Gson();
                     Map<String, ArrayList> map = new HashMap<>();
@@ -506,6 +516,18 @@ public class DockerRepoResource {
     @ApiOperation(value = "Search for matching registered containers", notes = "Search on the name (full path name) and description.", response = Container.class, responseContainer = "List")
     public List<Container> searchContainers(@QueryParam("pattern") String word) {
         return containerDAO.searchPattern(word);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/listTags")
+    @ApiOperation(value = "List the tags for a registered container", response = Tag.class, responseContainer = "List")
+    public List<Tag> listTags(@QueryParam("containerId") long containerId) {
+        Container repository = containerDAO.findById(containerId);
+        List<Tag> tags = new ArrayList<Tag>();
+        tags.addAll(repository.getTags());
+        return (List) tags;
     }
 
     @GET
@@ -569,7 +591,7 @@ public class DockerRepoResource {
         }
 
         String ret = builder.toString();
-        // LOG.info(ret);
+        LOG.info(ret);
         return ret;
     }
 }

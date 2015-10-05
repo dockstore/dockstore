@@ -16,10 +16,11 @@
  */
 package io.dockstore.webservice.core;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+//import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+//import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import io.swagger.annotations.ApiModel;
+import java.util.HashSet;
 import java.util.Set;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -27,6 +28,8 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
@@ -36,7 +39,7 @@ import javax.persistence.Table;
  *
  * @author xliu
  */
-@ApiModel(value = "A registered container that a user has submitted")
+@ApiModel(value = "Container")
 @Entity
 @Table(name = "container")
 @NamedQueries({
@@ -45,7 +48,7 @@ import javax.persistence.Table;
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findAll", query = "SELECT c FROM Container c"),
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findByPath", query = "SELECT c FROM Container c WHERE c.path = :path"),
         @NamedQuery(name = "io.dockstore.webservice.core.Container.searchPattern", query = "SELECT c FROM Container c WHERE (c.path LIKE :pattern) OR (c.registry LIKE :pattern) OR (c.description LIKE :pattern)") })
-@JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class, property = "@id")
+// @JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class, property = "@id")
 public class Container {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -74,16 +77,20 @@ public class Container {
     @Column
     private boolean isRegistered;
 
-    @OneToMany(fetch = FetchType.EAGER, mappedBy = "container")
+    @OneToMany(fetch = FetchType.EAGER)
+    // @JoinColumn(name = "containerid", nullable = false)
+    @JoinTable(name = "containertag", joinColumns = { @JoinColumn(name = "containerid", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "tagid", referencedColumnName = "id") })
     private Set<Tag> tags;
 
     public Container() {
+        this.tags = new HashSet<>(0);
     }
 
     public Container(long id, long userId, String name) {
         this.id = id;
         this.userId = userId;
         this.name = name;
+        this.tags = new HashSet<>(0);
     }
 
     public void update(Container container) {
@@ -168,8 +175,8 @@ public class Container {
         return tags;
     }
 
-    public void setTags(Set<Tag> tags) {
-        this.tags = tags;
+    public void addTag(Tag tag) {
+        tags.add(tag);
     }
 
     public void setGitUrl(String gitUrl) {

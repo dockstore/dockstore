@@ -10,13 +10,13 @@ import io.swagger.client.model.*;
 
 import java.util.*;
 
-import io.swagger.client.model.AParticularTokenThatAUserHasSubmittedViaOAuth;
+import io.swagger.client.model.Token;
 
 import java.io.File;
 import java.util.Map;
 import java.util.HashMap;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-05T11:00:25.557-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-05T12:31:03.778-04:00")
 public class TokenApi {
   private ApiClient apiClient;
 
@@ -40,9 +40,9 @@ public class TokenApi {
   /**
    * List all known tokens
    * List all tokens
-   * @return List<AParticularTokenThatAUserHasSubmittedViaOAuth>
+   * @return List<Token>
    */
-  public List<AParticularTokenThatAUserHasSubmittedViaOAuth> listTokens () throws ApiException {
+  public List<Token> listTokens () throws ApiException {
     Object postBody = null;
     
     // create path and map variables
@@ -72,7 +72,7 @@ public class TokenApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<List<AParticularTokenThatAUserHasSubmittedViaOAuth>>() {};
+    TypeRef returnType = new TypeRef<List<Token>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -82,9 +82,9 @@ public class TokenApi {
    * Temporary way to assign tokens to the endusers
    * @param tokenId 
    * @param userId 
-   * @return AParticularTokenThatAUserHasSubmittedViaOAuth
+   * @return Token
    */
-  public AParticularTokenThatAUserHasSubmittedViaOAuth assignUser (Long tokenId, Long userId) throws ApiException {
+  public Token assignUser (Long tokenId, Long userId) throws ApiException {
     Object postBody = null;
     
     // create path and map variables
@@ -118,7 +118,7 @@ public class TokenApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<AParticularTokenThatAUserHasSubmittedViaOAuth>() {};
+    TypeRef returnType = new TypeRef<Token>() {};
     return apiClient.invokeAPI(path, "PUT", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -127,9 +127,9 @@ public class TokenApi {
    * List all known tokens by source
    * List all tokens from a particular source
    * @param source source of tokens to return
-   * @return List<AParticularTokenThatAUserHasSubmittedViaOAuth>
+   * @return List<Token>
    */
-  public List<AParticularTokenThatAUserHasSubmittedViaOAuth> listTokensBySource (String source) throws ApiException {
+  public List<Token> listTokensBySource (String source) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'source' is set
@@ -165,7 +165,7 @@ public class TokenApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<List<AParticularTokenThatAUserHasSubmittedViaOAuth>>() {};
+    TypeRef returnType = new TypeRef<List<Token>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -174,9 +174,9 @@ public class TokenApi {
    * Add a new github.com token, used by quay.io redirect
    * This is used as part of the OAuth 2 web flow. Once a user has approved permissions for CollaboratoryTheir browser will load the redirect URI which should resolve here
    * @param code 
-   * @return AParticularTokenThatAUserHasSubmittedViaOAuth
+   * @return Token
    */
-  public AParticularTokenThatAUserHasSubmittedViaOAuth addGithubToken (String code) throws ApiException {
+  public Token addGithubToken (String code) throws ApiException {
     Object postBody = null;
     
     // create path and map variables
@@ -208,7 +208,7 @@ public class TokenApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<AParticularTokenThatAUserHasSubmittedViaOAuth>() {};
+    TypeRef returnType = new TypeRef<Token>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -216,9 +216,9 @@ public class TokenApi {
   /**
    * List all tokens owned by the logged-in user
    * List the tokens owned by the logged in user
-   * @return List<AParticularTokenThatAUserHasSubmittedViaOAuth>
+   * @return List<Token>
    */
-  public List<AParticularTokenThatAUserHasSubmittedViaOAuth> listOwnedTokens () throws ApiException {
+  public List<Token> listOwnedTokens () throws ApiException {
     Object postBody = null;
     
     // create path and map variables
@@ -248,7 +248,7 @@ public class TokenApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<List<AParticularTokenThatAUserHasSubmittedViaOAuth>>() {};
+    TypeRef returnType = new TypeRef<List<Token>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -257,9 +257,9 @@ public class TokenApi {
    * Add a new quay IO token
    * This is used as part of the OAuth 2 web flow. Once a user has approved permissions for CollaboratoryTheir browser will load the redirect URI which should resolve here
    * @param accessToken 
-   * @return AParticularTokenThatAUserHasSubmittedViaOAuth
+   * @return Token
    */
-  public AParticularTokenThatAUserHasSubmittedViaOAuth addQuayToken (String accessToken) throws ApiException {
+  public Token addQuayToken (String accessToken) throws ApiException {
     Object postBody = null;
     
     // create path and map variables
@@ -291,7 +291,7 @@ public class TokenApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<AParticularTokenThatAUserHasSubmittedViaOAuth>() {};
+    TypeRef returnType = new TypeRef<Token>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -300,9 +300,9 @@ public class TokenApi {
    * Get a specific token by id
    * Get a specific token by id
    * @param tokenId ID of token to return
-   * @return AParticularTokenThatAUserHasSubmittedViaOAuth
+   * @return Token
    */
-  public AParticularTokenThatAUserHasSubmittedViaOAuth listToken (Long tokenId) throws ApiException {
+  public Token listToken (Long tokenId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'tokenId' is set
@@ -338,7 +338,7 @@ public class TokenApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<AParticularTokenThatAUserHasSubmittedViaOAuth>() {};
+    TypeRef returnType = new TypeRef<Token>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -348,9 +348,9 @@ public class TokenApi {
    * 
    * @param tokenId Token id to delete
    * @param apiKey 
-   * @return AParticularTokenThatAUserHasSubmittedViaOAuth
+   * @return Token
    */
-  public AParticularTokenThatAUserHasSubmittedViaOAuth deleteToken (Long tokenId, String apiKey) throws ApiException {
+  public Token deleteToken (Long tokenId, String apiKey) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'tokenId' is set
@@ -388,7 +388,7 @@ public class TokenApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<AParticularTokenThatAUserHasSubmittedViaOAuth>() {};
+    TypeRef returnType = new TypeRef<Token>() {};
     return apiClient.invokeAPI(path, "DELETE", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
