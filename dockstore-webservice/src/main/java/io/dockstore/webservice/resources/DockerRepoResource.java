@@ -57,6 +57,7 @@ import org.eclipse.egit.github.core.RepositoryContents;
 import org.eclipse.egit.github.core.User;
 import org.eclipse.egit.github.core.client.GitHubClient;
 import org.eclipse.egit.github.core.service.ContentsService;
+import org.eclipse.egit.github.core.service.OrganizationService;
 import org.eclipse.egit.github.core.service.RepositoryService;
 import org.eclipse.egit.github.core.service.UserService;
 
@@ -86,6 +87,8 @@ public class DockerRepoResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(DockerRepoResource.class);
 
+    private final List<String> namespaces = new ArrayList<>();
+
     private static class RepoList {
 
         private List<Container> repositories;
@@ -108,6 +111,9 @@ public class DockerRepoResource {
         this.client = client;
 
         this.containerDAO = containerDAO;
+
+        namespaces.add("victoroicr");
+        namespaces.add("xliuoicr");
     }
 
     @GET
@@ -217,44 +223,48 @@ public class DockerRepoResource {
         for (Token token : findAll) {
             String tokenType = token.getTokenSource();
             if (tokenType.equals(TokenType.QUAY_IO.toString())) {
-                String url = TARGET_URL + "repository?last_modified=true&public=false";
-                Optional<String> asString = ResourceUtilities.asString(url, token.getContent(), client);
-                builder.append("Token: ").append(token.getId()).append("\n");
-                if (asString.isPresent()) {
-                    builder.append(asString.get());
-                    LOG.info("RESOURCE CALL: " + url);
 
-                    RepoList repos;
-                    try {
-                        // Deserialize JSON to a RepoList object and get the list of containers
-                        repos = objectMapper.readValue(asString.get(), RepoList.class);
-                        List<Container> containers = repos.getRepositories();
+                for (String namespace : namespaces) {
 
-                        // see if the container is registered,
-                        // if registered, replace the container in the list with the registered one
-                        // else use the deserialized container from the http request
-                        for (Container c : containers) {
-                            String name = c.getName();
-                            String namespace = c.getNamespace();
-                            List<Container> list = containerDAO.findByNameAndNamespaceAndRegistry(name, namespace, tokenType);
+                    String url = TARGET_URL + "repository?namespace=" + namespace;
+                    Optional<String> asString = ResourceUtilities.asString(url, token.getContent(), client);
+                    builder.append("Token: ").append(token.getId()).append("\n");
+                    if (asString.isPresent()) {
+                        builder.append(asString.get());
+                        LOG.info("RESOURCE CALL: " + url);
 
-                            if (list.size() == 1) {
-                                Container container = list.get(0);
-                                container.getTags();
-                                containerList.add(list.get(0));
-                            } else {
-                                c.setRegistry(tokenType);
-                                containerList.add(c);
+                        RepoList repos;
+                        try {
+                            // Deserialize JSON to a RepoList object and get the list of containers
+                            repos = objectMapper.readValue(asString.get(), RepoList.class);
+                            List<Container> containers = repos.getRepositories();
+
+                            // see if the container is registered,
+                            // if registered, replace the container in the list with the registered one
+                            // else use the deserialized container from the http request
+                            for (Container c : containers) {
+                                String name = c.getName();
+                                // String namespace = c.getNamespace();
+                                List<Container> list = containerDAO.findByNameAndNamespaceAndRegistry(name, namespace, tokenType);
+
+                                if (list.size() == 1) {
+                                    Container container = list.get(0);
+                                    container.getTags();
+                                    containerList.add(list.get(0));
+                                } else {
+                                    c.setRegistry(tokenType);
+                                    containerList.add(c);
+                                }
+
                             }
-
+                        } catch (IOException ex) {
+                            // Logger.getLogger(DockerRepoResource.class.getName()).log(Level.SEVERE, null, ex);
+                            LOG.info("Exception: " + ex);
                         }
-                    } catch (IOException ex) {
-                        // Logger.getLogger(DockerRepoResource.class.getName()).log(Level.SEVERE, null, ex);
-                        LOG.info("Exception: " + ex);
-                    }
 
+                    }
+                    builder.append("\n");
                 }
-                builder.append("\n");
             }
         }
         // return builder.toString();
@@ -295,7 +305,7 @@ public class DockerRepoResource {
             String tokenType = token.getTokenSource();
             if (repoRegistry.equals(TokenType.QUAY_IO.toString()) && tokenType.equals(TokenType.QUAY_IO.toString())) {
                 // Get the list of containers that belong to the user.
-                String url = TARGET_URL + "repository?last_modified=true&public=false";
+                String url = TARGET_URL + "repository?namespace=" + repoNamespace;
                 Optional<String> asString = ResourceUtilities.asString(url, token.getContent(), client);
 
                 if (asString.isPresent()) {
@@ -383,7 +393,7 @@ public class DockerRepoResource {
     @DELETE
     @UnitOfWork
     @Path("/unregisterContainer/{containerId}")
-    @ApiOperation(value = "Deletes a container")
+    @ApiOperation(value = "Deletes a container", hidden = true)
     public Container unregisterContainer(
             @ApiParam(value = "Container id to delete", required = true) @PathParam("containerId") Long containerId) {
         throw new UnsupportedOperationException();
@@ -423,7 +433,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/shareWithUser")
-    @ApiOperation(value = "User shares a container with a chosen user", notes = "Needs to be fleshed out.")
+    @ApiOperation(value = "User shares a container with a chosen user", notes = "Needs to be fleshed out.", hidden = true)
     public void shareWithUser(@QueryParam("container_id") Long containerId, @QueryParam("user_id") Long userId) {
         throw new UnsupportedOperationException();
     }
@@ -432,7 +442,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/shareWithGroup")
-    @ApiOperation(value = "User shares a container with a chosen group", notes = "Needs to be fleshed out.")
+    @ApiOperation(value = "User shares a container with a chosen group", notes = "Needs to be fleshed out.", hidden = true)
     public void shareWithGroup(@QueryParam("container_id") Long containerId, @QueryParam("group_id") Long groupId) {
         throw new UnsupportedOperationException();
     }
@@ -441,7 +451,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/getRepo/{userId}/{repository}")
-    @ApiOperation(value = "Fetch repo from quay.io", response = String.class)
+    @ApiOperation(value = "Fetch repo from quay.io", response = String.class, hidden = true)
     public String getRepo(@ApiParam(value = "The full path of the repository. e.g. namespace/name") @PathParam("repository") String repo,
             @ApiParam(value = "user id") @PathParam("userId") long userId) {
         List<Token> tokens = tokenDAO.findByUserId(userId);
@@ -467,7 +477,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/getBuilds")
-    @ApiOperation(value = "Get the list of repository builds.", notes = "For TESTING purposes. Also useful for getting more information about the repository.\n Enter full path without quay.io", response = String.class)
+    @ApiOperation(value = "Get the list of repository builds.", notes = "For TESTING purposes. Also useful for getting more information about the repository.\n Enter full path without quay.io", response = String.class, hidden = true)
     public String getBuilds(@QueryParam("repository") String repo, @QueryParam("userId") long userId) {
 
         List<Token> tokens = tokenDAO.findByUserId(userId);
@@ -522,7 +532,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/listTags")
-    @ApiOperation(value = "List the tags for a registered container", response = Tag.class, responseContainer = "List")
+    @ApiOperation(value = "List the tags for a registered container", response = Tag.class, responseContainer = "List", hidden = true)
     public List<Tag> listTags(@QueryParam("containerId") long containerId) {
         Container repository = containerDAO.findById(containerId);
         List<Tag> tags = new ArrayList<Tag>();
@@ -550,6 +560,7 @@ public class DockerRepoResource {
                     githubClient.setOAuth2Token(token.getContent());
                     try {
                         UserService uService = new UserService(githubClient);
+                        OrganizationService oService = new OrganizationService(githubClient);
                         RepositoryService service = new RepositoryService(githubClient);
                         ContentsService cService = new ContentsService(githubClient);
                         User user = uService.getUser();
@@ -558,7 +569,7 @@ public class DockerRepoResource {
                         for (Repository repo : service.getRepositories(user.getLogin())) {
                             // LOG.info(repo.getGitUrl());
                             // LOG.info(repo.getHtmlUrl());
-                            // LOG.info(repo.getSshUrl());
+                            LOG.info(repo.getSshUrl());
                             // LOG.info(repo.getUrl());
                             // LOG.info(container.getGitUrl());
                             if (repo.getSshUrl().equals(container.getGitUrl())) {
@@ -577,6 +588,29 @@ public class DockerRepoResource {
                                 }
                             }
                         }
+
+                        List<User> organizations = oService.getOrganizations();
+                        for (User org : organizations) {
+                            for (Repository repo : service.getRepositories(org.getLogin())) {
+                                LOG.info(repo.getSshUrl());
+                                if (repo.getSshUrl().equals(container.getGitUrl())) {
+                                    try {
+                                        List<RepositoryContents> contents = cService.getContents(repo, "collab.json");
+                                        // odd, throws exceptions if file does not exist
+                                        if (!(contents == null || contents.isEmpty())) {
+                                            // builder.append("\tRepo: ").append(repo.getName()).append(" has a collab.json \n");
+                                            String encoded = contents.get(0).getContent().replace("\n", "");
+                                            byte[] decode = Base64.getDecoder().decode(encoded);
+                                            String content = new String(decode, StandardCharsets.UTF_8);
+                                            builder.append(content);
+                                        }
+                                    } catch (IOException ex) {
+                                        builder.append("Repo: ").append(repo.getName()).append(" has no collab.json \n");
+                                    }
+                                }
+                            }
+                        }
+
                     } catch (IOException ex) {
                         builder.append("Token ignored due to IOException: ").append(token.getId()).append("\n");
                     }
@@ -593,5 +627,52 @@ public class DockerRepoResource {
         String ret = builder.toString();
         LOG.info(ret);
         return ret;
+    }
+
+    private static class QuayUser {
+        private String username;
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
+        public String getUsername() {
+            return this.username;
+        }
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/getQuayUser")
+    @ApiOperation(value = "Get quay user", notes = "testing", response = QuayUser.class)
+    // , hidden = true)
+    public QuayUser getQuayUser(@QueryParam("tokenId") long tokenId) {
+        Token token = tokenDAO.findById(tokenId);
+
+        String url = TARGET_URL + "user/";
+        Optional<String> asString = ResourceUtilities.asString(url, token.getContent(), client);
+        System.out.println("URL: " + url);
+        if (asString.isPresent()) {
+            System.out.println("INSIDE IF");
+            try {
+                System.out.println("GETTING RESPONSE....");
+                String response = asString.get();
+
+                Gson gson = new Gson();
+                Map<String, String> map = new HashMap<>();
+                map = (Map<String, String>) gson.fromJson(response, map.getClass());
+
+                String username = map.get("username");
+                System.out.println(username);
+
+                QuayUser quayUser = objectMapper.readValue(response, QuayUser.class);
+                System.out.println(quayUser.getUsername());
+                return quayUser;
+            } catch (IOException ex) {
+                System.out.println("EXCEPTION: " + ex);
+            }
+        }
+        return null;
     }
 }

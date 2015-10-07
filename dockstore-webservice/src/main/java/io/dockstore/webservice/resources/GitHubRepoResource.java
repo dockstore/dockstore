@@ -38,6 +38,7 @@ import org.eclipse.egit.github.core.RepositoryContents;
 import org.eclipse.egit.github.core.User;
 import org.eclipse.egit.github.core.client.GitHubClient;
 import org.eclipse.egit.github.core.service.ContentsService;
+import org.eclipse.egit.github.core.service.OrganizationService;
 import org.eclipse.egit.github.core.service.RepositoryService;
 import org.eclipse.egit.github.core.service.UserService;
 import org.slf4j.Logger;
@@ -98,9 +99,11 @@ public class GitHubRepoResource {
                 githubClient.setOAuth2Token(token.getContent());
                 try {
                     UserService uService = new UserService(githubClient);
+                    OrganizationService oService = new OrganizationService(githubClient);
                     RepositoryService service = new RepositoryService(githubClient);
                     ContentsService cService = new ContentsService(githubClient);
                     User user = uService.getUser();
+
                     builder.append("Token: ").append(token.getId()).append(" is ").append(user.getName()).append(" login is ")
                             .append(user.getLogin()).append("\n");
                     for (Repository repo : service.getRepositories(user.getLogin())) {
@@ -117,6 +120,26 @@ public class GitHubRepoResource {
                             builder.append("\tRepo: ").append(repo.getName()).append(" has no collab.json \n");
                         }
                     }
+
+                    List<User> organizations = oService.getOrganizations();
+                    for (User org : organizations) {
+                        builder.append("Organization: ").append(org.getLogin());
+                        for (Repository repo : service.getRepositories(org.getLogin())) {
+                            try {
+                                List<RepositoryContents> contents = cService.getContents(repo, "collab.json");
+                                // odd, throws exceptions if file does not exist
+                                if (!(contents == null || contents.isEmpty())) {
+                                    builder.append("\tRepo: ").append(repo.getName()).append(" has a collab.json \n");
+                                    String encoded = contents.get(0).getContent().replace("\n", "");
+                                    byte[] decode = Base64.getDecoder().decode(encoded);
+                                    builder.append(new String(decode, StandardCharsets.UTF_8));
+                                }
+                            } catch (IOException ex) {
+                                builder.append("\tRepo: ").append(repo.getName()).append(" has no collab.json \n");
+                            }
+                        }
+                    }
+
                     builder.append("\n");
                 } catch (IOException ex) {
                     LOG.warn("IOException", ex);

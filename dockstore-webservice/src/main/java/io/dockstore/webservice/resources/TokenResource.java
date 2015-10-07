@@ -20,6 +20,7 @@ import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
+import com.google.gson.Gson;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
@@ -34,6 +35,7 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import io.swagger.annotations.AuthorizationScope;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.ws.rs.DELETE;
@@ -62,8 +64,9 @@ import org.eclipse.egit.github.core.service.UserService;
 @Produces(MediaType.APPLICATION_JSON)
 public class TokenResource {
     private final TokenDAO tokenDAO;
-    private final UserDAO enduserDAO;
+    private final UserDAO userDAO;
     private static final String TARGET_URL = "https://github.com/";
+    private static final String QUAY_URL = "https://quay.io/api/v1/";
     private final String githubClientID;
     private final String githubClientSecret;
     private final HttpClient client;
@@ -73,7 +76,7 @@ public class TokenResource {
             HttpClient client) {
         this.objectMapper = mapper;
         this.tokenDAO = tokenDAO;
-        this.enduserDAO = enduserDAO;
+        this.userDAO = enduserDAO;
         this.githubClientID = githubClientID;
         this.githubClientSecret = githubClientSecret;
         this.client = client;
@@ -138,19 +141,33 @@ public class TokenResource {
             + "Once a user has approved permissions for Collaboratory"
             + "Their browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addQuayToken(@QueryParam("access_token") String accessToken) {
-        // Optional<String> asString = ResourceUtilities.asString(TARGET_URL + "user", accessToken, client);
-        // if (asString.isPresent()) {
-        // try {
-        // System.out.println(asString.get());
-        // QuayUser quayUser = objectMapper.readValue(asString.get(), QuayUser.class);
-        // System.out.println(quayUser.getUsername());
-        // } catch (IOException ex) {
-        // System.out.println(ex);
-        // }
-        // }
+        String url = QUAY_URL + "user/";
+        Optional<String> asString = ResourceUtilities.asString(url, accessToken, client);
+        System.out.println("URL: " + url);
+        String username = null;
+        User user = null;
+        if (asString.isPresent()) {
+            System.out.println("INSIDE IF");
+
+            String response = asString.get();
+            Gson gson = new Gson();
+            Map<String, String> map = new HashMap<>();
+            map = (Map<String, String>) gson.fromJson(response, map.getClass());
+
+            username = map.get("username");
+            System.out.println(username);
+
+            user = userDAO.findByUsername(username);
+        }
+
         Token token = new Token();
         token.setTokenSource(TokenType.QUAY_IO.toString());
         token.setContent(accessToken);
+
+        if (user != null) {
+            token.setUserId(user.getId());
+        }
+
         long create = tokenDAO.create(token);
         return tokenDAO.findById(create);
     }
@@ -191,11 +208,11 @@ public class TokenResource {
 
             String githubLogin = githubUser.getLogin();
 
-            User user = enduserDAO.findByUsername(githubLogin);
+            User user = userDAO.findByUsername(githubLogin);
             if (user == null) {
                 user = new User();
                 user.setUsername(githubLogin);
-                userID = enduserDAO.create(user);
+                userID = userDAO.create(user);
             } else {
                 userID = user.getId();
             }
