@@ -106,6 +106,15 @@ public class UserResource {
         return userDAO.findByUsername(username);
     }
 
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/getUser")
+    @ApiOperation(value = "Get user with id", response = User.class)
+    public User getUser(@QueryParam("user_id") Long userId) {
+        return userDAO.findById(userId);
+    }
+
     @POST
     @Timed
     @UnitOfWork

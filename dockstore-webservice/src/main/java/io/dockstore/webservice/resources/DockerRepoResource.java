@@ -114,6 +114,8 @@ public class DockerRepoResource {
 
         namespaces.add("victoroicr");
         namespaces.add("xliuoicr");
+        namespaces.add("oicr_vchung");
+        namespaces.add("oicr_vchung_org");
     }
 
     @GET
@@ -566,10 +568,12 @@ public class DockerRepoResource {
                         User user = uService.getUser();
                         // builder.append("Token: ").append(token.getId()).append(" is ").append(user.getName()).append(" login is ")
                         // .append(user.getLogin()).append("\n");
+
+                        // look through user's own repositories
                         for (Repository repo : service.getRepositories(user.getLogin())) {
                             // LOG.info(repo.getGitUrl());
                             // LOG.info(repo.getHtmlUrl());
-                            LOG.info(repo.getSshUrl());
+                            LOG.info(repo.getSshUrl()); // ssh url example: git@github.com:userspace/name.git
                             // LOG.info(repo.getUrl());
                             // LOG.info(container.getGitUrl());
                             if (repo.getSshUrl().equals(container.getGitUrl())) {
@@ -589,6 +593,7 @@ public class DockerRepoResource {
                             }
                         }
 
+                        // looks through all repos from different organizations user is in
                         List<User> organizations = oService.getOrganizations();
                         for (User org : organizations) {
                             for (Repository repo : service.getRepositories(org.getLogin())) {
