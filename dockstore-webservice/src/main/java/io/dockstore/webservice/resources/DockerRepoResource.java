@@ -68,8 +68,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author dyuen
  */
-@Path("/docker.repo")
-@Api(value = "/docker.repo")
+@Path("/container")
+@Api(value = "/container")
 @Produces(MediaType.APPLICATION_JSON)
 public class DockerRepoResource {
 
@@ -119,44 +119,45 @@ public class DockerRepoResource {
     }
 
     @GET
-    @Path("/listOwned")
+    @Path("/{userId}")
     @Timed
     @UnitOfWork
     @ApiOperation(value = "List repos owned by the logged-in user", notes = "Lists all registered and unregistered containers owned by the user", response = Container.class, responseContainer = "List")
-    public List<Container> listOwned(@QueryParam("enduser_id") Long userId) {
+    public List<Container> userContainers(@ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         List<Token> tokens = tokenDAO.findByUserId(userId);
         List<Container> ownedContainers = new ArrayList<>(0);
         for (Token token : tokens) {
             String tokenType = token.getTokenSource();
             if (tokenType.equals(TokenType.QUAY_IO.toString())) {
-                String url = TARGET_URL + "repository?last_modified=true&public=false";
-                Optional<String> asString = ResourceUtilities.asString(url, token.getContent(), client);
+                for (String namespace : namespaces) {
+                    String url = TARGET_URL + "repository?namespace=" + namespace;
+                    Optional<String> asString = ResourceUtilities.asString(url, token.getContent(), client);
 
-                if (asString.isPresent()) {
-                    RepoList repos;
-                    try {
-                        repos = objectMapper.readValue(asString.get(), RepoList.class);
-                        LOG.info("RESOURCE CALL: " + url);
-                        List<Container> containers = repos.getRepositories();
-                        // ownedContainers.addAll(containers);
+                    if (asString.isPresent()) {
+                        RepoList repos;
+                        try {
+                            repos = objectMapper.readValue(asString.get(), RepoList.class);
+                            LOG.info("RESOURCE CALL: " + url);
+                            List<Container> containers = repos.getRepositories();
+                            // ownedContainers.addAll(containers);
 
-                        for (Container c : containers) {
-                            String name = c.getName();
-                            String namespace = c.getNamespace();
-                            List<Container> list = containerDAO.findByNameAndNamespaceAndRegistry(name, namespace, tokenType);
+                            for (Container c : containers) {
+                                String name = c.getName();
+                                List<Container> list = containerDAO.findByNameAndNamespaceAndRegistry(name, namespace, tokenType);
 
-                            if (list.size() == 1) {
-                                ownedContainers.add(list.get(0));
-                            } else {
-                                c.setRegistry(tokenType);
-                                ownedContainers.add(c);
+                                if (list.size() == 1) {
+                                    ownedContainers.add(list.get(0));
+                                } else {
+                                    c.setRegistry(tokenType);
+                                    ownedContainers.add(c);
+                                }
+
                             }
 
+                        } catch (IOException ex) {
+                            // Logger.getLogger(DockerRepoResource.class.getName()).log(Level.SEVERE, null, ex);
+                            LOG.info("Exception: " + ex);
                         }
-
-                    } catch (IOException ex) {
-                        // Logger.getLogger(DockerRepoResource.class.getName()).log(Level.SEVERE, null, ex);
-                        LOG.info("Exception: " + ex);
                     }
                 }
             }
@@ -166,29 +167,31 @@ public class DockerRepoResource {
     }
 
     @PUT
-    @Path("/refreshRepos")
+    @Path("/refresh")
     @Timed
     @UnitOfWork
     @ApiOperation(value = "Refresh repos owned by the logged-in user", notes = "Updates some metadata", response = Container.class, responseContainer = "List")
-    public List<Container> refreshRepos(@QueryParam("user_id") Long userId) {
+    public List<Container> refresh(@QueryParam("user_id") Long userId) {
         List<Container> currentRepos = containerDAO.findByUserId(userId);
         List<Container> allRepos = new ArrayList<>(0);
         List<Token> tokens = tokenDAO.findByUserId(userId);
 
         for (Token token : tokens) {
             if (token.getTokenSource().equals(TokenType.QUAY_IO.toString())) {
-                String url = TARGET_URL + "repository?last_modified=true&public=false";
-                Optional<String> asString = ResourceUtilities.asString(url, token.getContent(), client);
+                for (String namespace : namespaces) {
+                    String url = TARGET_URL + "repository?namespace=" + namespace;
+                    Optional<String> asString = ResourceUtilities.asString(url, token.getContent(), client);
 
-                if (asString.isPresent()) {
-                    RepoList repos;
-                    try {
-                        repos = objectMapper.readValue(asString.get(), RepoList.class);
-                        LOG.info("RESOURCE CALL: " + url);
-                        allRepos.addAll(repos.getRepositories());
-                    } catch (IOException ex) {
-                        // Logger.getLogger(DockerRepoResource.class.getName()).log(Level.SEVERE, null, ex);
-                        LOG.info("Exception: " + ex);
+                    if (asString.isPresent()) {
+                        RepoList repos;
+                        try {
+                            repos = objectMapper.readValue(asString.get(), RepoList.class);
+                            LOG.info("RESOURCE CALL: " + url);
+                            allRepos.addAll(repos.getRepositories());
+                        } catch (IOException ex) {
+                            // Logger.getLogger(DockerRepoResource.class.getName()).log(Level.SEVERE, null, ex);
+                            LOG.info("Exception: " + ex);
+                        }
                     }
                 }
             }
@@ -216,7 +219,7 @@ public class DockerRepoResource {
             + "Right now, tokens are used to synchronously talk to the quay.io API to list repos. "
             + "Ultimately, we should cache this information and refresh either by user request or by time "
             + "TODO: This should be a properly defined list of objects, it also needs admin authentication", response = Container.class, responseContainer = "List")
-    public List<Container> getRepos() {
+    public List<Container> allContainers() {
         // public String getRepos() {
         List<Token> findAll = tokenDAO.findAll();
         StringBuilder builder = new StringBuilder();
@@ -277,9 +280,9 @@ public class DockerRepoResource {
     @POST
     @Timed
     @UnitOfWork
-    @Path("/registerContainer")
+    @Path("/register")
     @ApiOperation(value = "Register a container", notes = "Register a container (public or private). Assumes that user is using quay.io and github. Include quay.io in path if using quay.io", response = Container.class)
-    public Container registerContainer(@QueryParam("repository") String path, @QueryParam("enduser_id") Long userId) throws IOException {
+    public Container register(@QueryParam("repository") String path, @QueryParam("enduser_id") Long userId) throws IOException {
         String[] pathItems = path.split("/");
 
         String repoRegistry;
@@ -394,19 +397,18 @@ public class DockerRepoResource {
 
     @DELETE
     @UnitOfWork
-    @Path("/unregisterContainer/{containerId}")
+    @Path("/unregister/{containerId}")
     @ApiOperation(value = "Deletes a container", hidden = true)
-    public Container unregisterContainer(
-            @ApiParam(value = "Container id to delete", required = true) @PathParam("containerId") Long containerId) {
+    public Container unregister(@ApiParam(value = "Container id to delete", required = true) @PathParam("containerId") Long containerId) {
         throw new UnsupportedOperationException();
     }
 
     @GET
     @Timed
     @UnitOfWork
-    @Path("/getUserRegisteredContainers")
+    @Path("/allRegistered/{userId}")
     @ApiOperation(value = "List all registered containers from a user", notes = "Get user's registered containers only", response = Container.class, responseContainer = "List")
-    public List<Container> getUserRegisteredContainers(@QueryParam("user_id") Long userId) {
+    public List<Container> userRegisteredContainers(@ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         List<Container> repositories = containerDAO.findByUserId(userId);
         return repositories;
     }
@@ -414,9 +416,9 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("getAllRegisteredContainers")
+    @Path("allRegistered")
     @ApiOperation(value = "List all registered containers", notes = "", response = Container.class, responseContainer = "List")
-    public List<Container> getAllRegisteredContainers() {
+    public List<Container> allRegisteredContainers() {
         List<Container> repositories = containerDAO.findAll();
         return repositories;
     }
@@ -424,7 +426,7 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("getRegisteredContainer")
+    @Path("registered")
     @ApiOperation(value = "Get a registered container", notes = "Lists info of container. Enter full path (include quay.io in path)", response = Container.class)
     public Container getRegisteredContainer(@QueryParam("repository") String repo) {
         Container repository = containerDAO.findByPath(repo);
@@ -478,9 +480,9 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/getBuilds")
+    @Path("/builds")
     @ApiOperation(value = "Get the list of repository builds.", notes = "For TESTING purposes. Also useful for getting more information about the repository.\n Enter full path without quay.io", response = String.class, hidden = true)
-    public String getBuilds(@QueryParam("repository") String repo, @QueryParam("userId") long userId) {
+    public String builds(@QueryParam("repository") String repo, @QueryParam("userId") long userId) {
 
         List<Token> tokens = tokenDAO.findByUserId(userId);
         StringBuilder builder = new StringBuilder();
@@ -524,18 +526,18 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/searchContainers")
+    @Path("/search")
     @ApiOperation(value = "Search for matching registered containers", notes = "Search on the name (full path name) and description.", response = Container.class, responseContainer = "List")
-    public List<Container> searchContainers(@QueryParam("pattern") String word) {
+    public List<Container> search(@QueryParam("pattern") String word) {
         return containerDAO.searchPattern(word);
     }
 
     @GET
     @Timed
     @UnitOfWork
-    @Path("/listTags")
+    @Path("/tags")
     @ApiOperation(value = "List the tags for a registered container", response = Tag.class, responseContainer = "List", hidden = true)
-    public List<Tag> listTags(@QueryParam("containerId") long containerId) {
+    public List<Tag> tags(@QueryParam("containerId") long containerId) {
         Container repository = containerDAO.findById(containerId);
         List<Tag> tags = new ArrayList<Tag>();
         tags.addAll(repository.getTags());
@@ -545,9 +547,9 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/getCollabFile")
+    @Path("/collab")
     @ApiOperation(value = "Get the corresponding collab.json and/or cwl file on Github", notes = "Enter full path of container (add quay.io if using quay.io)", response = String.class)
-    public String getCollabFile(@QueryParam("repository") String repository) {
+    public String collab(@QueryParam("repository") String repository) {
         Container container = containerDAO.findByPath(repository);
         boolean hasGithub = false;
 
@@ -650,7 +652,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/getQuayUser")
-    @ApiOperation(value = "Get quay user", notes = "testing", response = QuayUser.class)
+    @ApiOperation(value = "Get quay user", notes = "testing", response = QuayUser.class, hidden = true)
     // , hidden = true)
     public QuayUser getQuayUser(@QueryParam("tokenId") long tokenId) {
         Token token = tokenDAO.findById(tokenId);

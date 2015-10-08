@@ -163,6 +163,9 @@ public class Container {
 
     @JsonProperty
     public String getGitUrl() {
+        if (gitUrl == null) {
+            return "";
+        }
         return gitUrl;
     }
 
