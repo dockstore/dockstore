@@ -45,6 +45,8 @@ import javax.persistence.Table;
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findByNameAndNamespaceAndRegistry", query = "SELECT c FROM Container c WHERE c.name = :name AND c.namespace = :namespace AND c.registry = :registry"),
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findByUserId", query = "SELECT c FROM Container c WHERE c.userId = :userId"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Container.findRegisteredByUserId", query = "SELECT c FROM Container c WHERE c.userId = :userId AND c.isRegistered = true"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Container.findAllRegistered", query = "SELECT c FROM Container c WHERE c.isRegistered = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findAll", query = "SELECT c FROM Container c"),
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findByPath", query = "SELECT c FROM Container c WHERE c.path = :path"),
         @NamedQuery(name = "io.dockstore.webservice.core.Container.searchPattern", query = "SELECT c FROM Container c WHERE (c.path LIKE :pattern) OR (c.registry LIKE :pattern) OR (c.description LIKE :pattern)") })
@@ -73,12 +75,15 @@ public class Container {
     @Column
     private Integer lastModified;
     @Column
+    private long lastUpdated;
+    @Column
     private String gitUrl;
     @Column
     private boolean isRegistered;
+    @Column
+    private boolean hasCollab;
 
-    @OneToMany(fetch = FetchType.EAGER)
-    // @JoinColumn(name = "containerid", nullable = false)
+    @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinTable(name = "containertag", joinColumns = { @JoinColumn(name = "containerid", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "tagid", referencedColumnName = "id") })
     private Set<Tag> tags;
 
@@ -93,11 +98,13 @@ public class Container {
         this.tags = new HashSet<>(0);
     }
 
-    public void update(Container container) {
+    public void update(Container container, long lastUpdated) {
         this.description = container.getDescription();
         this.isPublic = container.getIsPublic();
         this.isStarred = container.getIsStarred();
         this.lastModified = container.getLastModified();
+        this.lastUpdated = lastUpdated;
+
     }
 
     @JsonProperty
@@ -172,6 +179,16 @@ public class Container {
     @JsonProperty("is_registered")
     public boolean getIsRegistered() {
         return isRegistered;
+    }
+
+    @JsonProperty
+    public long getLastUpdated() {
+        return lastUpdated;
+    }
+
+    @JsonProperty
+    public boolean getHasCollab() {
+        return hasCollab;
     }
 
     public Set<Tag> getTags() {
@@ -256,6 +273,14 @@ public class Container {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public void setLastUpdated(long lastUpdated) {
+        this.lastUpdated = lastUpdated;
+    }
+
+    public void setHasCollab(boolean hasCollab) {
+        this.hasCollab = hasCollab;
     }
 
     /**

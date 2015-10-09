@@ -236,7 +236,18 @@ public class TokenResource {
     @ApiOperation(value = "Assign the token to a enduser", notes = "Temporary way to assign tokens to the endusers", response = Token.class)
     public Token assignUser(@QueryParam("tokenId") Long tokenId, @QueryParam("user_id") Long userId) {
         Token token = tokenDAO.findById(tokenId);
-        token.setUserId(userId);
+
+        if (token == null) {
+            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+        }
+
+        User user = userDAO.findById(userId);
+
+        if (user == null) {
+            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+        }
+
+        token.setUserId(user.getId());
         tokenDAO.update(token);
         return token;
     }

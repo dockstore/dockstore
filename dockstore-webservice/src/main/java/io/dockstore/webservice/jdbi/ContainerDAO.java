@@ -47,8 +47,16 @@ public class ContainerDAO extends AbstractDAO<Container> {
         return list(namedQuery("io.dockstore.webservice.core.Container.findByUserId").setParameter("userId", userId));
     }
 
+    public List<Container> findRegisteredByUserId(long userId) {
+        return list(namedQuery("io.dockstore.webservice.core.Container.findRegisteredByUserId").setParameter("userId", userId));
+    }
+
     public List<Container> findAll() {
         return list(namedQuery("io.dockstore.webservice.core.Container.findAll"));
+    }
+
+    public List<Container> findAllRegistered() {
+        return list(namedQuery("io.dockstore.webservice.core.Container.findAllRegistered"));
     }
 
     public List<Container> searchPattern(String pattern) {
