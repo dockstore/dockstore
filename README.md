@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/CancerCollaboratory/dockstore-descriptor.svg)](https://travis-ci.org/CancerCollaboratory/dockstore-descriptor)
+[![Coverage Status](https://coveralls.io/repos/CancerCollaboratory/dockstore-descriptor/badge.svg?branch=develop)](https://coveralls.io/github/CancerCollaboratory/dockstore-descriptor?branch=develop)
+
 # Dockstore Descriptor
 
 This repo contains an example HelloWorld workflow that simply generates a "helloworld" text file and sticks it in an output location on the filesystemxample, a Descriptor for how to run this Docker-ized HelloWorld workflow (along with a prototype in CWL), and a sample Java Launcher that interprets the Descriptor, provisions files, and launches the constructed command.  The goal of this repo is to provide a concrete example of this working so this prototype can be adapted into Consonance for real production use.  I didn't want to start with Consonance integration since that would require a large setup and I wanted to test this piece in isolation.
