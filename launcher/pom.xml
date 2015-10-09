@@ -8,6 +8,10 @@
     <artifactId>io.github.collaboratory.launcher</artifactId>
     <version>1.0.0</version>
 
+    <properties>
+        <cobertura.version>2.1.1</cobertura.version>
+    </properties>
+
     <repositories>
         <repository>
             <id>vfs-s3.repository</id>
@@ -328,6 +332,27 @@
                     <excludeFilterFile>
                         ${project.basedir}/findbugs-exclude.xml
                     </excludeFilterFile>
+                </configuration>
+            </plugin>
+	    <plugin>
+                <groupId>org.eluder.coveralls</groupId>
+                <artifactId>coveralls-maven-plugin</artifactId>
+                <version>4.0.0</version>
+            </plugin>
+	    <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>cobertura-maven-plugin</artifactId>
+                <version>2.7</version>
+                <configuration>
+                    <check>
+
+                    </check>
+                    <formats>
+                        <format>xml</format>
+                        <format>html</format>
+                    </formats>
+                    <attach>true</attach>
+                    <aggregate>true</aggregate>
                 </configuration>
             </plugin>
         </plugins>
