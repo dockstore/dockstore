@@ -1,43 +1,58 @@
+#!/usr/bin/env cwl-runner
+
 class: CommandLineTool
 description: "Markdown description text here"
 id: "HelloWorld"
 label: "HelloWorld Tool"
-version: "1.0.0"
+
+dct:creator:
+  "@id": "http://orcid.org/0000-0003-3566-7705"
+  foaf:name: Peter Amstutz
+  foaf:mbox: "mailto:peter.amstutz@curoverse.com"
 
 requirements:
   - class: DockerRequirement
-    dockerPull: "quay.io/collaboratory/HelloWorld:1.0.0"
-  - class: VMRequirements
-    cores: 8
-    ram_mb: 8092
-    storage_gb: 512
+    dockerPull: "quay.io/collaboratory/workflow-helloworld:1.0.0"
+  - { import: node-engine.cwl }
+
+hints:
+  - class: ResourceRequirement
+    coresMin: 8
+    ramMin: 8092
+    outdirMin: 512000
     description: "these parameters are used to locate a VM with appropriate resources"
 
 inputs:
   - id: "#ref_file_1"
     type: File
-    inputBinding:
-      position: 1
+    description: "this describes a large reference file that does not change between runs"
+    default:
+      class: File
+      path: 8e888694-9c56-4529-a750-d6bfbd4a74e7.txt
+
   - id: "#ref_file_2"
     type: File
-    inputBinding:
-      position: 2
-  - id: "#hello-input"
+    description: "this describes a large reference file that does not change between runs"
+    default:
+      class: File
+      path: b4cdad91-676a-446c-a635-57453f17617a.txt
+
+  - id: "#hello_input"
     type: File
-    inputBinding:
-      position: 3
+    description: "this describes an input file that should be provided before execution"
 
 outputs:
-  - id: "#hello-output"
+  - id: "#hello_output"
     type: File
     outputBinding:
       glob: hello-output.txt
+    description: "this describes an output file that should be saved after execution"
 
-tests:
-  -class: testCall
-   command: "echo 'test1' > test1.txt"
-  -class: testCall
-   command: "echo 'test2' > test2.txt"
-
-baseCommand: "cat"
-stdout: output.txt
+baseCommand: ["bash", "-c"]
+arguments:
+  - valueFrom:
+      engine: node-engine.cwl
+      script: |
+        "cat " + $job.hello_input.path + " > hello-output.txt &&"
+            + " ls " + $job.ref_file_1.path + " >> hello-output.txt && "
+            + " head -20 " + $job.ref_file_2.path + " >> hello-output.txt"

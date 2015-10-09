@@ -1,0 +1,9 @@
+- tool: collab.cwl
+  job:  collab-cwl-job.json
+  output:
+    hello_output:
+        path: "hello-output.txt"
+        size: 152
+        class: File
+        checksum: "sha1$c114986f8b8c5f0b420b87bca9040cfe848e439b"
+  doc: Test hello
