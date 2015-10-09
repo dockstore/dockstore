@@ -118,6 +118,9 @@ public class Launcher {
 
     private void runCommand(Object json, HashMap<String, HashMap<String, String>> fileMap, String workingDir, String command) {
 
+        // TODO: something weird about docker permissions, we need to fix them
+        command = "sudo chown -R seqware /outputs;" + command;
+
         // TODO: this doesn't deal with multi-tools properly
         JSONArray tools = (JSONArray) ((JSONObject) json).get("tools");
         for (Object tool : tools) {

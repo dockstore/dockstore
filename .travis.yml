@@ -1,3 +1,8 @@
+sudo: required
+
+services:
+  - docker
+
 notifications:
   slack: 
     on_success: never
