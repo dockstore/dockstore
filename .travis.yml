@@ -1,0 +1,15 @@
+notifications:
+  slack: 
+    on_success: never
+    on_failure: always
+    rooms:
+      - oicr:S9k4EowgQv9AnbCfEZHSzCsg
+
+sudo: false
+language: java
+jdk: 
+  - oraclejdk8
+
+script: 
+  - cd launcher
+  - mvn -B clean install -DskipITs=false
