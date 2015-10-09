@@ -16,6 +16,7 @@ jdk:
   - oraclejdk8
 
 script: 
+  - which docker 
   - cd launcher
   - mvn -B clean install -DskipITs=false
 
