@@ -21,7 +21,7 @@ any state in the DB is lost.
 You can also run it on your local computer but will need to setup postgres separately.
 
 1. Fill in the template hello-world.yml and stash it somewhere outside the git repo (like ~/.dockstore)
-2. Start with `java -jar dockstore-webservice/target/dockstore-0.0.1-SNAPSHOT.jar server ~/.dockstore/hello-world.yml`
+2. Start with `java -jar dockstore-webservice/target/dockstore-webservice-*.jar   server ~/.dockstore/hello-world.yml`
 
 ### View Swagger UI
 
