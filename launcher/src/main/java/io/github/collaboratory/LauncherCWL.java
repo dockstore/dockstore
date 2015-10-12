@@ -51,7 +51,8 @@ public class LauncherCWL {
     CommandLineParser parser = null;
     CommandLine line = null;
     HierarchicalINIConfiguration config = null;
-    Object json = null;
+    Object cwl = null;
+    Object inputsAndOutputsJson = null;
     HashMap<String, HashMap<String, String>> fileMap = null;
     String globalWorkingDir = null;
 
@@ -69,31 +70,46 @@ public class LauncherCWL {
         // now read in the INI file
         config = getINIConfig(line.getOptionValue("config"));
 
+        // TODO: resolve the URLs in the CWL
+        // TODO: this needs to switch to the JSON document that parameterizes the run
+        inputsAndOutputsJson = parseJSON(line.getOptionValue("job"));
+
         // now read the JSON file
-        // TODO: support comments in the JSON
-        json = parseDescriptor(line.getOptionValue("descriptor"));
+        // QUESTION: is this true?
+        // TODO: this needs to switch to parsing the CWL file to pull out things like large file dependencies???
+        cwl = parseCWL(line.getOptionValue("descriptor"));
 
         // setup directories
-        String workingDir = setupDirectories(json);
+        String workingDir = setupDirectories(cwl);
 
         // pull Docker images
-        pullDockerImages(json);
+        // TODO: defer to CWL runner to do this instead
+        //pullDockerImages(json);
 
         // pull data files
-        pullFiles("DATA", json, fileMap);
+        pullFiles("DATA", cwl, fileMap);
 
         // pull input files
-        pullFiles("INPUT", json, fileMap);
+        pullFiles("INPUT", cwl, fileMap);
 
         // construct command
-        String command = constructCommand(json);
+        // TODO: defer to CWL runner to do this instead
+        //String command = constructCommand(json);
 
         // run command
-        runCommand(json, fileMap, workingDir, command);
+        // TODO: defer to CWL runner to do this instead
+        //runCommand(json, fileMap, workingDir, command);
 
         // push output files
-        // LEFT OFF HERE
-        pushOutputFiles(json, fileMap, workingDir);
+        pushOutputFiles(cwl, fileMap, workingDir);
+    }
+
+    private Object parseCWL(String descriptor) {
+        return null;
+    }
+
+    private Object parseInputsAndOutputs(String job) {
+        return null;
     }
 
     private String setupDirectories(Object json) {
@@ -413,7 +429,7 @@ public class LauncherCWL {
         }
     }
 
-    private Object parseDescriptor(String descriptorFile) {
+    private Object parseJSON(String descriptorFile) {
 
         JSONParser parser = new JSONParser();
         Object obj = null;
@@ -488,7 +504,8 @@ public class LauncherCWL {
         options = new Options();
 
         options.addOption("c", "config", true, "the INI config file for this tool");
-        options.addOption("d", "descriptor", true, "a JSON tool descriptor used to construct the command and run it");
+        options.addOption("d", "descriptor", true, "a CWL tool descriptor used to construct the command and run it");
+        options.addOption("j", "job", true, "a JSON parameterization of the CWL tool, includes URLs for inputs and outputs");
 
         return parser;
     }
