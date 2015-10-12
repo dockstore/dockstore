@@ -49,8 +49,10 @@ And the various `$` field are filled in for local values within the docker conta
 
 ### Building
 
-Standard maven build in the launcher directory:
+Standard maven build in the launcher directory. Notice I'm unsetting my AWS credentials if I have them set already since the tests expect a credentials failure:
 
+    unset AWS_ACCESS_KEY
+    unset AWS_SECRET_KEY
     mvn clean install
 
 ### Running the Launcher
