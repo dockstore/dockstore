@@ -65,6 +65,7 @@ public class LauncherCWL {
         // now read in the INI file
         config = getINIConfig(line.getOptionValue("config"));
 
+        // parse the 
         cwl = parseCWL(line.getOptionValue("descriptor"));
 
         if (cwl == null) {
@@ -82,6 +83,7 @@ public class LauncherCWL {
             return;
         }
 
+        // this is the job order, just a JSON, defines the inputs/outputs in terms or realy URLs that are provisioned by the launcher
         inputsAndOutputsJson = loadJob(line.getOptionValue("job"));
 
         if (inputsAndOutputsJson == null) {
