@@ -1,31 +1,52 @@
 package io.github.collaboratory;
 
+import com.amazonaws.util.IOUtils;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
-import org.apache.commons.cli.*;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.configuration.SubnodeConfiguration;
-import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.commons.vfs2.*;
+import org.apache.commons.vfs2.FileObject;
+import org.apache.commons.vfs2.FileSystemException;
+import org.apache.commons.vfs2.FileSystemManager;
+import org.apache.commons.vfs2.Selectors;
+import org.apache.commons.vfs2.VFS;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.nio.charset.Charset;
-import java.util.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 /**
- * Created by boconnor on 9/24/15.
+ * @author boconnor 9/24/15
+ * @author dyuen
  */
 public class Launcher {
 
-    private Log log = null;
+    private Log log = LogFactory.getLog(this.getClass());
     Options options = null;
     CommandLineParser parser = null;
     CommandLine line = null;
@@ -34,13 +55,10 @@ public class Launcher {
     HashMap<String, HashMap<String, String>> fileMap = null;
     String globalWorkingDir = null;
 
-    public Launcher(String [ ] args) {
-
-        // logging
-        log = LogFactory.getLog(this.getClass());
+    public Launcher(String[] args) {
 
         // hashmap for files
-        fileMap = new HashMap<String, HashMap<String, String>>();
+        fileMap = new HashMap<>();
 
         // create the command line parser
         parser = setupCommandLineParser();
@@ -86,19 +104,22 @@ public class Launcher {
         // make UUID
         UUID uuid = UUID.randomUUID();
         // setup directories
-        globalWorkingDir = workingDir+"/launcher-"+uuid.toString();
-        execute("mkdir -p "+workingDir+"/launcher-"+uuid.toString());
-        execute("mkdir -p "+workingDir+"/launcher-"+uuid.toString()+"/configs");
+        globalWorkingDir = workingDir + "/launcher-" + uuid.toString();
+        execute("mkdir -p " + workingDir + "/launcher-" + uuid.toString());
+        execute("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/configs");
         execute("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/working");
-        execute("mkdir -p "+workingDir+"/launcher-"+uuid.toString()+"/inputs");
-        execute("mkdir -p "+workingDir+"/launcher-"+uuid.toString()+"/logs");
-        execute("mkdir -p "+workingDir+"/launcher-"+uuid.toString()+"/outputs");
+        execute("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/inputs");
+        execute("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/logs");
+        execute("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/outputs");
 
-        return(new File(workingDir+"/launcher-"+uuid.toString()).getAbsolutePath());
+        return (new File(workingDir + "/launcher-" + uuid.toString()).getAbsolutePath());
 
     }
 
     private void runCommand(Object json, HashMap<String, HashMap<String, String>> fileMap, String workingDir, String command) {
+
+        // TODO: something weird about docker permissions, we need to fix them
+        command = "sudo chown -R seqware /outputs;" + command;
 
         // TODO: this doesn't deal with multi-tools properly
         JSONArray tools = (JSONArray) ((JSONObject) json).get("tools");
@@ -132,7 +153,7 @@ public class Launcher {
                 }
                 sb.append("-v " + localPath + ":" + containerPath + " ");
                 sba.add("-v");
-                sba.add(localPath+":"+containerPath);
+                sba.add(localPath + ":" + containerPath);
 
             }
             // deal with inputs
@@ -146,7 +167,7 @@ public class Launcher {
                 }
                 sb.append("-v " + localPath + ":" + containerPath + " ");
                 sba.add("-v");
-                sba.add(localPath+":"+containerPath);
+                sba.add(localPath + ":" + containerPath);
             }
 
             // deal with outputs
@@ -165,7 +186,7 @@ public class Launcher {
             log.info("DOCKER CMD TO RUN: " + sb.toString());
 
             // FIXME: not working!
-            //execute(sb.toString());
+            // execute(sb.toString());
             // had to switch to this style instead
             executeArr(sba);
 
@@ -179,7 +200,7 @@ public class Launcher {
 
         // for each tool
         // TODO: really this launcher will operate off of a request for a particular tool whereas the collab.json can define multiple tools
-        // TODO: really don't want to process inputs for all tools!  Just the one going to be called
+        // TODO: really don't want to process inputs for all tools! Just the one going to be called
         JSONArray tools = (JSONArray) ((JSONObject) json).get("tools");
         for (Object tool : tools) {
 
@@ -197,10 +218,11 @@ public class Launcher {
                 String filePath = (String) ((JSONObject) file).get("path");
                 String fileId = (String) ((JSONObject) file).get("id");
                 // TODO: would be best to have output files here in this data structure rather than construct the path below
-                //String localFilePath = fileMap.get(fileId).get("local_path");
+                // String localFilePath = fileMap.get(fileId).get("local_path");
                 String localFilePath = workingDir + "/outputs/" + filePath;
 
-                // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and https://commons.apache.org/proper/commons-vfs/filesystems.html
+                // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
+                // https://commons.apache.org/proper/commons-vfs/filesystems.html
                 FileSystemManager fsManager = null;
                 try {
 
@@ -220,7 +242,6 @@ public class Launcher {
             }
         }
     }
-
 
     private String constructCommand(Object json) {
 
@@ -248,7 +269,7 @@ public class Launcher {
             Map<String, String> inputsHash = new HashMap<>();
             JSONArray files = (JSONArray) ((JSONObject) tool).get("inputs");
             for (Object file : files) {
-                inputsHash.put((String) ((JSONObject)file).get("id"), (String) ((JSONObject)file).get("path"));
+                inputsHash.put((String) ((JSONObject) file).get("id"), (String) ((JSONObject) file).get("path"));
             }
             root.put("inputs", inputsHash);
 
@@ -256,7 +277,7 @@ public class Launcher {
             Map<String, String> dataHash = new HashMap<>();
             files = (JSONArray) ((JSONObject) tool).get("data");
             for (Object file : files) {
-                dataHash.put((String) ((JSONObject) file).get("id"), (String) ((JSONObject)file).get("path"));
+                dataHash.put((String) ((JSONObject) file).get("id"), (String) ((JSONObject) file).get("path"));
             }
             root.put("data", dataHash);
 
@@ -264,7 +285,7 @@ public class Launcher {
             Map<String, String> outputsHash = new HashMap<>();
             files = (JSONArray) ((JSONObject) tool).get("outputs");
             for (Object file : files) {
-                outputsHash.put((String) ((JSONObject) file).get("id"), (String) ((JSONObject)file).get("path"));
+                outputsHash.put((String) ((JSONObject) file).get("id"), (String) ((JSONObject) file).get("path"));
             }
             root.put("outputs", outputsHash);
 
@@ -281,7 +302,7 @@ public class Launcher {
 
                 finalCmd = out.toString();
 
-                log.info("FINAL COMMAND: "+finalCmd);
+                log.info("FINAL COMMAND: " + finalCmd);
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -291,16 +312,16 @@ public class Launcher {
                 log.error(e.getMessage());
             }
 
-            log.info("CMD TEMPLATE: "+commandTemplate);
-            log.info("CMD TO RUN: "+finalCmd);
+            log.info("CMD TEMPLATE: " + commandTemplate);
+            log.info("CMD TO RUN: " + finalCmd);
         }
 
-        return(finalCmd);
+        return (finalCmd);
     }
 
     private void pullFiles(String data, Object json, HashMap<String, HashMap<String, String>> fileMap) {
 
-        log.info("DOWNLOADING "+data+" FILES...");
+        log.info("DOWNLOADING " + data + " FILES...");
 
         // working dir
 
@@ -312,11 +333,11 @@ public class Launcher {
             type = "inputs";
         }
 
-        log.info("TYPE: "+type);
+        log.info("TYPE: " + type);
 
         // for each tool
         // TODO: really this launcher will operate off of a request for a particular tool whereas the collab.json can define multiple tools
-        // TODO: really don't want to process inputs for all tools!  Just the one going to be called
+        // TODO: really don't want to process inputs for all tools! Just the one going to be called
         JSONArray tools = (JSONArray) ((JSONObject) json).get("tools");
         for (Object tool : tools) {
 
@@ -335,11 +356,12 @@ public class Launcher {
                 String fileId = (String) ((JSONObject) file).get("id");
                 File filePathObj = new File(filePath);
                 String newDirectory = globalWorkingDir + "/inputs/" + UUID.randomUUID().toString();
-                execute("mkdir -p "+newDirectory);
+                execute("mkdir -p " + newDirectory);
                 File newDirectoryFile = new File(newDirectory);
                 String uuidPath = newDirectoryFile.getAbsolutePath() + "/" + filePathObj.getName();
 
-                // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and https://commons.apache.org/proper/commons-vfs/filesystems.html
+                // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
+                // https://commons.apache.org/proper/commons-vfs/filesystems.html
                 FileSystemManager fsManager = null;
                 try {
 
@@ -385,7 +407,7 @@ public class Launcher {
         }
 
         // pull the images
-        for(String image : imagesHash.keySet()) {
+        for (String image : imagesHash.keySet()) {
             String command = "docker pull " + image;
             execute(command);
         }
@@ -393,20 +415,20 @@ public class Launcher {
 
     private Object parseDescriptor(String descriptorFile) {
 
-        JSONParser parser=new JSONParser();
+        JSONParser parser = new JSONParser();
         Object obj = null;
 
         // TODO: would be nice to support comments
 
         try {
-            obj = parser.parse(new FileReader(new File(descriptorFile)));
+            obj = parser.parse(FileUtils.readFileToString(new File(descriptorFile), StandardCharsets.UTF_8));
         } catch (IOException e) {
             e.printStackTrace();
         } catch (org.json.simple.parser.ParseException e) {
             e.printStackTrace();
         }
 
-        return(obj);
+        return (obj);
     }
 
     private HierarchicalINIConfiguration getINIConfig(String configFile) {
@@ -424,8 +446,8 @@ public class Launcher {
             CharSequence doubleDot = "..";
             CharSequence dot = ".";
 
-            Set<String> sections= c.getSections();
-            for (String section: sections) {
+            Set<String> sections = c.getSections();
+            for (String section : sections) {
 
                 SubnodeConfiguration subConf = c.getSection(section);
                 Iterator<String> it = subConf.getKeys();
@@ -433,7 +455,7 @@ public class Launcher {
                     String key = (it.next());
                     Object value = subConf.getString(key);
                     key = key.replace(doubleDot, dot);
-                    log.info("KEY: "+key+" VALUE: "+value);
+                    log.info("KEY: " + key + " VALUE: " + value);
                 }
             }
         } catch (FileNotFoundException e) {
@@ -442,44 +464,43 @@ public class Launcher {
             e.printStackTrace();
         }
 
-        return(c);
+        return (c);
     }
 
     private CommandLine parseCommandLine(String[] args) {
 
         try {
             // parse the command line arguments
-            line = parser.parse( options, args );
+            line = parser.parse(options, args);
 
-        }
-        catch( ParseException exp ) {
+        } catch (ParseException exp) {
             log.error("Unexpected exception:" + exp.getMessage());
         }
 
-        return(line);
+        return (line);
     }
 
-    private CommandLineParser setupCommandLineParser () {
+    private CommandLineParser setupCommandLineParser() {
         // create the command line parser
         CommandLineParser parser = new DefaultParser();
 
         // create the Options
         options = new Options();
 
-        options.addOption( "c", "config", true, "the INI config file for this tool" );
-        options.addOption( "d", "descriptor", true, "a JSON tool descriptor used to construct the command and run it" );
+        options.addOption("c", "config", true, "the INI config file for this tool");
+        options.addOption("d", "descriptor", true, "a JSON tool descriptor used to construct the command and run it");
 
         return parser;
     }
 
-    private void execute (String command) {
+    private void execute(String command) {
         try {
             log.info("CMD: " + command);
             Process p = Runtime.getRuntime().exec(command);
             p.waitFor();
             log.info("CMD RETURN CODE: " + p.exitValue());
-            log.info("CMD STDERR:"+ IOUtils.toString(p.getErrorStream(), Charset.defaultCharset()));
-            log.info("CMD STDOUT:"+ IOUtils.toString(p.getInputStream(), Charset.defaultCharset()));
+            log.info("CMD STDERR:" + IOUtils.toString(p.getErrorStream()));
+            log.info("CMD STDOUT:" + IOUtils.toString(p.getInputStream()));
 
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -490,14 +511,14 @@ public class Launcher {
         }
     }
 
-    private void executeArr (ArrayList<String> command) {
+    private void executeArr(ArrayList<String> command) {
         try {
-            //log.info("CMD: " + command);
+            // log.info("CMD: " + command);
             Process p = Runtime.getRuntime().exec(command.toArray(new String[0]));
             p.waitFor();
             log.info("CMD RETURN CODE: " + p.exitValue());
-            log.info("CMD STDERR:"+ IOUtils.toString(p.getErrorStream(), Charset.defaultCharset()));
-            log.info("CMD STDOUT:"+ IOUtils.toString(p.getInputStream(), Charset.defaultCharset()));
+            log.info("CMD STDERR:" + IOUtils.toString(p.getErrorStream()));
+            log.info("CMD STDOUT:" + IOUtils.toString(p.getInputStream()));
 
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -508,11 +529,8 @@ public class Launcher {
         }
     }
 
-    public static void main(String [ ] args)
-    {
-
-        Launcher l = new Launcher(args);
-
+    public static void main(String[] args) {
+        new Launcher(args);
     }
 
 }
