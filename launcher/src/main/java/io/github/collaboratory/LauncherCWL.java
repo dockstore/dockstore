@@ -12,7 +12,6 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.configuration.SubnodeConfiguration;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.vfs2.FileObject;
@@ -22,7 +21,9 @@ import org.apache.commons.vfs2.Selectors;
 import org.apache.commons.vfs2.VFS;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
+
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -32,7 +33,6 @@ import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -52,8 +52,10 @@ public class LauncherCWL {
     CommandLine line = null;
     HierarchicalINIConfiguration config = null;
     Object json = null;
+    Object job = null;
     HashMap<String, HashMap<String, String>> fileMap = null;
     String globalWorkingDir = null;
+    Yaml yaml = new Yaml(new SafeConstructor());
 
     public LauncherCWL(String[] args) {
 
@@ -69,31 +71,45 @@ public class LauncherCWL {
         // now read in the INI file
         config = getINIConfig(line.getOptionValue("config"));
 
-        // now read the JSON file
-        // TODO: support comments in the JSON
-        json = parseDescriptor(line.getOptionValue("descriptor"));
+        json = parseCWL(line.getOptionValue("descriptor"));
 
-        // setup directories
-        String workingDir = setupDirectories(json);
+        if (json == null) {
+            log.info("CWL was null");
+            return;
+        }
 
-        // pull Docker images
-        pullDockerImages(json);
+        log.info(json);
 
-        // pull data files
-        pullFiles("DATA", json, fileMap);
+        if (!(json instanceof Map)) {
+            log.info("Must be single object at root.");
+            return;
+        }
 
-        // pull input files
-        pullFiles("INPUT", json, fileMap);
+        if (!(((Map)json).get("class")).equals("CommandLineTool")) {
+            log.info("Must be CommandLineTool");
+            return;
+        }
 
-        // construct command
-        String command = constructCommand(json);
+        // // setup directories
+        // String workingDir = setupDirectories(json);
+
+        // // pull Docker images
+        // pullDockerImages(json);
+
+        // // pull data files
+        // pullFiles("DATA", json, fileMap);
+
+        // // pull input files
+        // pullFiles("INPUT", json, fileMap);
 
         // run command
-        runCommand(json, fileMap, workingDir, command);
+        //Object outputObj = runCommand(line.getOptionValue("descriptor"));
 
-        // push output files
-        // LEFT OFF HERE
-        pushOutputFiles(json, fileMap, workingDir);
+        //log.info(outputObj);
+
+        // // push output files
+        // // LEFT OFF HERE
+        // pushOutputFiles(json, fileMap, workingDir);
     }
 
     private String setupDirectories(Object json) {
@@ -116,81 +132,23 @@ public class LauncherCWL {
 
     }
 
-    private void runCommand(Object json, HashMap<String, HashMap<String, String>> fileMap, String workingDir, String command) {
+    private Object runCommand(String cwlFile, Object inputObject) {
+        Object obj = null;
 
-        // TODO: something weird about docker permissions, we need to fix them
-        command = "sudo chown -R seqware /outputs;" + command;
-
-        // TODO: this doesn't deal with multi-tools properly
-        JSONArray tools = (JSONArray) ((JSONObject) json).get("tools");
-        for (Object tool : tools) {
-
-            // container output path
-            String containerOutputPath = (String) ((JSONObject) tool).get("container_output_path");
-
-            // container working path
-            String containerWorkingPath = (String) ((JSONObject) tool).get("container_working_path");
-
-            // image to actually use
-            String image = (String) ((JSONObject) tool).get("image_name");
-
-            StringBuilder sb = new StringBuilder();
-
-            ArrayList<String> sba = new ArrayList<>();
-            // TODO: probably want the bare minimum env vars so 'bash -lc' is not ideal
-            sb.append("docker run ");
-            sba.add("docker");
-            sba.add("run");
-
-            // deal with data
-            JSONArray files = (JSONArray) ((JSONObject) tool).get("data");
-            for (Object file : files) {
-                String fileId = (String) ((JSONObject) file).get("id");
-                String containerPath = (String) ((JSONObject) file).get("path");
-                String localPath = fileMap.get(fileId).get("local_path");
-                if (!containerPath.startsWith("/")) {
-                    containerPath = containerWorkingPath + "/" + containerPath;
-                }
-                sb.append("-v " + localPath + ":" + containerPath + " ");
-                sba.add("-v");
-                sba.add(localPath + ":" + containerPath);
-
-            }
-            // deal with inputs
-            files = (JSONArray) ((JSONObject) tool).get("inputs");
-            for (Object file : files) {
-                String fileId = (String) ((JSONObject) file).get("id");
-                String containerPath = (String) ((JSONObject) file).get("path");
-                String localPath = fileMap.get(fileId).get("local_path");
-                if (!containerPath.startsWith("/")) {
-                    containerPath = containerWorkingPath + "/" + containerPath;
-                }
-                sb.append("-v " + localPath + ":" + containerPath + " ");
-                sba.add("-v");
-                sba.add(localPath + ":" + containerPath);
-            }
-
-            // deal with outputs
-            sb.append("-v " + workingDir + "/outputs:" + containerOutputPath + " ");
-            sba.add("-v");
-            sba.add(workingDir + "/outputs:" + containerOutputPath);
-
-            // docker image to run and command
-            sb.append(image + " /bin/bash -c '" + command + "'");
-            sba.add(image);
-            sba.add("/bin/bash");
-            sba.add("-c");
-            sba.add(command);
-
-            // execute the constructed command
-            log.info("DOCKER CMD TO RUN: " + sb.toString());
-
-            // FIXME: not working!
-            // execute(sb.toString());
-            // had to switch to this style instead
-            executeArr(sba);
-
+        try {
+            String[] s = new String[]{"cwltool", cwlFile, "-"};
+            Process p = Runtime.getRuntime().exec(s);
+            yaml.dump(inputObject, new java.io.OutputStreamWriter(p.getOutputStream()));
+            p.getOutputStream().close();
+            obj = yaml.load(p.getInputStream());
+            p.waitFor();
+        } catch (java.lang.InterruptedException e) {
+            e.printStackTrace();
+        } catch (java.io.IOException e) {
+            e.printStackTrace();
         }
+
+        return (obj);
 
     }
 
@@ -413,18 +371,17 @@ public class LauncherCWL {
         }
     }
 
-    private Object parseDescriptor(String descriptorFile) {
-
-        JSONParser parser = new JSONParser();
+    private Object parseCWL(String cwlFile) {
         Object obj = null;
 
-        // TODO: would be nice to support comments
-
         try {
-            obj = parser.parse(FileUtils.readFileToString(new File(descriptorFile), StandardCharsets.UTF_8));
-        } catch (IOException e) {
+            String[] s = new String[]{"cwltool", "--print-pre", cwlFile };
+            Process p = Runtime.getRuntime().exec(s);
+            obj = yaml.load(p.getInputStream());
+            p.waitFor();
+        } catch (java.lang.InterruptedException e) {
             e.printStackTrace();
-        } catch (org.json.simple.parser.ParseException e) {
+        } catch (java.io.IOException e) {
             e.printStackTrace();
         }
 
@@ -488,7 +445,8 @@ public class LauncherCWL {
         options = new Options();
 
         options.addOption("c", "config", true, "the INI config file for this tool");
-        options.addOption("d", "descriptor", true, "a JSON tool descriptor used to construct the command and run it");
+        options.addOption("d", "descriptor", true, "a CWL tool descriptor used to construct the command and run it");
+        options.addOption("j", "job", true, "Job input object");
 
         return parser;
     }
