@@ -82,7 +82,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     public void initialize(Bootstrap<DockstoreWebserviceConfiguration> bootstrap) {
         String ip = "localhost";
         try {
-            NetworkInterface ni = NetworkInterface.getByName("en0");
+            NetworkInterface ni = NetworkInterface.getByName("eth0");
             Enumeration<InetAddress> inetAddresses = ni.getInetAddresses();
 
             while (inetAddresses.hasMoreElements()) {
