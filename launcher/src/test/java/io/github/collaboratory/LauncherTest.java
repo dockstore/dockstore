@@ -29,7 +29,7 @@ public class LauncherTest {
         public void testCWL() throws Exception {
                 File iniFile = FileUtils.getFile("src", "test", "resources", "launcher.ini");
                 File cwlFile = FileUtils.getFile("src", "test", "resources", "collab.cwl");
-                File jobFile = FileUtils.getFile("src", "test", "resources", "collab-job.json");
+                File jobFile = FileUtils.getFile("src", "test", "resources", "collab-cwl-job.json");
                 new LauncherCWL(new String[] { "--config", iniFile.getAbsolutePath(),
                                                "--descriptor", cwlFile.getAbsolutePath(),
                                                "--job", jobFile.getAbsolutePath()});

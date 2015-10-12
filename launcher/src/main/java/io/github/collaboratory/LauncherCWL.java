@@ -1,9 +1,6 @@
 package io.github.collaboratory;
 
 import com.amazonaws.util.IOUtils;
-import freemarker.template.Configuration;
-import freemarker.template.Template;
-import freemarker.template.TemplateException;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -30,10 +27,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.Writer;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -51,8 +44,8 @@ public class LauncherCWL {
     CommandLineParser parser = null;
     CommandLine line = null;
     HierarchicalINIConfiguration config = null;
-    Object json = null;
-    Object job = null;
+    Object cwl = null;
+    Object inputsAndOutputsJson = null;
     HashMap<String, HashMap<String, String>> fileMap = null;
     String globalWorkingDir = null;
     Yaml yaml = new Yaml(new SafeConstructor());
@@ -71,65 +64,61 @@ public class LauncherCWL {
         // now read in the INI file
         config = getINIConfig(line.getOptionValue("config"));
 
-        json = parseCWL(line.getOptionValue("descriptor"));
+        cwl = parseCWL(line.getOptionValue("descriptor"));
 
-        if (json == null) {
+        if (cwl == null) {
             log.info("CWL was null");
             return;
         }
 
-        log.info(json);
-
-        if (!(json instanceof Map)) {
+        if (!(cwl instanceof Map)) {
             log.info("Must be single object at root.");
             return;
         }
 
-        if (!(((Map)json).get("class")).equals("CommandLineTool")) {
+        if (!(((Map)cwl).get("class")).equals("CommandLineTool")) {
             log.info("Must be CommandLineTool");
             return;
         }
 
-        // // setup directories
-        // String workingDir = setupDirectories(json);
+        inputsAndOutputsJson = loadJob(line.getOptionValue("job"));
 
-        // // pull Docker images
-        // pullDockerImages(json);
+        if (inputsAndOutputsJson == null) {
+            log.info("Cannot load job object.");
+            return;
+        }
 
-        // // pull data files
-        // pullFiles("DATA", json, fileMap);
+        // setup directories
+        String workingDir = setupDirectories(cwl);
 
-        // // pull input files
-        // pullFiles("INPUT", json, fileMap);
+        // pull data files
+        //pullFiles("DATA", cwl, fileMap);
+
+        // pull input files
+        //pullFiles("INPUT", cwl, fileMap);
 
         // run command
         //Object outputObj = runCommand(line.getOptionValue("descriptor"));
 
+        // push output files
+        //pushOutputFiles(cwl, fileMap, workingDir);
+
         //log.info(outputObj);
 
-        // // push output files
-        // // LEFT OFF HERE
-        // pushOutputFiles(json, fileMap, workingDir);
+        // push output files
+        //pushOutputFiles(json, fileMap, workingDir);
+    }
+
+    private Object loadJob(String jobPath) {
+        try {
+            return yaml.load(new FileInputStream(jobPath));
+        } catch (java.io.FileNotFoundException e) {
+            return null;
+        }
     }
 
     private String setupDirectories(Object json) {
-
-        log.info("MAKING DIRECTORIES...");
-        // directory to use, typically a large, encrypted filesystem
-        String workingDir = config.getString("working-directory");
-        // make UUID
-        UUID uuid = UUID.randomUUID();
-        // setup directories
-        globalWorkingDir = workingDir + "/launcher-" + uuid.toString();
-        execute("mkdir -p " + workingDir + "/launcher-" + uuid.toString());
-        execute("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/configs");
-        execute("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/working");
-        execute("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/inputs");
-        execute("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/logs");
-        execute("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/outputs");
-
-        return (new File(workingDir + "/launcher-" + uuid.toString()).getAbsolutePath());
-
+        return "";
     }
 
     private Object runCommand(String cwlFile, Object inputObject) {
@@ -149,7 +138,6 @@ public class LauncherCWL {
         }
 
         return (obj);
-
     }
 
     private void pushOutputFiles(Object json, HashMap<String, HashMap<String, String>> fileMap, String workingDir) {
@@ -201,80 +189,22 @@ public class LauncherCWL {
         }
     }
 
-    private String constructCommand(Object json) {
+    private void execute(String command) {
+        try {
+            log.info("CMD: " + command);
+            Process p = Runtime.getRuntime().exec(command);
+            p.waitFor();
+            log.info("CMD RETURN CODE: " + p.exitValue());
+            log.info("CMD STDERR:" + IOUtils.toString(p.getErrorStream()));
+            log.info("CMD STDOUT:" + IOUtils.toString(p.getInputStream()));
 
-        log.info("CONSTRUCTING COMMAND: ");
-
-        String finalCmd = null;
-
-        // TODO: this doesn't deal with multi-tools properly
-        JSONArray tools = (JSONArray) ((JSONObject) json).get("tools");
-        for (Object tool : tools) {
-
-            // get command
-            String commandTemplate = (String) ((JSONObject) tool).get("command");
-
-            // construct a HashMap with data and inputs documented in
-            Map<String, Object> root = new HashMap<>();
-
-            // container output path
-            root.put("container_output_path", (String) ((JSONObject) tool).get("container_output_path"));
-
-            // container working path
-            root.put("container_working_path", (String) ((JSONObject) tool).get("container_working_path"));
-
-            // inputs
-            Map<String, String> inputsHash = new HashMap<>();
-            JSONArray files = (JSONArray) ((JSONObject) tool).get("inputs");
-            for (Object file : files) {
-                inputsHash.put((String) ((JSONObject) file).get("id"), (String) ((JSONObject) file).get("path"));
-            }
-            root.put("inputs", inputsHash);
-
-            // data files
-            Map<String, String> dataHash = new HashMap<>();
-            files = (JSONArray) ((JSONObject) tool).get("data");
-            for (Object file : files) {
-                dataHash.put((String) ((JSONObject) file).get("id"), (String) ((JSONObject) file).get("path"));
-            }
-            root.put("data", dataHash);
-
-            // outputs
-            Map<String, String> outputsHash = new HashMap<>();
-            files = (JSONArray) ((JSONObject) tool).get("outputs");
-            for (Object file : files) {
-                outputsHash.put((String) ((JSONObject) file).get("id"), (String) ((JSONObject) file).get("path"));
-            }
-            root.put("outputs", outputsHash);
-
-            // config object for template
-            Configuration cfg = new Configuration(Configuration.VERSION_2_3_22);
-
-            // now process the command line
-            try {
-
-                Template t = new Template("commandTemplate", new StringReader(commandTemplate), cfg);
-
-                Writer out = new StringWriter();
-                t.process(root, out);
-
-                finalCmd = out.toString();
-
-                log.info("FINAL COMMAND: " + finalCmd);
-
-            } catch (IOException e) {
-                e.printStackTrace();
-                log.error(e.getMessage());
-            } catch (TemplateException e) {
-                e.printStackTrace();
-                log.error(e.getMessage());
-            }
-
-            log.info("CMD TEMPLATE: " + commandTemplate);
-            log.info("CMD TO RUN: " + finalCmd);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            log.error(e.getMessage());
+        } catch (IOException e) {
+            e.printStackTrace();
+            log.error(e.getMessage());
         }
-
-        return (finalCmd);
     }
 
     private void pullFiles(String data, Object json, HashMap<String, HashMap<String, String>> fileMap) {
@@ -348,28 +278,6 @@ public class LauncherCWL {
 
     }
 
-    private void pullDockerImages(Object json) {
-
-        log.info("PULLING DOCKER CONTAINERS...");
-
-        // list of images to pull
-        HashMap<String, String> imagesHash = new HashMap<String, String>();
-
-        // get list of images
-        JSONArray tools = (JSONArray) ((JSONObject) json).get("tools");
-        for (Object tool : tools) {
-            JSONArray images = (JSONArray) ((JSONObject) tool).get("images");
-            for (Object image : images) {
-                imagesHash.put(image.toString(), image.toString());
-            }
-        }
-
-        // pull the images
-        for (String image : imagesHash.keySet()) {
-            String command = "docker pull " + image;
-            execute(command);
-        }
-    }
 
     private Object parseCWL(String cwlFile) {
         Object obj = null;
@@ -446,46 +354,11 @@ public class LauncherCWL {
 
         options.addOption("c", "config", true, "the INI config file for this tool");
         options.addOption("d", "descriptor", true, "a CWL tool descriptor used to construct the command and run it");
-        options.addOption("j", "job", true, "Job input object");
+        options.addOption("j", "job", true, "a JSON parameterization of the CWL tool, includes URLs for inputs and outputs");
 
         return parser;
     }
 
-    private void execute(String command) {
-        try {
-            log.info("CMD: " + command);
-            Process p = Runtime.getRuntime().exec(command);
-            p.waitFor();
-            log.info("CMD RETURN CODE: " + p.exitValue());
-            log.info("CMD STDERR:" + IOUtils.toString(p.getErrorStream()));
-            log.info("CMD STDOUT:" + IOUtils.toString(p.getInputStream()));
-
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            log.error(e.getMessage());
-        } catch (IOException e) {
-            e.printStackTrace();
-            log.error(e.getMessage());
-        }
-    }
-
-    private void executeArr(ArrayList<String> command) {
-        try {
-            // log.info("CMD: " + command);
-            Process p = Runtime.getRuntime().exec(command.toArray(new String[0]));
-            p.waitFor();
-            log.info("CMD RETURN CODE: " + p.exitValue());
-            log.info("CMD STDERR:" + IOUtils.toString(p.getErrorStream()));
-            log.info("CMD STDOUT:" + IOUtils.toString(p.getInputStream()));
-
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            log.error(e.getMessage());
-        } catch (IOException e) {
-            e.printStackTrace();
-            log.error(e.getMessage());
-        }
-    }
 
     public static void main(String[] args) {
         new LauncherCWL(args);
