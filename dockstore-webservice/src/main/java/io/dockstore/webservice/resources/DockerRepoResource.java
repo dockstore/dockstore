@@ -420,7 +420,7 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("getAllRegisteredContainers")
     @ApiOperation(value = "List all registered containers. This would be a minimal resource that would need to be implemented "
-            + "by a GA4GH reference server", notes = "", response = Container.class, responseContainer = "List")
+            + "by a GA4GH reference server", tags={"GA4GH","docker.repo"}, notes = "", response = Container.class, responseContainer = "List")
     public List<Container> getAllRegisteredContainers() {
         List<Container> repositories = containerDAO.findAll();
         return repositories;
@@ -531,7 +531,9 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/searchContainers")
     @ApiOperation(value = "Search for matching registered containers."
-            + " This would be a minimal resource that would need to be implemented by a GA4GH reference server", notes = "Search on the name (full path name) and description.", response = Container.class, responseContainer = "List")
+            + " This would be a minimal resource that would need to be implemented by a GA4GH reference server",
+            notes = "Search on the name (full path name) and description.", response = Container.class,
+            responseContainer = "List", tags={"GA4GH","docker.repo"})
     public List<Container> searchContainers(@QueryParam("pattern") String word) {
         return containerDAO.searchPattern(word);
     }
