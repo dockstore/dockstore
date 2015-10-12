@@ -17,11 +17,11 @@
 package io.dockstore.webservice.core;
 
 //import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
-//import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import io.swagger.annotations.ApiModel;
-import java.util.HashSet;
-import java.util.Set;
+import io.swagger.annotations.ApiModelProperty;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -34,6 +34,10 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import java.util.HashSet;
+import java.util.Set;
+
+//import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
 /**
  *
@@ -52,34 +56,49 @@ import javax.persistence.Table;
 public class Container {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @ApiModelProperty("Implementation specific ID for the container in this web service")
     private long id;
 
     @Column(nullable = false)
+    @ApiModelProperty("Implementation specific user ID for the container owner in this web service")
     private long userId;
     @Column(nullable = false)
+    @ApiModelProperty("This is the name of the container, required: GA4GH")
     private String name;
     @Column
+    @ApiModelProperty("This is a docker namespace for the container, required: GA4GH")
     private String namespace;
     @Column
+    @ApiModelProperty("This is a specific docker provider like quay.io or dockerhub or n/a?, required: GA4GH")
     private String registry;
     @Column
+    @ApiModelProperty("This is a generated full docker path including registry and namespace")
     private String path;
     @Column
+    @ApiModelProperty("This is a human-readble description of this container and what it is trying to accomplish, required GA4GH")
     private String description;
     @Column
+    @ApiModelProperty("Implementation specific hook for social starring in this web service")
+    @JsonProperty("is_starred")
     private boolean isStarred;
     @Column
+    @JsonProperty("is_public")
+    @ApiModelProperty("Implementation specific visibility in this web service")
     private boolean isPublic;
     @Column
+    @ApiModelProperty("Implementation specific timestamp for last modified")
     private Integer lastModified;
     @Column
+    @ApiModelProperty("This is a link to the associated repo with a descriptor, required GA4GH")
     private String gitUrl;
     @Column
+    @ApiModelProperty("Implementation specific indication as to whether this is properly registered with this web service")
     private boolean isRegistered;
 
     @OneToMany(fetch = FetchType.EAGER)
     // @JoinColumn(name = "containerid", nullable = false)
     @JoinTable(name = "containertag", joinColumns = { @JoinColumn(name = "containerid", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "tagid", referencedColumnName = "id") })
+    @ApiModelProperty("Implementation specific tracking of valid build tags for the docker container")
     private Set<Tag> tags;
 
     public Container() {
@@ -258,7 +277,6 @@ public class Container {
     /**
      * @return the isPublic
      */
-    @JsonProperty("is_public")
     public boolean isIsPublic() {
         return isPublic;
     }
@@ -266,7 +284,6 @@ public class Container {
     /**
      * @return the isStarred
      */
-    @JsonProperty("is_starred")
     public boolean isIsStarred() {
         return isStarred;
     }

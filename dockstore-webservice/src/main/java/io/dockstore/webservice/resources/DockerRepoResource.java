@@ -24,7 +24,6 @@ import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
-//import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.ContainerDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -33,24 +32,6 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.HashMap;
-//import java.lang.reflect.Array;
-import java.util.List;
-import java.util.Map;
-import javax.ws.rs.DELETE;
-//import java.util.Map;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
 import org.apache.http.client.HttpClient;
 import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.RepositoryContents;
@@ -60,9 +41,29 @@ import org.eclipse.egit.github.core.service.ContentsService;
 import org.eclipse.egit.github.core.service.OrganizationService;
 import org.eclipse.egit.github.core.service.RepositoryService;
 import org.eclipse.egit.github.core.service.UserService;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+//import io.dockstore.webservice.core.User;
+//import java.lang.reflect.Array;
+//import java.util.Map;
 
 /**
  *
@@ -116,6 +117,9 @@ public class DockerRepoResource {
         namespaces.add("xliuoicr");
         namespaces.add("oicr_vchung");
         namespaces.add("oicr_vchung_org");
+        namespaces.add("denis-yuen");
+        namespaces.add("seqware");
+        namespaces.add("boconnor");
     }
 
     @GET
@@ -212,7 +216,7 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "List all repos known via all registered tokens", notes = "List docker container repos currently known. "
+    @ApiOperation(value = "List all registered docker containers known via all registered tokens", notes = "List docker container repos currently known. "
             + "Right now, tokens are used to synchronously talk to the quay.io API to list repos. "
             + "Ultimately, we should cache this information and refresh either by user request or by time "
             + "TODO: This should be a properly defined list of objects, it also needs admin authentication", response = Container.class, responseContainer = "List")
@@ -415,7 +419,8 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("getAllRegisteredContainers")
-    @ApiOperation(value = "List all registered containers", notes = "", response = Container.class, responseContainer = "List")
+    @ApiOperation(value = "List all registered containers. This would be a minimal resource that would need to be implemented "
+            + "by a GA4GH reference server", notes = "", response = Container.class, responseContainer = "List")
     public List<Container> getAllRegisteredContainers() {
         List<Container> repositories = containerDAO.findAll();
         return repositories;
@@ -525,7 +530,8 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/searchContainers")
-    @ApiOperation(value = "Search for matching registered containers", notes = "Search on the name (full path name) and description.", response = Container.class, responseContainer = "List")
+    @ApiOperation(value = "Search for matching registered containers."
+            + " This would be a minimal resource that would need to be implemented by a GA4GH reference server", notes = "Search on the name (full path name) and description.", response = Container.class, responseContainer = "List")
     public List<Container> searchContainers(@QueryParam("pattern") String word) {
         return containerDAO.searchPattern(word);
     }
