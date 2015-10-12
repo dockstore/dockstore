@@ -27,6 +27,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -128,7 +129,7 @@ public class LauncherCWL {
         try {
             String[] s = new String[]{"cwltool", "--outdir", workingDir, cwlFile, "-"};
             Process p = Runtime.getRuntime().exec(s);
-            yaml.dump(inputObject, new java.io.OutputStreamWriter(p.getOutputStream()));
+            yaml.dump(inputObject, new java.io.OutputStreamWriter(p.getOutputStream(), Charset.forName("UTF-8").newEncoder()));
             p.getOutputStream().close();
             obj = yaml.load(p.getInputStream());
             p.waitFor();
