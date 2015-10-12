@@ -11,7 +11,7 @@ trap "echo TRAPed signal" HUP INT QUIT KILL TERM
 /docker-entrypoint.sh &
 
 # todo put the web service startup here
-java -jar /gitroot/target/dockstore-*-SNAPSHOT.jar server /hello-world.yml
+java -jar /gitroot/dockstore-webservice/target/dockstore-webservice-*.jar server /hello-world.yml
 
 echo "[hit enter key to exit] or run 'docker stop <container>'"
 read
