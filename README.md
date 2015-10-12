@@ -4,10 +4,24 @@ This is the prototype web service for the dockstore. The usage of this is to enu
 
 ## Usage
 
-### Starting Up
+### Build Docker Version
 
-1. Fill in the template hello-world.yml and stash it somewhere outside the git repo (like ~/.stash)
-2. Start with java -jar target/dockstore-0.0.1-SNAPSHOT.jar server ~/.stash/hello-world.yml
+  docker build -t dockstore:1.0.0 .
+
+### Running Via Docker
+
+Probably the best way to run this since it includes a bundled postgres.  Keep in mind once you terminate the Docker container
+any state in the DB is lost.
+
+1. Fill in the template hello-world.yml and stash it somewhere outside the git repo (like ~/.dockstore)
+2. Start with `docker run -it -v ~/.dockstore/hello-world.yml:/hello-world.yml -e POSTGRES_PASSWORD=iAMs00perSecrEET -e POSTGRES_USER=webservice -p 8080:8080 dockstore:1.0.0`
+
+### Running Locally
+
+You can also run it on your local computer but will need to setup postgres separately.
+
+1. Fill in the template hello-world.yml and stash it somewhere outside the git repo (like ~/.dockstore)
+2. Start with `java -jar dockstore-webservice/target/dockstore-webservice-*.jar   server ~/.dockstore/hello-world.yml`
 
 ### View Swagger UI
 

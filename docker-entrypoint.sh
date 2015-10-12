@@ -8,18 +8,22 @@ trap "echo TRAPed signal" HUP INT QUIT KILL TERM
 # start service in background here
 #/usr/sbin/apachectl start
 # the entrypoint provided by the base Postgres container
-/docker-entrypoint.sh &
+echo "Starting Postgres"
+bash /docker-entrypoint.sh postgres &
+sleep 10
 
 # todo put the web service startup here
+echo "Starting Java Web Service"
 java -jar /gitroot/dockstore-webservice/target/dockstore-webservice-*.jar server /hello-world.yml
 
-echo "[hit enter key to exit] or run 'docker stop <container>'"
-read
+#echo "[hit enter key to exit] or run 'docker stop <container>'"
+#read
 
 # stop service and clean up here
-echo "stopping postgres"
+#echo "stopping postgres"
 #/usr/sbin/apachectl stop
 # not sure if this is right
-gosu postgres pg_ctl -D "$PGDATA" -m fast -w stop
+#gosu postgres pg_ctl -D "$PGDATA" -m fast -w stop
+#pkill java
 
-echo "exited $0"
+#echo "exited $0"
