@@ -99,12 +99,13 @@ public class LauncherCWL {
         //pullFiles("INPUT", cwl, fileMap);
 
         // run command
-        //Object outputObj = runCommand(line.getOptionValue("descriptor"));
+        Object outputObj = runCommand(line.getOptionValue("descriptor"),
+                                      inputsAndOutputsJson, workingDir);
+
+        log.info(outputObj);
 
         // push output files
         //pushOutputFiles(cwl, fileMap, workingDir);
-
-        //log.info(outputObj);
 
         // push output files
         //pushOutputFiles(json, fileMap, workingDir);
@@ -122,16 +123,21 @@ public class LauncherCWL {
         return "";
     }
 
-    private Object runCommand(String cwlFile, Object inputObject) {
+    private Object runCommand(String cwlFile, Object inputObject, String workingDir) {
         Object obj = null;
 
         try {
-            String[] s = new String[]{"cwltool", cwlFile, "-"};
+            String[] s = new String[]{"cwltool", "--outdir", workingDir, cwlFile, "-"};
             Process p = Runtime.getRuntime().exec(s);
             yaml.dump(inputObject, new java.io.OutputStreamWriter(p.getOutputStream(), Charset.forName("UTF-8").newEncoder()));
             p.getOutputStream().close();
             obj = yaml.load(p.getInputStream());
             p.waitFor();
+
+            if (p.exitValue() != 0) {
+                log.warn("Got return code " + p.exitValue());
+                log.warn("Error message is: " + IOUtils.toString(p.getErrorStream()));
+            }
         } catch (java.lang.InterruptedException e) {
             e.printStackTrace();
         } catch (java.io.IOException e) {
@@ -288,6 +294,12 @@ public class LauncherCWL {
             Process p = Runtime.getRuntime().exec(s);
             obj = yaml.load(p.getInputStream());
             p.waitFor();
+
+            if (p.exitValue() != 0) {
+                log.warn("Got return code " + p.exitValue());
+                log.warn("Error message is: " + IOUtils.toString(p.getErrorStream()));
+            }
+
         } catch (java.lang.InterruptedException e) {
             e.printStackTrace();
         } catch (java.io.IOException e) {
