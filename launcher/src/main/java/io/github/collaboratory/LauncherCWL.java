@@ -27,12 +27,14 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Array;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
+//import java.util.UUID;
 
 /**
  * @author boconnor 9/24/15
@@ -65,7 +67,7 @@ public class LauncherCWL {
         // now read in the INI file
         config = getINIConfig(line.getOptionValue("config"));
 
-        // parse the 
+        // parse the CWL tool definition
         cwl = parseCWL(line.getOptionValue("descriptor"));
 
         if (cwl == null) {
@@ -83,7 +85,7 @@ public class LauncherCWL {
             return;
         }
 
-        // this is the job order, just a JSON, defines the inputs/outputs in terms or realy URLs that are provisioned by the launcher
+        // this is the job parameterization, just a JSON, defines the inputs/outputs in terms or real URLs that are provisioned by the launcher
         inputsAndOutputsJson = loadJob(line.getOptionValue("job"));
 
         if (inputsAndOutputsJson == null) {
@@ -95,16 +97,16 @@ public class LauncherCWL {
         String workingDir = setupDirectories(cwl);
 
         // pull data files
-        //pullFiles("DATA", cwl, fileMap);
+        pullFiles(cwl, inputsAndOutputsJson, fileMap);
 
         // pull input files
         //pullFiles("INPUT", cwl, fileMap);
 
         // run command
-        Object outputObj = runCommand(line.getOptionValue("descriptor"),
+        //Object outputObj = runCommand(line.getOptionValue("descriptor"),
                                       inputsAndOutputsJson, workingDir);
 
-        log.info(outputObj);
+        //log.info(outputObj);
 
         // push output files
         //pushOutputFiles(cwl, fileMap, workingDir);
@@ -123,6 +125,9 @@ public class LauncherCWL {
 
     private String setupDirectories(Object json) {
         return "";
+
+        // TODO: we still need to have these directories to download input files to
+
     }
 
     private Object runCommand(String cwlFile, Object inputObject, String workingDir) {
@@ -216,73 +221,57 @@ public class LauncherCWL {
         }
     }
 
-    private void pullFiles(String data, Object json, HashMap<String, HashMap<String, String>> fileMap) {
+    private void pullFiles(Object cwl, Object inputsOutputs, HashMap<String, HashMap<String, String>> fileMap) {
 
-        log.info("DOWNLOADING " + data + " FILES...");
+        log.info("DOWNLOADING INPUT FILES...");
 
-        // working dir
+        // !(((Map)cwl).get("class")).equals("CommandLineTool")
 
-        // just figure out which files from the JSON are we pulling
-        String type = null;
-        if ("DATA".equals(data)) {
-            type = "data";
-        } else if ("INPUT".equals(data)) {
-            type = "inputs";
-        }
+        log.info(((Map) cwl).get("inputs"));
 
-        log.info("TYPE: " + type);
+        List files = (List) ((Map)cwl).get("inputs");
 
         // for each tool
-        // TODO: really this launcher will operate off of a request for a particular tool whereas the collab.json can define multiple tools
-        // TODO: really don't want to process inputs for all tools! Just the one going to be called
-        JSONArray tools = (JSONArray) ((JSONObject) json).get("tools");
-        for (Object tool : tools) {
+        for (Object file : files) {
 
-            // get list of files
-            JSONArray files = (JSONArray) ((JSONObject) tool).get(type);
 
-            log.info("files: " + files);
+            // input
+           /* String fileURL = (String) ((Map) file).get("url");
 
-            for (Object file : files) {
+            // output
+            String filePath = (String) ((JSONObject) file).get("path");
+            String fileId = (String) ((JSONObject) file).get("id");
+            File filePathObj = new File(filePath);
+            String newDirectory = globalWorkingDir + "/inputs/" + UUID.randomUUID().toString();
+            execute("mkdir -p " + newDirectory);
+            File newDirectoryFile = new File(newDirectory);
+            String uuidPath = newDirectoryFile.getAbsolutePath() + "/" + filePathObj.getName();
 
-                // input
-                String fileURL = (String) ((JSONObject) file).get("url");
+            // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
+            // https://commons.apache.org/proper/commons-vfs/filesystems.html
+            FileSystemManager fsManager = null;
+            try {
 
-                // output
-                String filePath = (String) ((JSONObject) file).get("path");
-                String fileId = (String) ((JSONObject) file).get("id");
-                File filePathObj = new File(filePath);
-                String newDirectory = globalWorkingDir + "/inputs/" + UUID.randomUUID().toString();
-                execute("mkdir -p " + newDirectory);
-                File newDirectoryFile = new File(newDirectory);
-                String uuidPath = newDirectoryFile.getAbsolutePath() + "/" + filePathObj.getName();
+                // trigger a copy from the URL to a local file path that's a UUID to avoid collision
+                fsManager = VFS.getManager();
+                FileObject src = fsManager.resolveFile(fileURL);
+                FileObject dest = fsManager.resolveFile(new File(uuidPath).getAbsolutePath());
+                dest.copyFrom(src, Selectors.SELECT_SELF);
 
-                // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
-                // https://commons.apache.org/proper/commons-vfs/filesystems.html
-                FileSystemManager fsManager = null;
-                try {
+                // now add this info to a hash so I can later reconstruct a docker -v command
+                HashMap<String, String> new1 = new HashMap<String, String>();
+                new1.put("local_path", uuidPath);
+                new1.put("docker_path", filePath);
+                new1.put("url", fileURL);
+                fileMap.put(fileId, new1);
 
-                    // trigger a copy from the URL to a local file path that's a UUID to avoid collision
-                    fsManager = VFS.getManager();
-                    FileObject src = fsManager.resolveFile(fileURL);
-                    FileObject dest = fsManager.resolveFile(new File(uuidPath).getAbsolutePath());
-                    dest.copyFrom(src, Selectors.SELECT_SELF);
-
-                    // now add this info to a hash so I can later reconstruct a docker -v command
-                    HashMap<String, String> new1 = new HashMap<String, String>();
-                    new1.put("local_path", uuidPath);
-                    new1.put("docker_path", filePath);
-                    new1.put("url", fileURL);
-                    fileMap.put(fileId, new1);
-
-                } catch (FileSystemException e) {
-                    e.printStackTrace();
-                    log.error(e.getMessage());
-                }
-
-                log.info("FILE: LOCAL: " + filePath + " URL: " + fileURL);
-
+            } catch (FileSystemException e) {
+                e.printStackTrace();
+                log.error(e.getMessage());
             }
+
+            log.info("FILE: LOCAL: " + filePath + " URL: " + fileURL);
+*/
         }
 
     }
