@@ -104,7 +104,9 @@ public class Container {
         this.isStarred = container.getIsStarred();
         this.lastModified = container.getLastModified();
         this.lastUpdated = lastUpdated;
+        this.hasCollab = container.getHasCollab();
 
+        this.gitUrl = container.getGitUrl();
     }
 
     @JsonProperty
