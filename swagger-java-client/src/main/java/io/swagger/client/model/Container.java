@@ -11,7 +11,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 @ApiModel(description = "")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-08T12:05:51.067-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-13T13:30:22.221-04:00")
 public class Container   {
   
   private Long id = null;
@@ -20,7 +20,9 @@ public class Container   {
   private String namespace = null;
   private String registry = null;
   private String description = null;
+  private Long lastUpdated = null;
   private String gitUrl = null;
+  private Boolean hasCollab = null;
   private List<Tag> tags = new ArrayList<Tag>();
   private String path = null;
   private Boolean isStarred = null;
@@ -104,12 +106,36 @@ public class Container   {
   /**
    **/
   @ApiModelProperty(value = "")
+  @JsonProperty("lastUpdated")
+  public Long getLastUpdated() {
+    return lastUpdated;
+  }
+  public void setLastUpdated(Long lastUpdated) {
+    this.lastUpdated = lastUpdated;
+  }
+
+  
+  /**
+   **/
+  @ApiModelProperty(value = "")
   @JsonProperty("gitUrl")
   public String getGitUrl() {
     return gitUrl;
   }
   public void setGitUrl(String gitUrl) {
     this.gitUrl = gitUrl;
+  }
+
+  
+  /**
+   **/
+  @ApiModelProperty(value = "")
+  @JsonProperty("hasCollab")
+  public Boolean getHasCollab() {
+    return hasCollab;
+  }
+  public void setHasCollab(Boolean hasCollab) {
+    this.hasCollab = hasCollab;
   }
 
   
@@ -197,7 +223,9 @@ public class Container   {
     sb.append("    namespace: ").append(StringUtil.toIndentedString(namespace)).append("\n");
     sb.append("    registry: ").append(StringUtil.toIndentedString(registry)).append("\n");
     sb.append("    description: ").append(StringUtil.toIndentedString(description)).append("\n");
+    sb.append("    lastUpdated: ").append(StringUtil.toIndentedString(lastUpdated)).append("\n");
     sb.append("    gitUrl: ").append(StringUtil.toIndentedString(gitUrl)).append("\n");
+    sb.append("    hasCollab: ").append(StringUtil.toIndentedString(hasCollab)).append("\n");
     sb.append("    tags: ").append(StringUtil.toIndentedString(tags)).append("\n");
     sb.append("    path: ").append(StringUtil.toIndentedString(path)).append("\n");
     sb.append("    isStarred: ").append(StringUtil.toIndentedString(isStarred)).append("\n");

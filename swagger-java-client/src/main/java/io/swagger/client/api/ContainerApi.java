@@ -16,7 +16,7 @@ import java.io.File;
 import java.util.Map;
 import java.util.HashMap;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-08T12:05:51.067-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-13T13:30:22.221-04:00")
 public class ContainerApi {
   private ApiClient apiClient;
 
@@ -38,7 +38,7 @@ public class ContainerApi {
 
   
   /**
-   * List all repos known via all registered tokens
+   * List all repos known cached in database
    * List docker container repos currently known. Right now, tokens are used to synchronously talk to the quay.io API to list repos. Ultimately, we should cache this information and refresh either by user request or by time TODO: This should be a properly defined list of objects, it also needs admin authentication
    * @return List<Container>
    */
@@ -397,7 +397,7 @@ public class ContainerApi {
     }
     
     // create path and map variables
-    String path = "/container/{userId}".replaceAll("\\{format\\}","json")
+    String path = "/container/user/{userId}".replaceAll("\\{format\\}","json")
       .replaceAll("\\{" + "userId" + "\\}", apiClient.escapeString(userId.toString()));
 
     // query params
@@ -425,6 +425,53 @@ public class ContainerApi {
 
     
     TypeRef returnType = new TypeRef<List<Container>>() {};
+    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    
+  }
+  
+  /**
+   * Get a cached repo
+   * 
+   * @param containerId Container ID
+   * @return Container
+   */
+  public Container getContainer (Long containerId) throws ApiException {
+    Object postBody = null;
+    
+    // verify the required parameter 'containerId' is set
+    if (containerId == null) {
+      throw new ApiException(400, "Missing the required parameter 'containerId' when calling getContainer");
+    }
+    
+    // create path and map variables
+    String path = "/container/{containerId}".replaceAll("\\{format\\}","json")
+      .replaceAll("\\{" + "containerId" + "\\}", apiClient.escapeString(containerId.toString()));
+
+    // query params
+    List<Pair> queryParams = new ArrayList<Pair>();
+    Map<String, String> headerParams = new HashMap<String, String>();
+    Map<String, Object> formParams = new HashMap<String, Object>();
+
+    
+
+    
+
+    
+
+    final String[] accepts = {
+      "application/json"
+    };
+    final String accept = apiClient.selectHeaderAccept(accepts);
+
+    final String[] contentTypes = {
+      
+    };
+    final String contentType = apiClient.selectHeaderContentType(contentTypes);
+
+    String[] authNames = new String[] {  };
+
+    
+    TypeRef returnType = new TypeRef<Container>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }

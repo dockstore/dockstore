@@ -276,7 +276,6 @@ public class DockerRepoResource {
                 LOG.info("Creating tag: " + tag);
                 Tag newTag = new Tag();
                 newTag.setVersion(tag);
-                // newTag.setContainer(container);
                 long tagId = tagDAO.create(newTag);
                 newTag = tagDAO.findById(tagId);
                 container.addTag(newTag);
@@ -313,7 +312,7 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/register")
     @ApiOperation(value = "Register a container", notes = "Register a container (public or private). Assumes that user is using quay.io and github. Include quay.io in path if using quay.io", response = Container.class)
-    public Container register(@QueryParam("repository") String path, @QueryParam("enduser_id") Long userId) throws IOException {
+    public Container register(@QueryParam("repository") String path, @QueryParam("enduser_id") Long userId) {
         Container c = containerDAO.findByPath(path);
 
         if (c == null || c.getUserId() != userId) {
@@ -325,96 +324,6 @@ public class DockerRepoResource {
 
         c = containerDAO.findById(id);
         return c;
-
-        // List<Token> tokens = tokenDAO.findByUserId(userId);
-        //
-        // for (Token token : tokens) {
-        // String tokenType = token.getTokenSource();
-        // if (repoRegistry.equals(TokenType.QUAY_IO.toString()) && tokenType.equals(TokenType.QUAY_IO.toString())) {
-        // // Get the list of containers that belong to the user.
-        // String url = TARGET_URL + "repository?namespace=" + repoNamespace;
-        // Optional<String> asString = ResourceUtilities.asString(url, token.getContent(), client);
-        //
-        // if (asString.isPresent()) {
-        // RepoList repos = objectMapper.readValue(asString.get(), RepoList.class);
-        // LOG.info("RESOURCE CALL: " + url);
-        // List<Container> containers = repos.getRepositories();
-        // for (Container c : containers) {
-        //
-        // // Check to see if the requested container even exists
-        // if (repoName.equals((String) c.getName()) && repoNamespace.equals((String) c.getNamespace())) {
-        //
-        // // first check to see if the container is already registered in our database.
-        // List<Container> list = containerDAO.findByNameAndNamespaceAndRegistry(repoName, repoNamespace, repoRegistry);
-        //
-        // if (list.isEmpty()) {
-        // String repo = repoNamespace + "/" + repoName;
-        //
-        // // Get the list of builds from the container.
-        // // Builds contain information such as the Git URL and tags
-        // String urlBuilds = TARGET_URL + "repository/" + repo + "/build/";
-        // Optional<String> asStringBuilds = ResourceUtilities.asString(urlBuilds, token.getContent(), client);
-        // String gitURL = "";
-        // ArrayList<String> tags = null;
-        //
-        // if (asStringBuilds.isPresent()) {
-        // String json = asStringBuilds.get();
-        // LOG.info("RESOURCE CALL: " + urlBuilds);
-        //
-        // // parse json using Gson to get the git url of repository and the list of tags
-        // Gson gson = new Gson();
-        // Map<String, ArrayList> map = new HashMap<>();
-        // map = (Map<String, ArrayList>) gson.fromJson(json, map.getClass());
-        //
-        // Map<String, Map<String, String>> map2 = new HashMap<>();
-        // map2 = (Map<String, Map<String, String>>) map.get("builds").get(0);
-        //
-        // gitURL = map2.get("trigger_metadata").get("git_url");
-        // LOG.info(gitURL);
-        //
-        // tags = (ArrayList<String>) map2.get("tags");
-        // }
-        //
-        // // String path = tokenType + "/" + namespace + "/" + name;
-        //
-        // c.setUserId(userId);
-        // c.setRegistry(tokenType);
-        // c.setGitUrl(gitURL);
-        // c.setIsRegistered(true);
-        // c.setPath(path);
-        // // c.setTags(containerTags);
-        // long create = containerDAO.create(c);
-        //
-        // Container container = containerDAO.findById(create);
-        //
-        // // create Tag objects and add them to the container.
-        // // Note: adding them to container will not store it in the instance, need to get the object again if the
-        // // list of tags are wanted.
-        // for (String tag : tags) {
-        // LOG.info("Creating tag: " + tag);
-        // Tag newTag = new Tag();
-        // newTag.setVersion(tag);
-        // // newTag.setContainer(container);
-        // long tagId = tagDAO.create(newTag);
-        // newTag = tagDAO.findById(tagId);
-        // container.addTag(newTag);
-        // }
-        //
-        // return container;
-        // } else {
-        // LOG.info("Container already registered");
-        // }
-        // } else {
-        // LOG.info("Container does not exist");
-        // }
-        //
-        // }
-        // } else {
-        // LOG.info("Received no repos from client");
-        // }
-        // }
-        // }
-        // return null;
     }
 
     @DELETE

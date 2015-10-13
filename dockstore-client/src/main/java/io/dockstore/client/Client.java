@@ -37,6 +37,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 
 import java.util.Map;
+import javassist.NotFoundException;
 
 /**
  *
@@ -120,8 +121,19 @@ public class Client {
         out(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "On Dockstore?", "Collab.json", "Automated");
 
         for (Container container : containers) {
+            String collab = "No";
+            String automated = "No";
+
+            if (container.getHasCollab()) {
+                collab = "Yes";
+            }
+
+            if (!container.getGitUrl().isEmpty()) {
+                automated = "Yes";
+            }
+
             out(format, container.getPath(), container.getDescription(), container.getGitUrl(), boolWord(container.getIsRegistered()),
-                    "No", "No");
+                    collab, automated);
         }
     }
 
@@ -290,6 +302,10 @@ public class Client {
 
             user = userApi.listUser(username);
 
+            if (user == null) {
+                throw new NotFoundException("User " + username + " not found");
+            }
+
             if (isHelp(args, true)) {
                 out("");
                 out("HELP FOR DOCKSTORE");
@@ -343,6 +359,8 @@ public class Client {
         } catch (YamlException ex) {
             out("Exception: " + ex);
         } catch (ApiException ex) {
+            out("Exception: " + ex);
+        } catch (NotFoundException ex) {
             out("Exception: " + ex);
         }
     }
