@@ -16,7 +16,6 @@ import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.FileSystemManager;
 import org.apache.commons.vfs2.Selectors;
 import org.apache.commons.vfs2.VFS;
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import org.yaml.snakeyaml.Yaml;
@@ -32,7 +31,6 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -207,8 +205,7 @@ public class LauncherCWL {
             if (fileMap.get(paramName) != null) {
                 param.put("path", ((HashMap) fileMap.get(paramName)).get("local_path"));
                 log.info("NEW FULL PATH: "+ ((HashMap) fileMap.get(paramName)).get("local_path"));
-            }
-            else if (outputMap.get(paramName) != null) {
+            } else if (outputMap.get(paramName) != null) {
                 param.put("path", ((HashMap) outputMap.get(paramName)).get("local_path"));
                 log.info("NEW FULL PATH: "+ ((HashMap) outputMap.get(paramName)).get("local_path"));
             }
