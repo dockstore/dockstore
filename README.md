@@ -95,9 +95,9 @@ To run the Launcher:
 
     java -jar <launcher.jar> --config <path_to_launcher.config> --decriptor <path_to_json_descriptor>
     # for example:
-    java -jar launcher/target/uber-io.github.collaboratory.launcher-1.0.0.jar --config launcher.ini --descriptor collab.json --job collab-cwl-job-pre.json
+    java -jar launcher/target/uber-io.github.collaboratory.launcher-1.0.0.jar --config launcher.ini --descriptor collab.cwl --job collab-cwl-job-pre.json
     # another example for testing
-    rm -rf datastore && cd launcher && mvn clean install && cd - && java -jar launcher/target/uber-io.github.collaboratory.launcher-1.0.0.jar --config launcher.ini --descriptor collab.json --job collab-cwl-job-pre.json
+    rm -rf datastore && cd launcher && mvn clean install && cd - && java -jar launcher/target/uber-io.github.collaboratory.launcher-1.0.0.jar --config launcher.ini --descriptor collab.cwl --job collab-cwl-job-pre.json
 
 ## The Descriptor
 
