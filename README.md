@@ -99,7 +99,7 @@ To run the Launcher:
     # for example:
     java -cp launcher/target/uber-io.github.collaboratory.launcher-1.0.0.jar io.github.collaboratory.LauncherCWL --config launcher.ini --descriptor collab.cwl --job collab-cwl-job-pre.json
     # another example for testing
-    rm -rf datastore && cd launcher && mvn clean install && cd - && java -cp launcher/target/uber-io.github.collaboratory.launcher-1.0.0.jar io.github.collaboratory.LauncherCWL --config launcher.ini --descriptor collab.cwl --job collab-cwl-job-pre.json
+    rm -rf datastore && cd launcher && mvn clean install -DskipTests -Dfindbugs.failOnError=false -Dcheckstyle.failOnViolation=false && cd - && java -cp launcher/target/uber-io.github.collaboratory.launcher-1.0.0.jar io.github.collaboratory.LauncherCWL --config launcher.ini --descriptor collab.cwl --job collab-cwl-job-pre.json
 
 ## The Descriptor
 
