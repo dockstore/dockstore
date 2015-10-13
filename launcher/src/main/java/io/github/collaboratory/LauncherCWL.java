@@ -25,16 +25,20 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Array;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-//import java.util.UUID;
+import java.util.UUID;
 
 /**
  * @author boconnor 9/24/15
@@ -96,15 +100,15 @@ public class LauncherCWL {
         // setup directories
         String workingDir = setupDirectories(cwl);
 
-        // pull data files
-        pullFiles(cwl, inputsAndOutputsJson, fileMap);
-
         // pull input files
-        //pullFiles("INPUT", cwl, fileMap);
+        pullFiles("inputs", cwl, inputsAndOutputsJson, fileMap);
+
+        // create updated JSON inputs document
+        String newJsonPath = createUpdatedInputsAndOutputsJson(fileMap, inputsAndOutputsJson);
 
         // run command
         //Object outputObj = runCommand(line.getOptionValue("descriptor"),
-                                      inputsAndOutputsJson, workingDir);
+        //                              inputsAndOutputsJson, workingDir);
 
         //log.info(outputObj);
 
@@ -115,6 +119,36 @@ public class LauncherCWL {
         //pushOutputFiles(json, fileMap, workingDir);
     }
 
+    private String createUpdatedInputsAndOutputsJson(HashMap<String, HashMap<String, String>> fileMap, Object inputsAndOutputsJson) {
+
+        JSONObject newJSON = new JSONObject();
+
+
+        for (Object paramName : ((HashMap)inputsAndOutputsJson).keySet()) {
+            HashMap param = (HashMap) ((HashMap) inputsAndOutputsJson).get(paramName);
+            String path = (String) param.get("path");
+            log.info("PATH: "+path+" PARAM_NAME: "+paramName);
+            // will be null for output
+            if (fileMap.get(paramName) != null) {
+                param.put("path", ((HashMap) fileMap.get(paramName)).get("local_path"));
+                log.info("NEW FULL PATH: "+ ((HashMap) fileMap.get(paramName)).get("local_path"));
+            }
+            //
+            //
+            //log.info("OLD: " + path + " NEW: " + (String) ((HashMap) fileMap.get(path)).get("local_path"));
+            // now add to the new JSON structure
+            JSONObject newRecord = new JSONObject();
+            newRecord.put("class", param.get("class"));
+            newRecord.put("path", param.get("path"));
+            newJSON.put(paramName, newRecord);
+
+        }
+
+        writeJob("foo.json", newJSON);
+
+        return("foo.json");
+    }
+
     private Object loadJob(String jobPath) {
         try {
             return yaml.load(new FileInputStream(jobPath));
@@ -123,10 +157,37 @@ public class LauncherCWL {
         }
     }
 
-    private String setupDirectories(Object json) {
-        return "";
+    private void writeJob(String jobOutputPath, JSONObject newJson) {
 
-        // TODO: we still need to have these directories to download input files to
+        try {
+
+            Writer file = new OutputStreamWriter(new FileOutputStream(jobOutputPath), "UTF-8");
+            file.write(((JSONObject)newJson).toJSONString());
+            file.flush();
+            file.close();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private String setupDirectories(Object json) {
+
+        log.info("MAKING DIRECTORIES...");
+        // directory to use, typically a large, encrypted filesystem
+        String workingDir = config.getString("working-directory");
+        // make UUID
+        UUID uuid = UUID.randomUUID();
+        // setup directories
+        globalWorkingDir = workingDir + "/launcher-" + uuid.toString();
+        execute("mkdir -p " + workingDir + "/launcher-" + uuid.toString());
+        execute("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/configs");
+        execute("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/working");
+        execute("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/inputs");
+        execute("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/logs");
+        execute("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/outputs");
+
+        return (new File(workingDir + "/launcher-" + uuid.toString()).getAbsolutePath());
 
     }
 
@@ -221,7 +282,7 @@ public class LauncherCWL {
         }
     }
 
-    private void pullFiles(Object cwl, Object inputsOutputs, HashMap<String, HashMap<String, String>> fileMap) {
+    private void pullFiles(String type, Object cwl, Object inputsOutputs, HashMap<String, HashMap<String, String>> fileMap) {
 
         log.info("DOWNLOADING INPUT FILES...");
 
@@ -229,49 +290,79 @@ public class LauncherCWL {
 
         log.info(((Map) cwl).get("inputs"));
 
-        List files = (List) ((Map)cwl).get("inputs");
+        List files = (List) ((Map)cwl).get(type);
 
-        // for each tool
+        // for each file input from the CWL
         for (Object file : files) {
 
-
-            // input
-           /* String fileURL = (String) ((Map) file).get("url");
-
-            // output
-            String filePath = (String) ((JSONObject) file).get("path");
-            String fileId = (String) ((JSONObject) file).get("id");
-            File filePathObj = new File(filePath);
-            String newDirectory = globalWorkingDir + "/inputs/" + UUID.randomUUID().toString();
-            execute("mkdir -p " + newDirectory);
-            File newDirectoryFile = new File(newDirectory);
-            String uuidPath = newDirectoryFile.getAbsolutePath() + "/" + filePathObj.getName();
-
-            // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
-            // https://commons.apache.org/proper/commons-vfs/filesystems.html
-            FileSystemManager fsManager = null;
+            // pull back the name of the input from the CWL
+            log.info(file.toString());
+            log.info("FILE: " + ((Map) file).get("id"));
+            String fileUrl = null;
             try {
-
-                // trigger a copy from the URL to a local file path that's a UUID to avoid collision
-                fsManager = VFS.getManager();
-                FileObject src = fsManager.resolveFile(fileURL);
-                FileObject dest = fsManager.resolveFile(new File(uuidPath).getAbsolutePath());
-                dest.copyFrom(src, Selectors.SELECT_SELF);
-
-                // now add this info to a hash so I can later reconstruct a docker -v command
-                HashMap<String, String> new1 = new HashMap<String, String>();
-                new1.put("local_path", uuidPath);
-                new1.put("docker_path", filePath);
-                new1.put("url", fileURL);
-                fileMap.put(fileId, new1);
-
-            } catch (FileSystemException e) {
+                fileUrl = new URL((String)((Map)file).get("id")).getRef();
+                log.info("REF: "+fileUrl);
+            } catch (MalformedURLException e) {
                 e.printStackTrace();
                 log.error(e.getMessage());
             }
 
-            log.info("FILE: LOCAL: " + filePath + " URL: " + fileURL);
-*/
+            if (fileUrl == null) {
+                log.error("fileURL from the CWL was not able to be parsed for the file name as a ref");
+            }
+
+            // now that I have an input name from the CWL I can find it in the JSON parameterization for this run
+            String fileURL = null;
+            log.info("JSON: "+inputsOutputs.toString());
+            for (Object paramName : ((HashMap)inputsOutputs).keySet()) {
+                HashMap param = (HashMap)((HashMap)inputsOutputs).get(paramName);
+                String path = (String)param.get("path");
+
+                if (paramName.equals(fileUrl)) {
+
+                    // if it's the current one
+                    log.info("PATH TO DOWNLOAD FROM: "+path+" FOR "+fileUrl+" FOR "+paramName);
+
+                    // output
+                    // TODO: poor naming here, need to cleanup the variables
+                    // just file name
+                    String filePath = fileUrl;
+                    // the file URL
+                    String fileId = path;
+                    File filePathObj = new File(filePath);
+                    String newDirectory = globalWorkingDir + "/inputs/" + UUID.randomUUID().toString();
+                    execute("mkdir -p " + newDirectory);
+                    File newDirectoryFile = new File(newDirectory);
+                    String uuidPath = newDirectoryFile.getAbsolutePath() + "/" + filePathObj.getName();
+
+                    // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
+                    // https://commons.apache.org/proper/commons-vfs/filesystems.html
+                    FileSystemManager fsManager = null;
+                    try {
+
+                        // trigger a copy from the URL to a local file path that's a UUID to avoid collision
+                        fsManager = VFS.getManager();
+                        FileObject src = fsManager.resolveFile(fileId);
+                        FileObject dest = fsManager.resolveFile(new File(uuidPath).getAbsolutePath());
+                        dest.copyFrom(src, Selectors.SELECT_SELF);
+
+                        // now add this info to a hash so I can later reconstruct a docker -v command
+                        HashMap<String, String> new1 = new HashMap<String, String>();
+                        new1.put("local_path", uuidPath);
+                        new1.put("docker_path", filePath);
+                        new1.put("url", fileId);
+                        fileMap.put(filePath, new1);
+
+                    } catch (FileSystemException e) {
+                        e.printStackTrace();
+                        log.error(e.getMessage());
+                    }
+
+                    log.info("DOWNLOADED FILE: LOCAL: " + filePath + " URL: " + fileId);
+
+                }
+            }
+
         }
 
     }

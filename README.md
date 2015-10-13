@@ -54,6 +54,8 @@ Standard maven build in the launcher directory. Notice I'm unsetting my AWS cred
     unset AWS_ACCESS_KEY
     unset AWS_SECRET_KEY
     mvn clean install
+    # to skip tests
+    mvn clean install -DskipTests
 
 ### Running the Launcher
 
