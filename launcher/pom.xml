@@ -252,7 +252,7 @@
                         <configuration>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>io.github.collaboratory.LauncherCWL</mainClass>
+                                    <mainClass>io.github.collaboratory.Launcher</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>

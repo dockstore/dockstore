@@ -54,6 +54,7 @@ public class LauncherCWL {
     Object cwl = null;
     Object inputsAndOutputsJson = null;
     HashMap<String, HashMap<String, String>> fileMap = null;
+    HashMap<String, HashMap<String, String>> outputMap = null;
     String globalWorkingDir = null;
     Yaml yaml = new Yaml(new SafeConstructor());
 
@@ -61,6 +62,7 @@ public class LauncherCWL {
 
         // hashmap for files
         fileMap = new HashMap<>();
+        outputMap = new HashMap<>();
 
         // create the command line parser
         parser = setupCommandLineParser();
@@ -98,31 +100,104 @@ public class LauncherCWL {
         }
 
         // setup directories
-        String workingDir = setupDirectories(cwl);
+        //String workingDir = setupDirectories(cwl);
+        globalWorkingDir = setupDirectories(cwl);
 
         // pull input files
         pullFiles("inputs", cwl, inputsAndOutputsJson, fileMap);
 
+        // prep outputs, just creates output dir and records what the local output path will be
+        prepUploads("outputs", cwl, inputsAndOutputsJson, outputMap);
+
         // create updated JSON inputs document
-        String newJsonPath = createUpdatedInputsAndOutputsJson(fileMap, inputsAndOutputsJson);
+        String newJsonPath = createUpdatedInputsAndOutputsJson(fileMap, outputMap, inputsAndOutputsJson);
 
         // run command
-        //Object outputObj = runCommand(line.getOptionValue("descriptor"),
-        //                              inputsAndOutputsJson, workingDir);
+        log.info("RUNNING COMMAND");
+        Object outputObj = runCommand(line.getOptionValue("descriptor"), newJsonPath, globalWorkingDir+"/outputs/");
 
         //log.info(outputObj);
 
         // push output files
-        //pushOutputFiles(cwl, fileMap, workingDir);
+        pushOutputFiles(cwl, outputMap, globalWorkingDir+"/outputs/", outputObj);
 
-        // push output files
-        //pushOutputFiles(json, fileMap, workingDir);
     }
 
-    private String createUpdatedInputsAndOutputsJson(HashMap<String, HashMap<String, String>> fileMap, Object inputsAndOutputsJson) {
+    private void prepUploads(String type, Object cwl, Object inputsOutputs, HashMap<String, HashMap<String, String>> fileMap) {
+
+        log.info("PREPPING UPLOADS...");
+
+        log.info(((Map) cwl).get(type));
+
+        List files = (List) ((Map)cwl).get(type);
+
+        // for each file input from the CWL
+        for (Object file : files) {
+
+            // pull back the name of the input from the CWL
+            log.info(file.toString());
+            log.info("FILE: " + ((Map) file).get("id"));
+            String fileUrl = null;
+            try {
+                //fileUrl = new URL((String)((Map)file).get("id")).getRef();
+                fileUrl = new URL((String)((Map)file).get("id")).getRef();
+                log.info("REF: "+fileUrl);
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+                log.error(e.getMessage());
+            }
+
+            if (fileUrl == null) {
+                log.error("fileURL from the CWL was not able to be parsed for the file name as a ref");
+            }
+
+            // now that I have an input name from the CWL I can find it in the JSON parameterization for this run
+            String fileURL = null;
+            log.info("JSON: "+inputsOutputs.toString());
+            for (Object paramName : ((HashMap)inputsOutputs).keySet()) {
+                HashMap param = (HashMap)((HashMap)inputsOutputs).get(paramName);
+                String path = (String)param.get("path");
+
+                if (paramName.equals(fileUrl)) {
+
+                    // if it's the current one
+                    log.info("PATH TO UPLOAD TO: "+path+" FOR "+fileUrl+" FOR "+paramName);
+
+                    // output
+                    // TODO: poor naming here, need to cleanup the variables
+                    // just file name
+                    String filePath = fileUrl;
+                    // the file URL
+                    String fileId = path;
+                    File filePathObj = new File(filePath);
+                    //String newDirectory = globalWorkingDir + "/outputs/" + UUID.randomUUID().toString();
+                    String newDirectory = globalWorkingDir + "/outputs";
+                    execute("mkdir -p " + newDirectory);
+                    File newDirectoryFile = new File(newDirectory);
+                    String uuidPath = newDirectoryFile.getAbsolutePath() + "/" + filePathObj.getName();
+
+                    // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
+                    // https://commons.apache.org/proper/commons-vfs/filesystems.html
+                    FileSystemManager fsManager = null;
+
+                    // now add this info to a hash so I can later reconstruct a docker -v command
+                    HashMap<String, String> new1 = new HashMap<String, String>();
+                    new1.put("local_path", uuidPath);
+                    new1.put("docker_path", filePath);
+                    new1.put("url", fileId);
+                    fileMap.put(filePath, new1);
+
+                    log.info("UPLOAD FILE: LOCAL: " + filePath + " URL: " + fileId);
+
+                }
+            }
+
+        }
+    }
+
+    private String createUpdatedInputsAndOutputsJson(HashMap<String, HashMap<String, String>> fileMap, HashMap<String, HashMap<String, String>> outputMap, Object inputsAndOutputsJson) {
 
         JSONObject newJSON = new JSONObject();
-
 
         for (Object paramName : ((HashMap)inputsAndOutputsJson).keySet()) {
             HashMap param = (HashMap) ((HashMap) inputsAndOutputsJson).get(paramName);
@@ -132,6 +207,10 @@ public class LauncherCWL {
             if (fileMap.get(paramName) != null) {
                 param.put("path", ((HashMap) fileMap.get(paramName)).get("local_path"));
                 log.info("NEW FULL PATH: "+ ((HashMap) fileMap.get(paramName)).get("local_path"));
+            }
+            else if (outputMap.get(paramName) != null) {
+                param.put("path", ((HashMap) outputMap.get(paramName)).get("local_path"));
+                log.info("NEW FULL PATH: "+ ((HashMap) outputMap.get(paramName)).get("local_path"));
             }
             //
             //
@@ -162,9 +241,13 @@ public class LauncherCWL {
         try {
 
             Writer file = new OutputStreamWriter(new FileOutputStream(jobOutputPath), "UTF-8");
-            file.write(((JSONObject)newJson).toJSONString());
+            file.write(((JSONObject)newJson).toJSONString().replace("\\",""));
             file.flush();
             file.close();
+
+            //execute("touch temp.json");
+            //execute ("cat " + jobOutputPath + " | json_pp > temp.json");
+            //execute("cp temp.json "+jobOutputPath);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -191,14 +274,14 @@ public class LauncherCWL {
 
     }
 
-    private Object runCommand(String cwlFile, Object inputObject, String workingDir) {
+    private Object runCommand(String cwlFile, String jsonSettings, String workingDir) {
         Object obj = null;
 
         try {
-            String[] s = new String[]{"cwltool", "--outdir", workingDir, cwlFile, "-"};
+            String[] s = new String[]{"cwltool", "--outdir", workingDir, cwlFile, jsonSettings};
             Process p = Runtime.getRuntime().exec(s);
-            yaml.dump(inputObject, new java.io.OutputStreamWriter(p.getOutputStream(), Charset.forName("UTF-8").newEncoder()));
-            p.getOutputStream().close();
+            //yaml.dump(inputObject, new java.io.OutputStreamWriter(p.getOutputStream(), Charset.forName("UTF-8").newEncoder()));
+            //p.getOutputStream().close();
             obj = yaml.load(p.getInputStream());
             p.waitFor();
 
@@ -215,53 +298,34 @@ public class LauncherCWL {
         return (obj);
     }
 
-    private void pushOutputFiles(Object json, HashMap<String, HashMap<String, String>> fileMap, String workingDir) {
+    private void pushOutputFiles(Object json, HashMap<String, HashMap<String, String>> fileMap, String workingDir, Object outputObject) {
 
         log.info("UPLOADING FILES...");
 
-        // for each tool
-        // TODO: really this launcher will operate off of a request for a particular tool whereas the collab.json can define multiple tools
-        // TODO: really don't want to process inputs for all tools! Just the one going to be called
-        JSONArray tools = (JSONArray) ((JSONObject) json).get("tools");
-        for (Object tool : tools) {
+        for (String fileName : fileMap.keySet()) {
+            Map file = fileMap.get(fileName);
 
-            // get list of files
-            JSONArray files = (JSONArray) ((JSONObject) tool).get("outputs");
+            String cwlOutputPath = (String)((Map)((Map)outputObject).get(fileName)).get("path");
 
-            log.info("files: " + files);
+            log.info("NAME: " + file.get("local_path") + " URL: " + file.get("url") +" FILENAME: "+fileName+" CWL OUTPUT PATH: "+cwlOutputPath);
 
-            for (Object file : files) {
+            FileSystemManager fsManager = null;
+            try {
 
-                // output
-                String fileURL = (String) ((JSONObject) file).get("url");
+                // trigger a copy from the URL to a local file path that's a UUID to avoid collision
+                fsManager = VFS.getManager();
+                FileObject dest = fsManager.resolveFile((String)file.get("url"));
+                FileObject src = fsManager.resolveFile(new File(cwlOutputPath).getAbsolutePath());
+                dest.copyFrom(src, Selectors.SELECT_SELF);
 
-                // input
-                String filePath = (String) ((JSONObject) file).get("path");
-                String fileId = (String) ((JSONObject) file).get("id");
-                // TODO: would be best to have output files here in this data structure rather than construct the path below
-                // String localFilePath = fileMap.get(fileId).get("local_path");
-                String localFilePath = workingDir + "/outputs/" + filePath;
-
-                // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
-                // https://commons.apache.org/proper/commons-vfs/filesystems.html
-                FileSystemManager fsManager = null;
-                try {
-
-                    // trigger a copy from the URL to a local file path that's a UUID to avoid collision
-                    fsManager = VFS.getManager();
-                    FileObject dest = fsManager.resolveFile(fileURL);
-                    FileObject src = fsManager.resolveFile(new File(localFilePath).getAbsolutePath());
-                    dest.copyFrom(src, Selectors.SELECT_SELF);
-
-                } catch (FileSystemException e) {
-                    e.printStackTrace();
-                    log.error(e.getMessage());
-                }
-
-                log.info("FILE: LOCAL PATH: " + localFilePath + " DOCKER PATH: " + filePath + " DEST URL: " + fileURL);
-
+            } catch (FileSystemException e) {
+                e.printStackTrace();
+                log.error(e.getMessage());
             }
+
+
         }
+
     }
 
     private void execute(String command) {
