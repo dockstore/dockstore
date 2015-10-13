@@ -91,7 +91,17 @@ The difference between this one and the regular Launcher is the nature of the de
 0. hands the updated JSON parameterization document and CWL descriptor to the CWL runner tool, this causes the command to be constructed, docker containers to be pulled and the command to be run correctly
 0. collect and provision output files to their destination referenced in `~/.consonance/launcher.config`
 
-LEFT OFF WITH: need more details on using the CWL launcher
+### Running the CWL-Based Launcher
+
+To run the Launcher:
+
+    export AWS_ACCESS_KEY=AAAAAAA
+    export AWS_SECRET_KEY=SSSSSSS
+    java -cp <launcher.jar> io.github.collaboratory.LauncherCWL --config <path_to_launcher.config> --decriptor <path_to_json_descriptor>
+    # for example:
+    java -cp launcher/target/uber-io.github.collaboratory.launcher-1.0.0.jar io.github.collaboratory.LauncherCWL --config launcher.ini --descriptor collab.cwl --job collab-cwl-job-pre.json
+    # another example for testing
+    rm -rf datastore && cd launcher && mvn clean install -DskipTests -Dfindbugs.failOnError=false -Dcheckstyle.failOnViolation=false && cd - && java -cp launcher/target/uber-io.github.collaboratory.launcher-1.0.0.jar io.github.collaboratory.LauncherCWL --config launcher.ini --descriptor collab.cwl --job collab-cwl-job-pre.json
 
 ## The Descriptor
 
