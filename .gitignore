@@ -12,3 +12,7 @@
 hs_err_pid*
 
 launcher/.idea
+launcher/target
+launcher/io.github.collaboratory.launcher.iml
+datastore
+
