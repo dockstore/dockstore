@@ -41,6 +41,7 @@ import java.util.Map;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -133,7 +134,7 @@ public class TokenResource {
         throw new UnsupportedOperationException();
     }
 
-    @GET
+    @POST
     @Timed
     @UnitOfWork
     @Path("/quay.io")
@@ -172,6 +173,35 @@ public class TokenResource {
         return tokenDAO.findById(create);
     }
 
+    @POST
+    @Timed
+    @UnitOfWork
+    @Path("/quay.io/{userId}")
+    @ApiOperation(value = "Add a new quay IO token", notes = "This is used as part of the OAuth 2 web flow. "
+            + "Once a user has approved permissions for Collaboratory"
+            + "Their browser will load the redirect URI which should resolve here", response = Token.class)
+    public Token addQuayTokenWithUser(@QueryParam("access_token") String accessToken,
+            @ApiParam(value = "User Id to assign token to") @PathParam("userId") long userId) {
+        if (accessToken.isEmpty()) {
+            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+        }
+
+        User user = userDAO.findById(userId);
+
+        Token token = new Token();
+        token.setTokenSource(TokenType.QUAY_IO.toString());
+        token.setContent(accessToken);
+
+        if (user != null) {
+            token.setUserId(user.getId());
+        } else {
+            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+        }
+
+        long create = tokenDAO.create(token);
+        return tokenDAO.findById(create);
+    }
+
     @DELETE
     @Path("/{tokenId}")
     @ApiOperation(value = "Deletes a token")
@@ -181,7 +211,7 @@ public class TokenResource {
         throw new UnsupportedOperationException();
     }
 
-    @GET
+    @POST
     @Timed
     @UnitOfWork
     @Path("/github.com")
