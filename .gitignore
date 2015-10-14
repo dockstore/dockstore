@@ -16,3 +16,5 @@ launcher/target
 launcher/io.github.collaboratory.launcher.iml
 datastore
 
+.idea/
+atlassian-ide-plugin.xml
