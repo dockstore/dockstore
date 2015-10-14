@@ -54,6 +54,8 @@ Standard maven build in the launcher directory. Notice I'm unsetting my AWS cred
     unset AWS_ACCESS_KEY
     unset AWS_SECRET_KEY
     mvn clean install
+    # to skip tests
+    mvn clean install -DskipTests
 
 ### Running the Launcher
 
@@ -99,7 +101,9 @@ To run the Launcher:
     # for example:
     java -cp launcher/target/uber-io.github.collaboratory.launcher-1.0.0.jar io.github.collaboratory.LauncherCWL --config launcher.ini --descriptor collab.cwl --job collab-cwl-job-pre.json
     # another example for testing
-    rm -rf datastore && cd launcher && mvn clean install -DskipTests -Dfindbugs.failOnError=false -Dcheckstyle.failOnViolation=false && cd - && java -cp launcher/target/uber-io.github.collaboratory.launcher-1.0.0.jar io.github.collaboratory.LauncherCWL --config launcher.ini --descriptor collab.cwl --job collab-cwl-job-pre.json
+    rm -rf datastore && cd launcher && mvn clean install && cd - && java -cp launcher/target/uber-io.github.collaboratory.launcher-1.0.0.jar io.github.collaboratory.LauncherCWL --config launcher.ini --descriptor collab.cwl --job collab-cwl-job-pre.json
+    # if you want to skip the tests/checks on code quality
+    # include -DskipTests -Dfindbugs.failOnError=false -Dcheckstyle.failOnViolation=false
 
 ## The Descriptor
 

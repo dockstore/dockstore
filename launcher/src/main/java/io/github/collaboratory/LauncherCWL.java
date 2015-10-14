@@ -1,9 +1,6 @@
 package io.github.collaboratory;
 
 import com.amazonaws.util.IOUtils;
-import freemarker.template.Configuration;
-import freemarker.template.Template;
-import freemarker.template.TemplateException;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -12,7 +9,6 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.configuration.SubnodeConfiguration;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.vfs2.FileObject;
@@ -20,22 +16,24 @@ import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.FileSystemManager;
 import org.apache.commons.vfs2.Selectors;
 import org.apache.commons.vfs2.VFS;
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
+
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringReader;
-import java.io.StringWriter;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -54,12 +52,15 @@ public class LauncherCWL {
     Object cwl = null;
     Object inputsAndOutputsJson = null;
     HashMap<String, HashMap<String, String>> fileMap = null;
+    HashMap<String, HashMap<String, String>> outputMap = null;
     String globalWorkingDir = null;
+    Yaml yaml = new Yaml(new SafeConstructor());
 
     public LauncherCWL(String[] args) {
 
         // hashmap for files
         fileMap = new HashMap<>();
+        outputMap = new HashMap<>();
 
         // create the command line parser
         parser = setupCommandLineParser();
@@ -70,46 +71,184 @@ public class LauncherCWL {
         // now read in the INI file
         config = getINIConfig(line.getOptionValue("config"));
 
-        // TODO: resolve the URLs in the CWL
-        // TODO: this needs to switch to the JSON document that parameterizes the run
-        inputsAndOutputsJson = parseJSON(line.getOptionValue("job"));
-
-        // now read the JSON file
-        // QUESTION: is this true?
-        // TODO: this needs to switch to parsing the CWL file to pull out things like large file dependencies???
+        // parse the CWL tool definition
         cwl = parseCWL(line.getOptionValue("descriptor"));
 
+        if (cwl == null) {
+            log.info("CWL was null");
+            return;
+        }
+
+        if (!(cwl instanceof Map)) {
+            log.info("Must be single object at root.");
+            return;
+        }
+
+        if (!(((Map)cwl).get("class")).equals("CommandLineTool")) {
+            log.info("Must be CommandLineTool");
+            return;
+        }
+
+        // this is the job parameterization, just a JSON, defines the inputs/outputs in terms or real URLs that are provisioned by the launcher
+        inputsAndOutputsJson = loadJob(line.getOptionValue("job"));
+
+        if (inputsAndOutputsJson == null) {
+            log.info("Cannot load job object.");
+            return;
+        }
+
         // setup directories
-        String workingDir = setupDirectories(cwl);
-
-        // pull Docker images
-        // TODO: defer to CWL runner to do this instead
-        //pullDockerImages(json);
-
-        // pull data files
-        pullFiles("DATA", cwl, fileMap);
+        //String workingDir = setupDirectories(cwl);
+        globalWorkingDir = setupDirectories(cwl);
 
         // pull input files
-        pullFiles("INPUT", cwl, fileMap);
+        pullFiles("inputs", cwl, inputsAndOutputsJson, fileMap);
 
-        // construct command
-        // TODO: defer to CWL runner to do this instead
-        //String command = constructCommand(json);
+        // prep outputs, just creates output dir and records what the local output path will be
+        prepUploads("outputs", cwl, inputsAndOutputsJson, outputMap);
+
+        // create updated JSON inputs document
+        String newJsonPath = createUpdatedInputsAndOutputsJson(fileMap, outputMap, inputsAndOutputsJson);
 
         // run command
-        // TODO: defer to CWL runner to do this instead
-        //runCommand(json, fileMap, workingDir, command);
+        log.info("RUNNING COMMAND");
+        Object outputObj = runCommand(line.getOptionValue("descriptor"), newJsonPath, globalWorkingDir+"/outputs/");
+
+        //log.info(outputObj);
 
         // push output files
-        pushOutputFiles(cwl, fileMap, workingDir);
+        pushOutputFiles(cwl, outputMap, globalWorkingDir+"/outputs/", outputObj);
+
     }
 
-    private Object parseCWL(String descriptor) {
-        return null;
+    private void prepUploads(String type, Object cwl, Object inputsOutputs, HashMap<String, HashMap<String, String>> fileMap) {
+
+        log.info("PREPPING UPLOADS...");
+
+        log.info(((Map) cwl).get(type));
+
+        List files = (List) ((Map)cwl).get(type);
+
+        // for each file input from the CWL
+        for (Object file : files) {
+
+            // pull back the name of the input from the CWL
+            log.info(file.toString());
+            log.info("FILE: " + ((Map) file).get("id"));
+            String fileUrl = null;
+            try {
+                //fileUrl = new URL((String)((Map)file).get("id")).getRef();
+                fileUrl = new URL((String)((Map)file).get("id")).getRef();
+                log.info("REF: "+fileUrl);
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+                log.error(e.getMessage());
+            }
+
+            if (fileUrl == null) {
+                log.error("fileURL from the CWL was not able to be parsed for the file name as a ref");
+            }
+
+            // now that I have an input name from the CWL I can find it in the JSON parameterization for this run
+            String fileURL = null;
+            log.info("JSON: "+inputsOutputs.toString());
+            for (Object paramName : ((HashMap)inputsOutputs).keySet()) {
+                HashMap param = (HashMap)((HashMap)inputsOutputs).get(paramName);
+                String path = (String)param.get("path");
+
+                if (paramName.equals(fileUrl)) {
+
+                    // if it's the current one
+                    log.info("PATH TO UPLOAD TO: "+path+" FOR "+fileUrl+" FOR "+paramName);
+
+                    // output
+                    // TODO: poor naming here, need to cleanup the variables
+                    // just file name
+                    String filePath = fileUrl;
+                    // the file URL
+                    String fileId = path;
+                    File filePathObj = new File(filePath);
+                    //String newDirectory = globalWorkingDir + "/outputs/" + UUID.randomUUID().toString();
+                    String newDirectory = globalWorkingDir + "/outputs";
+                    execute("mkdir -p " + newDirectory);
+                    File newDirectoryFile = new File(newDirectory);
+                    String uuidPath = newDirectoryFile.getAbsolutePath() + "/" + filePathObj.getName();
+
+                    // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
+                    // https://commons.apache.org/proper/commons-vfs/filesystems.html
+                    FileSystemManager fsManager = null;
+
+                    // now add this info to a hash so I can later reconstruct a docker -v command
+                    HashMap<String, String> new1 = new HashMap<String, String>();
+                    new1.put("local_path", uuidPath);
+                    new1.put("docker_path", filePath);
+                    new1.put("url", fileId);
+                    fileMap.put(filePath, new1);
+
+                    log.info("UPLOAD FILE: LOCAL: " + filePath + " URL: " + fileId);
+
+                }
+            }
+
+        }
     }
 
-    private Object parseInputsAndOutputs(String job) {
-        return null;
+    private String createUpdatedInputsAndOutputsJson(HashMap<String, HashMap<String, String>> fileMap, HashMap<String, HashMap<String, String>> outputMap, Object inputsAndOutputsJson) {
+
+        JSONObject newJSON = new JSONObject();
+
+        for (Object paramName : ((HashMap)inputsAndOutputsJson).keySet()) {
+            HashMap param = (HashMap) ((HashMap) inputsAndOutputsJson).get(paramName);
+            String path = (String) param.get("path");
+            log.info("PATH: "+path+" PARAM_NAME: "+paramName);
+            // will be null for output
+            if (fileMap.get(paramName) != null) {
+                param.put("path", ((HashMap) fileMap.get(paramName)).get("local_path"));
+                log.info("NEW FULL PATH: "+ ((HashMap) fileMap.get(paramName)).get("local_path"));
+            } else if (outputMap.get(paramName) != null) {
+                param.put("path", ((HashMap) outputMap.get(paramName)).get("local_path"));
+                log.info("NEW FULL PATH: "+ ((HashMap) outputMap.get(paramName)).get("local_path"));
+            }
+            //
+            //
+            //log.info("OLD: " + path + " NEW: " + (String) ((HashMap) fileMap.get(path)).get("local_path"));
+            // now add to the new JSON structure
+            JSONObject newRecord = new JSONObject();
+            newRecord.put("class", param.get("class"));
+            newRecord.put("path", param.get("path"));
+            newJSON.put(paramName, newRecord);
+
+        }
+
+        writeJob("foo.json", newJSON);
+
+        return("foo.json");
+    }
+
+    private Object loadJob(String jobPath) {
+        try {
+            return yaml.load(new FileInputStream(jobPath));
+        } catch (java.io.FileNotFoundException e) {
+            return null;
+        }
+    }
+
+    private void writeJob(String jobOutputPath, JSONObject newJson) {
+
+        try {
+
+            Writer file = new OutputStreamWriter(new FileOutputStream(jobOutputPath), "UTF-8");
+            file.write(((JSONObject)newJson).toJSONString().replace("\\",""));
+            file.flush();
+            file.close();
+
+            //execute("touch temp.json");
+            //execute ("cat " + jobOutputPath + " | json_pp > temp.json");
+            //execute("cp temp.json "+jobOutputPath);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private String setupDirectories(Object json) {
@@ -132,315 +271,181 @@ public class LauncherCWL {
 
     }
 
-    private void runCommand(Object json, HashMap<String, HashMap<String, String>> fileMap, String workingDir, String command) {
+    private Object runCommand(String cwlFile, String jsonSettings, String workingDir) {
+        Object obj = null;
 
-        // TODO: something weird about docker permissions, we need to fix them
-        command = "sudo chown -R seqware /outputs;" + command;
+        try {
+            String[] s = new String[]{"cwltool", "--outdir", workingDir, cwlFile, jsonSettings};
+            Process p = Runtime.getRuntime().exec(s);
+            //yaml.dump(inputObject, new java.io.OutputStreamWriter(p.getOutputStream(), Charset.forName("UTF-8").newEncoder()));
+            //p.getOutputStream().close();
+            obj = yaml.load(p.getInputStream());
+            p.waitFor();
 
-        // TODO: this doesn't deal with multi-tools properly
-        JSONArray tools = (JSONArray) ((JSONObject) json).get("tools");
-        for (Object tool : tools) {
-
-            // container output path
-            String containerOutputPath = (String) ((JSONObject) tool).get("container_output_path");
-
-            // container working path
-            String containerWorkingPath = (String) ((JSONObject) tool).get("container_working_path");
-
-            // image to actually use
-            String image = (String) ((JSONObject) tool).get("image_name");
-
-            StringBuilder sb = new StringBuilder();
-
-            ArrayList<String> sba = new ArrayList<>();
-            // TODO: probably want the bare minimum env vars so 'bash -lc' is not ideal
-            sb.append("docker run ");
-            sba.add("docker");
-            sba.add("run");
-
-            // deal with data
-            JSONArray files = (JSONArray) ((JSONObject) tool).get("data");
-            for (Object file : files) {
-                String fileId = (String) ((JSONObject) file).get("id");
-                String containerPath = (String) ((JSONObject) file).get("path");
-                String localPath = fileMap.get(fileId).get("local_path");
-                if (!containerPath.startsWith("/")) {
-                    containerPath = containerWorkingPath + "/" + containerPath;
-                }
-                sb.append("-v " + localPath + ":" + containerPath + " ");
-                sba.add("-v");
-                sba.add(localPath + ":" + containerPath);
-
+            if (p.exitValue() != 0) {
+                log.warn("Got return code " + p.exitValue());
+                log.warn("Error message is: " + IOUtils.toString(p.getErrorStream()));
             }
-            // deal with inputs
-            files = (JSONArray) ((JSONObject) tool).get("inputs");
-            for (Object file : files) {
-                String fileId = (String) ((JSONObject) file).get("id");
-                String containerPath = (String) ((JSONObject) file).get("path");
-                String localPath = fileMap.get(fileId).get("local_path");
-                if (!containerPath.startsWith("/")) {
-                    containerPath = containerWorkingPath + "/" + containerPath;
-                }
-                sb.append("-v " + localPath + ":" + containerPath + " ");
-                sba.add("-v");
-                sba.add(localPath + ":" + containerPath);
-            }
-
-            // deal with outputs
-            sb.append("-v " + workingDir + "/outputs:" + containerOutputPath + " ");
-            sba.add("-v");
-            sba.add(workingDir + "/outputs:" + containerOutputPath);
-
-            // docker image to run and command
-            sb.append(image + " /bin/bash -c '" + command + "'");
-            sba.add(image);
-            sba.add("/bin/bash");
-            sba.add("-c");
-            sba.add(command);
-
-            // execute the constructed command
-            log.info("DOCKER CMD TO RUN: " + sb.toString());
-
-            // FIXME: not working!
-            // execute(sb.toString());
-            // had to switch to this style instead
-            executeArr(sba);
-
+        } catch (java.lang.InterruptedException e) {
+            e.printStackTrace();
+        } catch (java.io.IOException e) {
+            e.printStackTrace();
         }
 
+        return (obj);
     }
 
-    private void pushOutputFiles(Object json, HashMap<String, HashMap<String, String>> fileMap, String workingDir) {
+    private void pushOutputFiles(Object json, HashMap<String, HashMap<String, String>> fileMap, String workingDir, Object outputObject) {
 
         log.info("UPLOADING FILES...");
 
-        // for each tool
-        // TODO: really this launcher will operate off of a request for a particular tool whereas the collab.json can define multiple tools
-        // TODO: really don't want to process inputs for all tools! Just the one going to be called
-        JSONArray tools = (JSONArray) ((JSONObject) json).get("tools");
-        for (Object tool : tools) {
+        for (String fileName : fileMap.keySet()) {
+            Map file = fileMap.get(fileName);
 
-            // get list of files
-            JSONArray files = (JSONArray) ((JSONObject) tool).get("outputs");
+            String cwlOutputPath = (String)((Map)((Map)outputObject).get(fileName)).get("path");
 
-            log.info("files: " + files);
+            log.info("NAME: " + file.get("local_path") + " URL: " + file.get("url") +" FILENAME: "+fileName+" CWL OUTPUT PATH: "+cwlOutputPath);
 
-            for (Object file : files) {
-
-                // output
-                String fileURL = (String) ((JSONObject) file).get("url");
-
-                // input
-                String filePath = (String) ((JSONObject) file).get("path");
-                String fileId = (String) ((JSONObject) file).get("id");
-                // TODO: would be best to have output files here in this data structure rather than construct the path below
-                // String localFilePath = fileMap.get(fileId).get("local_path");
-                String localFilePath = workingDir + "/outputs/" + filePath;
-
-                // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
-                // https://commons.apache.org/proper/commons-vfs/filesystems.html
-                FileSystemManager fsManager = null;
-                try {
-
-                    // trigger a copy from the URL to a local file path that's a UUID to avoid collision
-                    fsManager = VFS.getManager();
-                    FileObject dest = fsManager.resolveFile(fileURL);
-                    FileObject src = fsManager.resolveFile(new File(localFilePath).getAbsolutePath());
-                    dest.copyFrom(src, Selectors.SELECT_SELF);
-
-                } catch (FileSystemException e) {
-                    e.printStackTrace();
-                    log.error(e.getMessage());
-                }
-
-                log.info("FILE: LOCAL PATH: " + localFilePath + " DOCKER PATH: " + filePath + " DEST URL: " + fileURL);
-
-            }
-        }
-    }
-
-    private String constructCommand(Object json) {
-
-        log.info("CONSTRUCTING COMMAND: ");
-
-        String finalCmd = null;
-
-        // TODO: this doesn't deal with multi-tools properly
-        JSONArray tools = (JSONArray) ((JSONObject) json).get("tools");
-        for (Object tool : tools) {
-
-            // get command
-            String commandTemplate = (String) ((JSONObject) tool).get("command");
-
-            // construct a HashMap with data and inputs documented in
-            Map<String, Object> root = new HashMap<>();
-
-            // container output path
-            root.put("container_output_path", (String) ((JSONObject) tool).get("container_output_path"));
-
-            // container working path
-            root.put("container_working_path", (String) ((JSONObject) tool).get("container_working_path"));
-
-            // inputs
-            Map<String, String> inputsHash = new HashMap<>();
-            JSONArray files = (JSONArray) ((JSONObject) tool).get("inputs");
-            for (Object file : files) {
-                inputsHash.put((String) ((JSONObject) file).get("id"), (String) ((JSONObject) file).get("path"));
-            }
-            root.put("inputs", inputsHash);
-
-            // data files
-            Map<String, String> dataHash = new HashMap<>();
-            files = (JSONArray) ((JSONObject) tool).get("data");
-            for (Object file : files) {
-                dataHash.put((String) ((JSONObject) file).get("id"), (String) ((JSONObject) file).get("path"));
-            }
-            root.put("data", dataHash);
-
-            // outputs
-            Map<String, String> outputsHash = new HashMap<>();
-            files = (JSONArray) ((JSONObject) tool).get("outputs");
-            for (Object file : files) {
-                outputsHash.put((String) ((JSONObject) file).get("id"), (String) ((JSONObject) file).get("path"));
-            }
-            root.put("outputs", outputsHash);
-
-            // config object for template
-            Configuration cfg = new Configuration(Configuration.VERSION_2_3_22);
-
-            // now process the command line
+            FileSystemManager fsManager = null;
             try {
 
-                Template t = new Template("commandTemplate", new StringReader(commandTemplate), cfg);
+                // trigger a copy from the URL to a local file path that's a UUID to avoid collision
+                fsManager = VFS.getManager();
+                FileObject dest = fsManager.resolveFile((String)file.get("url"));
+                FileObject src = fsManager.resolveFile(new File(cwlOutputPath).getAbsolutePath());
+                dest.copyFrom(src, Selectors.SELECT_SELF);
 
-                Writer out = new StringWriter();
-                t.process(root, out);
-
-                finalCmd = out.toString();
-
-                log.info("FINAL COMMAND: " + finalCmd);
-
-            } catch (IOException e) {
-                e.printStackTrace();
-                log.error(e.getMessage());
-            } catch (TemplateException e) {
+            } catch (FileSystemException e) {
                 e.printStackTrace();
                 log.error(e.getMessage());
             }
 
-            log.info("CMD TEMPLATE: " + commandTemplate);
-            log.info("CMD TO RUN: " + finalCmd);
-        }
 
-        return (finalCmd);
-    }
-
-    private void pullFiles(String data, Object json, HashMap<String, HashMap<String, String>> fileMap) {
-
-        log.info("DOWNLOADING " + data + " FILES...");
-
-        // working dir
-
-        // just figure out which files from the JSON are we pulling
-        String type = null;
-        if ("DATA".equals(data)) {
-            type = "data";
-        } else if ("INPUT".equals(data)) {
-            type = "inputs";
-        }
-
-        log.info("TYPE: " + type);
-
-        // for each tool
-        // TODO: really this launcher will operate off of a request for a particular tool whereas the collab.json can define multiple tools
-        // TODO: really don't want to process inputs for all tools! Just the one going to be called
-        JSONArray tools = (JSONArray) ((JSONObject) json).get("tools");
-        for (Object tool : tools) {
-
-            // get list of files
-            JSONArray files = (JSONArray) ((JSONObject) tool).get(type);
-
-            log.info("files: " + files);
-
-            for (Object file : files) {
-
-                // input
-                String fileURL = (String) ((JSONObject) file).get("url");
-
-                // output
-                String filePath = (String) ((JSONObject) file).get("path");
-                String fileId = (String) ((JSONObject) file).get("id");
-                File filePathObj = new File(filePath);
-                String newDirectory = globalWorkingDir + "/inputs/" + UUID.randomUUID().toString();
-                execute("mkdir -p " + newDirectory);
-                File newDirectoryFile = new File(newDirectory);
-                String uuidPath = newDirectoryFile.getAbsolutePath() + "/" + filePathObj.getName();
-
-                // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
-                // https://commons.apache.org/proper/commons-vfs/filesystems.html
-                FileSystemManager fsManager = null;
-                try {
-
-                    // trigger a copy from the URL to a local file path that's a UUID to avoid collision
-                    fsManager = VFS.getManager();
-                    FileObject src = fsManager.resolveFile(fileURL);
-                    FileObject dest = fsManager.resolveFile(new File(uuidPath).getAbsolutePath());
-                    dest.copyFrom(src, Selectors.SELECT_SELF);
-
-                    // now add this info to a hash so I can later reconstruct a docker -v command
-                    HashMap<String, String> new1 = new HashMap<String, String>();
-                    new1.put("local_path", uuidPath);
-                    new1.put("docker_path", filePath);
-                    new1.put("url", fileURL);
-                    fileMap.put(fileId, new1);
-
-                } catch (FileSystemException e) {
-                    e.printStackTrace();
-                    log.error(e.getMessage());
-                }
-
-                log.info("FILE: LOCAL: " + filePath + " URL: " + fileURL);
-
-            }
         }
 
     }
 
-    private void pullDockerImages(Object json) {
-
-        log.info("PULLING DOCKER CONTAINERS...");
-
-        // list of images to pull
-        HashMap<String, String> imagesHash = new HashMap<String, String>();
-
-        // get list of images
-        JSONArray tools = (JSONArray) ((JSONObject) json).get("tools");
-        for (Object tool : tools) {
-            JSONArray images = (JSONArray) ((JSONObject) tool).get("images");
-            for (Object image : images) {
-                imagesHash.put(image.toString(), image.toString());
-            }
-        }
-
-        // pull the images
-        for (String image : imagesHash.keySet()) {
-            String command = "docker pull " + image;
-            execute(command);
-        }
-    }
-
-    private Object parseJSON(String descriptorFile) {
-
-        JSONParser parser = new JSONParser();
-        Object obj = null;
-
-        // TODO: would be nice to support comments
-
+    private void execute(String command) {
         try {
-            obj = parser.parse(FileUtils.readFileToString(new File(descriptorFile), StandardCharsets.UTF_8));
+            log.info("CMD: " + command);
+            Process p = Runtime.getRuntime().exec(command);
+            p.waitFor();
+            log.info("CMD RETURN CODE: " + p.exitValue());
+            log.info("CMD STDERR:" + IOUtils.toString(p.getErrorStream()));
+            log.info("CMD STDOUT:" + IOUtils.toString(p.getInputStream()));
+
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            log.error(e.getMessage());
         } catch (IOException e) {
             e.printStackTrace();
-        } catch (org.json.simple.parser.ParseException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    private void pullFiles(String type, Object cwl, Object inputsOutputs, HashMap<String, HashMap<String, String>> fileMap) {
+
+        log.info("DOWNLOADING INPUT FILES...");
+
+        // !(((Map)cwl).get("class")).equals("CommandLineTool")
+
+        log.info(((Map) cwl).get("inputs"));
+
+        List files = (List) ((Map)cwl).get(type);
+
+        // for each file input from the CWL
+        for (Object file : files) {
+
+            // pull back the name of the input from the CWL
+            log.info(file.toString());
+            log.info("FILE: " + ((Map) file).get("id"));
+            String fileUrl = null;
+            try {
+                fileUrl = new URL((String)((Map)file).get("id")).getRef();
+                log.info("REF: "+fileUrl);
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+                log.error(e.getMessage());
+            }
+
+            if (fileUrl == null) {
+                log.error("fileURL from the CWL was not able to be parsed for the file name as a ref");
+            }
+
+            // now that I have an input name from the CWL I can find it in the JSON parameterization for this run
+            String fileURL = null;
+            log.info("JSON: "+inputsOutputs.toString());
+            for (Object paramName : ((HashMap)inputsOutputs).keySet()) {
+                HashMap param = (HashMap)((HashMap)inputsOutputs).get(paramName);
+                String path = (String)param.get("path");
+
+                if (paramName.equals(fileUrl)) {
+
+                    // if it's the current one
+                    log.info("PATH TO DOWNLOAD FROM: "+path+" FOR "+fileUrl+" FOR "+paramName);
+
+                    // output
+                    // TODO: poor naming here, need to cleanup the variables
+                    // just file name
+                    String filePath = fileUrl;
+                    // the file URL
+                    String fileId = path;
+                    File filePathObj = new File(filePath);
+                    String newDirectory = globalWorkingDir + "/inputs/" + UUID.randomUUID().toString();
+                    execute("mkdir -p " + newDirectory);
+                    File newDirectoryFile = new File(newDirectory);
+                    String uuidPath = newDirectoryFile.getAbsolutePath() + "/" + filePathObj.getName();
+
+                    // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
+                    // https://commons.apache.org/proper/commons-vfs/filesystems.html
+                    FileSystemManager fsManager = null;
+                    try {
+
+                        // trigger a copy from the URL to a local file path that's a UUID to avoid collision
+                        fsManager = VFS.getManager();
+                        FileObject src = fsManager.resolveFile(fileId);
+                        FileObject dest = fsManager.resolveFile(new File(uuidPath).getAbsolutePath());
+                        dest.copyFrom(src, Selectors.SELECT_SELF);
+
+                        // now add this info to a hash so I can later reconstruct a docker -v command
+                        HashMap<String, String> new1 = new HashMap<String, String>();
+                        new1.put("local_path", uuidPath);
+                        new1.put("docker_path", filePath);
+                        new1.put("url", fileId);
+                        fileMap.put(filePath, new1);
+
+                    } catch (FileSystemException e) {
+                        e.printStackTrace();
+                        log.error(e.getMessage());
+                    }
+
+                    log.info("DOWNLOADED FILE: LOCAL: " + filePath + " URL: " + fileId);
+
+                }
+            }
+
+        }
+
+    }
+
+
+    private Object parseCWL(String cwlFile) {
+        Object obj = null;
+
+        try {
+            String[] s = new String[]{"cwltool", "--print-pre", cwlFile };
+            Process p = Runtime.getRuntime().exec(s);
+            obj = yaml.load(p.getInputStream());
+            p.waitFor();
+
+            if (p.exitValue() != 0) {
+                log.warn("Got return code " + p.exitValue());
+                log.warn("Error message is: " + IOUtils.toString(p.getErrorStream()));
+            }
+
+        } catch (java.lang.InterruptedException e) {
+            e.printStackTrace();
+        } catch (java.io.IOException e) {
             e.printStackTrace();
         }
 
@@ -510,41 +515,6 @@ public class LauncherCWL {
         return parser;
     }
 
-    private void execute(String command) {
-        try {
-            log.info("CMD: " + command);
-            Process p = Runtime.getRuntime().exec(command);
-            p.waitFor();
-            log.info("CMD RETURN CODE: " + p.exitValue());
-            log.info("CMD STDERR:" + IOUtils.toString(p.getErrorStream()));
-            log.info("CMD STDOUT:" + IOUtils.toString(p.getInputStream()));
-
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            log.error(e.getMessage());
-        } catch (IOException e) {
-            e.printStackTrace();
-            log.error(e.getMessage());
-        }
-    }
-
-    private void executeArr(ArrayList<String> command) {
-        try {
-            // log.info("CMD: " + command);
-            Process p = Runtime.getRuntime().exec(command.toArray(new String[0]));
-            p.waitFor();
-            log.info("CMD RETURN CODE: " + p.exitValue());
-            log.info("CMD STDERR:" + IOUtils.toString(p.getErrorStream()));
-            log.info("CMD STDOUT:" + IOUtils.toString(p.getInputStream()));
-
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            log.error(e.getMessage());
-        } catch (IOException e) {
-            e.printStackTrace();
-            log.error(e.getMessage());
-        }
-    }
 
     public static void main(String[] args) {
         new LauncherCWL(args);
