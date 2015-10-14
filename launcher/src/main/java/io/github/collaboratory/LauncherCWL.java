@@ -1,6 +1,5 @@
 package io.github.collaboratory;
 
-import com.amazonaws.util.IOUtils;
 import com.google.common.base.Joiner;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -9,7 +8,13 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.exec.DefaultExecuteResultHandler;
+import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.ExecuteException;
+import org.apache.commons.exec.Executor;
+import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.vfs2.FileObject;
@@ -22,10 +27,12 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.composer.ComposerException;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -38,6 +45,7 @@ import java.util.UUID;
 /**
  * @author boconnor 9/24/15
  * @author dyuen
+ * @author tetron
  */
 public class LauncherCWL {
 
@@ -94,7 +102,6 @@ public class LauncherCWL {
         }
 
         // setup directories
-        //String workingDir = setupDirectories(cwl);
         globalWorkingDir = setupDirectories();
 
         // pull input files
@@ -108,16 +115,14 @@ public class LauncherCWL {
 
         // run command
         LOG.info("RUNNING COMMAND");
-        Map<String, Object> outputObj = runCommand(line.getOptionValue("descriptor"), newJsonPath, globalWorkingDir+"/outputs/");
-
-        //LOG.info(outputObj);
+        Map<String, Object> outputObj = runCWLCommand(line.getOptionValue("descriptor"), newJsonPath, globalWorkingDir + "/outputs/");
 
         // push output files
         pushOutputFiles(outputMap, outputObj);
 
     }
 
-    private void prepUploads(String type, Object cwl, Object inputsOutputs, Map<String, Map<String, String>> fileMap) {
+    private void prepUploads(String type, Map<String, Object> cwl, Object inputsOutputs, Map<String, Map<String, String>> fileMap) {
 
         LOG.info("PREPPING UPLOADS...");
 
@@ -163,7 +168,7 @@ public class LauncherCWL {
                     File filePathObj = new File(fileUrl);
                     //String newDirectory = globalWorkingDir + "/outputs/" + UUID.randomUUID().toString();
                     String newDirectory = globalWorkingDir + "/outputs";
-                    execute("mkdir -p " + newDirectory);
+                    executeCommand("mkdir -p " + newDirectory);
                     File newDirectoryFile = new File(newDirectory);
                     String uuidPath = newDirectoryFile.getAbsolutePath() + "/" + filePathObj.getName();
 
@@ -240,32 +245,22 @@ public class LauncherCWL {
         UUID uuid = UUID.randomUUID();
         // setup directories
         globalWorkingDir = workingDir + "/launcher-" + uuid.toString();
-        execute("mkdir -p " + workingDir + "/launcher-" + uuid.toString());
-        execute("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/configs");
-        execute("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/working");
-        execute("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/inputs");
-        execute("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/logs");
-        execute("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/outputs");
+        executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid.toString());
+        executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/configs");
+        executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/working");
+        executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/inputs");
+        executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/logs");
+        executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/outputs");
 
         return (new File(workingDir + "/launcher-" + uuid.toString()).getAbsolutePath());
 
     }
 
-    private Map<String, Object> runCommand(String cwlFile, String jsonSettings, String workingDir) {
-        String[] s = new String[]{"cwltool", "--outdir", workingDir, cwlFile, jsonSettings};
-        try {
-            Process p = Runtime.getRuntime().exec(s);
-            Map<String, Object> obj = (Map<String, Object>)yaml.load(p.getInputStream());
-            p.waitFor();
-
-            if (p.exitValue() != 0) {
-                LOG.warn("Got return code " + p.exitValue());
-                LOG.warn("Error message is: " + IOUtils.toString(p.getErrorStream()));
-            }
-            return obj;
-        } catch (InterruptedException | IOException e) {
-            throw new RuntimeException("could not run cwl command " + Joiner.on(" ").join(Arrays.asList(s)), e);
-        }
+    private Map<String, Object> runCWLCommand(String cwlFile, String jsonSettings, String workingDir) {
+        String[] s = new String[]{"cwltool","--outdir", workingDir, cwlFile, jsonSettings};
+        final ImmutablePair<String, String> execute = this.executeCommand(Joiner.on(" ").join(Arrays.asList(s)));
+        Map<String, Object> obj = (Map<String, Object>)yaml.load(execute.getLeft());
+        return obj;
     }
 
     private void pushOutputFiles(Map<String, Map<String, String>> fileMap, Map<String, Object> outputObject) {
@@ -297,18 +292,41 @@ public class LauncherCWL {
 
     }
 
-    private void execute(String command) {
+    /**
+     * Execute a command and return stdout and stderr
+     * @param command
+     * @return
+     */
+    private ImmutablePair<String, String> executeCommand(String command) {
+        LOG.info("CMD: " + command);
+        // TODO: limit our output in case the called program goes crazy
+        ByteArrayOutputStream stdoutStream = new ByteArrayOutputStream();
+        ByteArrayOutputStream stderrStream = new ByteArrayOutputStream();
+        DefaultExecuteResultHandler resultHandler = new DefaultExecuteResultHandler();
+        String utf8 = StandardCharsets.UTF_8.name();
         try {
-            LOG.info("CMD: " + command);
-            Process p = Runtime.getRuntime().exec(command);
-            p.waitFor();
-            LOG.info("CMD RETURN CODE: " + p.exitValue());
-            LOG.info("CMD STDERR:" + IOUtils.toString(p.getErrorStream()));
-            LOG.info("CMD STDOUT:" + IOUtils.toString(p.getInputStream()));
-
+            final org.apache.commons.exec.CommandLine parse = org.apache.commons.exec.CommandLine.parse(command);
+            Executor executor = new DefaultExecutor();
+            executor.setExitValue(0);
+            // get stdout and stderr
+            executor.setStreamHandler(new PumpStreamHandler(stdoutStream, stderrStream));
+            executor.execute(parse, resultHandler);
+            resultHandler.waitFor();
+            // not sure why commons-exec does not throw an exception
+            if (resultHandler.getExitValue() != 0){
+                throw new ExecuteException("could not run command: " + command, resultHandler.getExitValue());
+            }
+            return new ImmutablePair<>(stdoutStream.toString(utf8), stderrStream.toString(utf8));
         } catch (InterruptedException | IOException e) {
-            LOG.error(e.getMessage());
-            throw new RuntimeException("Could not execute " + command, e);
+            throw new RuntimeException("could not run command: " + command, e);
+        } finally {
+            LOG.info("exit code: " + resultHandler.getExitValue());
+            try {
+                LOG.info("stderr was: " + stderrStream.toString(utf8));
+                LOG.info("stdout was: " + stdoutStream.toString(utf8));
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException("utf-8 does not exist?", e);
+            }
         }
     }
 
@@ -358,7 +376,7 @@ public class LauncherCWL {
                     // the file URL
                     File filePathObj = new File(fileUrl);
                     String newDirectory = globalWorkingDir + "/inputs/" + UUID.randomUUID().toString();
-                    execute("mkdir -p " + newDirectory);
+                    executeCommand("mkdir -p " + newDirectory);
                     File newDirectoryFile = new File(newDirectory);
                     String uuidPath = newDirectoryFile.getAbsolutePath() + "/" + filePathObj.getName();
 
@@ -397,19 +415,10 @@ public class LauncherCWL {
 
     private Map<String, Object> parseCWL(String cwlFile) {
         try {
-            Map<String, Object> obj;
             String[] s = new String[]{"cwltool", "--print-pre", cwlFile };
-            Process p = Runtime.getRuntime().exec(s);
-            obj = (Map<String, Object>)yaml.load(p.getInputStream());
-            p.waitFor();
-
-            if (p.exitValue() != 0) {
-                LOG.warn("Got return code " + p.exitValue());
-                LOG.warn("Error message is: " + IOUtils.toString(p.getErrorStream()));
-            }
+            final ImmutablePair<String, String> execute = this.executeCommand(Joiner.on(" ").join(Arrays.asList(s)));
+            Map<String, Object> obj = (Map<String, Object>)yaml.load(execute.getLeft());
             return obj;
-        } catch (InterruptedException | IOException e) {
-            throw new RuntimeException("Could not parse CWL", e);
         } catch (ComposerException e){
             throw new RuntimeException("Must be single object at root", e);
         }
