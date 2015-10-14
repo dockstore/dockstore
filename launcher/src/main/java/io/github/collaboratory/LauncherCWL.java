@@ -41,7 +41,7 @@ import java.util.UUID;
  */
 public class LauncherCWL {
 
-    private Log log = LogFactory.getLog(this.getClass());
+    private static final Log LOG = LogFactory.getLog(LauncherCWL.class);
     Options options = null;
     CommandLineParser parser = null;
     CommandLine line = null;
@@ -76,12 +76,12 @@ public class LauncherCWL {
         cwl = parseCWL(line.getOptionValue("descriptor"));
 
         if (cwl == null) {
-            log.info("CWL was null");
+            LOG.info("CWL was null");
             return;
         }
 
         if (!(cwl.get("class")).equals("CommandLineTool")) {
-            log.info("Must be CommandLineTool");
+            LOG.info("Must be CommandLineTool");
             return;
         }
 
@@ -89,7 +89,7 @@ public class LauncherCWL {
         inputsAndOutputsJson = loadJob(line.getOptionValue("job"));
 
         if (inputsAndOutputsJson == null) {
-            log.info("Cannot load job object.");
+            LOG.info("Cannot load job object.");
             return;
         }
 
@@ -107,10 +107,10 @@ public class LauncherCWL {
         String newJsonPath = createUpdatedInputsAndOutputsJson(fileMap, outputMap, inputsAndOutputsJson);
 
         // run command
-        log.info("RUNNING COMMAND");
+        LOG.info("RUNNING COMMAND");
         Map<String, Object> outputObj = runCommand(line.getOptionValue("descriptor"), newJsonPath, globalWorkingDir+"/outputs/");
 
-        //log.info(outputObj);
+        //LOG.info(outputObj);
 
         // push output files
         pushOutputFiles(outputMap, outputObj);
@@ -119,9 +119,9 @@ public class LauncherCWL {
 
     private void prepUploads(String type, Object cwl, Object inputsOutputs, Map<String, Map<String, String>> fileMap) {
 
-        log.info("PREPPING UPLOADS...");
+        LOG.info("PREPPING UPLOADS...");
 
-        log.info(((Map) cwl).get(type));
+        LOG.info(((Map) cwl).get(type));
 
         List files = (List) ((Map)cwl).get(type);
 
@@ -129,24 +129,24 @@ public class LauncherCWL {
         for (Object file : files) {
 
             // pull back the name of the input from the CWL
-            log.info(file.toString());
-            log.info("FILE: " + ((Map) file).get("id"));
+            LOG.info(file.toString());
+            LOG.info("FILE: " + ((Map) file).get("id"));
             String fileUrl;
             try {
                 //fileUrl = new URL((String)((Map)file).get("id")).getRef();
                 fileUrl = new URL((String)((Map)file).get("id")).getRef();
-                log.info("REF: "+fileUrl);
+                LOG.info("REF: " + fileUrl);
             } catch (MalformedURLException e) {
                 e.printStackTrace();
                 throw new RuntimeException("Could not process input URL",e);
             }
 
             if (fileUrl == null) {
-                log.error("fileURL from the CWL was not able to be parsed for the file name as a ref");
+                LOG.error("fileURL from the CWL was not able to be parsed for the file name as a ref");
             }
 
             // now that I have an input name from the CWL I can find it in the JSON parameterization for this run
-            log.info("JSON: "+inputsOutputs.toString());
+            LOG.info("JSON: " + inputsOutputs.toString());
             for (Object paramName : ((HashMap)inputsOutputs).keySet()) {
                 HashMap param = (HashMap)((HashMap)inputsOutputs).get(paramName);
                 String path = (String)param.get("path");
@@ -154,7 +154,7 @@ public class LauncherCWL {
                 if (paramName.equals(fileUrl)) {
 
                     // if it's the current one
-                    log.info("PATH TO UPLOAD TO: "+path+" FOR "+fileUrl+" FOR "+paramName);
+                    LOG.info("PATH TO UPLOAD TO: " + path + " FOR " + fileUrl + " FOR " + paramName);
 
                     // output
                     // TODO: poor naming here, need to cleanup the variables
@@ -177,7 +177,7 @@ public class LauncherCWL {
                     new1.put("url", path);
                     fileMap.put(fileUrl, new1);
 
-                    log.info("UPLOAD FILE: LOCAL: " + fileUrl + " URL: " + path);
+                    LOG.info("UPLOAD FILE: LOCAL: " + fileUrl + " URL: " + path);
 
                 }
             }
@@ -192,14 +192,14 @@ public class LauncherCWL {
         for (String paramName : inputsAndOutputsJson.keySet()) {
             Map<String, Object> param = inputsAndOutputsJson.get(paramName);
             String path = (String) param.get("path");
-            log.info("PATH: "+path+" PARAM_NAME: "+paramName);
+            LOG.info("PATH: " + path + " PARAM_NAME: " + paramName);
             // will be null for output
             if (fileMap.get(paramName) != null) {
                 param.put("path", fileMap.get(paramName).get("local_path"));
-                log.info("NEW FULL PATH: " + fileMap.get(paramName).get("local_path"));
+                LOG.info("NEW FULL PATH: " + fileMap.get(paramName).get("local_path"));
             } else if (outputMap.get(paramName) != null) {
                 param.put("path", outputMap.get(paramName).get("local_path"));
-                log.info("NEW FULL PATH: " + outputMap.get(paramName).get("local_path"));
+                LOG.info("NEW FULL PATH: " + outputMap.get(paramName).get("local_path"));
             }
             // now add to the new JSON structure
             JSONObject newRecord = new JSONObject();
@@ -233,7 +233,7 @@ public class LauncherCWL {
 
     private String setupDirectories() {
 
-        log.info("MAKING DIRECTORIES...");
+        LOG.info("MAKING DIRECTORIES...");
         // directory to use, typically a large, encrypted filesystem
         String workingDir = config.getString("working-directory");
         // make UUID
@@ -259,8 +259,8 @@ public class LauncherCWL {
             p.waitFor();
 
             if (p.exitValue() != 0) {
-                log.warn("Got return code " + p.exitValue());
-                log.warn("Error message is: " + IOUtils.toString(p.getErrorStream()));
+                LOG.warn("Got return code " + p.exitValue());
+                LOG.warn("Error message is: " + IOUtils.toString(p.getErrorStream()));
             }
             return obj;
         } catch (InterruptedException | IOException e) {
@@ -270,14 +270,15 @@ public class LauncherCWL {
 
     private void pushOutputFiles(Map<String, Map<String, String>> fileMap, Map<String, Object> outputObject) {
 
-        log.info("UPLOADING FILES...");
+        LOG.info("UPLOADING FILES...");
 
         for (String fileName : fileMap.keySet()) {
             Map file = fileMap.get(fileName);
 
             String cwlOutputPath = (String)((Map)((Map)outputObject).get(fileName)).get("path");
 
-            log.info("NAME: " + file.get("local_path") + " URL: " + file.get("url") +" FILENAME: "+fileName+" CWL OUTPUT PATH: "+cwlOutputPath);
+            LOG.info("NAME: " + file.get("local_path") + " URL: " + file.get("url") + " FILENAME: " + fileName + " CWL OUTPUT PATH: "
+                    + cwlOutputPath);
 
 
             try {
@@ -298,26 +299,26 @@ public class LauncherCWL {
 
     private void execute(String command) {
         try {
-            log.info("CMD: " + command);
+            LOG.info("CMD: " + command);
             Process p = Runtime.getRuntime().exec(command);
             p.waitFor();
-            log.info("CMD RETURN CODE: " + p.exitValue());
-            log.info("CMD STDERR:" + IOUtils.toString(p.getErrorStream()));
-            log.info("CMD STDOUT:" + IOUtils.toString(p.getInputStream()));
+            LOG.info("CMD RETURN CODE: " + p.exitValue());
+            LOG.info("CMD STDERR:" + IOUtils.toString(p.getErrorStream()));
+            LOG.info("CMD STDOUT:" + IOUtils.toString(p.getInputStream()));
 
         } catch (InterruptedException | IOException e) {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
             throw new RuntimeException("Could not execute " + command, e);
         }
     }
 
     private void pullFiles(String type, Object cwl, Object inputsOutputs, Map<String, Map<String, String>> fileMap) {
 
-        log.info("DOWNLOADING INPUT FILES...");
+        LOG.info("DOWNLOADING INPUT FILES...");
 
         // !(((Map)cwl).get("class")).equals("CommandLineTool")
 
-        log.info(((Map) cwl).get("inputs"));
+        LOG.info(((Map) cwl).get("inputs"));
 
         List files = (List) ((Map)cwl).get(type);
 
@@ -325,23 +326,23 @@ public class LauncherCWL {
         for (Object file : files) {
 
             // pull back the name of the input from the CWL
-            log.info(file.toString());
-            log.info("FILE: " + ((Map) file).get("id"));
+            LOG.info(file.toString());
+            LOG.info("FILE: " + ((Map) file).get("id"));
             String fileUrl = null;
             try {
                 fileUrl = new URL((String)((Map)file).get("id")).getRef();
-                log.info("REF: "+fileUrl);
+                LOG.info("REF: " + fileUrl);
             } catch (MalformedURLException e) {
                 e.printStackTrace();
-                log.error(e.getMessage());
+                LOG.error(e.getMessage());
             }
 
             if (fileUrl == null) {
-                log.error("fileURL from the CWL was not able to be parsed for the file name as a ref");
+                LOG.error("fileURL from the CWL was not able to be parsed for the file name as a ref");
             }
 
             // now that I have an input name from the CWL I can find it in the JSON parameterization for this run
-            log.info("JSON: "+inputsOutputs.toString());
+            LOG.info("JSON: " + inputsOutputs.toString());
             for (Object paramName : ((HashMap)inputsOutputs).keySet()) {
                 HashMap param = (HashMap)((HashMap)inputsOutputs).get(paramName);
                 String path = (String)param.get("path");
@@ -349,7 +350,7 @@ public class LauncherCWL {
                 if (paramName.equals(fileUrl)) {
 
                     // if it's the current one
-                    log.info("PATH TO DOWNLOAD FROM: "+path+" FOR "+fileUrl+" FOR "+paramName);
+                    LOG.info("PATH TO DOWNLOAD FROM: " + path + " FOR " + fileUrl + " FOR " + paramName);
 
                     // output
                     // TODO: poor naming here, need to cleanup the variables
@@ -380,11 +381,11 @@ public class LauncherCWL {
                         fileMap.put(fileUrl, new1);
 
                     } catch (FileSystemException e) {
-                        log.error(e.getMessage());
+                        LOG.error(e.getMessage());
                         throw new RuntimeException("Could not provision input files", e);
                     }
 
-                    log.info("DOWNLOADED FILE: LOCAL: " + fileUrl + " URL: " + path);
+                    LOG.info("DOWNLOADED FILE: LOCAL: " + fileUrl + " URL: " + path);
 
                 }
             }
@@ -403,8 +404,8 @@ public class LauncherCWL {
             p.waitFor();
 
             if (p.exitValue() != 0) {
-                log.warn("Got return code " + p.exitValue());
-                log.warn("Error message is: " + IOUtils.toString(p.getErrorStream()));
+                LOG.warn("Got return code " + p.exitValue());
+                LOG.warn("Error message is: " + IOUtils.toString(p.getErrorStream()));
             }
             return obj;
         } catch (InterruptedException | IOException e) {
@@ -420,7 +421,7 @@ public class LauncherCWL {
             line = parser.parse(options, args);
 
         } catch (ParseException exp) {
-            log.error("Unexpected exception:" + exp.getMessage());
+            LOG.error("Unexpected exception:" + exp.getMessage());
             throw new RuntimeException("Could not parse command-line", exp);
         }
         return line;
