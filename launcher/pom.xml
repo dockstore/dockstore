@@ -9,10 +9,27 @@
     <version>1.0.0</version>
 
     <properties>
-	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+	    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <cobertura.version>2.1.1</cobertura.version>
+        <github.url>scm:git:git@github.com:CancerCollaboratory/dockstore-descriptor.git</github.url>
     </properties>
+
+    <scm>
+        <connection>${github.url}</connection>
+        <developerConnection>${github.url}</developerConnection>
+        <url>${github.url}</url>
+        <tag>HEAD</tag>
+    </scm>
+    <distributionManagement>
+        <repository>
+            <id>seqwaremaven.oicr.on.ca</id>
+            <name>seqwaremaven.oicr.on.ca-releases</name>
+            <url>http://seqwaremaven.oicr.on.ca/artifactory/seqware-release</url>
+            <uniqueVersion>false</uniqueVersion>
+        </repository>
+    </distributionManagement>
+
 
     <repositories>
         <repository>
