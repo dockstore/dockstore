@@ -14,7 +14,7 @@ sleep 10
 
 # todo put the web service startup here
 echo "Starting Java Web Service"
-java -jar /gitroot/dockstore-webservice/target/dockstore-webservice-*.jar server /hello-world.yml
+/usr/lib/jvm/java-8-oracle/bin/java -jar /gitroot/dockstore-webservice/target/dockstore-webservice-*.jar server /hello-world.yml
 
 #echo "[hit enter key to exit] or run 'docker stop <container>'"
 #read
