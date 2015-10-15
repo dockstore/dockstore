@@ -298,7 +298,7 @@ public class Client {
         userApi = new UserApi(defaultApiClient);
 
         try {
-            InputStreamReader f = new InputStreamReader(new FileInputStream("clientConfig.yml"), Charset.defaultCharset());
+            InputStreamReader f = new InputStreamReader(new FileInputStream("config"), Charset.defaultCharset());
             YamlReader reader = new YamlReader(f);
             Object object = reader.read();
             Map map = (Map) object;
