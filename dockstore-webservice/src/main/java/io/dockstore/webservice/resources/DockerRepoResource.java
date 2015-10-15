@@ -24,7 +24,6 @@ import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
-//import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.ContainerDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -135,6 +134,9 @@ public class DockerRepoResource {
         namespaces.add("xliuoicr");
         namespaces.add("oicr_vchung");
         namespaces.add("oicr_vchung_org");
+        namespaces.add("denis-yuen");
+        namespaces.add("seqware");
+        namespaces.add("boconnor");
     }
 
     @GET
@@ -334,7 +336,7 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "List all repos known cached in database", notes = "List docker container repos currently known. "
+    @ApiOperation(value = "List all registered docker containers cached in database", notes = "List docker container repos currently known. "
             + "Right now, tokens are used to synchronously talk to the quay.io API to list repos. "
             + "Ultimately, we should cache this information and refresh either by user request or by time "
             + "TODO: This should be a properly defined list of objects, it also needs admin authentication", response = Container.class, responseContainer = "List")
@@ -397,7 +399,8 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("allRegistered")
-    @ApiOperation(value = "List all registered containers", notes = "", response = Container.class, responseContainer = "List")
+    @ApiOperation(value = "List all registered containers. This would be a minimal resource that would need to be implemented "
+            + "by a GA4GH reference server", tags = { "GA4GH", "docker.repo" }, notes = "", response = Container.class, responseContainer = "List")
     public List<Container> allRegisteredContainers() {
         List<Container> repositories = containerDAO.findAllRegistered();
         return repositories;
@@ -507,7 +510,9 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/search")
-    @ApiOperation(value = "Search for matching registered containers", notes = "Search on the name (full path name) and description.", response = Container.class, responseContainer = "List")
+    @ApiOperation(value = "Search for matching registered containers."
+            + " This would be a minimal resource that would need to be implemented by a GA4GH reference server", notes = "Search on the name (full path name) and description.", response = Container.class, responseContainer = "List", tags = {
+            "GA4GH", "docker.repo" })
     public List<Container> search(@QueryParam("pattern") String word) {
         return containerDAO.searchPattern(word);
     }
