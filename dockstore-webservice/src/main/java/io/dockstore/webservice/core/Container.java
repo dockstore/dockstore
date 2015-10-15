@@ -20,6 +20,7 @@ package io.dockstore.webservice.core;
 import com.fasterxml.jackson.annotation.JsonProperty;
 //import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import io.swagger.annotations.ApiModel;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import javax.persistence.Column;
@@ -67,6 +68,8 @@ public class Container {
     @Column
     private String path;
     @Column
+    private String author;
+    @Column
     private String description;
     @Column
     private boolean isStarred;
@@ -75,7 +78,9 @@ public class Container {
     @Column
     private Integer lastModified;
     @Column
-    private long lastUpdated;
+    private Date lastUpdated;
+    @Column
+    private Date lastBuild;
     @Column
     private String gitUrl;
     @Column
@@ -98,13 +103,14 @@ public class Container {
         this.tags = new HashSet<>(0);
     }
 
-    public void update(Container container, long lastUpdated) {
+    public void update(Container container) {
         this.description = container.getDescription();
         this.isPublic = container.getIsPublic();
         this.isStarred = container.getIsStarred();
         this.lastModified = container.getLastModified();
-        this.lastUpdated = lastUpdated;
+        this.lastBuild = container.getLastBuild();
         this.hasCollab = container.getHasCollab();
+        this.author = container.getAuthor();
 
         this.gitUrl = container.getGitUrl();
     }
@@ -184,13 +190,23 @@ public class Container {
     }
 
     @JsonProperty
-    public long getLastUpdated() {
+    public Date getLastUpdated() {
         return lastUpdated;
+    }
+
+    @JsonProperty
+    public Date getLastBuild() {
+        return lastBuild;
     }
 
     @JsonProperty
     public boolean getHasCollab() {
         return hasCollab;
+    }
+
+    @JsonProperty
+    public String getAuthor() {
+        return author;
     }
 
     public Set<Tag> getTags() {
@@ -277,12 +293,20 @@ public class Container {
         this.path = path;
     }
 
-    public void setLastUpdated(long lastUpdated) {
+    public void setLastUpdated(Date lastUpdated) {
         this.lastUpdated = lastUpdated;
+    }
+
+    public void setLastBuild(Date lastBuild) {
+        this.lastBuild = lastBuild;
     }
 
     public void setHasCollab(boolean hasCollab) {
         this.hasCollab = hasCollab;
+    }
+
+    public void setAuthor(String author) {
+        this.author = author;
     }
 
     /**

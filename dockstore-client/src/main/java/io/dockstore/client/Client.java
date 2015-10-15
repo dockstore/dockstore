@@ -24,6 +24,7 @@ import io.swagger.client.api.ContainerApi;
 import io.swagger.client.model.Container;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.User;
+import io.swagger.client.model.Collab;
 //import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,6 +36,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.util.Date;
 
 import java.util.Map;
 import javassist.NotFoundException;
@@ -118,7 +120,7 @@ public class Client {
         int descWidth = maxWidths[1] + PADDING;
         int gitWidth = maxWidths[2] + PADDING;
         String format = "%-" + nameWidth + "s%-" + descWidth + "s%-" + gitWidth + "s%-15s%-14s%-12s";
-        out(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "On Dockstore?", "Collab.json", "Automated");
+        out(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "On Dockstore?", "Collab.cwl", "Automated");
 
         for (Container container : containers) {
             String collab = "No";
@@ -211,7 +213,7 @@ public class Client {
                         out("Unable to publish " + first);
                     }
                 } catch (ApiException ex) {
-                    out("Exception: " + ex);
+                    out("Unable to publish " + first);
                 }
             }
         }
@@ -239,13 +241,15 @@ public class Client {
                 // out(containerApi.getRegisteredContainer(path).getTags().toString());
                 // Container container = containerApi.getRegisteredContainer(path);
 
+                Date dateUploaded = container.getLastBuild();
+
                 out("");
                 out("DESCRIPTION:");
                 out(container.getDescription());
                 out("AUTHOR:");
-                out(container.getNamespace());
+                out(container.getAuthor());
                 out("DATE UPLOADED:");
-                out("");
+                out(dateUploaded.toString());
                 out("TAGS");
 
                 List<Tag> tags = container.getTags();
@@ -275,9 +279,9 @@ public class Client {
         String path = args.get(0);
 
         try {
-            String collab = containerApi.collab(path);
-            if (!collab.isEmpty()) {
-                out(collab);
+            Collab collab = containerApi.collab(path);
+            if (!collab.getContent().isEmpty()) {
+                out(collab.getContent());
             } else {
                 out("No collab file found.");
             }

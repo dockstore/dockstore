@@ -296,5 +296,13 @@
                 </configuration>
             </plugin>
         </plugins>
+        
+        <resources>
+            <resource>
+                <targetPath>${basedir}/target</targetPath>
+                <directory>bin</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
     </build>
 </project>

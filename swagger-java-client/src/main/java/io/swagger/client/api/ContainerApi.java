@@ -11,12 +11,13 @@ import io.swagger.client.model.*;
 import java.util.*;
 
 import io.swagger.client.model.Container;
+import io.swagger.client.model.Collab;
 
 import java.io.File;
 import java.util.Map;
 import java.util.HashMap;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-13T13:30:22.221-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-15T13:53:59.483-04:00")
 public class ContainerApi {
   private ApiClient apiClient;
 
@@ -165,12 +166,12 @@ public class ContainerApi {
   }
   
   /**
-   * Get the corresponding collab.json and/or cwl file on Github
+   * Get the corresponding collab.cwl file on Github
    * Enter full path of container (add quay.io if using quay.io)
    * @param repository 
-   * @return String
+   * @return Collab
    */
-  public String collab (String repository) throws ApiException {
+  public Collab collab (String repository) throws ApiException {
     Object postBody = null;
     
     // create path and map variables
@@ -202,7 +203,7 @@ public class ContainerApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<String>() {};
+    TypeRef returnType = new TypeRef<Collab>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }

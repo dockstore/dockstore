@@ -201,7 +201,9 @@
             <property name="max" value="140"/>
             <property name="severity" value="ignore"/>
         </module>
-	<module name="MethodLength"/>
+	    <module name="MethodLength">
+            <property name="max" value="200"/>
+        </module>
         <module name="ParameterNumber"/>
 
         <!-- Checks for whitespace                               -->

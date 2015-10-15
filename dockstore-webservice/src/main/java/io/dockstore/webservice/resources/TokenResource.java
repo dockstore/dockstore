@@ -134,7 +134,7 @@ public class TokenResource {
         throw new UnsupportedOperationException();
     }
 
-    @POST
+    @GET
     @Timed
     @UnitOfWork
     @Path("/quay.io")
@@ -211,7 +211,7 @@ public class TokenResource {
         throw new UnsupportedOperationException();
     }
 
-    @POST
+    @GET
     @Timed
     @UnitOfWork
     @Path("/github.com")

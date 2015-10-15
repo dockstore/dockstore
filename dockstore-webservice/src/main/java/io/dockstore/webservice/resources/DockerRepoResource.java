@@ -63,6 +63,11 @@ import org.eclipse.egit.github.core.service.OrganizationService;
 import org.eclipse.egit.github.core.service.RepositoryService;
 import org.eclipse.egit.github.core.service.UserService;
 
+import com.esotericsoftware.yamlbeans.YamlReader;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,6 +109,18 @@ public class DockerRepoResource {
         }
     }
 
+    private static class Collab {
+        private String content;
+
+        public void setContent(String content) {
+            this.content = content;
+        }
+
+        public String getContent() {
+            return this.content;
+        }
+    }
+
     public DockerRepoResource(ObjectMapper mapper, HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ContainerDAO containerDAO,
             TagDAO tagDAO) {
         this.objectMapper = mapper;
@@ -140,6 +157,8 @@ public class DockerRepoResource {
         List<Container> allRepos = new ArrayList<>(0);
         List<Token> tokens = tokenDAO.findByUserId(userId);
         Map<String, ArrayList> tagMap = new HashMap<>();
+
+        SimpleDateFormat formatter = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
 
         String gitURL = "";
         Token quayToken = null;
@@ -198,6 +217,18 @@ public class DockerRepoResource {
 
                                 gitURL = map2.get("trigger_metadata").get("git_url");
 
+                                Map<String, String> map3 = (Map<String, String>) map.get("builds").get(0);
+                                String lastBuild = (String) map3.get("started");
+                                LOG.info("LAST BUILD: " + lastBuild);
+
+                                Date date = null;
+                                try {
+                                    date = formatter.parse(lastBuild);
+                                    c.setLastBuild(date);
+                                } catch (ParseException ex) {
+                                    LOG.info("Build date did not match format 'EEE, d MMM yyyy HH:mm:ss Z'");
+                                }
+
                                 tagMap.put(path, (ArrayList<String>) map2.get("tags"));
                             }
 
@@ -215,13 +246,29 @@ public class DockerRepoResource {
                                 LOG.info(repository.getSshUrl());
                                 if (repository.getSshUrl().equals(c.getGitUrl())) {
                                     try {
-                                        List<RepositoryContents> contents = cService.getContents(repository, "collab.json");
+                                        List<RepositoryContents> contents = cService.getContents(repository, "collab.cwl");
                                         if (!(contents == null || contents.isEmpty())) {
                                             c.setHasCollab(true);
-                                            LOG.info("Repo: " + repository.getName() + " has collab.json");
+
+                                            String encoded = contents.get(0).getContent().replace("\n", "");
+                                            byte[] decode = Base64.getDecoder().decode(encoded);
+                                            String content = new String(decode, StandardCharsets.UTF_8);
+
+                                            // parse the collab.cwl file to get description and author
+                                            YamlReader reader = new YamlReader(content);
+                                            Object object = reader.read();
+                                            Map map = (Map) object;
+                                            String description = (String) map.get("description");
+                                            map = (Map) map.get("dct:creator");
+                                            String author = (String) map.get("foaf:name");
+
+                                            c.setDescription(description);
+                                            c.setAuthor(author);
+
+                                            LOG.info("Repo: " + repository.getName() + " has collab.cwl");
                                         }
                                     } catch (IOException ex) {
-                                        LOG.info("Repo: " + repository.getName() + " has no collab.json");
+                                        LOG.info("Repo: " + repository.getName() + " has no collab.cwl");
                                     }
                                 }
                             }
@@ -237,7 +284,7 @@ public class DockerRepoResource {
             LOG.info("Token ignored due to IOException: " + gitToken.getId() + " " + ex);
         }
 
-        long time = System.currentTimeMillis();
+        Date time = new Date();
 
         for (Container newContainer : allRepos) {
             boolean exists = false;
@@ -248,7 +295,7 @@ public class DockerRepoResource {
                         && newContainer.getRegistry().equals(oldContainer.getRegistry())) {
                     exists = true;
 
-                    oldContainer.update(newContainer, time);
+                    oldContainer.update(newContainer);
 
                     break;
                 }
@@ -256,16 +303,15 @@ public class DockerRepoResource {
 
             if (!exists) {
                 newContainer.setUserId(userId);
-                newContainer.setLastUpdated(time);
                 String path = newContainer.getRegistry() + "/" + newContainer.getNamespace() + "/" + newContainer.getName();
                 newContainer.setPath(path);
 
                 currentRepos.add(newContainer);
             }
-
         }
 
         for (Container container : currentRepos) {
+            container.setLastUpdated(time);
             containerDAO.create(container);
 
             container.getTags().clear();
@@ -319,11 +365,14 @@ public class DockerRepoResource {
             throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
         }
 
-        c.setIsRegistered(true);
-        long id = containerDAO.create(c);
-
-        c = containerDAO.findById(id);
-        return c;
+        if (c.getHasCollab() && !c.getGitUrl().isEmpty()) {
+            c.setIsRegistered(true);
+            long id = containerDAO.create(c);
+            c = containerDAO.findById(id);
+            return c;
+        } else {
+            return null;
+        }
     }
 
     @DELETE
@@ -479,12 +528,14 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/collab")
-    @ApiOperation(value = "Get the corresponding collab.json and/or cwl file on Github", notes = "Enter full path of container (add quay.io if using quay.io)", response = String.class)
-    public String collab(@QueryParam("repository") String repository) {
+    @ApiOperation(value = "Get the corresponding collab.cwl file on Github", notes = "Enter full path of container (add quay.io if using quay.io)", response = Collab.class)
+    public Collab collab(@QueryParam("repository") String repository) {
         Container container = containerDAO.findByPath(repository);
         boolean hasGithub = false;
 
-        StringBuilder builder = new StringBuilder();
+        Collab collab = new Collab();
+
+        // StringBuilder builder = new StringBuilder();
         if (container != null) {
             List<Token> tokens = tokenDAO.findByUserId(container.getUserId());
 
@@ -511,17 +562,18 @@ public class DockerRepoResource {
                             // LOG.info(container.getGitUrl());
                             if (repo.getSshUrl().equals(container.getGitUrl())) {
                                 try {
-                                    List<RepositoryContents> contents = cService.getContents(repo, "collab.json");
+                                    List<RepositoryContents> contents = cService.getContents(repo, "collab.cwl");
                                     // odd, throws exceptions if file does not exist
                                     if (!(contents == null || contents.isEmpty())) {
-                                        // builder.append("\tRepo: ").append(repo.getName()).append(" has a collab.json \n");
                                         String encoded = contents.get(0).getContent().replace("\n", "");
                                         byte[] decode = Base64.getDecoder().decode(encoded);
                                         String content = new String(decode, StandardCharsets.UTF_8);
-                                        builder.append(content);
+                                        // builder.append(content);
+                                        collab.setContent(content);
                                     }
                                 } catch (IOException ex) {
-                                    builder.append("Repo: ").append(repo.getName()).append(" has no collab.json \n");
+                                    // builder.append("Repo: ").append(repo.getName()).append(" has no collab.cwl \n");
+                                    LOG.info("Repo: " + repo.getName() + " has no collab.cwl");
                                 }
                             }
                         }
@@ -533,38 +585,43 @@ public class DockerRepoResource {
                                 LOG.info(repo.getSshUrl());
                                 if (repo.getSshUrl().equals(container.getGitUrl())) {
                                     try {
-                                        List<RepositoryContents> contents = cService.getContents(repo, "collab.json");
+                                        List<RepositoryContents> contents = cService.getContents(repo, "collab.cwl");
                                         // odd, throws exceptions if file does not exist
                                         if (!(contents == null || contents.isEmpty())) {
-                                            // builder.append("\tRepo: ").append(repo.getName()).append(" has a collab.json \n");
                                             String encoded = contents.get(0).getContent().replace("\n", "");
                                             byte[] decode = Base64.getDecoder().decode(encoded);
                                             String content = new String(decode, StandardCharsets.UTF_8);
-                                            builder.append(content);
+                                            // builder.append(content);
+                                            collab.setContent(content);
                                         }
                                     } catch (IOException ex) {
-                                        builder.append("Repo: ").append(repo.getName()).append(" has no collab.json \n");
+                                        // builder.append("Repo: ").append(repo.getName()).append(" has no collab.cwl \n");
+                                        LOG.info("Repo: " + repo.getName() + " has no collab.cwl");
                                     }
                                 }
                             }
                         }
 
                     } catch (IOException ex) {
-                        builder.append("Token ignored due to IOException: ").append(token.getId()).append("\n");
+                        // builder.append("Token ignored due to IOException: ").append(token.getId()).append("\n");
+                        LOG.info("Token ignored due to IOException: " + token.getId());
                     }
                 }
             }
             if (!hasGithub) {
-                builder.append("Github is not setup");
+                // builder.append("Github is not setup");
+                LOG.info("Github is not setup");
             }
 
         } else {
-            builder.append(repository).append(" is not registered");
+            // builder.append(repository).append(" is not registered");
+            LOG.info(repository + " is not registered");
         }
 
-        String ret = builder.toString();
-        LOG.info(ret);
-        return ret;
+        // String ret = builder.toString();
+        // LOG.info(ret);
+        // LOG.info(collab.getContent());
+        return collab;
     }
 
     private static class QuayUser {
