@@ -51,6 +51,7 @@ import java.util.UUID;
 public class LauncherCWL {
 
     private static final Log LOG = LogFactory.getLog(LauncherCWL.class);
+    public static final String WORKING_DIRECTORY = "working-directory";
     private final String configFilePath;
     private final String imageDescriptorPath;
     private final String runtimeDescriptorPath;
@@ -125,27 +126,13 @@ public class LauncherCWL {
         globalWorkingDir = setupDirectories();
 
         // pull input files
-        final Map<String, Map<String, String>> inputsId2dockerMountMap = pullFiles(cwl, inputsAndOutputsJson);
+        final  Map<String, FileInfo> inputsId2dockerMountMap = pullFiles(cwl, inputsAndOutputsJson);
 
         // prep outputs, just creates output dir and records what the local output path will be
-        Map<String, Map<String, String>> outputMap = prepUploads(cwl, inputsAndOutputsJson);
+        Map<String, FileInfo> outputMap = prepUploads(cwl, inputsAndOutputsJson);
 
         // create updated JSON inputs document
         String newJsonPath = createUpdatedInputsAndOutputsJson(inputsId2dockerMountMap, outputMap, inputsAndOutputsJson);
-
-        // run validation now that the input is ready
-        // parse the CWL tool definition without validation
-        Map<String, Object> validCWL = parseCWL(imageDescriptorPath, true);
-
-        if (validCWL == null) {
-            LOG.info("CWL was null");
-            return;
-        }
-
-        if (!(validCWL.get("class")).equals("CommandLineTool")) {
-            LOG.info("Must be CommandLineTool");
-            return;
-        }
 
         // run command
         LOG.info("RUNNING COMMAND");
@@ -155,9 +142,9 @@ public class LauncherCWL {
         pushOutputFiles(outputMap, outputObj);
     }
 
-    private Map<String, Map<String, String>> prepUploads(Map<String, Object> cwl, Map<String, Map<String, Object>> inputsOutputs) {
+    private Map<String, FileInfo> prepUploads(Map<String, Object> cwl, Map<String, Map<String, Object>> inputsOutputs) {
 
-        Map<String, Map<String, String>> fileMap = new HashMap<>();
+        Map<String, FileInfo> fileMap = new HashMap<>();
 
         LOG.info("PREPPING UPLOADS...");
 
@@ -200,10 +187,10 @@ public class LauncherCWL {
                     // https://commons.apache.org/proper/commons-vfs/filesystems.html
 
                     // now add this info to a hash so I can later reconstruct a docker -v command
-                    HashMap<String, String> new1 = new HashMap<>();
-                    new1.put("local_path", uuidPath);
-                    new1.put("docker_path", cwlID);
-                    new1.put("url", path);
+                    FileInfo new1 = new FileInfo();
+                    new1.setUrl(path);
+                    new1.setDockerPath(cwlID);
+                    new1.setLocalPath(uuidPath);
                     fileMap.put(cwlID, new1);
 
                     LOG.info("UPLOAD FILE: LOCAL: " + cwlID + " URL: " + path);
@@ -215,7 +202,7 @@ public class LauncherCWL {
         return fileMap;
     }
 
-    private String createUpdatedInputsAndOutputsJson(Map<String, Map<String, String>> fileMap, Map<String, Map<String, String>> outputMap, Map<String, Map<String, Object>> inputsAndOutputsJson) {
+    private String createUpdatedInputsAndOutputsJson(Map<String, FileInfo> fileMap, Map<String, FileInfo> outputMap, Map<String, Map<String, Object>> inputsAndOutputsJson) {
 
         JSONObject newJSON = new JSONObject();
 
@@ -225,11 +212,13 @@ public class LauncherCWL {
             LOG.info("PATH: " + path + " PARAM_NAME: " + paramName);
             // will be null for output
             if (fileMap.get(paramName) != null) {
-                param.put("path", fileMap.get(paramName).get("local_path"));
-                LOG.info("NEW FULL PATH: " + fileMap.get(paramName).get("local_path"));
+                final String localPath = fileMap.get(paramName).getLocalPath();
+                param.put("path", localPath);
+                LOG.info("NEW FULL PATH: " + localPath);
             } else if (outputMap.get(paramName) != null) {
-                param.put("path", outputMap.get(paramName).get("local_path"));
-                LOG.info("NEW FULL PATH: " + outputMap.get(paramName).get("local_path"));
+                final String localPath = outputMap.get(paramName).getLocalPath();
+                param.put("path", localPath);
+                LOG.info("NEW FULL PATH: " + localPath);
             }
             // now add to the new JSON structure
             JSONObject newRecord = new JSONObject();
@@ -265,7 +254,7 @@ public class LauncherCWL {
 
         LOG.info("MAKING DIRECTORIES...");
         // directory to use, typically a large, encrypted filesystem
-        String workingDir = config.getString("working-directory");
+        String workingDir = config.getString(WORKING_DIRECTORY, "./datastore/");
         // make UUID
         UUID uuid = UUID.randomUUID();
         // setup directories
@@ -288,24 +277,23 @@ public class LauncherCWL {
         return obj;
     }
 
-    private void pushOutputFiles(Map<String, Map<String, String>> fileMap, Map<String, Object> outputObject) {
+    private void pushOutputFiles(Map<String, FileInfo> fileMap, Map<String, Object> outputObject) {
 
         LOG.info("UPLOADING FILES...");
 
         for (String fileName : fileMap.keySet()) {
-            Map file = fileMap.get(fileName);
+            FileInfo file = fileMap.get(fileName);
 
             String cwlOutputPath = (String)((Map)((Map)outputObject).get(fileName)).get("path");
 
-            LOG.info("NAME: " + file.get("local_path") + " URL: " + file.get("url") + " FILENAME: " + fileName + " CWL OUTPUT PATH: "
+            LOG.info("NAME: " + file.getLocalPath() + " URL: " + file.getUrl() + " FILENAME: " + fileName + " CWL OUTPUT PATH: "
                     + cwlOutputPath);
-
 
             try {
                 FileSystemManager fsManager;
                 // trigger a copy from the URL to a local file path that's a UUID to avoid collision
                 fsManager = VFS.getManager();
-                FileObject dest = fsManager.resolveFile((String)file.get("url"));
+                FileObject dest = fsManager.resolveFile(file.getUrl());
                 FileObject src = fsManager.resolveFile(new File(cwlOutputPath).getAbsolutePath());
                 dest.copyFrom(src, Selectors.SELECT_SELF);
             } catch (FileSystemException e) {
@@ -319,8 +307,8 @@ public class LauncherCWL {
 
     /**
      * Execute a command and return stdout and stderr
-     * @param command
-     * @return
+     * @param command the command to execute
+     * @return the stdout and stderr
      */
     private ImmutablePair<String, String> executeCommand(String command) {
         LOG.info("CMD: " + command);
@@ -366,8 +354,8 @@ public class LauncherCWL {
         }
     }
 
-    private Map<String, Map<String, String>> pullFiles(Map<String, Object> cwl, Map<String, Map<String, Object>> inputsOutputs) {
-        Map<String, Map<String, String>> fileMap = new HashMap<>();
+    private Map<String, FileInfo> pullFiles(Map<String, Object> cwl, Map<String, Map<String, Object>> inputsOutputs) {
+        Map<String, FileInfo> fileMap = new HashMap<>();
 
         LOG.info("DOWNLOADING INPUT FILES...");
 
@@ -417,11 +405,12 @@ public class LauncherCWL {
                         dest.copyFrom(src, Selectors.SELECT_SELF);
 
                         // now add this info to a hash so I can later reconstruct a docker -v command
-                        Map<String, String> new1 = new HashMap<>();
-                        new1.put("local_path", uuidPath);
-                        new1.put("docker_path", cwlInputFileID);
-                        new1.put("url", path);
-                        fileMap.put(cwlInputFileID, new1);
+                        FileInfo info = new FileInfo();
+                        info.setLocalPath(uuidPath);
+                        info.setDockerPath(cwlInputFileID);
+                        info.setUrl(path);
+
+                        fileMap.put(cwlInputFileID, info);
 
                     } catch (FileSystemException e) {
                         LOG.error(e.getMessage());
@@ -461,6 +450,45 @@ public class LauncherCWL {
         } catch (ParseException exp) {
             LOG.error("Unexpected exception:" + exp.getMessage());
             throw new RuntimeException("Could not parse command-line", exp);
+        }
+    }
+
+    public static class FileInfo{
+        private String localPath;
+        private String dockerPath;
+        private String url;
+        private String defaultLocalPath;
+
+        public String getLocalPath() {
+            return localPath;
+        }
+
+        public void setLocalPath(String localPath) {
+            this.localPath = localPath;
+        }
+
+        public String getDockerPath() {
+            return dockerPath;
+        }
+
+        public void setDockerPath(String dockerPath) {
+            this.dockerPath = dockerPath;
+        }
+
+        public String getUrl() {
+            return url;
+        }
+
+        public void setUrl(String url) {
+            this.url = url;
+        }
+
+        public String getDefaultLocalPath() {
+            return defaultLocalPath;
+        }
+
+        public void setDefaultLocalPath(String defaultLocalPath) {
+            this.defaultLocalPath = defaultLocalPath;
         }
     }
 
