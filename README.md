@@ -41,6 +41,21 @@ You can also run it on your local computer but will need to setup postgres separ
 3. Authorize via github.com using the provided link
 4. Browse to [http://localhost:8080/github.repo](http://localhost:8080/github.repo) to list repos along with their collab.json (if they exist)
 
+### Webservice Demo
+
+1. First add all your organizations/namespaces you are associated to on Quay.io to the constructor of `dockstore/dockstore-webservice/src/main/java/io/dockstore/webservice/resources/DockerRepoResource.java`. See next section for details.
+2. Add your Github token. Follow the the steps above to get your Github token. This will create a user with the same username.
+3. Add your Quay token. It will automatically be assigned to the user created with Github if the username is the same. If not, you need to user /token/assignEndUser to associate it with the user.
+4. Build the project and run the webservice.
+5. To load all your containers from Quay, use /container/refresh to load them in the database for viewing. This needs to be done automatically once the Quay token is set.
+6. Now you can see and list your containers. Note that listing Github repos do not return anything because it does not return a valid json.
+
+### Temporary Hack to List Containers
+
+Recently, Quay has fixed/optimized their API. To list a user's repositories, the required parameters: namespace, starred or public will have to be specified. If you do not specify namespace, you will see other people's public repositories, which is not what we want. Therefore we need to have namespace.
+
+However, the only way to list all namespaces and organizations is to use their /api/v1/user/ resource. But this resource seems to have a bug and does not list the organizations. Therefore, we are temporarily hard coding our namespaces to DockerRepoResource.java.
+
 ## TODO
 
 1. we need to define how this interacts with a single sign-on service
