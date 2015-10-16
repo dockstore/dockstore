@@ -13,8 +13,11 @@ notifications:
 language: java
 jdk: 
   - oraclejdk8
+python:
+  - "2.7"
 
 install: 
+  - pip --version  
   - pip install --user cwl-runner
 
 script: 
