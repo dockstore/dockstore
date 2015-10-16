@@ -10,7 +10,7 @@ trap "echo TRAPed signal" HUP INT QUIT KILL TERM
 # the entrypoint provided by the base Postgres container
 echo "Starting Postgres"
 bash /docker-entrypoint.sh postgres &
-sleep 10
+sleep 30
 
 # todo put the web service startup here
 echo "Starting Java Web Service"
