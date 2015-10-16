@@ -165,7 +165,6 @@ public class DockerRepoResource {
 
         SimpleDateFormat formatter = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
 
-        String gitURL = "";
         Token quayToken = null;
         Token gitToken = null;
 
@@ -209,6 +208,8 @@ public class DockerRepoResource {
                             String urlBuilds = TARGET_URL + "repository/" + repo + "/build/";
                             Optional<String> asStringBuilds = ResourceUtilities.asString(urlBuilds, quayToken.getContent(), client);
 
+                            String gitURL = "";
+
                             if (asStringBuilds.isPresent()) {
                                 String json = asStringBuilds.get();
                                 LOG.info("RESOURCE CALL: " + urlBuilds);
@@ -217,24 +218,28 @@ public class DockerRepoResource {
                                 Gson gson = new Gson();
                                 Map<String, ArrayList> map = new HashMap<>();
                                 map = (Map<String, ArrayList>) gson.fromJson(json, map.getClass());
-                                Map<String, Map<String, String>> map2 = new HashMap<>();
-                                map2 = (Map<String, Map<String, String>>) map.get("builds").get(0);
+                                ArrayList builds = map.get("builds");
 
-                                gitURL = map2.get("trigger_metadata").get("git_url");
+                                if (!builds.isEmpty()) {
+                                    Map<String, Map<String, String>> map2 = new HashMap<>();
+                                    map2 = (Map<String, Map<String, String>>) builds.get(0);
 
-                                Map<String, String> map3 = (Map<String, String>) map.get("builds").get(0);
-                                String lastBuild = (String) map3.get("started");
-                                LOG.info("LAST BUILD: " + lastBuild);
+                                    gitURL = map2.get("trigger_metadata").get("git_url");
 
-                                Date date = null;
-                                try {
-                                    date = formatter.parse(lastBuild);
-                                    c.setLastBuild(date);
-                                } catch (ParseException ex) {
-                                    LOG.info("Build date did not match format 'EEE, d MMM yyyy HH:mm:ss Z'");
+                                    Map<String, String> map3 = (Map<String, String>) builds.get(0);
+                                    String lastBuild = (String) map3.get("started");
+                                    LOG.info("LAST BUILD: " + lastBuild);
+
+                                    Date date = null;
+                                    try {
+                                        date = formatter.parse(lastBuild);
+                                        c.setLastBuild(date);
+                                    } catch (ParseException ex) {
+                                        LOG.info("Build date did not match format 'EEE, d MMM yyyy HH:mm:ss Z'");
+                                    }
+
+                                    tagMap.put(path, (ArrayList<String>) map2.get("tags"));
                                 }
-
-                                tagMap.put(path, (ArrayList<String>) map2.get("tags"));
                             }
 
                             c.setRegistry(quayToken.getTokenSource());
@@ -322,14 +327,15 @@ public class DockerRepoResource {
             container.getTags().clear();
 
             ArrayList<String> tags = tagMap.get(container.getPath());
-
-            for (String tag : tags) {
-                LOG.info("Creating tag: " + tag);
-                Tag newTag = new Tag();
-                newTag.setVersion(tag);
-                long tagId = tagDAO.create(newTag);
-                newTag = tagDAO.findById(tagId);
-                container.addTag(newTag);
+            if (tags != null) {
+                for (String tag : tags) {
+                    LOG.info("Creating tag: " + tag);
+                    Tag newTag = new Tag();
+                    newTag.setVersion(tag);
+                    long tagId = tagDAO.create(newTag);
+                    newTag = tagDAO.findById(tagId);
+                    container.addTag(newTag);
+                }
             }
         }
 
@@ -376,7 +382,7 @@ public class DockerRepoResource {
             c = containerDAO.findById(id);
             return c;
         } else {
-            return null;
+            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
         }
     }
 
