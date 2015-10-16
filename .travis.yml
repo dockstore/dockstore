@@ -13,11 +13,9 @@ notifications:
 language: java
 jdk: 
   - oraclejdk8
-python:
-  - "2.7"
 
 install: 
-  - pip --version  
+  - sudo apt-get install python2.7
   - pip install --user cwl-runner
 
 script: 
