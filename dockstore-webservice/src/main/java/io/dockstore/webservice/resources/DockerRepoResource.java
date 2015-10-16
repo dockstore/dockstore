@@ -32,6 +32,26 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.HashMap;
+//import java.lang.reflect.Array;
+import java.util.List;
+import java.util.Map;
+import javax.ws.rs.DELETE;
+//import java.util.Map;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.RepositoryContents;
@@ -41,36 +61,21 @@ import org.eclipse.egit.github.core.service.ContentsService;
 import org.eclipse.egit.github.core.service.OrganizationService;
 import org.eclipse.egit.github.core.service.RepositoryService;
 import org.eclipse.egit.github.core.service.UserService;
+
+import com.esotericsoftware.yamlbeans.YamlReader;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-//import io.dockstore.webservice.core.User;
-//import java.lang.reflect.Array;
-//import java.util.Map;
 
 /**
  *
  * @author dyuen
  */
-@Path("/docker.repo")
-@Api(value = "/docker.repo")
+@Path("/container")
+@Api(value = "/container")
 @Produces(MediaType.APPLICATION_JSON)
 public class DockerRepoResource {
 
@@ -103,6 +108,18 @@ public class DockerRepoResource {
         }
     }
 
+    private static class Collab {
+        private String content;
+
+        public void setContent(String content) {
+            this.content = content;
+        }
+
+        public String getContent() {
+            return this.content;
+        }
+    }
+
     public DockerRepoResource(ObjectMapper mapper, HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ContainerDAO containerDAO,
             TagDAO tagDAO) {
         this.objectMapper = mapper;
@@ -123,90 +140,193 @@ public class DockerRepoResource {
     }
 
     @GET
-    @Path("/listOwned")
+    @Path("/user/{userId}")
     @Timed
     @UnitOfWork
     @ApiOperation(value = "List repos owned by the logged-in user", notes = "Lists all registered and unregistered containers owned by the user", response = Container.class, responseContainer = "List")
-    public List<Container> listOwned(@QueryParam("enduser_id") Long userId) {
-        List<Token> tokens = tokenDAO.findByUserId(userId);
-        List<Container> ownedContainers = new ArrayList<>(0);
-        for (Token token : tokens) {
-            String tokenType = token.getTokenSource();
-            if (tokenType.equals(TokenType.QUAY_IO.toString())) {
-                String url = TARGET_URL + "repository?last_modified=true&public=false";
-                Optional<String> asString = ResourceUtilities.asString(url, token.getContent(), client);
-
-                if (asString.isPresent()) {
-                    RepoList repos;
-                    try {
-                        repos = objectMapper.readValue(asString.get(), RepoList.class);
-                        LOG.info("RESOURCE CALL: " + url);
-                        List<Container> containers = repos.getRepositories();
-                        // ownedContainers.addAll(containers);
-
-                        for (Container c : containers) {
-                            String name = c.getName();
-                            String namespace = c.getNamespace();
-                            List<Container> list = containerDAO.findByNameAndNamespaceAndRegistry(name, namespace, tokenType);
-
-                            if (list.size() == 1) {
-                                ownedContainers.add(list.get(0));
-                            } else {
-                                c.setRegistry(tokenType);
-                                ownedContainers.add(c);
-                            }
-
-                        }
-
-                    } catch (IOException ex) {
-                        // Logger.getLogger(DockerRepoResource.class.getName()).log(Level.SEVERE, null, ex);
-                        LOG.info("Exception: " + ex);
-                    }
-                }
-            }
-        }
-
+    public List<Container> userContainers(@ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
+        List<Container> ownedContainers = containerDAO.findByUserId(userId);
         return ownedContainers;
     }
 
     @PUT
-    @Path("/refreshRepos")
+    @Path("/refresh")
     @Timed
     @UnitOfWork
     @ApiOperation(value = "Refresh repos owned by the logged-in user", notes = "Updates some metadata", response = Container.class, responseContainer = "List")
-    public List<Container> refreshRepos(@QueryParam("user_id") Long userId) {
+    public List<Container> refresh(@QueryParam("user_id") Long userId) {
         List<Container> currentRepos = containerDAO.findByUserId(userId);
         List<Container> allRepos = new ArrayList<>(0);
         List<Token> tokens = tokenDAO.findByUserId(userId);
+        Map<String, ArrayList> tagMap = new HashMap<>();
 
+        SimpleDateFormat formatter = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
+
+        String gitURL = "";
+        Token quayToken = null;
+        Token gitToken = null;
+
+        // Get user's quay and git tokens
         for (Token token : tokens) {
             if (token.getTokenSource().equals(TokenType.QUAY_IO.toString())) {
-                String url = TARGET_URL + "repository?last_modified=true&public=false";
-                Optional<String> asString = ResourceUtilities.asString(url, token.getContent(), client);
+                quayToken = token;
+            }
+            if (token.getTokenSource().equals(TokenType.GITHUB_COM.toString())) {
+                gitToken = token;
+            }
+        }
+
+        GitHubClient githubClient = new GitHubClient();
+        githubClient.setOAuth2Token(gitToken.getContent());
+        try {
+            UserService uService = new UserService(githubClient);
+            OrganizationService oService = new OrganizationService(githubClient);
+            RepositoryService service = new RepositoryService(githubClient);
+            ContentsService cService = new ContentsService(githubClient);
+            User user = uService.getUser();
+
+            for (String namespace : namespaces) {
+                String url = TARGET_URL + "repository?namespace=" + namespace;
+                Optional<String> asString = ResourceUtilities.asString(url, quayToken.getContent(), client);
 
                 if (asString.isPresent()) {
                     RepoList repos;
                     try {
                         repos = objectMapper.readValue(asString.get(), RepoList.class);
                         LOG.info("RESOURCE CALL: " + url);
-                        allRepos.addAll(repos.getRepositories());
+
+                        List<Container> containers = repos.getRepositories();
+
+                        for (Container c : containers) {
+                            String repo = c.getNamespace() + "/" + c.getName();
+                            String path = quayToken.getTokenSource() + "/" + repo;
+
+                            // Get the list of builds from the container.
+                            // Builds contain information such as the Git URL and tags
+                            String urlBuilds = TARGET_URL + "repository/" + repo + "/build/";
+                            Optional<String> asStringBuilds = ResourceUtilities.asString(urlBuilds, quayToken.getContent(), client);
+
+                            if (asStringBuilds.isPresent()) {
+                                String json = asStringBuilds.get();
+                                LOG.info("RESOURCE CALL: " + urlBuilds);
+
+                                // parse json using Gson to get the git url of repository and the list of tags
+                                Gson gson = new Gson();
+                                Map<String, ArrayList> map = new HashMap<>();
+                                map = (Map<String, ArrayList>) gson.fromJson(json, map.getClass());
+                                Map<String, Map<String, String>> map2 = new HashMap<>();
+                                map2 = (Map<String, Map<String, String>>) map.get("builds").get(0);
+
+                                gitURL = map2.get("trigger_metadata").get("git_url");
+
+                                Map<String, String> map3 = (Map<String, String>) map.get("builds").get(0);
+                                String lastBuild = (String) map3.get("started");
+                                LOG.info("LAST BUILD: " + lastBuild);
+
+                                Date date = null;
+                                try {
+                                    date = formatter.parse(lastBuild);
+                                    c.setLastBuild(date);
+                                } catch (ParseException ex) {
+                                    LOG.info("Build date did not match format 'EEE, d MMM yyyy HH:mm:ss Z'");
+                                }
+
+                                tagMap.put(path, (ArrayList<String>) map2.get("tags"));
+                            }
+
+                            c.setRegistry(quayToken.getTokenSource());
+                            c.setGitUrl(gitURL);
+
+                            List<Repository> gitRepos = new ArrayList<>(0);
+                            gitRepos.addAll(service.getRepositories(user.getLogin()));
+
+                            for (User org : oService.getOrganizations()) {
+                                gitRepos.addAll(service.getRepositories(org.getLogin()));
+                            }
+
+                            for (Repository repository : gitRepos) {
+                                LOG.info(repository.getSshUrl());
+                                if (repository.getSshUrl().equals(c.getGitUrl())) {
+                                    try {
+                                        List<RepositoryContents> contents = cService.getContents(repository, "collab.cwl");
+                                        if (!(contents == null || contents.isEmpty())) {
+                                            c.setHasCollab(true);
+
+                                            String encoded = contents.get(0).getContent().replace("\n", "");
+                                            byte[] decode = Base64.getDecoder().decode(encoded);
+                                            String content = new String(decode, StandardCharsets.UTF_8);
+
+                                            // parse the collab.cwl file to get description and author
+                                            YamlReader reader = new YamlReader(content);
+                                            Object object = reader.read();
+                                            Map map = (Map) object;
+                                            String description = (String) map.get("description");
+                                            map = (Map) map.get("dct:creator");
+                                            String author = (String) map.get("foaf:name");
+
+                                            c.setDescription(description);
+                                            c.setAuthor(author);
+
+                                            LOG.info("Repo: " + repository.getName() + " has collab.cwl");
+                                        }
+                                    } catch (IOException ex) {
+                                        LOG.info("Repo: " + repository.getName() + " has no collab.cwl");
+                                    }
+                                }
+                            }
+                        }
+
+                        allRepos.addAll(containers);
                     } catch (IOException ex) {
-                        // Logger.getLogger(DockerRepoResource.class.getName()).log(Level.SEVERE, null, ex);
                         LOG.info("Exception: " + ex);
                     }
                 }
             }
+        } catch (IOException ex) {
+            LOG.info("Token ignored due to IOException: " + gitToken.getId() + " " + ex);
         }
 
+        Date time = new Date();
+
         for (Container newContainer : allRepos) {
+            boolean exists = false;
+
             for (Container oldContainer : currentRepos) {
                 if (newContainer.getName().equals(oldContainer.getName())
-                        && newContainer.getNamespace().equals(oldContainer.getNamespace())) {
-                    LOG.info("container " + oldContainer.getId() + " is being updated ...");
+                        && newContainer.getNamespace().equals(oldContainer.getNamespace())
+                        && newContainer.getRegistry().equals(oldContainer.getRegistry())) {
+                    exists = true;
+
                     oldContainer.update(newContainer);
-                    containerDAO.create(oldContainer);
-                    LOG.info("container " + oldContainer.getId() + " is updated");
+
+                    break;
                 }
+            }
+
+            if (!exists) {
+                newContainer.setUserId(userId);
+                String path = newContainer.getRegistry() + "/" + newContainer.getNamespace() + "/" + newContainer.getName();
+                newContainer.setPath(path);
+
+                currentRepos.add(newContainer);
+            }
+        }
+
+        for (Container container : currentRepos) {
+            container.setLastUpdated(time);
+            containerDAO.create(container);
+
+            container.getTags().clear();
+
+            ArrayList<String> tags = tagMap.get(container.getPath());
+
+            for (String tag : tags) {
+                LOG.info("Creating tag: " + tag);
+                Tag newTag = new Tag();
+                newTag.setVersion(tag);
+                long tagId = tagDAO.create(newTag);
+                newTag = tagDAO.findById(tagId);
+                container.addTag(newTag);
             }
         }
 
@@ -216,220 +336,80 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "List all registered docker containers known via all registered tokens", notes = "List docker container repos currently known. "
+    @ApiOperation(value = "List all registered docker containers cached in database", notes = "List docker container repos currently known. "
             + "Right now, tokens are used to synchronously talk to the quay.io API to list repos. "
             + "Ultimately, we should cache this information and refresh either by user request or by time "
             + "TODO: This should be a properly defined list of objects, it also needs admin authentication", response = Container.class, responseContainer = "List")
-    public List<Container> getRepos() {
-        // public String getRepos() {
-        List<Token> findAll = tokenDAO.findAll();
-        StringBuilder builder = new StringBuilder();
-        List<Container> containerList = new ArrayList<>(0);
+    public List<Container> allContainers() {
+        List<Container> list = containerDAO.findAll();
+        return list;
+    }
 
-        for (Token token : findAll) {
-            String tokenType = token.getTokenSource();
-            if (tokenType.equals(TokenType.QUAY_IO.toString())) {
-
-                for (String namespace : namespaces) {
-
-                    String url = TARGET_URL + "repository?namespace=" + namespace;
-                    Optional<String> asString = ResourceUtilities.asString(url, token.getContent(), client);
-                    builder.append("Token: ").append(token.getId()).append("\n");
-                    if (asString.isPresent()) {
-                        builder.append(asString.get());
-                        LOG.info("RESOURCE CALL: " + url);
-
-                        RepoList repos;
-                        try {
-                            // Deserialize JSON to a RepoList object and get the list of containers
-                            repos = objectMapper.readValue(asString.get(), RepoList.class);
-                            List<Container> containers = repos.getRepositories();
-
-                            // see if the container is registered,
-                            // if registered, replace the container in the list with the registered one
-                            // else use the deserialized container from the http request
-                            for (Container c : containers) {
-                                String name = c.getName();
-                                // String namespace = c.getNamespace();
-                                List<Container> list = containerDAO.findByNameAndNamespaceAndRegistry(name, namespace, tokenType);
-
-                                if (list.size() == 1) {
-                                    Container container = list.get(0);
-                                    container.getTags();
-                                    containerList.add(list.get(0));
-                                } else {
-                                    c.setRegistry(tokenType);
-                                    containerList.add(c);
-                                }
-
-                            }
-                        } catch (IOException ex) {
-                            // Logger.getLogger(DockerRepoResource.class.getName()).log(Level.SEVERE, null, ex);
-                            LOG.info("Exception: " + ex);
-                        }
-
-                    }
-                    builder.append("\n");
-                }
-            }
-        }
-        // return builder.toString();
-        // LOG.info(builder.toString());
-        return containerList;
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}")
+    @ApiOperation(value = "Get a cached repo", response = Container.class)
+    public Container getContainer(@ApiParam(value = "Container ID", required = true) @PathParam("containerId") Long containerId) {
+        Container c = containerDAO.findById(containerId);
+        return c;
     }
 
     @POST
     @Timed
     @UnitOfWork
-    @Path("/registerContainer")
+    @Path("/register")
     @ApiOperation(value = "Register a container", notes = "Register a container (public or private). Assumes that user is using quay.io and github. Include quay.io in path if using quay.io", response = Container.class)
-    public Container registerContainer(@QueryParam("repository") String path, @QueryParam("enduser_id") Long userId) throws IOException {
-        String[] pathItems = path.split("/");
+    public Container register(@QueryParam("repository") String path, @QueryParam("enduser_id") Long userId) {
+        Container c = containerDAO.findByPath(path);
 
-        String repoRegistry;
-        String repoNamespace;
-        String repoName;
+        if (c == null || c.getUserId() != userId) {
+            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+        }
 
-        if (pathItems.length == QUAY_PATH_LENGTH && pathItems[0].equals("quay.io")) {
-            repoRegistry = pathItems[0];
-            repoNamespace = pathItems[1];
-            repoName = pathItems[2];
-            LOG.info(repoRegistry);
-            LOG.info(repoNamespace);
-            LOG.info(repoName);
-        } else if (pathItems.length == DOCKERHUB_PATH_LENGTH) {
-            repoRegistry = "dockerhub";
-            repoNamespace = pathItems[0];
-            repoName = pathItems[1];
+        if (c.getHasCollab() && !c.getGitUrl().isEmpty()) {
+            c.setIsRegistered(true);
+            long id = containerDAO.create(c);
+            c = containerDAO.findById(id);
+            return c;
         } else {
             return null;
         }
-
-        List<Token> tokens = tokenDAO.findByUserId(userId);
-
-        for (Token token : tokens) {
-            String tokenType = token.getTokenSource();
-            if (repoRegistry.equals(TokenType.QUAY_IO.toString()) && tokenType.equals(TokenType.QUAY_IO.toString())) {
-                // Get the list of containers that belong to the user.
-                String url = TARGET_URL + "repository?namespace=" + repoNamespace;
-                Optional<String> asString = ResourceUtilities.asString(url, token.getContent(), client);
-
-                if (asString.isPresent()) {
-                    RepoList repos = objectMapper.readValue(asString.get(), RepoList.class);
-                    LOG.info("RESOURCE CALL: " + url);
-                    List<Container> containers = repos.getRepositories();
-                    for (Container c : containers) {
-
-                        // Check to see if the requested container even exists
-                        if (repoName.equals((String) c.getName()) && repoNamespace.equals((String) c.getNamespace())) {
-
-                            // first check to see if the container is already registered in our database.
-                            List<Container> list = containerDAO.findByNameAndNamespaceAndRegistry(repoName, repoNamespace, repoRegistry);
-
-                            if (list.isEmpty()) {
-                                String repo = repoNamespace + "/" + repoName;
-
-                                // Get the list of builds from the container.
-                                // Builds contain information such as the Git URL and tags
-                                String urlBuilds = TARGET_URL + "repository/" + repo + "/build/";
-                                Optional<String> asStringBuilds = ResourceUtilities.asString(urlBuilds, token.getContent(), client);
-                                String gitURL = "";
-                                ArrayList<String> tags = null;
-
-                                if (asStringBuilds.isPresent()) {
-                                    String json = asStringBuilds.get();
-                                    LOG.info("RESOURCE CALL: " + urlBuilds);
-
-                                    // parse json using Gson to get the git url of repository and the list of tags
-                                    Gson gson = new Gson();
-                                    Map<String, ArrayList> map = new HashMap<>();
-                                    map = (Map<String, ArrayList>) gson.fromJson(json, map.getClass());
-
-                                    Map<String, Map<String, String>> map2 = new HashMap<>();
-                                    map2 = (Map<String, Map<String, String>>) map.get("builds").get(0);
-
-                                    gitURL = map2.get("trigger_metadata").get("git_url");
-                                    LOG.info(gitURL);
-
-                                    tags = (ArrayList<String>) map2.get("tags");
-                                }
-
-                                // String path = tokenType + "/" + namespace + "/" + name;
-
-                                c.setUserId(userId);
-                                c.setRegistry(tokenType);
-                                c.setGitUrl(gitURL);
-                                c.setIsRegistered(true);
-                                c.setPath(path);
-                                // c.setTags(containerTags);
-                                long create = containerDAO.create(c);
-
-                                Container container = containerDAO.findById(create);
-
-                                // create Tag objects and add them to the container.
-                                // Note: adding them to container will not store it in the instance, need to get the object again if the
-                                // list of tags are wanted.
-                                for (String tag : tags) {
-                                    LOG.info("Creating tag: " + tag);
-                                    Tag newTag = new Tag();
-                                    newTag.setVersion(tag);
-                                    // newTag.setContainer(container);
-                                    long tagId = tagDAO.create(newTag);
-                                    newTag = tagDAO.findById(tagId);
-                                    container.addTag(newTag);
-                                }
-
-                                return container;
-                            } else {
-                                LOG.info("Container already registered");
-                            }
-                        } else {
-                            LOG.info("Container does not exist");
-                        }
-
-                    }
-                } else {
-                    LOG.info("Received no repos from client");
-                }
-            }
-        }
-        return null;
     }
 
     @DELETE
     @UnitOfWork
-    @Path("/unregisterContainer/{containerId}")
+    @Path("/unregister/{containerId}")
     @ApiOperation(value = "Deletes a container", hidden = true)
-    public Container unregisterContainer(
-            @ApiParam(value = "Container id to delete", required = true) @PathParam("containerId") Long containerId) {
+    public Container unregister(@ApiParam(value = "Container id to delete", required = true) @PathParam("containerId") Long containerId) {
         throw new UnsupportedOperationException();
     }
 
     @GET
     @Timed
     @UnitOfWork
-    @Path("/getUserRegisteredContainers")
+    @Path("/allRegistered/{userId}")
     @ApiOperation(value = "List all registered containers from a user", notes = "Get user's registered containers only", response = Container.class, responseContainer = "List")
-    public List<Container> getUserRegisteredContainers(@QueryParam("user_id") Long userId) {
-        List<Container> repositories = containerDAO.findByUserId(userId);
+    public List<Container> userRegisteredContainers(@ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
+        List<Container> repositories = containerDAO.findRegisteredByUserId(userId);
         return repositories;
     }
 
     @GET
     @Timed
     @UnitOfWork
-    @Path("getAllRegisteredContainers")
+    @Path("allRegistered")
     @ApiOperation(value = "List all registered containers. This would be a minimal resource that would need to be implemented "
-            + "by a GA4GH reference server", tags={"GA4GH","docker.repo"}, notes = "", response = Container.class, responseContainer = "List")
-    public List<Container> getAllRegisteredContainers() {
-        List<Container> repositories = containerDAO.findAll();
+            + "by a GA4GH reference server", tags = { "GA4GH", "docker.repo" }, notes = "", response = Container.class, responseContainer = "List")
+    public List<Container> allRegisteredContainers() {
+        List<Container> repositories = containerDAO.findAllRegistered();
         return repositories;
     }
 
     @GET
     @Timed
     @UnitOfWork
-    @Path("getRegisteredContainer")
+    @Path("registered")
     @ApiOperation(value = "Get a registered container", notes = "Lists info of container. Enter full path (include quay.io in path)", response = Container.class)
     public Container getRegisteredContainer(@QueryParam("repository") String repo) {
         Container repository = containerDAO.findByPath(repo);
@@ -483,9 +463,9 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/getBuilds")
+    @Path("/builds")
     @ApiOperation(value = "Get the list of repository builds.", notes = "For TESTING purposes. Also useful for getting more information about the repository.\n Enter full path without quay.io", response = String.class, hidden = true)
-    public String getBuilds(@QueryParam("repository") String repo, @QueryParam("userId") long userId) {
+    public String builds(@QueryParam("repository") String repo, @QueryParam("userId") long userId) {
 
         List<Token> tokens = tokenDAO.findByUserId(userId);
         StringBuilder builder = new StringBuilder();
@@ -529,21 +509,20 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/searchContainers")
+    @Path("/search")
     @ApiOperation(value = "Search for matching registered containers."
-            + " This would be a minimal resource that would need to be implemented by a GA4GH reference server",
-            notes = "Search on the name (full path name) and description.", response = Container.class,
-            responseContainer = "List", tags={"GA4GH","docker.repo"})
-    public List<Container> searchContainers(@QueryParam("pattern") String word) {
+            + " This would be a minimal resource that would need to be implemented by a GA4GH reference server", notes = "Search on the name (full path name) and description.", response = Container.class, responseContainer = "List", tags = {
+            "GA4GH", "docker.repo" })
+    public List<Container> search(@QueryParam("pattern") String word) {
         return containerDAO.searchPattern(word);
     }
 
     @GET
     @Timed
     @UnitOfWork
-    @Path("/listTags")
+    @Path("/tags")
     @ApiOperation(value = "List the tags for a registered container", response = Tag.class, responseContainer = "List", hidden = true)
-    public List<Tag> listTags(@QueryParam("containerId") long containerId) {
+    public List<Tag> tags(@QueryParam("containerId") long containerId) {
         Container repository = containerDAO.findById(containerId);
         List<Tag> tags = new ArrayList<Tag>();
         tags.addAll(repository.getTags());
@@ -553,13 +532,15 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/getCollabFile")
-    @ApiOperation(value = "Get the corresponding collab.json and/or cwl file on Github", notes = "Enter full path of container (add quay.io if using quay.io)", response = String.class)
-    public String getCollabFile(@QueryParam("repository") String repository) {
+    @Path("/collab")
+    @ApiOperation(value = "Get the corresponding collab.cwl file on Github", notes = "Enter full path of container (add quay.io if using quay.io)", response = Collab.class)
+    public Collab collab(@QueryParam("repository") String repository) {
         Container container = containerDAO.findByPath(repository);
         boolean hasGithub = false;
 
-        StringBuilder builder = new StringBuilder();
+        Collab collab = new Collab();
+
+        // StringBuilder builder = new StringBuilder();
         if (container != null) {
             List<Token> tokens = tokenDAO.findByUserId(container.getUserId());
 
@@ -586,17 +567,18 @@ public class DockerRepoResource {
                             // LOG.info(container.getGitUrl());
                             if (repo.getSshUrl().equals(container.getGitUrl())) {
                                 try {
-                                    List<RepositoryContents> contents = cService.getContents(repo, "collab.json");
+                                    List<RepositoryContents> contents = cService.getContents(repo, "collab.cwl");
                                     // odd, throws exceptions if file does not exist
                                     if (!(contents == null || contents.isEmpty())) {
-                                        // builder.append("\tRepo: ").append(repo.getName()).append(" has a collab.json \n");
                                         String encoded = contents.get(0).getContent().replace("\n", "");
                                         byte[] decode = Base64.getDecoder().decode(encoded);
                                         String content = new String(decode, StandardCharsets.UTF_8);
-                                        builder.append(content);
+                                        // builder.append(content);
+                                        collab.setContent(content);
                                     }
                                 } catch (IOException ex) {
-                                    builder.append("Repo: ").append(repo.getName()).append(" has no collab.json \n");
+                                    // builder.append("Repo: ").append(repo.getName()).append(" has no collab.cwl \n");
+                                    LOG.info("Repo: " + repo.getName() + " has no collab.cwl");
                                 }
                             }
                         }
@@ -608,38 +590,43 @@ public class DockerRepoResource {
                                 LOG.info(repo.getSshUrl());
                                 if (repo.getSshUrl().equals(container.getGitUrl())) {
                                     try {
-                                        List<RepositoryContents> contents = cService.getContents(repo, "collab.json");
+                                        List<RepositoryContents> contents = cService.getContents(repo, "collab.cwl");
                                         // odd, throws exceptions if file does not exist
                                         if (!(contents == null || contents.isEmpty())) {
-                                            // builder.append("\tRepo: ").append(repo.getName()).append(" has a collab.json \n");
                                             String encoded = contents.get(0).getContent().replace("\n", "");
                                             byte[] decode = Base64.getDecoder().decode(encoded);
                                             String content = new String(decode, StandardCharsets.UTF_8);
-                                            builder.append(content);
+                                            // builder.append(content);
+                                            collab.setContent(content);
                                         }
                                     } catch (IOException ex) {
-                                        builder.append("Repo: ").append(repo.getName()).append(" has no collab.json \n");
+                                        // builder.append("Repo: ").append(repo.getName()).append(" has no collab.cwl \n");
+                                        LOG.info("Repo: " + repo.getName() + " has no collab.cwl");
                                     }
                                 }
                             }
                         }
 
                     } catch (IOException ex) {
-                        builder.append("Token ignored due to IOException: ").append(token.getId()).append("\n");
+                        // builder.append("Token ignored due to IOException: ").append(token.getId()).append("\n");
+                        LOG.info("Token ignored due to IOException: " + token.getId());
                     }
                 }
             }
             if (!hasGithub) {
-                builder.append("Github is not setup");
+                // builder.append("Github is not setup");
+                LOG.info("Github is not setup");
             }
 
         } else {
-            builder.append(repository).append(" is not registered");
+            // builder.append(repository).append(" is not registered");
+            LOG.info(repository + " is not registered");
         }
 
-        String ret = builder.toString();
-        LOG.info(ret);
-        return ret;
+        // String ret = builder.toString();
+        // LOG.info(ret);
+        // LOG.info(collab.getContent());
+        return collab;
     }
 
     private static class QuayUser {
@@ -658,7 +645,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/getQuayUser")
-    @ApiOperation(value = "Get quay user", notes = "testing", response = QuayUser.class)
+    @ApiOperation(value = "Get quay user", notes = "testing", response = QuayUser.class, hidden = true)
     // , hidden = true)
     public QuayUser getQuayUser(@QueryParam("tokenId") long tokenId) {
         Token token = tokenDAO.findById(tokenId);

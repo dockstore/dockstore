@@ -16,15 +16,30 @@
  */
 package io.dockstore.client;
 
+import com.esotericsoftware.yamlbeans.YamlException;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;
-import io.swagger.client.api.DockerrepoApi;
+import io.swagger.client.api.ContainerApi;
 import io.swagger.client.model.Container;
-//import io.swagger.client.model.Tag;
+import io.swagger.client.model.Tag;
+import io.swagger.client.model.User;
+import io.swagger.client.model.Collab;
+//import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import com.esotericsoftware.yamlbeans.YamlReader;
+import io.swagger.client.api.UserApi;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
+import java.util.Date;
+
+import java.util.Map;
+import javassist.NotFoundException;
 
 /**
  *
@@ -33,7 +48,16 @@ import java.util.List;
 public class Client {
 
     private static ApiClient defaultApiClient;
-    private static DockerrepoApi dockerrepoApi;
+    private static ContainerApi containerApi;
+    private static UserApi userApi;
+
+    private static User user;
+
+    private static final String NAME_HEADER = "NAME";
+    private static final String DESCRIPTION_HEADER = "DESCRIPTION";
+    private static final String GIT_HEADER = "Github Repo";
+
+    private static final int PADDING = 3;
 
     private static void out(String format, Object... args) {
         System.out.println(String.format(format, args));
@@ -68,20 +92,84 @@ public class Client {
         kill("dockstore: '%s %s' is not a dockstore command. See 'dockstore %s --help'.", cmd, sub, cmd);
     }
 
+    private static String boolWord(boolean bool) {
+        if (bool) {
+            return "Yes";
+        } else {
+            return "No";
+        }
+    }
+
     private static void printContainerList(List<Container> containers) {
-        out("MATCHING CONTAINERS");
-        out("-------------------");
-        out("NAME                          DESCRIPTION                      GitHub Repo                  On Dockstore?      Collab.json    AUTOMATED");
+
+        int[] maxWidths = { NAME_HEADER.length(), DESCRIPTION_HEADER.length(), GIT_HEADER.length() };
+
         for (Container container : containers) {
-            String format = "%-30s%-30s%-29s";
-            out(format, container.getName(), container.getDescription(), container.getGitUrl());
+            if (container.getPath().length() > maxWidths[0]) {
+                maxWidths[0] = container.getPath().length();
+            }
+            if (container.getDescription().length() > maxWidths[1]) {
+                maxWidths[1] = container.getDescription().length();
+            }
+            if (container.getGitUrl().length() > maxWidths[2]) {
+                maxWidths[2] = container.getGitUrl().length();
+            }
+        }
+
+        int nameWidth = maxWidths[0] + PADDING;
+        int descWidth = maxWidths[1] + PADDING;
+        int gitWidth = maxWidths[2] + PADDING;
+        String format = "%-" + nameWidth + "s%-" + descWidth + "s%-" + gitWidth + "s%-15s%-14s%-12s";
+        out(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "On Dockstore?", "Collab.cwl", "Automated");
+
+        for (Container container : containers) {
+            String collab = "No";
+            String automated = "No";
+
+            if (container.getHasCollab()) {
+                collab = "Yes";
+            }
+
+            if (!container.getGitUrl().isEmpty()) {
+                automated = "Yes";
+            }
+
+            out(format, container.getPath(), container.getDescription(), container.getGitUrl(), boolWord(container.getIsRegistered()),
+                    collab, automated);
+        }
+    }
+
+    private static void printRegisteredList(List<Container> containers) {
+
+        int[] maxWidths = { NAME_HEADER.length(), DESCRIPTION_HEADER.length(), GIT_HEADER.length() };
+
+        for (Container container : containers) {
+            if (container.getPath().length() > maxWidths[0]) {
+                maxWidths[0] = container.getPath().length();
+            }
+            if (container.getDescription().length() > maxWidths[1]) {
+                maxWidths[1] = container.getDescription().length();
+            }
+            if (container.getGitUrl().length() > maxWidths[2]) {
+                maxWidths[2] = container.getGitUrl().length();
+            }
+        }
+
+        int nameWidth = maxWidths[0] + PADDING;
+        int descWidth = maxWidths[1] + PADDING;
+        int gitWidth = maxWidths[2] + PADDING;
+        String format = "%-" + nameWidth + "s%-" + descWidth + "s%-" + gitWidth + "s";
+        out(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER);
+
+        for (Container container : containers) {
+            out(format, container.getPath(), container.getDescription(), container.getGitUrl());
         }
     }
 
     private static void list(List<String> args) {
         try {
-            List<Container> containers = dockerrepoApi.getAllRegisteredContainers();
-            printContainerList(containers);
+            List<Container> containers = containerApi.allRegisteredContainers();
+            printRegisteredList(containers);
         } catch (ApiException ex) {
             out("Exception: " + ex);
         }
@@ -90,9 +178,11 @@ public class Client {
     private static void search(List<String> args) {
         String pattern = args.get(0);
         try {
-            List<Container> containers = dockerrepoApi.searchContainers(pattern);
+            List<Container> containers = containerApi.search(pattern);
 
-            printContainerList(containers);
+            out("MATCHING CONTAINERS");
+            out("-------------------");
+            printRegisteredList(containers);
         } catch (ApiException ex) {
             out("Exception: " + ex);
         }
@@ -100,13 +190,31 @@ public class Client {
 
     private static void publish(List<String> args) {
         if (args.isEmpty()) {
-            list(args);
+            try {
+                List<Container> containers = containerApi.userContainers(user.getId());
+
+                out("YOUR AVAILABLE CONTAINERS");
+                out("-------------------");
+                printContainerList(containers);
+            } catch (ApiException ex) {
+                out("Exception: " + ex);
+            }
         } else {
             String first = args.get(0);
             if (first.equals("-h") || first.equals("--help")) {
                 publishHelp();
             } else {
-                System.out.println("publish..");
+                try {
+                    Container container = containerApi.register(first, user.getId());
+
+                    if (container != null) {
+                        out("Successfully published " + first);
+                    } else {
+                        out("Unable to publish " + first);
+                    }
+                } catch (ApiException ex) {
+                    out("Unable to publish " + first);
+                }
             }
         }
     }
@@ -119,45 +227,49 @@ public class Client {
         out("");
         out("dockstore publish  :  lists the current and potential containers to share");
         out("");
-        out("");
         out("dockstore publish <contianer_id>  : registers that container for use by others in the dockstore");
     }
 
     private static void info(List<String> args) {
         String path = args.get(0);
         try {
-            out(dockerrepoApi.getRegisteredContainer(path).toString());
-            // out(dockerrepoApi.getRegisteredContainer(path).getTags().toString());
-            // Container container = dockerrepoApi.getRegisteredContainer(path);
-            // if (container == null) {
-            // out("Container " + path + " not found!");
-            // } else {
-            // out("");
-            // out("DESCRIPTION:");
-            // out(container.getDescription());
-            // out("AUTHOR:");
-            // out(container.getNamespace());
-            // out("DATE UPLOADED:");
-            // out("");
-            // out("TAGS");
-            //
-            // List<Tag> tags = container.getTags();
-            // int tagSize = tags.size();
-            // if (tagSize > 0) {
-            // out(tags.get(0).getVersion());
-            // for (int i = 1; i < tagSize; i++) {
-            // out(", " + tags.get(i).getVersion());
-            // }
-            // } else {
-            // out("");
-            // }
-            //
-            // out("GIT REPO:");
-            // out(container.getGitUrl());
-            // out("QUAY.IO REPO:");
-            // out("http://quay.io/repository/" + container.getNamespace() + "/" + container.getName());
-            // // out(container.toString());
-            // }
+            Container container = containerApi.getRegisteredContainer(path);
+            if (container == null) {
+                out("This container is not registered");
+            } else {
+                // out(container.toString());
+                // out(containerApi.getRegisteredContainer(path).getTags().toString());
+                // Container container = containerApi.getRegisteredContainer(path);
+
+                Date dateUploaded = container.getLastBuild();
+
+                out("");
+                out("DESCRIPTION:");
+                out(container.getDescription());
+                out("AUTHOR:");
+                out(container.getAuthor());
+                out("DATE UPLOADED:");
+                out(dateUploaded.toString());
+                out("TAGS");
+
+                List<Tag> tags = container.getTags();
+                int tagSize = tags.size();
+                StringBuilder builder = new StringBuilder();
+                if (tagSize > 0) {
+                    builder.append(tags.get(0).getVersion());
+                    for (int i = 1; i < tagSize; i++) {
+                        builder.append(", ").append(tags.get(i).getVersion());
+                    }
+                }
+
+                out(builder.toString());
+
+                out("GIT REPO:");
+                out(container.getGitUrl());
+                out("QUAY.IO REPO:");
+                out("http://quay.io/repository/" + container.getNamespace() + "/" + container.getName());
+                // out(container.toString());
+            }
         } catch (ApiException ex) {
             out("Exception: " + ex);
         }
@@ -167,9 +279,9 @@ public class Client {
         String path = args.get(0);
 
         try {
-            String collab = dockerrepoApi.getCollabFile(path);
-            if (!collab.isEmpty()) {
-                out(collab);
+            Collab collab = containerApi.collab(path);
+            if (!collab.getContent().isEmpty()) {
+                out(collab.getContent());
             } else {
                 out("No collab file found.");
             }
@@ -178,59 +290,82 @@ public class Client {
         }
     }
 
-    public static void main(String[] argv) throws ApiException {
+    public static void main(String[] argv) {
         List<String> args = new ArrayList<>(Arrays.asList(argv));
 
         defaultApiClient = Configuration.getDefaultApiClient();
-        dockerrepoApi = new DockerrepoApi(defaultApiClient);
+        containerApi = new ContainerApi(defaultApiClient);
+        userApi = new UserApi(defaultApiClient);
 
-        if (isHelp(args, true)) {
-            out("");
-            out("HELP FOR DOCKSTORE");
-            out("------------------");
-            out("See http://dockstore.io for more information");
-            out("");
-            out("Possible sub-commands include:");
-            out("");
-            out("  list        :  lists all the containers registered by the user ");
-            out("");
-            out("  search      :  allows a user to search for all containers that match the criteria");
-            out("");
-            out("  publish     :  register a container in the dockstore");
-            out("");
-            out("  info        :  print detailed information about a particular container");
-            out("");
-            out("  cwl         :  returns the Common Workflow Language tool definition for this Docker image ");
-            out("                 which enables integration with Global Alliance compliant systems");
-            out("------------------");
-        } else {
-            try {
-                String cmd = args.remove(0);
-                if (null != cmd) {
-                    switch (cmd) {
-                    case "list":
-                        list(args);
-                        break;
-                    case "search":
-                        search(args);
-                        break;
-                    case "publish":
-                        publish(args);
-                        break;
-                    case "info":
-                        info(args);
-                        break;
-                    case "cwl":
-                        cwl(args);
-                        break;
-                    default:
-                        invalid(cmd);
-                        break;
-                    }
-                }
-            } catch (Kill k) {
-                System.exit(1);
+        try {
+            InputStreamReader f = new InputStreamReader(new FileInputStream("config"), Charset.defaultCharset());
+            YamlReader reader = new YamlReader(f);
+            Object object = reader.read();
+            Map map = (Map) object;
+            String username = (String) map.get("username");
+
+            user = userApi.listUser(username);
+
+            if (user == null) {
+                throw new NotFoundException("User " + username + " not found");
             }
+
+            if (isHelp(args, true)) {
+                out("");
+                out("HELP FOR DOCKSTORE");
+                out("------------------");
+                out("See http://dockstore.io for more information");
+                out("");
+                out("Possible sub-commands include:");
+                out("");
+                out("  list        :  lists all the containers registered by the user ");
+                out("");
+                out("  search      :  allows a user to search for all containers that match the criteria");
+                out("");
+                out("  publish     :  register a container in the dockstore");
+                out("");
+                out("  info        :  print detailed information about a particular container");
+                out("");
+                out("  cwl         :  returns the Common Workflow Language tool definition for this Docker image ");
+                out("                 which enables integration with Global Alliance compliant systems");
+                out("------------------");
+            } else {
+                try {
+                    String cmd = args.remove(0);
+                    if (null != cmd) {
+                        switch (cmd) {
+                        case "list":
+                            list(args);
+                            break;
+                        case "search":
+                            search(args);
+                            break;
+                        case "publish":
+                            publish(args);
+                            break;
+                        case "info":
+                            info(args);
+                            break;
+                        case "cwl":
+                            cwl(args);
+                            break;
+                        default:
+                            invalid(cmd);
+                            break;
+                        }
+                    }
+                } catch (Kill k) {
+                    System.exit(1);
+                }
+            }
+        } catch (FileNotFoundException ex) {
+            out("Exception: " + ex);
+        } catch (YamlException ex) {
+            out("Exception: " + ex);
+        } catch (ApiException ex) {
+            out("Exception: " + ex);
+        } catch (NotFoundException ex) {
+            out("Exception: " + ex);
         }
     }
 }

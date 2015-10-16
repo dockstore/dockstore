@@ -11,20 +11,21 @@ import io.swagger.client.model.*;
 import java.util.*;
 
 import io.swagger.client.model.Container;
+import io.swagger.client.model.Collab;
 
 import java.io.File;
 import java.util.Map;
 import java.util.HashMap;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-05T12:31:03.778-04:00")
-public class DockerrepoApi {
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-15T13:53:59.483-04:00")
+public class ContainerApi {
   private ApiClient apiClient;
 
-  public DockerrepoApi() {
+  public ContainerApi() {
     this(Configuration.getDefaultApiClient());
   }
 
-  public DockerrepoApi(ApiClient apiClient) {
+  public ContainerApi(ApiClient apiClient) {
     this.apiClient = apiClient;
   }
 
@@ -38,15 +39,15 @@ public class DockerrepoApi {
 
   
   /**
-   * List all repos known via all registered tokens
+   * List all repos known cached in database
    * List docker container repos currently known. Right now, tokens are used to synchronously talk to the quay.io API to list repos. Ultimately, we should cache this information and refresh either by user request or by time TODO: This should be a properly defined list of objects, it also needs admin authentication
    * @return List<Container>
    */
-  public List<Container> getRepos () throws ApiException {
+  public List<Container> allContainers () throws ApiException {
     Object postBody = null;
     
     // create path and map variables
-    String path = "/docker.repo".replaceAll("\\{format\\}","json");
+    String path = "/container".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -82,11 +83,11 @@ public class DockerrepoApi {
    * 
    * @return List<Container>
    */
-  public List<Container> getAllRegisteredContainers () throws ApiException {
+  public List<Container> allRegisteredContainers () throws ApiException {
     Object postBody = null;
     
     // create path and map variables
-    String path = "/docker.repo/getAllRegisteredContainers".replaceAll("\\{format\\}","json");
+    String path = "/container/allRegistered".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -118,160 +119,21 @@ public class DockerrepoApi {
   }
   
   /**
-   * Get the list of repository builds.
-   * For TESTING purposes. Also useful for getting more information about the repository.\n Enter full path without quay.io
-   * @param repository 
-   * @param userId 
-   * @return String
+   * List all registered containers from a user
+   * Get user&#39;s registered containers only
+   * @param userId User ID
+   * @return List<Container>
    */
-  public String getBuilds (String repository, Long userId) throws ApiException {
+  public List<Container> userRegisteredContainers (Long userId) throws ApiException {
     Object postBody = null;
-    
-    // create path and map variables
-    String path = "/docker.repo/getBuilds".replaceAll("\\{format\\}","json");
-
-    // query params
-    List<Pair> queryParams = new ArrayList<Pair>();
-    Map<String, String> headerParams = new HashMap<String, String>();
-    Map<String, Object> formParams = new HashMap<String, Object>();
-
-    
-    queryParams.addAll(apiClient.parameterToPairs("", "repository", repository));
-    
-    queryParams.addAll(apiClient.parameterToPairs("", "userId", userId));
-    
-
-    
-
-    
-
-    final String[] accepts = {
-      "application/json"
-    };
-    final String accept = apiClient.selectHeaderAccept(accepts);
-
-    final String[] contentTypes = {
-      
-    };
-    final String contentType = apiClient.selectHeaderContentType(contentTypes);
-
-    String[] authNames = new String[] {  };
-
-    
-    TypeRef returnType = new TypeRef<String>() {};
-    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
-    
-  }
-  
-  /**
-   * Get the corresponding collab.json and/or cwl file on Github
-   * Enter full path of container (add quay.io if using quay.io)
-   * @param repository 
-   * @return String
-   */
-  public String getCollabFile (String repository) throws ApiException {
-    Object postBody = null;
-    
-    // create path and map variables
-    String path = "/docker.repo/getCollabFile".replaceAll("\\{format\\}","json");
-
-    // query params
-    List<Pair> queryParams = new ArrayList<Pair>();
-    Map<String, String> headerParams = new HashMap<String, String>();
-    Map<String, Object> formParams = new HashMap<String, Object>();
-
-    
-    queryParams.addAll(apiClient.parameterToPairs("", "repository", repository));
-    
-
-    
-
-    
-
-    final String[] accepts = {
-      "application/json"
-    };
-    final String accept = apiClient.selectHeaderAccept(accepts);
-
-    final String[] contentTypes = {
-      
-    };
-    final String contentType = apiClient.selectHeaderContentType(contentTypes);
-
-    String[] authNames = new String[] {  };
-
-    
-    TypeRef returnType = new TypeRef<String>() {};
-    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
-    
-  }
-  
-  /**
-   * Get a registered container
-   * Lists info of container. Enter full path (include quay.io in path)
-   * @param repository 
-   * @return Container
-   */
-  public Container getRegisteredContainer (String repository) throws ApiException {
-    Object postBody = null;
-    
-    // create path and map variables
-    String path = "/docker.repo/getRegisteredContainer".replaceAll("\\{format\\}","json");
-
-    // query params
-    List<Pair> queryParams = new ArrayList<Pair>();
-    Map<String, String> headerParams = new HashMap<String, String>();
-    Map<String, Object> formParams = new HashMap<String, Object>();
-
-    
-    queryParams.addAll(apiClient.parameterToPairs("", "repository", repository));
-    
-
-    
-
-    
-
-    final String[] accepts = {
-      "application/json"
-    };
-    final String accept = apiClient.selectHeaderAccept(accepts);
-
-    final String[] contentTypes = {
-      
-    };
-    final String contentType = apiClient.selectHeaderContentType(contentTypes);
-
-    String[] authNames = new String[] {  };
-
-    
-    TypeRef returnType = new TypeRef<Container>() {};
-    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
-    
-  }
-  
-  /**
-   * Fetch repo from quay.io
-   * 
-   * @param repository The full path of the repository. e.g. namespace/name
-   * @param userId user id
-   * @return String
-   */
-  public String getRepo (String repository, Long userId) throws ApiException {
-    Object postBody = null;
-    
-    // verify the required parameter 'repository' is set
-    if (repository == null) {
-      throw new ApiException(400, "Missing the required parameter 'repository' when calling getRepo");
-    }
     
     // verify the required parameter 'userId' is set
     if (userId == null) {
-      throw new ApiException(400, "Missing the required parameter 'userId' when calling getRepo");
+      throw new ApiException(400, "Missing the required parameter 'userId' when calling userRegisteredContainers");
     }
     
     // create path and map variables
-    String path = "/docker.repo/getRepo/{userId}/{repository}".replaceAll("\\{format\\}","json")
-      .replaceAll("\\{" + "repository" + "\\}", apiClient.escapeString(repository.toString()))
+    String path = "/container/allRegistered/{userId}".replaceAll("\\{format\\}","json")
       .replaceAll("\\{" + "userId" + "\\}", apiClient.escapeString(userId.toString()));
 
     // query params
@@ -298,22 +160,22 @@ public class DockerrepoApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<String>() {};
+    TypeRef returnType = new TypeRef<List<Container>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
   
   /**
-   * List all registered containers from a user
-   * Get user&#39;s registered containers only
-   * @param userId 
-   * @return List<Container>
+   * Get the corresponding collab.cwl file on Github
+   * Enter full path of container (add quay.io if using quay.io)
+   * @param repository 
+   * @return Collab
    */
-  public List<Container> getUserRegisteredContainers (Long userId) throws ApiException {
+  public Collab collab (String repository) throws ApiException {
     Object postBody = null;
     
     // create path and map variables
-    String path = "/docker.repo/getUserRegisteredContainers".replaceAll("\\{format\\}","json");
+    String path = "/container/collab".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -321,7 +183,7 @@ public class DockerrepoApi {
     Map<String, Object> formParams = new HashMap<String, Object>();
 
     
-    queryParams.addAll(apiClient.parameterToPairs("", "user_id", userId));
+    queryParams.addAll(apiClient.parameterToPairs("", "repository", repository));
     
 
     
@@ -341,50 +203,7 @@ public class DockerrepoApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<List<Container>>() {};
-    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
-    
-  }
-  
-  /**
-   * List repos owned by the logged-in user
-   * Lists all registered and unregistered containers owned by the user
-   * @param enduserId 
-   * @return List<Container>
-   */
-  public List<Container> listOwned (Long enduserId) throws ApiException {
-    Object postBody = null;
-    
-    // create path and map variables
-    String path = "/docker.repo/listOwned".replaceAll("\\{format\\}","json");
-
-    // query params
-    List<Pair> queryParams = new ArrayList<Pair>();
-    Map<String, String> headerParams = new HashMap<String, String>();
-    Map<String, Object> formParams = new HashMap<String, Object>();
-
-    
-    queryParams.addAll(apiClient.parameterToPairs("", "enduser_id", enduserId));
-    
-
-    
-
-    
-
-    final String[] accepts = {
-      "application/json"
-    };
-    final String accept = apiClient.selectHeaderAccept(accepts);
-
-    final String[] contentTypes = {
-      
-    };
-    final String contentType = apiClient.selectHeaderContentType(contentTypes);
-
-    String[] authNames = new String[] {  };
-
-    
-    TypeRef returnType = new TypeRef<List<Container>>() {};
+    TypeRef returnType = new TypeRef<Collab>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -395,11 +214,11 @@ public class DockerrepoApi {
    * @param userId 
    * @return List<Container>
    */
-  public List<Container> refreshRepos (Long userId) throws ApiException {
+  public List<Container> refresh (Long userId) throws ApiException {
     Object postBody = null;
     
     // create path and map variables
-    String path = "/docker.repo/refreshRepos".replaceAll("\\{format\\}","json");
+    String path = "/container/refresh".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -439,11 +258,11 @@ public class DockerrepoApi {
    * @param enduserId 
    * @return Container
    */
-  public Container registerContainer (String repository, Long enduserId) throws ApiException {
+  public Container register (String repository, Long enduserId) throws ApiException {
     Object postBody = null;
     
     // create path and map variables
-    String path = "/docker.repo/registerContainer".replaceAll("\\{format\\}","json");
+    String path = "/container/register".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -479,16 +298,59 @@ public class DockerrepoApi {
   }
   
   /**
+   * Get a registered container
+   * Lists info of container. Enter full path (include quay.io in path)
+   * @param repository 
+   * @return Container
+   */
+  public Container getRegisteredContainer (String repository) throws ApiException {
+    Object postBody = null;
+    
+    // create path and map variables
+    String path = "/container/registered".replaceAll("\\{format\\}","json");
+
+    // query params
+    List<Pair> queryParams = new ArrayList<Pair>();
+    Map<String, String> headerParams = new HashMap<String, String>();
+    Map<String, Object> formParams = new HashMap<String, Object>();
+
+    
+    queryParams.addAll(apiClient.parameterToPairs("", "repository", repository));
+    
+
+    
+
+    
+
+    final String[] accepts = {
+      "application/json"
+    };
+    final String accept = apiClient.selectHeaderAccept(accepts);
+
+    final String[] contentTypes = {
+      
+    };
+    final String contentType = apiClient.selectHeaderContentType(contentTypes);
+
+    String[] authNames = new String[] {  };
+
+    
+    TypeRef returnType = new TypeRef<Container>() {};
+    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    
+  }
+  
+  /**
    * Search for matching registered containers
    * Search on the name (full path name) and description.
    * @param pattern 
    * @return List<Container>
    */
-  public List<Container> searchContainers (String pattern) throws ApiException {
+  public List<Container> search (String pattern) throws ApiException {
     Object postBody = null;
     
     // create path and map variables
-    String path = "/docker.repo/searchContainers".replaceAll("\\{format\\}","json");
+    String path = "/container/search".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -522,27 +384,28 @@ public class DockerrepoApi {
   }
   
   /**
-   * User shares a container with a chosen group
-   * Needs to be fleshed out.
-   * @param containerId 
-   * @param groupId 
-   * @return void
+   * List repos owned by the logged-in user
+   * Lists all registered and unregistered containers owned by the user
+   * @param userId User ID
+   * @return List<Container>
    */
-  public void shareWithGroup (Long containerId, Long groupId) throws ApiException {
+  public List<Container> userContainers (Long userId) throws ApiException {
     Object postBody = null;
     
+    // verify the required parameter 'userId' is set
+    if (userId == null) {
+      throw new ApiException(400, "Missing the required parameter 'userId' when calling userContainers");
+    }
+    
     // create path and map variables
-    String path = "/docker.repo/shareWithGroup".replaceAll("\\{format\\}","json");
+    String path = "/container/user/{userId}".replaceAll("\\{format\\}","json")
+      .replaceAll("\\{" + "userId" + "\\}", apiClient.escapeString(userId.toString()));
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
     Map<String, String> headerParams = new HashMap<String, String>();
     Map<String, Object> formParams = new HashMap<String, Object>();
 
-    
-    queryParams.addAll(apiClient.parameterToPairs("", "container_id", containerId));
-    
-    queryParams.addAll(apiClient.parameterToPairs("", "group_id", groupId));
     
 
     
@@ -562,71 +425,27 @@ public class DockerrepoApi {
     String[] authNames = new String[] {  };
 
     
-    apiClient.invokeAPI(path, "PUT", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, null);
+    TypeRef returnType = new TypeRef<List<Container>>() {};
+    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
   
   /**
-   * User shares a container with a chosen user
-   * Needs to be fleshed out.
-   * @param containerId 
-   * @param userId 
-   * @return void
-   */
-  public void shareWithUser (Long containerId, Long userId) throws ApiException {
-    Object postBody = null;
-    
-    // create path and map variables
-    String path = "/docker.repo/shareWithUser".replaceAll("\\{format\\}","json");
-
-    // query params
-    List<Pair> queryParams = new ArrayList<Pair>();
-    Map<String, String> headerParams = new HashMap<String, String>();
-    Map<String, Object> formParams = new HashMap<String, Object>();
-
-    
-    queryParams.addAll(apiClient.parameterToPairs("", "container_id", containerId));
-    
-    queryParams.addAll(apiClient.parameterToPairs("", "user_id", userId));
-    
-
-    
-
-    
-
-    final String[] accepts = {
-      "application/json"
-    };
-    final String accept = apiClient.selectHeaderAccept(accepts);
-
-    final String[] contentTypes = {
-      
-    };
-    final String contentType = apiClient.selectHeaderContentType(contentTypes);
-
-    String[] authNames = new String[] {  };
-
-    
-    apiClient.invokeAPI(path, "PUT", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, null);
-    
-  }
-  
-  /**
-   * Deletes a container
+   * Get a cached repo
    * 
-   * @param containerId Container id to delete
+   * @param containerId Container ID
    * @return Container
    */
-  public Container unregisterContainer (Long containerId) throws ApiException {
+  public Container getContainer (Long containerId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'containerId' is set
     if (containerId == null) {
-      throw new ApiException(400, "Missing the required parameter 'containerId' when calling unregisterContainer");
+      throw new ApiException(400, "Missing the required parameter 'containerId' when calling getContainer");
     }
     
     // create path and map variables
-    String path = "/docker.repo/unregisterContainer/{containerId}".replaceAll("\\{format\\}","json")
+    String path = "/container/{containerId}".replaceAll("\\{format\\}","json")
       .replaceAll("\\{" + "containerId" + "\\}", apiClient.escapeString(containerId.toString()));
 
     // query params
@@ -654,7 +473,7 @@ public class DockerrepoApi {
 
     
     TypeRef returnType = new TypeRef<Container>() {};
-    return apiClient.invokeAPI(path, "DELETE", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
   

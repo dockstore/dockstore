@@ -27,7 +27,12 @@
             
         </dependency>
         
-
+        
+        <dependency>
+            <groupId>com.esotericsoftware.yamlbeans</groupId>
+            <artifactId>yamlbeans</artifactId>
+            <version>1.09</version>
+        </dependency>
 
     </dependencies>
 
@@ -46,8 +51,8 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.1</version>
                     <configuration>
-                        <source>1.7</source>
-                        <target>1.7</target>
+                        <source>1.8</source>
+                        <target>1.8</target>
                         <showDeprecation>true</showDeprecation>
                     </configuration>
                 </plugin>
@@ -276,7 +281,7 @@
             <plugin>
                 <groupId>org.eluder.coveralls</groupId>
                 <artifactId>coveralls-maven-plugin</artifactId>
-                <version>3.1.0</version>
+                <version>4.0.0</version>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -291,5 +296,13 @@
                 </configuration>
             </plugin>
         </plugins>
+        
+        <resources>
+            <resource>
+                <targetPath>${basedir}/target</targetPath>
+                <directory>bin</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
     </build>
 </project>

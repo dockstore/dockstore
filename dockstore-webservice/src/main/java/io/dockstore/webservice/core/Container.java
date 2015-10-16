@@ -20,6 +20,11 @@ package io.dockstore.webservice.core;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
+
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+
 import io.swagger.annotations.ApiModelProperty;
 
 import javax.persistence.Column;
@@ -34,8 +39,6 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
-import java.util.HashSet;
-import java.util.Set;
 
 //import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
@@ -49,6 +52,8 @@ import java.util.Set;
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findByNameAndNamespaceAndRegistry", query = "SELECT c FROM Container c WHERE c.name = :name AND c.namespace = :namespace AND c.registry = :registry"),
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findByUserId", query = "SELECT c FROM Container c WHERE c.userId = :userId"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Container.findRegisteredByUserId", query = "SELECT c FROM Container c WHERE c.userId = :userId AND c.isRegistered = true"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Container.findAllRegistered", query = "SELECT c FROM Container c WHERE c.isRegistered = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findAll", query = "SELECT c FROM Container c"),
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findByPath", query = "SELECT c FROM Container c WHERE c.path = :path"),
         @NamedQuery(name = "io.dockstore.webservice.core.Container.searchPattern", query = "SELECT c FROM Container c WHERE (c.path LIKE :pattern) OR (c.registry LIKE :pattern) OR (c.description LIKE :pattern)") })
@@ -75,7 +80,10 @@ public class Container {
     @ApiModelProperty("This is a generated full docker path including registry and namespace")
     private String path;
     @Column
-    @ApiModelProperty("This is a human-readble description of this container and what it is trying to accomplish, required GA4GH")
+    @ApiModelProperty("This is the name of the author stated in the collab.cwl")
+    private String author;
+    @Column
+    @ApiModelProperty("This is a human-readable description of this container and what it is trying to accomplish, required GA4GH")
     private String description;
     @Column
     @ApiModelProperty("Implementation specific hook for social starring in this web service")
@@ -89,14 +97,21 @@ public class Container {
     @ApiModelProperty("Implementation specific timestamp for last modified")
     private Integer lastModified;
     @Column
+    @ApiModelProperty("Implementation specific timestamp for last updated on webservice")
+    private Date lastUpdated;
+    @Column
+    @ApiModelProperty("Implementation specific timestamp for last built")
+    private Date lastBuild;
+    @Column
     @ApiModelProperty("This is a link to the associated repo with a descriptor, required GA4GH")
     private String gitUrl;
     @Column
     @ApiModelProperty("Implementation specific indication as to whether this is properly registered with this web service")
     private boolean isRegistered;
+    @Column
+    private boolean hasCollab;
 
-    @OneToMany(fetch = FetchType.EAGER)
-    // @JoinColumn(name = "containerid", nullable = false)
+    @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinTable(name = "containertag", joinColumns = { @JoinColumn(name = "containerid", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "tagid", referencedColumnName = "id") })
     @ApiModelProperty("Implementation specific tracking of valid build tags for the docker container")
     private Set<Tag> tags;
@@ -117,6 +132,11 @@ public class Container {
         this.isPublic = container.getIsPublic();
         this.isStarred = container.getIsStarred();
         this.lastModified = container.getLastModified();
+        this.lastBuild = container.getLastBuild();
+        this.hasCollab = container.getHasCollab();
+        this.author = container.getAuthor();
+
+        this.gitUrl = container.getGitUrl();
     }
 
     @JsonProperty
@@ -182,12 +202,35 @@ public class Container {
 
     @JsonProperty
     public String getGitUrl() {
+        if (gitUrl == null) {
+            return "";
+        }
         return gitUrl;
     }
 
     @JsonProperty("is_registered")
     public boolean getIsRegistered() {
         return isRegistered;
+    }
+
+    @JsonProperty
+    public Date getLastUpdated() {
+        return lastUpdated;
+    }
+
+    @JsonProperty
+    public Date getLastBuild() {
+        return lastBuild;
+    }
+
+    @JsonProperty
+    public boolean getHasCollab() {
+        return hasCollab;
+    }
+
+    @JsonProperty
+    public String getAuthor() {
+        return author;
     }
 
     public Set<Tag> getTags() {
@@ -272,6 +315,22 @@ public class Container {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public void setLastUpdated(Date lastUpdated) {
+        this.lastUpdated = lastUpdated;
+    }
+
+    public void setLastBuild(Date lastBuild) {
+        this.lastBuild = lastBuild;
+    }
+
+    public void setHasCollab(boolean hasCollab) {
+        this.hasCollab = hasCollab;
+    }
+
+    public void setAuthor(String author) {
+        this.author = author;
     }
 
     /**
