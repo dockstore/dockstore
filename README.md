@@ -27,13 +27,6 @@ You can also run it on your local computer but will need to setup postgres separ
 
 1. Browse to [http://localhost:8080/static/swagger-ui/index.html](http://localhost:8080/static/swagger-ui/index.html)
 
-### Demo Integration with Quay.io
-
-1. Setup an application as described in [Creating a new Application](http://docs.quay.io/api/)
-2. Browse to [http://localhost:8080/integration.quay.io](http://localhost:8080/integration.quay.io)
-3. Authorize via quay.io using the provided link
-4. Browse to [http://localhost:8080/container](http://localhost:8080/container) to list repos that we have tokens for at quay.io
-
 ### Demo Integration with Github.com
 
 1. Setup a new OAuth application at [Register a new OAuth application](https://github.com/settings/applications/new)
@@ -41,12 +34,19 @@ You can also run it on your local computer but will need to setup postgres separ
 3. Authorize via github.com using the provided link
 4. Browse to [http://localhost:8080/github.repo](http://localhost:8080/github.repo) to list repos along with their collab.json (if they exist)
 
+### Demo Integration with Quay.io
+
+1. Setup an application as described in [Creating a new Application](http://docs.quay.io/api/)
+2. Browse to [http://localhost:8080/integration.quay.io](http://localhost:8080/integration.quay.io)
+3. Authorize via quay.io using the provided link
+4. Browse to [http://localhost:8080/container](http://localhost:8080/container) to list repos that we have tokens for at quay.io
+
 ### Webservice Demo
 
 1. First add all your organizations/namespaces you are associated to on Quay.io to the constructor of `dockstore/dockstore-webservice/src/main/java/io/dockstore/webservice/resources/DockerRepoResource.java`. See next section for details.
-2. Add your Github token. Follow the the steps above to get your Github token. This will create a user with the same username.
-3. Add your Quay token. It will automatically be assigned to the user created with Github if the username is the same. If not, you need to user /token/assignEndUser to associate it with the user.
-4. Build the project and run the webservice.
+2. Build the project and run the webservice.
+3. Add your Github token. Follow the the steps above to get your Github token. This will create a user with the same username.
+4. Add your Quay token. It will automatically be assigned to the user created with Github if the username is the same. If not, you need to user /token/assignEndUser to associate it with the user.
 5. To load all your containers from Quay, use /container/refresh to load them in the database for viewing. This needs to be done automatically once the Quay token is set.
 6. Now you can see and list your containers. Note that listing Github repos do not return anything because it does not return a valid json.
 
