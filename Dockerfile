@@ -30,7 +30,6 @@ COPY dockstore-webservice /gitroot/dockstore-webservice
 COPY swagger-java-client /gitroot/swagger-java-client
 COPY dockstore-client /gitroot/dockstore-client
 # now build this
-RUN cd /gitroot && apt-get update && apt-get install -y maven openjdk-7-jdk
 RUN cd /gitroot && mvn clean install
 RUN chmod a+x /gitroot/docker-entrypoint.sh
 
