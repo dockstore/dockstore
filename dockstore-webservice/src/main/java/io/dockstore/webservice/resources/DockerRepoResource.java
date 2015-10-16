@@ -137,6 +137,7 @@ public class DockerRepoResource {
         namespaces.add("denis-yuen");
         namespaces.add("seqware");
         namespaces.add("boconnor");
+        namespaces.add("briandoconnor");
     }
 
     @GET

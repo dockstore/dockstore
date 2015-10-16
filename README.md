@@ -32,7 +32,7 @@ You can also run it on your local computer but will need to setup postgres separ
 1. Setup an application as described in [Creating a new Application](http://docs.quay.io/api/)
 2. Browse to [http://localhost:8080/integration.quay.io](http://localhost:8080/integration.quay.io)
 3. Authorize via quay.io using the provided link
-4. Browse to [http://localhost:8080/docker.repo](http://localhost:8080/docker.repo) to list repos that we have tokens for at quay.io
+4. Browse to [http://localhost:8080/container](http://localhost:8080/container) to list repos that we have tokens for at quay.io
 
 ### Demo Integration with Github.com
 
