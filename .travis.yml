@@ -15,7 +15,7 @@ jdk:
   - oraclejdk8
 
 install: 
-  - pip install --user cwl-runner
+  - pip2.7 install --user cwl-runner
 
 script: 
   - cd launcher

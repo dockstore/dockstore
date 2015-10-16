@@ -26,16 +26,10 @@ inputs:
   - id: "#ref_file_1"
     type: File
     description: "this describes a large reference file that does not change between runs"
-    default:
-      class: File
-      path: 8e888694-9c56-4529-a750-d6bfbd4a74e7.txt
 
   - id: "#ref_file_2"
     type: File
     description: "this describes a large reference file that does not change between runs"
-    default:
-      class: File
-      path: b4cdad91-676a-446c-a635-57453f17617a.txt
 
   - id: "#hello_input"
     type: File
