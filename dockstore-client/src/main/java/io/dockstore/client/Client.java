@@ -103,13 +103,13 @@ public class Client {
         int[] maxWidths = { NAME_HEADER.length(), DESCRIPTION_HEADER.length(), GIT_HEADER.length() };
 
         for (Container container : containers) {
-            if (container.getDescription() != null && container.getPath().length() > maxWidths[0]) {
+            if (container.getPath() != null && container.getPath().length() > maxWidths[0]) {
                 maxWidths[0] = container.getPath().length();
             }
             if (container.getDescription() != null && container.getDescription().length() > maxWidths[1]) {
                 maxWidths[1] = container.getDescription().length();
             }
-            if (container.getDescription() != null && container.getGitUrl().length() > maxWidths[2]) {
+            if (container.getGitUrl() != null && container.getGitUrl().length() > maxWidths[2]) {
                 maxWidths[2] = container.getGitUrl().length();
             }
         }
@@ -148,13 +148,13 @@ public class Client {
         int[] maxWidths = { NAME_HEADER.length(), DESCRIPTION_HEADER.length(), GIT_HEADER.length() };
 
         for (Container container : containers) {
-            if (container.getPath().length() > maxWidths[0]) {
+            if (container.getPath() != null && container.getPath().length() > maxWidths[0]) {
                 maxWidths[0] = container.getPath().length();
             }
-            if (container.getDescription().length() > maxWidths[1]) {
+            if (container.getDescription() != null && container.getDescription().length() > maxWidths[1]) {
                 maxWidths[1] = container.getDescription().length();
             }
-            if (container.getGitUrl().length() > maxWidths[2]) {
+            if (container.getGitUrl() != null && container.getGitUrl().length() > maxWidths[2]) {
                 maxWidths[2] = container.getGitUrl().length();
             }
         }
@@ -166,7 +166,18 @@ public class Client {
         out(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER);
 
         for (Container container : containers) {
-            out(format, container.getPath(), container.getDescription(), container.getGitUrl());
+            String description = "";
+            String gitUrl = "";
+
+            if (container.getGitUrl() != null && !container.getGitUrl().isEmpty()) {
+                gitUrl = container.getGitUrl();
+            }
+
+            if (container.getDescription() != null) {
+                description = container.getDescription();
+            }
+
+            out(format, container.getPath(), description, gitUrl);
         }
     }
 
@@ -186,7 +197,7 @@ public class Client {
 
             out("MATCHING CONTAINERS");
             out("-------------------");
-            printRegisteredList(containers);
+            printContainerList(containers);
         } catch (ApiException ex) {
             out("Exception: " + ex);
         }
