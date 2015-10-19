@@ -44,7 +44,7 @@ You can also run it on your local computer but will need to setup postgres separ
 ### Webservice Demo
 
 1. ~~First add all your organizations/namespaces you are associated to on Quay.io to the constructor of `dockstore/dockstore-webservice/src/main/java/io/dockstore/webservice/resources/DockerRepoResource.java`. See next section for details.~~ The webservice will now only use user's Quay username as namespace. This means that you will see only your own Quay repositories.
-2. Build the project and run the webservice.
+2. Build the project and run the webservice. NOTE: The webservice will grab and use the IP of the server running the API. For example, if running on a docker container with IP 172.17.0.24, the API will use this for the curl commands and request URLs.
 3. Add your Github token. Follow the the steps above to get your Github token. This will create a user with the same username.
 4. Add your Quay token. It will automatically be assigned to the user created with Github if the username is the same. If not, you need to user /token/assignEndUser to associate it with the user.
 5. To load all your containers from Quay, use /container/refresh to load them in the database for viewing. This needs to be done automatically once the Quay token is set.
