@@ -295,7 +295,7 @@ public class Client {
 
         try {
             Collab collab = containerApi.collab(path);
-            if (!collab.getContent().isEmpty()) {
+            if (collab.getContent() != null && !collab.getContent().isEmpty()) {
                 out(collab.getContent());
             } else {
                 out("No collab file found.");
