@@ -165,6 +165,8 @@ public class DockerRepoResource {
 
         SimpleDateFormat formatter = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
 
+        List<String> namespaceList = new ArrayList<>();
+
         Token quayToken = null;
         Token gitToken = null;
 
@@ -178,6 +180,8 @@ public class DockerRepoResource {
             }
         }
 
+        namespaceList.add(quayToken.getUsername());
+
         GitHubClient githubClient = new GitHubClient();
         githubClient.setOAuth2Token(gitToken.getContent());
         try {
@@ -187,7 +191,8 @@ public class DockerRepoResource {
             ContentsService cService = new ContentsService(githubClient);
             User user = uService.getUser();
 
-            for (String namespace : namespaces) {
+            // for (String namespace : namespaces) {
+            for (String namespace : namespaceList) {
                 String url = TARGET_URL + "repository?namespace=" + namespace;
                 Optional<String> asString = ResourceUtilities.asString(url, quayToken.getContent(), client);
 

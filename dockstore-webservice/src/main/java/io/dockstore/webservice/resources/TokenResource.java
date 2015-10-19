@@ -54,6 +54,9 @@ import org.apache.http.client.HttpClient;
 import org.eclipse.egit.github.core.client.GitHubClient;
 import org.eclipse.egit.github.core.service.UserService;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * The token resource handles operations with tokens. Tokens are needed to talk with the quay.io and github APIs. In addition, they will be
  * needed to pull down docker containers that are requested by users.
@@ -72,6 +75,8 @@ public class TokenResource {
     private final String githubClientSecret;
     private final HttpClient client;
     private final ObjectMapper objectMapper;
+
+    private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
 
     public TokenResource(ObjectMapper mapper, TokenDAO tokenDAO, UserDAO enduserDAO, String githubClientID, String githubClientSecret,
             HttpClient client) {
@@ -142,13 +147,17 @@ public class TokenResource {
             + "Once a user has approved permissions for Collaboratory"
             + "Their browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addQuayToken(@QueryParam("access_token") String accessToken) {
+        if (accessToken.isEmpty()) {
+            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+        }
+
         String url = QUAY_URL + "user/";
         Optional<String> asString = ResourceUtilities.asString(url, accessToken, client);
-        System.out.println("URL: " + url);
+
         String username = null;
         User user = null;
         if (asString.isPresent()) {
-            System.out.println("INSIDE IF");
+            LOG.info("RESOURCE CALL: " + url);
 
             String response = asString.get();
             Gson gson = new Gson();
@@ -156,7 +165,7 @@ public class TokenResource {
             map = (Map<String, String>) gson.fromJson(response, map.getClass());
 
             username = map.get("username");
-            System.out.println(username);
+            LOG.info("Username: " + username);
 
             user = userDAO.findByUsername(username);
         }
@@ -167,6 +176,13 @@ public class TokenResource {
 
         if (user != null) {
             token.setUserId(user.getId());
+        }
+
+        if (username != null) {
+            token.setUsername(username);
+        } else {
+            LOG.info("Quay.io tokenusername is null, did not create token");
+            throw new WebApplicationException("Username not found from resource call " + url);
         }
 
         long create = tokenDAO.create(token);
@@ -186,6 +202,22 @@ public class TokenResource {
             throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
         }
 
+        String url = QUAY_URL + "user/";
+        Optional<String> asString = ResourceUtilities.asString(url, accessToken, client);
+
+        String username = null;
+        if (asString.isPresent()) {
+            LOG.info("RESOURCE CALL: " + url);
+
+            String response = asString.get();
+            Gson gson = new Gson();
+            Map<String, String> map = new HashMap<>();
+            map = (Map<String, String>) gson.fromJson(response, map.getClass());
+
+            username = map.get("username");
+            LOG.info("Username: " + username);
+        }
+
         User user = userDAO.findById(userId);
 
         Token token = new Token();
@@ -196,6 +228,13 @@ public class TokenResource {
             token.setUserId(user.getId());
         } else {
             throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (username != null) {
+            token.setUsername(username);
+        } else {
+            LOG.info("Quay.io tokenusername is null, did not create token");
+            throw new WebApplicationException("Username not found from resource call " + url);
         }
 
         long create = tokenDAO.create(token);
@@ -232,11 +271,12 @@ public class TokenResource {
         GitHubClient githubClient = new GitHubClient();
         githubClient.setOAuth2Token(accessToken);
         long userID = 0;
+        String githubLogin;
         try {
             UserService uService = new UserService(githubClient);
             org.eclipse.egit.github.core.User githubUser = uService.getUser();
 
-            String githubLogin = githubUser.getLogin();
+            githubLogin = githubUser.getLogin();
 
             User user = userDAO.findByUsername(githubLogin);
             if (user == null) {
@@ -255,6 +295,7 @@ public class TokenResource {
         token.setTokenSource(TokenType.GITHUB_COM.toString());
         token.setContent(accessToken);
         token.setUserId(userID);
+        token.setUsername(githubLogin);
         long create = tokenDAO.create(token);
         return tokenDAO.findById(create);
     }

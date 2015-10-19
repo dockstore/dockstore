@@ -47,6 +47,8 @@ public class Token {
     private String tokenSource;
     @Column(nullable = false)
     private String content;
+    @Column(nullable = false)
+    private String username;
 
     // TODO: tokens will need to be associated with a particular user
     @Column
@@ -72,6 +74,11 @@ public class Token {
         return content;
     }
 
+    @JsonProperty
+    public String getUsername() {
+        return username;
+    }
+
     /**
      * @return the tokenSource
      */
@@ -94,6 +101,14 @@ public class Token {
      */
     public void setContent(String content) {
         this.content = content;
+    }
+
+    /**
+     * @param username
+     *            the username to set
+     */
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     @Override
