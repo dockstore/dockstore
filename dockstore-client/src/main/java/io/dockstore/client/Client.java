@@ -17,27 +17,25 @@
 package io.dockstore.client;
 
 import com.esotericsoftware.yamlbeans.YamlException;
+import com.esotericsoftware.yamlbeans.YamlReader;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;
 import io.swagger.client.api.ContainerApi;
+import io.swagger.client.api.UserApi;
+import io.swagger.client.model.Collab;
 import io.swagger.client.model.Container;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.User;
-import io.swagger.client.model.Collab;
-//import java.io.FileReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import com.esotericsoftware.yamlbeans.YamlReader;
-import io.swagger.client.api.UserApi;
+import io.swagger.client.model.UserRequest;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
-
+import java.util.List;
 import java.util.Map;
 import javassist.NotFoundException;
 
@@ -105,13 +103,13 @@ public class Client {
         int[] maxWidths = { NAME_HEADER.length(), DESCRIPTION_HEADER.length(), GIT_HEADER.length() };
 
         for (Container container : containers) {
-            if (container.getPath().length() > maxWidths[0]) {
+            if (container.getDescription() != null && container.getPath().length() > maxWidths[0]) {
                 maxWidths[0] = container.getPath().length();
             }
-            if (container.getDescription().length() > maxWidths[1]) {
+            if (container.getDescription() != null && container.getDescription().length() > maxWidths[1]) {
                 maxWidths[1] = container.getDescription().length();
             }
-            if (container.getGitUrl().length() > maxWidths[2]) {
+            if (container.getDescription() != null && container.getGitUrl().length() > maxWidths[2]) {
                 maxWidths[2] = container.getGitUrl().length();
             }
         }
@@ -125,17 +123,23 @@ public class Client {
         for (Container container : containers) {
             String collab = "No";
             String automated = "No";
+            String description = "";
+            String gitUrl = "";
 
             if (container.getHasCollab()) {
                 collab = "Yes";
             }
 
-            if (!container.getGitUrl().isEmpty()) {
+            if (container.getGitUrl() != null && !container.getGitUrl().isEmpty()) {
                 automated = "Yes";
+                gitUrl = container.getGitUrl();
             }
 
-            out(format, container.getPath(), container.getDescription(), container.getGitUrl(), boolWord(container.getIsRegistered()),
-                    collab, automated);
+            if (container.getDescription() != null) {
+                description = container.getDescription();
+            }
+
+            out(format, container.getPath(), description, gitUrl, boolWord(container.getIsRegistered()), collab, automated);
         }
     }
 
@@ -290,6 +294,20 @@ public class Client {
         }
     }
 
+    private static void refresh(List<String> args) {
+        try {
+            UserRequest userRequest = new UserRequest();
+            userRequest.setId(user.getId());
+            List<Container> containers = containerApi.refresh(userRequest);
+
+            out("YOUR UPDATED CONTAINERS");
+            out("-------------------");
+            printContainerList(containers);
+        } catch (ApiException ex) {
+            out("Exception: " + ex);
+        }
+    }
+
     public static void main(String[] argv) {
         List<String> args = new ArrayList<>(Arrays.asList(argv));
 
@@ -328,6 +346,8 @@ public class Client {
                 out("");
                 out("  cwl         :  returns the Common Workflow Language tool definition for this Docker image ");
                 out("                 which enables integration with Global Alliance compliant systems");
+                out("");
+                out("  refresh     :  updates your list of containers stored on Dockstore");
                 out("------------------");
             } else {
                 try {
@@ -348,6 +368,9 @@ public class Client {
                             break;
                         case "cwl":
                             cwl(args);
+                            break;
+                        case "refresh":
+                            refresh(args);
                             break;
                         default:
                             invalid(cmd);

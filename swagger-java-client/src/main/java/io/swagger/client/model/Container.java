@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 @ApiModel(description = "")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-15T13:53:59.483-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-19T13:08:57.358-04:00")
 public class Container   {
   
   private Long id = null;
@@ -35,8 +35,9 @@ public class Container   {
 
   
   /**
+   * Implementation specific ID for the container in this web service
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "Implementation specific ID for the container in this web service")
   @JsonProperty("id")
   public Long getId() {
     return id;
@@ -47,8 +48,9 @@ public class Container   {
 
   
   /**
+   * Implementation specific user ID for the container owner in this web service
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "Implementation specific user ID for the container owner in this web service")
   @JsonProperty("userId")
   public Long getUserId() {
     return userId;
@@ -59,8 +61,9 @@ public class Container   {
 
   
   /**
+   * This is the name of the container, required: GA4GH
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "This is the name of the container, required: GA4GH")
   @JsonProperty("name")
   public String getName() {
     return name;
@@ -71,8 +74,9 @@ public class Container   {
 
   
   /**
+   * This is a docker namespace for the container, required: GA4GH
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "This is a docker namespace for the container, required: GA4GH")
   @JsonProperty("namespace")
   public String getNamespace() {
     return namespace;
@@ -83,8 +87,9 @@ public class Container   {
 
   
   /**
+   * This is a specific docker provider like quay.io or dockerhub or n/a?, required: GA4GH
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "This is a specific docker provider like quay.io or dockerhub or n/a?, required: GA4GH")
   @JsonProperty("registry")
   public String getRegistry() {
     return registry;
@@ -95,8 +100,9 @@ public class Container   {
 
   
   /**
+   * This is the name of the author stated in the collab.cwl
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "This is the name of the author stated in the collab.cwl")
   @JsonProperty("author")
   public String getAuthor() {
     return author;
@@ -107,8 +113,9 @@ public class Container   {
 
   
   /**
+   * This is a human-readable description of this container and what it is trying to accomplish, required GA4GH
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "This is a human-readable description of this container and what it is trying to accomplish, required GA4GH")
   @JsonProperty("description")
   public String getDescription() {
     return description;
@@ -119,8 +126,9 @@ public class Container   {
 
   
   /**
+   * Implementation specific timestamp for last updated on webservice
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "Implementation specific timestamp for last updated on webservice")
   @JsonProperty("lastUpdated")
   public Date getLastUpdated() {
     return lastUpdated;
@@ -131,8 +139,9 @@ public class Container   {
 
   
   /**
+   * Implementation specific timestamp for last built
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "Implementation specific timestamp for last built")
   @JsonProperty("lastBuild")
   public Date getLastBuild() {
     return lastBuild;
@@ -143,8 +152,9 @@ public class Container   {
 
   
   /**
+   * This is a link to the associated repo with a descriptor, required GA4GH
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "This is a link to the associated repo with a descriptor, required GA4GH")
   @JsonProperty("gitUrl")
   public String getGitUrl() {
     return gitUrl;
@@ -167,8 +177,9 @@ public class Container   {
 
   
   /**
+   * Implementation specific tracking of valid build tags for the docker container
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "Implementation specific tracking of valid build tags for the docker container")
   @JsonProperty("tags")
   public List<Tag> getTags() {
     return tags;
@@ -179,8 +190,9 @@ public class Container   {
 
   
   /**
+   * This is a generated full docker path including registry and namespace
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "This is a generated full docker path including registry and namespace")
   @JsonProperty("path")
   public String getPath() {
     return path;
@@ -191,8 +203,9 @@ public class Container   {
 
   
   /**
+   * Implementation specific hook for social starring in this web service
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "Implementation specific hook for social starring in this web service")
   @JsonProperty("is_starred")
   public Boolean getIsStarred() {
     return isStarred;
@@ -203,8 +216,9 @@ public class Container   {
 
   
   /**
+   * Implementation specific visibility in this web service
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "Implementation specific visibility in this web service")
   @JsonProperty("is_public")
   public Boolean getIsPublic() {
     return isPublic;
@@ -215,8 +229,9 @@ public class Container   {
 
   
   /**
+   * Implementation specific timestamp for last modified
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "Implementation specific timestamp for last modified")
   @JsonProperty("last_modified")
   public Integer getLastModified() {
     return lastModified;
@@ -227,8 +242,9 @@ public class Container   {
 
   
   /**
+   * Implementation specific indication as to whether this is properly registered with this web service
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "Implementation specific indication as to whether this is properly registered with this web service")
   @JsonProperty("is_registered")
   public Boolean getIsRegistered() {
     return isRegistered;

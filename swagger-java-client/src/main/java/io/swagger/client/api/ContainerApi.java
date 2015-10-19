@@ -12,12 +12,13 @@ import java.util.*;
 
 import io.swagger.client.model.Container;
 import io.swagger.client.model.Collab;
+import io.swagger.client.model.UserRequest;
 
 import java.io.File;
 import java.util.Map;
 import java.util.HashMap;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-15T13:53:59.483-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-19T13:08:57.358-04:00")
 public class ContainerApi {
   private ApiClient apiClient;
 
@@ -39,7 +40,7 @@ public class ContainerApi {
 
   
   /**
-   * List all repos known cached in database
+   * List all docker containers cached in database
    * List docker container repos currently known. Right now, tokens are used to synchronously talk to the quay.io API to list repos. Ultimately, we should cache this information and refresh either by user request or by time TODO: This should be a properly defined list of objects, it also needs admin authentication
    * @return List<Container>
    */
@@ -79,7 +80,7 @@ public class ContainerApi {
   }
   
   /**
-   * List all registered containers
+   * List all registered containers. This would be a minimal resource that would need to be implemented by a GA4GH reference server
    * 
    * @return List<Container>
    */
@@ -211,11 +212,16 @@ public class ContainerApi {
   /**
    * Refresh repos owned by the logged-in user
    * Updates some metadata
-   * @param userId 
+   * @param body UserRequest to refresh the list of repos for a user
    * @return List<Container>
    */
-  public List<Container> refresh (Long userId) throws ApiException {
-    Object postBody = null;
+  public List<Container> refresh (UserRequest body) throws ApiException {
+    Object postBody = body;
+    
+    // verify the required parameter 'body' is set
+    if (body == null) {
+      throw new ApiException(400, "Missing the required parameter 'body' when calling refresh");
+    }
     
     // create path and map variables
     String path = "/container/refresh".replaceAll("\\{format\\}","json");
@@ -225,8 +231,6 @@ public class ContainerApi {
     Map<String, String> headerParams = new HashMap<String, String>();
     Map<String, Object> formParams = new HashMap<String, Object>();
 
-    
-    queryParams.addAll(apiClient.parameterToPairs("", "user_id", userId));
     
 
     
@@ -341,7 +345,7 @@ public class ContainerApi {
   }
   
   /**
-   * Search for matching registered containers
+   * Search for matching registered containers. This would be a minimal resource that would need to be implemented by a GA4GH reference server
    * Search on the name (full path name) and description.
    * @param pattern 
    * @return List<Container>

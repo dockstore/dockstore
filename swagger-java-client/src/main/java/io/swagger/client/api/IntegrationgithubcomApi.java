@@ -16,7 +16,7 @@ import java.io.File;
 import java.util.Map;
 import java.util.HashMap;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-15T13:53:59.483-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-19T13:08:57.358-04:00")
 public class IntegrationgithubcomApi {
   private ApiClient apiClient;
 

@@ -1,7 +1,6 @@
 package io.swagger.client.model;
 
 import io.swagger.client.StringUtil;
-import io.swagger.client.model.UserResource;
 
 
 
@@ -11,20 +10,20 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @ApiModel(description = "")
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-19T13:08:57.358-04:00")
-public class GithubRegisterView   {
+public class UserRequest   {
   
-  private UserResource parent = null;
+  private Long id = null;
 
   
   /**
    **/
   @ApiModelProperty(value = "")
-  @JsonProperty("parent")
-  public UserResource getParent() {
-    return parent;
+  @JsonProperty("id")
+  public Long getId() {
+    return id;
   }
-  public void setParent(UserResource parent) {
-    this.parent = parent;
+  public void setId(Long id) {
+    this.id = id;
   }
 
   
@@ -32,9 +31,9 @@ public class GithubRegisterView   {
   @Override
   public String toString()  {
     StringBuilder sb = new StringBuilder();
-    sb.append("class GithubRegisterView {\n");
+    sb.append("class UserRequest {\n");
     
-    sb.append("    parent: ").append(StringUtil.toIndentedString(parent)).append("\n");
+    sb.append("    id: ").append(StringUtil.toIndentedString(id)).append("\n");
     sb.append("}");
     return sb.toString();
   }

@@ -17,9 +17,11 @@
 package io.dockstore.webservice.resources;
 
 import com.codahale.metrics.annotation.Timed;
+import com.esotericsoftware.yamlbeans.YamlReader;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
+import io.dockstore.webservice.api.UserRequest;
 import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
@@ -34,14 +36,15 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Date;
 import java.util.HashMap;
-//import java.lang.reflect.Array;
 import java.util.List;
 import java.util.Map;
 import javax.ws.rs.DELETE;
-//import java.util.Map;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -61,12 +64,6 @@ import org.eclipse.egit.github.core.service.ContentsService;
 import org.eclipse.egit.github.core.service.OrganizationService;
 import org.eclipse.egit.github.core.service.RepositoryService;
 import org.eclipse.egit.github.core.service.UserService;
-
-import com.esotericsoftware.yamlbeans.YamlReader;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -130,14 +127,14 @@ public class DockerRepoResource {
 
         this.containerDAO = containerDAO;
 
-        namespaces.add("victoroicr");
-        namespaces.add("xliuoicr");
-        namespaces.add("oicr_vchung");
-        namespaces.add("oicr_vchung_org");
-        namespaces.add("denis-yuen");
+        // namespaces.add("victoroicr");
+        // namespaces.add("xliuoicr");
+        // namespaces.add("oicr_vchung");
+        // namespaces.add("oicr_vchung_org");
+        // namespaces.add("denis-yuen");
         namespaces.add("seqware");
-        namespaces.add("boconnor");
-        namespaces.add("briandoconnor");
+        // namespaces.add("boconnor");
+        // namespaces.add("briandoconnor");
         namespaces.add("collaboratory");
         namespaces.add("pancancer");
     }
@@ -157,7 +154,9 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @ApiOperation(value = "Refresh repos owned by the logged-in user", notes = "Updates some metadata", response = Container.class, responseContainer = "List")
-    public List<Container> refresh(@QueryParam("user_id") Long userId) {
+    public List<Container> refresh(
+            @ApiParam(value = "UserRequest to refresh the list of repos for a user", required = true) UserRequest request) {
+        long userId = request.getId();
         List<Container> currentRepos = containerDAO.findByUserId(userId);
         List<Container> allRepos = new ArrayList<>(0);
         List<Token> tokens = tokenDAO.findByUserId(userId);
@@ -181,6 +180,7 @@ public class DockerRepoResource {
         }
 
         namespaceList.add(quayToken.getUsername());
+        namespaceList.addAll(namespaces);
 
         GitHubClient githubClient = new GitHubClient();
         githubClient.setOAuth2Token(gitToken.getContent());
@@ -350,7 +350,7 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "List all registered docker containers cached in database", notes = "List docker container repos currently known. "
+    @ApiOperation(value = "List all docker containers cached in database", notes = "List docker container repos currently known. "
             + "Right now, tokens are used to synchronously talk to the quay.io API to list repos. "
             + "Ultimately, we should cache this information and refresh either by user request or by time "
             + "TODO: This should be a properly defined list of objects, it also needs admin authentication", response = Container.class, responseContainer = "List")
@@ -414,7 +414,7 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("allRegistered")
     @ApiOperation(value = "List all registered containers. This would be a minimal resource that would need to be implemented "
-            + "by a GA4GH reference server", tags = { "GA4GH", "docker.repo" }, notes = "", response = Container.class, responseContainer = "List")
+            + "by a GA4GH reference server", tags = { "GA4GH", "container" }, notes = "", response = Container.class, responseContainer = "List")
     public List<Container> allRegisteredContainers() {
         List<Container> repositories = containerDAO.findAllRegistered();
         return repositories;
@@ -526,7 +526,7 @@ public class DockerRepoResource {
     @Path("/search")
     @ApiOperation(value = "Search for matching registered containers."
             + " This would be a minimal resource that would need to be implemented by a GA4GH reference server", notes = "Search on the name (full path name) and description.", response = Container.class, responseContainer = "List", tags = {
-            "GA4GH", "docker.repo" })
+            "GA4GH", "container" })
     public List<Container> search(@QueryParam("pattern") String word) {
         return containerDAO.searchPattern(word);
     }

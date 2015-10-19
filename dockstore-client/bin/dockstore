@@ -88,17 +88,17 @@ add_path CLASSPATH "$DOCKSTORE_JAR"
 
 BOOTCLASSPATH="-Xbootclasspath/a:$DOCKSTORE_JAR"
 
-# if [ ! -r "$DOCKSTORE_JAR" -a "$1" != "self-install" -a "$1" != "self-check-install" -a "$1" != "init" ]; then
-#     "$0" self-install
-#     if [ $? != 0 ]; then
-#         exit $?
-#     fi
-# fi
+if [ ! -r "$DOCKSTORE_JAR" -a "$1" != "self-install" -a "$1" != "self-check-install" -a "$1" != "init" ]; then
+    "$0" self-install
+    if [ $? != 0 ]; then
+        exit $?
+    fi
+fi
 
-# if [ ! -r "$DOCKSTORE_SETTINGS" -a "$1" != "self-install" -a "$1" != "self-check-install"  -a "$1" != "init" ]; then
-#     "$0" init
-#     exit $?
-# fi
+if [ ! -r "$DOCKSTORE_SETTINGS" -a "$1" != "self-install" -a "$1" != "self-check-install"  -a "$1" != "init" ]; then
+    "$0" init
+    exit $?
+fi
 
 if [ "$HTTP_CLIENT" = "" ]; then
     if type -p curl >/dev/null 2>&1; then
@@ -161,6 +161,8 @@ if [ "$1" = "self-install" ]; then
     else
         DOCKSTORE_URL="http://wrench.res.oicr.on.ca/artifactory/dockstore-release/io/dockstore/dockstore-client/$DOCKSTORE_VERSION/dockstore-client-$DOCKSTORE_VERSION.jar"
     fi
+
+    echo "$DOCKSTORE_URL"
 
     $HTTP_CLIENT "$DOCKSTORE_JAR.pending" "$DOCKSTORE_URL"
     if [ $? == 0 ]; then

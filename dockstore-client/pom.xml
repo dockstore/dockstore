@@ -18,11 +18,10 @@
             <version>9.4-1201-jdbc41</version>
             <scope>runtime</scope>
         </dependency>
-           
+        
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-client</artifactId>
-            
             <version>0.0.1-SNAPSHOT</version>
             
         </dependency>
