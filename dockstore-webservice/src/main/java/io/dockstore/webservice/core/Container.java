@@ -80,7 +80,7 @@ public class Container {
     @Column
     @ApiModelProperty("This is the name of the author stated in the collab.cwl")
     private String author;
-    @Column
+    @Column(columnDefinition = "TEXT")
     @ApiModelProperty("This is a human-readable description of this container and what it is trying to accomplish, required GA4GH")
     private String description;
     @Column
