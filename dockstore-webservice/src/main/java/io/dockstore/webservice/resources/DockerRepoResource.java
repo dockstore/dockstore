@@ -426,7 +426,7 @@ public class DockerRepoResource {
     @Path("registered")
     @ApiOperation(value = "Get a registered container", notes = "Lists info of container. Enter full path (include quay.io in path)", response = Container.class)
     public Container getRegisteredContainer(@QueryParam("repository") String repo) {
-        Container repository = containerDAO.findByPath(repo);
+        Container repository = containerDAO.findRegisteredByPath(repo);
         return repository;
     }
 

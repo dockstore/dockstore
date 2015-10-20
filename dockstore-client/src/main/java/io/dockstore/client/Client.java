@@ -250,7 +250,7 @@ public class Client {
         try {
             Container container = containerApi.getRegisteredContainer(path);
             if (container == null) {
-                out("This container is not registered");
+                out("This container is not registered.");
             } else {
                 // out(container.toString());
                 // out(containerApi.getRegisteredContainer(path).getTags().toString());
@@ -258,13 +258,28 @@ public class Client {
 
                 Date dateUploaded = container.getLastBuild();
 
+                String description = container.getDescription();
+                if (description == null) {
+                    description = "";
+                }
+
+                String author = container.getAuthor();
+                if (author == null) {
+                    author = "";
+                }
+
+                String date = "";
+                if (dateUploaded != null) {
+                    date = dateUploaded.toString();
+                }
+
                 out("");
                 out("DESCRIPTION:");
-                out(container.getDescription());
+                out(description);
                 out("AUTHOR:");
-                out(container.getAuthor());
+                out(author);
                 out("DATE UPLOADED:");
-                out(dateUploaded.toString());
+                out(date);
                 out("TAGS");
 
                 List<Tag> tags = container.getTags();
