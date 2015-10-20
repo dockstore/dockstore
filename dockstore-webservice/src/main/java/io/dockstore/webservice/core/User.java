@@ -104,4 +104,8 @@ public class User {
         groups.add(group);
     }
 
+    public boolean removeGroup(Group group) {
+        return groups.remove(group);
+    }
+
 }

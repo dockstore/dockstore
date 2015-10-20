@@ -17,38 +17,36 @@
 package io.dockstore.webservice.resources;
 
 import com.codahale.metrics.annotation.Timed;
-import com.google.common.base.Optional;
-import com.google.common.base.Splitter;
-import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.core.Token;
-import io.dockstore.webservice.core.TokenType;
-import io.dockstore.webservice.jdbi.UserDAO;
+import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.GroupDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
+import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.hibernate.UnitOfWork;
-import io.dropwizard.views.View;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
-import org.eclipse.egit.github.core.client.GitHubClient;
-//import org.eclipse.egit.github.core.service.ContentsService;
-//import org.eclipse.egit.github.core.service.RepositoryService;
-import org.eclipse.egit.github.core.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -66,6 +64,8 @@ public class UserResource {
     private final String githubClientSecret;
 
     private static final String TARGET_URL = "https://github.com/";
+
+    private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
 
     public UserResource(HttpClient client, TokenDAO tokenDAO, UserDAO userDAO, GroupDAO groupDAO, String githubClientID,
             String githubClientSecret) {
@@ -109,10 +109,19 @@ public class UserResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/getUser")
+    @Path("/{userId}")
     @ApiOperation(value = "Get user with id", response = User.class)
-    public User getUser(@QueryParam("user_id") Long userId) {
+    public User getUser(@ApiParam(value = "User to return") @PathParam("userId") long userId) {
         return userDAO.findById(userId);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{userId}/tokens")
+    @ApiOperation(value = "Get user with id", response = Token.class, responseContainer = "List")
+    public List<Token> getUserTokens(@ApiParam(value = "User to return") @PathParam("userId") long userId) {
+        return tokenDAO.findByUserId(userId);
     }
 
     @POST
@@ -135,7 +144,7 @@ public class UserResource {
     @UnitOfWork
     @Path("/getGroupsFromUser")
     @ApiOperation(value = "Get groups that the user belongs to", response = Group.class)
-    public List<Group> getGroupsFromUser(@QueryParam("user_id") Long userId) {
+    public List<Group> getGroupsFromUser(@QueryParam("user_id") long userId) {
         User user = userDAO.findById(userId);
         List grouplist = new ArrayList(user.getGroups());
         return grouplist;
@@ -146,7 +155,7 @@ public class UserResource {
     @UnitOfWork
     @Path("/getUsersFromGroup")
     @ApiOperation(value = "Get users that belongs to a group", response = User.class)
-    public List<User> getUsersFromGroup(@QueryParam("group_id") Long groupId) {
+    public List<User> getUsersFromGroup(@QueryParam("group_id") long groupId) {
         Group group = groupDAO.findById(groupId);
         List userlist = new ArrayList(group.getUsers());
         return userlist;
@@ -162,26 +171,31 @@ public class UserResource {
         return groupDAO.findAll();
     }
 
-    @GET
+    @PUT
     @Timed
     @UnitOfWork
-    @Path("/addGroupToUser")
-    @ApiOperation(value = "Add a group to a user", response = String.class)
-    public String addGroupToUser(@QueryParam("user_id") Long userId, @QueryParam("group_id") Long groupId) {
+    @Path("/{userId}/groups")
+    @ApiOperation(value = "Add a group to a user", response = User.class)
+    public User addGroupToUser(@ApiParam(value = "User ID of user") @PathParam("userId") long userId, @QueryParam("group_id") long groupId) {
         User user = userDAO.findById(userId);
         Group group = groupDAO.findById(groupId);
 
-        user.addGroup(group);
+        if (user != null && group != null) {
+            user.addGroup(group);
+        } else {
+            LOG.info("user or group is null");
+            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+        }
 
-        return "Hello";
+        return user;
     }
 
     @GET
     @Timed
     @UnitOfWork
     @Path("/addUserToGroup")
-    @ApiOperation(value = "Add a user to a group", notes = "Does not work. Need to add group to user. This is because the user is defined as the 'owner'. It can be implemented the other way around.", response = String.class)
-    public String addUserToGroup(@QueryParam("user_id") Long userId, @QueryParam("group_id") Long groupId) {
+    @ApiOperation(value = "Add a user to a group", notes = "Does not work. Need to add group to user. This is because the user is defined as the 'owner'. It can be implemented the other way around.", response = String.class, hidden = true)
+    public String addUserToGroup(@QueryParam("user_id") long userId, @QueryParam("group_id") long groupId) {
         User user = userDAO.findById(userId);
         Group group = groupDAO.findById(groupId);
 
@@ -190,81 +204,25 @@ public class UserResource {
         return "Hello";
     }
 
-    @GET
+    @DELETE
     @Timed
     @UnitOfWork
-    @Path("/registerGithub")
-    @ApiOperation(value = "", response = GithubRegisterView.class)
-    @Produces(MediaType.TEXT_HTML)
-    public GithubRegisterView registerGithub() {
-        return new GithubRegisterView();
-    }
+    @Path("/{userId}/groups/{groupId}")
+    @ApiOperation(value = "Remove a user from a group", response = User.class)
+    @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid user or group value") })
+    public User removeUserFromGroup(@ApiParam() @HeaderParam("api_key") String apiKey,
+            @ApiParam(value = "User ID of user") @PathParam("userId") long userId,
+            @ApiParam(value = "Group ID of group") @PathParam("groupId") long groupId) {
+        User user = userDAO.findById(userId);
+        Group group = groupDAO.findById(groupId);
 
-    @GET
-    @Timed
-    @UnitOfWork
-    @Path("/registerGithubRedirect")
-    @ApiOperation(value = "", response = User.class)
-    public User registerGithubRedirect(@QueryParam("code") String code) {
-        Optional<String> asString = ResourceUtilities.asString(TARGET_URL + "login/oauth/access_token?code=" + code + "&client_id="
-                + githubClientID + "&client_secret=" + githubClientSecret, null, client);
-
-        String accessToken;
-        if (asString.isPresent()) {
-            Map<String, String> split = Splitter.on('&').trimResults().withKeyValueSeparator("=").split(asString.get());
-            accessToken = split.get("access_token");
+        if (user != null && group != null) {
+            user.removeGroup(group);
         } else {
-            throw new WebApplicationException("Could not retrieve github.com token based on code");
+            LOG.info("user or group is null");
+            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
         }
-
-        GitHubClient githubClient = new GitHubClient();
-        githubClient.setOAuth2Token(accessToken);
-        try {
-            UserService uService = new UserService(githubClient);
-            // RepositoryService service = new RepositoryService(githubClient);
-            // ContentsService cService = new ContentsService(githubClient);
-            org.eclipse.egit.github.core.User githubUser = uService.getUser();
-
-            String githubLogin = githubUser.getLogin();
-
-            User user = new User();
-            user.setUsername(githubLogin);
-            long userID = userDAO.create(user);
-
-            Token token = new Token();
-            token.setTokenSource(TokenType.GITHUB_COM.toString());
-            token.setContent(accessToken);
-            token.setUserId(userID);
-            tokenDAO.create(token);
-
-            return userDAO.findById(userID);
-
-        } catch (IOException ex) {
-            throw new WebApplicationException("Token ignored due to IOException");
-        }
-    }
-
-    /**
-     * @return the clientID
-     */
-    public String getGithubClientID() {
-        return githubClientID;
-    }
-
-    public class GithubRegisterView extends View {
-        private final UserResource parent;
-
-        public GithubRegisterView() {
-            super("github.register.auth.view.ftl");
-            this.parent = UserResource.this;
-        }
-
-        /**
-         * @return the parent
-         */
-        public UserResource getParent() {
-            return parent;
-        }
+        return user;
     }
 
 }

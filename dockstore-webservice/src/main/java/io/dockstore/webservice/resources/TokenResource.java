@@ -24,8 +24,8 @@ import com.google.gson.Gson;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
+import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -49,11 +49,11 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.eclipse.egit.github.core.client.GitHubClient;
 import org.eclipse.egit.github.core.service.UserService;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -136,7 +136,7 @@ public class TokenResource {
     @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid source supplied"),
             @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = "Tokens not found") })
     public List<Token> listTokensBySource(@ApiParam(value = "source of tokens to return") @PathParam("source") String source) {
-        throw new UnsupportedOperationException();
+        return tokenDAO.findBySource(source);
     }
 
     @GET
@@ -243,11 +243,21 @@ public class TokenResource {
 
     @DELETE
     @Path("/{tokenId}")
+    @UnitOfWork
     @ApiOperation(value = "Deletes a token")
     @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid token value") })
-    public Token deleteToken(@ApiParam() @HeaderParam("api_key") String apiKey,
+    public Response deleteToken(@ApiParam() @HeaderParam("api_key") String apiKey,
             @ApiParam(value = "Token id to delete", required = true) @PathParam("tokenId") Long tokenId) {
-        throw new UnsupportedOperationException();
+
+        Token token = tokenDAO.findById(tokenId);
+        tokenDAO.delete(token);
+
+        token = tokenDAO.findById(tokenId);
+        if (token == null) {
+            return Response.ok().build();
+        } else {
+            return Response.serverError().build();
+        }
     }
 
     @GET

@@ -179,6 +179,11 @@ public class DockerRepoResource {
             }
         }
 
+        if (gitToken == null || quayToken == null) {
+            LOG.info("GIT or QUAY token not found!");
+            throw new WebApplicationException(HttpStatus.SC_CONFLICT);
+        }
+
         namespaceList.add(quayToken.getUsername());
         namespaceList.addAll(namespaces);
 

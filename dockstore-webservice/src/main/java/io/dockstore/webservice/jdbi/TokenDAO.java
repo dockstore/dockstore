@@ -19,7 +19,7 @@ package io.dockstore.webservice.jdbi;
 import io.dockstore.webservice.core.Token;
 import io.dropwizard.hibernate.AbstractDAO;
 import java.util.List;
-//import org.hibernate.Query;
+import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 
 /**
@@ -44,7 +44,9 @@ public class TokenDAO extends AbstractDAO<Token> {
     }
 
     public void delete(Token token) {
-
+        Session session = currentSession();
+        session.delete(token);
+        session.flush();
     }
 
     public List<Token> findAll() {
@@ -53,5 +55,9 @@ public class TokenDAO extends AbstractDAO<Token> {
 
     public List<Token> findByUserId(long userId) {
         return list(namedQuery("io.dockstore.webservice.core.Token.findByUserId").setParameter("userId", userId));
+    }
+
+    public List<Token> findBySource(String source) {
+        return list(namedQuery("io.dockstore.webservice.core.Token.findBySource").setParameter("source", source));
     }
 }
