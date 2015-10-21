@@ -23,6 +23,7 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.GroupDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
+import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -119,8 +120,8 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/tokens")
-    @ApiOperation(value = "Get user with id", response = Token.class, responseContainer = "List")
-    public List<Token> getUserTokens(@ApiParam(value = "User to return") @PathParam("userId") long userId) {
+    @ApiOperation(value = "Get user with id", response = Token.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
+    public List<Token> getUserTokens(@ApiParam() @Auth User user, @ApiParam(value = "User to return") @PathParam("userId") long userId) {
         return tokenDAO.findByUserId(userId);
     }
 
@@ -129,11 +130,9 @@ public class UserResource {
     @UnitOfWork
     @Path("/registerUser")
     @ApiOperation(value = "Add new user", notes = "Register a new user", response = User.class)
-    public User registerUser(@QueryParam("username") String username, @QueryParam("password") String password,
-            @QueryParam("is_admin") boolean isAdmin) {
+    public User registerUser(@QueryParam("username") String username, @QueryParam("is_admin") boolean isAdmin) {
         User user = new User();
         user.setUsername(username);
-        user.setPassword(password);
         user.setIsAdmin(isAdmin);
         long create = userDAO.create(user);
         return userDAO.findById(create);

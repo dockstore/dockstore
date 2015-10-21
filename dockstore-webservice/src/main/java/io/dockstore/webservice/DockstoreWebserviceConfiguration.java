@@ -1,6 +1,7 @@
 package io.dockstore.webservice;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.cache.CacheBuilderSpec;
 import io.dropwizard.Configuration;
 import io.dropwizard.client.HttpClientConfiguration;
 import io.dropwizard.db.DataSourceFactory;
@@ -38,6 +39,9 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     @NotEmpty
     private String githubClientSecret;
+
+    @NotNull
+    private CacheBuilderSpec authenticationCachePolicy;
 
     @JsonProperty("database")
     public DataSourceFactory getDataSourceFactory() {
@@ -170,5 +174,13 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     @JsonProperty
     public void setGithubClientSecret(String githubClientSecret) {
         this.githubClientSecret = githubClientSecret;
+    }
+
+    public CacheBuilderSpec getAuthenticationCachePolicy() {
+        return authenticationCachePolicy;
+    }
+
+    public void setAuthenticationCachePolicy(CacheBuilderSpec authenticationCachePolicy) {
+        this.authenticationCachePolicy = authenticationCachePolicy;
     }
 }

@@ -17,16 +17,16 @@
 package io.dockstore.webservice;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Container;
-import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.core.Tag;
+import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.ContainerDAO;
-import io.dockstore.webservice.jdbi.TokenDAO;
-import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.GroupDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
+import io.dockstore.webservice.jdbi.TokenDAO;
+import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.resources.DockerRepoResource;
 import io.dockstore.webservice.resources.GitHubComAuthenticationResource;
 import io.dockstore.webservice.resources.GitHubRepoResource;
@@ -36,6 +36,9 @@ import io.dockstore.webservice.resources.TokenResource;
 import io.dockstore.webservice.resources.UserResource;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
+import io.dropwizard.auth.AuthFactory;
+import io.dropwizard.auth.CachingAuthenticator;
+import io.dropwizard.auth.oauth.OAuthFactory;
 import io.dropwizard.client.HttpClientBuilder;
 import io.dropwizard.db.DataSourceFactory;
 import io.dropwizard.hibernate.HibernateBundle;
@@ -54,12 +57,16 @@ import javax.servlet.DispatcherType;
 import javax.servlet.FilterRegistration;
 import org.apache.http.client.HttpClient;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author dyuen
  */
 public class DockstoreWebserviceApplication extends Application<DockstoreWebserviceConfiguration> {
+
+    private static final Logger LOG = LoggerFactory.getLogger(DockstoreWebserviceApplication.class);
 
     public static void main(String[] args) throws Exception {
         new DockstoreWebserviceApplication().run(args);
@@ -154,6 +161,13 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // Swagger providers
         environment.jersey().register(ApiListingResource.class);
         environment.jersey().register(SwaggerSerializers.class);
+
+        LOG.info("This is our custom logger saying that we're about to load authenticators");
+        // setup authentication
+        SimpleAuthenticator authenticator = new SimpleAuthenticator(userDAO);
+        CachingAuthenticator<String, User> cachingAuthenticator = new CachingAuthenticator<String, User>(environment.metrics(),
+                authenticator, configuration.getAuthenticationCachePolicy());
+        environment.jersey().register(AuthFactory.binder(new OAuthFactory<User>(cachingAuthenticator, "SUPER SECRET STUFF", User.class)));
 
         // optional CORS support
         // Enable CORS headers
