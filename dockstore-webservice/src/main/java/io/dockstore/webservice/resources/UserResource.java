@@ -17,8 +17,12 @@
 package io.dockstore.webservice.resources;
 
 import com.codahale.metrics.annotation.Timed;
+import com.google.common.base.Charsets;
+import com.google.common.hash.Hashing;
+import com.google.common.io.BaseEncoding;
 import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.GroupDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -33,6 +37,7 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
@@ -94,8 +99,12 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @ApiOperation(value = "List all known users", notes = "List all users", response = User.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
-    public List<User> listUsers() {
-        return userDAO.findAll();
+    public List<User> listUsers(@ApiParam(hidden = true) @Auth Token token) {
+        User user = userDAO.findById(token.getUserId());
+        if (user.getIsAdmin()) {
+            return userDAO.findAll();
+        }
+        throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
     }
 
     @GET
@@ -103,8 +112,13 @@ public class UserResource {
     @UnitOfWork
     @Path("/username/{username}")
     @ApiOperation(value = "Get user", response = User.class, authorizations = @Authorization(value = "api_key"))
-    public User listUser(@ApiParam(value = "Username of user to return") @PathParam("username") String username) {
-        return userDAO.findByUsername(username);
+    public User listUser(@ApiParam(hidden = true) @Auth Token token,
+            @ApiParam(value = "Username of user to return") @PathParam("username") String username) {
+        User user = userDAO.findById(token.getUserId());
+        if (user.getIsAdmin() || username.equals(user.getUsername())) {
+            return userDAO.findByUsername(username);
+        }
+        throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
     }
 
     @GET
@@ -112,17 +126,26 @@ public class UserResource {
     @UnitOfWork
     @Path("/{userId}")
     @ApiOperation(value = "Get user with id", response = User.class)
-    public User getUser(@ApiParam(value = "User to return") @PathParam("userId") long userId) {
-        return userDAO.findById(userId);
+    public User getUser(@ApiParam(hidden = true) @Auth Token token, @ApiParam(value = "User to return") @PathParam("userId") long userId) {
+        User user = userDAO.findById(token.getUserId());
+        if (user.getIsAdmin() || user.getId() == userId) {
+            return userDAO.findById(userId);
+        }
+        throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
     }
 
     @GET
     @Timed
     @UnitOfWork
     @Path("/{userId}/tokens")
-    @ApiOperation(value = "Get user with id", response = Token.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
-    public List<Token> getUserTokens(@ApiParam() @Auth User user, @ApiParam(value = "User to return") @PathParam("userId") long userId) {
-        return tokenDAO.findByUserId(userId);
+    @ApiOperation(value = "Get user with id", response = Token.class, responseContainer = "List")
+    public List<Token> getUserTokens(@ApiParam(hidden = true) @Auth Token token,
+            @ApiParam(value = "User to return") @PathParam("userId") long userId) {
+        User user = userDAO.findById(token.getUserId());
+        if (user.getIsAdmin() || user.getId() == userId) {
+            return tokenDAO.findByUserId(userId);
+        }
+        throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
     }
 
     @POST
@@ -131,11 +154,26 @@ public class UserResource {
     @Path("/registerUser")
     @ApiOperation(value = "Add new user", notes = "Register a new user", response = User.class)
     public User registerUser(@QueryParam("username") String username, @QueryParam("is_admin") boolean isAdmin) {
+        final Random random = new Random();
+        final int bufferLength = 1024;
+        final byte[] buffer = new byte[bufferLength];
+        random.nextBytes(buffer);
+        String randomString = BaseEncoding.base64Url().omitPadding().encode(buffer);
+        final String accessToken = Hashing.sha256().hashString(username + randomString, Charsets.UTF_8).toString();
+
         User user = new User();
         user.setUsername(username);
         user.setIsAdmin(isAdmin);
-        long create = userDAO.create(user);
-        return userDAO.findById(create);
+        long userId = userDAO.create(user);
+
+        Token token = new Token();
+        token.setTokenSource(TokenType.DOCKSTORE.toString());
+        token.setContent(accessToken);
+        token.setUsername(username);
+        token.setUserId(userId);
+        tokenDAO.create(token);
+
+        return userDAO.findById(userId);
     }
 
     @GET

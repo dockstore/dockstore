@@ -21,7 +21,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import io.swagger.annotations.ApiModel;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -44,10 +43,8 @@ import javax.persistence.Table;
 @ApiModel(value = "User")
 @Entity
 @Table(name = "enduser")
-@NamedQueries({
-        @NamedQuery(name = "io.dockstore.webservice.core.User.findAll", query = "SELECT t FROM User t"),
-        @NamedQuery(name = "io.dockstore.webservice.core.User.findByUsername", query = "SELECT t FROM User t WHERE t.username = :username"),
-        @NamedQuery(name = "io.dockstore.webservice.core.User.findByPassword", query = "SELECT u FROM User u WHERE hashedPassword = :hashedPassword") })
+@NamedQueries({ @NamedQuery(name = "io.dockstore.webservice.core.User.findAll", query = "SELECT t FROM User t"),
+        @NamedQuery(name = "io.dockstore.webservice.core.User.findByUsername", query = "SELECT t FROM User t WHERE t.username = :username") })
 @JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class, property = "@id")
 public class User {
     @Id
@@ -57,9 +54,6 @@ public class User {
 
     @Column(nullable = false, unique = true)
     private String username;
-
-    @Column
-    private String hashedPassword;
 
     @Column
     private boolean isAdmin;
@@ -87,20 +81,12 @@ public class User {
         return isAdmin;
     }
 
-    public String getHashedPassword() {
-        return hashedPassword;
-    }
-
     public void setUsername(String username) {
         this.username = username;
     }
 
     public void setIsAdmin(boolean isAdmin) {
         this.isAdmin = isAdmin;
-    }
-
-    public void setHashedPassword(String hashedPassword) {
-        this.hashedPassword = hashedPassword;
     }
 
     public Set<Group> getGroups() {
@@ -113,10 +99,6 @@ public class User {
 
     public boolean removeGroup(Group group) {
         return groups.remove(group);
-    }
-
-    public int hashCode() {
-        return Objects.hash(username, hashedPassword);
     }
 
 }

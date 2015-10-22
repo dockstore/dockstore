@@ -16,13 +16,9 @@
  */
 package io.dockstore.webservice.jdbi;
 
-import com.google.common.base.Charsets;
-import com.google.common.hash.Hashing;
-import com.google.common.io.BaseEncoding;
 import io.dockstore.webservice.core.User;
 import io.dropwizard.hibernate.AbstractDAO;
 import java.util.List;
-import java.util.Random;
 import org.hibernate.Query;
 import org.hibernate.SessionFactory;
 
@@ -40,15 +36,6 @@ public class UserDAO extends AbstractDAO<User> {
     }
 
     public long create(User user) {
-        final Random random = new Random();
-        final int bufferLength = 1024;
-        final byte[] buffer = new byte[bufferLength];
-        random.nextBytes(buffer);
-        String randomString = BaseEncoding.base64Url().omitPadding().encode(buffer);
-        final String hashedPassword = Hashing.sha256().hashString(user.getUsername() + randomString, Charsets.UTF_8).toString();
-
-        user.setHashedPassword(hashedPassword);
-
         return persist(user).getId();
     }
 
@@ -60,9 +47,5 @@ public class UserDAO extends AbstractDAO<User> {
         Query query = namedQuery("io.dockstore.webservice.core.User.findByUsername").setParameter("username", username);
         User user = (User) query.uniqueResult();
         return user;
-    }
-
-    public User findUserByHashedPassword(String hashedPassword) {
-        return uniqueResult(namedQuery("io.dockstore.webservice.core.User.findByPassword").setString("hashedPassword", hashedPassword));
     }
 }

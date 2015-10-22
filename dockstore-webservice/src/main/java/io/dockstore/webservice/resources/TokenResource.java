@@ -18,8 +18,11 @@ package io.dockstore.webservice.resources;
 
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
+import com.google.common.hash.Hashing;
+import com.google.common.io.BaseEncoding;
 import com.google.gson.Gson;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
@@ -38,6 +41,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
@@ -282,32 +286,52 @@ public class TokenResource {
         githubClient.setOAuth2Token(accessToken);
         long userID = 0;
         String githubLogin;
+        Token dockstoreToken;
         try {
             UserService uService = new UserService(githubClient);
             org.eclipse.egit.github.core.User githubUser = uService.getUser();
 
             githubLogin = githubUser.getLogin();
-
-            User user = userDAO.findByUsername(githubLogin);
-            if (user == null) {
-                user = new User();
-                user.setUsername(githubLogin);
-                userID = userDAO.create(user);
-            } else {
-                userID = user.getId();
-            }
-
         } catch (IOException ex) {
             throw new WebApplicationException("Token ignored due to IOException");
         }
 
+        User user = userDAO.findByUsername(githubLogin);
+        if (user == null) {
+            user = new User();
+            user.setUsername(githubLogin);
+            userID = userDAO.create(user);
+
+            // CREATE DOCKSTORE TOKEN
+            final Random random = new Random();
+            final int bufferLength = 1024;
+            final byte[] buffer = new byte[bufferLength];
+            random.nextBytes(buffer);
+            String randomString = BaseEncoding.base64Url().omitPadding().encode(buffer);
+            final String dockstoreAccessToken = Hashing.sha256().hashString(githubLogin + randomString, Charsets.UTF_8).toString();
+
+            dockstoreToken = new Token();
+            dockstoreToken.setTokenSource(TokenType.DOCKSTORE.toString());
+            dockstoreToken.setContent(dockstoreAccessToken);
+            dockstoreToken.setUserId(userID);
+            dockstoreToken.setUsername(githubLogin);
+            long dockstoreTokenId = tokenDAO.create(dockstoreToken);
+            dockstoreToken = tokenDAO.findById(dockstoreTokenId);
+
+        } else {
+            userID = user.getId();
+            dockstoreToken = tokenDAO.findDockstoreByUserId(userID);
+        }
+
+        // CREATE GITHUB TOKEN
         Token token = new Token();
         token.setTokenSource(TokenType.GITHUB_COM.toString());
         token.setContent(accessToken);
         token.setUserId(userID);
         token.setUsername(githubLogin);
-        long create = tokenDAO.create(token);
-        return tokenDAO.findById(create);
+        tokenDAO.create(token);
+
+        return dockstoreToken;
     }
 
     @PUT

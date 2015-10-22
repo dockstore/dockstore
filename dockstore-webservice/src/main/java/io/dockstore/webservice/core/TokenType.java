@@ -21,7 +21,7 @@ package io.dockstore.webservice.core;
  * @author dyuen
  */
 public enum TokenType {
-    QUAY_IO("quay.io"), GITHUB_COM("github.com");
+    QUAY_IO("quay.io"), GITHUB_COM("github.com"), DOCKSTORE("dockstore");
     private final String friendlyName;
 
     TokenType(String friendlyName) {

@@ -17,8 +17,8 @@
 package io.dockstore.webservice;
 
 import com.google.common.base.Optional;
-import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.jdbi.UserDAO;
+import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dropwizard.auth.AuthenticationException;
 import io.dropwizard.auth.Authenticator;
 import org.slf4j.Logger;
@@ -28,20 +28,20 @@ import org.slf4j.LoggerFactory;
  *
  * @author xliu
  */
-public class SimpleAuthenticator implements Authenticator<String, User> {
-    private final UserDAO dao;
+public class SimpleAuthenticator implements Authenticator<String, Token> {
+    private final TokenDAO dao;
     private static final Logger LOG = LoggerFactory.getLogger(SimpleAuthenticator.class);
 
-    public SimpleAuthenticator(UserDAO dao) {
+    public SimpleAuthenticator(TokenDAO dao) {
         this.dao = dao;
     }
 
     @Override
-    public Optional<User> authenticate(String credentials) throws AuthenticationException {
+    public Optional<Token> authenticate(String credentials) throws AuthenticationException {
         LOG.info("SimpleAuthenticator called with " + credentials);
-        final User userByName = dao.findUserByHashedPassword(credentials);
-        if (userByName != null) {
-            return Optional.of(userByName);
+        final Token token = dao.findByContent(credentials);
+        if (token != null) {
+            return Optional.of(token);
         }
         return Optional.absent();
     }

@@ -83,7 +83,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             return configuration.getDataSourceFactory();
         }
     };
-    private Object filterHolder;
 
     @Override
     public String getName() {
@@ -169,10 +168,10 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         LOG.info("This is our custom logger saying that we're about to load authenticators");
         // setup authentication
-        SimpleAuthenticator authenticator = new SimpleAuthenticator(userDAO);
-        CachingAuthenticator<String, User> cachingAuthenticator = new CachingAuthenticator<String, User>(environment.metrics(),
+        SimpleAuthenticator authenticator = new SimpleAuthenticator(tokenDAO);
+        CachingAuthenticator<String, Token> cachingAuthenticator = new CachingAuthenticator<String, Token>(environment.metrics(),
                 authenticator, configuration.getAuthenticationCachePolicy());
-        environment.jersey().register(AuthFactory.binder(new OAuthFactory<User>(cachingAuthenticator, "SUPER SECRET STUFF", User.class)));
+        environment.jersey().register(AuthFactory.binder(new OAuthFactory<Token>(cachingAuthenticator, "SUPER SECRET STUFF", Token.class)));
 
         // optional CORS support
         // Enable CORS headers
