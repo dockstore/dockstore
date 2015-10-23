@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Consonance
+ * Copyright (C) 2015 Collaboratory
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,22 +14,26 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.dockstore.webservice.core;
+package io.dockstore.webservice;
+
+import io.dockstore.webservice.core.User;
+import javax.ws.rs.WebApplicationException;
+import org.apache.http.HttpStatus;
 
 /**
  *
- * @author dyuen
+ * @author xliu
  */
-public enum TokenType {
-    QUAY_IO("quay.io"), GITHUB_COM("github.com"), DOCKSTORE("dockstore");
-    private final String friendlyName;
-
-    TokenType(String friendlyName) {
-        this.friendlyName = friendlyName;
+public class Helper {
+    public static void checkUser(User user) {
+        if (!user.getIsAdmin()) {
+            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
+        }
     }
 
-    @Override
-    public String toString() {
-        return this.friendlyName;
+    public static void checkUser(User user, long id) {
+        if (!user.getIsAdmin() && user.getId() != id) {
+            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
+        }
     }
 }

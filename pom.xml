@@ -17,6 +17,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <github.url>scm:git:git@github.com:CancerCollaboratory/dockstore.git</github.url>
         <dropwizard.version>0.8.4</dropwizard.version>
+        <swagger.version>1.5.3</swagger.version>
     </properties>
 
     <organization>

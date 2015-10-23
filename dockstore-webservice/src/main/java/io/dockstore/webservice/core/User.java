@@ -56,9 +56,6 @@ public class User {
     private String username;
 
     @Column
-    private String passwordHash;
-
-    @Column
     private boolean isAdmin;
 
     @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
@@ -90,10 +87,6 @@ public class User {
 
     public void setIsAdmin(boolean isAdmin) {
         this.isAdmin = isAdmin;
-    }
-
-    public void setPassword(String password) {
-        this.passwordHash = password;
     }
 
     public Set<Group> getGroups() {

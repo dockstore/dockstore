@@ -36,6 +36,9 @@ import io.dockstore.webservice.resources.TokenResource;
 import io.dockstore.webservice.resources.UserResource;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
+import io.dropwizard.auth.AuthFactory;
+import io.dropwizard.auth.CachingAuthenticator;
+import io.dropwizard.auth.oauth.OAuthFactory;
 import io.dropwizard.client.HttpClientBuilder;
 import io.dropwizard.db.DataSourceFactory;
 import io.dropwizard.hibernate.HibernateBundle;
@@ -58,12 +61,16 @@ import static org.eclipse.jetty.servlets.CrossOriginFilter.ACCESS_CONTROL_ALLOW_
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_HEADERS_PARAM;
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_METHODS_PARAM;
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_ORIGINS_PARAM;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author dyuen
  */
 public class DockstoreWebserviceApplication extends Application<DockstoreWebserviceConfiguration> {
+
+    private static final Logger LOG = LoggerFactory.getLogger(DockstoreWebserviceApplication.class);
 
     public static void main(String[] args) throws Exception {
         new DockstoreWebserviceApplication().run(args);
@@ -76,7 +83,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             return configuration.getDataSourceFactory();
         }
     };
-    private Object filterHolder;
 
     @Override
     public String getName() {
@@ -140,7 +146,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
         environment.jersey().register(new DockerRepoResource(mapper, httpClient, userDAO, tokenDAO, containerDAO, tagDAO));
-        environment.jersey().register(new GitHubRepoResource(httpClient, tokenDAO));
+        environment.jersey().register(new GitHubRepoResource(httpClient, tokenDAO, userDAO));
 
         final GitHubComAuthenticationResource resource3 = new GitHubComAuthenticationResource(configuration.getGithubClientID(),
                 configuration.getGithubRedirectURI());
@@ -159,6 +165,13 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // Swagger providers
         environment.jersey().register(ApiListingResource.class);
         environment.jersey().register(SwaggerSerializers.class);
+
+        LOG.info("This is our custom logger saying that we're about to load authenticators");
+        // setup authentication
+        SimpleAuthenticator authenticator = new SimpleAuthenticator(tokenDAO);
+        CachingAuthenticator<String, Token> cachingAuthenticator = new CachingAuthenticator<String, Token>(environment.metrics(),
+                authenticator, configuration.getAuthenticationCachePolicy());
+        environment.jersey().register(AuthFactory.binder(new OAuthFactory<Token>(cachingAuthenticator, "SUPER SECRET STUFF", Token.class)));
 
         // optional CORS support
         // Enable CORS headers

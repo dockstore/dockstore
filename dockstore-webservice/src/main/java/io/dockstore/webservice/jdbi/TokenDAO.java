@@ -57,7 +57,23 @@ public class TokenDAO extends AbstractDAO<Token> {
         return list(namedQuery("io.dockstore.webservice.core.Token.findByUserId").setParameter("userId", userId));
     }
 
+    public Token findDockstoreByUserId(long userId) {
+        return uniqueResult(namedQuery("io.dockstore.webservice.core.Token.findDockstoreByUserId").setParameter("userId", userId));
+    }
+
+    public Token findGithubByUserId(long userId) {
+        return uniqueResult(namedQuery("io.dockstore.webservice.core.Token.findGithubByUserId").setParameter("userId", userId));
+    }
+
+    public Token findQuayByUserId(long userId) {
+        return uniqueResult(namedQuery("io.dockstore.webservice.core.Token.findQuayByUserId").setParameter("userId", userId));
+    }
+
     public List<Token> findBySource(String source) {
         return list(namedQuery("io.dockstore.webservice.core.Token.findBySource").setParameter("source", source));
+    }
+
+    public Token findByContent(String content) {
+        return uniqueResult(namedQuery("io.dockstore.webservice.core.Token.findByContent").setParameter("content", content));
     }
 }

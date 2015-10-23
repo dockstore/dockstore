@@ -18,14 +18,19 @@ package io.dockstore.webservice.resources;
 
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
+import com.google.common.hash.Hashing;
+import com.google.common.io.BaseEncoding;
 import com.google.gson.Gson;
+import io.dockstore.webservice.Helper;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
+import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -38,11 +43,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -63,8 +66,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author dyuen
  */
-@Path("/token")
-@Api(value = "/token", authorizations = { @Authorization(value = "dockstore_auth", scopes = { @AuthorizationScope(scope = "read:tokens", description = "read tokens") }) }, tags = "token")
+@Path("/auth/tokens")
+@Api(value = "/auth/tokens", authorizations = { @Authorization(value = "dockstore_auth", scopes = { @AuthorizationScope(scope = "read:tokens", description = "read tokens") }) }, tags = "tokens")
 @Produces(MediaType.APPLICATION_JSON)
 public class TokenResource {
     private final TokenDAO tokenDAO;
@@ -101,19 +104,13 @@ public class TokenResource {
     }
 
     @GET
-    @Path("/listOwned")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "List all tokens owned by the logged-in user", notes = "List the tokens owned by the logged in user", response = Token.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
-    public List<Token> listOwnedTokens() {
-        throw new UnsupportedOperationException();
-    }
+    @ApiOperation(value = "List all known tokens", notes = "List all tokens. Admin Only.", response = Token.class, responseContainer = "List")
+    public List<Token> listTokens(@ApiParam(hidden = true) @Auth Token authToken) {
+        User user = userDAO.findById(authToken.getUserId());
+        Helper.checkUser(user);
 
-    @GET
-    @Timed
-    @UnitOfWork
-    @ApiOperation(value = "List all known tokens", notes = "List all tokens", response = Token.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
-    public List<Token> listTokens() {
         return tokenDAO.findAll();
     }
 
@@ -121,22 +118,16 @@ public class TokenResource {
     @Path("/{tokenId}")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "Get a specific token by id", notes = "Get a specific token by id", response = Token.class, authorizations = @Authorization(value = "api_key"))
+    @ApiOperation(value = "Get a specific token by id", notes = "Get a specific token by id", response = Token.class)
     @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid ID supplied"),
             @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = "Token not found") })
-    public Token listToken(@ApiParam(value = "ID of token to return") @PathParam("tokenId") Long tokenId) {
-        return tokenDAO.findById(tokenId);
-    }
+    public Token listToken(@ApiParam(hidden = true) @Auth Token authToken,
+            @ApiParam(value = "ID of token to return") @PathParam("tokenId") Long tokenId) {
+        User user = userDAO.findById(authToken.getUserId());
+        Token t = tokenDAO.findById(tokenId);
+        Helper.checkUser(user, t.getUserId());
 
-    @GET
-    @Path("/findBySource/{source}")
-    @Timed
-    @UnitOfWork
-    @ApiOperation(value = "List all known tokens by source", notes = "List all tokens from a particular source", response = Token.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
-    @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid source supplied"),
-            @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = "Tokens not found") })
-    public List<Token> listTokensBySource(@ApiParam(value = "source of tokens to return") @PathParam("source") String source) {
-        return tokenDAO.findBySource(source);
+        return t;
     }
 
     @GET
@@ -146,61 +137,12 @@ public class TokenResource {
     @ApiOperation(value = "Add a new quay IO token", notes = "This is used as part of the OAuth 2 web flow. "
             + "Once a user has approved permissions for Collaboratory"
             + "Their browser will load the redirect URI which should resolve here", response = Token.class)
-    public Token addQuayToken(@QueryParam("access_token") String accessToken) {
+    public Token addQuayToken(@ApiParam(hidden = true) @Auth Token authToken, @QueryParam("access_token") String accessToken) {
         if (accessToken.isEmpty()) {
             throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
         }
 
-        String url = QUAY_URL + "user/";
-        Optional<String> asString = ResourceUtilities.asString(url, accessToken, client);
-
-        String username = null;
-        User user = null;
-        if (asString.isPresent()) {
-            LOG.info("RESOURCE CALL: " + url);
-
-            String response = asString.get();
-            Gson gson = new Gson();
-            Map<String, String> map = new HashMap<>();
-            map = (Map<String, String>) gson.fromJson(response, map.getClass());
-
-            username = map.get("username");
-            LOG.info("Username: " + username);
-
-            user = userDAO.findByUsername(username);
-        }
-
-        Token token = new Token();
-        token.setTokenSource(TokenType.QUAY_IO.toString());
-        token.setContent(accessToken);
-
-        if (user != null) {
-            token.setUserId(user.getId());
-        }
-
-        if (username != null) {
-            token.setUsername(username);
-        } else {
-            LOG.info("Quay.io tokenusername is null, did not create token");
-            throw new WebApplicationException("Username not found from resource call " + url);
-        }
-
-        long create = tokenDAO.create(token);
-        return tokenDAO.findById(create);
-    }
-
-    @POST
-    @Timed
-    @UnitOfWork
-    @Path("/quay.io/{userId}")
-    @ApiOperation(value = "Add a new quay IO token", notes = "This is used as part of the OAuth 2 web flow. "
-            + "Once a user has approved permissions for Collaboratory"
-            + "Their browser will load the redirect URI which should resolve here", response = Token.class)
-    public Token addQuayTokenWithUser(@QueryParam("access_token") String accessToken,
-            @ApiParam(value = "User Id to assign token to") @PathParam("userId") long userId) {
-        if (accessToken.isEmpty()) {
-            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
-        }
+        User user = userDAO.findById(authToken.getUserId());
 
         String url = QUAY_URL + "user/";
         Optional<String> asString = ResourceUtilities.asString(url, accessToken, client);
@@ -218,16 +160,12 @@ public class TokenResource {
             LOG.info("Username: " + username);
         }
 
-        User user = userDAO.findById(userId);
-
         Token token = new Token();
         token.setTokenSource(TokenType.QUAY_IO.toString());
         token.setContent(accessToken);
 
         if (user != null) {
             token.setUserId(user.getId());
-        } else {
-            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
         }
 
         if (username != null) {
@@ -246,10 +184,12 @@ public class TokenResource {
     @UnitOfWork
     @ApiOperation(value = "Deletes a token")
     @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid token value") })
-    public Response deleteToken(@ApiParam() @HeaderParam("api_key") String apiKey,
+    public Response deleteToken(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "Token id to delete", required = true) @PathParam("tokenId") Long tokenId) {
-
+        User user = userDAO.findById(authToken.getUserId());
         Token token = tokenDAO.findById(tokenId);
+        Helper.checkUser(user, token.getUserId());
+
         tokenDAO.delete(token);
 
         token = tokenDAO.findById(tokenId);
@@ -282,54 +222,51 @@ public class TokenResource {
         githubClient.setOAuth2Token(accessToken);
         long userID = 0;
         String githubLogin;
+        Token dockstoreToken;
         try {
             UserService uService = new UserService(githubClient);
             org.eclipse.egit.github.core.User githubUser = uService.getUser();
 
             githubLogin = githubUser.getLogin();
-
-            User user = userDAO.findByUsername(githubLogin);
-            if (user == null) {
-                user = new User();
-                user.setUsername(githubLogin);
-                userID = userDAO.create(user);
-            } else {
-                userID = user.getId();
-            }
-
         } catch (IOException ex) {
             throw new WebApplicationException("Token ignored due to IOException");
         }
 
+        User user = userDAO.findByUsername(githubLogin);
+        if (user == null) {
+            user = new User();
+            user.setUsername(githubLogin);
+            userID = userDAO.create(user);
+
+            // CREATE DOCKSTORE TOKEN
+            final Random random = new Random();
+            final int bufferLength = 1024;
+            final byte[] buffer = new byte[bufferLength];
+            random.nextBytes(buffer);
+            String randomString = BaseEncoding.base64Url().omitPadding().encode(buffer);
+            final String dockstoreAccessToken = Hashing.sha256().hashString(githubLogin + randomString, Charsets.UTF_8).toString();
+
+            dockstoreToken = new Token();
+            dockstoreToken.setTokenSource(TokenType.DOCKSTORE.toString());
+            dockstoreToken.setContent(dockstoreAccessToken);
+            dockstoreToken.setUserId(userID);
+            dockstoreToken.setUsername(githubLogin);
+            long dockstoreTokenId = tokenDAO.create(dockstoreToken);
+            dockstoreToken = tokenDAO.findById(dockstoreTokenId);
+
+        } else {
+            userID = user.getId();
+            dockstoreToken = tokenDAO.findDockstoreByUserId(userID);
+        }
+
+        // CREATE GITHUB TOKEN
         Token token = new Token();
         token.setTokenSource(TokenType.GITHUB_COM.toString());
         token.setContent(accessToken);
         token.setUserId(userID);
         token.setUsername(githubLogin);
-        long create = tokenDAO.create(token);
-        return tokenDAO.findById(create);
-    }
+        tokenDAO.create(token);
 
-    @PUT
-    @Timed
-    @UnitOfWork
-    @Path("/assignEnduser")
-    @ApiOperation(value = "Assign the token to a enduser", notes = "Temporary way to assign tokens to the endusers", response = Token.class)
-    public Token assignUser(@QueryParam("tokenId") Long tokenId, @QueryParam("user_id") Long userId) {
-        Token token = tokenDAO.findById(tokenId);
-
-        if (token == null) {
-            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
-        }
-
-        User user = userDAO.findById(userId);
-
-        if (user == null) {
-            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
-        }
-
-        token.setUserId(user.getId());
-        tokenDAO.update(token);
-        return token;
+        return dockstoreToken;
     }
 }
