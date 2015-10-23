@@ -653,11 +653,13 @@ public class DockerRepoResource {
             if (!hasGithub) {
                 // builder.append("Github is not setup");
                 LOG.info("Github is not setup");
+                throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
             }
 
         } else {
             // builder.append(repository).append(" is not registered");
             LOG.info(repository + " is not registered");
+            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
         }
 
         // String ret = builder.toString();
