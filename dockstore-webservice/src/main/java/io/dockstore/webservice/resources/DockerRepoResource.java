@@ -569,7 +569,7 @@ public class DockerRepoResource {
         Container container = containerDAO.findByPath(repository);
 
         User authUser = userDAO.findById(authToken.getUserId());
-        Helper.checkUser(authUser, container.getUserId());
+        // Helper.checkUser(authUser, container.getUserId());
 
         boolean hasGithub = false;
 
@@ -577,6 +577,8 @@ public class DockerRepoResource {
 
         // StringBuilder builder = new StringBuilder();
         if (container != null) {
+            Helper.checkUser(authUser, container.getUserId()); // null check first
+
             List<Token> tokens = tokenDAO.findByUserId(container.getUserId());
 
             for (Token token : tokens) {
