@@ -26,10 +26,12 @@ import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
+import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.ContainerDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
+import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -58,7 +60,6 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.RepositoryContents;
-import org.eclipse.egit.github.core.User;
 import org.eclipse.egit.github.core.client.GitHubClient;
 import org.eclipse.egit.github.core.service.ContentsService;
 import org.eclipse.egit.github.core.service.OrganizationService;
@@ -71,8 +72,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author dyuen
  */
-@Path("/container")
-@Api(value = "/container")
+@Path("/containers")
+@Api(value = "/containers")
 @Produces(MediaType.APPLICATION_JSON)
 public class DockerRepoResource {
 
@@ -144,7 +145,13 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @ApiOperation(value = "List repos owned by the logged-in user", notes = "Lists all registered and unregistered containers owned by the user", response = Container.class, responseContainer = "List")
-    public List<Container> userContainers(@ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
+    public List<Container> userContainers(@ApiParam(hidden = true) @Auth Token token,
+            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
+        User user = userDAO.findById(token.getUserId());
+        if (!user.getIsAdmin() && user.getId() != userId) {
+            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
+        }
+
         List<Container> ownedContainers = containerDAO.findByUserId(userId);
         return ownedContainers;
     }
@@ -154,9 +161,15 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @ApiOperation(value = "Refresh repos owned by the logged-in user", notes = "Updates some metadata", response = Container.class, responseContainer = "List")
-    public List<Container> refresh(
+    public List<Container> refresh(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "UserRequest to refresh the list of repos for a user", required = true) UserRequest request) {
         long userId = request.getId();
+
+        User authUser = userDAO.findById(authToken.getUserId());
+        if (!authUser.getIsAdmin() && authUser.getId() != userId) {
+            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
+        }
+
         List<Container> currentRepos = containerDAO.findByUserId(userId);
         List<Container> allRepos = new ArrayList<>(0);
         List<Token> tokens = tokenDAO.findByUserId(userId);
@@ -194,7 +207,7 @@ public class DockerRepoResource {
             OrganizationService oService = new OrganizationService(githubClient);
             RepositoryService service = new RepositoryService(githubClient);
             ContentsService cService = new ContentsService(githubClient);
-            User user = uService.getUser();
+            org.eclipse.egit.github.core.User user = uService.getUser();
 
             // for (String namespace : namespaces) {
             for (String namespace : namespaceList) {
@@ -258,7 +271,7 @@ public class DockerRepoResource {
                             List<Repository> gitRepos = new ArrayList<>(0);
                             gitRepos.addAll(service.getRepositories(user.getLogin()));
 
-                            for (User org : oService.getOrganizations()) {
+                            for (org.eclipse.egit.github.core.User org : oService.getOrganizations()) {
                                 gitRepos.addAll(service.getRepositories(org.getLogin()));
                             }
 
@@ -355,11 +368,12 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "List all docker containers cached in database", notes = "List docker container repos currently known. "
-            + "Right now, tokens are used to synchronously talk to the quay.io API to list repos. "
-            + "Ultimately, we should cache this information and refresh either by user request or by time "
-            + "TODO: This should be a properly defined list of objects, it also needs admin authentication", response = Container.class, responseContainer = "List")
-    public List<Container> allContainers() {
+    @ApiOperation(value = "List all docker containers cached in database", notes = "List docker container repos currently known. Admin Only", response = Container.class, responseContainer = "List")
+    public List<Container> allContainers(@ApiParam(hidden = true) @Auth Token authToken) {
+        User user = userDAO.findById(authToken.getUserId());
+        if (!user.getIsAdmin()) {
+            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
+        }
         List<Container> list = containerDAO.findAll();
         return list;
     }
@@ -369,8 +383,14 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/{containerId}")
     @ApiOperation(value = "Get a cached repo", response = Container.class)
-    public Container getContainer(@ApiParam(value = "Container ID", required = true) @PathParam("containerId") Long containerId) {
+    public Container getContainer(@ApiParam(hidden = true) @Auth Token authToken,
+            @ApiParam(value = "Container ID", required = true) @PathParam("containerId") Long containerId) {
         Container c = containerDAO.findById(containerId);
+        User user = userDAO.findById(authToken.getUserId());
+        if (!user.getIsAdmin() && user.getId() != c.getUserId()) {
+            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
+        }
+
         return c;
     }
 
@@ -379,7 +399,13 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/register")
     @ApiOperation(value = "Register a container", notes = "Register a container (public or private). Assumes that user is using quay.io and github. Include quay.io in path if using quay.io", response = Container.class)
-    public Container register(@QueryParam("repository") String path, @QueryParam("enduser_id") Long userId) {
+    public Container register(@ApiParam(hidden = true) @Auth Token authToken, @QueryParam("repository") String path,
+            @QueryParam("enduser_id") Long userId) {
+        User user = userDAO.findById(authToken.getUserId());
+        if (!user.getIsAdmin() && user.getId() != userId) {
+            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
+        }
+
         Container c = containerDAO.findByPath(path);
 
         if (c == null || c.getUserId() != userId) {
@@ -400,8 +426,18 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/unregister/{containerId}")
     @ApiOperation(value = "Deletes a container", hidden = true)
-    public Container unregister(@ApiParam(value = "Container id to delete", required = true) @PathParam("containerId") Long containerId) {
-        throw new UnsupportedOperationException();
+    public Container unregister(@ApiParam(hidden = true) @Auth Token authToken,
+            @ApiParam(value = "Container id to delete", required = true) @PathParam("containerId") Long containerId) {
+        User user = userDAO.findById(authToken.getUserId());
+        Container c = containerDAO.findById(containerId);
+        if (!user.getIsAdmin() && user.getId() != c.getUserId()) {
+            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
+        }
+
+        c.setIsRegistered(false);
+        long id = containerDAO.create(c);
+        c = containerDAO.findById(id);
+        return c;
     }
 
     @GET
@@ -409,7 +445,13 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/allRegistered/{userId}")
     @ApiOperation(value = "List all registered containers from a user", notes = "Get user's registered containers only", response = Container.class, responseContainer = "List")
-    public List<Container> userRegisteredContainers(@ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
+    public List<Container> userRegisteredContainers(@ApiParam(hidden = true) @Auth Token authToken,
+            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
+        User user = userDAO.findById(authToken.getUserId());
+        if (!user.getIsAdmin() && user.getId() != userId) {
+            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
+        }
+
         List<Container> repositories = containerDAO.findRegisteredByUserId(userId);
         return repositories;
     }
@@ -419,7 +461,7 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("allRegistered")
     @ApiOperation(value = "List all registered containers. This would be a minimal resource that would need to be implemented "
-            + "by a GA4GH reference server", tags = { "GA4GH", "container" }, notes = "", response = Container.class, responseContainer = "List")
+            + "by a GA4GH reference server", tags = { "GA4GH", "containers" }, notes = "NO authentication", response = Container.class, responseContainer = "List")
     public List<Container> allRegisteredContainers() {
         List<Container> repositories = containerDAO.findAllRegistered();
         return repositories;
@@ -429,7 +471,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("registered")
-    @ApiOperation(value = "Get a registered container", notes = "Lists info of container. Enter full path (include quay.io in path)", response = Container.class)
+    @ApiOperation(value = "Get a registered container", notes = "Lists info of container. Enter full path (include quay.io in path). NO authentication", response = Container.class)
     public Container getRegisteredContainer(@QueryParam("repository") String repo) {
         Container repository = containerDAO.findRegisteredByPath(repo);
         return repository;
@@ -456,35 +498,14 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/getRepo/{userId}/{repository}")
-    @ApiOperation(value = "Fetch repo from quay.io", response = String.class, hidden = true)
-    public String getRepo(@ApiParam(value = "The full path of the repository. e.g. namespace/name") @PathParam("repository") String repo,
-            @ApiParam(value = "user id") @PathParam("userId") long userId) {
-        List<Token> tokens = tokenDAO.findByUserId(userId);
-        StringBuilder builder = new StringBuilder();
-
-        for (Token token : tokens) {
-            if (token.getTokenSource().equals(TokenType.QUAY_IO.toString())) {
-                String url = TARGET_URL + "repository/" + repo;
-                Optional<String> asString = ResourceUtilities.asString(url, token.getContent(), client);
-
-                if (asString.isPresent()) {
-                    builder.append(asString.get());
-                    LOG.info("RESOURCE CALL: " + url);
-                }
-                builder.append("\n");
-            }
-        }
-
-        return builder.toString();
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork
     @Path("/builds")
     @ApiOperation(value = "Get the list of repository builds.", notes = "For TESTING purposes. Also useful for getting more information about the repository.\n Enter full path without quay.io", response = String.class, hidden = true)
-    public String builds(@QueryParam("repository") String repo, @QueryParam("userId") long userId) {
+    public String builds(@ApiParam(hidden = true) @Auth Token authToken, @QueryParam("repository") String repo,
+            @QueryParam("userId") long userId) {
+        User user = userDAO.findById(authToken.getUserId());
+        if (!user.getIsAdmin() && user.getId() != userId) {
+            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
+        }
 
         List<Token> tokens = tokenDAO.findByUserId(userId);
         StringBuilder builder = new StringBuilder();
@@ -530,8 +551,8 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/search")
     @ApiOperation(value = "Search for matching registered containers."
-            + " This would be a minimal resource that would need to be implemented by a GA4GH reference server", notes = "Search on the name (full path name) and description.", response = Container.class, responseContainer = "List", tags = {
-            "GA4GH", "container" })
+            + " This would be a minimal resource that would need to be implemented by a GA4GH reference server", notes = "Search on the name (full path name) and description. NO authentication", response = Container.class, responseContainer = "List", tags = {
+            "GA4GH", "containers" })
     public List<Container> search(@QueryParam("pattern") String word) {
         return containerDAO.searchPattern(word);
     }
@@ -541,8 +562,14 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/tags")
     @ApiOperation(value = "List the tags for a registered container", response = Tag.class, responseContainer = "List", hidden = true)
-    public List<Tag> tags(@QueryParam("containerId") long containerId) {
+    public List<Tag> tags(@ApiParam(hidden = true) @Auth Token authToken, @QueryParam("containerId") long containerId) {
         Container repository = containerDAO.findById(containerId);
+
+        User user = userDAO.findById(authToken.getUserId());
+        if (!user.getIsAdmin() && user.getId() != repository.getUserId()) {
+            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
+        }
+
         List<Tag> tags = new ArrayList<Tag>();
         tags.addAll(repository.getTags());
         return (List) tags;
@@ -553,8 +580,14 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/collab")
     @ApiOperation(value = "Get the corresponding collab.cwl file on Github", notes = "Enter full path of container (add quay.io if using quay.io)", response = Collab.class)
-    public Collab collab(@QueryParam("repository") String repository) {
+    public Collab collab(@ApiParam(hidden = true) @Auth Token authToken, @QueryParam("repository") String repository) {
         Container container = containerDAO.findByPath(repository);
+
+        User authUser = userDAO.findById(authToken.getUserId());
+        if (!authUser.getIsAdmin() && authUser.getId() != container.getUserId()) {
+            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
+        }
+
         boolean hasGithub = false;
 
         Collab collab = new Collab();
@@ -573,7 +606,7 @@ public class DockerRepoResource {
                         OrganizationService oService = new OrganizationService(githubClient);
                         RepositoryService service = new RepositoryService(githubClient);
                         ContentsService cService = new ContentsService(githubClient);
-                        User user = uService.getUser();
+                        org.eclipse.egit.github.core.User user = uService.getUser();
                         // builder.append("Token: ").append(token.getId()).append(" is ").append(user.getName()).append(" login is ")
                         // .append(user.getLogin()).append("\n");
 
@@ -603,8 +636,8 @@ public class DockerRepoResource {
                         }
 
                         // looks through all repos from different organizations user is in
-                        List<User> organizations = oService.getOrganizations();
-                        for (User org : organizations) {
+                        List<org.eclipse.egit.github.core.User> organizations = oService.getOrganizations();
+                        for (org.eclipse.egit.github.core.User org : organizations) {
                             for (Repository repo : service.getRepositories(org.getLogin())) {
                                 LOG.info(repo.getSshUrl());
                                 if (repo.getSshUrl().equals(container.getGitUrl())) {
@@ -666,7 +699,12 @@ public class DockerRepoResource {
     @Path("/getQuayUser")
     @ApiOperation(value = "Get quay user", notes = "testing", response = QuayUser.class, hidden = true)
     // , hidden = true)
-    public QuayUser getQuayUser(@QueryParam("tokenId") long tokenId) {
+    public QuayUser getQuayUser(@ApiParam(hidden = true) @Auth Token authToken, @QueryParam("tokenId") long tokenId) {
+        User authUser = userDAO.findById(authToken.getUserId());
+        if (!authUser.getIsAdmin()) {
+            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
+        }
+
         Token token = tokenDAO.findById(tokenId);
 
         String url = TARGET_URL + "user/";

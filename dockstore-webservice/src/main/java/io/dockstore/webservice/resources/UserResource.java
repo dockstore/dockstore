@@ -40,7 +40,6 @@ import java.util.List;
 import java.util.Random;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -58,8 +57,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author xliu
  */
-@Path("/user")
-@Api(value = "/user")
+@Path("/users")
+@Api(value = "/users")
 @Produces(MediaType.APPLICATION_JSON)
 public class UserResource {
     private final HttpClient client;
@@ -88,7 +87,7 @@ public class UserResource {
     @UnitOfWork
     @Path("/createGroup")
     @ApiOperation(value = "Create user group", response = Group.class)
-    public Group createGroup(@QueryParam("group_name") String name) {
+    public Group createGroup(@ApiParam(hidden = true) @Auth Token authToken, @QueryParam("group_name") String name) {
         Group group = new Group();
         group.setName(name);
         long create = groupDAO.create(group);
@@ -98,13 +97,14 @@ public class UserResource {
     @GET
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "List all known users", notes = "List all users", response = User.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
-    public List<User> listUsers(@ApiParam(hidden = true) @Auth Token token) {
-        User user = userDAO.findById(token.getUserId());
-        if (user.getIsAdmin()) {
-            return userDAO.findAll();
+    @ApiOperation(value = "List all known users", notes = "List all users. Admin only.", response = User.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
+    public List<User> listUsers(@ApiParam(hidden = true) @Auth Token authToken) {
+        User user = userDAO.findById(authToken.getUserId());
+        if (!user.getIsAdmin()) {
+            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
         }
-        throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
+
+        return userDAO.findAll();
     }
 
     @GET
@@ -112,13 +112,14 @@ public class UserResource {
     @UnitOfWork
     @Path("/username/{username}")
     @ApiOperation(value = "Get user", response = User.class, authorizations = @Authorization(value = "api_key"))
-    public User listUser(@ApiParam(hidden = true) @Auth Token token,
+    public User listUser(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "Username of user to return") @PathParam("username") String username) {
-        User user = userDAO.findById(token.getUserId());
-        if (user.getIsAdmin() || username.equals(user.getUsername())) {
-            return userDAO.findByUsername(username);
+        User user = userDAO.findById(authToken.getUserId());
+        if (!user.getIsAdmin() && !(username.equals(user.getUsername()))) {
+            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
         }
-        throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
+
+        return userDAO.findByUsername(username);
     }
 
     @GET
@@ -126,26 +127,61 @@ public class UserResource {
     @UnitOfWork
     @Path("/{userId}")
     @ApiOperation(value = "Get user with id", response = User.class)
-    public User getUser(@ApiParam(hidden = true) @Auth Token token, @ApiParam(value = "User to return") @PathParam("userId") long userId) {
-        User user = userDAO.findById(token.getUserId());
-        if (user.getIsAdmin() || user.getId() == userId) {
-            return userDAO.findById(userId);
+    public User getUser(@ApiParam(hidden = true) @Auth Token authToken, @ApiParam(value = "User to return") @PathParam("userId") long userId) {
+        User authUser = userDAO.findById(authToken.getUserId());
+        if (!authUser.getIsAdmin() && authUser.getId() != userId) {
+            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
         }
-        throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
+
+        User user = userDAO.findById(userId);
+        if (user == null) {
+            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+        }
+        return user;
     }
 
     @GET
     @Timed
     @UnitOfWork
     @Path("/{userId}/tokens")
-    @ApiOperation(value = "Get user with id", response = Token.class, responseContainer = "List")
-    public List<Token> getUserTokens(@ApiParam(hidden = true) @Auth Token token,
+    @ApiOperation(value = "Get tokens with user id", response = Token.class, responseContainer = "List")
+    public List<Token> getUserTokens(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "User to return") @PathParam("userId") long userId) {
-        User user = userDAO.findById(token.getUserId());
-        if (user.getIsAdmin() || user.getId() == userId) {
-            return tokenDAO.findByUserId(userId);
+        User user = userDAO.findById(authToken.getUserId());
+        if (!user.getIsAdmin() && user.getId() != userId) {
+            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
         }
-        throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
+
+        return tokenDAO.findByUserId(userId);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{userId}/tokens/github.com")
+    @ApiOperation(value = "Get Github tokens with user id", response = Token.class, responseContainer = "List")
+    public Token getGithubUserTokens(@ApiParam(hidden = true) @Auth Token authToken,
+            @ApiParam(value = "User to return") @PathParam("userId") long userId) {
+        User user = userDAO.findById(authToken.getUserId());
+        if (!user.getIsAdmin() && user.getId() != userId) {
+            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
+        }
+
+        return tokenDAO.findGithubByUserId(userId);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{userId}/tokens/quay.io")
+    @ApiOperation(value = "Get Quay tokens with user id", response = Token.class, responseContainer = "List")
+    public Token getQuayUserTokens(@ApiParam(hidden = true) @Auth Token authToken,
+            @ApiParam(value = "User to return") @PathParam("userId") long userId) {
+        User user = userDAO.findById(authToken.getUserId());
+        if (!user.getIsAdmin() && user.getId() != userId) {
+            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
+        }
+        return tokenDAO.findQuayByUserId(userId);
     }
 
     @POST
@@ -181,8 +217,17 @@ public class UserResource {
     @UnitOfWork
     @Path("/getGroupsFromUser")
     @ApiOperation(value = "Get groups that the user belongs to", response = Group.class)
-    public List<Group> getGroupsFromUser(@QueryParam("user_id") long userId) {
+    public List<Group> getGroupsFromUser(@ApiParam(hidden = true) @Auth Token authToken, @QueryParam("user_id") long userId) {
+        User authUser = userDAO.findById(authToken.getUserId());
+        if (!authUser.getIsAdmin() && authUser.getId() != userId) {
+            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
+        }
+
         User user = userDAO.findById(userId);
+        if (user == null) {
+            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+        }
+
         List grouplist = new ArrayList(user.getGroups());
         return grouplist;
     }
@@ -192,8 +237,12 @@ public class UserResource {
     @UnitOfWork
     @Path("/getUsersFromGroup")
     @ApiOperation(value = "Get users that belongs to a group", response = User.class)
-    public List<User> getUsersFromGroup(@QueryParam("group_id") long groupId) {
+    public List<User> getUsersFromGroup(@ApiParam(hidden = true) @Auth Token authToken, @QueryParam("group_id") long groupId) {
         Group group = groupDAO.findById(groupId);
+        if (group == null) {
+            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+        }
+
         List userlist = new ArrayList(group.getUsers());
         return userlist;
 
@@ -204,7 +253,7 @@ public class UserResource {
     @UnitOfWork
     @Path("/allGroups")
     @ApiOperation(value = "Get all groups", response = Group.class)
-    public List<Group> allGroups() {
+    public List<Group> allGroups(@ApiParam(hidden = true) @Auth Token authToken) {
         return groupDAO.findAll();
     }
 
@@ -213,7 +262,13 @@ public class UserResource {
     @UnitOfWork
     @Path("/{userId}/groups")
     @ApiOperation(value = "Add a group to a user", response = User.class)
-    public User addGroupToUser(@ApiParam(value = "User ID of user") @PathParam("userId") long userId, @QueryParam("group_id") long groupId) {
+    public User addGroupToUser(@ApiParam(hidden = true) @Auth Token authToken,
+            @ApiParam(value = "User ID of user") @PathParam("userId") long userId, @QueryParam("group_id") long groupId) {
+        User authUser = userDAO.findById(authToken.getUserId());
+        if (!authUser.getIsAdmin() && authUser.getId() != userId) {
+            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
+        }
+
         User user = userDAO.findById(userId);
         Group group = groupDAO.findById(groupId);
 
@@ -225,20 +280,7 @@ public class UserResource {
         }
 
         return user;
-    }
 
-    @GET
-    @Timed
-    @UnitOfWork
-    @Path("/addUserToGroup")
-    @ApiOperation(value = "Add a user to a group", notes = "Does not work. Need to add group to user. This is because the user is defined as the 'owner'. It can be implemented the other way around.", response = String.class, hidden = true)
-    public String addUserToGroup(@QueryParam("user_id") long userId, @QueryParam("group_id") long groupId) {
-        User user = userDAO.findById(userId);
-        Group group = groupDAO.findById(groupId);
-
-        group.addUser(user);
-
-        return "Hello";
     }
 
     @DELETE
@@ -247,9 +289,14 @@ public class UserResource {
     @Path("/{userId}/groups/{groupId}")
     @ApiOperation(value = "Remove a user from a group", response = User.class)
     @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid user or group value") })
-    public User removeUserFromGroup(@ApiParam() @HeaderParam("api_key") String apiKey,
+    public User removeUserFromGroup(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "User ID of user") @PathParam("userId") long userId,
             @ApiParam(value = "Group ID of group") @PathParam("groupId") long groupId) {
+        User authUser = userDAO.findById(authToken.getUserId());
+        if (!authUser.getIsAdmin() && authUser.getId() != userId) {
+            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
+        }
+
         User user = userDAO.findById(userId);
         Group group = groupDAO.findById(groupId);
 

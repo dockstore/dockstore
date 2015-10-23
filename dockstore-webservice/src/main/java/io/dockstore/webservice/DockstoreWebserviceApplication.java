@@ -146,7 +146,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
         environment.jersey().register(new DockerRepoResource(mapper, httpClient, userDAO, tokenDAO, containerDAO, tagDAO));
-        environment.jersey().register(new GitHubRepoResource(httpClient, tokenDAO));
+        environment.jersey().register(new GitHubRepoResource(httpClient, tokenDAO, userDAO));
 
         final GitHubComAuthenticationResource resource3 = new GitHubComAuthenticationResource(configuration.getGithubClientID(),
                 configuration.getGithubRedirectURI());

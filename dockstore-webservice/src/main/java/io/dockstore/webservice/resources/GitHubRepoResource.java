@@ -20,9 +20,12 @@ import com.codahale.metrics.annotation.Timed;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.jdbi.TokenDAO;
+import io.dockstore.webservice.jdbi.UserDAO;
+import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -31,7 +34,9 @@ import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.RepositoryContents;
@@ -54,11 +59,13 @@ import org.slf4j.LoggerFactory;
 public class GitHubRepoResource {
     private static final Logger LOG = LoggerFactory.getLogger(GitHubRepoResource.class);
     private final TokenDAO dao;
+    private final UserDAO userDAO;
     private final HttpClient client;
     public static final String TARGET_URL = "https://github.com/";
 
-    public GitHubRepoResource(HttpClient client, TokenDAO dao) {
+    public GitHubRepoResource(HttpClient client, TokenDAO dao, UserDAO userDAO) {
         this.dao = dao;
+        this.userDAO = userDAO;
         this.client = client;
     }
 
@@ -67,7 +74,7 @@ public class GitHubRepoResource {
     @Timed
     @UnitOfWork
     @ApiOperation(value = "List repos owned by the logged-in user", notes = "This part needs to be fleshed out but the user "
-            + "can list only the repos they own by default", response = String.class)
+            + "can list only the repos they own by default", response = String.class, hidden = true)
     public String listOwned() {
         throw new UnsupportedOperationException();
     }
@@ -77,7 +84,7 @@ public class GitHubRepoResource {
     @Timed
     @UnitOfWork
     @ApiOperation(value = "Refresh repos owned by the logged-in user", notes = "This part needs to be fleshed out but the user "
-            + "can trigger a sync on the repos they're associated with", response = String.class)
+            + "can trigger a sync on the repos they're associated with", response = String.class, hidden = true)
     public String refreshOwned() {
         throw new UnsupportedOperationException();
     }
@@ -89,7 +96,12 @@ public class GitHubRepoResource {
             + "Right now, tokens are used to synchronously talk to the quay.io API to list repos. "
             + "Ultimately, we should cache this information and refresh either by user request or by time "
             + "TODO: This should be a properly defined list of objects, it also needs admin authentication", response = String.class)
-    public String getRepos() {
+    public String getRepos(@ApiParam(hidden = true) @Auth Token authToken) {
+        io.dockstore.webservice.core.User authUser = userDAO.findById(authToken.getUserId());
+        if (!authUser.getIsAdmin()) {
+            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
+        }
+
         List<Token> findAll = dao.findAll();
         StringBuilder builder = new StringBuilder();
         for (Token token : findAll) {
