@@ -202,7 +202,7 @@
             <property name="severity" value="ignore"/>
         </module>
 	    <module name="MethodLength">
-            <property name="max" value="200"/>
+            <property name="max" value="300"/>
         </module>
         <module name="ParameterNumber"/>
 
