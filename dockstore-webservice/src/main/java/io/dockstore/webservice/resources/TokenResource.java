@@ -24,6 +24,7 @@ import com.google.common.base.Splitter;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
 import com.google.gson.Gson;
+import io.dockstore.webservice.Helper;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
@@ -108,9 +109,8 @@ public class TokenResource {
     @ApiOperation(value = "List all known tokens", notes = "List all tokens. Admin Only.", response = Token.class, responseContainer = "List")
     public List<Token> listTokens(@ApiParam(hidden = true) @Auth Token authToken) {
         User user = userDAO.findById(authToken.getUserId());
-        if (!user.getIsAdmin()) {
-            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
-        }
+        Helper.checkUser(user);
+
         return tokenDAO.findAll();
     }
 
@@ -125,9 +125,7 @@ public class TokenResource {
             @ApiParam(value = "ID of token to return") @PathParam("tokenId") Long tokenId) {
         User user = userDAO.findById(authToken.getUserId());
         Token t = tokenDAO.findById(tokenId);
-        if (!user.getIsAdmin() && user.getId() != t.getUserId()) {
-            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
-        }
+        Helper.checkUser(user, t.getUserId());
 
         return t;
     }
@@ -190,9 +188,7 @@ public class TokenResource {
             @ApiParam(value = "Token id to delete", required = true) @PathParam("tokenId") Long tokenId) {
         User user = userDAO.findById(authToken.getUserId());
         Token token = tokenDAO.findById(tokenId);
-        if (!user.getIsAdmin() && authToken.getUserId() != token.getUserId()) {
-            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
-        }
+        Helper.checkUser(user, token.getUserId());
 
         tokenDAO.delete(token);
 

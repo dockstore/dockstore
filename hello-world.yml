@@ -6,6 +6,8 @@ githubClientID: <fill me in>
 githubClientSecret: <fill me in>
 githubRedirectURI: http://<fill me in>:8080/token/github.com
 
+authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
+
 httpClient:
   timeout: 5500ms
   connectionTimeout: 5500ms

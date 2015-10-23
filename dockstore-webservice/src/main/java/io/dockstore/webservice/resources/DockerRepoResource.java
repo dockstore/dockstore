@@ -21,6 +21,7 @@ import com.esotericsoftware.yamlbeans.YamlReader;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
+import io.dockstore.webservice.Helper;
 import io.dockstore.webservice.api.UserRequest;
 import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.Tag;
@@ -148,9 +149,7 @@ public class DockerRepoResource {
     public List<Container> userContainers(@ApiParam(hidden = true) @Auth Token token,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         User user = userDAO.findById(token.getUserId());
-        if (!user.getIsAdmin() && user.getId() != userId) {
-            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
-        }
+        Helper.checkUser(user, userId);
 
         List<Container> ownedContainers = containerDAO.findByUserId(userId);
         return ownedContainers;
@@ -161,14 +160,13 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @ApiOperation(value = "Refresh repos owned by the logged-in user", notes = "Updates some metadata", response = Container.class, responseContainer = "List")
+    @SuppressWarnings("checkstyle:methodlength")
     public List<Container> refresh(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "UserRequest to refresh the list of repos for a user", required = true) UserRequest request) {
         long userId = request.getId();
 
         User authUser = userDAO.findById(authToken.getUserId());
-        if (!authUser.getIsAdmin() && authUser.getId() != userId) {
-            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
-        }
+        Helper.checkUser(authUser, userId);
 
         List<Container> currentRepos = containerDAO.findByUserId(userId);
         List<Container> allRepos = new ArrayList<>(0);
@@ -371,9 +369,8 @@ public class DockerRepoResource {
     @ApiOperation(value = "List all docker containers cached in database", notes = "List docker container repos currently known. Admin Only", response = Container.class, responseContainer = "List")
     public List<Container> allContainers(@ApiParam(hidden = true) @Auth Token authToken) {
         User user = userDAO.findById(authToken.getUserId());
-        if (!user.getIsAdmin()) {
-            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
-        }
+        Helper.checkUser(user);
+
         List<Container> list = containerDAO.findAll();
         return list;
     }
@@ -387,9 +384,7 @@ public class DockerRepoResource {
             @ApiParam(value = "Container ID", required = true) @PathParam("containerId") Long containerId) {
         Container c = containerDAO.findById(containerId);
         User user = userDAO.findById(authToken.getUserId());
-        if (!user.getIsAdmin() && user.getId() != c.getUserId()) {
-            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
-        }
+        Helper.checkUser(user, c.getUserId());
 
         return c;
     }
@@ -402,9 +397,7 @@ public class DockerRepoResource {
     public Container register(@ApiParam(hidden = true) @Auth Token authToken, @QueryParam("repository") String path,
             @QueryParam("enduser_id") Long userId) {
         User user = userDAO.findById(authToken.getUserId());
-        if (!user.getIsAdmin() && user.getId() != userId) {
-            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
-        }
+        Helper.checkUser(user, userId);
 
         Container c = containerDAO.findByPath(path);
 
@@ -430,9 +423,7 @@ public class DockerRepoResource {
             @ApiParam(value = "Container id to delete", required = true) @PathParam("containerId") Long containerId) {
         User user = userDAO.findById(authToken.getUserId());
         Container c = containerDAO.findById(containerId);
-        if (!user.getIsAdmin() && user.getId() != c.getUserId()) {
-            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
-        }
+        Helper.checkUser(user, c.getUserId());
 
         c.setIsRegistered(false);
         long id = containerDAO.create(c);
@@ -448,9 +439,7 @@ public class DockerRepoResource {
     public List<Container> userRegisteredContainers(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         User user = userDAO.findById(authToken.getUserId());
-        if (!user.getIsAdmin() && user.getId() != userId) {
-            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
-        }
+        Helper.checkUser(user, userId);
 
         List<Container> repositories = containerDAO.findRegisteredByUserId(userId);
         return repositories;
@@ -503,9 +492,7 @@ public class DockerRepoResource {
     public String builds(@ApiParam(hidden = true) @Auth Token authToken, @QueryParam("repository") String repo,
             @QueryParam("userId") long userId) {
         User user = userDAO.findById(authToken.getUserId());
-        if (!user.getIsAdmin() && user.getId() != userId) {
-            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
-        }
+        Helper.checkUser(user, userId);
 
         List<Token> tokens = tokenDAO.findByUserId(userId);
         StringBuilder builder = new StringBuilder();
@@ -566,9 +553,7 @@ public class DockerRepoResource {
         Container repository = containerDAO.findById(containerId);
 
         User user = userDAO.findById(authToken.getUserId());
-        if (!user.getIsAdmin() && user.getId() != repository.getUserId()) {
-            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
-        }
+        Helper.checkUser(user, repository.getUserId());
 
         List<Tag> tags = new ArrayList<Tag>();
         tags.addAll(repository.getTags());
@@ -584,9 +569,7 @@ public class DockerRepoResource {
         Container container = containerDAO.findByPath(repository);
 
         User authUser = userDAO.findById(authToken.getUserId());
-        if (!authUser.getIsAdmin() && authUser.getId() != container.getUserId()) {
-            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
-        }
+        Helper.checkUser(authUser, container.getUserId());
 
         boolean hasGithub = false;
 
@@ -701,9 +684,7 @@ public class DockerRepoResource {
     // , hidden = true)
     public QuayUser getQuayUser(@ApiParam(hidden = true) @Auth Token authToken, @QueryParam("tokenId") long tokenId) {
         User authUser = userDAO.findById(authToken.getUserId());
-        if (!authUser.getIsAdmin()) {
-            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
-        }
+        Helper.checkUser(authUser);
 
         Token token = tokenDAO.findById(tokenId);
 

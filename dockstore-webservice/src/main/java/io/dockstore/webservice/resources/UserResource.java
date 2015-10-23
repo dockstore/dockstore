@@ -20,6 +20,7 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Charsets;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
+import io.dockstore.webservice.Helper;
 import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
@@ -100,9 +101,7 @@ public class UserResource {
     @ApiOperation(value = "List all known users", notes = "List all users. Admin only.", response = User.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
     public List<User> listUsers(@ApiParam(hidden = true) @Auth Token authToken) {
         User user = userDAO.findById(authToken.getUserId());
-        if (!user.getIsAdmin()) {
-            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
-        }
+        Helper.checkUser(user);
 
         return userDAO.findAll();
     }
@@ -114,12 +113,11 @@ public class UserResource {
     @ApiOperation(value = "Get user", response = User.class, authorizations = @Authorization(value = "api_key"))
     public User listUser(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "Username of user to return") @PathParam("username") String username) {
-        User user = userDAO.findById(authToken.getUserId());
-        if (!user.getIsAdmin() && !(username.equals(user.getUsername()))) {
-            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
-        }
+        User authUser = userDAO.findById(authToken.getUserId());
+        User user = userDAO.findByUsername(username);
+        Helper.checkUser(authUser, user.getId());
 
-        return userDAO.findByUsername(username);
+        return user;
     }
 
     @GET
@@ -129,9 +127,7 @@ public class UserResource {
     @ApiOperation(value = "Get user with id", response = User.class)
     public User getUser(@ApiParam(hidden = true) @Auth Token authToken, @ApiParam(value = "User to return") @PathParam("userId") long userId) {
         User authUser = userDAO.findById(authToken.getUserId());
-        if (!authUser.getIsAdmin() && authUser.getId() != userId) {
-            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
-        }
+        Helper.checkUser(authUser, userId);
 
         User user = userDAO.findById(userId);
         if (user == null) {
@@ -148,9 +144,7 @@ public class UserResource {
     public List<Token> getUserTokens(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "User to return") @PathParam("userId") long userId) {
         User user = userDAO.findById(authToken.getUserId());
-        if (!user.getIsAdmin() && user.getId() != userId) {
-            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
-        }
+        Helper.checkUser(user, userId);
 
         return tokenDAO.findByUserId(userId);
     }
@@ -163,9 +157,7 @@ public class UserResource {
     public Token getGithubUserTokens(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "User to return") @PathParam("userId") long userId) {
         User user = userDAO.findById(authToken.getUserId());
-        if (!user.getIsAdmin() && user.getId() != userId) {
-            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
-        }
+        Helper.checkUser(user, userId);
 
         return tokenDAO.findGithubByUserId(userId);
     }
@@ -178,9 +170,8 @@ public class UserResource {
     public Token getQuayUserTokens(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "User to return") @PathParam("userId") long userId) {
         User user = userDAO.findById(authToken.getUserId());
-        if (!user.getIsAdmin() && user.getId() != userId) {
-            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
-        }
+        Helper.checkUser(user, userId);
+
         return tokenDAO.findQuayByUserId(userId);
     }
 
@@ -219,9 +210,7 @@ public class UserResource {
     @ApiOperation(value = "Get groups that the user belongs to", response = Group.class)
     public List<Group> getGroupsFromUser(@ApiParam(hidden = true) @Auth Token authToken, @QueryParam("user_id") long userId) {
         User authUser = userDAO.findById(authToken.getUserId());
-        if (!authUser.getIsAdmin() && authUser.getId() != userId) {
-            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
-        }
+        Helper.checkUser(authUser, userId);
 
         User user = userDAO.findById(userId);
         if (user == null) {
@@ -265,9 +254,7 @@ public class UserResource {
     public User addGroupToUser(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "User ID of user") @PathParam("userId") long userId, @QueryParam("group_id") long groupId) {
         User authUser = userDAO.findById(authToken.getUserId());
-        if (!authUser.getIsAdmin() && authUser.getId() != userId) {
-            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
-        }
+        Helper.checkUser(authUser, userId);
 
         User user = userDAO.findById(userId);
         Group group = groupDAO.findById(groupId);
@@ -293,9 +280,7 @@ public class UserResource {
             @ApiParam(value = "User ID of user") @PathParam("userId") long userId,
             @ApiParam(value = "Group ID of group") @PathParam("groupId") long groupId) {
         User authUser = userDAO.findById(authToken.getUserId());
-        if (!authUser.getIsAdmin() && authUser.getId() != userId) {
-            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
-        }
+        Helper.checkUser(authUser, userId);
 
         User user = userDAO.findById(userId);
         Group group = groupDAO.findById(groupId);

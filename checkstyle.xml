@@ -86,6 +86,13 @@
     <property name="influenceFormat" value="$1" />
   </module>
 
+<module name="SuppressWarningsFilter" />
+   <module name="TreeWalker">
+       <module name="SuppressWarningsHolder" />
+   </module>
+
+
+
     <!--
         If you set the basedir property below, then all reported file
         names will be relative to the specified directory. See
@@ -202,7 +209,7 @@
             <property name="severity" value="ignore"/>
         </module>
 	    <module name="MethodLength">
-            <property name="max" value="300"/>
+            <property name="max" value="150"/>
         </module>
         <module name="ParameterNumber"/>
 

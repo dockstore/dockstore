@@ -17,6 +17,7 @@
 package io.dockstore.webservice.resources;
 
 import com.codahale.metrics.annotation.Timed;
+import io.dockstore.webservice.Helper;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -34,9 +35,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
-import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.RepositoryContents;
@@ -98,9 +97,7 @@ public class GitHubRepoResource {
             + "TODO: This should be a properly defined list of objects, it also needs admin authentication", response = String.class)
     public String getRepos(@ApiParam(hidden = true) @Auth Token authToken) {
         io.dockstore.webservice.core.User authUser = userDAO.findById(authToken.getUserId());
-        if (!authUser.getIsAdmin()) {
-            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
-        }
+        Helper.checkUser(authUser);
 
         List<Token> findAll = dao.findAll();
         StringBuilder builder = new StringBuilder();
