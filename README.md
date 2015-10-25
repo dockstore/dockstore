@@ -58,8 +58,26 @@ However, the only way to list all namespaces and organizations is to use their /
 
 ## Dockstore Java Client
 
+Some background on the client:
+
 * https://sdngeeks.wordpress.com/2014/08/01/swagger-example-with-java-spring-apache-cxf-jackson/
 * http://developers-blog.helloreverb.com/enabling-oauth-with-swagger/
+
+## Dockstore Command Line
+
+The dockstore command line should be installed in a location in your path.
+
+  /dockstore-client/bin/dockstore
+
+You then need to setup a `~/.dockstore/config` file with the following contents:
+
+```
+token: <dockstore_token_from_web_app>
+username: <github_username>
+server-url: http://www.dockstore.org:8080
+```
+
+If you are working with a custom-built or updated dockstore client you will need to update the jar in: `~/.dockstore/config/self-installs`.
 
 ## TODO
 
@@ -68,4 +86,7 @@ However, the only way to list all namespaces and organizations is to use their /
    2. only admin users (or our other services) should be able to list all information  
 1. items from Brian
    2. you need better directions for filling in the yml settings file
-   3. you should create a Dockerfile for this so I can deploy with Docker, this will make testing much easier
+1. you need to document how you created the Java Swagger client (e.g show the commands used)
+1. you need to document the config file
+1. you need to document better how to setup the dockstore command line
+1. you need to document the release process, how to update the jar the dockstore command line downloads
