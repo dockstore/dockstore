@@ -56,6 +56,11 @@ Recently, Quay has fixed/optimized their API. To list a user's repositories, the
 
 However, the only way to list all namespaces and organizations is to use their /api/v1/user/ resource. But this resource seems to have a bug and does not list the organizations. Therefore, we are temporarily hard coding our namespaces to DockerRepoResource.java.
 
+## Dockstore Java Client
+
+* https://sdngeeks.wordpress.com/2014/08/01/swagger-example-with-java-spring-apache-cxf-jackson/
+* http://developers-blog.helloreverb.com/enabling-oauth-with-swagger/
+
 ## TODO
 
 1. we need to define how this interacts with a single sign-on service
