@@ -75,9 +75,9 @@ To run the Launcher:
     java -cp <launcher.jar> io.github.collaboratory.LauncherCWL --config <path_to_launcher.config> --decriptor <path_to_json_descriptor>
 
     # for example:
-    java -cp launcher/target/uber-io.github.collaboratory.launcher-1.0.2.jar io.github.collaboratory.LauncherCWL --config launcher.ini --descriptor collab.cwl --job collab-cwl-job-pre.json
+    java -cp launcher/target/uber-io.github.collaboratory.launcher-1.0.2-SNAPSHOT.jar io.github.collaboratory.LauncherCWL --config launcher.ini --descriptor collab.cwl --job collab-cwl-job-pre.json
     # another example for testing
-    rm -rf datastore && cd launcher && mvn clean install && cd - && java -cp launcher/target/uber-io.github.collaboratory.launcher-1.0.2.jar io.github.collaboratory.LauncherCWL --config launcher.ini --descriptor collab.cwl --job collab-cwl-job-pre.json
+    rm -rf datastore && cd launcher && mvn clean install && cd - && java -cp launcher/target/uber-io.github.collaboratory.launcher-1.0.2-SNAPSHOT.jar io.github.collaboratory.LauncherCWL --config launcher.ini --descriptor collab.cwl --job collab-cwl-job-pre.json
     # if you want to skip the tests/checks on code quality
     # include -DskipTests -Dfindbugs.failOnError=false -Dcheckstyle.failOnViolation=false
 
