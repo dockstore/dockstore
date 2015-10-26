@@ -3,16 +3,9 @@
 
 # Dockstore Descriptor
 
-This repo contains an example HelloWorld workflow that simply generates a "helloworld" text file and sticks it in an output location on the filesystemxample, a Descriptor for how to run this Docker-ized HelloWorld workflow (along with a prototype in CWL), and a sample Java Launcher that interprets the Descriptor, provisions files, and launches the constructed command.  The goal of this repo is to provide a concrete example of this working so this prototype can be adapted into Consonance for real production use.  I didn't want to start with Consonance integration since that would require a large setup and I wanted to test this piece in isolation.
+The purpose of this tool is to show how [CWL](http://ga4gh.org/#/cwf-team) can be used to describe and run a tool inside a Docker container.
 
-A future version of this prototype tool will include CWL support as an alternative descriptor.  In that case, it may actually call out to the reference CWL runner to construct the command line since CWL is complicated to parse and act on.
-
-Some items TBD as this prototype is integrated into Consonance:
-
-* a descriptor for publishing the Docker container (and possibly including *defaults*) vs. a runtime descritor parameterized with real data
-* CWL and/or Galaxy Tool Defnition support, possible as a replacement or in parallel with the current JSON descriptor
-* how the config files are passed from Consonance vs. a normal input transfer from S3, HTTP/s, SFTP, etc
-* the actual message format pulled from the work queue and how that encapsulates the runtime descriptor, INI files, etc
+This repo contains an example HelloWorld workflow that simply generates a "helloworld" text file and sticks it in an output location on the filesystem, an example Descriptor for how to run this Docker-ized HelloWorld workflow (in JSON and CWL), and a sample Java Launcher that interprets the Descriptor, provisions files, and launches the constructed command.  The goal of this repo is to provide a concrete example of this working so I can get feedback from the community on the goal of using CWL with Docker.  This prototype can also be adapted into [Consonance](https://github.com/Consonance/), our cloud orchestration framework, for real production use. Finally, it's useful for developers to use as a testing tool with their Dockers described using CWL. 
 
 ## Dependencies
 
@@ -20,8 +13,14 @@ You need the following on your system to use the launcher:
 
 * java 1.8
 * maven
-* the cwl command line utils (see below)
 * docker
+* the cwl command line utils (see below)
+
+For the last item you need to do something like the following:
+
+```
+$ pip install cwl-runner
+```
 
 ## The Launcher
 
