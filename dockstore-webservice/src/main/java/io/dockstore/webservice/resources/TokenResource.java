@@ -37,8 +37,6 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import io.swagger.annotations.Authorization;
-import io.swagger.annotations.AuthorizationScope;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -67,7 +65,7 @@ import org.slf4j.LoggerFactory;
  * @author dyuen
  */
 @Path("/auth/tokens")
-@Api(value = "/auth/tokens", authorizations = { @Authorization(value = "dockstore_auth", scopes = { @AuthorizationScope(scope = "read:tokens", description = "read tokens") }) }, tags = "tokens")
+@Api(value = "/auth/tokens", tags = "tokens")
 @Produces(MediaType.APPLICATION_JSON)
 public class TokenResource {
     private final TokenDAO tokenDAO;

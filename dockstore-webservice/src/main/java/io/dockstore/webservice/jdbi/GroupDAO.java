@@ -19,6 +19,7 @@ package io.dockstore.webservice.jdbi;
 import io.dockstore.webservice.core.Group;
 import io.dropwizard.hibernate.AbstractDAO;
 import java.util.List;
+import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 
 /**
@@ -40,5 +41,11 @@ public class GroupDAO extends AbstractDAO<Group> {
 
     public long create(Group group) {
         return persist(group).getId();
+    }
+
+    public void delete(Group group) {
+        Session session = currentSession();
+        session.delete(group);
+        session.flush();
     }
 }

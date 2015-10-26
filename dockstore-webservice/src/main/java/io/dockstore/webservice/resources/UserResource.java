@@ -17,15 +17,19 @@
 package io.dockstore.webservice.resources;
 
 import com.codahale.metrics.annotation.Timed;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
 import io.dockstore.webservice.Helper;
+import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.jdbi.ContainerDAO;
 import io.dockstore.webservice.jdbi.GroupDAO;
+import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.auth.Auth;
@@ -35,7 +39,6 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import io.swagger.annotations.Authorization;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -49,6 +52,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
@@ -66,27 +70,40 @@ public class UserResource {
     private final UserDAO userDAO;
     private final GroupDAO groupDAO;
     private final TokenDAO tokenDAO;
+    private final ContainerDAO containerDAO;
+    private final TagDAO tagDAO;
     private final String githubClientID;
     private final String githubClientSecret;
 
     private static final String TARGET_URL = "https://github.com/";
 
+    private final ObjectMapper objectMapper;
+
     private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
 
-    public UserResource(HttpClient client, TokenDAO tokenDAO, UserDAO userDAO, GroupDAO groupDAO, String githubClientID,
-            String githubClientSecret) {
+    private final List<String> namespaces = new ArrayList<>();
+
+    public UserResource(ObjectMapper mapper, HttpClient client, TokenDAO tokenDAO, UserDAO userDAO, GroupDAO groupDAO,
+            ContainerDAO containerDAO, TagDAO tagDAO, String githubClientID, String githubClientSecret) {
+        this.objectMapper = mapper;
         this.client = client;
         this.userDAO = userDAO;
         this.groupDAO = groupDAO;
         this.tokenDAO = tokenDAO;
+        this.containerDAO = containerDAO;
+        this.tagDAO = tagDAO;
         this.githubClientID = githubClientID;
         this.githubClientSecret = githubClientSecret;
+
+        namespaces.add("seqware");
+        namespaces.add("collaboratory");
+        namespaces.add("pancancer");
     }
 
     @POST
     @Timed
     @UnitOfWork
-    @Path("/createGroup")
+    @Path("/groups")
     @ApiOperation(value = "Create user group", response = Group.class)
     public Group createGroup(@ApiParam(hidden = true) @Auth Token authToken, @QueryParam("group_name") String name) {
         Group group = new Group();
@@ -95,10 +112,32 @@ public class UserResource {
         return groupDAO.findById(create);
     }
 
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("/groups/{groupId}")
+    @ApiOperation(value = "Deletes a group", response = Response.class)
+    @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid groupId value") })
+    public Response deleteGroup(@ApiParam(hidden = true) @Auth Token authToken,
+            @ApiParam(value = "Group id to delete", required = true) @PathParam("groupId") Long groupId) {
+        User user = userDAO.findById(authToken.getUserId());
+        Group group = groupDAO.findById(groupId);
+        Helper.checkUser(user);
+
+        groupDAO.delete(group);
+
+        group = groupDAO.findById(groupId);
+        if (group == null) {
+            return Response.ok().build();
+        } else {
+            return Response.serverError().build();
+        }
+    }
+
     @GET
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "List all known users", notes = "List all users. Admin only.", response = User.class, responseContainer = "List", authorizations = @Authorization(value = "api_key"))
+    @ApiOperation(value = "List all known users", notes = "List all users. Admin only.", response = User.class, responseContainer = "List")
     public List<User> listUsers(@ApiParam(hidden = true) @Auth Token authToken) {
         User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user);
@@ -110,7 +149,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/username/{username}")
-    @ApiOperation(value = "Get user", response = User.class, authorizations = @Authorization(value = "api_key"))
+    @ApiOperation(value = "Get user", response = User.class)
     public User listUser(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "Username of user to return") @PathParam("username") String username) {
         User authUser = userDAO.findById(authToken.getUserId());
@@ -178,7 +217,6 @@ public class UserResource {
     @POST
     @Timed
     @UnitOfWork
-    @Path("/registerUser")
     @ApiOperation(value = "Add new user", notes = "Register a new user", response = User.class)
     public User registerUser(@QueryParam("username") String username, @QueryParam("is_admin") boolean isAdmin) {
         final Random random = new Random();
@@ -206,9 +244,10 @@ public class UserResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/getGroupsFromUser")
+    @Path("/{userId}/groups")
     @ApiOperation(value = "Get groups that the user belongs to", response = Group.class)
-    public List<Group> getGroupsFromUser(@ApiParam(hidden = true) @Auth Token authToken, @QueryParam("user_id") long userId) {
+    public List<Group> getGroupsFromUser(@ApiParam(hidden = true) @Auth Token authToken,
+            @ApiParam(value = "User") @PathParam("userId") long userId) {
         User authUser = userDAO.findById(authToken.getUserId());
         Helper.checkUser(authUser, userId);
 
@@ -224,9 +263,10 @@ public class UserResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/getUsersFromGroup")
+    @Path("/groups/{groupId}/users")
     @ApiOperation(value = "Get users that belongs to a group", response = User.class)
-    public List<User> getUsersFromGroup(@ApiParam(hidden = true) @Auth Token authToken, @QueryParam("group_id") long groupId) {
+    public List<User> getUsersFromGroup(@ApiParam(hidden = true) @Auth Token authToken,
+            @ApiParam(value = "Group") @PathParam("groupId") long groupId) {
         Group group = groupDAO.findById(groupId);
         if (group == null) {
             throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
@@ -240,9 +280,19 @@ public class UserResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/allGroups")
-    @ApiOperation(value = "Get all groups", response = Group.class)
+    @Path("/groups")
+    @ApiOperation(value = "List all groups", response = Group.class)
     public List<Group> allGroups(@ApiParam(hidden = true) @Auth Token authToken) {
+        return groupDAO.findAll();
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/groups/{groupId}")
+    @ApiOperation(value = "List a group", response = Group.class)
+    public List<Group> getGroup(@ApiParam(hidden = true) @Auth Token authToken,
+            @ApiParam(value = "Group") @PathParam("groupId") long groupId) {
         return groupDAO.findAll();
     }
 
@@ -292,6 +342,50 @@ public class UserResource {
             throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
         }
         return user;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{userId}/containers/registered")
+    @ApiOperation(value = "List all registered containers from a user", notes = "Get user's registered containers only", response = Container.class, responseContainer = "List")
+    public List<Container> userRegisteredContainers(@ApiParam(hidden = true) @Auth Token authToken,
+            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
+        User user = userDAO.findById(authToken.getUserId());
+        Helper.checkUser(user, userId);
+
+        List<Container> repositories = containerDAO.findRegisteredByUserId(userId);
+        return repositories;
+    }
+
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/{userId}/containers")
+    @ApiOperation(value = "Refresh repos owned by the logged-in user", notes = "Updates some metadata", response = Container.class, responseContainer = "List")
+    @SuppressWarnings("checkstyle:methodlength")
+    public List<Container> refresh(@ApiParam(hidden = true) @Auth Token authToken,
+            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
+
+        User authUser = userDAO.findById(authToken.getUserId());
+        Helper.checkUser(authUser, userId);
+
+        List<Container> containers = Helper.refresh(userId, client, objectMapper, namespaces, LOG, userDAO, containerDAO, tokenDAO, tagDAO);
+        return containers;
+    }
+
+    @GET
+    @Path("/{userId}/containers")
+    @Timed
+    @UnitOfWork
+    @ApiOperation(value = "List repos owned by the logged-in user", notes = "Lists all registered and unregistered containers owned by the user", response = Container.class, responseContainer = "List")
+    public List<Container> userContainers(@ApiParam(hidden = true) @Auth Token token,
+            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
+        User user = userDAO.findById(token.getUserId());
+        Helper.checkUser(user, userId);
+
+        List<Container> ownedContainers = containerDAO.findByUserId(userId);
+        return ownedContainers;
     }
 
 }
