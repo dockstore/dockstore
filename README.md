@@ -22,7 +22,9 @@ For the last item you need to do something like the following:
 $ pip install cwl-runner
 ```
 
-## The Launcher
+## The JSON Launcher
+
+DEPRECATED: use the CWL launcher instead, see below
 
 The Launcher Java program is just a proof of concept.  The code will eventually be folded into the Consonance worker daemon which needs to do the items below in addition to interacting with the consonance queue to pull orders.  This launcher below is a simplification and just focuses on constructing a command and dealing with inputs/outputs as a prototype.
 
