@@ -48,7 +48,7 @@ public class UserApi {
     Object postBody = null;
     
     // create path and map variables
-    String path = "/user".replaceAll("\\{format\\}","json");
+    String path = "/users".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -90,7 +90,7 @@ public class UserApi {
     Object postBody = null;
     
     // create path and map variables
-    String path = "/user/addGroupToUser".replaceAll("\\{format\\}","json");
+    String path = "/users/addGroupToUser".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -136,7 +136,7 @@ public class UserApi {
     Object postBody = null;
     
     // create path and map variables
-    String path = "/user/addUserToGroup".replaceAll("\\{format\\}","json");
+    String path = "/users/addUserToGroup".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -180,7 +180,7 @@ public class UserApi {
     Object postBody = null;
     
     // create path and map variables
-    String path = "/user/allGroups".replaceAll("\\{format\\}","json");
+    String path = "/users/allGroups".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -221,7 +221,7 @@ public class UserApi {
     Object postBody = null;
     
     // create path and map variables
-    String path = "/user/createGroup".replaceAll("\\{format\\}","json");
+    String path = "/users/createGroup".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -264,7 +264,7 @@ public class UserApi {
     Object postBody = null;
     
     // create path and map variables
-    String path = "/user/getGroupsFromUser".replaceAll("\\{format\\}","json");
+    String path = "/users/getGroupsFromUser".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -307,7 +307,7 @@ public class UserApi {
     Object postBody = null;
     
     // create path and map variables
-    String path = "/user/getUser".replaceAll("\\{format\\}","json");
+    String path = "/users/getUser".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -350,7 +350,7 @@ public class UserApi {
     Object postBody = null;
     
     // create path and map variables
-    String path = "/user/getUsersFromGroup".replaceAll("\\{format\\}","json");
+    String path = "/users/getUsersFromGroup".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -392,7 +392,7 @@ public class UserApi {
     Object postBody = null;
     
     // create path and map variables
-    String path = "/user/registerGithub".replaceAll("\\{format\\}","json");
+    String path = "/users/registerGithub".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -433,7 +433,7 @@ public class UserApi {
     Object postBody = null;
     
     // create path and map variables
-    String path = "/user/registerGithubRedirect".replaceAll("\\{format\\}","json");
+    String path = "/users/registerGithubRedirect".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -478,7 +478,7 @@ public class UserApi {
     Object postBody = null;
     
     // create path and map variables
-    String path = "/user/registerUser".replaceAll("\\{format\\}","json");
+    String path = "/users/registerUser".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -530,7 +530,7 @@ public class UserApi {
     }
     
     // create path and map variables
-    String path = "/user/username/{username}".replaceAll("\\{format\\}","json")
+    String path = "/users/username/{username}".replaceAll("\\{format\\}","json")
       .replaceAll("\\{" + "username" + "\\}", apiClient.escapeString(username.toString()));
 
     // query params

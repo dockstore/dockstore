@@ -28,6 +28,8 @@ import io.swagger.client.model.Container;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.User;
 import io.swagger.client.model.UserRequest;
+
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
@@ -50,6 +52,7 @@ public class Client {
     private static UserApi userApi;
 
     private static User user;
+    private static String apiKey;
 
     private static final String NAME_HEADER = "NAME";
     private static final String DESCRIPTION_HEADER = "DESCRIPTION";
@@ -337,16 +340,25 @@ public class Client {
     public static void main(String[] argv) {
         List<String> args = new ArrayList<>(Arrays.asList(argv));
 
-        defaultApiClient = Configuration.getDefaultApiClient();
-        containerApi = new ContainerApi(defaultApiClient);
-        userApi = new UserApi(defaultApiClient);
+        // user home dir
+        String userHome = System.getProperty("user.home");
 
         try {
-            InputStreamReader f = new InputStreamReader(new FileInputStream("config"), Charset.defaultCharset());
+            InputStreamReader f = new InputStreamReader(new FileInputStream(userHome + File.separator + ".dockstore"+File.separator+"config"), Charset.defaultCharset());
             YamlReader reader = new YamlReader(f);
             Object object = reader.read();
             Map map = (Map) object;
+
+            // pull out the variables from the config
             String username = (String) map.get("username");
+            String token = (String) map.get("token");
+            String serverUrl = (String) map.get("server-url");
+
+            defaultApiClient = Configuration.getDefaultApiClient();
+            defaultApiClient.addDefaultHeader("Authorization", "Bearer "+token);
+            defaultApiClient.setBasePath(serverUrl);
+            containerApi = new ContainerApi(defaultApiClient);
+            userApi = new UserApi(defaultApiClient);
 
             user = userApi.listUser(username);
 

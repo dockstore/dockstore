@@ -48,7 +48,7 @@ public class ContainerApi {
     Object postBody = null;
     
     // create path and map variables
-    String path = "/container".replaceAll("\\{format\\}","json");
+    String path = "/containers".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -88,7 +88,7 @@ public class ContainerApi {
     Object postBody = null;
     
     // create path and map variables
-    String path = "/container/allRegistered".replaceAll("\\{format\\}","json");
+    String path = "/containers/allRegistered".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -134,7 +134,7 @@ public class ContainerApi {
     }
     
     // create path and map variables
-    String path = "/container/allRegistered/{userId}".replaceAll("\\{format\\}","json")
+    String path = "/containers/allRegistered/{userId}".replaceAll("\\{format\\}","json")
       .replaceAll("\\{" + "userId" + "\\}", apiClient.escapeString(userId.toString()));
 
     // query params
@@ -176,7 +176,7 @@ public class ContainerApi {
     Object postBody = null;
     
     // create path and map variables
-    String path = "/container/collab".replaceAll("\\{format\\}","json");
+    String path = "/containers/collab".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -224,7 +224,7 @@ public class ContainerApi {
     }
     
     // create path and map variables
-    String path = "/container/refresh".replaceAll("\\{format\\}","json");
+    String path = "/containers/refresh".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -266,7 +266,7 @@ public class ContainerApi {
     Object postBody = null;
     
     // create path and map variables
-    String path = "/container/register".replaceAll("\\{format\\}","json");
+    String path = "/containers/register".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -311,7 +311,7 @@ public class ContainerApi {
     Object postBody = null;
     
     // create path and map variables
-    String path = "/container/registered".replaceAll("\\{format\\}","json");
+    String path = "/containers/registered".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -354,7 +354,7 @@ public class ContainerApi {
     Object postBody = null;
     
     // create path and map variables
-    String path = "/container/search".replaceAll("\\{format\\}","json");
+    String path = "/containers/search".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -402,7 +402,7 @@ public class ContainerApi {
     }
     
     // create path and map variables
-    String path = "/container/user/{userId}".replaceAll("\\{format\\}","json")
+    String path = "/containers/user/{userId}".replaceAll("\\{format\\}","json")
       .replaceAll("\\{" + "userId" + "\\}", apiClient.escapeString(userId.toString()));
 
     // query params
@@ -449,7 +449,7 @@ public class ContainerApi {
     }
     
     // create path and map variables
-    String path = "/container/{containerId}".replaceAll("\\{format\\}","json")
+    String path = "/containers/{containerId}".replaceAll("\\{format\\}","json")
       .replaceAll("\\{" + "containerId" + "\\}", apiClient.escapeString(containerId.toString()));
 
     // query params
