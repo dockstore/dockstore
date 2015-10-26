@@ -160,3 +160,4 @@ Here are some example Docker-based workflows in CWL (with Dockerfiles) from 7Bri
 * services needs to be fleshed out
 * tests need to be fleshed out
 * there is no real error checking, for production system will need to handle errors correctly/robustly.
+* better error messages if things like docker or cwl-tools are not installed
