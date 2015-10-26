@@ -22,79 +22,6 @@ For the last item you need to do something like the following:
 $ pip install cwl-runner
 ```
 
-## The JSON Launcher
-
-DEPRECATED: use the CWL launcher instead, see below
-
-The Launcher Java program is just a proof of concept.  The code will eventually be folded into the Consonance worker daemon which needs to do the items below in addition to interacting with the consonance queue to pull orders.  This launcher below is a simplification and just focuses on constructing a command and dealing with inputs/outputs as a prototype.
-
-0. pulls over config file to `~/.consonance/launcher.config`, uses same mechanism as other config files but needs to be done first, see below. For this demo it assumes the config file is provided on the command line.
-0. makes a working directory in `/datastore/launcher-<uuid>` (from the config file above, this demo assumes `/datastore` is the big disk to use here but it could be any path)
-0. pulls over 0 or more files that were associated with this workflow order to `/datastore/launcher-<uuid>/configs`, these will be used by the workflow itself. These will come from a web service endpoint in Consonance rather than external sources like inputs below. This is how we get a SeqWare INI file for example. For this demo launcher this functionality will be skipped since it lacks a queue/web service to talk to. 
-0. make `/datastore/launcher-<uuid>/working` to be used as the working directory for the command, `/datastore/launcher-<uuid>/inputs` for all the file inputs, and `/datastore/launcher-<uuid>/logs` for logs
-0. pull down all the Docker images referenced in the descriptor
-0. start services referenced in the descriptor, this functionality does not yet exist
-0. download all the inputs, these will come from S3, HTTP/S, SFTP, FTP, ICGCObjectStore, etc, put them in locations within `/datastore/launcher-<uuid>/inputs`
-0. construct the command, this includes `-v` for all config and input files, `-v` for the working directory /datastore/launcher-<uuid>/working, the `docker run <image_id:version>` parts of the command along with the actual command being run.
-0. run the command, noting success/failure, stderr/stdout going to `/datastore/launcher-<uuid>/logs`
-0. collect and provision output files to their destination referenced in `~/.consonance/launcher.config`
-
-### The Config file
-
-```
-working-directory=./datastore/
-```
-
-### Resulting Docker Command
-
-The command is constructed for this HelloWorld tool:
-
-    docker run -v $ref_file_1:$ref_file_1.destination -v $ref_file_2:$ref_file_2.destination dockerId '$cmd'
-
-So the command is from the JSON, in this case:
-
-    cat $hello-input > $hello-output && ls $ref_file_2 >> $hello-output && head -20 $ref_file_2 >> $hello-output
-
-And the various `$` field are filled in for local values within the docker container and executed with the CWD being `/datastore/launcher-<uuid>/working`.
-
-### Building
-
-Standard maven build in the launcher directory. Notice I'm unsetting my AWS credentials if I have them set already since the tests expect a credentials failure:
-
-    unset AWS_ACCESS_KEY
-    unset AWS_SECRET_KEY
-    mvn clean install
-    # to skip tests
-    mvn clean install -DskipTests
-
-### Running the Launcher
-
-#### JSON Parameters
-
-If you do not have access to the OICR AWS account you will want to change the output URL to a location you can write to in S3:
-
-```
-collab-cwl-job-pre.json
-```
-
-#### Running
-
-To run the Launcher:
-
-    java -jar <launcher.jar> --config <path_to_launcher.config> --decriptor <path_to_json_descriptor>
-    # for example:
-    java -jar launcher/target/uber-io.github.collaboratory.launcher-1.0.0.jar --config launcher.ini --descriptor collab.json
-    # another example for testing
-    rm -rf datastore && cd launcher && mvn clean install && cd - && java -jar launcher/target/uber-io.github.collaboratory.launcher-1.0.0.jar --config launcher.ini --descriptor collab.json
-
-The above will fail with an `AmazonS3Exception: Access Denied` since the collab.json points to an output location on S3 (`s3://oicr.temp/testing-launcher` specifically).  So you need to include your Amazon keys as env vars to be picked up by the API we're using to do uploads.  The correct command would be (of course fill in your own values here):
-
-    export AWS_ACCESS_KEY=AAAAAAA
-    export AWS_SECRET_KEY=SSSSSSS
-    rm -rf datastore && cd launcher && mvn clean install && cd - && java -jar launcher/target/uber-io.github.collaboratory.launcher-1.0.0.jar --config launcher.ini --descriptor collab.json
-
-If you change the `collab.json` to point to other destinations (like SFTP) you will need to pass in auth params in a similar way, see the [VFS Docs](http://commons.apache.org/proper/commons-vfs/api.html).
-
 ## The CWL-Based Launcher
 
 The CWL Launcher Java program is just a proof of concept.  The code will eventually be folded into the Consonance worker daemon which needs to do the items below in addition to interacting with the consonance queue to pull orders.  This launcher below is a simplification and just focuses on constructing a command and dealing with inputs/outputs as a prototype.
@@ -111,11 +38,29 @@ The difference between this one and the regular Launcher is the nature of the de
 0. hands the updated JSON parameterization document and CWL descriptor to the CWL runner tool, this causes the command to be constructed, docker containers to be pulled and the command to be run correctly
 0. collect and provision output files to their destination referenced in `~/.consonance/launcher.config`
 
+### The Config file
+
+```
+working-directory=./datastore/
+```
+
+This tells the system what the local working directory should be.  Files will be written here.
+
+### Building
+
+Standard maven build in the launcher directory. Notice I'm unsetting my AWS credentials if I have them set already since the tests expect a credentials failure:
+
+    unset AWS_ACCESS_KEY
+    unset AWS_SECRET_KEY
+    mvn clean install
+    # to skip tests
+    mvn clean install -DskipTests
+
 ### Running the CWL-Based Launcher
 
 #### JSON Parameters
 
-If you do not have access to the OICR AWS account you will want to change the output URL to a location you can write to in S3:
+If you do not have access to the OICR AWS account (and, hence, the output location of `s3://oicr.temp/testing-launcher/hello-output.txt`) you will want to change the output URL to a location you can write to in S3, see the following file:
 
 ```
 collab-cwl-job-pre.json
@@ -128,12 +73,16 @@ To run the Launcher:
     export AWS_ACCESS_KEY=AAAAAAA
     export AWS_SECRET_KEY=SSSSSSS
     java -cp <launcher.jar> io.github.collaboratory.LauncherCWL --config <path_to_launcher.config> --decriptor <path_to_json_descriptor>
+
     # for example:
     java -cp launcher/target/uber-io.github.collaboratory.launcher-1.0.0.jar io.github.collaboratory.LauncherCWL --config launcher.ini --descriptor collab.cwl --job collab-cwl-job-pre.json
     # another example for testing
     rm -rf datastore && cd launcher && mvn clean install && cd - && java -cp launcher/target/uber-io.github.collaboratory.launcher-1.0.0.jar io.github.collaboratory.LauncherCWL --config launcher.ini --descriptor collab.cwl --job collab-cwl-job-pre.json
     # if you want to skip the tests/checks on code quality
     # include -DskipTests -Dfindbugs.failOnError=false -Dcheckstyle.failOnViolation=false
+
+If you change the `collab.json` to point to other destinations (like SFTP) you will need to pass in auth params in a similar way, see the [VFS Docs](http://commons.apache.org/proper/commons-vfs/api.html).
+
 
 ## The Descriptor
 
