@@ -59,6 +59,16 @@ Standard maven build in the launcher directory. Notice I'm unsetting my AWS cred
 
 ### Running the Launcher
 
+#### JSON Parameters
+
+If you do not have access to the OICR AWS account you will want to change the output URL to a location you can write to in S3:
+
+```
+collab-cwl-job-pre.json
+```
+
+#### Running
+
 To run the Launcher:
 
     java -jar <launcher.jar> --config <path_to_launcher.config> --decriptor <path_to_json_descriptor>
@@ -92,6 +102,16 @@ The difference between this one and the regular Launcher is the nature of the de
 0. collect and provision output files to their destination referenced in `~/.consonance/launcher.config`
 
 ### Running the CWL-Based Launcher
+
+#### JSON Parameters
+
+If you do not have access to the OICR AWS account you will want to change the output URL to a location you can write to in S3:
+
+```
+collab-cwl-job-pre.json
+```
+
+#### Running
 
 To run the Launcher:
 
