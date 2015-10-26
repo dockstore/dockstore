@@ -14,6 +14,15 @@ Some items TBD as this prototype is integrated into Consonance:
 * how the config files are passed from Consonance vs. a normal input transfer from S3, HTTP/s, SFTP, etc
 * the actual message format pulled from the work queue and how that encapsulates the runtime descriptor, INI files, etc
 
+## Dependencies
+
+You need the following on your system to use the launcher:
+
+* java 1.8
+* maven
+* the cwl command line utils (see below)
+* docker
+
 ## The Launcher
 
 The Launcher Java program is just a proof of concept.  The code will eventually be folded into the Consonance worker daemon which needs to do the items below in addition to interacting with the consonance queue to pull orders.  This launcher below is a simplification and just focuses on constructing a command and dealing with inputs/outputs as a prototype.
