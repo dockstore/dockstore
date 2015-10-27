@@ -158,23 +158,31 @@ public class TokenResource {
             LOG.info("Username: " + username);
         }
 
-        Token token = new Token();
-        token.setTokenSource(TokenType.QUAY_IO.toString());
-        token.setContent(accessToken);
+        Token token = null;
 
         if (user != null) {
-            token.setUserId(user.getId());
-        }
+            token = tokenDAO.findQuayByUserId(user.getId());
 
-        if (username != null) {
-            token.setUsername(username);
-        } else {
-            LOG.info("Quay.io tokenusername is null, did not create token");
-            throw new WebApplicationException("Username not found from resource call " + url);
+            if (token == null) {
+                token = new Token();
+                token.setTokenSource(TokenType.QUAY_IO.toString());
+                token.setContent(accessToken);
+                token.setUserId(user.getId());
+                if (username != null) {
+                    token.setUsername(username);
+                } else {
+                    LOG.info("Quay.io tokenusername is null, did not create token");
+                    throw new WebApplicationException("Username not found from resource call " + url);
+                }
+                long create = tokenDAO.create(token);
+                LOG.info("Quay token created for " + user.getUsername());
+                return tokenDAO.findById(create);
+            } else {
+                LOG.info("Quay token already exists for " + user.getUsername());
+            }
         }
-
-        long create = tokenDAO.create(token);
-        return tokenDAO.findById(create);
+        LOG.info("Could not find user");
+        throw new WebApplicationException(HttpStatus.SC_CONFLICT);
     }
 
     @DELETE
@@ -231,6 +239,7 @@ public class TokenResource {
         }
 
         User user = userDAO.findByUsername(githubLogin);
+        Token token = null;
         if (user == null) {
             user = new User();
             user.setUsername(githubLogin);
@@ -255,15 +264,19 @@ public class TokenResource {
         } else {
             userID = user.getId();
             dockstoreToken = tokenDAO.findDockstoreByUserId(userID);
+            token = tokenDAO.findGithubByUserId(userID);
         }
 
-        // CREATE GITHUB TOKEN
-        Token token = new Token();
-        token.setTokenSource(TokenType.GITHUB_COM.toString());
-        token.setContent(accessToken);
-        token.setUserId(userID);
-        token.setUsername(githubLogin);
-        tokenDAO.create(token);
+        if (token == null) {
+            // CREATE GITHUB TOKEN
+            token = new Token();
+            token.setTokenSource(TokenType.GITHUB_COM.toString());
+            token.setContent(accessToken);
+            token.setUserId(userID);
+            token.setUsername(githubLogin);
+            tokenDAO.create(token);
+            LOG.info("Github token created for " + githubLogin);
+        }
 
         return dockstoreToken;
     }

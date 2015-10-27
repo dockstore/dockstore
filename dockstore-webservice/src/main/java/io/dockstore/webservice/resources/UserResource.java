@@ -83,6 +83,7 @@ public class UserResource {
 
     private final List<String> namespaces = new ArrayList<>();
 
+    @SuppressWarnings("checkstyle:parameternumber")
     public UserResource(ObjectMapper mapper, HttpClient client, TokenDAO tokenDAO, UserDAO userDAO, GroupDAO groupDAO,
             ContainerDAO containerDAO, TagDAO tagDAO, String githubClientID, String githubClientSecret) {
         this.objectMapper = mapper;

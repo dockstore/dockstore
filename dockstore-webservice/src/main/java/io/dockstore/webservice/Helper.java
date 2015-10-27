@@ -82,6 +82,7 @@ public class Helper {
         }
     }
 
+    @SuppressWarnings({ "checkstyle:methodlength", "checkstyle:parameternumber" })
     public static List<Container> refresh(Long userId, HttpClient client, ObjectMapper objectMapper, List<String> namespaces, Logger LOG,
             UserDAO userDAO, ContainerDAO containerDAO, TokenDAO tokenDAO, TagDAO tagDAO) {
         List<Container> currentRepos = containerDAO.findByUserId(userId);

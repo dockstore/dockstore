@@ -215,7 +215,7 @@ elif [ "$1" = "init" ]; then
         echo "Dockstore is ready to use!"
 
     else
-        echo "Please setup an account at http://dockstore.io"
+        echo "Please setup an account at http://www.dockstore.org/"
     fi
 
 elif [ "$1" = "version" -o "$1" = "-v" -o "$1" = "--version" ]; then
