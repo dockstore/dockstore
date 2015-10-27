@@ -16,3 +16,4 @@ hello-world.yml
 /dockstore-webservice/target/
 /dockstore-client/target/
 /swagger-java-client/target/
+dockstore-webservice/nbactions.xml

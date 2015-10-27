@@ -159,7 +159,7 @@ if [ "$1" = "self-install" ]; then
     # for testing, if you have a local release version, just use it
         DOCKSTORE_URL="file:///$HOME/.m2/repository/io/dockstore/dockstore-client/$DOCKSTORE_VERSION/dockstore-client-$DOCKSTORE_VERSION.jar"
     else
-        DOCKSTORE_URL="http://wrench.res.oicr.on.ca/artifactory/dockstore-release/io/dockstore/dockstore-client/$DOCKSTORE_VERSION/dockstore-client-$DOCKSTORE_VERSION.jar"
+       DOCKSTORE_URL="http://seqwaremaven.oicr.on.ca/artifactory/collab-release/io/dockstore/dockstore-client/$DOCKSTORE_VERSION/dockstore-client-$DOCKSTORE_VERSION.jar"
     fi
 
     echo "$DOCKSTORE_URL"
@@ -186,7 +186,7 @@ elif [ "$1" = "init" ]; then
     echo "ask you a few questions, download, and configure the command line tool."
     echo
     echo
-    echo "HAVE YOU SETUP AN ACCOUNT AT http://dockstore.io?"
+    echo "HAVE YOU SETUP AN ACCOUNT AT http://www.dockstore.org/?"
     echo -n "Y/N> "
 
     read HASACCOUNT
@@ -200,6 +200,14 @@ elif [ "$1" = "init" ]; then
         echo "WHAT IS YOUR USERNAME?"
         read USERNAME
         echo "username: $USERNAME" >> $DOCKSTORE_SETTINGS
+
+        echo "WHAT IS YOUR TOKEN?"
+        read TOKEN
+        echo "token: $TOKEN" >> $DOCKSTORE_SETTINGS
+
+        echo "WHAT IS YOUR SERVER URL?"
+        read SERVER_URL
+        echo "server-url: $SERVER_URL" >> $DOCKSTORE_SETTINGS
         
         echo    
         echo "Created Dockstore settings file at $DOCKSTORE_SETTINGS"
