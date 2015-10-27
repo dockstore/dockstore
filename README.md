@@ -4,6 +4,12 @@ This is the prototype web service for the dockstore. The usage of this is to enu
 
 ## Usage
 
+### Building
+
+If you maven build in the root directory this will build not only the web service but the client tool:
+
+    mvn clean install
+
 ### Build Docker Version
 
   docker build -t dockstore:1.0.0 .
