@@ -63,14 +63,14 @@
             <url>http://www.gnu.org/licenses/gpl-3.0.html</url>
         </license>
     </licenses>
-    <!--distributionManagement>
+    <distributionManagement>
         <repository>
             <id>seqwaremaven.oicr.on.ca</id>
             <name>seqwaremaven.oicr.on.ca-releases</name>
-            <url>http://seqwaremaven.oicr.on.ca/artifactory/seqware-release</url>
+            <url>http://seqwaremaven.oicr.on.ca/artifactory/collab-release</url>
             <uniqueVersion>false</uniqueVersion>
         </repository>
-    </distributionManagement-->
+    </distributionManagement>
 
 
     <dependencyManagement>
