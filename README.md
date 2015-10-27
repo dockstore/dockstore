@@ -12,7 +12,7 @@ If you maven build in the root directory this will build not only the web servic
 
 ### Build Docker Version
 
-  docker build -t dockstore:1.0.0 .
+    docker build -t dockstore:1.0.0 .
 
 ### Running Via Docker
 
