@@ -20,6 +20,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 
 /**
+ * This is an object to encapsulate a register request in an entity. Does not need to be stored in the database. Used for the body of
+ * /containers/{containerId}/register
  *
  * @author xliu
  */

@@ -142,6 +142,13 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final GroupDAO groupDAO = new GroupDAO(hibernate.getSessionFactory());
         final TagDAO tagDAO = new TagDAO(hibernate.getSessionFactory());
 
+        LOG.info("This is our custom logger saying that we're about to load authenticators");
+        // setup authentication
+        SimpleAuthenticator authenticator = new SimpleAuthenticator(tokenDAO);
+        CachingAuthenticator<String, Token> cachingAuthenticator = new CachingAuthenticator<>(environment.metrics(), authenticator,
+                configuration.getAuthenticationCachePolicy());
+        environment.jersey().register(AuthFactory.binder(new OAuthFactory<Token>(cachingAuthenticator, "SUPER SECRET STUFF", Token.class)));
+
         final ObjectMapper mapper = environment.getObjectMapper();
 
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
@@ -154,7 +161,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         environment.jersey().register(
                 new TokenResource(mapper, tokenDAO, userDAO, configuration.getGithubClientID(), configuration.getGithubClientSecret(),
-                        httpClient));
+                        httpClient, cachingAuthenticator));
 
         environment.jersey().register(
                 new UserResource(mapper, httpClient, tokenDAO, userDAO, groupDAO, containerDAO, tagDAO, configuration.getGithubClientID(),
@@ -165,13 +172,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // Swagger providers
         environment.jersey().register(ApiListingResource.class);
         environment.jersey().register(SwaggerSerializers.class);
-
-        LOG.info("This is our custom logger saying that we're about to load authenticators");
-        // setup authentication
-        SimpleAuthenticator authenticator = new SimpleAuthenticator(tokenDAO);
-        CachingAuthenticator<String, Token> cachingAuthenticator = new CachingAuthenticator<String, Token>(environment.metrics(),
-                authenticator, configuration.getAuthenticationCachePolicy());
-        environment.jersey().register(AuthFactory.binder(new OAuthFactory<Token>(cachingAuthenticator, "SUPER SECRET STUFF", Token.class)));
 
         // optional CORS support
         // Enable CORS headers

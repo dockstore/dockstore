@@ -31,6 +31,7 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.auth.Auth;
+import io.dropwizard.auth.CachingAuthenticator;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -78,15 +79,17 @@ public class TokenResource {
     private final ObjectMapper objectMapper;
 
     private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
+    private final CachingAuthenticator<String, Token> cachingAuthenticator;
 
     public TokenResource(ObjectMapper mapper, TokenDAO tokenDAO, UserDAO enduserDAO, String githubClientID, String githubClientSecret,
-            HttpClient client) {
+            HttpClient client, CachingAuthenticator<String, Token> cachingAuthenticator) {
         this.objectMapper = mapper;
         this.tokenDAO = tokenDAO;
         this.userDAO = enduserDAO;
         this.githubClientID = githubClientID;
         this.githubClientSecret = githubClientSecret;
         this.client = client;
+        this.cachingAuthenticator = cachingAuthenticator;
     }
 
     private static class QuayUser {
@@ -194,6 +197,9 @@ public class TokenResource {
         User user = userDAO.findById(authToken.getUserId());
         Token token = tokenDAO.findById(tokenId);
         Helper.checkUser(user, token.getUserId());
+
+        // invalidate cache now that we're deleting the token
+        cachingAuthenticator.invalidate(token.getContent());
 
         tokenDAO.delete(token);
 
