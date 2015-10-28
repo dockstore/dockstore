@@ -137,6 +137,7 @@ public class Helper {
 
                         List<Container> containers = repos.getRepositories();
 
+                        // Go through each container for each namespace
                         for (Container c : containers) {
                             String repo = c.getNamespace() + "/" + c.getName();
                             String path = quayToken.getTokenSource() + "/" + repo;

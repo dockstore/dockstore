@@ -21,14 +21,12 @@ import com.esotericsoftware.yamlbeans.YamlReader;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;
-import io.swagger.client.api.ContainerApi;
-import io.swagger.client.api.UserApi;
+import io.swagger.client.api.ContainersApi;
+import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.Collab;
 import io.swagger.client.model.Container;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.User;
-import io.swagger.client.model.UserRequest;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -48,8 +46,8 @@ import javassist.NotFoundException;
 public class Client {
 
     private static ApiClient defaultApiClient;
-    private static ContainerApi containerApi;
-    private static UserApi userApi;
+    private static ContainersApi containersApi;
+    private static UsersApi usersApi;
 
     private static User user;
     private static String apiKey;
@@ -186,7 +184,7 @@ public class Client {
 
     private static void list(List<String> args) {
         try {
-            List<Container> containers = containerApi.allRegisteredContainers();
+            List<Container> containers = containersApi.allRegisteredContainers();
             printRegisteredList(containers);
         } catch (ApiException ex) {
             out("Exception: " + ex);
@@ -196,7 +194,7 @@ public class Client {
     private static void search(List<String> args) {
         String pattern = args.get(0);
         try {
-            List<Container> containers = containerApi.search(pattern);
+            List<Container> containers = containersApi.search(pattern);
 
             out("MATCHING CONTAINERS");
             out("-------------------");
@@ -209,7 +207,7 @@ public class Client {
     private static void publish(List<String> args) {
         if (args.isEmpty()) {
             try {
-                List<Container> containers = containerApi.userContainers(user.getId());
+                List<Container> containers = usersApi.userContainers(user.getId());
 
                 out("YOUR AVAILABLE CONTAINERS");
                 out("-------------------");
@@ -223,7 +221,8 @@ public class Client {
                 publishHelp();
             } else {
                 try {
-                    Container container = containerApi.register(first, user.getId());
+                    Container container = containersApi.getRegisteredContainer(first);
+                    container = containersApi.register(container.getId());
 
                     if (container != null) {
                         out("Successfully published " + first);
@@ -251,13 +250,13 @@ public class Client {
     private static void info(List<String> args) {
         String path = args.get(0);
         try {
-            Container container = containerApi.getRegisteredContainer(path);
+            Container container = containersApi.getRegisteredContainer(path);
             if (container == null) {
                 out("This container is not registered.");
             } else {
                 // out(container.toString());
-                // out(containerApi.getRegisteredContainer(path).getTags().toString());
-                // Container container = containerApi.getRegisteredContainer(path);
+                // out(containersApi.getRegisteredContainer(path).getTags().toString());
+                // Container container = containersApi.getRegisteredContainer(path);
 
                 Date dateUploaded = container.getLastBuild();
 
@@ -312,7 +311,8 @@ public class Client {
         String path = args.get(0);
 
         try {
-            Collab collab = containerApi.collab(path);
+            Container container = containersApi.getRegisteredContainer(path);
+            Collab collab = containersApi.collab(container.getId());
             if (collab.getContent() != null && !collab.getContent().isEmpty()) {
                 out(collab.getContent());
             } else {
@@ -325,9 +325,7 @@ public class Client {
 
     private static void refresh(List<String> args) {
         try {
-            UserRequest userRequest = new UserRequest();
-            userRequest.setId(user.getId());
-            List<Container> containers = containerApi.refresh(userRequest);
+            List<Container> containers = usersApi.refresh(user.getId());
 
             out("YOUR UPDATED CONTAINERS");
             out("-------------------");
@@ -344,7 +342,8 @@ public class Client {
         String userHome = System.getProperty("user.home");
 
         try {
-            InputStreamReader f = new InputStreamReader(new FileInputStream(userHome + File.separator + ".dockstore"+File.separator+"config"), Charset.defaultCharset());
+            InputStreamReader f = new InputStreamReader(new FileInputStream(userHome + File.separator + ".dockstore" + File.separator
+                    + "config"), Charset.defaultCharset());
             YamlReader reader = new YamlReader(f);
             Object object = reader.read();
             Map map = (Map) object;
@@ -355,12 +354,12 @@ public class Client {
             String serverUrl = (String) map.get("server-url");
 
             defaultApiClient = Configuration.getDefaultApiClient();
-            defaultApiClient.addDefaultHeader("Authorization", "Bearer "+token);
+            defaultApiClient.addDefaultHeader("Authorization", "Bearer " + token);
             defaultApiClient.setBasePath(serverUrl);
-            containerApi = new ContainerApi(defaultApiClient);
-            userApi = new UserApi(defaultApiClient);
+            containersApi = new ContainersApi(defaultApiClient);
+            usersApi = new UsersApi(defaultApiClient);
 
-            user = userApi.listUser(username);
+            user = usersApi.listUser(username);
 
             if (user == null) {
                 throw new NotFoundException("User " + username + " not found");

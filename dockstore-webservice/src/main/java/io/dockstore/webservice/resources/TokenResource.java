@@ -180,8 +180,9 @@ public class TokenResource {
             } else {
                 LOG.info("Quay token already exists for " + user.getUsername());
             }
+        } else {
+            LOG.info("Could not find user");
         }
-        LOG.info("Could not find user");
         throw new WebApplicationException(HttpStatus.SC_CONFLICT);
     }
 
