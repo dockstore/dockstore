@@ -14,38 +14,30 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.dockstore.webservice.jdbi;
+package io.dockstore.webservice.api;
 
-import io.dockstore.webservice.core.Group;
-import io.dropwizard.hibernate.AbstractDAO;
-import java.util.List;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.annotations.ApiModel;
 
 /**
+ * This is an object to encapsulate a register request in an entity. Does not need to be stored in the database. Used for the body of
+ * /containers/{containerId}/register
  *
  * @author xliu
  */
-public class GroupDAO extends AbstractDAO<Group> {
-    public GroupDAO(SessionFactory factory) {
-        super(factory);
+@ApiModel(value = "Register request")
+public class RegisterRequest {
+    private boolean register;
+
+    public RegisterRequest() {
     }
 
-    public Group findById(Long id) {
-        return get(id);
+    public RegisterRequest(boolean register) {
+        this.register = register;
     }
 
-    public List<Group> findAll() {
-        return list(namedQuery("io.dockstore.webservice.core.Group.findAll"));
-    }
-
-    public long create(Group group) {
-        return persist(group).getId();
-    }
-
-    public void delete(Group group) {
-        Session session = currentSession();
-        session.delete(group);
-        session.flush();
+    @JsonProperty
+    public boolean getRegister() {
+        return register;
     }
 }

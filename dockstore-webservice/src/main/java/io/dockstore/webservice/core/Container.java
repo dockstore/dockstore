@@ -50,6 +50,7 @@ import javax.persistence.Table;
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findByNameAndNamespaceAndRegistry", query = "SELECT c FROM Container c WHERE c.name = :name AND c.namespace = :namespace AND c.registry = :registry"),
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findByUserId", query = "SELECT c FROM Container c WHERE c.userId = :userId"),
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findRegisteredByUserId", query = "SELECT c FROM Container c WHERE c.userId = :userId AND c.isRegistered = true"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Container.findRegisteredById", query = "SELECT c FROM Container c WHERE c.id = :id AND c.isRegistered = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findAllRegistered", query = "SELECT c FROM Container c WHERE c.isRegistered = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findAll", query = "SELECT c FROM Container c"),
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findByPath", query = "SELECT c FROM Container c WHERE c.path = :path"),

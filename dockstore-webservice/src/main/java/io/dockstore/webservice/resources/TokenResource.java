@@ -31,14 +31,13 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.auth.Auth;
+import io.dropwizard.auth.CachingAuthenticator;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import io.swagger.annotations.Authorization;
-import io.swagger.annotations.AuthorizationScope;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -61,13 +60,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The token resource handles operations with tokens. Tokens are needed to talk with the quay.io and github APIs. In addition, they will be
- * needed to pull down docker containers that are requested by users.
+ * The githubToken resource handles operations with tokens. Tokens are needed to talk with the quay.io and github APIs. In addition, they
+ * will be needed to pull down docker containers that are requested by users.
  *
  * @author dyuen
  */
 @Path("/auth/tokens")
-@Api(value = "/auth/tokens", authorizations = { @Authorization(value = "dockstore_auth", scopes = { @AuthorizationScope(scope = "read:tokens", description = "read tokens") }) }, tags = "tokens")
+@Api(value = "/auth/tokens", tags = "tokens")
 @Produces(MediaType.APPLICATION_JSON)
 public class TokenResource {
     private final TokenDAO tokenDAO;
@@ -80,15 +79,17 @@ public class TokenResource {
     private final ObjectMapper objectMapper;
 
     private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
+    private final CachingAuthenticator<String, Token> cachingAuthenticator;
 
     public TokenResource(ObjectMapper mapper, TokenDAO tokenDAO, UserDAO enduserDAO, String githubClientID, String githubClientSecret,
-            HttpClient client) {
+            HttpClient client, CachingAuthenticator<String, Token> cachingAuthenticator) {
         this.objectMapper = mapper;
         this.tokenDAO = tokenDAO;
         this.userDAO = enduserDAO;
         this.githubClientID = githubClientID;
         this.githubClientSecret = githubClientSecret;
         this.client = client;
+        this.cachingAuthenticator = cachingAuthenticator;
     }
 
     private static class QuayUser {
@@ -160,23 +161,30 @@ public class TokenResource {
             LOG.info("Username: " + username);
         }
 
-        Token token = new Token();
-        token.setTokenSource(TokenType.QUAY_IO.toString());
-        token.setContent(accessToken);
-
         if (user != null) {
-            token.setUserId(user.getId());
-        }
+            List<Token> tokens = tokenDAO.findQuayByUserId(user.getId());
 
-        if (username != null) {
-            token.setUsername(username);
+            if (tokens.isEmpty()) {
+                Token token = new Token();
+                token.setTokenSource(TokenType.QUAY_IO.toString());
+                token.setContent(accessToken);
+                token.setUserId(user.getId());
+                if (username != null) {
+                    token.setUsername(username);
+                } else {
+                    LOG.info("Quay.io tokenusername is null, did not create token");
+                    throw new WebApplicationException("Username not found from resource call " + url);
+                }
+                long create = tokenDAO.create(token);
+                LOG.info("Quay token created for " + user.getUsername());
+                return tokenDAO.findById(create);
+            } else {
+                LOG.info("Quay token already exists for " + user.getUsername());
+            }
         } else {
-            LOG.info("Quay.io tokenusername is null, did not create token");
-            throw new WebApplicationException("Username not found from resource call " + url);
+            LOG.info("Could not find user");
         }
-
-        long create = tokenDAO.create(token);
-        return tokenDAO.findById(create);
+        throw new WebApplicationException(HttpStatus.SC_CONFLICT);
     }
 
     @DELETE
@@ -189,6 +197,9 @@ public class TokenResource {
         User user = userDAO.findById(authToken.getUserId());
         Token token = tokenDAO.findById(tokenId);
         Helper.checkUser(user, token.getUserId());
+
+        // invalidate cache now that we're deleting the token
+        cachingAuthenticator.invalidate(token.getContent());
 
         tokenDAO.delete(token);
 
@@ -222,7 +233,8 @@ public class TokenResource {
         githubClient.setOAuth2Token(accessToken);
         long userID = 0;
         String githubLogin;
-        Token dockstoreToken;
+        Token dockstoreToken = null;
+        Token githubToken = null;
         try {
             UserService uService = new UserService(githubClient);
             org.eclipse.egit.github.core.User githubUser = uService.getUser();
@@ -256,16 +268,46 @@ public class TokenResource {
 
         } else {
             userID = user.getId();
-            dockstoreToken = tokenDAO.findDockstoreByUserId(userID);
+            List<Token> tokens = tokenDAO.findDockstoreByUserId(userID);
+            if (!tokens.isEmpty()) {
+                dockstoreToken = tokens.get(0);
+            }
+
+            tokens = tokenDAO.findGithubByUserId(userID);
+            if (!tokens.isEmpty()) {
+                githubToken = tokens.get(0);
+            }
         }
 
-        // CREATE GITHUB TOKEN
-        Token token = new Token();
-        token.setTokenSource(TokenType.GITHUB_COM.toString());
-        token.setContent(accessToken);
-        token.setUserId(userID);
-        token.setUsername(githubLogin);
-        tokenDAO.create(token);
+        if (dockstoreToken == null) {
+            LOG.info("Could not find user's dockstore token. Making new one...");
+            final Random random = new Random();
+            final int bufferLength = 1024;
+            final byte[] buffer = new byte[bufferLength];
+            random.nextBytes(buffer);
+            String randomString = BaseEncoding.base64Url().omitPadding().encode(buffer);
+            final String dockstoreAccessToken = Hashing.sha256().hashString(githubLogin + randomString, Charsets.UTF_8).toString();
+
+            dockstoreToken = new Token();
+            dockstoreToken.setTokenSource(TokenType.DOCKSTORE.toString());
+            dockstoreToken.setContent(dockstoreAccessToken);
+            dockstoreToken.setUserId(userID);
+            dockstoreToken.setUsername(githubLogin);
+            long dockstoreTokenId = tokenDAO.create(dockstoreToken);
+            dockstoreToken = tokenDAO.findById(dockstoreTokenId);
+        }
+
+        if (githubToken == null) {
+            LOG.info("Could not find user's github token. Making new one...");
+            // CREATE GITHUB TOKEN
+            githubToken = new Token();
+            githubToken.setTokenSource(TokenType.GITHUB_COM.toString());
+            githubToken.setContent(accessToken);
+            githubToken.setUserId(userID);
+            githubToken.setUsername(githubLogin);
+            tokenDAO.create(githubToken);
+            LOG.info("Github token created for " + githubLogin);
+        }
 
         return dockstoreToken;
     }

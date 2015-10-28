@@ -186,7 +186,7 @@ elif [ "$1" = "init" ]; then
     echo "ask you a few questions, download, and configure the command line tool."
     echo
     echo
-    echo "HAVE YOU SETUP AN ACCOUNT AT http://www.dockstore.org/?"
+    echo "Have you setup an account at http://www.dockstore.org/?"
     echo -n "Y/N> "
 
     read HASACCOUNT
@@ -197,15 +197,12 @@ elif [ "$1" = "init" ]; then
         chmod 600 $DOCKSTORE_SETTINGS
 
         echo
-        echo "WHAT IS YOUR USERNAME?"
-        read USERNAME
-        echo "username: $USERNAME" >> $DOCKSTORE_SETTINGS
 
-        echo "WHAT IS YOUR TOKEN?"
+        echo "What is your token?"
         read TOKEN
         echo "token: $TOKEN" >> $DOCKSTORE_SETTINGS
 
-        echo "WHAT IS YOUR SERVER URL?"
+        echo "What is your server-url?"
         read SERVER_URL
         echo "server-url: $SERVER_URL" >> $DOCKSTORE_SETTINGS
         

@@ -16,7 +16,7 @@ import java.io.File;
 import java.util.Map;
 import java.util.HashMap;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-19T13:08:57.358-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-28T13:50:50.783-04:00")
 public class GAGHApi {
   private ApiClient apiClient;
 
@@ -39,14 +39,14 @@ public class GAGHApi {
   
   /**
    * List all registered containers. This would be a minimal resource that would need to be implemented by a GA4GH reference server
-   * 
+   * NO authentication
    * @return List<Container>
    */
   public List<Container> allRegisteredContainers () throws ApiException {
     Object postBody = null;
     
     // create path and map variables
-    String path = "/container/allRegistered".replaceAll("\\{format\\}","json");
+    String path = "/containers/registered".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -79,7 +79,7 @@ public class GAGHApi {
   
   /**
    * Search for matching registered containers. This would be a minimal resource that would need to be implemented by a GA4GH reference server
-   * Search on the name (full path name) and description.
+   * Search on the name (full path name) and description. NO authentication
    * @param pattern 
    * @return List<Container>
    */
@@ -87,7 +87,7 @@ public class GAGHApi {
     Object postBody = null;
     
     // create path and map variables
-    String path = "/container/search".replaceAll("\\{format\\}","json");
+    String path = "/containers/search".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();

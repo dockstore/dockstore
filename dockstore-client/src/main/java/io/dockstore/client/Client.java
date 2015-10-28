@@ -21,14 +21,13 @@ import com.esotericsoftware.yamlbeans.YamlReader;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;
-import io.swagger.client.api.ContainerApi;
-import io.swagger.client.api.UserApi;
-import io.swagger.client.model.Collab;
+import io.swagger.client.api.ContainersApi;
+import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.Container;
+import io.swagger.client.model.FileResponse;
+import io.swagger.client.model.RegisterRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.User;
-import io.swagger.client.model.UserRequest;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -48,11 +47,10 @@ import javassist.NotFoundException;
 public class Client {
 
     private static ApiClient defaultApiClient;
-    private static ContainerApi containerApi;
-    private static UserApi userApi;
+    private static ContainersApi containersApi;
+    private static UsersApi usersApi;
 
     private static User user;
-    private static String apiKey;
 
     private static final String NAME_HEADER = "NAME";
     private static final String DESCRIPTION_HEADER = "DESCRIPTION";
@@ -121,16 +119,16 @@ public class Client {
         int descWidth = maxWidths[1] + PADDING;
         int gitWidth = maxWidths[2] + PADDING;
         String format = "%-" + nameWidth + "s%-" + descWidth + "s%-" + gitWidth + "s%-15s%-14s%-12s";
-        out(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "On Dockstore?", "Collab.cwl", "Automated");
+        out(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "On Dockstore?", "Dockstore.cwl", "Automated");
 
         for (Container container : containers) {
-            String collab = "No";
+            String cwl = "No";
             String automated = "No";
             String description = "";
             String gitUrl = "";
 
             if (container.getHasCollab()) {
-                collab = "Yes";
+                cwl = "Yes";
             }
 
             if (container.getGitUrl() != null && !container.getGitUrl().isEmpty()) {
@@ -142,7 +140,7 @@ public class Client {
                 description = container.getDescription();
             }
 
-            out(format, container.getPath(), description, gitUrl, boolWord(container.getIsRegistered()), collab, automated);
+            out(format, container.getPath(), description, gitUrl, boolWord(container.getIsRegistered()), cwl, automated);
         }
     }
 
@@ -186,7 +184,7 @@ public class Client {
 
     private static void list(List<String> args) {
         try {
-            List<Container> containers = containerApi.allRegisteredContainers();
+            List<Container> containers = containersApi.allRegisteredContainers();
             printRegisteredList(containers);
         } catch (ApiException ex) {
             out("Exception: " + ex);
@@ -196,7 +194,7 @@ public class Client {
     private static void search(List<String> args) {
         String pattern = args.get(0);
         try {
-            List<Container> containers = containerApi.search(pattern);
+            List<Container> containers = containersApi.search(pattern);
 
             out("MATCHING CONTAINERS");
             out("-------------------");
@@ -209,7 +207,7 @@ public class Client {
     private static void publish(List<String> args) {
         if (args.isEmpty()) {
             try {
-                List<Container> containers = containerApi.userContainers(user.getId());
+                List<Container> containers = usersApi.userContainers(user.getId());
 
                 out("YOUR AVAILABLE CONTAINERS");
                 out("-------------------");
@@ -223,7 +221,10 @@ public class Client {
                 publishHelp();
             } else {
                 try {
-                    Container container = containerApi.register(first, user.getId());
+                    Container container = containersApi.getContainerByPath(first);
+                    RegisterRequest req = new RegisterRequest();
+                    req.setRegister(true);
+                    container = containersApi.register(container.getId(), req);
 
                     if (container != null) {
                         out("Successfully published " + first);
@@ -251,13 +252,13 @@ public class Client {
     private static void info(List<String> args) {
         String path = args.get(0);
         try {
-            Container container = containerApi.getRegisteredContainer(path);
+            Container container = containersApi.getContainerByPath(path);
             if (container == null) {
                 out("This container is not registered.");
             } else {
                 // out(container.toString());
-                // out(containerApi.getRegisteredContainer(path).getTags().toString());
-                // Container container = containerApi.getRegisteredContainer(path);
+                // out(containersApi.getRegisteredContainer(path).getTags().toString());
+                // Container container = containersApi.getRegisteredContainer(path);
 
                 Date dateUploaded = container.getLastBuild();
 
@@ -312,11 +313,12 @@ public class Client {
         String path = args.get(0);
 
         try {
-            Collab collab = containerApi.collab(path);
+            Container container = containersApi.getContainerByPath(path);
+            FileResponse collab = containersApi.cwl(container.getId());
             if (collab.getContent() != null && !collab.getContent().isEmpty()) {
                 out(collab.getContent());
             } else {
-                out("No collab file found.");
+                out("No cwl file found.");
             }
         } catch (ApiException ex) {
             out("Exception: " + ex);
@@ -325,9 +327,7 @@ public class Client {
 
     private static void refresh(List<String> args) {
         try {
-            UserRequest userRequest = new UserRequest();
-            userRequest.setId(user.getId());
-            List<Container> containers = containerApi.refresh(userRequest);
+            List<Container> containers = usersApi.refresh(user.getId());
 
             out("YOUR UPDATED CONTAINERS");
             out("-------------------");
@@ -344,26 +344,26 @@ public class Client {
         String userHome = System.getProperty("user.home");
 
         try {
-            InputStreamReader f = new InputStreamReader(new FileInputStream(userHome + File.separator + ".dockstore"+File.separator+"config"), Charset.defaultCharset());
+            InputStreamReader f = new InputStreamReader(new FileInputStream(userHome + File.separator + ".dockstore" + File.separator
+                    + "config"), Charset.defaultCharset());
             YamlReader reader = new YamlReader(f);
             Object object = reader.read();
             Map map = (Map) object;
 
             // pull out the variables from the config
-            String username = (String) map.get("username");
             String token = (String) map.get("token");
             String serverUrl = (String) map.get("server-url");
 
             defaultApiClient = Configuration.getDefaultApiClient();
-            defaultApiClient.addDefaultHeader("Authorization", "Bearer "+token);
+            defaultApiClient.addDefaultHeader("Authorization", "Bearer " + token);
             defaultApiClient.setBasePath(serverUrl);
-            containerApi = new ContainerApi(defaultApiClient);
-            userApi = new UserApi(defaultApiClient);
+            containersApi = new ContainersApi(defaultApiClient);
+            usersApi = new UsersApi(defaultApiClient);
 
-            user = userApi.listUser(username);
+            user = usersApi.getUser();
 
             if (user == null) {
-                throw new NotFoundException("User " + username + " not found");
+                throw new NotFoundException("User not found");
             }
 
             if (isHelp(args, true)) {
