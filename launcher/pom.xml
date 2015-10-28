@@ -10,7 +10,7 @@
 	    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <cobertura.version>2.1.1</cobertura.version>
-        <aws.version>1.10.27</aws.version>
+        <aws.version>1.10.29</aws.version>
         <spring.version>4.1.7.RELEASE</spring.version>
         <slf4j.version>1.7.12</slf4j.version>
         <github.url>scm:git:git@github.com:CancerCollaboratory/dockstore-descriptor.git</github.url>
@@ -32,14 +32,6 @@
     </distributionManagement>
 
     <repositories>
-        <repository>
-            <id>vfs-s3.repository</id>
-            <name>vfs-s3 project repository</name>
-            <url>http://dl.bintray.com/content/abashev/vfs-s3</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
         <repository>
           <id>Sonatype-public</id>
           <name>SnakeYAML repository</name>
@@ -202,21 +194,15 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-vfs2</artifactId>
-            <version>2.1.1660580.2</version>
-        </dependency>
-        <dependency>
-            <groupId>com.intridea.io</groupId>
-            <artifactId>vfs-s3</artifactId>
-            <version>2.3.3</version>
+            <version>2.0</version>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.freemarker</groupId>
-            <artifactId>freemarker</artifactId>
-            <version>2.3.23</version>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-s3</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-httpclient</groupId>
@@ -251,10 +237,12 @@
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
 		</dependency>
+        <!--
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>jcl-over-slf4j</artifactId>
         </dependency>
+        -->
         <dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
@@ -398,7 +386,7 @@
                         <configuration>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>io.github.collaboratory.Launcher</mainClass>
+                                    <mainClass>io.github.collaboratory.LauncherCWL</mainClass>
                                 </transformer>
                             </transformers>
                             <filters>
@@ -462,7 +450,6 @@
                             <ignoreNonCompile>true</ignoreNonCompile>
                             <usedDependencies>
                                 <usedDependency>commons-httpclient:commons-httpclient</usedDependency>
-                                <usedDependency>com.intridea.io:vfs-s3</usedDependency>
                                 <usedDependency>org.icgc.dcc:dcc-storage-client</usedDependency>
                                 <usedDependency>ch.qos.logback:logback-classic</usedDependency>
                                 <usedDependency>commons-logging:commons-logging</usedDependency>

@@ -83,6 +83,14 @@ To run the Launcher:
 
 If you change the `collab.json` to point to other destinations (like SFTP) you will need to pass in auth params in a similar way, see the [VFS Docs](http://commons.apache.org/proper/commons-vfs/api.html).
 
+##### Upload to Alternative S3 Endpoints
+
+Add the following entry to your config file (~/.consonance/config if part of Consonance, launcher.ini in this readme) 
+
+    [s3]
+    endpoint = https://www.cancercollaboratory.org:9080
+
+
 
 ## The Descriptor
 
