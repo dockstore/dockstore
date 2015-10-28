@@ -1,10 +1,5 @@
 package io.github.collaboratory;
 
-import org.icgc.dcc.storage.client.ClientMain;
-
-import static org.icgc.dcc.storage.client.util.SingletonBeansInitializer.singletonBeans;
-
-import com.beust.jcommander.JCommander;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.io.Files;
@@ -14,6 +9,7 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.exec.DefaultExecuteResultHandler;
@@ -32,7 +28,7 @@ import org.apache.commons.vfs2.VFS;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.builder.SpringApplicationBuilder;
+
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.composer.ComposerException;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -61,6 +57,8 @@ public class LauncherCWL {
 
     private static final Logger LOG = LoggerFactory.getLogger(LauncherCWL.class);
     public static final String WORKING_DIRECTORY = "working-directory";
+    public static final String DCC_CLIENT_CONFIG = "dcc_storage";
+    public static final String DCC_CLIENT_KEY = "client";
     private final String configFilePath;
     private final String imageDescriptorPath;
     private final String runtimeDescriptorPath;
@@ -149,25 +147,6 @@ public class LauncherCWL {
 
         // push output files
         pushOutputFiles(outputMap, outputObj);
-    }
-
-	private ClientMain initStorageClient(String[] args) {	
-		try {
-		    // Setup
-		    JCommander cli = new JCommander();
-		
-		    // Run
-		    new SpringApplicationBuilder(ClientMain.class)
-		        .showBanner(false) // Not appropriate for tool
-		        .initializers(singletonBeans(cli)) // Add cli to context
-		        .addCommandLineProperties(false) // Only use formal parameters defined in cli
-		        .run(args);
-		} catch (Throwable t) {
-		    System.out.println("\nUnknown error starting application. Please see log for details");
-		    LOG.error("Exception running: ", t);
-		    LOG.info("Exiting...");
-		}
-    	return null;
     }
     
     private Map<String, FileInfo> prepUploads(Map<String, Object> cwl, Map<String, Map<String, Object>> inputsOutputs) {
@@ -293,7 +272,7 @@ public class LauncherCWL {
     }
 
     private Map<String, Object> runCWLCommand(String cwlFile, String jsonSettings, String workingDir) {
-        String[] s = new String[]{"/usr/local/bin/cwltool","--outdir", workingDir, cwlFile, jsonSettings};
+        String[] s = new String[]{"cwltool","--outdir", workingDir, cwlFile, jsonSettings};
         final ImmutablePair<String, String> execute = this.executeCommand(Joiner.on(" ").join(Arrays.asList(s)));
         Map<String, Object> obj = (Map<String, Object>)yaml.load(execute.getLeft());
         return obj;
@@ -375,6 +354,23 @@ public class LauncherCWL {
          }
     }
     
+    private String getStorageClient() {
+    	Configuration configSection = config.getSection(DCC_CLIENT_CONFIG);
+    	String result = configSection.getString(DCC_CLIENT_KEY, "/icgc/dcc-storage/bin/dcc-storage-client");
+    	return result;
+    }
+    
+    private void downloadFromDccStorage(String objectId, String downloadDir) {  	
+    	// default layout saves to original_file_name/object_id
+    	// file name is the directory and object id is actual file name
+    	String client = getStorageClient();
+    	StringBuilder bob = new StringBuilder(client).append(" download");
+    	bob.append(" --object-id ").append(objectId);
+    	bob.append(" --output-dir ").append(downloadDir);
+    	bob.append(" --output-layout id");
+    	executeCommand(bob.toString());
+    }
+    
     private Map<String, FileInfo> pullFiles(Map<String, Object> cwl, Map<String, Map<String, Object>> inputsOutputs) {
         Map<String, FileInfo> fileMap = new HashMap<>();
 
@@ -412,14 +408,7 @@ public class LauncherCWL {
                     PathInfo pathInfo = new PathInfo(path);
                     if (pathInfo.isObjectIdType()) {
                     	String objectId = pathInfo.getObjectId();
-                    	
-                    	// default layout saves to original_file_name/object_id
-                    	// file name is the directory and object id is actual file name
-                    	StringBuilder bob = new StringBuilder("/icgc/dcc-storage/bin/dcc-storage-client download");
-                    	bob.append(" --object-id ").append(objectId);
-                    	bob.append(" --output-dir ").append(downloadDirectory);
-                    	bob.append(" --output-layout id");
-                    	executeCommand(bob.toString());
+                    	downloadFromDccStorage(objectId, downloadDirectory);
                     	
                     	// downloaded file 
                     	String downloadPath = downloadDirFileObj.getAbsolutePath() + "/" + objectId;
@@ -466,7 +455,7 @@ public class LauncherCWL {
     private Map<String, Object> parseCWL(String cwlFile, boolean validate) {
         try {
             // update seems to just output the JSON version without checking file links
-            String[] s = new String[]{"/usr/local/bin/cwltool", validate ? "--print-pre" : "--update", cwlFile };
+            String[] s = new String[]{"cwltool", validate ? "--print-pre" : "--update", cwlFile };
             final ImmutablePair<String, String> execute = this.executeCommand(Joiner.on(" ").join(Arrays.asList(s)));
             Map<String, Object> obj = (Map<String, Object>)yaml.load(execute.getLeft());
             return obj;
