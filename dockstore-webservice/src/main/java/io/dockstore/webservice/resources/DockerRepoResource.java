@@ -47,6 +47,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -280,9 +282,10 @@ public class DockerRepoResource {
                                     try {
                                         List<RepositoryContents> contents = null;
                                         try {
-                                            cService.getContents(repository, "Dockstore.cwl");
+                                            contents = cService.getContents(repository, "Dockstore.cwl");
                                         } catch (Exception e) {
-                                            cService.getContents(repository, "dockstore.cwl");
+                                            contents = cService.getContents(repository, "dockstore.cwl");
+                                            LOG.error("Repo: " + repository.getName() + " has no Dockstore.cwl, trying dockstore.cwl");
                                         }
                                         if (!(contents == null || contents.isEmpty())) {
                                             c.setHasCollab(true);
@@ -302,10 +305,12 @@ public class DockerRepoResource {
                                             c.setDescription(description);
                                             c.setAuthor(author);
 
-                                            LOG.info("Repo: " + repository.getName() + " has Dockstore.cwl");
+                                            LOG.error("Repo: " + repository.getName() + " has Dockstore.cwl");
+                                        } else {
+                                            LOG.error("Repo: " + repository.getName() + " has no Dockstore.cwl nor dockstore.cwl!!!");
                                         }
                                     } catch (IOException ex) {
-                                        LOG.info("Repo: " + repository.getName() + " has no Dockstore.cwl");
+                                        LOG.error("Repo: " + repository.getName() + " has no Dockstore.cwl");
                                     }
                                 }
                             }
@@ -566,6 +571,55 @@ public class DockerRepoResource {
         return (List) tags;
     }
 
+    // TODO: this method is very repetative with the method below, need to refactor
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/dockerfile")
+    @ApiOperation(value = "Get the corresponding Dockerfile on Github", notes = "Enter full path of container (add quay.io if using quay.io)", response = Collab.class)
+    public Collab dockerfile(@QueryParam("repository") String repository) {
+
+        // info about this repository path
+        Container container = containerDAO.findByPath(repository);
+
+        Collab collab = new Collab();
+
+        // TODO: this only works with public repos, we will need an endpoint for public and another for auth to handle private repos in the future
+        // search for the Dockstore.cwl
+        GitHubClient githubClient = new GitHubClient();
+        RepositoryService service = new RepositoryService(githubClient);
+        try {
+            // git@github.com:briandoconnor/dockstore-tool-bamstats.git
+
+            Pattern p = Pattern.compile("git\\@github.com:(\\S+)/(\\S+)\\.git");
+            Matcher m = p.matcher(container.getGitUrl());
+            m.find();
+
+            Repository repo = service.getRepository(m.group(1), m.group(2));
+
+            ContentsService cService = new ContentsService(githubClient);
+            List<RepositoryContents> contents = null;
+            try {
+                contents = cService.getContents(repo, "Dockerfile");
+            } catch (Exception e) {
+                contents = cService.getContents(repo, "dockerfile");
+            }
+            if (!(contents == null || contents.isEmpty())) {
+                String encoded = contents.get(0).getContent().replace("\n", "");
+                byte[] decode = Base64.getDecoder().decode(encoded);
+                String content = new String(decode, StandardCharsets.UTF_8);
+                // builder.append(content);
+                collab.setContent(content);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            LOG.error(e.getMessage());
+        }
+
+        return collab;
+    }
+
     @GET
     @Timed
     @UnitOfWork
@@ -583,11 +637,17 @@ public class DockerRepoResource {
         GitHubClient githubClient = new GitHubClient();
         RepositoryService service = new RepositoryService(githubClient);
         try {
-            Repository repo = service.getRepository(container.getAuthor(), container.getName());
+            // git@github.com:briandoconnor/dockstore-tool-bamstats.git
+
+            Pattern p = Pattern.compile("git\\@github.com:(\\S+)/(\\S+)\\.git");
+            Matcher m = p.matcher(container.getGitUrl());
+            m.find();
+            
+            Repository repo = service.getRepository(m.group(1), m.group(2));
             ContentsService cService = new ContentsService(githubClient);
             List<RepositoryContents> contents = null;
             try {
-                cService.getContents(repo, "Dockstore.cwl");
+                contents = cService.getContents(repo, "Dockstore.cwl");
             } catch (Exception e) {
                 contents = cService.getContents(repo, "dockstore.cwl");
             }

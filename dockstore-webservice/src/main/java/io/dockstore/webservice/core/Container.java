@@ -78,7 +78,7 @@ public class Container {
     @ApiModelProperty("This is a generated full docker path including registry and namespace")
     private String path;
     @Column
-    @ApiModelProperty("This is the name of the author stated in the collab.cwl")
+    @ApiModelProperty("This is the name of the author stated in the Dockstore.cwl")
     private String author;
     @Column(columnDefinition = "TEXT")
     @ApiModelProperty("This is a human-readable description of this container and what it is trying to accomplish, required GA4GH")
