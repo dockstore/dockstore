@@ -1,7 +1,17 @@
 package io.github.collaboratory;
 
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.auth.SignerFactory;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.S3ClientOptions;
+import com.amazonaws.services.s3.internal.S3Signer;
+import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.S3Object;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
+import com.google.common.collect.Lists;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -50,6 +60,11 @@ import java.util.UUID;
  */
 public class LauncherCWL {
 
+    static {
+        SignerFactory.registerSigner("S3Signer", S3Signer.class);
+    }
+
+    public static final String S3_ENDPOINT = "s3.endpoint";
     private static final Log LOG = LogFactory.getLog(LauncherCWL.class);
     public static final String WORKING_DIRECTORY = "working-directory";
     private final String configFilePath;
@@ -60,6 +75,7 @@ public class LauncherCWL {
     private final Yaml yaml = new Yaml(new SafeConstructor());
     private final Optional<OutputStream> stdoutStream;
     private final Optional<OutputStream> stderrStream;
+
 
     /**
      * Constructor for shell-based launch
@@ -289,18 +305,32 @@ public class LauncherCWL {
             LOG.info("NAME: " + file.getLocalPath() + " URL: " + file.getUrl() + " FILENAME: " + fileName + " CWL OUTPUT PATH: "
                     + cwlOutputPath);
 
-            try {
-                FileSystemManager fsManager;
-                // trigger a copy from the URL to a local file path that's a UUID to avoid collision
-                fsManager = VFS.getManager();
-                FileObject dest = fsManager.resolveFile(file.getUrl());
-                FileObject src = fsManager.resolveFile(new File(cwlOutputPath).getAbsolutePath());
-                dest.copyFrom(src, Selectors.SELECT_SELF);
-            } catch (FileSystemException e) {
-                throw new RuntimeException("Could not provision output files", e);
+            if (file.getUrl().startsWith("s3://")) {
+                AmazonS3 s3Client = new AmazonS3Client(new ClientConfiguration().withSignerOverride("S3Signer"));
+                if (config.containsKey(LauncherCWL.S3_ENDPOINT)){
+                    final String endpoint = config.getString(LauncherCWL.S3_ENDPOINT);
+                    LOG.info("found custom S3 endpoint, setting to " + endpoint);
+                    s3Client.setEndpoint(endpoint);
+                    s3Client.setS3ClientOptions(new S3ClientOptions().withPathStyleAccess(true));
+                }
+                String trimmedPath = file.getUrl().replace("s3://","");
+                List<String> splitPathList  = Lists.newArrayList(trimmedPath.split("/"));
+                String bucketName = splitPathList.remove(0);
+
+                s3Client.putObject(new PutObjectRequest(bucketName, Joiner.on("/").join(splitPathList), new File(cwlOutputPath)));
+            } else {
+
+                try {
+                    FileSystemManager fsManager;
+                    // trigger a copy from the URL to a local file path that's a UUID to avoid collision
+                    fsManager = VFS.getManager();
+                    FileObject dest = fsManager.resolveFile(file.getUrl());
+                    FileObject src = fsManager.resolveFile(new File(cwlOutputPath).getAbsolutePath());
+                    dest.copyFrom(src, Selectors.SELECT_SELF);
+                } catch (FileSystemException e) {
+                    throw new RuntimeException("Could not provision output files", e);
+                }
             }
-
-
         }
 
     }
@@ -393,29 +423,48 @@ public class LauncherCWL {
                     File newDirectoryFile = new File(newDirectory);
                     String uuidPath = newDirectoryFile.getAbsolutePath() + "/" + filePathObj.getName();
 
-                    // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
-                    // https://commons.apache.org/proper/commons-vfs/filesystems.html
-                    FileSystemManager fsManager;
-                    try {
+                    if (path.startsWith("s3://")) {
+                        AmazonS3 s3Client = new AmazonS3Client(new ClientConfiguration().withSignerOverride("S3Signer"));
+                        if (config.containsKey(LauncherCWL.S3_ENDPOINT)){
+                            final String endpoint = config.getString(LauncherCWL.S3_ENDPOINT);
+                            LOG.info("found custom S3 endpoint, setting to " + endpoint);
+                            s3Client.setEndpoint(endpoint);
+                            s3Client.setS3ClientOptions(new S3ClientOptions().withPathStyleAccess(true));
+                        }
+                        String trimmedPath = path.replace("s3://","");
+                        List<String> splitPathList  = Lists.newArrayList(trimmedPath.split("/"));
+                        String bucketName = splitPathList.remove(0);
 
-                        // trigger a copy from the URL to a local file path that's a UUID to avoid collision
-                        fsManager = VFS.getManager();
-                        FileObject src = fsManager.resolveFile(path);
-                        FileObject dest = fsManager.resolveFile(new File(uuidPath).getAbsolutePath());
-                        dest.copyFrom(src, Selectors.SELECT_SELF);
+                        S3Object object = s3Client.getObject(
+                                new GetObjectRequest(bucketName, Joiner.on("/").join(splitPathList)));
+                        try {
+                            FileUtils.copyInputStreamToFile(object.getObjectContent(), new File(uuidPath));
+                        } catch (IOException e) {
+                            throw new RuntimeException("Could not provision input files from S3", e);
+                        }
+                    } else {
+                        // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
+                        // https://commons.apache.org/proper/commons-vfs/filesystems.html
+                        FileSystemManager fsManager;
+                        try {
 
-                        // now add this info to a hash so I can later reconstruct a docker -v command
-                        FileInfo info = new FileInfo();
-                        info.setLocalPath(uuidPath);
-                        info.setDockerPath(cwlInputFileID);
-                        info.setUrl(path);
-
-                        fileMap.put(cwlInputFileID, info);
-
-                    } catch (FileSystemException e) {
-                        LOG.error(e.getMessage());
-                        throw new RuntimeException("Could not provision input files", e);
+                            // trigger a copy from the URL to a local file path that's a UUID to avoid collision
+                            fsManager = VFS.getManager();
+                            FileObject src = fsManager.resolveFile(path);
+                            FileObject dest = fsManager.resolveFile(new File(uuidPath).getAbsolutePath());
+                            dest.copyFrom(src, Selectors.SELECT_SELF);
+                        } catch (FileSystemException e) {
+                            LOG.error(e.getMessage());
+                            throw new RuntimeException("Could not provision input files", e);
+                        }
                     }
+                    // now add this info to a hash so I can later reconstruct a docker -v command
+                    FileInfo info = new FileInfo();
+                    info.setLocalPath(uuidPath);
+                    info.setDockerPath(cwlInputFileID);
+                    info.setUrl(path);
+
+                    fileMap.put(cwlInputFileID, info);
 
                     LOG.info("DOWNLOADED FILE: LOCAL: " + cwlInputFileID + " URL: " + path);
 

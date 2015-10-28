@@ -31,15 +31,6 @@
 
     <repositories>
         <repository>
-            <id>vfs-s3.repository</id>
-            <name>vfs-s3 project repository</name>
-            <url>http://dl.bintray.com/content/abashev/vfs-s3</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-
-        <repository>
           <id>Sonatype-public</id>
           <name>SnakeYAML repository</name>
           <url>http://oss.sonatype.org/content/groups/public/</url>
@@ -95,12 +86,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-vfs2</artifactId>
-            <version>2.1.1660580.2</version>
-        </dependency>
-        <dependency>
-            <groupId>com.intridea.io</groupId>
-            <artifactId>vfs-s3</artifactId>
-            <version>2.3.3</version>
+            <version>2.0</version>
         </dependency>
         <dependency>
             <groupId>commons-logging</groupId>
@@ -110,7 +96,12 @@
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-core</artifactId>
-            <version>1.9.23</version>
+            <version>1.10.29</version>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-s3</artifactId>
+            <version>1.10.29</version>
         </dependency>
         <dependency>
             <groupId>org.freemarker</groupId>
@@ -282,7 +273,7 @@
                         <configuration>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>io.github.collaboratory.Launcher</mainClass>
+                                    <mainClass>io.github.collaboratory.LauncherCWL</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>
@@ -335,7 +326,6 @@
                             <ignoreNonCompile>true</ignoreNonCompile>
                             <usedDependencies>
                                 <usedDependency>commons-httpclient:commons-httpclient</usedDependency>
-                                <usedDependency>com.intridea.io:vfs-s3</usedDependency>
                             </usedDependencies>
                         </configuration>
                     </execution>
