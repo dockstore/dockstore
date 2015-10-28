@@ -11,7 +11,6 @@
 	    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <cobertura.version>2.1.1</cobertura.version>
         <aws.version>1.10.29</aws.version>
-        <spring.version>4.1.7.RELEASE</spring.version>
         <slf4j.version>1.7.12</slf4j.version>
         <github.url>scm:git:git@github.com:CancerCollaboratory/dockstore-descriptor.git</github.url>
     </properties>
@@ -87,36 +86,6 @@
                 <version>${aws.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-beans</artifactId>
-                <version>${spring.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-web</artifactId>
-                <version>${spring.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-aop</artifactId>
-                <version>${spring.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-context</artifactId>
-                <version>${spring.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-core</artifactId>
-                <version>${spring.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-expression</artifactId>
-                <version>${spring.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>jul-to-slf4j</artifactId>
                 <version>${slf4j.version}</version>
@@ -131,46 +100,10 @@
                 <artifactId>slf4j-api</artifactId>
                 <version>${slf4j.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.tukaani</groupId>
-                <artifactId>xz</artifactId>
-                <version>1.5</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 
     <dependencies>
-    	<dependency>
-	        <groupId>org.icgc.dcc</groupId>
-			<artifactId>dcc-storage-client</artifactId>
-			<version>0.0.39-SNAPSHOT</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.yaml</groupId>
-                    <artifactId>snakeyaml</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>joda-time</groupId>
-                    <artifactId>joda-time</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-databind</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>ch.qos.logback</groupId>
-                    <artifactId>logback-classic</artifactId>
-                </exclusion>
-            </exclusions>
-	    </dependency>
 		<dependency>
 			<groupId>commons-cli</groupId>
 			<artifactId>commons-cli</artifactId>
@@ -237,22 +170,6 @@
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
 		</dependency>
-        <!--
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>jcl-over-slf4j</artifactId>
-        </dependency>
-        -->
-        <dependency>
-			<groupId>ch.qos.logback</groupId>
-			<artifactId>logback-classic</artifactId>
-			<version>1.1.3</version>
-		</dependency>
-        <dependency>
-            <groupId>commons-logging</groupId>
-            <artifactId>commons-logging</artifactId>
-            <version>1.2</version>
-        </dependency>
     </dependencies>
 
     <build>
@@ -424,7 +341,6 @@
                                     <failWhenParentIsSnapshot>false</failWhenParentIsSnapshot>
                                     <excludes>
                                         <exclude>io.github.collaboratory.launcher:*</exclude>
-                                        <exclude>org.icgc.dcc:*</exclude>
                                     </excludes>
                               	</requireReleaseDeps>
                                 <requireUpperBoundDeps />
@@ -450,9 +366,6 @@
                             <ignoreNonCompile>true</ignoreNonCompile>
                             <usedDependencies>
                                 <usedDependency>commons-httpclient:commons-httpclient</usedDependency>
-                                <usedDependency>org.icgc.dcc:dcc-storage-client</usedDependency>
-                                <usedDependency>ch.qos.logback:logback-classic</usedDependency>
-                                <usedDependency>commons-logging:commons-logging</usedDependency>
                             </usedDependencies>
                         </configuration>
                     </execution>

@@ -18,7 +18,6 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.exec.DefaultExecuteResultHandler;
@@ -71,8 +70,7 @@ public class LauncherCWL {
 
     public static final String S3_ENDPOINT = "s3.endpoint";
     public static final String WORKING_DIRECTORY = "working-directory";
-    public static final String DCC_CLIENT_CONFIG = "dcc_storage";
-    public static final String DCC_CLIENT_KEY = "client";
+    public static final String DCC_CLIENT_KEY = "dcc_storage.client";
     private final String configFilePath;
     private final String imageDescriptorPath;
     private final String runtimeDescriptorPath;
@@ -386,9 +384,7 @@ public class LauncherCWL {
     }
     
     private String getStorageClient() {
-    	Configuration configSection = config.getSection(DCC_CLIENT_CONFIG);
-    	String result = configSection.getString(DCC_CLIENT_KEY, "/icgc/dcc-storage/bin/dcc-storage-client");
-    	return result;
+    	return config.getString(DCC_CLIENT_KEY, "/icgc/dcc-storage/bin/dcc-storage-client");
     }
     
     private void downloadFromDccStorage(String objectId, String downloadDir) {  	
