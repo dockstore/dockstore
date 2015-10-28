@@ -70,7 +70,7 @@ public class Helper {
         }
     }
 
-    public static class Collab {
+    public static class FileResponse {
         private String content;
 
         public void setContent(String content) {

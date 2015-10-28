@@ -359,10 +359,10 @@ public class UserResource {
         return repositories;
     }
 
-    @PUT
+    @GET
     @Timed
     @UnitOfWork
-    @Path("/{userId}/containers")
+    @Path("/{userId}/containers/refresh")
     @ApiOperation(value = "Refresh repos owned by the logged-in user", notes = "Updates some metadata", response = Container.class, responseContainer = "List")
     @SuppressWarnings("checkstyle:methodlength")
     public List<Container> refresh(@ApiParam(hidden = true) @Auth Token authToken,

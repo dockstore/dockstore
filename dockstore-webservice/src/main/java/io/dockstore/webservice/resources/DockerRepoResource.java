@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
 import io.dockstore.webservice.Helper;
+import io.dockstore.webservice.api.RegisterRequest;
 import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
@@ -42,6 +43,8 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -57,9 +60,7 @@ import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.RepositoryContents;
 import org.eclipse.egit.github.core.client.GitHubClient;
 import org.eclipse.egit.github.core.service.ContentsService;
-import org.eclipse.egit.github.core.service.OrganizationService;
 import org.eclipse.egit.github.core.service.RepositoryService;
-import org.eclipse.egit.github.core.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,19 +99,20 @@ public class DockerRepoResource {
 
         this.containerDAO = containerDAO;
 
+        // TODO: these need to be removed, Quay.io owes us an API fix to allow us to remove these
         // namespaces.add("victoroicr");
         // namespaces.add("xliuoicr");
         // namespaces.add("oicr_vchung");
         // namespaces.add("oicr_vchung_org");
         // namespaces.add("denis-yuen");
-        namespaces.add("seqware");
+        // namespaces.add("seqware");
         // namespaces.add("boconnor");
         // namespaces.add("briandoconnor");
-        namespaces.add("collaboratory");
-        namespaces.add("pancancer");
+        // namespaces.add("collaboratory");
+        // namespaces.add("pancancer");
     }
 
-    @PUT
+    @GET
     @Path("/refresh")
     @Timed
     @UnitOfWork
@@ -177,38 +179,25 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/register")
-    @ApiOperation(value = "Register a container", notes = "Register a container (public or private). Assumes that user is using quay.io and github. Include quay.io in path if using quay.io", response = Container.class)
+    @ApiOperation(value = "Register or unregister a container", notes = "Register a container (public or private). Assumes that user is using quay.io and github.", response = Container.class)
     public Container register(@ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "Container id to delete", required = true) @PathParam("containerId") Long containerId) {
+            @ApiParam(value = "Container id to delete", required = true) @PathParam("containerId") Long containerId,
+            @ApiParam(value = "RegisterRequest to refresh the list of repos for a user", required = true) RegisterRequest request) {
         Container c = containerDAO.findById(containerId);
         Helper.checkContainer(c);
 
         User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c.getUserId());
-
-        if (c.getHasCollab() && !c.getGitUrl().isEmpty()) {
-            c.setIsRegistered(true);
-            long id = containerDAO.create(c);
-            c = containerDAO.findById(id);
-            return c;
+        if (request.getRegister()) {
+            if (c.getHasCollab() && !c.getGitUrl().isEmpty()) {
+                c.setIsRegistered(true);
+            } else {
+                throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+            }
         } else {
-            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+            c.setIsRegistered(false);
         }
-    }
 
-    @POST
-    @UnitOfWork
-    @Path("/{containerId}/unregister")
-    @ApiOperation(value = "Unregister a container", response = Container.class)
-    public Container unregister(@ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "Container id to delete", required = true) @PathParam("containerId") Long containerId) {
-        Container c = containerDAO.findById(containerId);
-        Helper.checkContainer(c);
-
-        User user = userDAO.findById(authToken.getUserId());
-        Helper.checkUser(user, c.getUserId());
-
-        c.setIsRegistered(false);
         long id = containerDAO.create(c);
         c = containerDAO.findById(id);
         return c;
@@ -335,109 +324,194 @@ public class DockerRepoResource {
         return (List) tags;
     }
 
+    // TODO: this method is very repetative with the method below, need to refactor
     @GET
     @Timed
     @UnitOfWork
-    @Path("/{containerId}/collab")
-    @ApiOperation(value = "Get the corresponding collab.cwl file on Github", notes = "Enter full path of container (add quay.io if using quay.io)", response = Helper.Collab.class)
-    public Helper.Collab collab(@ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "Container id to delete", required = true) @PathParam("containerId") Long containerId) {
-        Container container = containerDAO.findById(containerId);
-        Helper.checkContainer(container);
+    @Path("/dockerfile")
+    @ApiOperation(value = "Get the corresponding Dockerfile on Github", notes = "Enter full path of container (add quay.io if using quay.io)", response = Helper.FileResponse.class)
+    public Helper.FileResponse dockerfile(@QueryParam("repository") String repository) {
 
-        User authUser = userDAO.findById(authToken.getUserId());
-        Helper.checkUser(authUser, container.getUserId());
+        // info about this repository path
+        Container container = containerDAO.findByPath(repository);
 
-        boolean hasGithub = false;
+        Helper.FileResponse dockerfile = new Helper.FileResponse();
 
-        Helper.Collab collab = new Helper.Collab();
+        // TODO: this only works with public repos, we will need an endpoint for public and another for auth to handle private repos in the
+        // future
+        // search for the Dockstore.cwl
+        GitHubClient githubClient = new GitHubClient();
+        RepositoryService service = new RepositoryService(githubClient);
+        try {
+            // git@github.com:briandoconnor/dockstore-tool-bamstats.git
+            Pattern p = Pattern.compile("git\\@github.com:(\\S+)/(\\S+)\\.git");
+            Matcher m = p.matcher(container.getGitUrl());
+            m.find();
 
-        if (!container.getIsRegistered()) {
-            LOG.info("Container " + container.getPath() + " is not registered!");
-            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
-        }
+            Repository repo = service.getRepository(m.group(1), m.group(2));
 
-        List<Token> tokens = tokenDAO.findByUserId(container.getUserId());
-
-        for (Token token : tokens) {
-            if (token.getTokenSource().equals(TokenType.GITHUB_COM.toString())) {
-                hasGithub = true;
-                GitHubClient githubClient = new GitHubClient();
-                githubClient.setOAuth2Token(token.getContent());
-                try {
-                    UserService uService = new UserService(githubClient);
-                    OrganizationService oService = new OrganizationService(githubClient);
-                    RepositoryService service = new RepositoryService(githubClient);
-                    ContentsService cService = new ContentsService(githubClient);
-                    org.eclipse.egit.github.core.User user = uService.getUser();
-                    // builder.append("Token: ").append(token.getId()).append(" is ").append(user.getName()).append(" login is ")
-                    // .append(user.getLogin()).append("\n");
-
-                    // look through user's own repositories
-                    for (Repository repo : service.getRepositories(user.getLogin())) {
-                        // LOG.info(repo.getGitUrl());
-                        // LOG.info(repo.getHtmlUrl());
-                        LOG.info(repo.getSshUrl()); // ssh url example: git@github.com:userspace/name.git
-                        // LOG.info(repo.getUrl());
-                        // LOG.info(container.getGitUrl());
-                        if (repo.getSshUrl().equals(container.getGitUrl())) {
-                            try {
-                                List<RepositoryContents> contents = cService.getContents(repo, "collab.cwl");
-                                // odd, throws exceptions if file does not exist
-                                if (!(contents == null || contents.isEmpty())) {
-                                    String encoded = contents.get(0).getContent().replace("\n", "");
-                                    byte[] decode = Base64.getDecoder().decode(encoded);
-                                    String content = new String(decode, StandardCharsets.UTF_8);
-                                    // builder.append(content);
-                                    collab.setContent(content);
-                                }
-                            } catch (IOException ex) {
-                                // builder.append("Repo: ").append(repo.getName()).append(" has no collab.cwl \n");
-                                LOG.info("Repo: " + repo.getName() + " has no collab.cwl");
-                            }
-                        }
-                    }
-
-                    // looks through all repos from different organizations user is in
-                    List<org.eclipse.egit.github.core.User> organizations = oService.getOrganizations();
-                    for (org.eclipse.egit.github.core.User org : organizations) {
-                        for (Repository repo : service.getRepositories(org.getLogin())) {
-                            LOG.info(repo.getSshUrl());
-                            if (repo.getSshUrl().equals(container.getGitUrl())) {
-                                try {
-                                    List<RepositoryContents> contents = cService.getContents(repo, "collab.cwl");
-                                    // odd, throws exceptions if file does not exist
-                                    if (!(contents == null || contents.isEmpty())) {
-                                        String encoded = contents.get(0).getContent().replace("\n", "");
-                                        byte[] decode = Base64.getDecoder().decode(encoded);
-                                        String content = new String(decode, StandardCharsets.UTF_8);
-                                        // builder.append(content);
-                                        collab.setContent(content);
-                                    }
-                                } catch (IOException ex) {
-                                    // builder.append("Repo: ").append(repo.getName()).append(" has no collab.cwl \n");
-                                    LOG.info("Repo: " + repo.getName() + " has no collab.cwl");
-                                }
-                            }
-                        }
-                    }
-
-                } catch (IOException ex) {
-                    // builder.append("Token ignored due to IOException: ").append(token.getId()).append("\n");
-                    LOG.info("Token ignored due to IOException: " + token.getId());
-                }
+            ContentsService cService = new ContentsService(githubClient);
+            List<RepositoryContents> contents = null;
+            try {
+                contents = cService.getContents(repo, "Dockerfile");
+            } catch (Exception e) {
+                contents = cService.getContents(repo, "dockerfile");
             }
+            if (!(contents == null || contents.isEmpty())) {
+                String encoded = contents.get(0).getContent().replace("\n", "");
+                byte[] decode = Base64.getDecoder().decode(encoded);
+                String content = new String(decode, StandardCharsets.UTF_8);
+                // builder.append(content);
+                dockerfile.setContent(content);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            LOG.error(e.getMessage());
         }
-        if (!hasGithub) {
-            // builder.append("Github is not setup");
-            LOG.info("Github is not setup");
-            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+
+        return dockerfile;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/cwl")
+    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github", notes = "Enter full path of container (add quay.io if using quay.io)", response = Helper.FileResponse.class)
+    public Helper.FileResponse cwl(@QueryParam("repository") String repository) {
+
+        // info about this repository path
+        Container container = containerDAO.findByPath(repository);
+
+        Helper.FileResponse cwl = new Helper.FileResponse();
+
+        // TODO: this only works with public repos, we will need an endpoint for public and another for auth to handle private repos in the
+        // future
+        // search for the Dockstore.cwl
+        GitHubClient githubClient = new GitHubClient();
+        RepositoryService service = new RepositoryService(githubClient);
+        try {
+            // git@github.com:briandoconnor/dockstore-tool-bamstats.git
+
+            Pattern p = Pattern.compile("git\\@github.com:(\\S+)/(\\S+)\\.git");
+            Matcher m = p.matcher(container.getGitUrl());
+            m.find();
+
+            Repository repo = service.getRepository(m.group(1), m.group(2));
+            ContentsService cService = new ContentsService(githubClient);
+            List<RepositoryContents> contents = null;
+            try {
+                contents = cService.getContents(repo, "Dockstore.cwl");
+            } catch (Exception e) {
+                contents = cService.getContents(repo, "dockstore.cwl");
+            }
+            if (!(contents == null || contents.isEmpty())) {
+                String encoded = contents.get(0).getContent().replace("\n", "");
+                byte[] decode = Base64.getDecoder().decode(encoded);
+                String content = new String(decode, StandardCharsets.UTF_8);
+                // builder.append(content);
+                cwl.setContent(content);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            LOG.error(e.getMessage());
         }
+
+        // TODO: I'm leaving this commented code below since it will be useful for when we support private repos
+
+        // StringBuilder builder = new StringBuilder();
+        // if (container != null) {
+        //
+        // Helper.checkUser(authUser, container.getUserId()); // null check first
+        //
+        // List<Token> tokens = tokenDAO.findByUserId(container.getUserId());
+        //
+        // for (Token token : tokens) {
+        // if (token.getTokenSource().equals(TokenType.GITHUB_COM.toString())) {
+        // hasGithub = true;
+        // GitHubClient githubClient = new GitHubClient();
+        // githubClient.setOAuth2Token(token.getContent());
+        // try {
+        // UserService uService = new UserService(githubClient);
+        // OrganizationService oService = new OrganizationService(githubClient);
+        // RepositoryService service = new RepositoryService(githubClient);
+        // ContentsService cService = new ContentsService(githubClient);
+        // org.eclipse.egit.github.core.User user = uService.getUser();
+        // // builder.append("Token: ").append(token.getId()).append(" is ").append(user.getName()).append(" login is ")
+        // // .append(user.getLogin()).append("\n");
+        //
+        // // look through user's own repositories
+        // for (Repository repo : service.getRepositories(user.getLogin())) {
+        // // LOG.info(repo.getGitUrl());
+        // // LOG.info(repo.getHtmlUrl());
+        // LOG.info(repo.getSshUrl()); // ssh url example: git@github.com:userspace/name.git
+        // // LOG.info(repo.getUrl());
+        // // LOG.info(container.getGitUrl());
+        // if (repo.getSshUrl().equals(container.getGitUrl())) {
+        // try {
+        // List<RepositoryContents> contents = cService.getContents(repo, "dockerfile.cwl");
+        // // odd, throws exceptions if file does not exist
+        // if (!(contents == null || contents.isEmpty())) {
+        // String encoded = contents.get(0).getContent().replace("\n", "");
+        // byte[] decode = Base64.getDecoder().decode(encoded);
+        // String content = new String(decode, StandardCharsets.UTF_8);
+        // // builder.append(content);
+        // dockerfile.setContent(content);
+        // }
+        // } catch (IOException ex) {
+        // // builder.append("Repo: ").append(repo.getName()).append(" has no dockerfile.cwl \n");
+        // LOG.info("Repo: " + repo.getName() + " has no dockerfile.cwl");
+        // }
+        // }
+        // }
+        //
+        // // looks through all repos from different organizations user is in
+        // List<org.eclipse.egit.github.core.User> organizations = oService.getOrganizations();
+        // for (org.eclipse.egit.github.core.User org : organizations) {
+        // for (Repository repo : service.getRepositories(org.getLogin())) {
+        // LOG.info(repo.getSshUrl());
+        // if (repo.getSshUrl().equals(container.getGitUrl())) {
+        // try {
+        // List<RepositoryContents> contents = cService.getContents(repo, "dockerfile.cwl");
+        // // odd, throws exceptions if file does not exist
+        // if (!(contents == null || contents.isEmpty())) {
+        // String encoded = contents.get(0).getContent().replace("\n", "");
+        // byte[] decode = Base64.getDecoder().decode(encoded);
+        // String content = new String(decode, StandardCharsets.UTF_8);
+        // // builder.append(content);
+        // dockerfile.setContent(content);
+        // }
+        // } catch (IOException ex) {
+        // // builder.append("Repo: ").append(repo.getName()).append(" has no dockerfile.cwl \n");
+        // LOG.info("Repo: " + repo.getName() + " has no dockerfile.cwl");
+        // }
+        // }
+        // }
+        // }
+        //
+        // } catch (IOException ex) {
+        // // builder.append("Token ignored due to IOException: ").append(token.getId()).append("\n");
+        // LOG.info("Token ignored due to IOException: " + token.getId());
+        // }
+        // }
+        // }
+        // if (!hasGithub) {
+        // // builder.append("Github is not setup");
+        // LOG.info("Github is not setup");
+        // throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+        // }
+        //
+        // } else {
+        // // builder.append(repository).append(" is not registered");
+        // LOG.info(repository + " is not registered");
+        // throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+        // }
 
         // String ret = builder.toString();
         // LOG.info(ret);
-        // LOG.info(collab.getContent());
-        return collab;
+        // LOG.info(dockerfile.getContent());
+        return cwl;
     }
 
     private static class QuayUser {
