@@ -100,9 +100,9 @@ public class Container   {
 
   
   /**
-   * This is the name of the author stated in the collab.cwl
+   * This is the name of the author stated in the Dockstore.cwl
    **/
-  @ApiModelProperty(value = "This is the name of the author stated in the collab.cwl")
+  @ApiModelProperty(value = "This is the name of the author stated in the Dockstore.cwl")
   @JsonProperty("author")
   public String getAuthor() {
     return author;
