@@ -217,10 +217,11 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/path/{path}")
-    @ApiOperation(value = "Get a registered container by path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Container.class)
-    public Container getRegisteredContainer(@ApiParam(hidden = true) @Auth Token authToken, @QueryParam("repository") String path) {
-        Container container = containerDAO.findRegisteredByPath(path);
+    @Path("/path/{repository}")
+    @ApiOperation(value = "Get a container by path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Container.class)
+    public Container getContainerByPath(@ApiParam(hidden = true) @Auth Token authToken,
+            @ApiParam(value = "repository", required = true) @PathParam("repository") String path) {
+        Container container = containerDAO.findByPath(path);
         Helper.checkContainer(container);
 
         User user = userDAO.findById(authToken.getUserId());
@@ -328,12 +329,13 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/dockerfile")
-    @ApiOperation(value = "Get the corresponding Dockerfile on Github", notes = "Enter full path of container (add quay.io if using quay.io)", response = Helper.FileResponse.class)
-    public Helper.FileResponse dockerfile(@QueryParam("repository") String repository) {
+    @Path("/{containerId}/dockerfile")
+    @ApiOperation(value = "Get the corresponding Dockerfile on Github", notes = "Does not need authentication", response = Helper.FileResponse.class)
+    public Helper.FileResponse dockerfile(
+            @ApiParam(value = "Container id to delete", required = true) @PathParam("containerId") Long containerId) {
 
         // info about this repository path
-        Container container = containerDAO.findByPath(repository);
+        Container container = containerDAO.findById(containerId);
 
         Helper.FileResponse dockerfile = new Helper.FileResponse();
 
@@ -376,12 +378,12 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/cwl")
-    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github", notes = "Enter full path of container (add quay.io if using quay.io)", response = Helper.FileResponse.class)
-    public Helper.FileResponse cwl(@QueryParam("repository") String repository) {
+    @Path("/{containerId}/cwl")
+    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github", notes = "Does not need authentication", response = Helper.FileResponse.class)
+    public Helper.FileResponse cwl(@ApiParam(value = "Container id to delete", required = true) @PathParam("containerId") Long containerId) {
 
         // info about this repository path
-        Container container = containerDAO.findByPath(repository);
+        Container container = containerDAO.findById(containerId);
 
         Helper.FileResponse cwl = new Helper.FileResponse();
 

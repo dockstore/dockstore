@@ -1,7 +1,6 @@
 package io.swagger.client.model;
 
 import io.swagger.client.StringUtil;
-import io.swagger.client.model.GitHubComAuthenticationResource;
 
 
 
@@ -11,20 +10,20 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @ApiModel(description = "")
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-28T13:50:50.783-04:00")
-public class GithubComView   {
+public class RegisterRequest   {
   
-  private GitHubComAuthenticationResource parent = null;
+  private Boolean register = null;
 
   
   /**
    **/
   @ApiModelProperty(value = "")
-  @JsonProperty("parent")
-  public GitHubComAuthenticationResource getParent() {
-    return parent;
+  @JsonProperty("register")
+  public Boolean getRegister() {
+    return register;
   }
-  public void setParent(GitHubComAuthenticationResource parent) {
-    this.parent = parent;
+  public void setRegister(Boolean register) {
+    this.register = register;
   }
 
   
@@ -32,9 +31,9 @@ public class GithubComView   {
   @Override
   public String toString()  {
     StringBuilder sb = new StringBuilder();
-    sb.append("class GithubComView {\n");
+    sb.append("class RegisterRequest {\n");
     
-    sb.append("    parent: ").append(StringUtil.toIndentedString(parent)).append("\n");
+    sb.append("    register: ").append(StringUtil.toIndentedString(register)).append("\n");
     sb.append("}");
     return sb.toString();
   }

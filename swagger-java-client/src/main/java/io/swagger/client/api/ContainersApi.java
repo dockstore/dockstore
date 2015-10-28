@@ -11,13 +11,14 @@ import io.swagger.client.model.*;
 import java.util.*;
 
 import io.swagger.client.model.Container;
-import io.swagger.client.model.Collab;
+import io.swagger.client.model.FileResponse;
+import io.swagger.client.model.RegisterRequest;
 
 import java.io.File;
 import java.util.Map;
 import java.util.HashMap;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-27T16:41:14.927-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-28T13:50:50.783-04:00")
 public class ContainersApi {
   private ApiClient apiClient;
 
@@ -79,24 +80,28 @@ public class ContainersApi {
   }
   
   /**
-   * Get a registered container by path
+   * Get a container by path
    * Lists info of container. Enter full path (include quay.io in path).
-   * @param repository 
+   * @param repository repository
    * @return Container
    */
-  public Container getRegisteredContainer (String repository) throws ApiException {
+  public Container getContainerByPath (String repository) throws ApiException {
     Object postBody = null;
     
+    // verify the required parameter 'repository' is set
+    if (repository == null) {
+      throw new ApiException(400, "Missing the required parameter 'repository' when calling getContainerByPath");
+    }
+    
     // create path and map variables
-    String path = "/containers/path/{path}".replaceAll("\\{format\\}","json");
+    String path = "/containers/path/{repository}".replaceAll("\\{format\\}","json")
+      .replaceAll("\\{" + "repository" + "\\}", apiClient.escapeString(repository.toString()));
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
     Map<String, String> headerParams = new HashMap<String, String>();
     Map<String, Object> formParams = new HashMap<String, Object>();
 
-    
-    queryParams.addAll(apiClient.parameterToPairs("", "repository", repository));
     
 
     
@@ -157,7 +162,7 @@ public class ContainersApi {
 
     
     TypeRef returnType = new TypeRef<List<Container>>() {};
-    return apiClient.invokeAPI(path, "PUT", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
   
@@ -207,12 +212,12 @@ public class ContainersApi {
    * @param containerId Container ID
    * @return Container
    */
-  public Container getRegisteredContainer_1 (Long containerId) throws ApiException {
+  public Container getRegisteredContainer (Long containerId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'containerId' is set
     if (containerId == null) {
-      throw new ApiException(400, "Missing the required parameter 'containerId' when calling getRegisteredContainer_1");
+      throw new ApiException(400, "Missing the required parameter 'containerId' when calling getRegisteredContainer");
     }
     
     // create path and map variables
@@ -339,21 +344,21 @@ public class ContainersApi {
   }
   
   /**
-   * Get the corresponding collab.cwl file on Github
-   * Enter full path of container (add quay.io if using quay.io)
+   * Get the corresponding Dockstore.cwl file on Github
+   * Does not need authentication
    * @param containerId Container id to delete
-   * @return Collab
+   * @return FileResponse
    */
-  public Collab collab (Long containerId) throws ApiException {
+  public FileResponse cwl (Long containerId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'containerId' is set
     if (containerId == null) {
-      throw new ApiException(400, "Missing the required parameter 'containerId' when calling collab");
+      throw new ApiException(400, "Missing the required parameter 'containerId' when calling cwl");
     }
     
     // create path and map variables
-    String path = "/containers/{containerId}/collab".replaceAll("\\{format\\}","json")
+    String path = "/containers/{containerId}/cwl".replaceAll("\\{format\\}","json")
       .replaceAll("\\{" + "containerId" + "\\}", apiClient.escapeString(containerId.toString()));
 
     // query params
@@ -380,74 +385,80 @@ public class ContainersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<Collab>() {};
+    TypeRef returnType = new TypeRef<FileResponse>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
   
   /**
-   * Register a container
-   * Register a container (public or private). Assumes that user is using quay.io and github. Include quay.io in path if using quay.io
+   * Get the corresponding Dockerfile on Github
+   * Does not need authentication
    * @param containerId Container id to delete
+   * @return FileResponse
+   */
+  public FileResponse dockerfile (Long containerId) throws ApiException {
+    Object postBody = null;
+    
+    // verify the required parameter 'containerId' is set
+    if (containerId == null) {
+      throw new ApiException(400, "Missing the required parameter 'containerId' when calling dockerfile");
+    }
+    
+    // create path and map variables
+    String path = "/containers/{containerId}/dockerfile".replaceAll("\\{format\\}","json")
+      .replaceAll("\\{" + "containerId" + "\\}", apiClient.escapeString(containerId.toString()));
+
+    // query params
+    List<Pair> queryParams = new ArrayList<Pair>();
+    Map<String, String> headerParams = new HashMap<String, String>();
+    Map<String, Object> formParams = new HashMap<String, Object>();
+
+    
+
+    
+
+    
+
+    final String[] accepts = {
+      "application/json"
+    };
+    final String accept = apiClient.selectHeaderAccept(accepts);
+
+    final String[] contentTypes = {
+      
+    };
+    final String contentType = apiClient.selectHeaderContentType(contentTypes);
+
+    String[] authNames = new String[] {  };
+
+    
+    TypeRef returnType = new TypeRef<FileResponse>() {};
+    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    
+  }
+  
+  /**
+   * Register or unregister a container
+   * Register a container (public or private). Assumes that user is using quay.io and github.
+   * @param containerId Container id to delete
+   * @param body RegisterRequest to refresh the list of repos for a user
    * @return Container
    */
-  public Container register (Long containerId) throws ApiException {
-    Object postBody = null;
+  public Container register (Long containerId, RegisterRequest body) throws ApiException {
+    Object postBody = body;
     
     // verify the required parameter 'containerId' is set
     if (containerId == null) {
       throw new ApiException(400, "Missing the required parameter 'containerId' when calling register");
     }
     
-    // create path and map variables
-    String path = "/containers/{containerId}/register".replaceAll("\\{format\\}","json")
-      .replaceAll("\\{" + "containerId" + "\\}", apiClient.escapeString(containerId.toString()));
-
-    // query params
-    List<Pair> queryParams = new ArrayList<Pair>();
-    Map<String, String> headerParams = new HashMap<String, String>();
-    Map<String, Object> formParams = new HashMap<String, Object>();
-
-    
-
-    
-
-    
-
-    final String[] accepts = {
-      "application/json"
-    };
-    final String accept = apiClient.selectHeaderAccept(accepts);
-
-    final String[] contentTypes = {
-      
-    };
-    final String contentType = apiClient.selectHeaderContentType(contentTypes);
-
-    String[] authNames = new String[] {  };
-
-    
-    TypeRef returnType = new TypeRef<Container>() {};
-    return apiClient.invokeAPI(path, "POST", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
-    
-  }
-  
-  /**
-   * Unregister a container
-   * 
-   * @param containerId Container id to delete
-   * @return Container
-   */
-  public Container unregister (Long containerId) throws ApiException {
-    Object postBody = null;
-    
-    // verify the required parameter 'containerId' is set
-    if (containerId == null) {
-      throw new ApiException(400, "Missing the required parameter 'containerId' when calling unregister");
+    // verify the required parameter 'body' is set
+    if (body == null) {
+      throw new ApiException(400, "Missing the required parameter 'body' when calling register");
     }
     
     // create path and map variables
-    String path = "/containers/{containerId}/unregister".replaceAll("\\{format\\}","json")
+    String path = "/containers/{containerId}/register".replaceAll("\\{format\\}","json")
       .replaceAll("\\{" + "containerId" + "\\}", apiClient.escapeString(containerId.toString()));
 
     // query params

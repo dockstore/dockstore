@@ -197,9 +197,6 @@ elif [ "$1" = "init" ]; then
         chmod 600 $DOCKSTORE_SETTINGS
 
         echo
-        echo "WHAT IS YOUR USERNAME?"
-        read USERNAME
-        echo "username: $USERNAME" >> $DOCKSTORE_SETTINGS
 
         echo "WHAT IS YOUR TOKEN?"
         read TOKEN

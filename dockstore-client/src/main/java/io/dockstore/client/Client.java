@@ -23,8 +23,9 @@ import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.UsersApi;
-import io.swagger.client.model.Collab;
 import io.swagger.client.model.Container;
+import io.swagger.client.model.FileResponse;
+import io.swagger.client.model.RegisterRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.User;
 import java.io.File;
@@ -50,7 +51,6 @@ public class Client {
     private static UsersApi usersApi;
 
     private static User user;
-    private static String apiKey;
 
     private static final String NAME_HEADER = "NAME";
     private static final String DESCRIPTION_HEADER = "DESCRIPTION";
@@ -119,16 +119,16 @@ public class Client {
         int descWidth = maxWidths[1] + PADDING;
         int gitWidth = maxWidths[2] + PADDING;
         String format = "%-" + nameWidth + "s%-" + descWidth + "s%-" + gitWidth + "s%-15s%-14s%-12s";
-        out(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "On Dockstore?", "Collab.cwl", "Automated");
+        out(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "On Dockstore?", "Dockstore.cwl", "Automated");
 
         for (Container container : containers) {
-            String collab = "No";
+            String cwl = "No";
             String automated = "No";
             String description = "";
             String gitUrl = "";
 
             if (container.getHasCollab()) {
-                collab = "Yes";
+                cwl = "Yes";
             }
 
             if (container.getGitUrl() != null && !container.getGitUrl().isEmpty()) {
@@ -140,7 +140,7 @@ public class Client {
                 description = container.getDescription();
             }
 
-            out(format, container.getPath(), description, gitUrl, boolWord(container.getIsRegistered()), collab, automated);
+            out(format, container.getPath(), description, gitUrl, boolWord(container.getIsRegistered()), cwl, automated);
         }
     }
 
@@ -221,8 +221,10 @@ public class Client {
                 publishHelp();
             } else {
                 try {
-                    Container container = containersApi.getRegisteredContainer(first);
-                    container = containersApi.register(container.getId());
+                    Container container = containersApi.getContainerByPath(first);
+                    RegisterRequest req = new RegisterRequest();
+                    req.setRegister(true);
+                    container = containersApi.register(container.getId(), req);
 
                     if (container != null) {
                         out("Successfully published " + first);
@@ -250,7 +252,7 @@ public class Client {
     private static void info(List<String> args) {
         String path = args.get(0);
         try {
-            Container container = containersApi.getRegisteredContainer(path);
+            Container container = containersApi.getContainerByPath(path);
             if (container == null) {
                 out("This container is not registered.");
             } else {
@@ -311,12 +313,12 @@ public class Client {
         String path = args.get(0);
 
         try {
-            Container container = containersApi.getRegisteredContainer(path);
-            Collab collab = containersApi.collab(container.getId());
+            Container container = containersApi.getContainerByPath(path);
+            FileResponse collab = containersApi.cwl(container.getId());
             if (collab.getContent() != null && !collab.getContent().isEmpty()) {
                 out(collab.getContent());
             } else {
-                out("No collab file found.");
+                out("No cwl file found.");
             }
         } catch (ApiException ex) {
             out("Exception: " + ex);
@@ -349,7 +351,6 @@ public class Client {
             Map map = (Map) object;
 
             // pull out the variables from the config
-            String username = (String) map.get("username");
             String token = (String) map.get("token");
             String serverUrl = (String) map.get("server-url");
 
@@ -359,10 +360,10 @@ public class Client {
             containersApi = new ContainersApi(defaultApiClient);
             usersApi = new UsersApi(defaultApiClient);
 
-            user = usersApi.listUser(username);
+            user = usersApi.getUser();
 
             if (user == null) {
-                throw new NotFoundException("User " + username + " not found");
+                throw new NotFoundException("User not found");
             }
 
             if (isHelp(args, true)) {

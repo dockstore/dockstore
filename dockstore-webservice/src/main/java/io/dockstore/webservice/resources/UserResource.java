@@ -193,8 +193,8 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/tokens/github.com")
-    @ApiOperation(value = "Get Github tokens with user id", response = Token.class, responseContainer = "List")
-    public Token getGithubUserTokens(@ApiParam(hidden = true) @Auth Token authToken,
+    @ApiOperation(value = "Get Github tokens with user id", response = Token.class)
+    public List<Token> getGithubUserTokens(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "User to return") @PathParam("userId") long userId) {
         User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, userId);
@@ -206,8 +206,21 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/tokens/quay.io")
-    @ApiOperation(value = "Get Quay tokens with user id", response = Token.class, responseContainer = "List")
-    public Token getQuayUserTokens(@ApiParam(hidden = true) @Auth Token authToken,
+    @ApiOperation(value = "Get Quay tokens with user id", response = Token.class)
+    public List<Token> getQuayUserTokens(@ApiParam(hidden = true) @Auth Token authToken,
+            @ApiParam(value = "User to return") @PathParam("userId") long userId) {
+        User user = userDAO.findById(authToken.getUserId());
+        Helper.checkUser(user, userId);
+
+        return tokenDAO.findQuayByUserId(userId);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{userId}/tokens/dockstore")
+    @ApiOperation(value = "Get Dockstore tokens with user id", response = Token.class)
+    public List<Token> getDockstoreUserTokens(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "User to return") @PathParam("userId") long userId) {
         User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, userId);
@@ -246,7 +259,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/groups")
-    @ApiOperation(value = "Get groups that the user belongs to", response = Group.class)
+    @ApiOperation(value = "Get groups that the user belongs to", response = Group.class, responseContainer = "List")
     public List<Group> getGroupsFromUser(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "User") @PathParam("userId") long userId) {
         User authUser = userDAO.findById(authToken.getUserId());
@@ -265,7 +278,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/groups/{groupId}/users")
-    @ApiOperation(value = "Get users that belongs to a group", response = User.class)
+    @ApiOperation(value = "Get users that belongs to a group", response = User.class, responseContainer = "List")
     public List<User> getUsersFromGroup(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "Group") @PathParam("groupId") long groupId) {
         Group group = groupDAO.findById(groupId);
@@ -282,7 +295,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/groups")
-    @ApiOperation(value = "List all groups", response = Group.class)
+    @ApiOperation(value = "List all groups", response = Group.class, responseContainer = "List")
     public List<Group> allGroups(@ApiParam(hidden = true) @Auth Token authToken) {
         return groupDAO.findAll();
     }
@@ -291,7 +304,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/groups/{groupId}")
-    @ApiOperation(value = "List a group", response = Group.class)
+    @ApiOperation(value = "List a group", response = Group.class, responseContainer = "List")
     public List<Group> getGroup(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "Group") @PathParam("groupId") long groupId) {
         return groupDAO.findAll();
@@ -389,4 +402,13 @@ public class UserResource {
         return ownedContainers;
     }
 
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/user")
+    @ApiOperation(value = "Get Dockstore tokens with user id", response = User.class)
+    public User getUser(@ApiParam(hidden = true) @Auth Token authToken) {
+        User user = userDAO.findById(authToken.getUserId());
+        return user;
+    }
 }

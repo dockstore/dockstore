@@ -19,7 +19,7 @@ import java.io.File;
 import java.util.Map;
 import java.util.HashMap;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-27T16:41:14.927-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-28T13:50:50.783-04:00")
 public class UsersApi {
   private ApiClient apiClient;
 
@@ -129,9 +129,9 @@ public class UsersApi {
   /**
    * List all groups
    * 
-   * @return Group
+   * @return List<Group>
    */
-  public Group allGroups () throws ApiException {
+  public List<Group> allGroups () throws ApiException {
     Object postBody = null;
     
     // create path and map variables
@@ -161,7 +161,7 @@ public class UsersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<Group>() {};
+    TypeRef returnType = new TypeRef<List<Group>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -213,9 +213,9 @@ public class UsersApi {
    * List a group
    * 
    * @param groupId Group
-   * @return Group
+   * @return List<Group>
    */
-  public Group getGroup (Long groupId) throws ApiException {
+  public List<Group> getGroup (Long groupId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'groupId' is set
@@ -251,7 +251,7 @@ public class UsersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<Group>() {};
+    TypeRef returnType = new TypeRef<List<Group>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -306,9 +306,9 @@ public class UsersApi {
    * Get users that belongs to a group
    * 
    * @param groupId Group
-   * @return User
+   * @return List<User>
    */
-  public User getUsersFromGroup (Long groupId) throws ApiException {
+  public List<User> getUsersFromGroup (Long groupId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'groupId' is set
@@ -319,6 +319,46 @@ public class UsersApi {
     // create path and map variables
     String path = "/users/groups/{groupId}/users".replaceAll("\\{format\\}","json")
       .replaceAll("\\{" + "groupId" + "\\}", apiClient.escapeString(groupId.toString()));
+
+    // query params
+    List<Pair> queryParams = new ArrayList<Pair>();
+    Map<String, String> headerParams = new HashMap<String, String>();
+    Map<String, Object> formParams = new HashMap<String, Object>();
+
+    
+
+    
+
+    
+
+    final String[] accepts = {
+      "application/json"
+    };
+    final String accept = apiClient.selectHeaderAccept(accepts);
+
+    final String[] contentTypes = {
+      
+    };
+    final String contentType = apiClient.selectHeaderContentType(contentTypes);
+
+    String[] authNames = new String[] {  };
+
+    
+    TypeRef returnType = new TypeRef<List<User>>() {};
+    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    
+  }
+  
+  /**
+   * Get Dockstore tokens with user id
+   * 
+   * @return User
+   */
+  public User getUser () throws ApiException {
+    Object postBody = null;
+    
+    // create path and map variables
+    String path = "/users/user".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -402,12 +442,12 @@ public class UsersApi {
    * @param userId User to return
    * @return User
    */
-  public User getUser (Long userId) throws ApiException {
+  public User getUser_1 (Long userId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'userId' is set
     if (userId == null) {
-      throw new ApiException(400, "Missing the required parameter 'userId' when calling getUser");
+      throw new ApiException(400, "Missing the required parameter 'userId' when calling getUser_1");
     }
     
     // create path and map variables
@@ -505,7 +545,7 @@ public class UsersApi {
     }
     
     // create path and map variables
-    String path = "/users/{userId}/containers".replaceAll("\\{format\\}","json")
+    String path = "/users/{userId}/containers/refresh".replaceAll("\\{format\\}","json")
       .replaceAll("\\{" + "userId" + "\\}", apiClient.escapeString(userId.toString()));
 
     // query params
@@ -533,7 +573,7 @@ public class UsersApi {
 
     
     TypeRef returnType = new TypeRef<List<Container>>() {};
-    return apiClient.invokeAPI(path, "PUT", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
   
@@ -588,9 +628,9 @@ public class UsersApi {
    * Get groups that the user belongs to
    * 
    * @param userId User
-   * @return Group
+   * @return List<Group>
    */
-  public Group getGroupsFromUser (Long userId) throws ApiException {
+  public List<Group> getGroupsFromUser (Long userId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'userId' is set
@@ -626,7 +666,7 @@ public class UsersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<Group>() {};
+    TypeRef returnType = new TypeRef<List<Group>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -783,12 +823,59 @@ public class UsersApi {
   }
   
   /**
+   * Get Dockstore tokens with user id
+   * 
+   * @param userId User to return
+   * @return Token
+   */
+  public Token getDockstoreUserTokens (Long userId) throws ApiException {
+    Object postBody = null;
+    
+    // verify the required parameter 'userId' is set
+    if (userId == null) {
+      throw new ApiException(400, "Missing the required parameter 'userId' when calling getDockstoreUserTokens");
+    }
+    
+    // create path and map variables
+    String path = "/users/{userId}/tokens/dockstore".replaceAll("\\{format\\}","json")
+      .replaceAll("\\{" + "userId" + "\\}", apiClient.escapeString(userId.toString()));
+
+    // query params
+    List<Pair> queryParams = new ArrayList<Pair>();
+    Map<String, String> headerParams = new HashMap<String, String>();
+    Map<String, Object> formParams = new HashMap<String, Object>();
+
+    
+
+    
+
+    
+
+    final String[] accepts = {
+      "application/json"
+    };
+    final String accept = apiClient.selectHeaderAccept(accepts);
+
+    final String[] contentTypes = {
+      
+    };
+    final String contentType = apiClient.selectHeaderContentType(contentTypes);
+
+    String[] authNames = new String[] {  };
+
+    
+    TypeRef returnType = new TypeRef<Token>() {};
+    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    
+  }
+  
+  /**
    * Get Github tokens with user id
    * 
    * @param userId User to return
-   * @return List<Token>
+   * @return Token
    */
-  public List<Token> getGithubUserTokens (Long userId) throws ApiException {
+  public Token getGithubUserTokens (Long userId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'userId' is set
@@ -824,7 +911,7 @@ public class UsersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<List<Token>>() {};
+    TypeRef returnType = new TypeRef<Token>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -833,9 +920,9 @@ public class UsersApi {
    * Get Quay tokens with user id
    * 
    * @param userId User to return
-   * @return List<Token>
+   * @return Token
    */
-  public List<Token> getQuayUserTokens (Long userId) throws ApiException {
+  public Token getQuayUserTokens (Long userId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'userId' is set
@@ -871,7 +958,7 @@ public class UsersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<List<Token>>() {};
+    TypeRef returnType = new TypeRef<Token>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }

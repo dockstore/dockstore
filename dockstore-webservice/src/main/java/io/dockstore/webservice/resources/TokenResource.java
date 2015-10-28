@@ -59,8 +59,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The token resource handles operations with tokens. Tokens are needed to talk with the quay.io and github APIs. In addition, they will be
- * needed to pull down docker containers that are requested by users.
+ * The githubToken resource handles operations with tokens. Tokens are needed to talk with the quay.io and github APIs. In addition, they
+ * will be needed to pull down docker containers that are requested by users.
  *
  * @author dyuen
  */
@@ -158,13 +158,11 @@ public class TokenResource {
             LOG.info("Username: " + username);
         }
 
-        Token token = null;
-
         if (user != null) {
-            token = tokenDAO.findQuayByUserId(user.getId());
+            List<Token> tokens = tokenDAO.findQuayByUserId(user.getId());
 
-            if (token == null) {
-                token = new Token();
+            if (tokens.isEmpty()) {
+                Token token = new Token();
                 token.setTokenSource(TokenType.QUAY_IO.toString());
                 token.setContent(accessToken);
                 token.setUserId(user.getId());
@@ -229,7 +227,8 @@ public class TokenResource {
         githubClient.setOAuth2Token(accessToken);
         long userID = 0;
         String githubLogin;
-        Token dockstoreToken;
+        Token dockstoreToken = null;
+        Token githubToken = null;
         try {
             UserService uService = new UserService(githubClient);
             org.eclipse.egit.github.core.User githubUser = uService.getUser();
@@ -240,7 +239,6 @@ public class TokenResource {
         }
 
         User user = userDAO.findByUsername(githubLogin);
-        Token token = null;
         if (user == null) {
             user = new User();
             user.setUsername(githubLogin);
@@ -264,18 +262,44 @@ public class TokenResource {
 
         } else {
             userID = user.getId();
-            dockstoreToken = tokenDAO.findDockstoreByUserId(userID);
-            token = tokenDAO.findGithubByUserId(userID);
+            List<Token> tokens = tokenDAO.findDockstoreByUserId(userID);
+            if (!tokens.isEmpty()) {
+                dockstoreToken = tokens.get(0);
+            }
+
+            tokens = tokenDAO.findGithubByUserId(userID);
+            if (!tokens.isEmpty()) {
+                githubToken = tokens.get(0);
+            }
         }
 
-        if (token == null) {
+        if (dockstoreToken == null) {
+            LOG.info("Could not find user's dockstore token. Making new one...");
+            final Random random = new Random();
+            final int bufferLength = 1024;
+            final byte[] buffer = new byte[bufferLength];
+            random.nextBytes(buffer);
+            String randomString = BaseEncoding.base64Url().omitPadding().encode(buffer);
+            final String dockstoreAccessToken = Hashing.sha256().hashString(githubLogin + randomString, Charsets.UTF_8).toString();
+
+            dockstoreToken = new Token();
+            dockstoreToken.setTokenSource(TokenType.DOCKSTORE.toString());
+            dockstoreToken.setContent(dockstoreAccessToken);
+            dockstoreToken.setUserId(userID);
+            dockstoreToken.setUsername(githubLogin);
+            long dockstoreTokenId = tokenDAO.create(dockstoreToken);
+            dockstoreToken = tokenDAO.findById(dockstoreTokenId);
+        }
+
+        if (githubToken == null) {
+            LOG.info("Could not find user's github token. Making new one...");
             // CREATE GITHUB TOKEN
-            token = new Token();
-            token.setTokenSource(TokenType.GITHUB_COM.toString());
-            token.setContent(accessToken);
-            token.setUserId(userID);
-            token.setUsername(githubLogin);
-            tokenDAO.create(token);
+            githubToken = new Token();
+            githubToken.setTokenSource(TokenType.GITHUB_COM.toString());
+            githubToken.setContent(accessToken);
+            githubToken.setUserId(userID);
+            githubToken.setUsername(githubLogin);
+            tokenDAO.create(githubToken);
             LOG.info("Github token created for " + githubLogin);
         }
 

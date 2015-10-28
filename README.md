@@ -79,7 +79,6 @@ You then need to setup a `~/.dockstore/config` file with the following contents:
 
 ```
 token: <dockstore_token_from_web_app>
-username: <github_username>
 server-url: http://www.dockstore.org:8080
 ```
 

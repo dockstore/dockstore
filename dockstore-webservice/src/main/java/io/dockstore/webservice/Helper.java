@@ -195,7 +195,12 @@ public class Helper {
                                 LOG.info(repository.getSshUrl());
                                 if (repository.getSshUrl().equals(c.getGitUrl())) {
                                     try {
-                                        List<RepositoryContents> contents = cService.getContents(repository, "collab.cwl");
+                                        List<RepositoryContents> contents = null;
+                                        try {
+                                            contents = cService.getContents(repository, "Dockstore.cwl");
+                                        } catch (Exception e) {
+                                            contents = cService.getContents(repository, "dockstore.cwl");
+                                        }
                                         if (!(contents == null || contents.isEmpty())) {
                                             c.setHasCollab(true);
 
@@ -214,10 +219,10 @@ public class Helper {
                                             c.setDescription(description);
                                             c.setAuthor(author);
 
-                                            LOG.info("Repo: " + repository.getName() + " has collab.cwl");
+                                            LOG.info("Repo: " + repository.getName() + " has Dockstore.cwl");
                                         }
                                     } catch (IOException ex) {
-                                        LOG.info("Repo: " + repository.getName() + " has no collab.cwl");
+                                        LOG.info("Repo: " + repository.getName() + " has no Dockstore.cwl");
                                     }
                                 }
                             }
