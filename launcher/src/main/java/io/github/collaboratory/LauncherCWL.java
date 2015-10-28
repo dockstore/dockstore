@@ -1,7 +1,14 @@
 package io.github.collaboratory;
 
+import org.icgc.dcc.storage.client.ClientMain;
+
+import static org.icgc.dcc.storage.client.util.SingletonBeansInitializer.singletonBeans;
+
+import com.beust.jcommander.JCommander;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
+import com.google.common.io.Files;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -17,14 +24,15 @@ import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.FileSystemManager;
 import org.apache.commons.vfs2.Selectors;
 import org.apache.commons.vfs2.VFS;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.composer.ComposerException;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -36,6 +44,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -50,7 +59,7 @@ import java.util.UUID;
  */
 public class LauncherCWL {
 
-    private static final Log LOG = LogFactory.getLog(LauncherCWL.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LauncherCWL.class);
     public static final String WORKING_DIRECTORY = "working-directory";
     private final String configFilePath;
     private final String imageDescriptorPath;
@@ -124,7 +133,7 @@ public class LauncherCWL {
 
         // setup directories
         globalWorkingDir = setupDirectories();
-
+        
         // pull input files
         final  Map<String, FileInfo> inputsId2dockerMountMap = pullFiles(cwl, inputsAndOutputsJson);
 
@@ -142,13 +151,30 @@ public class LauncherCWL {
         pushOutputFiles(outputMap, outputObj);
     }
 
+	private ClientMain initStorageClient(String[] args) {	
+		try {
+		    // Setup
+		    JCommander cli = new JCommander();
+		
+		    // Run
+		    new SpringApplicationBuilder(ClientMain.class)
+		        .showBanner(false) // Not appropriate for tool
+		        .initializers(singletonBeans(cli)) // Add cli to context
+		        .addCommandLineProperties(false) // Only use formal parameters defined in cli
+		        .run(args);
+		} catch (Throwable t) {
+		    System.out.println("\nUnknown error starting application. Please see log for details");
+		    LOG.error("Exception running: ", t);
+		    LOG.info("Exiting...");
+		}
+    	return null;
+    }
+    
     private Map<String, FileInfo> prepUploads(Map<String, Object> cwl, Map<String, Map<String, Object>> inputsOutputs) {
 
         Map<String, FileInfo> fileMap = new HashMap<>();
 
         LOG.info("PREPPING UPLOADS...");
-
-        LOG.info(((Map) cwl).get("outputs"));
 
         List<Map<String, Object>> files = (List) ((Map)cwl).get("outputs");
 
@@ -159,7 +185,6 @@ public class LauncherCWL {
             LOG.info(file.toString());
             String cwlID = ((String)((Map) file).get("id")).substring(1);
             LOG.info("ID: " + cwlID);
-
 
             // now that I have an input name from the CWL I can find it in the JSON parameterization for this run
             LOG.info("JSON: " + inputsOutputs.toString());
@@ -194,10 +219,8 @@ public class LauncherCWL {
                     fileMap.put(cwlID, new1);
 
                     LOG.info("UPLOAD FILE: LOCAL: " + cwlID + " URL: " + path);
-
                 }
             }
-
         }
         return fileMap;
     }
@@ -267,11 +290,10 @@ public class LauncherCWL {
         executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/outputs");
 
         return (new File(workingDir + "/launcher-" + uuid.toString()).getAbsolutePath());
-
     }
 
     private Map<String, Object> runCWLCommand(String cwlFile, String jsonSettings, String workingDir) {
-        String[] s = new String[]{"cwltool","--outdir", workingDir, cwlFile, jsonSettings};
+        String[] s = new String[]{"/usr/local/bin/cwltool","--outdir", workingDir, cwlFile, jsonSettings};
         final ImmutablePair<String, String> execute = this.executeCommand(Joiner.on(" ").join(Arrays.asList(s)));
         Map<String, Object> obj = (Map<String, Object>)yaml.load(execute.getLeft());
         return obj;
@@ -299,10 +321,7 @@ public class LauncherCWL {
             } catch (FileSystemException e) {
                 throw new RuntimeException("Could not provision output files", e);
             }
-
-
         }
-
     }
 
     /**
@@ -332,12 +351,14 @@ public class LauncherCWL {
             final org.apache.commons.exec.CommandLine parse = org.apache.commons.exec.CommandLine.parse(command);
             Executor executor = new DefaultExecutor();
             executor.setExitValue(0);
+            System.out.println("executor working directory: " + executor.getWorkingDirectory().getAbsolutePath());
             // get stdout and stderr
             executor.setStreamHandler(new PumpStreamHandler(stdout, stderr));
             executor.execute(parse, resultHandler);
             resultHandler.waitFor();
             // not sure why commons-exec does not throw an exception
-            if (resultHandler.getExitValue() != 0){
+            if (resultHandler.getExitValue() != 0) {
+            	resultHandler.getException().printStackTrace();
                 throw new ExecuteException("could not run command: " + command, resultHandler.getExitValue());
             }
             return new ImmutablePair<>(localStdoutStream.toString(utf8), localStdErrStream.toString(utf8));
@@ -351,15 +372,13 @@ public class LauncherCWL {
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException("utf-8 does not exist?", e);
             }
-        }
+         }
     }
-
+    
     private Map<String, FileInfo> pullFiles(Map<String, Object> cwl, Map<String, Map<String, Object>> inputsOutputs) {
         Map<String, FileInfo> fileMap = new HashMap<>();
 
         LOG.info("DOWNLOADING INPUT FILES...");
-
-        LOG.info(cwl.get("inputs"));
 
         List<Map<String, Object>> files = (List) cwl.get("inputs");
 
@@ -379,49 +398,66 @@ public class LauncherCWL {
                 String path = (String)param.get("path");
 
                 if (paramName.equals(cwlInputFileID)) {
-
                     // if it's the current one
                     LOG.info("PATH TO DOWNLOAD FROM: " + path + " FOR " + cwlInputFileID + " FOR " + paramName);
 
-                    // output
-                    // TODO: poor naming here, need to cleanup the variables
-                    // just file name
-                    // the file URL
-                    File filePathObj = new File(cwlInputFileID);
-                    String newDirectory = globalWorkingDir + "/inputs/" + UUID.randomUUID().toString();
-                    executeCommand("mkdir -p " + newDirectory);
-                    File newDirectoryFile = new File(newDirectory);
-                    String uuidPath = newDirectoryFile.getAbsolutePath() + "/" + filePathObj.getName();
-
-                    // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
-                    // https://commons.apache.org/proper/commons-vfs/filesystems.html
-                    FileSystemManager fsManager;
-                    try {
-
-                        // trigger a copy from the URL to a local file path that's a UUID to avoid collision
-                        fsManager = VFS.getManager();
-                        FileObject src = fsManager.resolveFile(path);
-                        FileObject dest = fsManager.resolveFile(new File(uuidPath).getAbsolutePath());
-                        dest.copyFrom(src, Selectors.SELECT_SELF);
-
-                        // now add this info to a hash so I can later reconstruct a docker -v command
-                        FileInfo info = new FileInfo();
-                        info.setLocalPath(uuidPath);
-                        info.setDockerPath(cwlInputFileID);
-                        info.setUrl(path);
-
-                        fileMap.put(cwlInputFileID, info);
-
-                    } catch (FileSystemException e) {
-                        LOG.error(e.getMessage());
-                        throw new RuntimeException("Could not provision input files", e);
+                    // set up output paths                   
+                    String downloadDirectory = globalWorkingDir + "/inputs/" + UUID.randomUUID().toString();
+                    executeCommand("mkdir -p " + downloadDirectory);
+                    File downloadDirFileObj = new File(downloadDirectory);
+                    
+                    String targetFilePath = downloadDirFileObj.getAbsolutePath() + "/" + cwlInputFileID;
+                    
+                    // expects URI in "path": "icgc:eef47481-670d-4139-ab5b-1dad808a92d9"
+                    PathInfo pathInfo = new PathInfo(path);
+                    if (pathInfo.isObjectIdType()) {
+                    	String objectId = pathInfo.getObjectId();
+                    	
+                    	// default layout saves to original_file_name/object_id
+                    	// file name is the directory and object id is actual file name
+                    	StringBuilder bob = new StringBuilder("/icgc/dcc-storage/bin/dcc-storage-client download");
+                    	bob.append(" --object-id ").append(objectId);
+                    	bob.append(" --output-dir ").append(downloadDirectory);
+                    	bob.append(" --output-layout id");
+                    	executeCommand(bob.toString());
+                    	
+                    	// downloaded file 
+                    	String downloadPath = downloadDirFileObj.getAbsolutePath() + "/" + objectId;
+                    	System.out.println("download path: " + downloadPath);
+                    	File downloadedFileFileObj = new File(downloadPath);
+                    	File targetPathFileObj = new File(targetFilePath);
+                    	try {
+                    		Files.move(downloadedFileFileObj, targetPathFileObj);
+                    	} catch (IOException ioe) {
+                    		LOG.error(ioe.getMessage());
+                    		throw new RuntimeException("Could not move input file: ", ioe);
+                    	}
+                    } else {
+                        // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
+                        // https://commons.apache.org/proper/commons-vfs/filesystems.html
+                        FileSystemManager fsManager;
+                        try {
+                            // trigger a copy from the URL to a local file path that's a UUID to avoid collision
+                            fsManager = VFS.getManager();
+                            FileObject src = fsManager.resolveFile(path);
+                            FileObject dest = fsManager.resolveFile(new File(targetFilePath).getAbsolutePath());
+                            dest.copyFrom(src, Selectors.SELECT_SELF);
+                        } catch (FileSystemException e) {
+                            LOG.error(e.getMessage());
+                            throw new RuntimeException("Could not provision input files", e);
+                        }
                     }
 
-                    LOG.info("DOWNLOADED FILE: LOCAL: " + cwlInputFileID + " URL: " + path);
+                    // now add this info to a hash so I can later reconstruct a docker -v command
+                    FileInfo info = new FileInfo();
+                    info.setLocalPath(targetFilePath);
+                    info.setDockerPath(cwlInputFileID);
+                    info.setUrl(path);
 
+                    fileMap.put(cwlInputFileID, info);
+                    LOG.info("DOWNLOADED FILE: LOCAL: " + cwlInputFileID + " URL: " + path);
                 }
             }
-
         }
         return fileMap;
     }
@@ -430,7 +466,7 @@ public class LauncherCWL {
     private Map<String, Object> parseCWL(String cwlFile, boolean validate) {
         try {
             // update seems to just output the JSON version without checking file links
-            String[] s = new String[]{"cwltool", validate?"--print-pre":"--update", cwlFile };
+            String[] s = new String[]{"/usr/local/bin/cwltool", validate ? "--print-pre" : "--update", cwlFile };
             final ImmutablePair<String, String> execute = this.executeCommand(Joiner.on(" ").join(Arrays.asList(s)));
             Map<String, Object> obj = (Map<String, Object>)yaml.load(execute.getLeft());
             return obj;
@@ -453,7 +489,37 @@ public class LauncherCWL {
         }
     }
 
-    public static class FileInfo{
+    public static class PathInfo {
+        private static final Logger LOG = LoggerFactory.getLogger(PathInfo.class);
+        public static final String DCC_STORAGE_SCHEME = "icgc";
+    	private boolean objectIdType = false;
+    	private String objectId = "";
+    	
+		public boolean isObjectIdType() {
+			return objectIdType;
+		}
+
+		public String getObjectId() {
+			return objectId;
+		}
+		
+		public PathInfo(String path) {
+			super();
+			try {
+		    	URI objectIdentifier = URI.create(path);	// throws IllegalArgumentException if it isn't a valid URI
+		    	if (objectIdentifier.getScheme().equalsIgnoreCase(DCC_STORAGE_SCHEME)) {
+		    		objectIdType = true;
+		    		objectId = objectIdentifier.getSchemeSpecificPart().toLowerCase();
+		    	}				
+			} catch (IllegalArgumentException iae) {
+				StringBuilder bob = new StringBuilder("Invalid path specified for CWL pre-processor values: ").append(path);
+				LOG.warn(bob.toString());
+				objectIdType = false;
+			}
+		}
+    }
+    
+    public static class FileInfo {
         private String localPath;
         private String dockerPath;
         private String url;
@@ -497,5 +563,4 @@ public class LauncherCWL {
         final LauncherCWL launcherCWL = new LauncherCWL(args);
         launcherCWL.run();
     }
-
 }
