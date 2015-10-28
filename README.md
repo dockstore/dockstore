@@ -4,24 +4,30 @@ This is the prototype web service for the dockstore. The usage of this is to enu
 
 ## Usage
 
+### Building
+
+If you maven build in the root directory this will build not only the web service but the client tool:
+
+    mvn clean install
+
 ### Build Docker Version
 
-  docker build -t dockstore:1.0.0 .
+    docker build -t dockstore:1.0.0 .
 
 ### Running Via Docker
 
 Probably the best way to run this since it includes a bundled postgres.  Keep in mind once you terminate the Docker container
 any state in the DB is lost.
 
-1. Fill in the template hello-world.yml and stash it somewhere outside the git repo (like ~/.dockstore)
-2. Start with `docker run -it -v ~/.dockstore/hello-world.yml:/hello-world.yml -e POSTGRES_PASSWORD=iAMs00perSecrEET -e POSTGRES_USER=webservice -p 8080:8080 dockstore:1.0.0`
+1. Fill in the template dockstore.yml and stash it somewhere outside the git repo (like ~/.dockstore)
+2. Start with `docker run -it -v ~/.dockstore/dockstore.yml:/dockstore.yml -e POSTGRES_PASSWORD=iAMs00perSecrEET -e POSTGRES_USER=webservice -p 8080:8080 dockstore:1.0.0`
 
 ### Running Locally
 
 You can also run it on your local computer but will need to setup postgres separately.
 
-1. Fill in the template hello-world.yml and stash it somewhere outside the git repo (like ~/.dockstore)
-2. Start with `java -jar dockstore-webservice/target/dockstore-webservice-*.jar   server ~/.dockstore/hello-world.yml`
+1. Fill in the template dockstore.yml and stash it somewhere outside the git repo (like ~/.dockstore)
+2. Start with `java -jar dockstore-webservice/target/dockstore-webservice-*.jar   server ~/.dockstore/dockstore.yml`
 
 ### View Swagger UI
 

@@ -167,7 +167,7 @@ public class ContainerApi {
   }
   
   /**
-   * Get the corresponding collab.cwl file on Github
+   * Get the corresponding Dockstore.cwl file on Github
    * Enter full path of container (add quay.io if using quay.io)
    * @param repository 
    * @return Collab

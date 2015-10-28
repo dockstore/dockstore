@@ -47,6 +47,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -129,16 +131,17 @@ public class DockerRepoResource {
 
         this.containerDAO = containerDAO;
 
+        // TODO: these need to be removed, Quay.io owes us an API fix to allow us to remove these
         // namespaces.add("victoroicr");
         // namespaces.add("xliuoicr");
         // namespaces.add("oicr_vchung");
         // namespaces.add("oicr_vchung_org");
         // namespaces.add("denis-yuen");
-        namespaces.add("seqware");
+        // namespaces.add("seqware");
         // namespaces.add("boconnor");
         // namespaces.add("briandoconnor");
-        namespaces.add("collaboratory");
-        namespaces.add("pancancer");
+        // namespaces.add("collaboratory");
+        // namespaces.add("pancancer");
     }
 
     @GET
@@ -277,7 +280,13 @@ public class DockerRepoResource {
                                 LOG.info(repository.getSshUrl());
                                 if (repository.getSshUrl().equals(c.getGitUrl())) {
                                     try {
-                                        List<RepositoryContents> contents = cService.getContents(repository, "collab.cwl");
+                                        List<RepositoryContents> contents = null;
+                                        try {
+                                            contents = cService.getContents(repository, "Dockstore.cwl");
+                                        } catch (Exception e) {
+                                            contents = cService.getContents(repository, "dockstore.cwl");
+                                            LOG.error("Repo: " + repository.getName() + " has no Dockstore.cwl, trying dockstore.cwl");
+                                        }
                                         if (!(contents == null || contents.isEmpty())) {
                                             c.setHasCollab(true);
 
@@ -285,7 +294,7 @@ public class DockerRepoResource {
                                             byte[] decode = Base64.getDecoder().decode(encoded);
                                             String content = new String(decode, StandardCharsets.UTF_8);
 
-                                            // parse the collab.cwl file to get description and author
+                                            // parse the Dockstore.cwl file to get description and author
                                             YamlReader reader = new YamlReader(content);
                                             Object object = reader.read();
                                             Map map = (Map) object;
@@ -296,10 +305,12 @@ public class DockerRepoResource {
                                             c.setDescription(description);
                                             c.setAuthor(author);
 
-                                            LOG.info("Repo: " + repository.getName() + " has collab.cwl");
+                                            LOG.error("Repo: " + repository.getName() + " has Dockstore.cwl");
+                                        } else {
+                                            LOG.error("Repo: " + repository.getName() + " has no Dockstore.cwl nor dockstore.cwl!!!");
                                         }
                                     } catch (IOException ex) {
-                                        LOG.info("Repo: " + repository.getName() + " has no collab.cwl");
+                                        LOG.error("Repo: " + repository.getName() + " has no Dockstore.cwl");
                                     }
                                 }
                             }
@@ -368,8 +379,8 @@ public class DockerRepoResource {
     @UnitOfWork
     @ApiOperation(value = "List all docker containers cached in database", notes = "List docker container repos currently known. Admin Only", response = Container.class, responseContainer = "List")
     public List<Container> allContainers(@ApiParam(hidden = true) @Auth Token authToken) {
-        User user = userDAO.findById(authToken.getUserId());
-        Helper.checkUser(user);
+        //User user = userDAO.findById(authToken.getUserId());
+        //Helper.checkUser(user);
 
         List<Container> list = containerDAO.findAll();
         return list;
@@ -379,12 +390,12 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}")
-    @ApiOperation(value = "Get a cached repo", response = Container.class)
-    public Container getContainer(@ApiParam(hidden = true) @Auth Token authToken,
+    @ApiOperation(value = "Get a cached repo", notes = "NO authentication", response = Container.class)
+    public Container getContainer(
             @ApiParam(value = "Container ID", required = true) @PathParam("containerId") Long containerId) {
         Container c = containerDAO.findById(containerId);
-        User user = userDAO.findById(authToken.getUserId());
-        Helper.checkUser(user, c.getUserId());
+        //User user = userDAO.findById(authToken.getUserId());
+        //Helper.checkUser(user, c.getUserId());
 
         return c;
     }
@@ -560,23 +571,105 @@ public class DockerRepoResource {
         return (List) tags;
     }
 
+    // TODO: this method is very repetative with the method below, need to refactor
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/dockerfile")
+    @ApiOperation(value = "Get the corresponding Dockerfile on Github", notes = "Enter full path of container (add quay.io if using quay.io)", response = Collab.class)
+    public Collab dockerfile(@QueryParam("repository") String repository) {
+
+        // info about this repository path
+        Container container = containerDAO.findByPath(repository);
+
+        Collab collab = new Collab();
+
+        // TODO: this only works with public repos, we will need an endpoint for public and another for auth to handle private repos in the future
+        // search for the Dockstore.cwl
+        GitHubClient githubClient = new GitHubClient();
+        RepositoryService service = new RepositoryService(githubClient);
+        try {
+            // git@github.com:briandoconnor/dockstore-tool-bamstats.git
+
+            Pattern p = Pattern.compile("git\\@github.com:(\\S+)/(\\S+)\\.git");
+            Matcher m = p.matcher(container.getGitUrl());
+            m.find();
+
+            Repository repo = service.getRepository(m.group(1), m.group(2));
+
+            ContentsService cService = new ContentsService(githubClient);
+            List<RepositoryContents> contents = null;
+            try {
+                contents = cService.getContents(repo, "Dockerfile");
+            } catch (Exception e) {
+                contents = cService.getContents(repo, "dockerfile");
+            }
+            if (!(contents == null || contents.isEmpty())) {
+                String encoded = contents.get(0).getContent().replace("\n", "");
+                byte[] decode = Base64.getDecoder().decode(encoded);
+                String content = new String(decode, StandardCharsets.UTF_8);
+                // builder.append(content);
+                collab.setContent(content);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            LOG.error(e.getMessage());
+        }
+
+        return collab;
+    }
+
     @GET
     @Timed
     @UnitOfWork
     @Path("/collab")
-    @ApiOperation(value = "Get the corresponding collab.cwl file on Github", notes = "Enter full path of container (add quay.io if using quay.io)", response = Collab.class)
-    public Collab collab(@ApiParam(hidden = true) @Auth Token authToken, @QueryParam("repository") String repository) {
+    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github", notes = "Enter full path of container (add quay.io if using quay.io)", response = Collab.class)
+    public Collab collab(@QueryParam("repository") String repository) {
+
+        // info about this repository path
         Container container = containerDAO.findByPath(repository);
-
-        User authUser = userDAO.findById(authToken.getUserId());
-        // Helper.checkUser(authUser, container.getUserId());
-
-        boolean hasGithub = false;
 
         Collab collab = new Collab();
 
+        // TODO: this only works with public repos, we will need an endpoint for public and another for auth to handle private repos in the future
+        // search for the Dockstore.cwl
+        GitHubClient githubClient = new GitHubClient();
+        RepositoryService service = new RepositoryService(githubClient);
+        try {
+            // git@github.com:briandoconnor/dockstore-tool-bamstats.git
+
+            Pattern p = Pattern.compile("git\\@github.com:(\\S+)/(\\S+)\\.git");
+            Matcher m = p.matcher(container.getGitUrl());
+            m.find();
+            
+            Repository repo = service.getRepository(m.group(1), m.group(2));
+            ContentsService cService = new ContentsService(githubClient);
+            List<RepositoryContents> contents = null;
+            try {
+                contents = cService.getContents(repo, "Dockstore.cwl");
+            } catch (Exception e) {
+                contents = cService.getContents(repo, "dockstore.cwl");
+            }
+            if (!(contents == null || contents.isEmpty())) {
+                String encoded = contents.get(0).getContent().replace("\n", "");
+                byte[] decode = Base64.getDecoder().decode(encoded);
+                String content = new String(decode, StandardCharsets.UTF_8);
+                // builder.append(content);
+                collab.setContent(content);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            LOG.error(e.getMessage());
+        }
+
+        // TODO: I'm leaving this commented code below since it will be useful for when we support private repos
+
+        /*
         // StringBuilder builder = new StringBuilder();
         if (container != null) {
+
             Helper.checkUser(authUser, container.getUserId()); // null check first
 
             List<Token> tokens = tokenDAO.findByUserId(container.getUserId());
@@ -656,11 +749,12 @@ public class DockerRepoResource {
                 throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
             }
 
-        } else {
+       } else {
             // builder.append(repository).append(" is not registered");
             LOG.info(repository + " is not registered");
             throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
         }
+        */
 
         // String ret = builder.toString();
         // LOG.info(ret);
