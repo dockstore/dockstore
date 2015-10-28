@@ -336,6 +336,7 @@ public class DockerRepoResource {
 
         // info about this repository path
         Container container = containerDAO.findById(containerId);
+        Helper.checkContainer(container);
 
         Helper.FileResponse dockerfile = new Helper.FileResponse();
 
@@ -348,7 +349,9 @@ public class DockerRepoResource {
             // git@github.com:briandoconnor/dockstore-tool-bamstats.git
             Pattern p = Pattern.compile("git\\@github.com:(\\S+)/(\\S+)\\.git");
             Matcher m = p.matcher(container.getGitUrl());
-            m.find();
+            if (!m.find()) {
+                throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
+            }
 
             Repository repo = service.getRepository(m.group(1), m.group(2));
 
@@ -384,6 +387,7 @@ public class DockerRepoResource {
 
         // info about this repository path
         Container container = containerDAO.findById(containerId);
+        Helper.checkContainer(container);
 
         Helper.FileResponse cwl = new Helper.FileResponse();
 
@@ -397,7 +401,9 @@ public class DockerRepoResource {
 
             Pattern p = Pattern.compile("git\\@github.com:(\\S+)/(\\S+)\\.git");
             Matcher m = p.matcher(container.getGitUrl());
-            m.find();
+            if (!m.find()) {
+                throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
+            }
 
             Repository repo = service.getRepository(m.group(1), m.group(2));
             ContentsService cService = new ContentsService(githubClient);
