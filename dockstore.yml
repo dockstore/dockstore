@@ -5,6 +5,7 @@ quayRedirectURI: http://<fill me in>:8080/accounts
 githubClientID: <fill me in>
 githubClientSecret: <fill me in>
 githubRedirectURI: http://<fill me in>:8080/login
+hostName: <fill me in>
 
 authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
 

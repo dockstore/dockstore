@@ -43,6 +43,9 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     @NotNull
     private CacheBuilderSpec authenticationCachePolicy;
 
+    @NotEmpty
+    private String hostName;
+
     @JsonProperty("database")
     public DataSourceFactory getDataSourceFactory() {
         return database;
@@ -182,5 +185,13 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     public void setAuthenticationCachePolicy(CacheBuilderSpec authenticationCachePolicy) {
         this.authenticationCachePolicy = authenticationCachePolicy;
+    }
+
+    public String getHostName() {
+        return hostName;
+    }
+
+    public void setHostName(String hostName) {
+        this.hostName = hostName;
     }
 }
