@@ -330,7 +330,8 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/dockerfile")
-    @ApiOperation(value = "Get the corresponding Dockerfile on Github", notes = "Does not need authentication", response = Helper.FileResponse.class)
+    @ApiOperation(value = "Get the corresponding Dockerfile on Github. This would be a minimal resource that would need to be implemented "
+            + "by a GA4GH reference server", tags = { "GA4GH", "containers" }, notes = "Does not need authentication", response = Helper.FileResponse.class)
     public Helper.FileResponse dockerfile(
             @ApiParam(value = "Container id to delete", required = true) @PathParam("containerId") Long containerId) {
 
@@ -382,7 +383,8 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/cwl")
-    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github", notes = "Does not need authentication", response = Helper.FileResponse.class)
+    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github. This would be a minimal resource that would need to be implemented "
+            + "by a GA4GH reference server", tags = { "GA4GH", "containers" }, notes = "Does not need authentication", response = Helper.FileResponse.class)
     public Helper.FileResponse cwl(@ApiParam(value = "Container id to delete", required = true) @PathParam("containerId") Long containerId) {
 
         // info about this repository path

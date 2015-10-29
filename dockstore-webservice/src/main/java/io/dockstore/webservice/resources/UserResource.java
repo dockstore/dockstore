@@ -406,7 +406,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/user")
-    @ApiOperation(value = "Get Dockstore tokens with user id", response = User.class)
+    @ApiOperation(value = "Get the logged-in user", response = User.class)
     public User getUser(@ApiParam(hidden = true) @Auth Token authToken) {
         User user = userDAO.findById(authToken.getUserId());
         return user;
