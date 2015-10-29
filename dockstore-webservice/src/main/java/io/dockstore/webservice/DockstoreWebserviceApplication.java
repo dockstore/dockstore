@@ -126,8 +126,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     public void run(DockstoreWebserviceConfiguration configuration, Environment environment) {
         BeanConfig beanConfig = new BeanConfig();
         beanConfig.setVersion("1.0.2");
-        beanConfig.setSchemes(new String[] { "http" });
-        beanConfig.setHost(configuration.getHostname() + ":8080");
+        beanConfig.setSchemes(new String[] { configuration.getScheme() });
+        beanConfig.setHost(configuration.getHostname() + ":" + configuration.getPort());
         beanConfig.setBasePath("/");
         beanConfig.setResourcePackage("io.dockstore.webservice.resources");
         beanConfig.setScan(true);

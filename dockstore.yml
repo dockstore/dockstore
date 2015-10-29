@@ -6,6 +6,8 @@ githubClientID: <fill me in>
 githubClientSecret: <fill me in>
 githubRedirectURI: http://<fill me in>:8080/login
 hostname: <fill me in>
+scheme: https
+port: 8443
 
 authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
 

@@ -46,6 +46,12 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     @NotEmpty
     private String hostname;
 
+    @NotEmpty
+    private String scheme;
+
+    @NotEmpty
+    private String port;
+
     @JsonProperty("database")
     public DataSourceFactory getDataSourceFactory() {
         return database;
@@ -193,5 +199,21 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     public void setHostname(String hostname) {
         this.hostname = hostname;
+    }
+
+    public String getScheme() {
+        return scheme;
+    }
+
+    public void setScheme(String scheme) {
+        this.scheme = scheme;
+    }
+
+    public String getPort() {
+        return port;
+    }
+
+    public void setPort(String port) {
+        this.port = port;
     }
 }
