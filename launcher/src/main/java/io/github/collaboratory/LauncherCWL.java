@@ -395,6 +395,7 @@ public class LauncherCWL {
     	bob.append(" --object-id ").append(objectId);
     	bob.append(" --output-dir ").append(downloadDir);
     	bob.append(" --output-layout id");
+        bob.append(" --quiet");
     	executeCommand(bob.toString());
     }
     
