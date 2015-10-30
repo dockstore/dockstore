@@ -258,6 +258,10 @@ public class Client {
     }
 
     private static void info(List<String> args) {
+        if (args.isEmpty()) {
+            kill("Please provide a container.");
+        }
+
         String path = args.get(0);
         try {
             Container container = containersApi.getContainerByPath(path);
@@ -323,6 +327,10 @@ public class Client {
     }
 
     private static void cwl(List<String> args) {
+        if (args.isEmpty()) {
+            kill("Please provide a container.");
+        }
+
         String path = args.get(0);
 
         try {
@@ -334,7 +342,8 @@ public class Client {
                 out("No cwl file found.");
             }
         } catch (ApiException ex) {
-            out("Exception: " + ex);
+            // out("Exception: " + ex);
+            out("Could not find container");
         }
     }
 
