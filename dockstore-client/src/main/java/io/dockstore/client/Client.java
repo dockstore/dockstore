@@ -188,7 +188,8 @@ public class Client {
 
     private static void list(List<String> args) {
         try {
-            List<Container> containers = containersApi.allRegisteredContainers();
+            // List<Container> containers = containersApi.allRegisteredContainers();
+            List<Container> containers = usersApi.userRegisteredContainers(user.getId());
             printRegisteredList(containers);
         } catch (ApiException ex) {
             out("Exception: " + ex);
@@ -312,11 +313,12 @@ public class Client {
                 // out(container.toString());
             }
         } catch (ApiException ex) {
-            if (ex.getCode() == BAD_REQUEST) {
-                out("This container is not registered.");
-            } else {
-                out("Exception: " + ex);
-            }
+            // if (ex.getCode() == BAD_REQUEST) {
+            // out("This container is not registered.");
+            // } else {
+            // out("Exception: " + ex);
+            // }
+            out("Could not find container");
         }
     }
 
