@@ -404,7 +404,7 @@ public class Client {
                 out("");
                 out("  info <container> :  print detailed information about a particular container");
                 out("");
-                out("  cwl              :  returns the Common Workflow Language tool definition for this Docker image ");
+                out("  cwl <container>  :  returns the Common Workflow Language tool definition for this Docker image ");
                 out("                      which enables integration with Global Alliance compliant systems");
                 out("");
                 out("  refresh          :  updates your list of containers stored on Dockstore");
