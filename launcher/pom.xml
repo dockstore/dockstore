@@ -4,7 +4,7 @@
 
     <groupId>io.github.collaboratory.launcher</groupId>
     <artifactId>io.github.collaboratory.launcher</artifactId>
-    <version>1.0.4</version>
+    <version>1.0.5-SNAPSHOT</version>
 
     <properties>
 	    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -19,7 +19,7 @@
         <connection>${github.url}</connection>
         <developerConnection>${github.url}</developerConnection>
         <url>${github.url}</url>
-        <tag>1.0.4</tag>
+        <tag>HEAD</tag>
     </scm>
     
     <distributionManagement>
