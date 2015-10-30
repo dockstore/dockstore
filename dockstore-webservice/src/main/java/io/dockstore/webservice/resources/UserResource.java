@@ -96,9 +96,9 @@ public class UserResource {
         this.githubClientID = githubClientID;
         this.githubClientSecret = githubClientSecret;
 
-        namespaces.add("seqware");
-        namespaces.add("collaboratory");
-        namespaces.add("pancancer");
+        // namespaces.add("seqware");
+        // namespaces.add("collaboratory");
+        // namespaces.add("pancancer");
     }
 
     @POST
