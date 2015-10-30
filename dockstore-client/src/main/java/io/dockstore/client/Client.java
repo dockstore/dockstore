@@ -56,7 +56,9 @@ public class Client {
     private static final String DESCRIPTION_HEADER = "DESCRIPTION";
     private static final String GIT_HEADER = "Github Repo";
 
+    private static final int BAD_REQUEST = 400;
     private static final int PADDING = 3;
+    private static final int MAX_DESCRIPTION = 50;
 
     private static void out(String format, Object... args) {
         System.out.println(String.format(format, args));
@@ -99,8 +101,7 @@ public class Client {
         }
     }
 
-    private static void printContainerList(List<Container> containers) {
-
+    private static int[] columnWidths(List<Container> containers) {
         int[] maxWidths = { NAME_HEADER.length(), DESCRIPTION_HEADER.length(), GIT_HEADER.length() };
 
         for (Container container : containers) {
@@ -115,10 +116,19 @@ public class Client {
             }
         }
 
+        maxWidths[1] = (maxWidths[1] > MAX_DESCRIPTION) ? MAX_DESCRIPTION : maxWidths[1];
+
+        return maxWidths;
+    }
+
+    private static void printContainerList(List<Container> containers) {
+
+        int[] maxWidths = columnWidths(containers);
+
         int nameWidth = maxWidths[0] + PADDING;
         int descWidth = maxWidths[1] + PADDING;
         int gitWidth = maxWidths[2] + PADDING;
-        String format = "%-" + nameWidth + "s%-" + descWidth + "s%-" + gitWidth + "s%-15s%-14s%-12s";
+        String format = "%-" + nameWidth + "s%-" + descWidth + "s%-" + gitWidth + "s%-16s%-16s%-10s";
         out(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "On Dockstore?", "Dockstore.cwl", "Automated");
 
         for (Container container : containers) {
@@ -138,6 +148,9 @@ public class Client {
 
             if (container.getDescription() != null) {
                 description = container.getDescription();
+                if (description.length() > MAX_DESCRIPTION) {
+                    description = description.substring(0, MAX_DESCRIPTION - PADDING) + "...";
+                }
             }
 
             out(format, container.getPath(), description, gitUrl, boolWord(container.getIsRegistered()), cwl, automated);
@@ -146,19 +159,7 @@ public class Client {
 
     private static void printRegisteredList(List<Container> containers) {
 
-        int[] maxWidths = { NAME_HEADER.length(), DESCRIPTION_HEADER.length(), GIT_HEADER.length() };
-
-        for (Container container : containers) {
-            if (container.getPath() != null && container.getPath().length() > maxWidths[0]) {
-                maxWidths[0] = container.getPath().length();
-            }
-            if (container.getDescription() != null && container.getDescription().length() > maxWidths[1]) {
-                maxWidths[1] = container.getDescription().length();
-            }
-            if (container.getGitUrl() != null && container.getGitUrl().length() > maxWidths[2]) {
-                maxWidths[2] = container.getGitUrl().length();
-            }
-        }
+        int[] maxWidths = columnWidths(containers);
 
         int nameWidth = maxWidths[0] + PADDING;
         int descWidth = maxWidths[1] + PADDING;
@@ -176,6 +177,9 @@ public class Client {
 
             if (container.getDescription() != null) {
                 description = container.getDescription();
+                if (description.length() > MAX_DESCRIPTION) {
+                    description = description.substring(0, MAX_DESCRIPTION - PADDING) + "...";
+                }
             }
 
             out(format, container.getPath(), description, gitUrl);
@@ -192,6 +196,9 @@ public class Client {
     }
 
     private static void search(List<String> args) {
+        if (args.isEmpty()) {
+            kill("Please provide a search term.");
+        }
         String pattern = args.get(0);
         try {
             List<Container> containers = containersApi.search(pattern);
@@ -242,18 +249,18 @@ public class Client {
         out("");
         out("HELP FOR DOCKSTORE");
         out("------------------");
-        out("See http://dockstore.io for more information");
+        out("See https://www.dockstore.org for more information");
         out("");
-        out("dockstore publish  :  lists the current and potential containers to share");
+        out("dockstore publish              :  lists the current and potential containers to share");
         out("");
-        out("dockstore publish <contianer_id>  : registers that container for use by others in the dockstore");
+        out("dockstore publish <container>  :  registers that container for use by others in the dockstore");
     }
 
     private static void info(List<String> args) {
         String path = args.get(0);
         try {
             Container container = containersApi.getContainerByPath(path);
-            if (container == null) {
+            if (container == null || !container.getIsRegistered()) {
                 out("This container is not registered.");
             } else {
                 // out(container.toString());
@@ -305,7 +312,11 @@ public class Client {
                 // out(container.toString());
             }
         } catch (ApiException ex) {
-            out("Exception: " + ex);
+            if (ex.getCode() == BAD_REQUEST) {
+                out("This container is not registered.");
+            } else {
+                out("Exception: " + ex);
+            }
         }
     }
 
@@ -354,6 +365,15 @@ public class Client {
             String token = (String) map.get("token");
             String serverUrl = (String) map.get("server-url");
 
+            if (token == null) {
+                err("The token is missing from your config file.");
+                System.exit(1);
+            }
+            if (serverUrl == null) {
+                err("The server-url is missing from your config file.");
+                System.exit(1);
+            }
+
             defaultApiClient = Configuration.getDefaultApiClient();
             defaultApiClient.addDefaultHeader("Authorization", "Bearer " + token);
             defaultApiClient.setBasePath(serverUrl);
@@ -370,22 +390,22 @@ public class Client {
                 out("");
                 out("HELP FOR DOCKSTORE");
                 out("------------------");
-                out("See http://dockstore.io for more information");
+                out("See https://www.dockstore.org for more information");
                 out("");
                 out("Possible sub-commands include:");
                 out("");
-                out("  list        :  lists all the containers registered by the user ");
+                out("  list             :  lists all the containers registered by the user ");
                 out("");
-                out("  search      :  allows a user to search for all containers that match the criteria");
+                out("  search <pattern> :  allows a user to search for all containers that match the criteria");
                 out("");
-                out("  publish     :  register a container in the dockstore");
+                out("  publish          :  register a container in the dockstore");
                 out("");
-                out("  info        :  print detailed information about a particular container");
+                out("  info <container> :  print detailed information about a particular container");
                 out("");
-                out("  cwl         :  returns the Common Workflow Language tool definition for this Docker image ");
-                out("                 which enables integration with Global Alliance compliant systems");
+                out("  cwl              :  returns the Common Workflow Language tool definition for this Docker image ");
+                out("                      which enables integration with Global Alliance compliant systems");
                 out("");
-                out("  refresh     :  updates your list of containers stored on Dockstore");
+                out("  refresh          :  updates your list of containers stored on Dockstore");
                 out("------------------");
             } else {
                 try {
