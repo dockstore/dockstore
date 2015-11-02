@@ -28,7 +28,6 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.ContainerDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
-import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.resources.ResourceUtilities;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -51,12 +50,15 @@ import org.eclipse.egit.github.core.service.OrganizationService;
 import org.eclipse.egit.github.core.service.RepositoryService;
 import org.eclipse.egit.github.core.service.UserService;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author xliu
  */
 public class Helper {
+    private static final Logger LOG = LoggerFactory.getLogger(Helper.class);
+
     public static class RepoList {
 
         private List<Container> repositories;
@@ -131,8 +133,7 @@ public class Helper {
         return currentList;
     }
 
-    private static List<Container> getQuayContainers(HttpClient client, Logger LOG, ObjectMapper objectMapper, List<String> namespaces,
-            Token quayToken) {
+    private static List<Container> getQuayContainers(HttpClient client, ObjectMapper objectMapper, List<String> namespaces, Token quayToken) {
         List<Container> containerList = new ArrayList<>(0);
 
         for (String namespace : namespaces) {
@@ -156,7 +157,7 @@ public class Helper {
         return containerList;
     }
 
-    private static List<String> getNamespaces(HttpClient client, Logger LOG, Token quayToken) {
+    private static List<String> getNamespaces(HttpClient client, Token quayToken) {
         List<String> namespaces = new ArrayList<>();
 
         String url = "https://quay.io/api/v1/user/";
@@ -182,9 +183,8 @@ public class Helper {
         return namespaces;
     }
 
-    @SuppressWarnings("checkstyle:parameternumber")
-    public static List<Container> refresh(Long userId, HttpClient client, ObjectMapper objectMapper, Logger LOG, UserDAO userDAO,
-            ContainerDAO containerDAO, TokenDAO tokenDAO, TagDAO tagDAO) {
+    public static List<Container> refresh(Long userId, HttpClient client, ObjectMapper objectMapper, ContainerDAO containerDAO,
+            TokenDAO tokenDAO, TagDAO tagDAO) {
         List<Container> currentRepos = containerDAO.findByUserId(userId);
         List<Container> allRepos = new ArrayList<>(0);
         List<Token> tokens = tokenDAO.findByUserId(userId);
@@ -212,7 +212,7 @@ public class Helper {
             throw new WebApplicationException(HttpStatus.SC_CONFLICT);
         }
 
-        namespaces.addAll(getNamespaces(client, LOG, quayToken));
+        namespaces.addAll(getNamespaces(client, quayToken));
 
         GitHubClient githubClient = new GitHubClient();
         githubClient.setOAuth2Token(gitToken.getContent());
@@ -223,7 +223,7 @@ public class Helper {
             ContentsService cService = new ContentsService(githubClient);
             org.eclipse.egit.github.core.User user = uService.getUser();
 
-            allRepos = Helper.getQuayContainers(client, LOG, objectMapper, namespaces, quayToken);
+            allRepos = Helper.getQuayContainers(client, objectMapper, namespaces, quayToken);
 
             // Go through each container for each namespace
             for (Container c : allRepos) {
