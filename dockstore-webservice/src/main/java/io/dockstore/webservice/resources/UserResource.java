@@ -19,8 +19,10 @@ package io.dockstore.webservice.resources;
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
+import com.google.common.base.Optional;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
+import com.google.gson.Gson;
 import io.dockstore.webservice.Helper;
 import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.Group;
@@ -40,7 +42,9 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -81,8 +85,6 @@ public class UserResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
 
-    private final List<String> namespaces = new ArrayList<>();
-
     @SuppressWarnings("checkstyle:parameternumber")
     public UserResource(ObjectMapper mapper, HttpClient client, TokenDAO tokenDAO, UserDAO userDAO, GroupDAO groupDAO,
             ContainerDAO containerDAO, TagDAO tagDAO, String githubClientID, String githubClientSecret) {
@@ -95,10 +97,6 @@ public class UserResource {
         this.tagDAO = tagDAO;
         this.githubClientID = githubClientID;
         this.githubClientSecret = githubClientSecret;
-
-        // namespaces.add("seqware");
-        // namespaces.add("collaboratory");
-        // namespaces.add("pancancer");
     }
 
     @POST
@@ -384,7 +382,7 @@ public class UserResource {
         User authUser = userDAO.findById(authToken.getUserId());
         Helper.checkUser(authUser, userId);
 
-        List<Container> containers = Helper.refresh(userId, client, objectMapper, namespaces, LOG, userDAO, containerDAO, tokenDAO, tagDAO);
+        List<Container> containers = Helper.refresh(userId, client, objectMapper, containerDAO, tokenDAO, tagDAO);
         return containers;
     }
 
@@ -410,5 +408,44 @@ public class UserResource {
     public User getUser(@ApiParam(hidden = true) @Auth Token authToken) {
         User user = userDAO.findById(authToken.getUserId());
         return user;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/organizations")
+    @ApiOperation(value = "Get user's organizations", notes = "For testing purposes. Returns the list of organizations from user's Quay.io account", response = ArrayList.class, responseContainer = "List", hidden = true)
+    public ArrayList getOrganizations(@ApiParam(hidden = true) @Auth Token authToken) {
+        User authUser = userDAO.findById(authToken.getUserId());
+        // Helper.checkUser(authUser);
+
+        List<Token> tokens = tokenDAO.findQuayByUserId(authUser.getId());
+        Token token = null;
+        if (tokens.isEmpty()) {
+            throw new WebApplicationException(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        } else {
+            token = tokens.get(0);
+        }
+
+        String url = "https://quay.io/api/v1/user/";
+        Optional<String> asString = ResourceUtilities.asString(url, token.getContent(), client);
+        if (asString.isPresent()) {
+            String response = asString.get();
+            LOG.info("RESOURCE CALL: " + url);
+
+            Gson gson = new Gson();
+            // Map<String, String> map = new HashMap<>();
+            // map = (Map<String, String>) gson.fromJson(response, map.getClass());
+            //
+            // String username = map.get("username");
+            // LOG.info(username);
+
+            Map<String, ArrayList> map2 = new HashMap<>();
+            map2 = (Map<String, ArrayList>) gson.fromJson(response, map2.getClass());
+            ArrayList organizations = map2.get("organizations");
+
+            return organizations;
+        }
+        return null;
     }
 }
