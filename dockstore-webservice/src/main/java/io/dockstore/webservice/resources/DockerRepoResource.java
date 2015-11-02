@@ -535,7 +535,7 @@ public class DockerRepoResource {
         List<Token> tokens = tokenDAO.findQuayByUserId(authUser.getId());
         Token token = null;
         if (tokens.isEmpty()) {
-
+            throw new WebApplicationException(HttpStatus.SC_INTERNAL_SERVER_ERROR);
         } else {
             token = tokens.get(0);
         }
