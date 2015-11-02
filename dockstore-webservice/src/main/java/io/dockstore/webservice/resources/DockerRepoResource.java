@@ -126,8 +126,7 @@ public class DockerRepoResource {
         List<User> users = userDAO.findAll();
         for (User user : users) {
             try {
-                containers.addAll(Helper.refresh(user.getId(), client, objectMapper, namespaces, LOG, userDAO, containerDAO, tokenDAO,
-                        tagDAO));
+                containers.addAll(Helper.refresh(user.getId(), client, objectMapper, containerDAO, tokenDAO, tagDAO));
             } catch (WebApplicationException ex) {
                 LOG.info("Failed to refresh user " + user.getId());
             }
@@ -524,53 +523,4 @@ public class DockerRepoResource {
         return cwl;
     }
 
-    private static class QuayUser {
-        private String username;
-
-        public void setUsername(String username) {
-            this.username = username;
-        }
-
-        public String getUsername() {
-            return this.username;
-        }
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork
-    @Path("/getQuayUser")
-    @ApiOperation(value = "Get quay user", notes = "testing", response = QuayUser.class, hidden = true)
-    // , hidden = true)
-    public QuayUser getQuayUser(@ApiParam(hidden = true) @Auth Token authToken, @QueryParam("tokenId") long tokenId) {
-        User authUser = userDAO.findById(authToken.getUserId());
-        Helper.checkUser(authUser);
-
-        Token token = tokenDAO.findById(tokenId);
-
-        String url = TARGET_URL + "user/";
-        Optional<String> asString = ResourceUtilities.asString(url, token.getContent(), client);
-        System.out.println("URL: " + url);
-        if (asString.isPresent()) {
-            System.out.println("INSIDE IF");
-            try {
-                System.out.println("GETTING RESPONSE....");
-                String response = asString.get();
-
-                Gson gson = new Gson();
-                Map<String, String> map = new HashMap<>();
-                map = (Map<String, String>) gson.fromJson(response, map.getClass());
-
-                String username = map.get("username");
-                System.out.println(username);
-
-                QuayUser quayUser = objectMapper.readValue(response, QuayUser.class);
-                System.out.println(quayUser.getUsername());
-                return quayUser;
-            } catch (IOException ex) {
-                System.out.println("EXCEPTION: " + ex);
-            }
-        }
-        return null;
-    }
 }

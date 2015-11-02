@@ -188,7 +188,8 @@ public class Client {
 
     private static void list(List<String> args) {
         try {
-            List<Container> containers = containersApi.allRegisteredContainers();
+            // List<Container> containers = containersApi.allRegisteredContainers();
+            List<Container> containers = usersApi.userRegisteredContainers(user.getId());
             printRegisteredList(containers);
         } catch (ApiException ex) {
             out("Exception: " + ex);
@@ -257,6 +258,10 @@ public class Client {
     }
 
     private static void info(List<String> args) {
+        if (args.isEmpty()) {
+            kill("Please provide a container.");
+        }
+
         String path = args.get(0);
         try {
             Container container = containersApi.getContainerByPath(path);
@@ -312,15 +317,20 @@ public class Client {
                 // out(container.toString());
             }
         } catch (ApiException ex) {
-            if (ex.getCode() == BAD_REQUEST) {
-                out("This container is not registered.");
-            } else {
-                out("Exception: " + ex);
-            }
+            // if (ex.getCode() == BAD_REQUEST) {
+            // out("This container is not registered.");
+            // } else {
+            // out("Exception: " + ex);
+            // }
+            out("Could not find container");
         }
     }
 
     private static void cwl(List<String> args) {
+        if (args.isEmpty()) {
+            kill("Please provide a container.");
+        }
+
         String path = args.get(0);
 
         try {
@@ -332,7 +342,8 @@ public class Client {
                 out("No cwl file found.");
             }
         } catch (ApiException ex) {
-            out("Exception: " + ex);
+            // out("Exception: " + ex);
+            out("Could not find container");
         }
     }
 
@@ -402,7 +413,7 @@ public class Client {
                 out("");
                 out("  info <container> :  print detailed information about a particular container");
                 out("");
-                out("  cwl              :  returns the Common Workflow Language tool definition for this Docker image ");
+                out("  cwl <container>  :  returns the Common Workflow Language tool definition for this Docker image ");
                 out("                      which enables integration with Global Alliance compliant systems");
                 out("");
                 out("  refresh          :  updates your list of containers stored on Dockstore");
