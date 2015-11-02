@@ -81,8 +81,6 @@ public class UserResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
 
-    private final List<String> namespaces = new ArrayList<>();
-
     @SuppressWarnings("checkstyle:parameternumber")
     public UserResource(ObjectMapper mapper, HttpClient client, TokenDAO tokenDAO, UserDAO userDAO, GroupDAO groupDAO,
             ContainerDAO containerDAO, TagDAO tagDAO, String githubClientID, String githubClientSecret) {
@@ -95,10 +93,6 @@ public class UserResource {
         this.tagDAO = tagDAO;
         this.githubClientID = githubClientID;
         this.githubClientSecret = githubClientSecret;
-
-        // namespaces.add("seqware");
-        // namespaces.add("collaboratory");
-        // namespaces.add("pancancer");
     }
 
     @POST
@@ -384,7 +378,7 @@ public class UserResource {
         User authUser = userDAO.findById(authToken.getUserId());
         Helper.checkUser(authUser, userId);
 
-        List<Container> containers = Helper.refresh(userId, client, objectMapper, namespaces, LOG, userDAO, containerDAO, tokenDAO, tagDAO);
+        List<Container> containers = Helper.refresh(userId, client, objectMapper, LOG, userDAO, containerDAO, tokenDAO, tagDAO);
         return containers;
     }
 

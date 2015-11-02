@@ -82,7 +82,7 @@ public class Helper {
         }
     }
 
-    public static List<Container> updateContainers(List<Container> newList, List<Container> currentList, long userId,
+    private static List<Container> updateContainers(List<Container> newList, List<Container> currentList, long userId,
             ContainerDAO containerDAO, TagDAO tagDAO, Map<String, ArrayList> tagMap) {
         Date time = new Date();
 
@@ -131,11 +131,11 @@ public class Helper {
         return currentList;
     }
 
-    public static List<Container> getQuayContainers(HttpClient client, Logger LOG, ObjectMapper objectMapper, List<String> namespaceList,
+    private static List<Container> getQuayContainers(HttpClient client, Logger LOG, ObjectMapper objectMapper, List<String> namespaces,
             Token quayToken) {
         List<Container> containerList = new ArrayList<>(0);
 
-        for (String namespace : namespaceList) {
+        for (String namespace : namespaces) {
             String url = "https://quay.io/api/v1/repository?namespace=" + namespace;
             Optional<String> asString = ResourceUtilities.asString(url, quayToken.getContent(), client);
 
@@ -156,9 +156,35 @@ public class Helper {
         return containerList;
     }
 
+    private static List<String> getNamespaces(HttpClient client, Logger LOG, Token quayToken) {
+        List<String> namespaces = new ArrayList<>();
+
+        String url = "https://quay.io/api/v1/user/";
+        Optional<String> asString = ResourceUtilities.asString(url, quayToken.getContent(), client);
+        if (asString.isPresent()) {
+            String response = asString.get();
+            LOG.info("RESOURCE CALL: " + url);
+            Gson gson = new Gson();
+
+            Map<String, ArrayList> map = new HashMap<>();
+            map = (Map<String, ArrayList>) gson.fromJson(response, map.getClass());
+            ArrayList organizations = map.get("organizations");
+
+            for (int i = 0; i < organizations.size(); i++) {
+                Map<String, String> map2 = new HashMap<>();
+                map2 = (Map<String, String>) organizations.get(i);
+                LOG.info("Organization: " + map2.get("name"));
+                namespaces.add(map2.get("name"));
+            }
+        }
+
+        namespaces.add(quayToken.getUsername());
+        return namespaces;
+    }
+
     @SuppressWarnings("checkstyle:parameternumber")
-    public static List<Container> refresh(Long userId, HttpClient client, ObjectMapper objectMapper, List<String> namespaces, Logger LOG,
-            UserDAO userDAO, ContainerDAO containerDAO, TokenDAO tokenDAO, TagDAO tagDAO) {
+    public static List<Container> refresh(Long userId, HttpClient client, ObjectMapper objectMapper, Logger LOG, UserDAO userDAO,
+            ContainerDAO containerDAO, TokenDAO tokenDAO, TagDAO tagDAO) {
         List<Container> currentRepos = containerDAO.findByUserId(userId);
         List<Container> allRepos = new ArrayList<>(0);
         List<Token> tokens = tokenDAO.findByUserId(userId);
@@ -166,7 +192,7 @@ public class Helper {
 
         SimpleDateFormat formatter = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
 
-        List<String> namespaceList = new ArrayList<>();
+        List<String> namespaces = new ArrayList<>();
 
         Token quayToken = null;
         Token gitToken = null;
@@ -186,8 +212,7 @@ public class Helper {
             throw new WebApplicationException(HttpStatus.SC_CONFLICT);
         }
 
-        namespaceList.add(quayToken.getUsername());
-        namespaceList.addAll(namespaces);
+        namespaces.addAll(getNamespaces(client, LOG, quayToken));
 
         GitHubClient githubClient = new GitHubClient();
         githubClient.setOAuth2Token(gitToken.getContent());
@@ -198,7 +223,7 @@ public class Helper {
             ContentsService cService = new ContentsService(githubClient);
             org.eclipse.egit.github.core.User user = uService.getUser();
 
-            allRepos = Helper.getQuayContainers(client, LOG, objectMapper, namespaceList, quayToken);
+            allRepos = Helper.getQuayContainers(client, LOG, objectMapper, namespaces, quayToken);
 
             // Go through each container for each namespace
             for (Container c : allRepos) {
