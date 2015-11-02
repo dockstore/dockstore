@@ -414,7 +414,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/organizations")
-    @ApiOperation(value = "Get user's organizations", notes = "For testing purposes. Returns the list of organizations from user's Quay.io account", response = ArrayList.class, responseContainer = "List")
+    @ApiOperation(value = "Get user's organizations", notes = "For testing purposes. Returns the list of organizations from user's Quay.io account", response = ArrayList.class, responseContainer = "List", hidden = true)
     public ArrayList getOrganizations(@ApiParam(hidden = true) @Auth Token authToken) {
         User authUser = userDAO.findById(authToken.getUserId());
         // Helper.checkUser(authUser);
