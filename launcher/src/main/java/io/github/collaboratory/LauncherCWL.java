@@ -136,7 +136,7 @@ public class LauncherCWL {
         }
 
         // this is the job parameterization, just a JSON, defines the inputs/outputs in terms or real URLs that are provisioned by the launcher
-        Map<String, Map<String, Object>> inputsAndOutputsJson = loadJob(runtimeDescriptorPath);
+        Map<String, Object> inputsAndOutputsJson = loadJob(runtimeDescriptorPath);
 
         if (inputsAndOutputsJson == null) {
             LOG.info("Cannot load job object.");
@@ -163,7 +163,7 @@ public class LauncherCWL {
         pushOutputFiles(outputMap, outputObj);
     }
     
-    private Map<String, FileInfo> prepUploads(Map<String, Object> cwl, Map<String, Map<String, Object>> inputsOutputs) {
+    private Map<String, FileInfo> prepUploads(Map<String, Object> cwl, Map<String, Object> inputsOutputs) {
 
         Map<String, FileInfo> fileMap = new HashMap<>();
 
@@ -182,65 +182,76 @@ public class LauncherCWL {
             // now that I have an input name from the CWL I can find it in the JSON parameterization for this run
             LOG.info("JSON: " + inputsOutputs.toString());
             for (String paramName : inputsOutputs.keySet()) {
-                Map param = inputsOutputs.get(paramName);
-                String path = (String)param.get("path");
 
-                if (paramName.equals(cwlID)) {
+                if (inputsOutputs.get(paramName) instanceof HashMap) {
 
-                    // if it's the current one
-                    LOG.info("PATH TO UPLOAD TO: " + path + " FOR " + cwlID + " FOR " + paramName);
+                    Map param = (Map<String, Object>)inputsOutputs.get(paramName);
+                    String path = (String) param.get("path");
 
-                    // output
-                    // TODO: poor naming here, need to cleanup the variables
-                    // just file name
-                    // the file URL
-                    File filePathObj = new File(cwlID);
-                    //String newDirectory = globalWorkingDir + "/outputs/" + UUID.randomUUID().toString();
-                    String newDirectory = globalWorkingDir + "/outputs";
-                    executeCommand("mkdir -p " + newDirectory);
-                    File newDirectoryFile = new File(newDirectory);
-                    String uuidPath = newDirectoryFile.getAbsolutePath() + "/" + filePathObj.getName();
+                    if (paramName.equals(cwlID)) {
 
-                    // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
-                    // https://commons.apache.org/proper/commons-vfs/filesystems.html
+                        // if it's the current one
+                        LOG.info("PATH TO UPLOAD TO: " + path + " FOR " + cwlID + " FOR " + paramName);
 
-                    // now add this info to a hash so I can later reconstruct a docker -v command
-                    FileInfo new1 = new FileInfo();
-                    new1.setUrl(path);
-                    new1.setDockerPath(cwlID);
-                    new1.setLocalPath(uuidPath);
-                    fileMap.put(cwlID, new1);
+                        // output
+                        // TODO: poor naming here, need to cleanup the variables
+                        // just file name
+                        // the file URL
+                        File filePathObj = new File(cwlID);
+                        //String newDirectory = globalWorkingDir + "/outputs/" + UUID.randomUUID().toString();
+                        String newDirectory = globalWorkingDir + "/outputs";
+                        executeCommand("mkdir -p " + newDirectory);
+                        File newDirectoryFile = new File(newDirectory);
+                        String uuidPath = newDirectoryFile.getAbsolutePath() + "/" + filePathObj.getName();
 
-                    LOG.info("UPLOAD FILE: LOCAL: " + cwlID + " URL: " + path);
+                        // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
+                        // https://commons.apache.org/proper/commons-vfs/filesystems.html
+
+                        // now add this info to a hash so I can later reconstruct a docker -v command
+                        FileInfo new1 = new FileInfo();
+                        new1.setUrl(path);
+                        new1.setDockerPath(cwlID);
+                        new1.setLocalPath(uuidPath);
+                        fileMap.put(cwlID, new1);
+
+                        LOG.info("UPLOAD FILE: LOCAL: " + cwlID + " URL: " + path);
+                    }
                 }
             }
         }
         return fileMap;
     }
 
-    private String createUpdatedInputsAndOutputsJson(Map<String, FileInfo> fileMap, Map<String, FileInfo> outputMap, Map<String, Map<String, Object>> inputsAndOutputsJson) {
+    private String createUpdatedInputsAndOutputsJson(Map<String, FileInfo> fileMap, Map<String, FileInfo> outputMap, Map<String, Object> inputsAndOutputsJson) {
 
         JSONObject newJSON = new JSONObject();
 
         for (String paramName : inputsAndOutputsJson.keySet()) {
-            Map<String, Object> param = inputsAndOutputsJson.get(paramName);
-            String path = (String) param.get("path");
-            LOG.info("PATH: " + path + " PARAM_NAME: " + paramName);
-            // will be null for output
-            if (fileMap.get(paramName) != null) {
-                final String localPath = fileMap.get(paramName).getLocalPath();
-                param.put("path", localPath);
-                LOG.info("NEW FULL PATH: " + localPath);
-            } else if (outputMap.get(paramName) != null) {
-                final String localPath = outputMap.get(paramName).getLocalPath();
-                param.put("path", localPath);
-                LOG.info("NEW FULL PATH: " + localPath);
+
+            if (inputsAndOutputsJson.get(paramName) instanceof Map) {
+
+                Map<String, Object> param = (Map<String, Object>)inputsAndOutputsJson.get(paramName);
+                String path = (String) param.get("path");
+                LOG.info("PATH: " + path + " PARAM_NAME: " + paramName);
+                // will be null for output
+                if (fileMap.get(paramName) != null) {
+                    final String localPath = fileMap.get(paramName).getLocalPath();
+                    param.put("path", localPath);
+                    LOG.info("NEW FULL PATH: " + localPath);
+                } else if (outputMap.get(paramName) != null) {
+                    final String localPath = outputMap.get(paramName).getLocalPath();
+                    param.put("path", localPath);
+                    LOG.info("NEW FULL PATH: " + localPath);
+                }
+                // now add to the new JSON structure
+                JSONObject newRecord = new JSONObject();
+                newRecord.put("class", param.get("class"));
+                newRecord.put("path", param.get("path"));
+                newJSON.put(paramName, newRecord);
+            } else {
+                String param = (String)inputsAndOutputsJson.get(paramName);
+                newJSON.put(paramName, param);
             }
-            // now add to the new JSON structure
-            JSONObject newRecord = new JSONObject();
-            newRecord.put("class", param.get("class"));
-            newRecord.put("path", param.get("path"));
-            newJSON.put(paramName, newRecord);
         }
 
         writeJob("foo.json", newJSON);
@@ -248,9 +259,9 @@ public class LauncherCWL {
         return("foo.json");
     }
 
-    private Map<String, Map<String, Object>> loadJob(String jobPath) {
+    private Map<String, Object> loadJob(String jobPath) {
         try {
-            return (Map<String, Map<String, Object>>)yaml.load(new FileInputStream(jobPath));
+            return (Map<String, Object>)yaml.load(new FileInputStream(jobPath));
         } catch (FileNotFoundException e) {
             throw new RuntimeException("could not load job from yaml",e);
         }
@@ -402,7 +413,7 @@ public class LauncherCWL {
     	executeCommand(bob.toString());
     }
     
-    private Map<String, FileInfo> pullFiles(Map<String, Object> cwl, Map<String, Map<String, Object>> inputsOutputs) {
+    private Map<String, FileInfo> pullFiles(Map<String, Object> cwl, Map<String, Object> inputsOutputs) {
         Map<String, FileInfo> fileMap = new HashMap<>();
 
         LOG.info("DOWNLOADING INPUT FILES...");
