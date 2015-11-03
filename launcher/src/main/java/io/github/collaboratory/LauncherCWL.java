@@ -25,7 +25,6 @@ import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.Executor;
 import org.apache.commons.exec.PumpStreamHandler;
-import org.apache.commons.exec.environment.EnvironmentUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -230,7 +229,7 @@ public class LauncherCWL {
 
             if (inputsAndOutputsJson.get(paramName) instanceof Map) {
 
-                Map<String, Object> param = (Map<String, Object>)inputsAndOutputsJson.get(paramName);
+                Map<String, Object> param = (Map<String, Object>) inputsAndOutputsJson.get(paramName);
                 String path = (String) param.get("path");
                 LOG.info("PATH: " + path + " PARAM_NAME: " + paramName);
                 // will be null for output
@@ -248,7 +247,16 @@ public class LauncherCWL {
                 newRecord.put("class", param.get("class"));
                 newRecord.put("path", param.get("path"));
                 newJSON.put(paramName, newRecord);
+
+                // TODO: fill in for all possible types
+            } else if (inputsAndOutputsJson.get(paramName) instanceof Integer) {
+                Integer param = (Integer)inputsAndOutputsJson.get(paramName);
+                newJSON.put(paramName, param);
+            } else if (inputsAndOutputsJson.get(paramName) instanceof Float) {
+                Float param = (Float)inputsAndOutputsJson.get(paramName);
+                newJSON.put(paramName, param);
             } else {
+                // TODO: will need to deal wit multiple types here
                 String param = inputsAndOutputsJson.get(paramName).toString();
                 newJSON.put(paramName, param);
             }
@@ -372,8 +380,6 @@ public class LauncherCWL {
             Executor executor = new DefaultExecutor();
             executor.setExitValue(0);
             System.out.println("CMD: " + command);
-            System.out.println("ENV: "+EnvironmentUtils.getProcEnvironment());
-
             // get stdout and stderr
             executor.setStreamHandler(new PumpStreamHandler(stdout, stderr));
             executor.execute(parse, resultHandler);
