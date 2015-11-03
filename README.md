@@ -42,6 +42,14 @@ The difference between this one and the regular Launcher is the nature of the de
 
 ```
 working-directory=./datastore/
+
+[s3]
+# optional: the S3 endpoint can be overridden to use custom implementations of the S3 API rather than AWS S3
+# endpoint = https://www.cancercollaboratory.org:9080
+
+[dcc_storage]
+# optional: the location of the DCC storage client can be customized 
+# client = /icgc/dcc-storage/bin/dcc-storage-client
 ```
 
 This tells the system what the local working directory should be.  Files will be written here.
