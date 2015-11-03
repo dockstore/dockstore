@@ -25,6 +25,7 @@ import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.Executor;
 import org.apache.commons.exec.PumpStreamHandler;
+import org.apache.commons.exec.environment.EnvironmentUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -359,7 +360,9 @@ public class LauncherCWL {
             final org.apache.commons.exec.CommandLine parse = org.apache.commons.exec.CommandLine.parse(command);
             Executor executor = new DefaultExecutor();
             executor.setExitValue(0);
-            System.out.println("executor working directory: " + executor.getWorkingDirectory().getAbsolutePath());
+            System.out.println("CMD: " + command);
+            System.out.println("ENV: "+EnvironmentUtils.getProcEnvironment());
+
             // get stdout and stderr
             executor.setStreamHandler(new PumpStreamHandler(stdout, stderr));
             executor.execute(parse, resultHandler);
@@ -367,16 +370,16 @@ public class LauncherCWL {
             // not sure why commons-exec does not throw an exception
             if (resultHandler.getExitValue() != 0) {
             	resultHandler.getException().printStackTrace();
-                throw new ExecuteException("could not run command: " + command, resultHandler.getExitValue());
+                throw new ExecuteException("problems running command: " + command, resultHandler.getExitValue());
             }
             return new ImmutablePair<>(localStdoutStream.toString(utf8), localStdErrStream.toString(utf8));
         } catch (InterruptedException | IOException e) {
-            throw new RuntimeException("could not run command: " + command, e);
+            throw new RuntimeException("problems running command: " + command, e);
         } finally {
-            LOG.info("exit code: " + resultHandler.getExitValue());
+            System.out.println("exit code: " + resultHandler.getExitValue());
             try {
-                LOG.info("stderr was: " + localStdErrStream.toString(utf8));
-                LOG.info("stdout was: " + localStdoutStream.toString(utf8));
+                System.err.println("stderr was: " + localStdErrStream.toString(utf8));
+                System.out.println("stdout was: " + localStdoutStream.toString(utf8));
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException("utf-8 does not exist?", e);
             }
