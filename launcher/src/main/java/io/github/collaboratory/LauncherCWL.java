@@ -249,7 +249,7 @@ public class LauncherCWL {
                 newRecord.put("path", param.get("path"));
                 newJSON.put(paramName, newRecord);
             } else {
-                String param = (String)inputsAndOutputsJson.get(paramName);
+                String param = inputsAndOutputsJson.get(paramName).toString();
                 newJSON.put(paramName, param);
             }
         }
