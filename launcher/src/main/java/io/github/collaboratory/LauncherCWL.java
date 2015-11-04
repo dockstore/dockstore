@@ -227,9 +227,9 @@ public class LauncherCWL {
 
         for (String paramName : inputsAndOutputsJson.keySet()) {
 
-            if (inputsAndOutputsJson.get(paramName) instanceof Map) {
-
-                Map<String, Object> param = (Map<String, Object>) inputsAndOutputsJson.get(paramName);
+            final Object currentParam = inputsAndOutputsJson.get(paramName);
+            if (currentParam instanceof Map) {
+                Map<String, Object> param = (Map<String, Object>) currentParam;
                 String path = (String) param.get("path");
                 LOG.info("PATH: " + path + " PARAM_NAME: " + paramName);
                 // will be null for output
@@ -249,16 +249,10 @@ public class LauncherCWL {
                 newJSON.put(paramName, newRecord);
 
                 // TODO: fill in for all possible types
-            } else if (inputsAndOutputsJson.get(paramName) instanceof Integer) {
-                Integer param = (Integer)inputsAndOutputsJson.get(paramName);
-                newJSON.put(paramName, param);
-            } else if (inputsAndOutputsJson.get(paramName) instanceof Float) {
-                Float param = (Float)inputsAndOutputsJson.get(paramName);
-                newJSON.put(paramName, param);
+            } else if (currentParam instanceof Integer || currentParam instanceof Float || currentParam instanceof String) {
+                newJSON.put(paramName, currentParam);
             } else {
-                // TODO: will need to deal wit multiple types here
-                String param = inputsAndOutputsJson.get(paramName).toString();
-                newJSON.put(paramName, param);
+                throw new RuntimeException("we found an unexpected datatype as follows: " + currentParam.getClass() + "\n with content " + currentParam.toString());
             }
         }
 
