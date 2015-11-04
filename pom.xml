@@ -15,6 +15,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <github.url>scm:git:git@github.com:CancerCollaboratory/dockstore.git</github.url>
+        <cobertura.version>2.1.1</cobertura.version>
         <dropwizard.version>0.8.4</dropwizard.version>
         <swagger.version>1.5.3</swagger.version>
         <assertj.version>3.2.0</assertj.version>
@@ -85,9 +86,11 @@
     </dependencyManagement>
     
     <modules>
+        <module>dockstore-common</module>
         <module>dockstore-webservice</module>
         <module>swagger-java-client</module>
         <module>dockstore-client</module>
+        <module>dockstore-integration-testing</module>
     </modules>
 
     <build>
@@ -350,6 +353,25 @@
                     </formats>
                     <aggregate>true</aggregate>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>2.18.1</version>
+                <executions>
+                    <execution>
+                        <id>integration-test</id>
+                        <goals>
+                            <goal>integration-test</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>verify</id>
+                        <goals>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
