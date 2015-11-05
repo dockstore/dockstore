@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import javax.ws.rs.WebApplicationException;
@@ -88,6 +89,24 @@ public class Helper {
             ContainerDAO containerDAO, TagDAO tagDAO, Map<String, List<Tag>> tagMap) {
         Date time = new Date();
 
+        List<Container> toDelete = new ArrayList<>(0);
+        for (Iterator<Container> iterator = currentList.iterator(); iterator.hasNext();) {
+            Container oldContainer = iterator.next();
+            boolean exists = false;
+            for (Container newContainer : newList) {
+                if (newContainer.getName().equals(oldContainer.getName())
+                        && newContainer.getNamespace().equals(oldContainer.getNamespace())
+                        && newContainer.getRegistry().equals(oldContainer.getRegistry())) {
+                    exists = true;
+                    break;
+                }
+            }
+            if (!exists) {
+                toDelete.add(oldContainer);
+                iterator.remove();
+            }
+        }
+
         for (Container newContainer : newList) {
             boolean exists = false;
 
@@ -126,6 +145,13 @@ public class Helper {
                     container.addTag(tag);
                 }
             }
+            LOG.info("UPDATED Container: " + container.getPath());
+        }
+
+        for (Container c : toDelete) {
+            LOG.info("DELETING: " + c.getPath());
+            c.getTags().clear();
+            containerDAO.delete(c);
         }
 
         return currentList;
