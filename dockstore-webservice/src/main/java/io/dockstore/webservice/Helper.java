@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import javax.ws.rs.WebApplicationException;
@@ -85,8 +86,26 @@ public class Helper {
     }
 
     private static List<Container> updateContainers(List<Container> newList, List<Container> currentList, long userId,
-            ContainerDAO containerDAO, TagDAO tagDAO, Map<String, ArrayList> tagMap) {
+            ContainerDAO containerDAO, TagDAO tagDAO, Map<String, List<Tag>> tagMap) {
         Date time = new Date();
+
+        List<Container> toDelete = new ArrayList<>(0);
+        for (Iterator<Container> iterator = currentList.iterator(); iterator.hasNext();) {
+            Container oldContainer = iterator.next();
+            boolean exists = false;
+            for (Container newContainer : newList) {
+                if (newContainer.getName().equals(oldContainer.getName())
+                        && newContainer.getNamespace().equals(oldContainer.getNamespace())
+                        && newContainer.getRegistry().equals(oldContainer.getRegistry())) {
+                    exists = true;
+                    break;
+                }
+            }
+            if (!exists) {
+                toDelete.add(oldContainer);
+                iterator.remove();
+            }
+        }
 
         for (Container newContainer : newList) {
             boolean exists = false;
@@ -118,16 +137,21 @@ public class Helper {
 
             container.getTags().clear();
 
-            ArrayList<String> tags = tagMap.get(container.getPath());
+            List<Tag> tags = tagMap.get(container.getPath());
             if (tags != null) {
-                for (String tag : tags) {
-                    Tag newTag = new Tag();
-                    newTag.setVersion(tag);
-                    long tagId = tagDAO.create(newTag);
-                    newTag = tagDAO.findById(tagId);
-                    container.addTag(newTag);
+                for (Tag tag : tags) {
+                    long tagId = tagDAO.create(tag);
+                    tag = tagDAO.findById(tagId);
+                    container.addTag(tag);
                 }
             }
+            LOG.info("UPDATED Container: " + container.getPath());
+        }
+
+        for (Container c : toDelete) {
+            LOG.info("DELETING: " + c.getPath());
+            c.getTags().clear();
+            containerDAO.delete(c);
         }
 
         return currentList;
@@ -183,12 +207,50 @@ public class Helper {
         return namespaces;
     }
 
+    private static Map<String, List<Tag>> getTags(HttpClient client, List<Container> containers, ObjectMapper objectMapper, Token quayToken) {
+        Map<String, List<Tag>> tagMap = new HashMap<>();
+
+        for (Container c : containers) {
+            String repo = c.getNamespace() + "/" + c.getName();
+            String urlBuilds = "https://quay.io/api/v1/repository/" + repo;
+            Optional<String> asStringBuilds = ResourceUtilities.asString(urlBuilds, quayToken.getContent(), client);
+
+            List<Tag> tags = new ArrayList<>();
+
+            if (asStringBuilds.isPresent()) {
+                String json = asStringBuilds.get();
+                // LOG.info(json);
+
+                Gson gson = new Gson();
+                Map<String, Map<String, Map<String, String>>> map = new HashMap<>();
+                map = (Map<String, Map<String, Map<String, String>>>) gson.fromJson(json, map.getClass());
+
+                Map<String, Map<String, String>> listOfTags = map.get("tags");
+
+                for (String key : listOfTags.keySet()) {
+                    Map<String, String> m = listOfTags.get(key);
+                    String s = gson.toJson(listOfTags.get(key));
+                    try {
+                        Tag tag = objectMapper.readValue(s, Tag.class);
+                        tags.add(tag);
+                        // LOG.info(gson.toJson(tag));
+                    } catch (IOException ex) {
+                        LOG.info("Exception: " + ex);
+                    }
+                }
+
+            }
+            tagMap.put(c.getPath(), tags);
+        }
+
+        return tagMap;
+    }
+
     public static List<Container> refresh(Long userId, HttpClient client, ObjectMapper objectMapper, ContainerDAO containerDAO,
             TokenDAO tokenDAO, TagDAO tagDAO) {
         List<Container> currentRepos = containerDAO.findByUserId(userId);
         List<Container> allRepos = new ArrayList<>(0);
         List<Token> tokens = tokenDAO.findByUserId(userId);
-        Map<String, ArrayList> tagMap = new HashMap<>();
 
         SimpleDateFormat formatter = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
 
@@ -223,12 +285,13 @@ public class Helper {
             ContentsService cService = new ContentsService(githubClient);
             org.eclipse.egit.github.core.User user = uService.getUser();
 
-            allRepos = Helper.getQuayContainers(client, objectMapper, namespaces, quayToken);
+            allRepos = getQuayContainers(client, objectMapper, namespaces, quayToken);
 
             // Go through each container for each namespace
             for (Container c : allRepos) {
                 String repo = c.getNamespace() + "/" + c.getName();
                 String path = quayToken.getTokenSource() + "/" + repo;
+                c.setPath(path);
 
                 // Get the list of builds from the container.
                 // Builds contain information such as the Git URL and tags
@@ -264,8 +327,6 @@ public class Helper {
                         } catch (ParseException ex) {
                             LOG.info("Build date did not match format 'EEE, d MMM yyyy HH:mm:ss Z'");
                         }
-
-                        tagMap.put(path, (ArrayList<String>) map2.get("tags"));
                     }
                 }
 
@@ -319,6 +380,8 @@ public class Helper {
         } catch (IOException ex) {
             LOG.info("Token ignored due to IOException: " + gitToken.getId() + " " + ex);
         }
+
+        Map<String, List<Tag>> tagMap = getTags(client, allRepos, objectMapper, quayToken);
 
         currentRepos = Helper.updateContainers(allRepos, currentRepos, userId, containerDAO, tagDAO, tagMap);
 

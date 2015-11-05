@@ -302,9 +302,9 @@ public class Client {
                 int tagSize = tags.size();
                 StringBuilder builder = new StringBuilder();
                 if (tagSize > 0) {
-                    builder.append(tags.get(0).getVersion());
+                    builder.append(tags.get(0).getName());
                     for (int i = 1; i < tagSize; i++) {
-                        builder.append(", ").append(tags.get(i).getVersion());
+                        builder.append(", ").append(tags.get(i).getName());
                     }
                 }
 

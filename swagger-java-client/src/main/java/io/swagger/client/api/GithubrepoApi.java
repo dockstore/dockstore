@@ -15,7 +15,7 @@ import java.io.File;
 import java.util.Map;
 import java.util.HashMap;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-28T13:50:50.783-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-05T12:49:06.379-05:00")
 public class GithubrepoApi {
   private ApiClient apiClient;
 

@@ -18,7 +18,7 @@ import java.io.File;
 import java.util.Map;
 import java.util.HashMap;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-10-28T13:50:50.783-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-05T12:49:06.379-05:00")
 public class ContainersApi {
   private ApiClient apiClient;
 
@@ -344,7 +344,7 @@ public class ContainersApi {
   }
   
   /**
-   * Get the corresponding Dockstore.cwl file on Github
+   * Get the corresponding Dockstore.cwl file on Github. This would be a minimal resource that would need to be implemented by a GA4GH reference server
    * Does not need authentication
    * @param containerId Container id to delete
    * @return FileResponse
@@ -391,7 +391,7 @@ public class ContainersApi {
   }
   
   /**
-   * Get the corresponding Dockerfile on Github
+   * Get the corresponding Dockerfile on Github. This would be a minimal resource that would need to be implemented by a GA4GH reference server
    * Does not need authentication
    * @param containerId Container id to delete
    * @return FileResponse

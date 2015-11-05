@@ -19,6 +19,7 @@ package io.dockstore.webservice.core;
 //import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
+import java.util.Date;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -40,7 +41,18 @@ public class Tag {
     private long id;
 
     @Column
-    private String version;
+    private String name;
+
+    @Column
+    @JsonProperty("image_id")
+    private String imageId;
+
+    @Column
+    @JsonProperty("last_modified")
+    private Date lastModified;
+
+    @Column
+    private long size;
 
     // @ManyToOne(fetch = FetchType.LAZY)
     // @JoinColumn(name = "containerid", nullable = false)
@@ -60,12 +72,39 @@ public class Tag {
     }
 
     @JsonProperty
-    public String getVersion() {
-        return version;
+    public String getName() {
+        return name;
     }
 
-    public void setVersion(String version) {
-        this.version = version;
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @JsonProperty
+    public String getImageId() {
+        return imageId;
+    }
+
+    public void setImageId(String imageId) {
+        this.imageId = imageId;
+    }
+
+    @JsonProperty
+    public Date getLastModified() {
+        return lastModified;
+    }
+
+    public void setLastModified(Date lastModified) {
+        this.lastModified = lastModified;
+    }
+
+    @JsonProperty
+    public long getSize() {
+        return size;
+    }
+
+    public void setSize(long size) {
+        this.size = size;
     }
 
 }
