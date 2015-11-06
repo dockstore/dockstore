@@ -19,6 +19,7 @@ package io.dockstore.webservice.jdbi;
 import io.dockstore.webservice.core.Container;
 import io.dropwizard.hibernate.AbstractDAO;
 import java.util.List;
+import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 
 /**
@@ -36,6 +37,12 @@ public class ContainerDAO extends AbstractDAO<Container> {
 
     public long create(Container container) {
         return persist(container).getId();
+    }
+
+    public void delete(Container container) {
+        Session session = currentSession();
+        session.delete(container);
+        session.flush();
     }
 
     public List<Container> findByNameAndNamespaceAndRegistry(String name, String namespace, String registry) {
