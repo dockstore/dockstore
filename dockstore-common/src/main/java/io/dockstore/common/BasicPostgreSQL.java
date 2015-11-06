@@ -99,7 +99,7 @@ public class BasicPostgreSQL {
      * This clears the data base for testing and creates an admin user
      */
     public void clearDatabase() {
-        this.runUpdateStatement("delete from extra_files; delete from provision_ansibleplaybooks; delete from provision; delete from job; delete from consonance_user");
+        this.runUpdateStatement("delete from enduser;");
     }
 
     protected <T> T runSelectStatement(String query, ResultSetHandler<T> handler, Object... params) {
@@ -125,7 +125,8 @@ public class BasicPostgreSQL {
             QueryRunner run = new QueryRunner(dataSource);
             run.update(query, params);
             return true;
-        } catch (SQLException e) {
+        } catch (Exception e) {
+            e.printStackTrace();
             throw new RuntimeException(e);
         }
     }

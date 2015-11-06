@@ -5,7 +5,7 @@ quayRedirectURI: http://10.0.29.49:8080/static/quay_callback.htm
 githubClientID: d2a5a83a0f0871d29540
 githubClientSecret: 0db285c4cb33c6edd30c43d51c4947b3f1e37f82
 githubRedirectURI: http://10.0.29.49:8080/auth/tokens/github.com
-hostname: 10.0.29.49
+hostname: localhost
 scheme: http
 port: 8080
 
@@ -16,20 +16,20 @@ database:
   driverClass: org.postgresql.Driver
 
   # the username
-  user: xliu
+  user: test
 
   # the password
-  password: XL@62157
+  password: test
 
   # the JDBC URL
-  url: jdbc:postgresql://localhost:5432/webservice
+  url: jdbc:postgresql://localhost:5432/webservice_test
 
   # any properties specific to your JDBC driver:
   properties:
     charSet: UTF-8
     hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
     # create database as needed, disable in production
-    #hibernate.hbm2ddl.auto: create
+    hibernate.hbm2ddl.auto: create
 
   # the maximum amount of time to wait on an empty pool before throwing an exception
   maxWaitForConnection: 1s
