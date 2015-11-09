@@ -162,6 +162,22 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
+    @Path("/{containerId}/users")
+    @ApiOperation(value = "Get a cached repo", response = User.class, responseContainer = "List")
+    public List<User> getUsers(@ApiParam(hidden = true) @Auth Token authToken,
+            @ApiParam(value = "Container ID", required = true) @PathParam("containerId") Long containerId) {
+        Container c = containerDAO.findById(containerId);
+        Helper.checkContainer(c);
+
+        User user = userDAO.findById(authToken.getUserId());
+        Helper.checkUser(user, c);
+
+        return new ArrayList(c.getUsers());
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
     @Path("/registered/{containerId}")
     @ApiOperation(value = "Get a registered container", notes = "NO authentication", response = Container.class)
     public Container getRegisteredContainer(@ApiParam(value = "Container ID", required = true) @PathParam("containerId") Long containerId) {
