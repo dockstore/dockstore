@@ -128,6 +128,7 @@ public class Helper {
                 if (oldContainer != null) {
                     exists = true;
                     oldContainer.update(newContainer);
+                    currentList.add(newContainer);
                 }
             }
 
