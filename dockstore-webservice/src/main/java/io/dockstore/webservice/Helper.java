@@ -91,6 +91,7 @@ public class Helper {
         Date time = new Date();
 
         List<Container> toDelete = new ArrayList<>(0);
+        // Find containers that the user no longer has
         for (Iterator<Container> iterator = currentList.iterator(); iterator.hasNext();) {
             Container oldContainer = iterator.next();
             boolean exists = false;
@@ -113,6 +114,7 @@ public class Helper {
             String path = newContainer.getRegistry() + "/" + newContainer.getNamespace() + "/" + newContainer.getName();
             boolean exists = false;
 
+            // Find if user already has the container
             for (Container oldContainer : currentList) {
                 if (newContainer.getPath().equals(oldContainer.getPath())) {
                     exists = true;
@@ -123,6 +125,7 @@ public class Helper {
                 }
             }
 
+            // Find if container already exists, but does not belong to user
             if (!exists) {
                 Container oldContainer = containerDAO.findByPath(path);
                 if (oldContainer != null) {
@@ -132,6 +135,7 @@ public class Helper {
                 }
             }
 
+            // Container does not already exist
             if (!exists) {
                 // newContainer.setUserId(userId);
                 newContainer.setPath(path);
@@ -140,6 +144,7 @@ public class Helper {
             }
         }
 
+        // Save all new and existing containers, and generate new tags
         for (Container container : currentList) {
             container.setLastUpdated(time);
             containerDAO.create(container);
@@ -159,6 +164,7 @@ public class Helper {
             LOG.info("UPDATED Container: " + container.getPath());
         }
 
+        // delete container if it has no users
         for (Container c : toDelete) {
             if (c.getUsers().isEmpty()) {
                 LOG.info("DELETING: " + c.getPath());
@@ -403,8 +409,8 @@ public class Helper {
         Map<String, List<Tag>> tagMap = getTags(client, allRepos, objectMapper, quayToken);
 
         currentRepos = Helper.updateContainers(allRepos, currentRepos, dockstoreUser, containerDAO, tagDAO, tagMap);
-
-        return currentRepos;
+        userDAO.clearCache();
+        return new ArrayList(userDAO.findById(userId).getContainers());
     }
 
     public static void checkUser(User user) {

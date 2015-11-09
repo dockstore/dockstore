@@ -39,6 +39,10 @@ public class UserDAO extends AbstractDAO<User> {
         return persist(user).getId();
     }
 
+    public void clearCache() {
+        currentSession().clear();
+    }
+
     public List<User> findAll() {
         return list(namedQuery("io.dockstore.webservice.core.User.findAll"));
     }
