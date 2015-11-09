@@ -147,9 +147,8 @@ public class Helper {
         // Save all new and existing containers, and generate new tags
         for (Container container : currentList) {
             container.setLastUpdated(time);
-            containerDAO.create(container);
-
             container.addUser(user);
+            containerDAO.create(container);
 
             container.getTags().clear();
 

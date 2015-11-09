@@ -40,6 +40,7 @@ public class UserDAO extends AbstractDAO<User> {
     }
 
     public void clearCache() {
+        currentSession().flush();
         currentSession().clear();
     }
 
