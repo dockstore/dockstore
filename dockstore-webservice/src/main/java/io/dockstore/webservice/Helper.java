@@ -28,6 +28,7 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.ContainerDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
+import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.resources.ResourceUtilities;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -85,7 +86,7 @@ public class Helper {
         }
     }
 
-    private static List<Container> updateContainers(List<Container> newList, List<Container> currentList, long userId,
+    private static List<Container> updateContainers(List<Container> newList, List<Container> currentList, User user,
             ContainerDAO containerDAO, TagDAO tagDAO, Map<String, List<Tag>> tagMap) {
         Date time = new Date();
 
@@ -102,18 +103,18 @@ public class Helper {
                 }
             }
             if (!exists) {
+                user.removeContainer(oldContainer);
                 toDelete.add(oldContainer);
                 iterator.remove();
             }
         }
 
         for (Container newContainer : newList) {
+            String path = newContainer.getRegistry() + "/" + newContainer.getNamespace() + "/" + newContainer.getName();
             boolean exists = false;
 
             for (Container oldContainer : currentList) {
-                if (newContainer.getName().equals(oldContainer.getName())
-                        && newContainer.getNamespace().equals(oldContainer.getNamespace())
-                        && newContainer.getRegistry().equals(oldContainer.getRegistry())) {
+                if (newContainer.getPath().equals(oldContainer.getPath())) {
                     exists = true;
 
                     oldContainer.update(newContainer);
@@ -123,8 +124,15 @@ public class Helper {
             }
 
             if (!exists) {
-                newContainer.setUserId(userId);
-                String path = newContainer.getRegistry() + "/" + newContainer.getNamespace() + "/" + newContainer.getName();
+                Container oldContainer = containerDAO.findByPath(path);
+                if (oldContainer != null) {
+                    exists = true;
+                    oldContainer.update(newContainer);
+                }
+            }
+
+            if (!exists) {
+                // newContainer.setUserId(userId);
                 newContainer.setPath(path);
 
                 currentList.add(newContainer);
@@ -134,6 +142,8 @@ public class Helper {
         for (Container container : currentList) {
             container.setLastUpdated(time);
             containerDAO.create(container);
+
+            container.addUser(user);
 
             container.getTags().clear();
 
@@ -149,9 +159,11 @@ public class Helper {
         }
 
         for (Container c : toDelete) {
-            LOG.info("DELETING: " + c.getPath());
-            c.getTags().clear();
-            containerDAO.delete(c);
+            if (c.getUsers().isEmpty()) {
+                LOG.info("DELETING: " + c.getPath());
+                c.getTags().clear();
+                containerDAO.delete(c);
+            }
         }
 
         return currentList;
@@ -246,9 +258,11 @@ public class Helper {
         return tagMap;
     }
 
-    public static List<Container> refresh(Long userId, HttpClient client, ObjectMapper objectMapper, ContainerDAO containerDAO,
-            TokenDAO tokenDAO, TagDAO tagDAO) {
-        List<Container> currentRepos = containerDAO.findByUserId(userId);
+    public static List<Container> refresh(Long userId, HttpClient client, ObjectMapper objectMapper, UserDAO userDAO,
+            ContainerDAO containerDAO, TokenDAO tokenDAO, TagDAO tagDAO) {
+        User dockstoreUser = userDAO.findById(userId);
+
+        List<Container> currentRepos = new ArrayList(dockstoreUser.getContainers());// containerDAO.findByUserId(userId);
         List<Container> allRepos = new ArrayList<>(0);
         List<Token> tokens = tokenDAO.findByUserId(userId);
 
@@ -362,11 +376,15 @@ public class Helper {
                                 Object object = reader.read();
                                 Map map = (Map) object;
                                 String description = (String) map.get("description");
-                                map = (Map) map.get("dct:creator");
-                                String author = (String) map.get("foaf:name");
+                                if (description != null) {
+                                    c.setDescription(description);
+                                }
 
-                                c.setDescription(description);
-                                c.setAuthor(author);
+                                map = (Map) map.get("dct:creator");
+                                if (map != null) {
+                                    String author = (String) map.get("foaf:name");
+                                    c.setAuthor(author);
+                                }
 
                                 LOG.info("Repo: " + repository.getName() + " has Dockstore.cwl");
                             }
@@ -383,7 +401,7 @@ public class Helper {
 
         Map<String, List<Tag>> tagMap = getTags(client, allRepos, objectMapper, quayToken);
 
-        currentRepos = Helper.updateContainers(allRepos, currentRepos, userId, containerDAO, tagDAO, tagMap);
+        currentRepos = Helper.updateContainers(allRepos, currentRepos, dockstoreUser, containerDAO, tagDAO, tagMap);
 
         return currentRepos;
     }
@@ -396,6 +414,12 @@ public class Helper {
 
     public static void checkUser(User user, long id) {
         if (!user.getIsAdmin() && user.getId() != id) {
+            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
+        }
+    }
+
+    public static void checkUser(User user, Container container) {
+        if (!user.getIsAdmin() && !container.getUsers().contains(user)) {
             throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
         }
     }

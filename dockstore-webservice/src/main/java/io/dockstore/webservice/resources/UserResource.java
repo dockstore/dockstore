@@ -43,6 +43,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -366,7 +367,16 @@ public class UserResource {
         User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, userId);
 
-        List<Container> repositories = containerDAO.findRegisteredByUserId(userId);
+        List<Container> repositories = new ArrayList(user.getContainers());
+
+        for (Iterator<Container> iterator = repositories.iterator(); iterator.hasNext();) {
+            Container c = iterator.next();
+
+            if (!c.getIsRegistered()) {
+                iterator.remove();
+            }
+        }
+
         return repositories;
     }
 
@@ -382,7 +392,7 @@ public class UserResource {
         User authUser = userDAO.findById(authToken.getUserId());
         Helper.checkUser(authUser, userId);
 
-        List<Container> containers = Helper.refresh(userId, client, objectMapper, containerDAO, tokenDAO, tagDAO);
+        List<Container> containers = Helper.refresh(userId, client, objectMapper, userDAO, containerDAO, tokenDAO, tagDAO);
         return containers;
     }
 
@@ -396,7 +406,7 @@ public class UserResource {
         User user = userDAO.findById(token.getUserId());
         Helper.checkUser(user, userId);
 
-        List<Container> ownedContainers = containerDAO.findByUserId(userId);
+        List<Container> ownedContainers = new ArrayList(user.getContainers());
         return ownedContainers;
     }
 

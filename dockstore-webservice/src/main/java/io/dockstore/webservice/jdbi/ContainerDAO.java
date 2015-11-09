@@ -50,14 +50,6 @@ public class ContainerDAO extends AbstractDAO<Container> {
                 .setString("namespace", namespace).setString("registry", registry));
     }
 
-    public List<Container> findByUserId(long userId) {
-        return list(namedQuery("io.dockstore.webservice.core.Container.findByUserId").setParameter("userId", userId));
-    }
-
-    public List<Container> findRegisteredByUserId(long userId) {
-        return list(namedQuery("io.dockstore.webservice.core.Container.findRegisteredByUserId").setParameter("userId", userId));
-    }
-
     public Container findRegisteredById(long id) {
         return uniqueResult(namedQuery("io.dockstore.webservice.core.Container.findRegisteredById").setParameter("id", id));
     }
