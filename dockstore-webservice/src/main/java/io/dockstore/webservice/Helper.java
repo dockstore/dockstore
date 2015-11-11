@@ -104,7 +104,8 @@ public class Helper {
                 }
             }
             if (!exists) {
-                user.removeContainer(oldContainer);
+                oldContainer.removeUser(user);
+                // user.removeContainer(oldContainer);
                 toDelete.add(oldContainer);
                 iterator.remove();
             }
@@ -165,6 +166,8 @@ public class Helper {
 
         // delete container if it has no users
         for (Container c : toDelete) {
+            LOG.info(c.getPath() + " " + c.getUsers().size());
+
             if (c.getUsers().isEmpty()) {
                 LOG.info("DELETING: " + c.getPath());
                 c.getTags().clear();
@@ -384,6 +387,7 @@ public class Helper {
             if (repository == null) {
                 LOG.info("Github repository not found for " + c.getPath());
             } else {
+                LOG.info("Github found for: " + repository.getName());
                 try {
                     List<RepositoryContents> contents = null;
                     try {
@@ -392,28 +396,38 @@ public class Helper {
                         contents = cService.getContents(repository, "dockstore.cwl");
                     }
                     if (!(contents == null || contents.isEmpty())) {
-                        c.setHasCollab(true);
-
                         String encoded = contents.get(0).getContent().replace("\n", "");
                         byte[] decode = Base64.getDecoder().decode(encoded);
                         String content = new String(decode, StandardCharsets.UTF_8);
 
                         // parse the collab.cwl file to get description and author
-                        YamlReader reader = new YamlReader(content);
-                        Object object = reader.read();
-                        Map map = (Map) object;
-                        String description = (String) map.get("description");
-                        if (description != null) {
-                            c.setDescription(description);
-                        }
+                        Map map = null;
+                        try {
+                            YamlReader reader = new YamlReader(content);
+                            Object object = reader.read();
+                            map = (Map) object;
 
-                        map = (Map) map.get("dct:creator");
-                        if (map != null) {
-                            String author = (String) map.get("foaf:name");
-                            c.setAuthor(author);
-                        }
+                            String description = (String) map.get("description");
+                            if (description != null) {
+                                c.setDescription(description);
+                            } else {
+                                LOG.info("Description not found!");
+                            }
 
-                        LOG.info("Repo: " + repository.getName() + " has Dockstore.cwl");
+                            map = (Map) map.get("dct:creator");
+                            if (map != null) {
+                                String author = (String) map.get("foaf:name");
+                                c.setAuthor(author);
+                            } else {
+                                LOG.info("Creator not found!");
+                            }
+
+                            c.setHasCollab(true);
+                            LOG.info("Repo: " + repository.getName() + " has Dockstore.cwl");
+                        } catch (IOException ex) {
+                            LOG.info("CWL file is malformed");
+                            ex.printStackTrace();
+                        }
                     }
                 } catch (IOException ex) {
                     LOG.info("Repo: " + repository.getName() + " has no Dockstore.cwl");

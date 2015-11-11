@@ -356,4 +356,8 @@ public class Container {
     public void addUser(User user) {
         users.add(user);
     }
+
+    public boolean removeUser(User user) {
+        return users.remove(user);
+    }
 }
