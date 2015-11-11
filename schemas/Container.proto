@@ -1,0 +1,68 @@
+package io_dockstore_webservice_core;
+
+import "protostuff-default.proto";
+
+option java_package = "io.dockstore.webservice.core";
+
+message Container {
+  optional int64 id = 1;
+  repeated User users = 2;
+  optional string name = 3;
+  optional string namespace = 4;
+  optional string registry = 5;
+  optional string path = 6;
+  optional string author = 7;
+  optional string description = 8;
+  optional bool isStarred = 9;
+  optional bool isPublic = 10;
+  optional int32 lastModified = 11;
+  optional fixed64 lastUpdated = 12;
+  optional fixed64 lastBuild = 13;
+  optional string gitUrl = 14;
+  optional bool isRegistered = 15;
+  optional bool hasCollab = 16;
+  repeated Tag tags = 17;
+}
+
+message User {
+  optional int64 id = 1;
+  optional string username = 2;
+  optional bool isAdmin = 3;
+  repeated Group groups = 4;
+  repeated Container containers = 5;
+}
+
+message Group {
+  optional int64 id = 1;
+  optional string name = 2;
+  repeated User users = 3;
+}
+
+message Container {
+  optional int64 id = 1;
+  repeated User users = 2;
+  optional string name = 3;
+  optional string namespace = 4;
+  optional string registry = 5;
+  optional string path = 6;
+  optional string author = 7;
+  optional string description = 8;
+  optional bool isStarred = 9;
+  optional bool isPublic = 10;
+  optional int32 lastModified = 11;
+  optional fixed64 lastUpdated = 12;
+  optional fixed64 lastBuild = 13;
+  optional string gitUrl = 14;
+  optional bool isRegistered = 15;
+  optional bool hasCollab = 16;
+  repeated Tag tags = 17;
+}
+
+message Tag {
+  optional int64 id = 1;
+  optional string name = 2;
+  optional string imageId = 3;
+  optional fixed64 lastModified = 4;
+  optional int64 size = 5;
+}
+

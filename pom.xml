@@ -33,7 +33,7 @@
 
     <repositories>
         <repository>
-            <id>seqware.sourceforge.net</id>
+            <id>collab-release</id>
             <name>SeqWare Maven Repository</name>
             <url>http://seqwaremaven.oicr.on.ca/artifactory/collab-release</url>
             <releases>
@@ -41,6 +41,17 @@
             </releases>
             <snapshots>
                 <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>collab-snapshot</id>
+            <name>SeqWare Maven Repository</name>
+            <url>http://seqwaremaven.oicr.on.ca/artifactory/collab-snapshot</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
             </snapshots>
         </repository>
         <repository>
@@ -242,6 +253,7 @@
                                     <failWhenParentIsSnapshot>false</failWhenParentIsSnapshot>
                                     <excludes>
                                         <exclude>io.dockstore:*</exclude>
+                                        <exclude>net.webby.proto:*</exclude>
                                     </excludes>
                                 </requireReleaseDeps>
                                 <requireUpperBoundDeps />
@@ -299,6 +311,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
+                <configuration>
+                    <enableFilesSummary>true</enableFilesSummary>
+                    <enableRulesSummary>true</enableRulesSummary>
+                </configuration>
                 <executions>
                     <execution>
                         <phase>
@@ -308,8 +324,6 @@
                             <goal>check</goal>
                         </goals>
                         <configuration>
-                            <enableFilesSummary>true</enableFilesSummary>
-                            <enableRulesSummary>true</enableRulesSummary>
                             <consoleOutput>true</consoleOutput>
                         </configuration>
                     </execution>
@@ -343,6 +357,7 @@
                 <artifactId>cobertura-maven-plugin</artifactId>
                 <version>2.7</version>
                 <configuration>
+                    <check></check>
                     <formats>
                         <format>xml</format>
                         <format>html</format>
@@ -370,6 +385,7 @@
                         <artifactId>cobertura-maven-plugin</artifactId>
                         <version>2.7</version>
                         <configuration>
+                            <check></check>
                             <formats>
                                 <format>xml</format>
                             </formats>
