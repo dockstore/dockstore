@@ -1,0 +1,127 @@
+{
+  "type" : "record",
+  "name" : "Group",
+  "namespace" : "io.dockstore.webservice.core",
+  "doc" : "Schema for io.dockstore.webservice.core.Group",
+  "fields" : [ {
+    "name" : "id",
+    "type" : "long"
+  }, {
+    "name" : "name",
+    "type" : [ "null", "string" ]
+  }, {
+    "name" : "users",
+    "type" : [ "null", {
+      "type" : "array",
+      "items" : {
+        "type" : "record",
+        "name" : "User",
+        "doc" : "Schema for io.dockstore.webservice.core.User",
+        "fields" : [ {
+          "name" : "containers",
+          "type" : [ "null", {
+            "type" : "array",
+            "items" : {
+              "type" : "record",
+              "name" : "Container",
+              "doc" : "Schema for io.dockstore.webservice.core.Container",
+              "fields" : [ {
+                "name" : "author",
+                "type" : [ "null", "string" ]
+              }, {
+                "name" : "description",
+                "type" : [ "null", "string" ]
+              }, {
+                "name" : "gitUrl",
+                "type" : [ "null", "string" ]
+              }, {
+                "name" : "hasCollab",
+                "type" : "boolean"
+              }, {
+                "name" : "id",
+                "type" : "long"
+              }, {
+                "name" : "is_public",
+                "type" : "boolean"
+              }, {
+                "name" : "is_registered",
+                "type" : "boolean"
+              }, {
+                "name" : "is_starred",
+                "type" : "boolean"
+              }, {
+                "name" : "lastBuild",
+                "type" : [ "null", "long" ]
+              }, {
+                "name" : "lastUpdated",
+                "type" : [ "null", "long" ]
+              }, {
+                "name" : "last_modified",
+                "type" : [ "null", "int" ]
+              }, {
+                "name" : "name",
+                "type" : [ "null", "string" ]
+              }, {
+                "name" : "namespace",
+                "type" : [ "null", "string" ]
+              }, {
+                "name" : "path",
+                "type" : [ "null", "string" ]
+              }, {
+                "name" : "registry",
+                "type" : [ "null", "string" ]
+              }, {
+                "name" : "tags",
+                "type" : [ "null", {
+                  "type" : "array",
+                  "items" : {
+                    "type" : "record",
+                    "name" : "Tag",
+                    "doc" : "Schema for io.dockstore.webservice.core.Tag",
+                    "fields" : [ {
+                      "name" : "id",
+                      "type" : "long"
+                    }, {
+                      "name" : "image_id",
+                      "type" : [ "null", "string" ]
+                    }, {
+                      "name" : "last_modified",
+                      "type" : [ "null", "long" ]
+                    }, {
+                      "name" : "name",
+                      "type" : [ "null", "string" ]
+                    }, {
+                      "name" : "size",
+                      "type" : "long"
+                    } ]
+                  }
+                } ]
+              }, {
+                "name" : "users",
+                "type" : [ "null", {
+                  "type" : "array",
+                  "items" : "User"
+                } ]
+              } ]
+            }
+          } ]
+        }, {
+          "name" : "groups",
+          "type" : [ "null", {
+            "type" : "array",
+            "items" : "Group"
+          } ]
+        }, {
+          "name" : "id",
+          "type" : "long"
+        }, {
+          "name" : "isAdmin",
+          "type" : "boolean"
+        }, {
+          "name" : "username",
+          "type" : [ "null", "string" ]
+        } ]
+      }
+    } ]
+  } ]
+}

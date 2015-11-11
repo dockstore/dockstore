@@ -1,0 +1,22 @@
+{
+  "type" : "record",
+  "name" : "Tag",
+  "namespace" : "io.dockstore.webservice.core",
+  "doc" : "Schema for io.dockstore.webservice.core.Tag",
+  "fields" : [ {
+    "name" : "id",
+    "type" : "long"
+  }, {
+    "name" : "image_id",
+    "type" : [ "null", "string" ]
+  }, {
+    "name" : "last_modified",
+    "type" : [ "null", "long" ]
+  }, {
+    "name" : "name",
+    "type" : [ "null", "string" ]
+  }, {
+    "name" : "size",
+    "type" : "long"
+  } ]
+}
