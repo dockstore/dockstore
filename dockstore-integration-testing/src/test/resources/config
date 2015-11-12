@@ -4,6 +4,6 @@ token = 08932ab0c9ae39a880905666902f8659633ae0232e94ba9f3d2094cb928397e7
 
 [database]
 postgresHost = 127.0.0.1
-postgresUser = test
-postgresPass = test
+postgresUser = dockstore
+postgresPass = dockstore
 postgresDBName = webservice_test

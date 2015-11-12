@@ -6,6 +6,11 @@ language: java
 jdk: 
   - oraclejdk8
 
+before_script:
+  - psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
+  - psql -c "ALTER USER dockstore WITH superuser;" -U postgres
+  - psql -c 'create database webservice_test with owner = dockstore;' -U postgres
+
 script: mvn -B clean install -DskipITs=false
 
 after_success:
