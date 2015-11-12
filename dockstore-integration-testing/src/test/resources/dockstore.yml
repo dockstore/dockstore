@@ -11,6 +11,15 @@ port: 8080
 
 authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
 
+server:
+  applicationConnectors:
+  - type: http 
+    port: 8000
+  adminConnectors:
+  - type: http
+    port: 8001
+
+
 database:
   # the name of your JDBC driver
   driverClass: org.postgresql.Driver

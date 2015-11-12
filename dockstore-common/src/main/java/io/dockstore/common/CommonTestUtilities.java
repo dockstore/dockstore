@@ -52,6 +52,10 @@ public class CommonTestUtilities {
                     "id"));
             this.runInsertStatement("insert into token(id, content, tokensource, userid, username) VALUES (1, '" + DUMMY_ADMIN_PASSWORD
                     + "', 'dockstore', 1, 'admin@admin.com');", new KeyedHandler<>("id"));
+            this.runInsertStatement(
+                    "insert into container(id, name, namespace, registry, path, hasCollab, isstarred, ispublic, isregistered) VALUES (1, 'ubuntu', 'victor_org', 'quay.io', 'quay.io/victor_org/ubuntu', false, false, false, false);",
+                    new KeyedHandler<>("id"));
+            this.runInsertStatement("insert into usercontainer(userid, containerid) VALUES (1, 1);", new KeyedHandler<>("containerid"));
         }
     }
 

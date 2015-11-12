@@ -82,9 +82,6 @@ public class DockerRepoResource {
 
     private final ObjectMapper objectMapper;
 
-    private static final int QUAY_PATH_LENGTH = 3;
-    private static final int DOCKERHUB_PATH_LENGTH = 2;
-
     private static final Logger LOG = LoggerFactory.getLogger(DockerRepoResource.class);
 
     private final List<String> namespaces = new ArrayList<>();
@@ -126,7 +123,7 @@ public class DockerRepoResource {
         List<User> users = userDAO.findAll();
         for (User user : users) {
             try {
-                containers.addAll(Helper.refresh(user.getId(), client, objectMapper, containerDAO, tokenDAO, tagDAO));
+                containers.addAll(Helper.refresh(user.getId(), client, objectMapper, userDAO, containerDAO, tokenDAO, tagDAO));
             } catch (WebApplicationException ex) {
                 LOG.info("Failed to refresh user " + user.getId());
             }
@@ -157,9 +154,25 @@ public class DockerRepoResource {
         Helper.checkContainer(c);
 
         User user = userDAO.findById(authToken.getUserId());
-        Helper.checkUser(user, c.getUserId());
+        Helper.checkUser(user, c);
 
         return c;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}/users")
+    @ApiOperation(value = "Get users of a container", response = User.class, responseContainer = "List")
+    public List<User> getUsers(@ApiParam(hidden = true) @Auth Token authToken,
+            @ApiParam(value = "Container ID", required = true) @PathParam("containerId") Long containerId) {
+        Container c = containerDAO.findById(containerId);
+        Helper.checkContainer(c);
+
+        User user = userDAO.findById(authToken.getUserId());
+        Helper.checkUser(user, c);
+
+        return new ArrayList(c.getUsers());
     }
 
     @GET
@@ -186,7 +199,7 @@ public class DockerRepoResource {
         Helper.checkContainer(c);
 
         User user = userDAO.findById(authToken.getUserId());
-        Helper.checkUser(user, c.getUserId());
+        Helper.checkUser(user, c);
         if (request.getRegister()) {
             if (c.getHasCollab() && !c.getGitUrl().isEmpty()) {
                 c.setIsRegistered(true);
@@ -224,7 +237,7 @@ public class DockerRepoResource {
         Helper.checkContainer(container);
 
         User user = userDAO.findById(authToken.getUserId());
-        Helper.checkUser(user, container.getUserId());
+        Helper.checkUser(user, container);
 
         return container;
     }
@@ -317,7 +330,7 @@ public class DockerRepoResource {
         Helper.checkContainer(repository);
 
         User user = userDAO.findById(authToken.getUserId());
-        Helper.checkUser(user, repository.getUserId());
+        Helper.checkUser(user, repository);
 
         List<Tag> tags = new ArrayList<Tag>();
         tags.addAll(repository.getTags());

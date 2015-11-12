@@ -99,7 +99,10 @@ public class BasicPostgreSQL {
      * This clears the data base for testing and creates an admin user
      */
     public void clearDatabase() {
+        this.runUpdateStatement("delete from usercontainer;");
         this.runUpdateStatement("delete from enduser;");
+        this.runUpdateStatement("delete from token;");
+        this.runUpdateStatement("delete from container;");
     }
 
     protected <T> T runSelectStatement(String query, ResultSetHandler<T> handler, Object... params) {

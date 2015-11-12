@@ -35,6 +35,8 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -121,7 +123,18 @@ public class Client {
         return maxWidths;
     }
 
+    private static class ContainerComparator implements Comparator<Container> {
+        @Override
+        public int compare(Container c1, Container c2) {
+            String path1 = c1.getPath();
+            String path2 = c2.getPath();
+
+            return path1.compareToIgnoreCase(path2);
+        }
+    }
+
     private static void printContainerList(List<Container> containers) {
+        Collections.sort(containers, new ContainerComparator());
 
         int[] maxWidths = columnWidths(containers);
 
@@ -158,6 +171,7 @@ public class Client {
     }
 
     private static void printRegisteredList(List<Container> containers) {
+        Collections.sort(containers, new ContainerComparator());
 
         int[] maxWidths = columnWidths(containers);
 
@@ -335,9 +349,13 @@ public class Client {
 
         try {
             Container container = containersApi.getContainerByPath(path);
-            FileResponse collab = containersApi.cwl(container.getId());
-            if (collab.getContent() != null && !collab.getContent().isEmpty()) {
-                out(collab.getContent());
+            if (container.getHasCollab()) {
+                FileResponse collab = containersApi.cwl(container.getId());
+                if (collab.getContent() != null && !collab.getContent().isEmpty()) {
+                    out(collab.getContent());
+                } else {
+                    out("No cwl file found.");
+                }
             } else {
                 out("No cwl file found.");
             }

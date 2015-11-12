@@ -1,5 +1,5 @@
 [webservice]
-base_path = http://localhost:8080
+base_path = http://localhost:8000
 token = 08932ab0c9ae39a880905666902f8659633ae0232e94ba9f3d2094cb928397e7
 
 [database]

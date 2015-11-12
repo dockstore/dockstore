@@ -25,13 +25,18 @@ import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit.DropwizardAppRule;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
+import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.UsersApi;
+import io.swagger.client.model.Container;
+import io.swagger.client.model.RegisterRequest;
 import io.swagger.client.model.User;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.TimeoutException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
+import static org.junit.Assert.assertTrue;
 import org.junit.ClassRule;
 import org.junit.Test;
 
@@ -59,16 +64,62 @@ public class SystemClientIT {
         return client;
     }
 
-    @Test
+    @Test(expected = ApiException.class)
     public void testListUsersWithoutAuthentication() throws IOException, TimeoutException, ApiException {
-        ApiClient client = getWebClient(true);
+        ApiClient client = getWebClient(false);
         UsersApi usersApi = new UsersApi(client);
         User user = usersApi.getUser();
-        // ContainersApi containersApi = new ContainersApi(client);
-        // final List<Container> containers = containersApi.allRegisteredContainers();
-        // final List<User> dockstoreUsers = usersApi.listUsers();
+        final List<User> dockstoreUsers = usersApi.listUsers();
 
         // should just be the one admin user after we clear it out
-        // assertThat(dockstoreUsers.size() > 1);
+        assertTrue(dockstoreUsers.size() > 1);
     }
+
+    @Test
+    public void testListUsers() throws ApiException, IOException, TimeoutException {
+        ApiClient client = getWebClient();
+        UsersApi usersApi = new UsersApi(client);
+        final List<User> users = usersApi.listUsers();
+        // should just be the one admin user after we clear it out
+        assertTrue(users.size() == 1);
+    }
+
+    @Test
+    public void testListUsersContainers() throws ApiException, IOException, TimeoutException {
+        ApiClient client = getWebClient();
+
+        UsersApi usersApi = new UsersApi(client);
+        User user = usersApi.getUser();
+
+        List<Container> containers = usersApi.userContainers(user.getId());
+
+        ContainersApi containersApi = new ContainersApi(client);
+        List<Container> containerList = containersApi.allContainers();
+        assertTrue(containerList.size() == 1);
+
+        assertTrue(containers.size() == 1);
+    }
+
+    @Test(expected = ApiException.class)
+    public void testContainerRegistration() throws ApiException, IOException, TimeoutException {
+        ApiClient client = getWebClient();
+        ContainersApi containersApi = new ContainersApi(client);
+        List<Container> containers = containersApi.allRegisteredContainers();
+
+        assertTrue(containers.size() == 0);
+
+        UsersApi usersApi = new UsersApi(client);
+        User user = usersApi.getUser();
+        containers = usersApi.userContainers(user.getId());
+
+        assertTrue(containers.size() == 1);
+
+        long containerId = containers.get(0).getId();
+
+        RegisterRequest req = new RegisterRequest();
+        req.setRegister(true);
+
+        Container container = containersApi.register(containerId, req);
+    }
+
 }

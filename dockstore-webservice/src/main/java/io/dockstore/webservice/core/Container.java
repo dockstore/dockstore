@@ -24,6 +24,7 @@ import io.swagger.annotations.ApiModelProperty;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -32,6 +33,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
@@ -48,8 +50,6 @@ import javax.persistence.Table;
 @Table(name = "container")
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findByNameAndNamespaceAndRegistry", query = "SELECT c FROM Container c WHERE c.name = :name AND c.namespace = :namespace AND c.registry = :registry"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Container.findByUserId", query = "SELECT c FROM Container c WHERE c.userId = :userId"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Container.findRegisteredByUserId", query = "SELECT c FROM Container c WHERE c.userId = :userId AND c.isRegistered = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findRegisteredById", query = "SELECT c FROM Container c WHERE c.id = :id AND c.isRegistered = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findAllRegistered", query = "SELECT c FROM Container c WHERE c.isRegistered = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findAll", query = "SELECT c FROM Container c"),
@@ -63,9 +63,10 @@ public class Container {
     @ApiModelProperty("Implementation specific ID for the container in this web service")
     private long id;
 
-    @Column(nullable = false)
-    @ApiModelProperty("Implementation specific user ID for the container owner in this web service")
-    private long userId;
+    @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+    @JoinTable(name = "usercontainer", inverseJoinColumns = { @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id") }, joinColumns = { @JoinColumn(name = "containerid", nullable = false, updatable = false, referencedColumnName = "id") })
+    private Set<User> users;
+
     @Column(nullable = false)
     @ApiModelProperty("This is the name of the container, required: GA4GH")
     private String name;
@@ -117,13 +118,15 @@ public class Container {
 
     public Container() {
         this.tags = new HashSet<>(0);
+        this.users = new HashSet<>(0);
     }
 
-    public Container(long id, long userId, String name) {
+    public Container(long id, String name) {
         this.id = id;
-        this.userId = userId;
+        // this.userId = userId;
         this.name = name;
         this.tags = new HashSet<>(0);
+        this.users = new HashSet<>(0);
     }
 
     public void update(Container container) {
@@ -143,10 +146,10 @@ public class Container {
         return id;
     }
 
-    @JsonProperty
-    public long getUserId() {
-        return userId;
-    }
+    // @JsonProperty
+    // public long getUserId() {
+    // return userId;
+    // }
 
     @JsonProperty
     public String getName() {
@@ -252,9 +255,9 @@ public class Container {
      * @param enduserId
      *            the user ID to set
      */
-    public void setUserId(long userId) {
-        this.userId = userId;
-    }
+    // public void setUserId(long userId) {
+    // this.userId = userId;
+    // }
 
     /**
      * @param name
@@ -346,4 +349,15 @@ public class Container {
         return isStarred;
     }
 
+    public Set<User> getUsers() {
+        return users;
+    }
+
+    public void addUser(User user) {
+        users.add(user);
+    }
+
+    public boolean removeUser(User user) {
+        return users.remove(user);
+    }
 }

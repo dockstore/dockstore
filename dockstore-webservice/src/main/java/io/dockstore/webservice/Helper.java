@@ -28,6 +28,7 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.ContainerDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
+import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.resources.ResourceUtilities;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -85,11 +86,12 @@ public class Helper {
         }
     }
 
-    private static List<Container> updateContainers(List<Container> newList, List<Container> currentList, long userId,
+    private static List<Container> updateContainers(List<Container> newList, List<Container> currentList, User user,
             ContainerDAO containerDAO, TagDAO tagDAO, Map<String, List<Tag>> tagMap) {
         Date time = new Date();
 
         List<Container> toDelete = new ArrayList<>(0);
+        // Find containers that the user no longer has
         for (Iterator<Container> iterator = currentList.iterator(); iterator.hasNext();) {
             Container oldContainer = iterator.next();
             boolean exists = false;
@@ -102,18 +104,20 @@ public class Helper {
                 }
             }
             if (!exists) {
+                oldContainer.removeUser(user);
+                // user.removeContainer(oldContainer);
                 toDelete.add(oldContainer);
                 iterator.remove();
             }
         }
 
         for (Container newContainer : newList) {
+            String path = newContainer.getRegistry() + "/" + newContainer.getNamespace() + "/" + newContainer.getName();
             boolean exists = false;
 
+            // Find if user already has the container
             for (Container oldContainer : currentList) {
-                if (newContainer.getName().equals(oldContainer.getName())
-                        && newContainer.getNamespace().equals(oldContainer.getNamespace())
-                        && newContainer.getRegistry().equals(oldContainer.getRegistry())) {
+                if (newContainer.getPath().equals(oldContainer.getPath())) {
                     exists = true;
 
                     oldContainer.update(newContainer);
@@ -122,17 +126,29 @@ public class Helper {
                 }
             }
 
+            // Find if container already exists, but does not belong to user
             if (!exists) {
-                newContainer.setUserId(userId);
-                String path = newContainer.getRegistry() + "/" + newContainer.getNamespace() + "/" + newContainer.getName();
+                Container oldContainer = containerDAO.findByPath(path);
+                if (oldContainer != null) {
+                    exists = true;
+                    oldContainer.update(newContainer);
+                    currentList.add(oldContainer);
+                }
+            }
+
+            // Container does not already exist
+            if (!exists) {
+                // newContainer.setUserId(userId);
                 newContainer.setPath(path);
 
                 currentList.add(newContainer);
             }
         }
 
+        // Save all new and existing containers, and generate new tags
         for (Container container : currentList) {
             container.setLastUpdated(time);
+            container.addUser(user);
             containerDAO.create(container);
 
             container.getTags().clear();
@@ -148,10 +164,15 @@ public class Helper {
             LOG.info("UPDATED Container: " + container.getPath());
         }
 
+        // delete container if it has no users
         for (Container c : toDelete) {
-            LOG.info("DELETING: " + c.getPath());
-            c.getTags().clear();
-            containerDAO.delete(c);
+            LOG.info(c.getPath() + " " + c.getUsers().size());
+
+            if (c.getUsers().isEmpty()) {
+                LOG.info("DELETING: " + c.getPath());
+                c.getTags().clear();
+                containerDAO.delete(c);
+            }
         }
 
         return currentList;
@@ -179,6 +200,32 @@ public class Helper {
         }
 
         return containerList;
+    }
+
+    private static Map<String, Repository> getGithubRepos(UserService uService, OrganizationService oService, RepositoryService service) {
+        Map<String, Repository> map = new HashMap<>();
+
+        try {
+            org.eclipse.egit.github.core.User user = uService.getUser();
+
+            List<Repository> gitRepos = new ArrayList<>(0);
+            gitRepos.addAll(service.getRepositories(user.getLogin()));
+
+            for (org.eclipse.egit.github.core.User org : oService.getOrganizations()) {
+                gitRepos.addAll(service.getRepositories(org.getLogin()));
+            }
+
+            for (Repository repo : gitRepos) {
+                LOG.info(repo.getSshUrl());
+                map.put(repo.getSshUrl(), repo);
+            }
+
+        } catch (IOException ex) {
+            LOG.info("IOException occurred when retrieving Github user");
+            ex.printStackTrace();
+        }
+
+        return map;
     }
 
     private static List<String> getNamespaces(HttpClient client, Token quayToken) {
@@ -246,9 +293,11 @@ public class Helper {
         return tagMap;
     }
 
-    public static List<Container> refresh(Long userId, HttpClient client, ObjectMapper objectMapper, ContainerDAO containerDAO,
-            TokenDAO tokenDAO, TagDAO tagDAO) {
-        List<Container> currentRepos = containerDAO.findByUserId(userId);
+    public static List<Container> refresh(Long userId, HttpClient client, ObjectMapper objectMapper, UserDAO userDAO,
+            ContainerDAO containerDAO, TokenDAO tokenDAO, TagDAO tagDAO) {
+        User dockstoreUser = userDAO.findById(userId);
+
+        List<Container> currentRepos = new ArrayList(dockstoreUser.getContainers());// containerDAO.findByUserId(userId);
         List<Container> allRepos = new ArrayList<>(0);
         List<Token> tokens = tokenDAO.findByUserId(userId);
 
@@ -278,114 +327,119 @@ public class Helper {
 
         GitHubClient githubClient = new GitHubClient();
         githubClient.setOAuth2Token(gitToken.getContent());
-        try {
-            UserService uService = new UserService(githubClient);
-            OrganizationService oService = new OrganizationService(githubClient);
-            RepositoryService service = new RepositoryService(githubClient);
-            ContentsService cService = new ContentsService(githubClient);
-            org.eclipse.egit.github.core.User user = uService.getUser();
 
-            allRepos = getQuayContainers(client, objectMapper, namespaces, quayToken);
+        UserService uService = new UserService(githubClient);
+        OrganizationService oService = new OrganizationService(githubClient);
+        RepositoryService service = new RepositoryService(githubClient);
+        ContentsService cService = new ContentsService(githubClient);
 
-            // Go through each container for each namespace
-            for (Container c : allRepos) {
-                String repo = c.getNamespace() + "/" + c.getName();
-                String path = quayToken.getTokenSource() + "/" + repo;
-                c.setPath(path);
+        Map<String, Repository> gitRepos = getGithubRepos(uService, oService, service);
 
-                // Get the list of builds from the container.
-                // Builds contain information such as the Git URL and tags
-                String urlBuilds = "https://quay.io/api/v1/repository/" + repo + "/build/";
-                Optional<String> asStringBuilds = ResourceUtilities.asString(urlBuilds, quayToken.getContent(), client);
+        allRepos = getQuayContainers(client, objectMapper, namespaces, quayToken);
 
-                String gitURL = "";
+        // Go through each container for each namespace
+        for (Container c : allRepos) {
+            String repo = c.getNamespace() + "/" + c.getName();
+            String path = quayToken.getTokenSource() + "/" + repo;
+            c.setPath(path);
 
-                if (asStringBuilds.isPresent()) {
-                    String json = asStringBuilds.get();
-                    LOG.info("RESOURCE CALL: " + urlBuilds);
+            // Get the list of builds from the container.
+            // Builds contain information such as the Git URL and tags
+            String urlBuilds = "https://quay.io/api/v1/repository/" + repo + "/build/";
+            Optional<String> asStringBuilds = ResourceUtilities.asString(urlBuilds, quayToken.getContent(), client);
 
-                    // parse json using Gson to get the git url of repository and the list of tags
-                    Gson gson = new Gson();
-                    Map<String, ArrayList> map = new HashMap<>();
-                    map = (Map<String, ArrayList>) gson.fromJson(json, map.getClass());
-                    ArrayList builds = map.get("builds");
+            String gitURL = "";
 
-                    if (!builds.isEmpty()) {
-                        Map<String, Map<String, String>> map2 = new HashMap<>();
-                        map2 = (Map<String, Map<String, String>>) builds.get(0);
+            if (asStringBuilds.isPresent()) {
+                String json = asStringBuilds.get();
+                LOG.info("RESOURCE CALL: " + urlBuilds);
 
-                        gitURL = map2.get("trigger_metadata").get("git_url");
+                // parse json using Gson to get the git url of repository and the list of tags
+                Gson gson = new Gson();
+                Map<String, ArrayList> map = new HashMap<>();
+                map = (Map<String, ArrayList>) gson.fromJson(json, map.getClass());
+                ArrayList builds = map.get("builds");
 
-                        Map<String, String> map3 = (Map<String, String>) builds.get(0);
-                        String lastBuild = (String) map3.get("started");
-                        LOG.info("LAST BUILD: " + lastBuild);
+                if (!builds.isEmpty()) {
+                    Map<String, Map<String, String>> map2 = new HashMap<>();
+                    map2 = (Map<String, Map<String, String>>) builds.get(0);
 
-                        Date date = null;
-                        try {
-                            date = formatter.parse(lastBuild);
-                            c.setLastBuild(date);
-                        } catch (ParseException ex) {
-                            LOG.info("Build date did not match format 'EEE, d MMM yyyy HH:mm:ss Z'");
-                        }
-                    }
-                }
+                    gitURL = map2.get("trigger_metadata").get("git_url");
 
-                c.setRegistry(quayToken.getTokenSource());
-                c.setGitUrl(gitURL);
+                    Map<String, String> map3 = (Map<String, String>) builds.get(0);
+                    String lastBuild = (String) map3.get("started");
+                    LOG.info("LAST BUILD: " + lastBuild);
 
-                List<Repository> gitRepos = new ArrayList<>(0);
-                gitRepos.addAll(service.getRepositories(user.getLogin()));
-
-                for (org.eclipse.egit.github.core.User org : oService.getOrganizations()) {
-                    gitRepos.addAll(service.getRepositories(org.getLogin()));
-                }
-
-                for (Repository repository : gitRepos) {
-                    LOG.info(repository.getSshUrl());
-                    if (repository.getSshUrl().equals(c.getGitUrl())) {
-                        try {
-                            List<RepositoryContents> contents = null;
-                            try {
-                                contents = cService.getContents(repository, "Dockstore.cwl");
-                            } catch (Exception e) {
-                                contents = cService.getContents(repository, "dockstore.cwl");
-                            }
-                            if (!(contents == null || contents.isEmpty())) {
-                                c.setHasCollab(true);
-
-                                String encoded = contents.get(0).getContent().replace("\n", "");
-                                byte[] decode = Base64.getDecoder().decode(encoded);
-                                String content = new String(decode, StandardCharsets.UTF_8);
-
-                                // parse the collab.cwl file to get description and author
-                                YamlReader reader = new YamlReader(content);
-                                Object object = reader.read();
-                                Map map = (Map) object;
-                                String description = (String) map.get("description");
-                                map = (Map) map.get("dct:creator");
-                                String author = (String) map.get("foaf:name");
-
-                                c.setDescription(description);
-                                c.setAuthor(author);
-
-                                LOG.info("Repo: " + repository.getName() + " has Dockstore.cwl");
-                            }
-                        } catch (IOException ex) {
-                            LOG.info("Repo: " + repository.getName() + " has no Dockstore.cwl");
-                        }
-                        break;
+                    Date date = null;
+                    try {
+                        date = formatter.parse(lastBuild);
+                        c.setLastBuild(date);
+                    } catch (ParseException ex) {
+                        LOG.info("Build date did not match format 'EEE, d MMM yyyy HH:mm:ss Z'");
                     }
                 }
             }
-        } catch (IOException ex) {
-            LOG.info("Token ignored due to IOException: " + gitToken.getId() + " " + ex);
+
+            c.setRegistry(quayToken.getTokenSource());
+            c.setGitUrl(gitURL);
+
+            Repository repository = gitRepos.get(c.getGitUrl());
+            if (repository == null) {
+                LOG.info("Github repository not found for " + c.getPath());
+            } else {
+                LOG.info("Github found for: " + repository.getName());
+                try {
+                    List<RepositoryContents> contents = null;
+                    try {
+                        contents = cService.getContents(repository, "Dockstore.cwl");
+                    } catch (Exception e) {
+                        contents = cService.getContents(repository, "dockstore.cwl");
+                    }
+                    if (!(contents == null || contents.isEmpty())) {
+                        String encoded = contents.get(0).getContent().replace("\n", "");
+                        byte[] decode = Base64.getDecoder().decode(encoded);
+                        String content = new String(decode, StandardCharsets.UTF_8);
+
+                        // parse the collab.cwl file to get description and author
+                        Map map = null;
+                        try {
+                            YamlReader reader = new YamlReader(content);
+                            Object object = reader.read();
+                            map = (Map) object;
+
+                            String description = (String) map.get("description");
+                            if (description != null) {
+                                c.setDescription(description);
+                            } else {
+                                LOG.info("Description not found!");
+                            }
+
+                            map = (Map) map.get("dct:creator");
+                            if (map != null) {
+                                String author = (String) map.get("foaf:name");
+                                c.setAuthor(author);
+                            } else {
+                                LOG.info("Creator not found!");
+                            }
+
+                            c.setHasCollab(true);
+                            LOG.info("Repo: " + repository.getName() + " has Dockstore.cwl");
+                        } catch (IOException ex) {
+                            LOG.info("CWL file is malformed");
+                            ex.printStackTrace();
+                        }
+                    }
+                } catch (IOException ex) {
+                    LOG.info("Repo: " + repository.getName() + " has no Dockstore.cwl");
+                }
+            }
         }
 
         Map<String, List<Tag>> tagMap = getTags(client, allRepos, objectMapper, quayToken);
 
-        currentRepos = Helper.updateContainers(allRepos, currentRepos, userId, containerDAO, tagDAO, tagMap);
-
-        return currentRepos;
+        currentRepos = Helper.updateContainers(allRepos, currentRepos, dockstoreUser, containerDAO, tagDAO, tagMap);
+        userDAO.clearCache();
+        return new ArrayList(userDAO.findById(userId).getContainers());
     }
 
     public static void checkUser(User user) {
@@ -396,6 +450,12 @@ public class Helper {
 
     public static void checkUser(User user, long id) {
         if (!user.getIsAdmin() && user.getId() != id) {
+            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
+        }
+    }
+
+    public static void checkUser(User user, Container container) {
+        if (!user.getIsAdmin() && !container.getUsers().contains(user)) {
             throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
         }
     }

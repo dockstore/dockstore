@@ -61,8 +61,13 @@ public class User {
     @JoinTable(name = "endusergroup", joinColumns = { @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "groupid", nullable = false, updatable = false, referencedColumnName = "id") })
     private Set<Group> groups;
 
+    @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+    @JoinTable(name = "usercontainer", inverseJoinColumns = { @JoinColumn(name = "containerid", nullable = false, updatable = false, referencedColumnName = "id") }, joinColumns = { @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id") })
+    private Set<Container> containers;
+
     public User() {
         this.groups = new HashSet<>(0);
+        this.containers = new HashSet<>(0);
     }
 
     @JsonProperty
@@ -98,6 +103,18 @@ public class User {
 
     public boolean removeGroup(Group group) {
         return groups.remove(group);
+    }
+
+    public Set<Container> getContainers() {
+        return this.containers;
+    }
+
+    public void addContainer(Container container) {
+        containers.add(container);
+    }
+
+    public boolean removeContainer(Container container) {
+        return containers.remove(container);
     }
 
     @Override
