@@ -25,10 +25,10 @@ database:
   driverClass: org.postgresql.Driver
 
   # the username
-  user: test
+  user: dockstore
 
   # the password
-  password: test
+  password: dockstore
 
   # the JDBC URL
   url: jdbc:postgresql://localhost:5432/webservice_test
