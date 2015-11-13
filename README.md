@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/CancerCollaboratory/dockstore.svg?branch=develop)](https://travis-ci.org/CancerCollaboratory/dockstore)
+
 # dockstore
 
 This is the prototype web service for the dockstore. The usage of this is to enumerate the docker containers (from quay.io and hopefully docker hub) and the workflows (from github) that are available to users of Collaboratory.
