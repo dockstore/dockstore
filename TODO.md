@@ -14,3 +14,4 @@ This document will keep a (relatively) prioritized list of features we want.
 * support for private repositories, groups, sharing settings, etc
 * unique, stable URL for each tool/version that can be used in publications
 * integrate the [Launcher](https://github.com/CancerCollaboratory/dockstore-descriptor#dockstore-descriptor) into the Dockstore command line utility
+* auto-conversion, if a user uploads a WDL auto-convert to CWL and vice versa(?) (Broad group may help with this)
