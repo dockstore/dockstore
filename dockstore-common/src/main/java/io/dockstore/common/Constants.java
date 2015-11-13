@@ -25,6 +25,7 @@ package io.dockstore.common;
 public class Constants {
     public static final String WEBSERVICE_BASE_PATH = "webservice.base_path";
     public static final String WEBSERVICE_TOKEN = "webservice.token";
+    public static final String WEBSERVICE_TOKEN2 = "webservice.token2";
     public static final String WEBSERVICE_EXTRA_FILES = "webservice.extra_files";
 
     public static final String POSTGRES_HOST = "database.postgresHost";

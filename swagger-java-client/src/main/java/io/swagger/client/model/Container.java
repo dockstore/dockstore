@@ -1,6 +1,7 @@
 package io.swagger.client.model;
 
 import io.swagger.client.StringUtil;
+import io.swagger.client.model.User;
 import java.util.*;
 import io.swagger.client.model.Tag;
 import java.util.Date;
@@ -12,11 +13,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 @ApiModel(description = "")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-05T12:49:06.379-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-13T14:06:54.737-05:00")
 public class Container   {
   
   private Long id = null;
-  private Long userId = null;
+  private List<User> users = new ArrayList<User>();
   private String name = null;
   private String namespace = null;
   private String registry = null;
@@ -48,15 +49,14 @@ public class Container   {
 
   
   /**
-   * Implementation specific user ID for the container owner in this web service
    **/
-  @ApiModelProperty(value = "Implementation specific user ID for the container owner in this web service")
-  @JsonProperty("userId")
-  public Long getUserId() {
-    return userId;
+  @ApiModelProperty(value = "")
+  @JsonProperty("users")
+  public List<User> getUsers() {
+    return users;
   }
-  public void setUserId(Long userId) {
-    this.userId = userId;
+  public void setUsers(List<User> users) {
+    this.users = users;
   }
 
   
@@ -261,7 +261,7 @@ public class Container   {
     sb.append("class Container {\n");
     
     sb.append("    id: ").append(StringUtil.toIndentedString(id)).append("\n");
-    sb.append("    userId: ").append(StringUtil.toIndentedString(userId)).append("\n");
+    sb.append("    users: ").append(StringUtil.toIndentedString(users)).append("\n");
     sb.append("    name: ").append(StringUtil.toIndentedString(name)).append("\n");
     sb.append("    namespace: ").append(StringUtil.toIndentedString(namespace)).append("\n");
     sb.append("    registry: ").append(StringUtil.toIndentedString(registry)).append("\n");

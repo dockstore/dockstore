@@ -30,6 +30,14 @@ import org.junit.Test;
 public class UserTest {
     private static final ObjectMapper MAPPER = Jackson.newObjectMapper();
 
+    private User getUser() {
+        final User user = new User();
+        user.setUsername("victoroicr");
+        user.setIsAdmin(false);
+
+        return user;
+    }
+
     @Test
     public void serializesToJson() throws Exception {
         final User user = getUser();
@@ -43,11 +51,4 @@ public class UserTest {
         assertThat(MAPPER.readValue(fixture("fixtures/user.json"), User.class)).isEqualTo(user);
     }
 
-    private User getUser() {
-        final User user = new User();
-        user.setUsername("victoroicr");
-        user.setIsAdmin(false);
-
-        return user;
-    }
 }

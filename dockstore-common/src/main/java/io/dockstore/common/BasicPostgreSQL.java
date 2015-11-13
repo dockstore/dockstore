@@ -100,9 +100,12 @@ public class BasicPostgreSQL {
      */
     public void clearDatabase() {
         this.runUpdateStatement("delete from usercontainer;");
+        this.runUpdateStatement("delete from endusergroup;");
+
         this.runUpdateStatement("delete from enduser;");
         this.runUpdateStatement("delete from token;");
         this.runUpdateStatement("delete from container;");
+        this.runUpdateStatement("delete from usergroup;");
     }
 
     protected <T> T runSelectStatement(String query, ResultSetHandler<T> handler, Object... params) {
