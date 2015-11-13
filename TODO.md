@@ -1,6 +1,6 @@
 # New Features
 
-This document will keep a (relatively) prioritized list of features we want.
+This document will keep a list of features we want (not yet prioritized).
 
 * work to promote a standardized web service API for sharing Docker-based tools through the GA4GH so other sites can register Docker images described with CWL and we can cross index, think [MavenCentral](http://search.maven.org/)
 * publish Dockstore images for tools from the [PCAWG](https://dcc.igcg.org/pcawg) and other projects to help seed the Dockstore
