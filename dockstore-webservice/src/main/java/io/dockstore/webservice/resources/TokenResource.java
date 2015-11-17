@@ -39,6 +39,7 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -325,12 +326,12 @@ public class TokenResource {
     @ApiOperation(value = "Add a new bitbucket.org token, used by quay.io redirect", notes = "This is used as part of the OAuth 2 web flow. "
             + "Once a user has approved permissions for Collaboratory"
             + "Their browser will load the redirect URI which should resolve here", response = Token.class)
-    public Token addBitbucketToken(@QueryParam("code") String code) {
+    public Token addBitbucketToken(@QueryParam("code") String code) throws UnsupportedEncodingException {
         Token token = new Token();
 
-        Optional<String> asString = ResourceUtilities.asString(
-                "https://bitbucket.org/site/oauth2/access_token?grant_type=authorization_code&code=" + code + "&client_id="
-                        + bitbucketClientID + "&client_secret=" + bitbucketClientSecret, null, client);
+        // TODO: modify this section to get oauth working for bitbucket
+        Optional<String> asString = ResourceUtilities.httpPost("https://bitbucket.org/site/oauth2/access_token", null, client,
+                bitbucketClientID, bitbucketClientSecret, code);
         String accessToken;
         if (asString.isPresent()) {
             LOG.info(asString.get());
