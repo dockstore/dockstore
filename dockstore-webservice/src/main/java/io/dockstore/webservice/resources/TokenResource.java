@@ -94,7 +94,7 @@ public class TokenResource {
         this.githubClientID = githubClientID;
         this.githubClientSecret = githubClientSecret;
         this.bitbucketClientID = bitbucketClientID;
-        this.bitbucketClientSecret = bitbucketClientID;
+        this.bitbucketClientSecret = bitbucketClientSecret;
         this.client = client;
         this.cachingAuthenticator = cachingAuthenticator;
     }
@@ -329,14 +329,18 @@ public class TokenResource {
     public Token addBitbucketToken(@QueryParam("code") String code) throws UnsupportedEncodingException {
         Token token = new Token();
 
-        // TODO: modify this section to get oauth working for bitbucket
         Optional<String> asString = ResourceUtilities.httpPost("https://bitbucket.org/site/oauth2/access_token", null, client,
-                bitbucketClientID, bitbucketClientSecret, code);
+                bitbucketClientID, bitbucketClientSecret, "grant_type=authorization_code&code=" + code);
         String accessToken;
         if (asString.isPresent()) {
-            LOG.info(asString.get());
-            Map<String, String> split = Splitter.on('&').trimResults().withKeyValueSeparator("=").split(asString.get());
-            accessToken = split.get("access_token");
+            String json = asString.get();
+            LOG.info(json);
+
+            Gson gson = new Gson();
+            Map<String, String> map = new HashMap<>();
+            map = (Map<String, String>) gson.fromJson(json, map.getClass());
+
+            accessToken = map.get("access_token");
         } else {
             throw new WebApplicationException("Could not retrieve github.com token based on code");
         }

@@ -19,6 +19,7 @@ package io.dockstore.webservice.resources;
 import com.google.common.base.Optional;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
@@ -42,9 +43,9 @@ public class ResourceUtilities {
         return getResponseAsString(buildHttpGet(input, token), client);
     }
 
-    public static Optional<String> httpPost(String input, String token, HttpClient client, String client_id, String secret, String code)
+    public static Optional<String> httpPost(String input, String token, HttpClient client, String client_id, String secret, String payload)
             throws UnsupportedEncodingException {
-        return getResponseAsString(buildHttpPost(input, token, client_id, secret, code), client);
+        return getResponseAsString(buildHttpPost(input, token, client_id, secret, payload), client);
     }
 
     public static HttpGet buildHttpGet(String input, String token) {
@@ -55,21 +56,18 @@ public class ResourceUtilities {
         return httpGet;
     }
 
-    public static HttpPost buildHttpPost(String input, String token, String client_id, String secret, String code)
+    public static HttpPost buildHttpPost(String input, String token, String client_id, String secret, String payload)
             throws UnsupportedEncodingException {
         HttpPost httpPost = new HttpPost(input);
         if (token == null) {
             String string = client_id + ":" + secret;
-            byte[] b = string.getBytes("UTF-8");
+            byte[] b = string.getBytes(StandardCharsets.UTF_8);
             String encoding = Base64.getEncoder().encodeToString(b);
 
-            // this is what the encoding is supposed to be for my client_id:secret
-            encoding = "U1BNaEo0OXJXM0o3RVN0dVJiOkx6M1lwdmNMRGRrWHpWeWJwS2M0NDZORThFeVB1aHlt";
-            LOG.info(encoding);
             httpPost.addHeader("Authorization", "Basic " + encoding);
 
-            StringEntity entity = new StringEntity("grant_type=authorization_code&code=" + code);
-
+            StringEntity entity = new StringEntity(payload);
+            entity.setContentType("application/x-www-form-urlencoded");
             httpPost.setEntity(entity);
         }
         return httpPost;
