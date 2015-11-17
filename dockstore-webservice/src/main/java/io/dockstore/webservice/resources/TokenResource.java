@@ -75,19 +75,25 @@ public class TokenResource {
     private static final String QUAY_URL = "https://quay.io/api/v1/";
     private final String githubClientID;
     private final String githubClientSecret;
+    private final String bitbucketClientID;
+    private final String bitbucketClientSecret;
     private final HttpClient client;
     private final ObjectMapper objectMapper;
 
     private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
     private final CachingAuthenticator<String, Token> cachingAuthenticator;
 
+    @SuppressWarnings("checkstyle:parameternumber")
     public TokenResource(ObjectMapper mapper, TokenDAO tokenDAO, UserDAO enduserDAO, String githubClientID, String githubClientSecret,
-            HttpClient client, CachingAuthenticator<String, Token> cachingAuthenticator) {
+            String bitbucketClientID, String bitbucketClientSecret, HttpClient client,
+            CachingAuthenticator<String, Token> cachingAuthenticator) {
         this.objectMapper = mapper;
         this.tokenDAO = tokenDAO;
         this.userDAO = enduserDAO;
         this.githubClientID = githubClientID;
         this.githubClientSecret = githubClientSecret;
+        this.bitbucketClientID = bitbucketClientID;
+        this.bitbucketClientSecret = bitbucketClientID;
         this.client = client;
         this.cachingAuthenticator = cachingAuthenticator;
     }
@@ -310,5 +316,35 @@ public class TokenResource {
         }
 
         return dockstoreToken;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/bitbucket.org")
+    @ApiOperation(value = "Add a new bitbucket.org token, used by quay.io redirect", notes = "This is used as part of the OAuth 2 web flow. "
+            + "Once a user has approved permissions for Collaboratory"
+            + "Their browser will load the redirect URI which should resolve here", response = Token.class)
+    public Token addBitbucketToken(@QueryParam("code") String code) {
+        Token token = new Token();
+
+        Optional<String> asString = ResourceUtilities.asString(
+                "https://bitbucket.org/site/oauth2/access_token?grant_type=authorization_code&code=" + code + "&client_id="
+                        + bitbucketClientID + "&client_secret=" + bitbucketClientSecret, null, client);
+        String accessToken;
+        if (asString.isPresent()) {
+            LOG.info(asString.get());
+            Map<String, String> split = Splitter.on('&').trimResults().withKeyValueSeparator("=").split(asString.get());
+            accessToken = split.get("access_token");
+        } else {
+            throw new WebApplicationException("Could not retrieve github.com token based on code");
+        }
+
+        token.setTokenSource(TokenType.BITBUCKET_ORG.toString());
+        token.setContent(accessToken);
+        token.setUsername("bitbucket test");
+        tokenDAO.create(token);
+
+        return token;
     }
 }

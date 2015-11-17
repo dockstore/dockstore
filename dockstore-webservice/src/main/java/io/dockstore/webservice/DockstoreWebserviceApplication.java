@@ -27,6 +27,7 @@ import io.dockstore.webservice.jdbi.GroupDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
+import io.dockstore.webservice.resources.BitbucketOrgAuthenticationResource;
 import io.dockstore.webservice.resources.DockerRepoResource;
 import io.dockstore.webservice.resources.GitHubComAuthenticationResource;
 import io.dockstore.webservice.resources.GitHubRepoResource;
@@ -163,9 +164,12 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 configuration.getGithubRedirectURI());
         environment.jersey().register(resource3);
 
+        final BitbucketOrgAuthenticationResource resource4 = new BitbucketOrgAuthenticationResource(configuration.getBitbucketClientID());
+        environment.jersey().register(resource4);
+
         environment.jersey().register(
                 new TokenResource(mapper, tokenDAO, userDAO, configuration.getGithubClientID(), configuration.getGithubClientSecret(),
-                        httpClient, cachingAuthenticator));
+                        configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), httpClient, cachingAuthenticator));
 
         environment.jersey().register(
                 new UserResource(mapper, httpClient, tokenDAO, userDAO, groupDAO, containerDAO, tagDAO, configuration.getGithubClientID(),
