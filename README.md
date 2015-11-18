@@ -2,7 +2,13 @@
 
 # dockstore
 
-This is the prototype web service for the dockstore. The usage of this is to enumerate the docker containers (from quay.io and hopefully docker hub) and the workflows (from github) that are available to users of Collaboratory.
+The Dockstore brings together tools in Docker images with CWL-based descriptors.  We hope to use this project as motivation to create a GA4GH API standard for container registries and intend on making Dockstore fully compliant.
+
+For a live demo see https://dockstore.org
+
+This repo is the web service for the Dockstore. The usage of this is to enumerate the docker containers (from quay.io and hopefully docker hub) and the workflows (from github) that are available to users of Dockstore.org.
+
+For the related web UI see the [dockstore-ui](https://github.com/ga4gh/dockstore-ui) project.
 
 ## Usage
 
