@@ -303,10 +303,9 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/groups/{groupId}")
-    @ApiOperation(value = "List a group", response = Group.class, responseContainer = "List")
-    public List<Group> getGroup(@ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "Group") @PathParam("groupId") long groupId) {
-        return groupDAO.findAll();
+    @ApiOperation(value = "List a group", response = Group.class)
+    public Group getGroup(@ApiParam(hidden = true) @Auth Token authToken, @ApiParam(value = "Group") @PathParam("groupId") long groupId) {
+        return groupDAO.findById(groupId);
     }
 
     @PUT
@@ -315,12 +314,13 @@ public class UserResource {
     @Path("/{userId}/groups")
     @ApiOperation(value = "Add a group to a user", response = User.class)
     public User addGroupToUser(@ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "User ID of user") @PathParam("userId") long userId, @QueryParam("group_id") long groupId) {
+            @ApiParam(value = "User ID of user") @PathParam("userId") long userId,
+            @ApiParam(value = "RegisterRequest to refresh the list of repos for a user", required = true) Group group) {
         User authUser = userDAO.findById(authToken.getUserId());
         Helper.checkUser(authUser, userId);
 
         User user = userDAO.findById(userId);
-        Group group = groupDAO.findById(groupId);
+        // Group group = groupDAO.findById(groupId);
 
         if (user != null && group != null) {
             user.addGroup(group);

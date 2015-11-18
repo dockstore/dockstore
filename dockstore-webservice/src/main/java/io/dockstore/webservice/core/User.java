@@ -19,6 +19,7 @@ package io.dockstore.webservice.core;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -114,6 +115,35 @@ public class User {
 
     public boolean removeContainer(Container container) {
         return containers.remove(container);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, username);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final User other = (User) obj;
+        if (this.id != other.id) {
+            return false;
+        }
+        if (!Objects.equals(this.username, other.username)) {
+            return false;
+        }
+        if (this.isAdmin != other.isAdmin) {
+            return false;
+        }
+        if (!Objects.equals(this.groups, other.groups)) {
+            return false;
+        }
+        return true;
     }
 
 }

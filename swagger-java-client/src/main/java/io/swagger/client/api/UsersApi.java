@@ -19,7 +19,7 @@ import java.io.File;
 import java.util.Map;
 import java.util.HashMap;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-05T12:49:06.379-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-13T14:06:54.737-05:00")
 public class UsersApi {
   private ApiClient apiClient;
 
@@ -213,9 +213,9 @@ public class UsersApi {
    * List a group
    * 
    * @param groupId Group
-   * @return List<Group>
+   * @return Group
    */
-  public List<Group> getGroup (Long groupId) throws ApiException {
+  public Group getGroup (Long groupId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'groupId' is set
@@ -251,7 +251,7 @@ public class UsersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<List<Group>>() {};
+    TypeRef returnType = new TypeRef<Group>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -675,15 +675,20 @@ public class UsersApi {
    * Add a group to a user
    * 
    * @param userId User ID of user
-   * @param groupId 
+   * @param body RegisterRequest to refresh the list of repos for a user
    * @return User
    */
-  public User addGroupToUser (Long userId, Long groupId) throws ApiException {
-    Object postBody = null;
+  public User addGroupToUser (Long userId, Group body) throws ApiException {
+    Object postBody = body;
     
     // verify the required parameter 'userId' is set
     if (userId == null) {
       throw new ApiException(400, "Missing the required parameter 'userId' when calling addGroupToUser");
+    }
+    
+    // verify the required parameter 'body' is set
+    if (body == null) {
+      throw new ApiException(400, "Missing the required parameter 'body' when calling addGroupToUser");
     }
     
     // create path and map variables
@@ -695,8 +700,6 @@ public class UsersApi {
     Map<String, String> headerParams = new HashMap<String, String>();
     Map<String, Object> formParams = new HashMap<String, Object>();
 
-    
-    queryParams.addAll(apiClient.parameterToPairs("", "group_id", groupId));
     
 
     

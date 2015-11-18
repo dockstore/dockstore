@@ -127,12 +127,12 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     public void run(DockstoreWebserviceConfiguration configuration, Environment environment) {
         BeanConfig beanConfig = new BeanConfig();
         beanConfig.setVersion("1.0.2");
+        beanConfig.setTitle("Dockstore API");
         beanConfig.setSchemes(new String[] { configuration.getScheme() });
         beanConfig.setHost(configuration.getHostname() + ":" + configuration.getPort());
         beanConfig.setBasePath("/");
         beanConfig.setResourcePackage("io.dockstore.webservice.resources");
         beanConfig.setScan(true);
-        beanConfig.setTitle("Swagger Remote Registry Prototype");
 
         final QuayIOAuthenticationResource resource2 = new QuayIOAuthenticationResource(configuration.getQuayClientID(),
                 configuration.getQuayRedirectURI());

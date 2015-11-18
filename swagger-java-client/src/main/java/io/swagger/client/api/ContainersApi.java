@@ -13,12 +13,13 @@ import java.util.*;
 import io.swagger.client.model.Container;
 import io.swagger.client.model.FileResponse;
 import io.swagger.client.model.RegisterRequest;
+import io.swagger.client.model.User;
 
 import java.io.File;
 import java.util.Map;
 import java.util.HashMap;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-05T12:49:06.379-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-13T14:06:54.737-05:00")
 public class ContainersApi {
   private ApiClient apiClient;
 
@@ -487,6 +488,53 @@ public class ContainersApi {
     
     TypeRef returnType = new TypeRef<Container>() {};
     return apiClient.invokeAPI(path, "POST", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    
+  }
+  
+  /**
+   * Get users of a container
+   * 
+   * @param containerId Container ID
+   * @return List<User>
+   */
+  public List<User> getUsers (Long containerId) throws ApiException {
+    Object postBody = null;
+    
+    // verify the required parameter 'containerId' is set
+    if (containerId == null) {
+      throw new ApiException(400, "Missing the required parameter 'containerId' when calling getUsers");
+    }
+    
+    // create path and map variables
+    String path = "/containers/{containerId}/users".replaceAll("\\{format\\}","json")
+      .replaceAll("\\{" + "containerId" + "\\}", apiClient.escapeString(containerId.toString()));
+
+    // query params
+    List<Pair> queryParams = new ArrayList<Pair>();
+    Map<String, String> headerParams = new HashMap<String, String>();
+    Map<String, Object> formParams = new HashMap<String, Object>();
+
+    
+
+    
+
+    
+
+    final String[] accepts = {
+      "application/json"
+    };
+    final String accept = apiClient.selectHeaderAccept(accepts);
+
+    final String[] contentTypes = {
+      
+    };
+    final String contentType = apiClient.selectHeaderContentType(contentTypes);
+
+    String[] authNames = new String[] {  };
+
+    
+    TypeRef returnType = new TypeRef<List<User>>() {};
+    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
   
