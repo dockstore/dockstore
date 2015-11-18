@@ -458,4 +458,37 @@ public class UserResource {
         }
         return null;
     }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{userId}/bitbucketUser")
+    @ApiOperation(value = "Test bitbucket", notes = "NO authentication", response = String.class)
+    public String getBitbucketUser(@ApiParam(hidden = true) @Auth Token authToken,
+            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
+        User user = userDAO.findById(authToken.getUserId());
+        Helper.checkUser(user, userId);
+
+        List<Token> tokens = tokenDAO.findBySource(TokenType.BITBUCKET_ORG.toString());
+
+        Token bitbucketToken = null;
+
+        if (tokens.isEmpty()) {
+            LOG.info("BITBUCKET token not found!");
+            throw new WebApplicationException(HttpStatus.SC_CONFLICT);
+        } else {
+            bitbucketToken = tokens.get(0);
+        }
+
+        String json = "";
+
+        String url = "https://bitbucket.org/api/2.0/users/victoroicr";
+        Optional<String> asString = ResourceUtilities.asString(url, bitbucketToken.getContent(), client);
+
+        if (asString.isPresent()) {
+            json = asString.get();
+        }
+
+        return json;
+    }
 }

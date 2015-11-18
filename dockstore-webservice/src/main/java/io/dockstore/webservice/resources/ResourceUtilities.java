@@ -43,8 +43,8 @@ public class ResourceUtilities {
         return getResponseAsString(buildHttpGet(input, token), client);
     }
 
-    public static Optional<String> httpPost(String input, String token, HttpClient client, String client_id, String secret, String payload)
-            throws UnsupportedEncodingException {
+    public static Optional<String> bitbucketPost(String input, String token, HttpClient client, String client_id, String secret,
+            String payload) throws UnsupportedEncodingException {
         return getResponseAsString(buildHttpPost(input, token, client_id, secret, payload), client);
     }
 

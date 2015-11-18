@@ -549,26 +549,4 @@ public class DockerRepoResource {
         // LOG.info(dockerfile.getContent());
         return cwl;
     }
-
-    @GET
-    @Timed
-    @UnitOfWork
-    @Path("/bitbucket")
-    @ApiOperation(value = "Test bitbucket", notes = "NO authentication", response = String.class)
-    public String getRegisteredContainer() {
-        List<Token> tokens = tokenDAO.findBySource(TokenType.BITBUCKET_ORG.toString());
-        String json = "";
-
-        if (!tokens.isEmpty()) {
-            Token token = tokens.get(0);
-            String url = "https://bitbucket.org/api/2.0/users/victoroicr";
-            Optional<String> asString = ResourceUtilities.asString(url, token.getContent(), client);
-
-            if (asString.isPresent()) {
-                json = asString.get();
-            }
-        }
-
-        return json;
-    }
 }
