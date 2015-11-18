@@ -2,7 +2,11 @@
 
 # dockstore
 
-This is the prototype web service for the dockstore. The usage of this is to enumerate the docker containers (from quay.io and hopefully docker hub) and the workflows (from github) that are available to users of Collaboratory.
+The Dockstore brings together tools in Docker images with CWL-based descriptors.
+
+For a live demo see https://dockstore.org
+
+This repo is the web service for the Dockstore. The usage of this is to enumerate the docker containers (from quay.io and hopefully docker hub) and the workflows (from github) that are available to users of Dockstore.org.
 
 ## Usage
 
