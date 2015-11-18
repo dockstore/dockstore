@@ -115,9 +115,17 @@ public class Container {
     @JoinTable(name = "containertag", joinColumns = { @JoinColumn(name = "containerid", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "tagid", referencedColumnName = "id") })
     @ApiModelProperty("Implementation specific tracking of valid build tags for the docker container")
     private Set<Tag> tags;
+    
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "containerlabel",
+    			joinColumns = { @JoinColumn(name = "containerid", referencedColumnName = "id") },
+    			inverseJoinColumns = { @JoinColumn(name = "labelid", referencedColumnName = "id") })
+    @ApiModelProperty("Labels (i.e. meta tags) for describing the purpose and contents of containers")
+    private Set<Label> labels;
 
     public Container() {
         this.tags = new HashSet<>(0);
+        this.labels = new HashSet<>(0);
         this.users = new HashSet<>(0);
     }
 
@@ -126,6 +134,7 @@ public class Container {
         // this.userId = userId;
         this.name = name;
         this.tags = new HashSet<>(0);
+        this.labels = new HashSet<>(0);
         this.users = new HashSet<>(0);
     }
 
@@ -241,6 +250,14 @@ public class Container {
 
     public void addTag(Tag tag) {
         tags.add(tag);
+    }
+    
+    public Set<Label> getLabels() {
+        return labels;
+    }
+
+    public void setLabels(Set<Label> labels) {
+        this.labels = labels;
     }
 
     public void setGitUrl(String gitUrl) {
