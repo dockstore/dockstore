@@ -1,10 +1,10 @@
 template: Hello, %s!
 defaultName: Stranger
-quayClientID: 4CFMQRAV6121BVCG3SXA
-quayRedirectURI: http://10.0.29.49:8080/static/quay_callback.htm
-githubClientID: d2a5a83a0f0871d29540
-githubClientSecret: 0db285c4cb33c6edd30c43d51c4947b3f1e37f82
-githubRedirectURI: http://10.0.29.49:8080/auth/tokens/github.com
+quayClientID: <fill me in>
+quayRedirectURI: http://<fill me in>:8080/static/quay_callback.htm
+githubClientID: <fill me in>
+githubClientSecret: <fill me in>
+githubRedirectURI: http://<fill me in>:8080/auth/tokens/github.com
 hostname: localhost
 scheme: http
 port: 8080
