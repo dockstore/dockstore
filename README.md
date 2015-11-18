@@ -2,7 +2,7 @@
 
 # dockstore
 
-The Dockstore brings together tools in Docker images with CWL-based descriptors.
+The Dockstore brings together tools in Docker images with CWL-based descriptors.  We hope to use this project as motivation to create a GA4GH API standard for container registries and intend on making Dockstore fully compliant.
 
 For a live demo see https://dockstore.org
 
