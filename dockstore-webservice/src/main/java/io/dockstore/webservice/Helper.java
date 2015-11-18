@@ -41,6 +41,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.ws.rs.WebApplicationException;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -228,6 +231,86 @@ public class Helper {
         return map;
     }
 
+    private static Container parseBitbucketCWL(HttpClient client, Container container, TokenDAO tokenDAO, User user) {
+        List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
+        if (!tokens.isEmpty()) {
+            Token token = tokens.get(0);
+
+            Pattern p = Pattern.compile("git\\@bitbucket.org:(\\S+)/(\\S+)\\.git");
+            Matcher m = p.matcher(container.getGitUrl());
+            LOG.info(container.getGitUrl());
+            if (!m.find()) {
+                LOG.info("Namespace and/or repository name could not be found from container's giturl");
+                return container;
+                // throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
+            }
+
+            String url = "https://bitbucket.org/api/1.0/repositories/" + m.group(1) + "/" + m.group(2) + "/branches";
+            Optional<String> asString = ResourceUtilities.asString(url, null, client);
+            LOG.info("RESOURCE CALL: " + url);
+            if (asString.isPresent()) {
+                String response = asString.get();
+
+                Gson gson = new Gson();
+                Map<String, Object> branchMap = new HashMap<>();
+
+                branchMap = (Map<String, Object>) gson.fromJson(response, branchMap.getClass());
+                Set<String> branches = branchMap.keySet();
+
+                for (String branch : branches) {
+                    LOG.info("Checking branch: " + branch);
+
+                    url = "https://bitbucket.org/api/1.0/repositories/" + m.group(1) + "/" + m.group(2) + "/raw/" + branch
+                            + "/Dockstore.cwl";
+                    asString = ResourceUtilities.asString(url, null, client);
+                    LOG.info("RESOURCE CALL: " + url);
+                    if (asString.isPresent()) {
+                        LOG.info("CWL FOUND");
+                        String content = asString.get();
+
+                        // parse the collab.cwl file to get description and author
+                        Map map = null;
+                        try {
+                            YamlReader reader = new YamlReader(content);
+                            Object object = reader.read();
+                            map = (Map) object;
+
+                            String description = (String) map.get("description");
+                            if (description != null) {
+                                container.setDescription(description);
+                            } else {
+                                LOG.info("Description not found!");
+                            }
+
+                            map = (Map) map.get("dct:creator");
+                            if (map != null) {
+                                String author = (String) map.get("foaf:name");
+                                container.setAuthor(author);
+                            } else {
+                                LOG.info("Creator not found!");
+                            }
+
+                            container.setHasCollab(true);
+                            LOG.info("Repo: " + container.getGitUrl() + " has Dockstore.cwl");
+                        } catch (IOException ex) {
+                            LOG.info("CWL file is malformed");
+                            ex.printStackTrace();
+                        }
+
+                    } else {
+                        LOG.info("Branch: " + branch + " has no Dockstore.cwl");
+                    }
+                }
+
+            }
+
+        } else {
+            LOG.info("BITBUCKET token not found!");
+        }
+
+        return container;
+    }
+
     private static List<String> getNamespaces(HttpClient client, Token quayToken) {
         List<String> namespaces = new ArrayList<>();
 
@@ -386,6 +469,7 @@ public class Helper {
             Repository repository = gitRepos.get(c.getGitUrl());
             if (repository == null) {
                 LOG.info("Github repository not found for " + c.getPath());
+                c = parseBitbucketCWL(client, c, tokenDAO, dockstoreUser);
             } else {
                 LOG.info("Github found for: " + repository.getName());
                 try {

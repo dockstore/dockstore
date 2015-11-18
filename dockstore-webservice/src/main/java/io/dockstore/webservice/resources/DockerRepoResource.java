@@ -43,6 +43,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.ws.rs.GET;
@@ -358,8 +359,7 @@ public class DockerRepoResource {
     @Path("/{containerId}/dockerfile")
     @ApiOperation(value = "Get the corresponding Dockerfile on Github. This would be a minimal resource that would need to be implemented "
             + "by a GA4GH reference server", tags = { "GA4GH", "containers" }, notes = "Does not need authentication", response = Helper.FileResponse.class)
-    public Helper.FileResponse dockerfile(
-            @ApiParam(value = "Container id to delete", required = true) @PathParam("containerId") Long containerId) {
+    public Helper.FileResponse dockerfile(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId) {
 
         // info about this repository path
         Container container = containerDAO.findById(containerId);
@@ -411,7 +411,7 @@ public class DockerRepoResource {
     @Path("/{containerId}/cwl")
     @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github. This would be a minimal resource that would need to be implemented "
             + "by a GA4GH reference server", tags = { "GA4GH", "containers" }, notes = "Does not need authentication", response = Helper.FileResponse.class)
-    public Helper.FileResponse cwl(@ApiParam(value = "Container id to delete", required = true) @PathParam("containerId") Long containerId) {
+    public Helper.FileResponse cwl(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId) {
 
         // info about this repository path
         Container container = containerDAO.findById(containerId);
@@ -548,5 +548,64 @@ public class DockerRepoResource {
         // LOG.info(ret);
         // LOG.info(dockerfile.getContent());
         return cwl;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}/bitbucketCWL")
+    @ApiOperation(value = "Test bitbucket", notes = "NO authentication", response = String.class)
+    public String getBitbucketCwl(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId) {
+        LOG.info("CONTAINER ID = " + containerId);
+        Container container = containerDAO.findById(containerId);
+        // List<Token> tokens = tokenDAO.findBitbucketByUserId(userId);
+
+        // Token bitbucketToken = null;
+        //
+        // if (tokens.isEmpty()) {
+        // LOG.info("BITBUCKET token not found!");
+        // throw new WebApplicationException(HttpStatus.SC_CONFLICT);
+        // } else {
+        // bitbucketToken = tokens.get(0);
+        // }
+
+        String response = "";
+
+        Pattern p = Pattern.compile("git\\@bitbucket.org:(\\S+)/(\\S+)\\.git");
+        Matcher m = p.matcher(container.getGitUrl());
+        LOG.info(container.getGitUrl());
+        if (!m.find()) {
+            throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
+        }
+
+        String url = "https://bitbucket.org/api/1.0/repositories/" + m.group(1) + "/" + m.group(2) + "/branches";
+        Optional<String> asString = ResourceUtilities.asString(url, null, client);
+        LOG.info("RESOURCE CALL: " + url);
+        if (asString.isPresent()) {
+            response = asString.get();
+
+            Gson gson = new Gson();
+            Map<String, Object> map = new HashMap<>();
+
+            map = (Map<String, Object>) gson.fromJson(response, map.getClass());
+            Set<String> branches = map.keySet();
+
+            for (String branch : branches) {
+                LOG.info("Checking branch: " + branch);
+
+                url = "https://bitbucket.org/api/1.0/repositories/" + m.group(1) + "/" + m.group(2) + "/raw/" + branch + "/Dockstore.cwl";
+                asString = ResourceUtilities.asString(url, null, client);
+                LOG.info("RESOURCE CALL: " + url);
+                if (asString.isPresent()) {
+                    LOG.info("CWL FOUND");
+                    response = asString.get();
+                } else {
+                    LOG.info("CWL NOT FOUND");
+                }
+            }
+
+        }
+
+        return response;
     }
 }
