@@ -56,7 +56,7 @@ public class Client {
 
     private static final String NAME_HEADER = "NAME";
     private static final String DESCRIPTION_HEADER = "DESCRIPTION";
-    private static final String GIT_HEADER = "Github Repo";
+    private static final String GIT_HEADER = "Git Repo";
 
     private static final int BAD_REQUEST = 400;
     private static final int PADDING = 3;
