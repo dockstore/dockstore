@@ -218,7 +218,7 @@ elif [ "$1" = "init" ]; then
 elif [ "$1" = "version" -o "$1" = "-v" -o "$1" = "--version" ]; then
     echo "Dockstore version $DOCKSTORE_VERSION"
 else
-    $JAVA_CMD $DOCKSTORE_JVM_OPTS io.dockstore.client.Client "$@"
+    $JAVA_CMD $DOCKSTORE_JVM_OPTS io.dockstore.client.cli.Client "$@"
     
     EXIT_CODE=$?
 

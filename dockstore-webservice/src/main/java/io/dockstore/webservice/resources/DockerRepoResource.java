@@ -163,7 +163,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/users")
-    @ApiOperation(value = "Get a cached repo", response = User.class, responseContainer = "List")
+    @ApiOperation(value = "Get users of a container", response = User.class, responseContainer = "List")
     public List<User> getUsers(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "Container ID", required = true) @PathParam("containerId") Long containerId) {
         Container c = containerDAO.findById(containerId);

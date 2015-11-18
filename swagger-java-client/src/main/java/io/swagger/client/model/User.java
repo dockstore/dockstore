@@ -2,6 +2,7 @@ package io.swagger.client.model;
 
 import io.swagger.client.StringUtil;
 import io.swagger.client.model.Group;
+import io.swagger.client.model.Container;
 import java.util.*;
 
 
@@ -11,13 +12,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 @ApiModel(description = "")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-05T12:49:06.379-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-13T14:06:54.737-05:00")
 public class User   {
   
   private Long id = null;
   private String username = null;
   private Boolean isAdmin = null;
   private List<Group> groups = new ArrayList<Group>();
+  private List<Container> containers = new ArrayList<Container>();
 
   
   /**
@@ -68,6 +70,18 @@ public class User   {
   }
 
   
+  /**
+   **/
+  @ApiModelProperty(value = "")
+  @JsonProperty("containers")
+  public List<Container> getContainers() {
+    return containers;
+  }
+  public void setContainers(List<Container> containers) {
+    this.containers = containers;
+  }
+
+  
 
   @Override
   public String toString()  {
@@ -78,6 +92,7 @@ public class User   {
     sb.append("    username: ").append(StringUtil.toIndentedString(username)).append("\n");
     sb.append("    isAdmin: ").append(StringUtil.toIndentedString(isAdmin)).append("\n");
     sb.append("    groups: ").append(StringUtil.toIndentedString(groups)).append("\n");
+    sb.append("    containers: ").append(StringUtil.toIndentedString(containers)).append("\n");
     sb.append("}");
     return sb.toString();
   }
