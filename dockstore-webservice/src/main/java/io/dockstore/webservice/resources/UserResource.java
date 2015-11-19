@@ -79,6 +79,8 @@ public class UserResource {
     private final TagDAO tagDAO;
     private final String githubClientID;
     private final String githubClientSecret;
+    private final String bitbucketClientID;
+    private final String bitbucketClientSecret;
 
     private static final String TARGET_URL = "https://github.com/";
 
@@ -88,7 +90,8 @@ public class UserResource {
 
     @SuppressWarnings("checkstyle:parameternumber")
     public UserResource(ObjectMapper mapper, HttpClient client, TokenDAO tokenDAO, UserDAO userDAO, GroupDAO groupDAO,
-            ContainerDAO containerDAO, TagDAO tagDAO, String githubClientID, String githubClientSecret) {
+            ContainerDAO containerDAO, TagDAO tagDAO, String githubClientID, String githubClientSecret, String bitbucketClientID,
+            String bitbucketClientSecret) {
         this.objectMapper = mapper;
         this.client = client;
         this.userDAO = userDAO;
@@ -98,6 +101,8 @@ public class UserResource {
         this.tagDAO = tagDAO;
         this.githubClientID = githubClientID;
         this.githubClientSecret = githubClientSecret;
+        this.bitbucketClientID = bitbucketClientID;
+        this.bitbucketClientSecret = bitbucketClientSecret;
     }
 
     @POST
@@ -391,6 +396,13 @@ public class UserResource {
 
         User authUser = userDAO.findById(authToken.getUserId());
         Helper.checkUser(authUser, userId);
+
+        List<Token> tokens = tokenDAO.findBitbucketByUserId(userId);
+
+        if (!tokens.isEmpty()) {
+            Token bitbucketToken = tokens.get(0);
+            Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
+        }
 
         List<Container> containers = Helper.refresh(userId, client, objectMapper, userDAO, containerDAO, tokenDAO, tagDAO);
         return containers;

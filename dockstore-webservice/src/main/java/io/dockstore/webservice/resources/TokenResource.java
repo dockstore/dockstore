@@ -409,42 +409,11 @@ public class TokenResource {
         List<Token> tokens = tokenDAO.findBitbucketByUserId(authToken.getUserId());
 
         if (tokens.isEmpty()) {
-            throw new WebApplicationException(HttpStatus.SC_CONFLICT);
+            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
         }
 
         Token bitbucketToken = tokens.get(0);
 
-        String url = BITBUCKET_URL + "site/oauth2/access_token";
-
-        try {
-            Optional<String> asString = ResourceUtilities.bitbucketPost(url, null, client, bitbucketClientID, bitbucketClientSecret,
-                    "grant_type=refresh_token&refresh_token=" + bitbucketToken.getRefreshToken());
-
-            String accessToken;
-            String refreshToken;
-            if (asString.isPresent()) {
-                LOG.info("RESOURCE CALL: " + url);
-                String json = asString.get();
-                LOG.info(json);
-
-                Gson gson = new Gson();
-                Map<String, String> map = new HashMap<>();
-                map = (Map<String, String>) gson.fromJson(json, map.getClass());
-
-                accessToken = map.get("access_token");
-                refreshToken = map.get("refresh_token");
-
-                bitbucketToken.setContent(accessToken);
-                bitbucketToken.setRefreshToken(refreshToken);
-
-                long create = tokenDAO.create(bitbucketToken);
-                return tokenDAO.findById(create);
-            } else {
-                throw new WebApplicationException("Could not retrieve bitbucket.org token based on code");
-            }
-        } catch (UnsupportedEncodingException ex) {
-            LOG.info(ex.toString());
-            throw new WebApplicationException(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        }
+        return Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
     }
 }

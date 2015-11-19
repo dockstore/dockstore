@@ -19,14 +19,14 @@ package io.dockstore.webservice;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.Group;
-import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Label;
+import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.ContainerDAO;
 import io.dockstore.webservice.jdbi.GroupDAO;
-import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
+import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.resources.BitbucketOrgAuthenticationResource;
@@ -160,7 +160,9 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final ObjectMapper mapper = environment.getObjectMapper();
 
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
-        environment.jersey().register(new DockerRepoResource(mapper, httpClient, userDAO, tokenDAO, containerDAO, tagDAO, labelDAO));
+        environment.jersey().register(
+                new DockerRepoResource(mapper, httpClient, userDAO, tokenDAO, containerDAO, tagDAO, labelDAO, configuration
+                        .getBitbucketClientID(), configuration.getBitbucketClientSecret()));
         environment.jersey().register(new GitHubRepoResource(httpClient, tokenDAO, userDAO));
 
         final GitHubComAuthenticationResource resource3 = new GitHubComAuthenticationResource(configuration.getGithubClientID(),
@@ -176,7 +178,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         environment.jersey().register(
                 new UserResource(mapper, httpClient, tokenDAO, userDAO, groupDAO, containerDAO, tagDAO, configuration.getGithubClientID(),
-                        configuration.getGithubClientSecret()));
+                        configuration.getGithubClientSecret(), configuration.getBitbucketClientID(), configuration
+                                .getBitbucketClientSecret()));
 
         // swagger stuff
 

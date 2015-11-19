@@ -74,6 +74,10 @@ public class DockerRepoResource {
     private final TagDAO tagDAO;
     private final LabelDAO labelDAO;
     private final HttpClient client;
+
+    private final String bitbucketClientID;
+    private final String bitbucketClientSecret;
+
     public static final String TARGET_URL = "https://quay.io/api/v1/";
 
     private final ObjectMapper objectMapper;
@@ -83,13 +87,16 @@ public class DockerRepoResource {
     private final List<String> namespaces = new ArrayList<>();
 
     public DockerRepoResource(ObjectMapper mapper, HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ContainerDAO containerDAO,
-            TagDAO tagDAO, LabelDAO labelDAO) {
+            TagDAO tagDAO, LabelDAO labelDAO, String bitbucketClientID, String bitbucketClientSecret) {
         this.objectMapper = mapper;
         this.userDAO = userDAO;
         this.tokenDAO = tokenDAO;
         this.tagDAO = tagDAO;
         this.labelDAO = labelDAO;
         this.client = client;
+
+        this.bitbucketClientID = bitbucketClientID;
+        this.bitbucketClientSecret = bitbucketClientSecret;
 
         this.containerDAO = containerDAO;
 
@@ -120,6 +127,13 @@ public class DockerRepoResource {
         List<User> users = userDAO.findAll();
         for (User user : users) {
             try {
+                List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
+
+                if (!tokens.isEmpty()) {
+                    Token bitbucketToken = tokens.get(0);
+                    Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
+                }
+
                 containers.addAll(Helper.refresh(user.getId(), client, objectMapper, userDAO, containerDAO, tokenDAO, tagDAO));
             } catch (WebApplicationException ex) {
                 LOG.info("Failed to refresh user " + user.getId());

@@ -31,6 +31,7 @@ import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.resources.ResourceUtilities;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -63,6 +64,10 @@ import org.slf4j.LoggerFactory;
  */
 public class Helper {
     private static final Logger LOG = LoggerFactory.getLogger(Helper.class);
+
+    private static final String GIT_URL = "https://github.com/";
+    private static final String QUAY_URL = "https://quay.io/api/v1/";
+    private static final String BITBUCKET_URL = "https://bitbucket.org/";
 
     public static class RepoList {
 
@@ -551,9 +556,14 @@ public class Helper {
             throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
         }
 
-        String source = m.group(1);
-        String gitUsername = m.group(2);
-        String gitRepository = m.group(3);
+        // These correspond to the positions of the pattern matcher
+        final int sourceIndex = 1;
+        final int usernameIndex = 2;
+        final int reponameIndex = 3;
+
+        String source = m.group(sourceIndex);
+        String gitUsername = m.group(usernameIndex);
+        String gitRepository = m.group(reponameIndex);
         LOG.info("Source: " + source);
         LOG.info("Username: " + gitUsername);
         LOG.info("Repository: " + gitRepository);
@@ -620,6 +630,42 @@ public class Helper {
         }
 
         return cwl;
+    }
+
+    public static Token refreshBitbucketToken(Token token, HttpClient client, TokenDAO tokenDAO, String bitbucketClientID,
+            String bitbucketClientSecret) {
+
+        String url = BITBUCKET_URL + "site/oauth2/access_token";
+
+        try {
+            Optional<String> asString = ResourceUtilities.bitbucketPost(url, null, client, bitbucketClientID, bitbucketClientSecret,
+                    "grant_type=refresh_token&refresh_token=" + token.getRefreshToken());
+
+            String accessToken;
+            String refreshToken;
+            if (asString.isPresent()) {
+                LOG.info("RESOURCE CALL: " + url);
+                String json = asString.get();
+
+                Gson gson = new Gson();
+                Map<String, String> map = new HashMap<>();
+                map = (Map<String, String>) gson.fromJson(json, map.getClass());
+
+                accessToken = map.get("access_token");
+                refreshToken = map.get("refresh_token");
+
+                token.setContent(accessToken);
+                token.setRefreshToken(refreshToken);
+
+                long create = tokenDAO.create(token);
+                return tokenDAO.findById(create);
+            } else {
+                throw new WebApplicationException("Could not retrieve bitbucket.org token based on code");
+            }
+        } catch (UnsupportedEncodingException ex) {
+            LOG.info(ex.toString());
+            throw new WebApplicationException(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
     }
 
     public static void checkUser(User user) {
