@@ -86,6 +86,7 @@ public class DockerRepoResource {
 
     private final List<String> namespaces = new ArrayList<>();
 
+    @SuppressWarnings("checkstyle:parameternumber")
     public DockerRepoResource(ObjectMapper mapper, HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ContainerDAO containerDAO,
             TagDAO tagDAO, LabelDAO labelDAO, String bitbucketClientID, String bitbucketClientSecret) {
         this.objectMapper = mapper;
