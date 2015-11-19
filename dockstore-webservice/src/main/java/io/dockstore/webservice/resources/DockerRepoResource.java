@@ -24,11 +24,13 @@ import io.dockstore.webservice.Helper;
 import io.dockstore.webservice.api.RegisterRequest;
 import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.Tag;
+import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.ContainerDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
+import io.dockstore.webservice.jdbi.LabelDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.auth.Auth;
@@ -36,9 +38,11 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -46,6 +50,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.Set;
+import java.util.HashSet;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -78,6 +84,7 @@ public class DockerRepoResource {
     private final TokenDAO tokenDAO;
     private final ContainerDAO containerDAO;
     private final TagDAO tagDAO;
+    private final LabelDAO labelDAO;
     private final HttpClient client;
     public static final String TARGET_URL = "https://quay.io/api/v1/";
 
@@ -88,11 +95,12 @@ public class DockerRepoResource {
     private final List<String> namespaces = new ArrayList<>();
 
     public DockerRepoResource(ObjectMapper mapper, HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ContainerDAO containerDAO,
-            TagDAO tagDAO) {
+            TagDAO tagDAO, LabelDAO labelDAO) {
         this.objectMapper = mapper;
         this.userDAO = userDAO;
         this.tokenDAO = tokenDAO;
         this.tagDAO = tagDAO;
+        this.labelDAO = labelDAO;
         this.client = client;
 
         this.containerDAO = containerDAO;
@@ -157,6 +165,45 @@ public class DockerRepoResource {
         User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
 
+        return c;
+    }
+    
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}/labels")
+    @ApiOperation(value = "Update the labels linked to a container.",
+		notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.",
+		response = Container.class)
+    public Container updateLabels(@ApiParam(hidden = true) @Auth Token authToken,
+            @ApiParam(value = "Container to modify.", required = true)
+    			@PathParam("containerId") Long containerId,
+            @ApiParam(value = "Comma-delimited list of labels.", required = true)
+    			@QueryParam("labels") String labelStrings) {
+        Container c = containerDAO.findById(containerId);
+        Helper.checkContainer(c);
+
+        Set<String> labelStringSet = new HashSet<String>(Arrays.asList(labelStrings.toLowerCase().split("\\s*,\\s*")));
+        final String labelStringPattern = "^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$";
+        
+        Set<Label> labels = new HashSet<Label>();
+        for (final String labelString : labelStringSet) {
+        	if (labelString.matches(labelStringPattern)) {
+        		Label label = labelDAO.findByLabelValue(labelString);
+        		if (label != null) {
+        			labels.add(label);
+        		} else {
+        			label = new Label();
+        			label.setValue(labelString);
+        			long id = labelDAO.create(label);
+        			labels.add(labelDAO.findById(id));
+        		}
+        	} else {
+        		throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+        	}
+        }
+        
+        c.setLabels(labels);
         return c;
     }
 

@@ -20,11 +20,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.core.Tag;
+import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.ContainerDAO;
 import io.dockstore.webservice.jdbi.GroupDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
+import io.dockstore.webservice.jdbi.LabelDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.resources.BitbucketOrgAuthenticationResource;
@@ -74,7 +76,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     }
 
     private final HibernateBundle<DockstoreWebserviceConfiguration> hibernate = new HibernateBundle<DockstoreWebserviceConfiguration>(
-            Token.class, Container.class, User.class, Group.class, Tag.class) {
+            Token.class, Container.class, User.class, Group.class, Tag.class, Label.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
@@ -146,6 +148,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final ContainerDAO containerDAO = new ContainerDAO(hibernate.getSessionFactory());
         final GroupDAO groupDAO = new GroupDAO(hibernate.getSessionFactory());
         final TagDAO tagDAO = new TagDAO(hibernate.getSessionFactory());
+        final LabelDAO labelDAO = new LabelDAO(hibernate.getSessionFactory());
 
         LOG.info("This is our custom logger saying that we're about to load authenticators");
         // setup authentication
@@ -157,7 +160,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final ObjectMapper mapper = environment.getObjectMapper();
 
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
-        environment.jersey().register(new DockerRepoResource(mapper, httpClient, userDAO, tokenDAO, containerDAO, tagDAO));
+        environment.jersey().register(new DockerRepoResource(mapper, httpClient, userDAO, tokenDAO, containerDAO, tagDAO, labelDAO));
         environment.jersey().register(new GitHubRepoResource(httpClient, tokenDAO, userDAO));
 
         final GitHubComAuthenticationResource resource3 = new GitHubComAuthenticationResource(configuration.getGithubClientID(),
