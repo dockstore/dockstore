@@ -232,41 +232,59 @@ public class Helper {
     }
 
     private static Container parseBitbucketCWL(HttpClient client, Container container, TokenDAO tokenDAO, User user) {
-        List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
-        if (!tokens.isEmpty()) {
-            Token token = tokens.get(0);
+        String giturl = container.getGitUrl();
+        if (giturl != null && !giturl.isEmpty()) {
+            List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
+            if (!tokens.isEmpty()) {
+                Token token = tokens.get(0);
 
-            Pattern p = Pattern.compile("git\\@bitbucket.org:(\\S+)/(\\S+)\\.git");
-            Matcher m = p.matcher(container.getGitUrl());
-            LOG.info(container.getGitUrl());
-            if (!m.find()) {
-                LOG.info("Namespace and/or repository name could not be found from container's giturl");
-                return container;
-                // throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
-            }
+                Pattern p = Pattern.compile("git\\@bitbucket.org:(\\S+)/(\\S+)\\.git");
+                Matcher m = p.matcher(giturl);
+                LOG.info(giturl);
+                if (!m.find()) {
+                    LOG.info("Namespace and/or repository name could not be found from container's giturl");
+                    return container;
+                    // throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
+                }
 
-            String url = "https://bitbucket.org/api/1.0/repositories/" + m.group(1) + "/" + m.group(2) + "/branches";
-            Optional<String> asString = ResourceUtilities.asString(url, null, client);
-            LOG.info("RESOURCE CALL: " + url);
-            if (asString.isPresent()) {
-                String response = asString.get();
+                String url = "https://bitbucket.org/api/1.0/repositories/" + m.group(1) + "/" + m.group(2) + "/branches";
+                Optional<String> asString = ResourceUtilities.asString(url, null, client);
+                LOG.info("RESOURCE CALL: " + url);
+                if (asString.isPresent()) {
+                    String response = asString.get();
 
-                Gson gson = new Gson();
-                Map<String, Object> branchMap = new HashMap<>();
+                    Gson gson = new Gson();
+                    Map<String, Object> branchMap = new HashMap<>();
 
-                branchMap = (Map<String, Object>) gson.fromJson(response, branchMap.getClass());
-                Set<String> branches = branchMap.keySet();
+                    branchMap = (Map<String, Object>) gson.fromJson(response, branchMap.getClass());
+                    Set<String> branches = branchMap.keySet();
 
-                for (String branch : branches) {
-                    LOG.info("Checking branch: " + branch);
+                    for (String branch : branches) {
+                        LOG.info("Checking branch: " + branch);
 
-                    url = "https://bitbucket.org/api/1.0/repositories/" + m.group(1) + "/" + m.group(2) + "/raw/" + branch
-                            + "/Dockstore.cwl";
-                    asString = ResourceUtilities.asString(url, null, client);
-                    LOG.info("RESOURCE CALL: " + url);
-                    if (asString.isPresent()) {
-                        LOG.info("CWL FOUND");
-                        String content = asString.get();
+                        String content = null;
+
+                        url = "https://bitbucket.org/api/1.0/repositories/" + m.group(1) + "/" + m.group(2) + "/raw/" + branch
+                                + "/Dockstore.cwl";
+                        asString = ResourceUtilities.asString(url, null, client);
+                        LOG.info("RESOURCE CALL: " + url);
+                        if (asString.isPresent()) {
+                            LOG.info("CWL FOUND");
+                            content = asString.get();
+                        } else {
+                            LOG.info("Branch: " + branch + " has no Dockstore.cwl. Checking for dockstore.cwl.");
+
+                            url = "https://bitbucket.org/api/1.0/repositories/" + m.group(1) + "/" + m.group(2) + "/raw/" + branch
+                                    + "/dockstore.cwl";
+                            asString = ResourceUtilities.asString(url, null, client);
+                            LOG.info("RESOURCE CALL: " + url);
+                            if (asString.isPresent()) {
+                                LOG.info("CWL FOUND");
+                                content = asString.get();
+                            } else {
+                                LOG.info("Branch: " + branch + " has no dockstore.cwl");
+                            }
+                        }
 
                         // parse the collab.cwl file to get description and author
                         Map map = null;
@@ -291,21 +309,18 @@ public class Helper {
                             }
 
                             container.setHasCollab(true);
-                            LOG.info("Repo: " + container.getGitUrl() + " has Dockstore.cwl");
+                            LOG.info("Repo: " + giturl + " has Dockstore.cwl");
                         } catch (IOException ex) {
                             LOG.info("CWL file is malformed");
                             ex.printStackTrace();
                         }
-
-                    } else {
-                        LOG.info("Branch: " + branch + " has no Dockstore.cwl");
                     }
+
                 }
 
+            } else {
+                LOG.info("BITBUCKET token not found!");
             }
-
-        } else {
-            LOG.info("BITBUCKET token not found!");
         }
 
         return container;
