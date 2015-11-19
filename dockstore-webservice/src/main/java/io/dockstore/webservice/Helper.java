@@ -262,7 +262,7 @@ public class Helper {
                     for (String branch : branches) {
                         LOG.info("Checking branch: " + branch);
 
-                        String content = null;
+                        String content = "";
 
                         url = "https://bitbucket.org/api/1.0/repositories/" + m.group(1) + "/" + m.group(2) + "/raw/" + branch
                                 + "/Dockstore.cwl";
@@ -287,32 +287,33 @@ public class Helper {
                         }
 
                         // parse the collab.cwl file to get description and author
-                        Map map = null;
-                        try {
-                            YamlReader reader = new YamlReader(content);
-                            Object object = reader.read();
-                            map = (Map) object;
+                        if (content != null && !content.isEmpty()) {
+                            try {
+                                YamlReader reader = new YamlReader(content);
+                                Object object = reader.read();
+                                Map map = (Map) object;
 
-                            String description = (String) map.get("description");
-                            if (description != null) {
-                                container.setDescription(description);
-                            } else {
-                                LOG.info("Description not found!");
+                                String description = (String) map.get("description");
+                                if (description != null) {
+                                    container.setDescription(description);
+                                } else {
+                                    LOG.info("Description not found!");
+                                }
+
+                                map = (Map) map.get("dct:creator");
+                                if (map != null) {
+                                    String author = (String) map.get("foaf:name");
+                                    container.setAuthor(author);
+                                } else {
+                                    LOG.info("Creator not found!");
+                                }
+
+                                container.setHasCollab(true);
+                                LOG.info("Repo: " + giturl + " has Dockstore.cwl");
+                            } catch (IOException ex) {
+                                LOG.info("CWL file is malformed");
+                                ex.printStackTrace();
                             }
-
-                            map = (Map) map.get("dct:creator");
-                            if (map != null) {
-                                String author = (String) map.get("foaf:name");
-                                container.setAuthor(author);
-                            } else {
-                                LOG.info("Creator not found!");
-                            }
-
-                            container.setHasCollab(true);
-                            LOG.info("Repo: " + giturl + " has Dockstore.cwl");
-                        } catch (IOException ex) {
-                            LOG.info("CWL file is malformed");
-                            ex.printStackTrace();
                         }
                     }
 
@@ -539,6 +540,86 @@ public class Helper {
         currentRepos = Helper.updateContainers(allRepos, currentRepos, dockstoreUser, containerDAO, tagDAO, tagMap);
         userDAO.clearCache();
         return new ArrayList(userDAO.findById(userId).getContainers());
+    }
+
+    public static FileResponse readGitRepositoryFile(Container container, String fileName, HttpClient client) {
+        FileResponse cwl = new Helper.FileResponse();
+
+        Pattern p = Pattern.compile("git\\@(\\S+):(\\S+)/(\\S+)\\.git");
+        Matcher m = p.matcher(container.getGitUrl());
+        if (!m.find()) {
+            throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
+        }
+
+        String source = m.group(1);
+        String gitUsername = m.group(2);
+        String gitRepository = m.group(3);
+        LOG.info("Source: " + source);
+        LOG.info("Username: " + gitUsername);
+        LOG.info("Repository: " + gitRepository);
+
+        // TODO: this only works with public repos, we will need an endpoint for public and another for auth to handle private repos in the
+        // future
+        // search for the Dockstore.cwl
+        if (source.equals("github.com")) {
+            GitHubClient githubClient = new GitHubClient();
+            RepositoryService service = new RepositoryService(githubClient);
+            try {
+                // git@github.com:briandoconnor/dockstore-tool-bamstats.git
+
+                Repository repo = service.getRepository(gitUsername, gitRepository);
+                ContentsService cService = new ContentsService(githubClient);
+                List<RepositoryContents> contents = null;
+                try {
+                    contents = cService.getContents(repo, fileName);
+                } catch (Exception e) {
+                    contents = cService.getContents(repo, fileName.toLowerCase());
+                }
+                if (!(contents == null || contents.isEmpty())) {
+                    String encoded = contents.get(0).getContent().replace("\n", "");
+                    byte[] decode = Base64.getDecoder().decode(encoded);
+                    String content = new String(decode, StandardCharsets.UTF_8);
+                    // builder.append(content);
+                    cwl.setContent(content);
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+                LOG.error(e.getMessage());
+            }
+        } else if (source.equals("bitbucket.org")) {
+            String content = "";
+            String branch = "develop";
+
+            String url = "https://bitbucket.org/api/1.0/repositories/" + gitUsername + "/" + gitRepository + "/raw/" + branch + "/"
+                    + fileName;
+            Optional<String> asString = ResourceUtilities.asString(url, null, client);
+            LOG.info("RESOURCE CALL: " + url);
+            if (asString.isPresent()) {
+                LOG.info("CWL FOUND");
+                content = asString.get();
+            } else {
+                LOG.info("Branch: " + branch + " has no Dockstore.cwl. Checking for dockstore.cwl.");
+
+                url = "https://bitbucket.org/api/1.0/repositories/" + gitUsername + "/" + gitRepository + "/raw/" + branch + "/"
+                        + fileName.toLowerCase();
+                asString = ResourceUtilities.asString(url, null, client);
+                LOG.info("RESOURCE CALL: " + url);
+                if (asString.isPresent()) {
+                    LOG.info("CWL FOUND");
+                    content = asString.get();
+                } else {
+                    LOG.info("Branch: " + branch + " has no dockstore.cwl");
+                }
+            }
+
+            // parse the collab.cwl file to get description and author
+            if (content != null && !content.isEmpty()) {
+                cwl.setContent(content);
+            }
+        }
+
+        return cwl;
     }
 
     public static void checkUser(User user) {

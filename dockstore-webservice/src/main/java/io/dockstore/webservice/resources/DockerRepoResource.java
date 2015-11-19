@@ -23,14 +23,14 @@ import com.google.gson.Gson;
 import io.dockstore.webservice.Helper;
 import io.dockstore.webservice.api.RegisterRequest;
 import io.dockstore.webservice.core.Container;
-import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Label;
+import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.ContainerDAO;
-import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
+import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.auth.Auth;
@@ -38,20 +38,13 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.Set;
-import java.util.HashSet;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -63,11 +56,6 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
-import org.eclipse.egit.github.core.Repository;
-import org.eclipse.egit.github.core.RepositoryContents;
-import org.eclipse.egit.github.core.client.GitHubClient;
-import org.eclipse.egit.github.core.service.ContentsService;
-import org.eclipse.egit.github.core.service.RepositoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -167,42 +155,38 @@ public class DockerRepoResource {
 
         return c;
     }
-    
+
     @PUT
     @Timed
     @UnitOfWork
     @Path("/{containerId}/labels")
-    @ApiOperation(value = "Update the labels linked to a container.",
-		notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.",
-		response = Container.class)
+    @ApiOperation(value = "Update the labels linked to a container.", notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Container.class)
     public Container updateLabels(@ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "Container to modify.", required = true)
-    			@PathParam("containerId") Long containerId,
-            @ApiParam(value = "Comma-delimited list of labels.", required = true)
-    			@QueryParam("labels") String labelStrings) {
+            @ApiParam(value = "Container to modify.", required = true) @PathParam("containerId") Long containerId,
+            @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings) {
         Container c = containerDAO.findById(containerId);
         Helper.checkContainer(c);
 
         Set<String> labelStringSet = new HashSet<String>(Arrays.asList(labelStrings.toLowerCase().split("\\s*,\\s*")));
         final String labelStringPattern = "^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$";
-        
+
         Set<Label> labels = new HashSet<Label>();
         for (final String labelString : labelStringSet) {
-        	if (labelString.matches(labelStringPattern)) {
-        		Label label = labelDAO.findByLabelValue(labelString);
-        		if (label != null) {
-        			labels.add(label);
-        		} else {
-        			label = new Label();
-        			label.setValue(labelString);
-        			long id = labelDAO.create(label);
-        			labels.add(labelDAO.findById(id));
-        		}
-        	} else {
-        		throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
-        	}
+            if (labelString.matches(labelStringPattern)) {
+                Label label = labelDAO.findByLabelValue(labelString);
+                if (label != null) {
+                    labels.add(label);
+                } else {
+                    label = new Label();
+                    label.setValue(labelString);
+                    long id = labelDAO.create(label);
+                    labels.add(labelDAO.findById(id));
+                }
+            } else {
+                throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+            }
         }
-        
+
         c.setLabels(labels);
         return c;
     }
@@ -412,44 +396,7 @@ public class DockerRepoResource {
         Container container = containerDAO.findById(containerId);
         Helper.checkContainer(container);
 
-        Helper.FileResponse dockerfile = new Helper.FileResponse();
-
-        // TODO: this only works with public repos, we will need an endpoint for public and another for auth to handle private repos in the
-        // future
-        // search for the Dockstore.cwl
-        GitHubClient githubClient = new GitHubClient();
-        RepositoryService service = new RepositoryService(githubClient);
-        try {
-            // git@github.com:briandoconnor/dockstore-tool-bamstats.git
-            Pattern p = Pattern.compile("git\\@github.com:(\\S+)/(\\S+)\\.git");
-            Matcher m = p.matcher(container.getGitUrl());
-            if (!m.find()) {
-                throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
-            }
-
-            Repository repo = service.getRepository(m.group(1), m.group(2));
-
-            ContentsService cService = new ContentsService(githubClient);
-            List<RepositoryContents> contents = null;
-            try {
-                contents = cService.getContents(repo, "Dockerfile");
-            } catch (Exception e) {
-                contents = cService.getContents(repo, "dockerfile");
-            }
-            if (!(contents == null || contents.isEmpty())) {
-                String encoded = contents.get(0).getContent().replace("\n", "");
-                byte[] decode = Base64.getDecoder().decode(encoded);
-                String content = new String(decode, StandardCharsets.UTF_8);
-                // builder.append(content);
-                dockerfile.setContent(content);
-            }
-
-        } catch (IOException e) {
-            e.printStackTrace();
-            LOG.error(e.getMessage());
-        }
-
-        return dockerfile;
+        return Helper.readGitRepositoryFile(container, "Dockerfile", client);
     }
 
     @GET
@@ -464,195 +411,6 @@ public class DockerRepoResource {
         Container container = containerDAO.findById(containerId);
         Helper.checkContainer(container);
 
-        Helper.FileResponse cwl = new Helper.FileResponse();
-
-        // TODO: this only works with public repos, we will need an endpoint for public and another for auth to handle private repos in the
-        // future
-        // search for the Dockstore.cwl
-        GitHubClient githubClient = new GitHubClient();
-        RepositoryService service = new RepositoryService(githubClient);
-        try {
-            // git@github.com:briandoconnor/dockstore-tool-bamstats.git
-
-            Pattern p = Pattern.compile("git\\@github.com:(\\S+)/(\\S+)\\.git");
-            Matcher m = p.matcher(container.getGitUrl());
-            if (!m.find()) {
-                throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
-            }
-
-            Repository repo = service.getRepository(m.group(1), m.group(2));
-            ContentsService cService = new ContentsService(githubClient);
-            List<RepositoryContents> contents = null;
-            try {
-                contents = cService.getContents(repo, "Dockstore.cwl");
-            } catch (Exception e) {
-                contents = cService.getContents(repo, "dockstore.cwl");
-            }
-            if (!(contents == null || contents.isEmpty())) {
-                String encoded = contents.get(0).getContent().replace("\n", "");
-                byte[] decode = Base64.getDecoder().decode(encoded);
-                String content = new String(decode, StandardCharsets.UTF_8);
-                // builder.append(content);
-                cwl.setContent(content);
-            }
-
-        } catch (IOException e) {
-            e.printStackTrace();
-            LOG.error(e.getMessage());
-        }
-
-        // TODO: I'm leaving this commented code below since it will be useful for when we support private repos
-
-        // StringBuilder builder = new StringBuilder();
-        // if (container != null) {
-        //
-        // Helper.checkUser(authUser, container.getUserId()); // null check first
-        //
-        // List<Token> tokens = tokenDAO.findByUserId(container.getUserId());
-        //
-        // for (Token token : tokens) {
-        // if (token.getTokenSource().equals(TokenType.GITHUB_COM.toString())) {
-        // hasGithub = true;
-        // GitHubClient githubClient = new GitHubClient();
-        // githubClient.setOAuth2Token(token.getContent());
-        // try {
-        // UserService uService = new UserService(githubClient);
-        // OrganizationService oService = new OrganizationService(githubClient);
-        // RepositoryService service = new RepositoryService(githubClient);
-        // ContentsService cService = new ContentsService(githubClient);
-        // org.eclipse.egit.github.core.User user = uService.getUser();
-        // // builder.append("Token: ").append(token.getId()).append(" is ").append(user.getName()).append(" login is ")
-        // // .append(user.getLogin()).append("\n");
-        //
-        // // look through user's own repositories
-        // for (Repository repo : service.getRepositories(user.getLogin())) {
-        // // LOG.info(repo.getGitUrl());
-        // // LOG.info(repo.getHtmlUrl());
-        // LOG.info(repo.getSshUrl()); // ssh url example: git@github.com:userspace/name.git
-        // // LOG.info(repo.getUrl());
-        // // LOG.info(container.getGitUrl());
-        // if (repo.getSshUrl().equals(container.getGitUrl())) {
-        // try {
-        // List<RepositoryContents> contents = cService.getContents(repo, "dockerfile.cwl");
-        // // odd, throws exceptions if file does not exist
-        // if (!(contents == null || contents.isEmpty())) {
-        // String encoded = contents.get(0).getContent().replace("\n", "");
-        // byte[] decode = Base64.getDecoder().decode(encoded);
-        // String content = new String(decode, StandardCharsets.UTF_8);
-        // // builder.append(content);
-        // dockerfile.setContent(content);
-        // }
-        // } catch (IOException ex) {
-        // // builder.append("Repo: ").append(repo.getName()).append(" has no dockerfile.cwl \n");
-        // LOG.info("Repo: " + repo.getName() + " has no dockerfile.cwl");
-        // }
-        // }
-        // }
-        //
-        // // looks through all repos from different organizations user is in
-        // List<org.eclipse.egit.github.core.User> organizations = oService.getOrganizations();
-        // for (org.eclipse.egit.github.core.User org : organizations) {
-        // for (Repository repo : service.getRepositories(org.getLogin())) {
-        // LOG.info(repo.getSshUrl());
-        // if (repo.getSshUrl().equals(container.getGitUrl())) {
-        // try {
-        // List<RepositoryContents> contents = cService.getContents(repo, "dockerfile.cwl");
-        // // odd, throws exceptions if file does not exist
-        // if (!(contents == null || contents.isEmpty())) {
-        // String encoded = contents.get(0).getContent().replace("\n", "");
-        // byte[] decode = Base64.getDecoder().decode(encoded);
-        // String content = new String(decode, StandardCharsets.UTF_8);
-        // // builder.append(content);
-        // dockerfile.setContent(content);
-        // }
-        // } catch (IOException ex) {
-        // // builder.append("Repo: ").append(repo.getName()).append(" has no dockerfile.cwl \n");
-        // LOG.info("Repo: " + repo.getName() + " has no dockerfile.cwl");
-        // }
-        // }
-        // }
-        // }
-        //
-        // } catch (IOException ex) {
-        // // builder.append("Token ignored due to IOException: ").append(token.getId()).append("\n");
-        // LOG.info("Token ignored due to IOException: " + token.getId());
-        // }
-        // }
-        // }
-        // if (!hasGithub) {
-        // // builder.append("Github is not setup");
-        // LOG.info("Github is not setup");
-        // throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
-        // }
-        //
-        // } else {
-        // // builder.append(repository).append(" is not registered");
-        // LOG.info(repository + " is not registered");
-        // throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
-        // }
-
-        // String ret = builder.toString();
-        // LOG.info(ret);
-        // LOG.info(dockerfile.getContent());
-        return cwl;
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork
-    @Path("/{containerId}/bitbucketCWL")
-    @ApiOperation(value = "Test bitbucket", notes = "NO authentication", response = String.class)
-    public String getBitbucketCwl(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId) {
-        LOG.info("CONTAINER ID = " + containerId);
-        Container container = containerDAO.findById(containerId);
-        // List<Token> tokens = tokenDAO.findBitbucketByUserId(userId);
-
-        // Token bitbucketToken = null;
-        //
-        // if (tokens.isEmpty()) {
-        // LOG.info("BITBUCKET token not found!");
-        // throw new WebApplicationException(HttpStatus.SC_CONFLICT);
-        // } else {
-        // bitbucketToken = tokens.get(0);
-        // }
-
-        String response = "";
-
-        Pattern p = Pattern.compile("git\\@bitbucket.org:(\\S+)/(\\S+)\\.git");
-        Matcher m = p.matcher(container.getGitUrl());
-        LOG.info(container.getGitUrl());
-        if (!m.find()) {
-            throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
-        }
-
-        String url = "https://bitbucket.org/api/1.0/repositories/" + m.group(1) + "/" + m.group(2) + "/branches";
-        Optional<String> asString = ResourceUtilities.asString(url, null, client);
-        LOG.info("RESOURCE CALL: " + url);
-        if (asString.isPresent()) {
-            response = asString.get();
-
-            Gson gson = new Gson();
-            Map<String, Object> map = new HashMap<>();
-
-            map = (Map<String, Object>) gson.fromJson(response, map.getClass());
-            Set<String> branches = map.keySet();
-
-            for (String branch : branches) {
-                LOG.info("Checking branch: " + branch);
-
-                url = "https://bitbucket.org/api/1.0/repositories/" + m.group(1) + "/" + m.group(2) + "/raw/" + branch + "/Dockstore.cwl";
-                asString = ResourceUtilities.asString(url, null, client);
-                LOG.info("RESOURCE CALL: " + url);
-                if (asString.isPresent()) {
-                    LOG.info("CWL FOUND");
-                    response = asString.get();
-                } else {
-                    LOG.info("CWL NOT FOUND");
-                }
-            }
-
-        }
-
-        return response;
+        return Helper.readGitRepositoryFile(container, "Dockstore.cwl", client);
     }
 }
