@@ -43,4 +43,5 @@ public class LabelDAO extends AbstractDAO<Label> {
     public long create(Label label) {
         return persist(label).getId();
     }
+
 }

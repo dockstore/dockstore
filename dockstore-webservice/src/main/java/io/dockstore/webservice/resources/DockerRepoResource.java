@@ -175,8 +175,10 @@ public class DockerRepoResource {
 		notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.",
 		response = Container.class)
     public Container updateLabels(@ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "Container to modify.", required = true) @PathParam("containerId") Long containerId,
-            @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings) {
+            @ApiParam(value = "Container to modify.", required = true)
+    			@PathParam("containerId") Long containerId,
+            @ApiParam(value = "Comma-delimited list of labels.", required = true)
+    			@QueryParam("labels") String labelStrings) {
         Container c = containerDAO.findById(containerId);
         Helper.checkContainer(c);
 
@@ -189,12 +191,11 @@ public class DockerRepoResource {
         		Label label = labelDAO.findByLabelValue(labelString);
         		if (label != null) {
         			labels.add(label);
-        			continue;
         		} else {
         			label = new Label();
-            		label.setValue(labelString);
-            		long id = labelDAO.create(label);
-            		labels.add(labelDAO.findById(id));
+        			label.setValue(labelString);
+        			long id = labelDAO.create(label);
+        			labels.add(labelDAO.findById(id));
         		}
         	} else {
         		throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
@@ -202,7 +203,6 @@ public class DockerRepoResource {
         }
         
         c.setLabels(labels);
-        
         return c;
     }
 
