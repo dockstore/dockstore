@@ -29,8 +29,8 @@ import org.apache.commons.io.FileUtils;
  * @author xliu
  */
 public class CommonTestUtilities {
-    public static final String DUMMY_ADMIN_PASSWORD = "08932ab0c9ae39a880905666902f8659633ae0232e94ba9f3d2094cb928397e7";
-    public static final String DUMMY_ADMIN_PASSWORD2 = "3a04647fd0a1bd949637n5fddb164261fc8c80d83f0750fe0e873bc744338fce";
+    public static final String DUMMY_TOKEN_1 = "08932ab0c9ae39a880905666902f8659633ae0232e94ba9f3d2094cb928397e7";
+    public static final String DUMMY_TOKEN_2 = "3a04647fd0a1bd949637n5fddb164261fc8c80d83f0750fe0e873bc744338fce";
 
     public static HierarchicalINIConfiguration parseConfig(String path) {
         try {
@@ -51,12 +51,12 @@ public class CommonTestUtilities {
             super.clearDatabase();
             this.runInsertStatement("insert into enduser(id, isAdmin, username) VALUES (1,true,'admin@admin.com');", new KeyedHandler<>(
                     "id"));
-            this.runInsertStatement("insert into token(id, content, tokensource, userid, username) VALUES (1, '" + DUMMY_ADMIN_PASSWORD
+            this.runInsertStatement("insert into token(id, content, tokensource, userid, username) VALUES (1, '" + DUMMY_TOKEN_1
                     + "', 'dockstore', 1, 'admin@admin.com');", new KeyedHandler<>("id"));
 
-            this.runInsertStatement("insert into enduser(id, isAdmin, username) VALUES (2,true,'user1@user.com');",
-                    new KeyedHandler<>("id"));
-            this.runInsertStatement("insert into token(id, content, tokensource, userid, username) VALUES (2, '" + DUMMY_ADMIN_PASSWORD2
+            this.runInsertStatement("insert into enduser(id, isAdmin, username) VALUES (2,false,'user1@user.com');", new KeyedHandler<>(
+                    "id"));
+            this.runInsertStatement("insert into token(id, content, tokensource, userid, username) VALUES (2, '" + DUMMY_TOKEN_2
                     + "', 'dockstore', 2, 'user1@user.com');", new KeyedHandler<>("id"));
 
             this.runInsertStatement(

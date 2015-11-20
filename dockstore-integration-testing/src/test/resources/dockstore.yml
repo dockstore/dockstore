@@ -5,6 +5,8 @@ quayRedirectURI: http://<fill me in>:8080/static/quay_callback.htm
 githubClientID: <fill me in>
 githubClientSecret: <fill me in>
 githubRedirectURI: http://<fill me in>:8080/auth/tokens/github.com
+bitbucketClientID: <fill me in>
+bitbucketClientSecret: <fill me in>
 hostname: localhost
 scheme: http
 port: 8080

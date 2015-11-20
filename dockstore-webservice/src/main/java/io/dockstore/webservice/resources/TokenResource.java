@@ -39,6 +39,7 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,23 +72,30 @@ import org.slf4j.LoggerFactory;
 public class TokenResource {
     private final TokenDAO tokenDAO;
     private final UserDAO userDAO;
-    private static final String TARGET_URL = "https://github.com/";
+    private static final String GIT_URL = "https://github.com/";
     private static final String QUAY_URL = "https://quay.io/api/v1/";
+    private static final String BITBUCKET_URL = "https://bitbucket.org/";
     private final String githubClientID;
     private final String githubClientSecret;
+    private final String bitbucketClientID;
+    private final String bitbucketClientSecret;
     private final HttpClient client;
     private final ObjectMapper objectMapper;
 
     private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
     private final CachingAuthenticator<String, Token> cachingAuthenticator;
 
+    @SuppressWarnings("checkstyle:parameternumber")
     public TokenResource(ObjectMapper mapper, TokenDAO tokenDAO, UserDAO enduserDAO, String githubClientID, String githubClientSecret,
-            HttpClient client, CachingAuthenticator<String, Token> cachingAuthenticator) {
+            String bitbucketClientID, String bitbucketClientSecret, HttpClient client,
+            CachingAuthenticator<String, Token> cachingAuthenticator) {
         this.objectMapper = mapper;
         this.tokenDAO = tokenDAO;
         this.userDAO = enduserDAO;
         this.githubClientID = githubClientID;
         this.githubClientSecret = githubClientSecret;
+        this.bitbucketClientID = bitbucketClientID;
+        this.bitbucketClientSecret = bitbucketClientSecret;
         this.client = client;
         this.cachingAuthenticator = cachingAuthenticator;
     }
@@ -219,7 +227,7 @@ public class TokenResource {
             + "Once a user has approved permissions for Collaboratory"
             + "Their browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addGithubToken(@QueryParam("code") String code) {
-        Optional<String> asString = ResourceUtilities.asString(TARGET_URL + "login/oauth/access_token?code=" + code + "&client_id="
+        Optional<String> asString = ResourceUtilities.asString(GIT_URL + "login/oauth/access_token?code=" + code + "&client_id="
                 + githubClientID + "&client_secret=" + githubClientSecret, null, client);
         String accessToken;
         if (asString.isPresent()) {
@@ -310,5 +318,102 @@ public class TokenResource {
         }
 
         return dockstoreToken;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/bitbucket.org")
+    @ApiOperation(value = "Add a new bitbucket.org token, used by quay.io redirect", notes = "This is used as part of the OAuth 2 web flow. "
+            + "Once a user has approved permissions for Collaboratory"
+            + "Their browser will load the redirect URI which should resolve here", response = Token.class)
+    public Token addBitbucketToken(@ApiParam(hidden = true) @Auth Token authToken, @QueryParam("code") String code)
+            throws UnsupportedEncodingException {
+        if (code.isEmpty()) {
+            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+        }
+
+        User user = userDAO.findById(authToken.getUserId());
+
+        String url = BITBUCKET_URL + "site/oauth2/access_token";
+
+        Optional<String> asString = ResourceUtilities.bitbucketPost(url, null, client, bitbucketClientID, bitbucketClientSecret,
+                "grant_type=authorization_code&code=" + code);
+        String accessToken;
+        String refreshToken;
+        if (asString.isPresent()) {
+            LOG.info("RESOURCE CALL: " + url);
+            String json = asString.get();
+            LOG.info(json);
+
+            Gson gson = new Gson();
+            Map<String, String> map = new HashMap<>();
+            map = (Map<String, String>) gson.fromJson(json, map.getClass());
+
+            accessToken = map.get("access_token");
+            refreshToken = map.get("refresh_token");
+        } else {
+            throw new WebApplicationException("Could not retrieve bitbucket.org token based on code");
+        }
+
+        String username = null;
+
+        url = BITBUCKET_URL + "api/2.0/users/victoroicr";
+        Optional<String> asString2 = ResourceUtilities.asString(url, accessToken, client);
+
+        if (asString2.isPresent()) {
+            LOG.info("RESOURCE CALL: " + url);
+
+            String response = asString2.get();
+            Gson gson = new Gson();
+            Map<String, String> map = new HashMap<>();
+            map = (Map<String, String>) gson.fromJson(response, map.getClass());
+
+            username = map.get("username");
+            LOG.info("Username: " + username);
+        }
+
+        if (user != null) {
+            List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
+
+            if (tokens.isEmpty()) {
+                Token token = new Token();
+                token.setTokenSource(TokenType.BITBUCKET_ORG.toString());
+                token.setContent(accessToken);
+                token.setRefreshToken(refreshToken);
+                token.setUserId(user.getId());
+                if (username != null) {
+                    token.setUsername(username);
+                } else {
+                    LOG.info("Bitbucket.org token username is null, did not create token");
+                    throw new WebApplicationException("Username not found from resource call " + url);
+                }
+                long create = tokenDAO.create(token);
+                LOG.info("Bitbucket token created for " + user.getUsername());
+                return tokenDAO.findById(create);
+            } else {
+                LOG.info("Bitbucket token already exists for " + user.getUsername());
+            }
+        } else {
+            LOG.info("Could not find user");
+        }
+        throw new WebApplicationException(HttpStatus.SC_CONFLICT);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/bitbucket.org/refresh")
+    @ApiOperation(value = "Refresh Bitbucket token", notes = "The Bitbucket token expire in one hour. When this happens you'll get 401 responses", response = Token.class)
+    public Token refreshBitbucketToken(@ApiParam(hidden = true) @Auth Token authToken) {
+        List<Token> tokens = tokenDAO.findBitbucketByUserId(authToken.getUserId());
+
+        if (tokens.isEmpty()) {
+            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+        }
+
+        Token bitbucketToken = tokens.get(0);
+
+        return Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
     }
 }

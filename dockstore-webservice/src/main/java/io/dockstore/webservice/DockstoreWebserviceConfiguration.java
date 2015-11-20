@@ -32,6 +32,12 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     private String githubClientID;
 
     @NotEmpty
+    private String bitbucketClientID;
+
+    @NotEmpty
+    private String bitbucketClientSecret;
+
+    @NotEmpty
     private String quayRedirectURI;
 
     @NotEmpty
@@ -183,6 +189,40 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     @JsonProperty
     public void setGithubClientSecret(String githubClientSecret) {
         this.githubClientSecret = githubClientSecret;
+    }
+
+    /**
+     * @return the bitbucketClientID
+     */
+    @JsonProperty
+    public String getBitbucketClientID() {
+        return bitbucketClientID;
+    }
+
+    /**
+     * @param bitbucketClientID
+     *            the bitbucketClientID to set
+     */
+    @JsonProperty
+    public void setBitbucketClientID(String bitbucketClientID) {
+        this.bitbucketClientID = bitbucketClientID;
+    }
+
+    /**
+     * @return the bitbucketClientSecret
+     */
+    @JsonProperty
+    public String getBitbucketClientSecret() {
+        return bitbucketClientSecret;
+    }
+
+    /**
+     * @param bitbucketClientSecret
+     *            the bitbucketClientSecret to set
+     */
+    @JsonProperty
+    public void setBitbucketClientSecret(String bitbucketClientSecret) {
+        this.bitbucketClientSecret = bitbucketClientSecret;
     }
 
     public CacheBuilderSpec getAuthenticationCachePolicy() {
