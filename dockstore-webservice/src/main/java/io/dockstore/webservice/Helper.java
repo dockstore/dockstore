@@ -599,27 +599,47 @@ public class Helper {
             }
         } else if (source.equals("bitbucket.org")) {
             String content = "";
-            String branch = "develop";
 
-            String url = "https://bitbucket.org/api/1.0/repositories/" + gitUsername + "/" + gitRepository + "/raw/" + branch + "/"
-                    + fileName;
-            Optional<String> asString = ResourceUtilities.asString(url, null, client);
-            LOG.info("RESOURCE CALL: " + url);
+            String mainBranchUrl = "https://bitbucket.org/api/1.0/repositories/" + gitUsername + "/" + gitRepository + "/main-branch";
+
+            Optional<String> asString = ResourceUtilities.asString(mainBranchUrl, null, client);
+            LOG.info("RESOURCE CALL: " + mainBranchUrl);
             if (asString.isPresent()) {
-                LOG.info("CWL FOUND");
-                content = asString.get();
-            } else {
-                LOG.info("Branch: " + branch + " has no Dockstore.cwl. Checking for dockstore.cwl.");
+                String branchJson = asString.get();
 
-                url = "https://bitbucket.org/api/1.0/repositories/" + gitUsername + "/" + gitRepository + "/raw/" + branch + "/"
-                        + fileName.toLowerCase();
+                Gson gson = new Gson();
+                Map<String, String> map = new HashMap<>();
+                map = (Map<String, String>) gson.fromJson(branchJson, map.getClass());
+
+                String branch = map.get("name");
+
+                if (branch == null) {
+                    LOG.info("Could NOT find bitbucket default branch!");
+                    throw new WebApplicationException(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                } else {
+                    LOG.info("Default branch: " + branch);
+                }
+
+                String url = "https://bitbucket.org/api/1.0/repositories/" + gitUsername + "/" + gitRepository + "/raw/" + branch + "/"
+                        + fileName;
                 asString = ResourceUtilities.asString(url, null, client);
                 LOG.info("RESOURCE CALL: " + url);
                 if (asString.isPresent()) {
                     LOG.info("CWL FOUND");
                     content = asString.get();
                 } else {
-                    LOG.info("Branch: " + branch + " has no dockstore.cwl");
+                    LOG.info("Branch: " + branch + " has no Dockstore.cwl. Checking for dockstore.cwl.");
+
+                    url = "https://bitbucket.org/api/1.0/repositories/" + gitUsername + "/" + gitRepository + "/raw/" + branch + "/"
+                            + fileName.toLowerCase();
+                    asString = ResourceUtilities.asString(url, null, client);
+                    LOG.info("RESOURCE CALL: " + url);
+                    if (asString.isPresent()) {
+                        LOG.info("CWL FOUND");
+                        content = asString.get();
+                    } else {
+                        LOG.info("Branch: " + branch + " has no dockstore.cwl");
+                    }
                 }
             }
 
