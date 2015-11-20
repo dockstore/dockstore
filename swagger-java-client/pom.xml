@@ -7,7 +7,7 @@
     <name>swagger-java-client</name>
   
     <parent>
-        <version>0.0.12-SNAPSHOT</version>
+        <version>0.1.0</version>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
         <relativePath>../pom.xml</relativePath>
