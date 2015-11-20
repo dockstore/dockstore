@@ -181,28 +181,34 @@ public class DockerRepoResource {
     			@QueryParam("labels") String labelStrings) {
         Container c = containerDAO.findById(containerId);
         Helper.checkContainer(c);
-
-        Set<String> labelStringSet = new HashSet<String>(Arrays.asList(labelStrings.toLowerCase().split("\\s*,\\s*")));
-        final String labelStringPattern = "^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$";
         
-        Set<Label> labels = new HashSet<Label>();
-        for (final String labelString : labelStringSet) {
-        	if (labelString.matches(labelStringPattern)) {
-        		Label label = labelDAO.findByLabelValue(labelString);
-        		if (label != null) {
-        			labels.add(label);
-        		} else {
-        			label = new Label();
-        			label.setValue(labelString);
-        			long id = labelDAO.create(label);
-        			labels.add(labelDAO.findById(id));
-        		}
-        	} else {
-        		throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
-        	}
+        if (labelStrings.length() == 0) {
+        	c.setLabels(new HashSet<>(0));
+        } else {
+        	Set<String> labelStringSet = new HashSet<String>(
+        			Arrays.asList(labelStrings.toLowerCase().split("\\s*,\\s*")));
+            final String labelStringPattern = "^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$";
+            final int labelMaxLength = 255;
+            Set<Label> labels = new HashSet<Label>();
+            for (final String labelString : labelStringSet) {
+            	if (labelString.length() <= labelMaxLength
+            			&& labelString.matches(labelStringPattern)) {
+            		Label label = labelDAO.findByLabelValue(labelString);
+            		if (label != null) {
+            			labels.add(label);
+            		} else {
+            			label = new Label();
+            			label.setValue(labelString);
+            			long id = labelDAO.create(label);
+            			labels.add(labelDAO.findById(id));
+            		}
+            	} else {
+            		throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+            	}
+            }
+            c.setLabels(labels);
         }
-        
-        c.setLabels(labels);
+
         return c;
     }
 
