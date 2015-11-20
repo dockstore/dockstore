@@ -628,7 +628,7 @@ public class Helper {
                     LOG.info("CWL FOUND");
                     content = asString.get();
                 } else {
-                    LOG.info("Branch: " + branch + " has no Dockstore.cwl. Checking for dockstore.cwl.");
+                    LOG.info("Branch: " + branch + " has no " + fileName + ". Checking for " + fileName.toLowerCase());
 
                     url = "https://bitbucket.org/api/1.0/repositories/" + gitUsername + "/" + gitRepository + "/raw/" + branch + "/"
                             + fileName.toLowerCase();
@@ -638,7 +638,7 @@ public class Helper {
                         LOG.info("CWL FOUND");
                         content = asString.get();
                     } else {
-                        LOG.info("Branch: " + branch + " has no dockstore.cwl");
+                        LOG.info("Branch: " + branch + " has no " + fileName.toLowerCase());
                     }
                 }
             }
