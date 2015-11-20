@@ -54,8 +54,8 @@ public class CommonTestUtilities {
             this.runInsertStatement("insert into token(id, content, tokensource, userid, username) VALUES (1, '" + DUMMY_ADMIN_PASSWORD
                     + "', 'dockstore', 1, 'admin@admin.com');", new KeyedHandler<>("id"));
 
-            this.runInsertStatement("insert into enduser(id, isAdmin, username) VALUES (2,true,'user1@user.com');",
-                    new KeyedHandler<>("id"));
+            this.runInsertStatement("insert into enduser(id, isAdmin, username) VALUES (2,false,'user1@user.com');", new KeyedHandler<>(
+                    "id"));
             this.runInsertStatement("insert into token(id, content, tokensource, userid, username) VALUES (2, '" + DUMMY_ADMIN_PASSWORD2
                     + "', 'dockstore', 2, 'user1@user.com');", new KeyedHandler<>("id"));
 

@@ -74,7 +74,8 @@ public class SystemClientIT {
         client.addDefaultHeader(
                 "Authorization",
                 "Bearer "
-                        + (correctUser ? parseConfig.getString(admin ? Constants.WEBSERVICE_TOKEN : Constants.WEBSERVICE_TOKEN2) : "foobar"));
+                        + (correctUser ? parseConfig.getString(admin ? Constants.WEBSERVICE_TOKEN_USER_1
+                                : Constants.WEBSERVICE_TOKEN_USER_2) : "foobar"));
         return client;
     }
 
