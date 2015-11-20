@@ -666,9 +666,10 @@ public class Helper {
      * @param container
      * @param fileName
      * @param client
+     * @param tag
      * @return a FileResponse instance
      */
-    public static FileResponse readGitRepositoryFile(Container container, String fileName, HttpClient client) {
+    public static FileResponse readGitRepositoryFile(Container container, String fileName, HttpClient client, String tag) {
         Map<String, String> map = parseGitUrl(container.getGitUrl());
         String source = map.get("Source");
         String gitUsername = map.get("Username");

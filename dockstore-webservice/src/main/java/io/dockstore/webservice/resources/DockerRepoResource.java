@@ -175,40 +175,34 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/labels")
-    @ApiOperation(value = "Update the labels linked to a container.",
-		notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.",
-		response = Container.class)
+    @ApiOperation(value = "Update the labels linked to a container.", notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Container.class)
     public Container updateLabels(@ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "Container to modify.", required = true)
-    			@PathParam("containerId") Long containerId,
-            @ApiParam(value = "Comma-delimited list of labels.", required = true)
-    			@QueryParam("labels") String labelStrings) {
+            @ApiParam(value = "Container to modify.", required = true) @PathParam("containerId") Long containerId,
+            @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings) {
         Container c = containerDAO.findById(containerId);
         Helper.checkContainer(c);
-        
+
         if (labelStrings.length() == 0) {
-        	c.setLabels(new HashSet<>(0));
+            c.setLabels(new HashSet<>(0));
         } else {
-        	Set<String> labelStringSet = new HashSet<String>(
-        			Arrays.asList(labelStrings.toLowerCase().split("\\s*,\\s*")));
+            Set<String> labelStringSet = new HashSet<String>(Arrays.asList(labelStrings.toLowerCase().split("\\s*,\\s*")));
             final String labelStringPattern = "^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$";
             final int labelMaxLength = 255;
             Set<Label> labels = new HashSet<Label>();
             for (final String labelString : labelStringSet) {
-            	if (labelString.length() <= labelMaxLength
-            			&& labelString.matches(labelStringPattern)) {
-            		Label label = labelDAO.findByLabelValue(labelString);
-            		if (label != null) {
-            			labels.add(label);
-            		} else {
-            			label = new Label();
-            			label.setValue(labelString);
-            			long id = labelDAO.create(label);
-            			labels.add(labelDAO.findById(id));
-            		}
-            	} else {
-            		throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
-            	}
+                if (labelString.length() <= labelMaxLength && labelString.matches(labelStringPattern)) {
+                    Label label = labelDAO.findByLabelValue(labelString);
+                    if (label != null) {
+                        labels.add(label);
+                    } else {
+                        label = new Label();
+                        label.setValue(labelString);
+                        long id = labelDAO.create(label);
+                        labels.add(labelDAO.findById(id));
+                    }
+                } else {
+                    throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+                }
             }
             c.setLabels(labels);
         }
@@ -415,13 +409,14 @@ public class DockerRepoResource {
     @Path("/{containerId}/dockerfile")
     @ApiOperation(value = "Get the corresponding Dockerfile on Github. This would be a minimal resource that would need to be implemented "
             + "by a GA4GH reference server", tags = { "GA4GH", "containers" }, notes = "Does not need authentication", response = Helper.FileResponse.class)
-    public Helper.FileResponse dockerfile(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId) {
+    public Helper.FileResponse dockerfile(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
+            @QueryParam("containerId") String tag) {
 
         // info about this repository path
         Container container = containerDAO.findById(containerId);
         Helper.checkContainer(container);
 
-        return Helper.readGitRepositoryFile(container, "Dockerfile", client);
+        return Helper.readGitRepositoryFile(container, "Dockerfile", client, tag);
     }
 
     @GET
@@ -430,12 +425,13 @@ public class DockerRepoResource {
     @Path("/{containerId}/cwl")
     @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github. This would be a minimal resource that would need to be implemented "
             + "by a GA4GH reference server", tags = { "GA4GH", "containers" }, notes = "Does not need authentication", response = Helper.FileResponse.class)
-    public Helper.FileResponse cwl(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId) {
+    public Helper.FileResponse cwl(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
+            @QueryParam("containerId") String tag) {
 
         // info about this repository path
         Container container = containerDAO.findById(containerId);
         Helper.checkContainer(container);
 
-        return Helper.readGitRepositoryFile(container, "Dockstore.cwl", client);
+        return Helper.readGitRepositoryFile(container, "Dockstore.cwl", client, tag);
     }
 }
