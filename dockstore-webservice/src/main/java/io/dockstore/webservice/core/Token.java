@@ -42,7 +42,8 @@ import javax.persistence.Table;
         @NamedQuery(name = "io.dockstore.webservice.core.Token.findByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId"),
         @NamedQuery(name = "io.dockstore.webservice.core.Token.findDockstoreByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'dockstore'"),
         @NamedQuery(name = "io.dockstore.webservice.core.Token.findGithubByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'github.com'"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Token.findQuayByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'quay.io'") })
+        @NamedQuery(name = "io.dockstore.webservice.core.Token.findQuayByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'quay.io'"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Token.findBitbucketByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'bitbucket.org'") })
 public class Token {
 
     @Id
@@ -54,6 +55,8 @@ public class Token {
     private String content;
     @Column(nullable = false)
     private String username;
+    @Column
+    private String refreshToken;
 
     // TODO: tokens will need to be associated with a particular user
     @Column
@@ -93,6 +96,13 @@ public class Token {
     }
 
     /**
+     * @return the refreshToken
+     */
+    public String getRefreshToken() {
+        return refreshToken;
+    }
+
+    /**
      * @param tokenSource
      *            the tokenSource to set
      */
@@ -114,6 +124,14 @@ public class Token {
      */
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    /**
+     * @param refreshToken
+     *            the refreshToken to set
+     */
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
     }
 
     @Override

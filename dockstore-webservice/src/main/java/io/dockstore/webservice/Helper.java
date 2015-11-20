@@ -31,6 +31,7 @@ import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.resources.ResourceUtilities;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -41,6 +42,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.ws.rs.WebApplicationException;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -60,6 +64,10 @@ import org.slf4j.LoggerFactory;
  */
 public class Helper {
     private static final Logger LOG = LoggerFactory.getLogger(Helper.class);
+
+    private static final String GIT_URL = "https://github.com/";
+    private static final String QUAY_URL = "https://quay.io/api/v1/";
+    private static final String BITBUCKET_URL = "https://bitbucket.org/";
 
     public static class RepoList {
 
@@ -86,6 +94,51 @@ public class Helper {
         }
     }
 
+    /**
+     * Parse Git URL to retrieve source, username and repository name.
+     * 
+     * @param url
+     * @return a map with keys: Source, Username, Repository
+     */
+    private static Map<String, String> parseGitUrl(String url) {
+        Pattern p = Pattern.compile("git\\@(\\S+):(\\S+)/(\\S+)\\.git");
+        Matcher m = p.matcher(url);
+        if (!m.find()) {
+            LOG.info("Cannot parse url: " + url);
+            return null;
+        }
+
+        // These correspond to the positions of the pattern matcher
+        final int sourceIndex = 1;
+        final int usernameIndex = 2;
+        final int reponameIndex = 3;
+
+        String source = m.group(sourceIndex);
+        String gitUsername = m.group(usernameIndex);
+        String gitRepository = m.group(reponameIndex);
+        LOG.info("Source: " + source);
+        LOG.info("Username: " + gitUsername);
+        LOG.info("Repository: " + gitRepository);
+
+        Map<String, String> map = new HashMap<>();
+        map.put("Source", source);
+        map.put("Username", gitUsername);
+        map.put("Repository", gitRepository);
+
+        return map;
+    }
+
+    /**
+     * Updates the new list of containers to the database. Deletes containers that has no users.
+     * 
+     * @param newList
+     * @param currentList
+     * @param user
+     * @param containerDAO
+     * @param tagDAO
+     * @param tagMap
+     * @return list of newly updated containers
+     */
     private static List<Container> updateContainers(List<Container> newList, List<Container> currentList, User user,
             ContainerDAO containerDAO, TagDAO tagDAO, Map<String, List<Tag>> tagMap) {
         Date time = new Date();
@@ -178,6 +231,15 @@ public class Helper {
         return currentList;
     }
 
+    /**
+     * Retrieve the list of user's repositories from Quay.io.
+     * 
+     * @param client
+     * @param objectMapper
+     * @param namespaces
+     * @param quayToken
+     * @return the list of containers
+     */
     private static List<Container> getQuayContainers(HttpClient client, ObjectMapper objectMapper, List<String> namespaces, Token quayToken) {
         List<Container> containerList = new ArrayList<>(0);
 
@@ -202,6 +264,14 @@ public class Helper {
         return containerList;
     }
 
+    /**
+     * Retrieve the list of user's repositories from Github.com.
+     * 
+     * @param uService
+     * @param oService
+     * @param service
+     * @return a map with Git URL as key and repository as value
+     */
     private static Map<String, Repository> getGithubRepos(UserService uService, OrganizationService oService, RepositoryService service) {
         Map<String, Repository> map = new HashMap<>();
 
@@ -228,6 +298,169 @@ public class Helper {
         return map;
     }
 
+    /**
+     * Parses the cwl content to get the author and description. Updates the container with the author, description, and hasCollab fields.
+     * 
+     * @param container
+     * @param content
+     * @return the updated container
+     */
+    private static Container parseCWLContent(Container container, String content) {
+        // parse the collab.cwl file to get description and author
+        if (content != null && !content.isEmpty()) {
+            try {
+                YamlReader reader = new YamlReader(content);
+                Object object = reader.read();
+                Map map = (Map) object;
+
+                String description = (String) map.get("description");
+                if (description != null) {
+                    container.setDescription(description);
+                } else {
+                    LOG.info("Description not found!");
+                }
+
+                map = (Map) map.get("dct:creator");
+                if (map != null) {
+                    String author = (String) map.get("foaf:name");
+                    container.setAuthor(author);
+                } else {
+                    LOG.info("Creator not found!");
+                }
+
+                container.setHasCollab(true);
+                LOG.info("Repository has Dockstore.cwl");
+            } catch (IOException ex) {
+                LOG.info("CWL file is malformed");
+                ex.printStackTrace();
+            }
+        }
+        return container;
+    }
+
+    /**
+     * Look for the Dockstore.cwl file in container's Github repo.
+     * 
+     * @param c
+     * @param gitRepos
+     * @param cService
+     * @return the updated container
+     */
+    private static Container findGithubCWL(Container c, Map<String, Repository> gitRepos, ContentsService cService) {
+        Repository repository = gitRepos.get(c.getGitUrl());
+        if (repository == null) {
+            LOG.info("Github repository not found for " + c.getPath());
+        } else {
+            LOG.info("Github found for: " + repository.getName());
+            try {
+                List<RepositoryContents> contents = null;
+                try {
+                    contents = cService.getContents(repository, "Dockstore.cwl");
+                } catch (Exception e) {
+                    contents = cService.getContents(repository, "dockstore.cwl");
+                }
+                if (!(contents == null || contents.isEmpty())) {
+                    String encoded = contents.get(0).getContent().replace("\n", "");
+                    byte[] decode = Base64.getDecoder().decode(encoded);
+                    String content = new String(decode, StandardCharsets.UTF_8);
+
+                    c = parseCWLContent(c, content);
+                }
+            } catch (IOException ex) {
+                LOG.info("Repo: " + repository.getName() + " has no Dockstore.cwl");
+            }
+        }
+        return c;
+    }
+
+    /**
+     * Look for the Dockstore.cwl file in container's Bitbucket repo.
+     * 
+     * @param container
+     * @param client
+     * @param tokenDAO
+     * @param user
+     * @return the updated container
+     */
+    private static Container findBitbucketCWL(Container container, HttpClient client, TokenDAO tokenDAO, User user) {
+        String giturl = container.getGitUrl();
+        if (giturl != null && !giturl.isEmpty()) {
+            List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
+            if (!tokens.isEmpty()) {
+                Token token = tokens.get(0);
+
+                Pattern p = Pattern.compile("git\\@bitbucket.org:(\\S+)/(\\S+)\\.git");
+                Matcher m = p.matcher(giturl);
+                LOG.info(giturl);
+                if (!m.find()) {
+                    LOG.info("Namespace and/or repository name could not be found from container's giturl");
+                    return container;
+                    // throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
+                }
+
+                String url = "https://bitbucket.org/api/1.0/repositories/" + m.group(1) + "/" + m.group(2) + "/branches";
+                Optional<String> asString = ResourceUtilities.asString(url, null, client);
+                LOG.info("RESOURCE CALL: " + url);
+                if (asString.isPresent()) {
+                    String response = asString.get();
+
+                    Gson gson = new Gson();
+                    Map<String, Object> branchMap = new HashMap<>();
+
+                    branchMap = (Map<String, Object>) gson.fromJson(response, branchMap.getClass());
+                    Set<String> branches = branchMap.keySet();
+
+                    for (String branch : branches) {
+                        LOG.info("Checking branch: " + branch);
+
+                        String content = "";
+
+                        url = "https://bitbucket.org/api/1.0/repositories/" + m.group(1) + "/" + m.group(2) + "/raw/" + branch
+                                + "/Dockstore.cwl";
+                        asString = ResourceUtilities.asString(url, null, client);
+                        LOG.info("RESOURCE CALL: " + url);
+                        if (asString.isPresent()) {
+                            LOG.info("CWL FOUND");
+                            content = asString.get();
+                        } else {
+                            LOG.info("Branch: " + branch + " has no Dockstore.cwl. Checking for dockstore.cwl.");
+
+                            url = "https://bitbucket.org/api/1.0/repositories/" + m.group(1) + "/" + m.group(2) + "/raw/" + branch
+                                    + "/dockstore.cwl";
+                            asString = ResourceUtilities.asString(url, null, client);
+                            LOG.info("RESOURCE CALL: " + url);
+                            if (asString.isPresent()) {
+                                LOG.info("CWL FOUND");
+                                content = asString.get();
+                            } else {
+                                LOG.info("Branch: " + branch + " has no dockstore.cwl");
+                            }
+                        }
+
+                        container = parseCWLContent(container, content);
+
+                        if (container.getHasCollab()) {
+                            break;
+                        }
+                    }
+
+                }
+
+            } else {
+                LOG.info("BITBUCKET token not found!");
+            }
+        }
+
+        return container;
+    }
+
+    /**
+     * Get the list of namespaces and organization that the user is associated to on Quay.io.
+     * 
+     * @param client
+     * @param quayToken
+     * @return list of namespaces
+     */
     private static List<String> getNamespaces(HttpClient client, Token quayToken) {
         List<String> namespaces = new ArrayList<>();
 
@@ -254,6 +487,15 @@ public class Helper {
         return namespaces;
     }
 
+    /**
+     * Get the list of tags for each container from Quay.io.
+     * 
+     * @param client
+     * @param containers
+     * @param objectMapper
+     * @param quayToken
+     * @return a map: key = path; value = list of tags
+     */
     private static Map<String, List<Tag>> getTags(HttpClient client, List<Container> containers, ObjectMapper objectMapper, Token quayToken) {
         Map<String, List<Tag>> tagMap = new HashMap<>();
 
@@ -293,6 +535,18 @@ public class Helper {
         return tagMap;
     }
 
+    /**
+     * Refreshes user's containers
+     * 
+     * @param userId
+     * @param client
+     * @param objectMapper
+     * @param userDAO
+     * @param containerDAO
+     * @param tokenDAO
+     * @param tagDAO
+     * @return list of updated containers
+     */
     public static List<Container> refresh(Long userId, HttpClient client, ObjectMapper objectMapper, UserDAO userDAO,
             ContainerDAO containerDAO, TokenDAO tokenDAO, TagDAO tagDAO) {
         User dockstoreUser = userDAO.findById(userId);
@@ -343,6 +597,8 @@ public class Helper {
             String path = quayToken.getTokenSource() + "/" + repo;
             c.setPath(path);
 
+            LOG.info("========== Configuring " + path + " ==========");
+
             // Get the list of builds from the container.
             // Builds contain information such as the Git URL and tags
             String urlBuilds = "https://quay.io/api/v1/repository/" + repo + "/build/";
@@ -383,54 +639,16 @@ public class Helper {
             c.setRegistry(quayToken.getTokenSource());
             c.setGitUrl(gitURL);
 
-            Repository repository = gitRepos.get(c.getGitUrl());
-            if (repository == null) {
-                LOG.info("Github repository not found for " + c.getPath());
-            } else {
-                LOG.info("Github found for: " + repository.getName());
-                try {
-                    List<RepositoryContents> contents = null;
-                    try {
-                        contents = cService.getContents(repository, "Dockstore.cwl");
-                    } catch (Exception e) {
-                        contents = cService.getContents(repository, "dockstore.cwl");
-                    }
-                    if (!(contents == null || contents.isEmpty())) {
-                        String encoded = contents.get(0).getContent().replace("\n", "");
-                        byte[] decode = Base64.getDecoder().decode(encoded);
-                        String content = new String(decode, StandardCharsets.UTF_8);
+            Map<String, String> repoUrlMap = parseGitUrl(c.getGitUrl());
 
-                        // parse the collab.cwl file to get description and author
-                        Map map = null;
-                        try {
-                            YamlReader reader = new YamlReader(content);
-                            Object object = reader.read();
-                            map = (Map) object;
+            if (repoUrlMap != null) {
+                String source = repoUrlMap.get("Source");
 
-                            String description = (String) map.get("description");
-                            if (description != null) {
-                                c.setDescription(description);
-                            } else {
-                                LOG.info("Description not found!");
-                            }
-
-                            map = (Map) map.get("dct:creator");
-                            if (map != null) {
-                                String author = (String) map.get("foaf:name");
-                                c.setAuthor(author);
-                            } else {
-                                LOG.info("Creator not found!");
-                            }
-
-                            c.setHasCollab(true);
-                            LOG.info("Repo: " + repository.getName() + " has Dockstore.cwl");
-                        } catch (IOException ex) {
-                            LOG.info("CWL file is malformed");
-                            ex.printStackTrace();
-                        }
-                    }
-                } catch (IOException ex) {
-                    LOG.info("Repo: " + repository.getName() + " has no Dockstore.cwl");
+                // find if there is a Dockstore.cwl file from the git repository
+                if (source.equals("github.com")) {
+                    c = findGithubCWL(c, gitRepos, cService);
+                } else if (source.equals("bitbucket.org")) {
+                    c = findBitbucketCWL(c, client, tokenDAO, dockstoreUser);
                 }
             }
         }
@@ -442,24 +660,220 @@ public class Helper {
         return new ArrayList(userDAO.findById(userId).getContainers());
     }
 
+    /**
+     * Read a file from the container's git repository.
+     * 
+     * @param container
+     * @param fileName
+     * @param client
+     * @return a FileResponse instance
+     */
+    public static FileResponse readGitRepositoryFile(Container container, String fileName, HttpClient client) {
+        Map<String, String> map = parseGitUrl(container.getGitUrl());
+        String source = map.get("Source");
+        String gitUsername = map.get("Username");
+        String gitRepository = map.get("Repository");
+
+        if (source.equals("github.com")) {
+            return readGithubFile(gitUsername, gitRepository, fileName);
+        } else if (source.equals("bitbucket.org")) {
+            return readBitbucketFile(gitUsername, gitRepository, fileName, client);
+        } else {
+            LOG.info("Do not support: " + source);
+            throw new WebApplicationException(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE);
+        }
+    }
+
+    /**
+     * Read a file from the container's Github repository
+     * 
+     * @param gitUsername
+     * @param gitRepository
+     * @param fileName
+     * @return a FileResponse instance
+     */
+    private static FileResponse readGithubFile(String gitUsername, String gitRepository, String fileName) {
+        FileResponse cwl = new FileResponse();
+
+        GitHubClient githubClient = new GitHubClient();
+        RepositoryService service = new RepositoryService(githubClient);
+        try {
+            // git@github.com:briandoconnor/dockstore-tool-bamstats.git
+
+            Repository repo = service.getRepository(gitUsername, gitRepository);
+            ContentsService cService = new ContentsService(githubClient);
+            List<RepositoryContents> contents = null;
+            try {
+                contents = cService.getContents(repo, fileName);
+            } catch (Exception e) {
+                contents = cService.getContents(repo, fileName.toLowerCase());
+            }
+            if (!(contents == null || contents.isEmpty())) {
+                String encoded = contents.get(0).getContent().replace("\n", "");
+                byte[] decode = Base64.getDecoder().decode(encoded);
+                String content = new String(decode, StandardCharsets.UTF_8);
+                // builder.append(content);
+                cwl.setContent(content);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            LOG.error(e.getMessage());
+        }
+        return cwl;
+    }
+
+    /**
+     * Read a file from the container's Bitbucket repository
+     * 
+     * @param gitUsername
+     * @param gitRepository
+     * @param fileName
+     * @param client
+     * @return a FileResponse instance
+     */
+    private static FileResponse readBitbucketFile(String gitUsername, String gitRepository, String fileName, HttpClient client) {
+        FileResponse cwl = new FileResponse();
+
+        String content = "";
+
+        String mainBranchUrl = "https://bitbucket.org/api/1.0/repositories/" + gitUsername + "/" + gitRepository + "/main-branch";
+
+        Optional<String> asString = ResourceUtilities.asString(mainBranchUrl, null, client);
+        LOG.info("RESOURCE CALL: " + mainBranchUrl);
+        if (asString.isPresent()) {
+            String branchJson = asString.get();
+
+            Gson gson = new Gson();
+            Map<String, String> map = new HashMap<>();
+            map = (Map<String, String>) gson.fromJson(branchJson, map.getClass());
+
+            String branch = map.get("name");
+
+            if (branch == null) {
+                LOG.info("Could NOT find bitbucket default branch!");
+                throw new WebApplicationException(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            } else {
+                LOG.info("Default branch: " + branch);
+            }
+
+            String url = "https://bitbucket.org/api/1.0/repositories/" + gitUsername + "/" + gitRepository + "/raw/" + branch + "/"
+                    + fileName;
+            asString = ResourceUtilities.asString(url, null, client);
+            LOG.info("RESOURCE CALL: " + url);
+            if (asString.isPresent()) {
+                LOG.info("CWL FOUND");
+                content = asString.get();
+            } else {
+                LOG.info("Branch: " + branch + " has no " + fileName + ". Checking for " + fileName.toLowerCase());
+
+                url = "https://bitbucket.org/api/1.0/repositories/" + gitUsername + "/" + gitRepository + "/raw/" + branch + "/"
+                        + fileName.toLowerCase();
+                asString = ResourceUtilities.asString(url, null, client);
+                LOG.info("RESOURCE CALL: " + url);
+                if (asString.isPresent()) {
+                    LOG.info("CWL FOUND");
+                    content = asString.get();
+                } else {
+                    LOG.info("Branch: " + branch + " has no " + fileName.toLowerCase());
+                    throw new WebApplicationException(HttpStatus.SC_CONFLICT);
+                }
+            }
+        }
+
+        if (content != null && !content.isEmpty()) {
+            cwl.setContent(content);
+        }
+
+        return cwl;
+    }
+
+    /**
+     * Refreshes user's Bitbucket token.
+     * 
+     * @param token
+     * @param client
+     * @param tokenDAO
+     * @param bitbucketClientID
+     * @param bitbucketClientSecret
+     * @return the updated token
+     */
+    public static Token refreshBitbucketToken(Token token, HttpClient client, TokenDAO tokenDAO, String bitbucketClientID,
+            String bitbucketClientSecret) {
+
+        String url = BITBUCKET_URL + "site/oauth2/access_token";
+
+        try {
+            Optional<String> asString = ResourceUtilities.bitbucketPost(url, null, client, bitbucketClientID, bitbucketClientSecret,
+                    "grant_type=refresh_token&refresh_token=" + token.getRefreshToken());
+
+            String accessToken;
+            String refreshToken;
+            if (asString.isPresent()) {
+                LOG.info("RESOURCE CALL: " + url);
+                String json = asString.get();
+
+                Gson gson = new Gson();
+                Map<String, String> map = new HashMap<>();
+                map = (Map<String, String>) gson.fromJson(json, map.getClass());
+
+                accessToken = map.get("access_token");
+                refreshToken = map.get("refresh_token");
+
+                token.setContent(accessToken);
+                token.setRefreshToken(refreshToken);
+
+                long create = tokenDAO.create(token);
+                return tokenDAO.findById(create);
+            } else {
+                throw new WebApplicationException("Could not retrieve bitbucket.org token based on code");
+            }
+        } catch (UnsupportedEncodingException ex) {
+            LOG.info(ex.toString());
+            throw new WebApplicationException(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Check if admin
+     * 
+     * @param user
+     */
     public static void checkUser(User user) {
         if (!user.getIsAdmin()) {
             throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
         }
     }
 
+    /**
+     * Check if admin or correct user
+     * 
+     * @param user
+     * @param id
+     */
     public static void checkUser(User user, long id) {
         if (!user.getIsAdmin() && user.getId() != id) {
             throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
         }
     }
 
+    /**
+     * Check if admin or if container belongs to user
+     * 
+     * @param user
+     * @param container
+     */
     public static void checkUser(User user, Container container) {
         if (!user.getIsAdmin() && !container.getUsers().contains(user)) {
             throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
         }
     }
 
+    /**
+     * Check if container is null
+     * 
+     * @param container
+     */
     public static void checkContainer(Container container) {
         if (container == null) {
             throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);

@@ -64,11 +64,9 @@ You can also run it on your local computer but will need to setup postgres separ
 5. To load all your containers from Quay, use /container/refresh to load them in the database for viewing. This needs to be done automatically once the Quay token is set.
 6. Now you can see and list your containers. Note that listing Github repos do not return anything because it does not return a valid json.
 
-### Temporary Hack to List Containers
+## Coding Standards
 
-Recently, Quay has fixed/optimized their API. To list a user's repositories, the required parameters: namespace, starred or public will have to be specified. If you do not specify namespace, you will see other people's public repositories, which is not what we want. Therefore we need to have namespace.
-
-However, the only way to list all namespaces and organizations is to use their /api/v1/user/ resource. But this resource seems to have a bug and does not list the organizations. Therefore, we are temporarily hard coding our namespaces to DockerRepoResource.java.
+Please refer to SeqWare's [Coding Standards](https://seqware.github.io/docs/100-coding-standards/). 
 
 ## Dockstore Java Client
 
@@ -109,12 +107,7 @@ To regenerate the swagger client:
 
 ## TODO
 
-1. we need to define how this interacts with a single sign-on service
-   1. in general, users should be able to list their own information (such as tokens and repos)
-   2. only admin users (or our other services) should be able to list all information  
 1. items from Brian
    2. you need better directions for filling in the yml settings file
-1. you need to document how you created the Java Swagger client (e.g show the commands used)
 1. you need to document the config file
-1. you need to document better how to setup the dockstore command line
 1. you need to document the release process, how to update the jar the dockstore command line downloads

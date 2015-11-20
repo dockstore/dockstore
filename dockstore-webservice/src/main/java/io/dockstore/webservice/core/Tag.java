@@ -54,6 +54,9 @@ public class Tag {
     @Column
     private long size;
 
+    @Column
+    private String reference;
+
     // @ManyToOne(fetch = FetchType.LAZY)
     // @JoinColumn(name = "containerid", nullable = false)
     // private Container container;
@@ -105,6 +108,15 @@ public class Tag {
 
     public void setSize(long size) {
         this.size = size;
+    }
+
+    @JsonProperty
+    public String getReference() {
+        return reference;
+    }
+
+    public void setReference(String reference) {
+        this.reference = reference;
     }
 
 }

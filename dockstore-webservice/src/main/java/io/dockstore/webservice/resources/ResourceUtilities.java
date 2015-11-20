@@ -18,10 +18,15 @@ package io.dockstore.webservice.resources;
 
 import com.google.common.base.Optional;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,12 +43,34 @@ public class ResourceUtilities {
         return getResponseAsString(buildHttpGet(input, token), client);
     }
 
+    public static Optional<String> bitbucketPost(String input, String token, HttpClient client, String client_id, String secret,
+            String payload) throws UnsupportedEncodingException {
+        return getResponseAsString(buildHttpPost(input, token, client_id, secret, payload), client);
+    }
+
     public static HttpGet buildHttpGet(String input, String token) {
         HttpGet httpGet = new HttpGet(input);
         if (token != null) {
             httpGet.addHeader("Authorization", "Bearer " + token);
         }
         return httpGet;
+    }
+
+    public static HttpPost buildHttpPost(String input, String token, String client_id, String secret, String payload)
+            throws UnsupportedEncodingException {
+        HttpPost httpPost = new HttpPost(input);
+        if (token == null) {
+            String string = client_id + ":" + secret;
+            byte[] b = string.getBytes(StandardCharsets.UTF_8);
+            String encoding = Base64.getEncoder().encodeToString(b);
+
+            httpPost.addHeader("Authorization", "Basic " + encoding);
+
+            StringEntity entity = new StringEntity(payload);
+            entity.setContentType("application/x-www-form-urlencoded");
+            httpPost.setEntity(entity);
+        }
+        return httpPost;
     }
 
     public static Optional<String> getResponseAsString(HttpGet httpGet, HttpClient client) {
@@ -59,6 +86,23 @@ public class ResourceUtilities {
                     + ioe.getMessage() + ">");
         } finally {
             httpGet.releaseConnection();
+        }
+        return result;
+    }
+
+    public static Optional<String> getResponseAsString(HttpPost httpPost, HttpClient client) {
+        Optional<String> result = Optional.absent();
+        try {
+            ResponseHandler<String> responseHandler = new BasicResponseHandler();
+            result = Optional.of(client.execute(httpPost, responseHandler));
+        } catch (HttpResponseException httpResponseException) {
+            LOG.error("getResponseAsString(): caught 'HttpResponseException' while processing request <" + httpPost.toString() + "> :=> <"
+                    + httpResponseException.getMessage() + ">");
+        } catch (IOException ioe) {
+            LOG.error("getResponseAsString(): caught 'IOException' while processing request <" + httpPost.toString() + "> :=> <"
+                    + ioe.getMessage() + ">");
+        } finally {
+            httpPost.releaseConnection();
         }
         return result;
     }
