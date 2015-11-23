@@ -496,13 +496,15 @@ public class Helper {
      * @param quayToken
      * @return a map: key = path; value = list of tags
      */
-    private static Map<String, List<Tag>> getTags(HttpClient client, List<Container> containers, ObjectMapper objectMapper, Token quayToken) {
+    private static Map<String, List<Tag>> getTags(HttpClient client, List<Container> containers, ObjectMapper objectMapper,
+            Token quayToken, Map<String, ArrayList> mapOfBuilds) {
         Map<String, List<Tag>> tagMap = new HashMap<>();
 
         for (Container c : containers) {
+            LOG.info("======================= Getting tags for: " + c.getPath() + "================================");
             String repo = c.getNamespace() + "/" + c.getName();
-            String urlBuilds = "https://quay.io/api/v1/repository/" + repo;
-            Optional<String> asStringBuilds = ResourceUtilities.asString(urlBuilds, quayToken.getContent(), client);
+            String repoUrl = "https://quay.io/api/v1/repository/" + repo;
+            Optional<String> asStringBuilds = ResourceUtilities.asString(repoUrl, quayToken.getContent(), client);
 
             List<Tag> tags = new ArrayList<>();
 
@@ -529,6 +531,41 @@ public class Helper {
                 }
 
             }
+            ArrayList builds = mapOfBuilds.get(c.getPath());
+
+            if (builds != null && !builds.isEmpty()) {
+                for (Tag tag : tags) {
+                    LOG.info("TAG: " + tag.getName());
+                    String ref;
+
+                    for (Object build : builds) {
+                        Map<String, String> idMap = new HashMap<>();
+                        idMap = (Map<String, String>) build;
+                        String buildId = idMap.get("id");
+
+                        LOG.info("Build ID: " + buildId);
+
+                        Map<String, ArrayList<String>> tagsMap = new HashMap<>();
+                        tagsMap = (Map<String, ArrayList<String>>) build;
+
+                        ArrayList<String> buildTags = tagsMap.get("tags");
+
+                        if (buildTags.contains(tag.getName())) {
+                            LOG.info("Build found with tag: " + tag.getName());
+
+                            Map<String, Map<String, String>> triggerMetadataMap = new HashMap<>();
+                            triggerMetadataMap = (Map<String, Map<String, String>>) build;
+
+                            ref = triggerMetadataMap.get("trigger_metadata").get("ref");
+                            LOG.info("REFERENCE: " + ref);
+                            tag.setReference(ref);
+
+                            break;
+                        }
+                    }
+                }
+            }
+
             tagMap.put(c.getPath(), tags);
         }
 
@@ -591,6 +628,8 @@ public class Helper {
 
         allRepos = getQuayContainers(client, objectMapper, namespaces, quayToken);
 
+        Map<String, ArrayList> mapOfBuilds = new HashMap<>();
+
         // Go through each container for each namespace
         for (Container c : allRepos) {
             String repo = c.getNamespace() + "/" + c.getName();
@@ -615,6 +654,8 @@ public class Helper {
                 Map<String, ArrayList> map = new HashMap<>();
                 map = (Map<String, ArrayList>) gson.fromJson(json, map.getClass());
                 ArrayList builds = map.get("builds");
+
+                mapOfBuilds.put(path, builds);
 
                 if (!builds.isEmpty()) {
                     Map<String, Map<String, String>> map2 = new HashMap<>();
@@ -653,7 +694,7 @@ public class Helper {
             }
         }
 
-        Map<String, List<Tag>> tagMap = getTags(client, allRepos, objectMapper, quayToken);
+        Map<String, List<Tag>> tagMap = getTags(client, allRepos, objectMapper, quayToken, mapOfBuilds);
 
         currentRepos = Helper.updateContainers(allRepos, currentRepos, dockstoreUser, containerDAO, tagDAO, tagMap);
         userDAO.clearCache();
@@ -667,18 +708,47 @@ public class Helper {
      * @param fileName
      * @param client
      * @param tag
+     * @param quayToken
      * @return a FileResponse instance
      */
-    public static FileResponse readGitRepositoryFile(Container container, String fileName, HttpClient client, String tag) {
+    public static FileResponse readGitRepositoryFile(Container container, String fileName, HttpClient client, String tag, Token quayToken) {
+        String quayTokenContent = (quayToken == null) ? null : quayToken.getContent();
+
         Map<String, String> map = parseGitUrl(container.getGitUrl());
         String source = map.get("Source");
         String gitUsername = map.get("Username");
         String gitRepository = map.get("Repository");
 
+        String reference = null;
+
+        for (Tag t : container.getTags()) {
+            if (t.getName().equals(tag)) {
+
+                Pattern p = Pattern.compile("(\\S+)/(\\S+)/(\\S+)");
+                Matcher m = p.matcher(t.getReference());
+                if (!m.find()) {
+                    LOG.info("Cannot parse reference: " + t.getReference());
+                    return null;
+                }
+
+                // These correspond to the positions of the pattern matcher
+                final int refIndex = 3;
+
+                reference = m.group(refIndex);
+                LOG.info("REFERENCE: " + reference);
+                break;
+            }
+        }
+
+        if (reference == null && (tag != null && !tag.isEmpty())) {
+            LOG.info("Tag " + tag + " was not found for container " + container.getPath());
+            throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
+        }
+
         if (source.equals("github.com")) {
-            return readGithubFile(gitUsername, gitRepository, fileName);
+            return readGithubFile(gitUsername, gitRepository, fileName, reference);
         } else if (source.equals("bitbucket.org")) {
-            return readBitbucketFile(gitUsername, gitRepository, fileName, client);
+            return readBitbucketFile(gitUsername, gitRepository, fileName, reference, client);
         } else {
             LOG.info("Do not support: " + source);
             throw new WebApplicationException(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE);
@@ -691,9 +761,10 @@ public class Helper {
      * @param gitUsername
      * @param gitRepository
      * @param fileName
+     * @param reference
      * @return a FileResponse instance
      */
-    private static FileResponse readGithubFile(String gitUsername, String gitRepository, String fileName) {
+    private static FileResponse readGithubFile(String gitUsername, String gitRepository, String fileName, String reference) {
         FileResponse cwl = new FileResponse();
 
         GitHubClient githubClient = new GitHubClient();
@@ -705,10 +776,16 @@ public class Helper {
             ContentsService cService = new ContentsService(githubClient);
             List<RepositoryContents> contents = null;
             try {
-                contents = cService.getContents(repo, fileName);
+                contents = cService.getContents(repo, fileName, reference);
             } catch (Exception e) {
-                contents = cService.getContents(repo, fileName.toLowerCase());
+                try {
+                    contents = cService.getContents(repo, fileName.toLowerCase(), reference);
+                } catch (Exception ex) {
+                    LOG.info("Exception: " + ex.getMessage());
+                    throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
+                }
             }
+
             if (!(contents == null || contents.isEmpty())) {
                 String encoded = contents.get(0).getContent().replace("\n", "");
                 byte[] decode = Base64.getDecoder().decode(encoded);
@@ -731,54 +808,60 @@ public class Helper {
      * @param gitRepository
      * @param fileName
      * @param client
+     * @param reference
      * @return a FileResponse instance
      */
-    private static FileResponse readBitbucketFile(String gitUsername, String gitRepository, String fileName, HttpClient client) {
+    private static FileResponse readBitbucketFile(String gitUsername, String gitRepository, String fileName, String reference,
+            HttpClient client) {
         FileResponse cwl = new FileResponse();
 
         String content = "";
+        String branch = null;
 
-        String mainBranchUrl = "https://bitbucket.org/api/1.0/repositories/" + gitUsername + "/" + gitRepository + "/main-branch";
+        if (reference == null) {
+            String mainBranchUrl = "https://bitbucket.org/api/1.0/repositories/" + gitUsername + "/" + gitRepository + "/main-branch";
 
-        Optional<String> asString = ResourceUtilities.asString(mainBranchUrl, null, client);
-        LOG.info("RESOURCE CALL: " + mainBranchUrl);
-        if (asString.isPresent()) {
-            String branchJson = asString.get();
+            Optional<String> asString = ResourceUtilities.asString(mainBranchUrl, null, client);
+            LOG.info("RESOURCE CALL: " + mainBranchUrl);
+            if (asString.isPresent()) {
+                String branchJson = asString.get();
 
-            Gson gson = new Gson();
-            Map<String, String> map = new HashMap<>();
-            map = (Map<String, String>) gson.fromJson(branchJson, map.getClass());
+                Gson gson = new Gson();
+                Map<String, String> map = new HashMap<>();
+                map = (Map<String, String>) gson.fromJson(branchJson, map.getClass());
 
-            String branch = map.get("name");
+                branch = map.get("name");
 
-            if (branch == null) {
-                LOG.info("Could NOT find bitbucket default branch!");
-                throw new WebApplicationException(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-            } else {
-                LOG.info("Default branch: " + branch);
+                if (branch == null) {
+                    LOG.info("Could NOT find bitbucket default branch!");
+                    throw new WebApplicationException(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                } else {
+                    LOG.info("Default branch: " + branch);
+                }
             }
+        } else {
+            branch = reference;
+        }
 
-            String url = "https://bitbucket.org/api/1.0/repositories/" + gitUsername + "/" + gitRepository + "/raw/" + branch + "/"
-                    + fileName;
+        String url = "https://bitbucket.org/api/1.0/repositories/" + gitUsername + "/" + gitRepository + "/raw/" + branch + "/" + fileName;
+        Optional<String> asString = ResourceUtilities.asString(url, null, client);
+        LOG.info("RESOURCE CALL: " + url);
+        if (asString.isPresent()) {
+            LOG.info("CWL FOUND");
+            content = asString.get();
+        } else {
+            LOG.info("Branch: " + branch + " has no " + fileName + ". Checking for " + fileName.toLowerCase());
+
+            url = "https://bitbucket.org/api/1.0/repositories/" + gitUsername + "/" + gitRepository + "/raw/" + branch + "/"
+                    + fileName.toLowerCase();
             asString = ResourceUtilities.asString(url, null, client);
             LOG.info("RESOURCE CALL: " + url);
             if (asString.isPresent()) {
                 LOG.info("CWL FOUND");
                 content = asString.get();
             } else {
-                LOG.info("Branch: " + branch + " has no " + fileName + ". Checking for " + fileName.toLowerCase());
-
-                url = "https://bitbucket.org/api/1.0/repositories/" + gitUsername + "/" + gitRepository + "/raw/" + branch + "/"
-                        + fileName.toLowerCase();
-                asString = ResourceUtilities.asString(url, null, client);
-                LOG.info("RESOURCE CALL: " + url);
-                if (asString.isPresent()) {
-                    LOG.info("CWL FOUND");
-                    content = asString.get();
-                } else {
-                    LOG.info("Branch: " + branch + " has no " + fileName.toLowerCase());
-                    throw new WebApplicationException(HttpStatus.SC_CONFLICT);
-                }
+                LOG.info("Branch: " + branch + " has no " + fileName.toLowerCase());
+                throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
             }
         }
 

@@ -410,13 +410,12 @@ public class DockerRepoResource {
     @ApiOperation(value = "Get the corresponding Dockerfile on Github. This would be a minimal resource that would need to be implemented "
             + "by a GA4GH reference server", tags = { "GA4GH", "containers" }, notes = "Does not need authentication", response = Helper.FileResponse.class)
     public Helper.FileResponse dockerfile(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
-            @QueryParam("containerId") String tag) {
+            @QueryParam("tag") String tag) {
 
-        // info about this repository path
         Container container = containerDAO.findById(containerId);
         Helper.checkContainer(container);
 
-        return Helper.readGitRepositoryFile(container, "Dockerfile", client, tag);
+        return Helper.readGitRepositoryFile(container, "Dockerfile", client, tag, null);
     }
 
     @GET
@@ -426,12 +425,11 @@ public class DockerRepoResource {
     @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github. This would be a minimal resource that would need to be implemented "
             + "by a GA4GH reference server", tags = { "GA4GH", "containers" }, notes = "Does not need authentication", response = Helper.FileResponse.class)
     public Helper.FileResponse cwl(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
-            @QueryParam("containerId") String tag) {
+            @QueryParam("tag") String tag) {
 
-        // info about this repository path
         Container container = containerDAO.findById(containerId);
         Helper.checkContainer(container);
 
-        return Helper.readGitRepositoryFile(container, "Dockstore.cwl", client, tag);
+        return Helper.readGitRepositoryFile(container, "Dockstore.cwl", client, tag, null);
     }
 }
