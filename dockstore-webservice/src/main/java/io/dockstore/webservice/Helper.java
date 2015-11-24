@@ -611,6 +611,7 @@ public class Helper {
      * @param fileDAO
      * @return list of updated containers
      */
+    @SuppressWarnings("checkstyle:parameternumber")
     public static List<Container> refresh(Long userId, HttpClient client, ObjectMapper objectMapper, UserDAO userDAO,
             ContainerDAO containerDAO, TokenDAO tokenDAO, TagDAO tagDAO, FileDAO fileDAO) {
         User dockstoreUser = userDAO.findById(userId);
