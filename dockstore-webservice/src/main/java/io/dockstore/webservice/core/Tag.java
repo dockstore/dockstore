@@ -19,12 +19,19 @@ package io.dockstore.webservice.core;
 //import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 /**
@@ -57,17 +64,14 @@ public class Tag {
     @Column
     private String reference;
 
-    // @ManyToOne(fetch = FetchType.LAZY)
-    // @JoinColumn(name = "containerid", nullable = false)
-    // private Container container;
-    //
-    // public Container getContainer() {
-    // return container;
-    // }
-    //
-    // public void setContainer(Container container) {
-    // this.container = container;
-    // }
+    @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true)
+    @JoinTable(name = "tagfile", joinColumns = { @JoinColumn(name = "tagid", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "fileid", referencedColumnName = "id") })
+    @ApiModelProperty("Cached files for each tag. Includes Dockerfile and Dockstore.cwl.")
+    private Set<File> files;
+
+    public Tag() {
+        this.files = new HashSet<>(0);
+    }
 
     @JsonProperty
     public long getId() {
@@ -119,4 +123,11 @@ public class Tag {
         this.reference = reference;
     }
 
+    public Set<File> getFiles() {
+        return files;
+    }
+
+    public void addFile(File file) {
+        files.add(file);
+    }
 }

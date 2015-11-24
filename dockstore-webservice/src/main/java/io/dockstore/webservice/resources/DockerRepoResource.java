@@ -23,12 +23,14 @@ import com.google.gson.Gson;
 import io.dockstore.webservice.Helper;
 import io.dockstore.webservice.api.RegisterRequest;
 import io.dockstore.webservice.core.Container;
+import io.dockstore.webservice.core.File;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.ContainerDAO;
+import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -73,12 +75,16 @@ public class DockerRepoResource {
     private final ContainerDAO containerDAO;
     private final TagDAO tagDAO;
     private final LabelDAO labelDAO;
+    private final FileDAO fileDAO;
     private final HttpClient client;
 
     private final String bitbucketClientID;
     private final String bitbucketClientSecret;
 
     public static final String TARGET_URL = "https://quay.io/api/v1/";
+
+    private static final String DOCKSTORE_CWL = "Dockstore.cwl";
+    private static final String DOCKERFILE = "Dockerfile";
 
     private final ObjectMapper objectMapper;
 
@@ -88,12 +94,13 @@ public class DockerRepoResource {
 
     @SuppressWarnings("checkstyle:parameternumber")
     public DockerRepoResource(ObjectMapper mapper, HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ContainerDAO containerDAO,
-            TagDAO tagDAO, LabelDAO labelDAO, String bitbucketClientID, String bitbucketClientSecret) {
+            TagDAO tagDAO, LabelDAO labelDAO, FileDAO fileDAO, String bitbucketClientID, String bitbucketClientSecret) {
         this.objectMapper = mapper;
         this.userDAO = userDAO;
         this.tokenDAO = tokenDAO;
         this.tagDAO = tagDAO;
         this.labelDAO = labelDAO;
+        this.fileDAO = fileDAO;
         this.client = client;
 
         this.bitbucketClientID = bitbucketClientID;
@@ -135,7 +142,7 @@ public class DockerRepoResource {
                     Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
                 }
 
-                containers.addAll(Helper.refresh(user.getId(), client, objectMapper, userDAO, containerDAO, tokenDAO, tagDAO));
+                containers.addAll(Helper.refresh(user.getId(), client, objectMapper, userDAO, containerDAO, tokenDAO, tagDAO, fileDAO));
             } catch (WebApplicationException ex) {
                 LOG.info("Failed to refresh user " + user.getId());
             }
@@ -409,13 +416,39 @@ public class DockerRepoResource {
     @Path("/{containerId}/dockerfile")
     @ApiOperation(value = "Get the corresponding Dockerfile on Github. This would be a minimal resource that would need to be implemented "
             + "by a GA4GH reference server", tags = { "GA4GH", "containers" }, notes = "Does not need authentication", response = Helper.FileResponse.class)
-    public Helper.FileResponse dockerfile(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
+    public File dockerfile(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag) {
 
         Container container = containerDAO.findById(containerId);
         Helper.checkContainer(container);
+        Tag tagInstance = null;
 
-        return Helper.readGitRepositoryFile(container, "Dockerfile", client, tag, null);
+        if (tag == null) {
+            tag = "latest";
+        }
+
+        for (Tag t : container.getTags()) {
+            if (t.getName().equals(tag)) {
+                tagInstance = t;
+            }
+        }
+
+        if (tagInstance == null) {
+            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+        } else {
+            for (File file : tagInstance.getFiles()) {
+                if (file.getType().equals(DOCKERFILE)) {
+                    return file;
+                }
+            }
+        }
+        throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
+
+        // GitHubClient githubClient = new GitHubClient();
+        // RepositoryService service = new RepositoryService(githubClient);
+        // ContentsService cService = new ContentsService(githubClient);
+        //
+        // return Helper.readGitRepositoryFile(container, "Dockerfile", client, tagInstance, service, cService, null);
     }
 
     @GET
@@ -424,12 +457,38 @@ public class DockerRepoResource {
     @Path("/{containerId}/cwl")
     @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github. This would be a minimal resource that would need to be implemented "
             + "by a GA4GH reference server", tags = { "GA4GH", "containers" }, notes = "Does not need authentication", response = Helper.FileResponse.class)
-    public Helper.FileResponse cwl(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
+    public File cwl(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag) {
 
         Container container = containerDAO.findById(containerId);
         Helper.checkContainer(container);
+        Tag tagInstance = null;
 
-        return Helper.readGitRepositoryFile(container, "Dockstore.cwl", client, tag, null);
+        if (tag == null) {
+            tag = "latest";
+        }
+
+        for (Tag t : container.getTags()) {
+            if (t.getName().equals(tag)) {
+                tagInstance = t;
+            }
+        }
+
+        if (tagInstance == null) {
+            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+        } else {
+            for (File file : tagInstance.getFiles()) {
+                if (file.getType().equals(DOCKSTORE_CWL)) {
+                    return file;
+                }
+            }
+        }
+        throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
+
+        // GitHubClient githubClient = new GitHubClient();
+        // RepositoryService service = new RepositoryService(githubClient);
+        // ContentsService cService = new ContentsService(githubClient);
+        //
+        // return Helper.readGitRepositoryFile(container, "Dockstore.cwl", client, tagInstance, service, cService, null);
     }
 }
