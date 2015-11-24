@@ -421,8 +421,8 @@ public class Helper {
 
                     String content = "";
 
-                    url = "https://bitbucket.org/api/1.0/repositories/" + m.group(1) + "/" + m.group(2) + "/raw/" + branch
-                            + "/Dockstore.cwl";
+                    url = "https://bitbucket.org/api/1.0/repositories/" + m.group(1) + "/" + m.group(2) + "/raw/" + branch + "/"
+                            + DOCKSTORE_CWL;
                     asString = ResourceUtilities.asString(url, token.getContent(), client);
                     LOG.info("RESOURCE CALL: " + url);
                     if (asString.isPresent()) {
@@ -431,8 +431,8 @@ public class Helper {
                     } else {
                         LOG.info("Branch: " + branch + " has no Dockstore.cwl. Checking for dockstore.cwl.");
 
-                        url = "https://bitbucket.org/api/1.0/repositories/" + m.group(1) + "/" + m.group(2) + "/raw/" + branch
-                                + "/dockstore.cwl";
+                        url = "https://bitbucket.org/api/1.0/repositories/" + m.group(1) + "/" + m.group(2) + "/raw/" + branch + "/"
+                                + DOCKSTORE_CWL.toLowerCase();
                         asString = ResourceUtilities.asString(url, token.getContent(), client);
                         LOG.info("RESOURCE CALL: " + url);
                         if (asString.isPresent()) {
