@@ -16,17 +16,15 @@
  */
 package io.dockstore.webservice.core;
 
-//import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
+
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -38,8 +36,10 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
-//import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
 /**
  *
@@ -63,6 +63,11 @@ public class Container {
     @ApiModelProperty("Implementation specific ID for the container in this web service")
     private long id;
 
+    @Column(nullable = false, columnDefinition="Text default 'AUTO_DETECT_QUAY'")
+    @Enumerated(EnumType.STRING)
+    @ApiModelProperty("This indicates what mode this is in which informs how we do things like refresh")
+    private ContainerMode mode = ContainerMode.AUTO_DETECT_QUAY;
+
     @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinTable(name = "usercontainer", inverseJoinColumns = { @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id") }, joinColumns = { @JoinColumn(name = "containerid", nullable = false, updatable = false, referencedColumnName = "id") })
     private Set<User> users;
@@ -70,6 +75,15 @@ public class Container {
     @Column(nullable = false)
     @ApiModelProperty("This is the name of the container, required: GA4GH")
     private String name;
+
+    @Column
+    @ApiModelProperty("This is the tool name of the container, when not-present this will function just like 0.1 dockstore"
+            + "when present, this can be used to distinguish between two containers based on the same image, but associated with different "
+            + "CWL and Dockerfile documents. i.e. two containers with the same registry+namespace+name but different toolnames "
+            + "will be two different entries in the dockstore registry/namespace/name/tool, different options to edit tags, and "
+            + "only the same insofar as they would \"docker pull\" the same image, required: GA4GH")
+    private String toolname = null;
+
     @Column
     @ApiModelProperty("This is a docker namespace for the container, required: GA4GH")
     private String namespace;
@@ -77,7 +91,7 @@ public class Container {
     @ApiModelProperty("This is a specific docker provider like quay.io or dockerhub or n/a?, required: GA4GH")
     private String registry;
     @Column
-    @ApiModelProperty("This is a generated full docker path including registry and namespace")
+    @ApiModelProperty("This is a generated full docker path including registry and namespace, used for docker pull commands")
     private String path;
     @Column
     @ApiModelProperty("This is the name of the author stated in the Dockstore.cwl")
@@ -109,6 +123,7 @@ public class Container {
     @ApiModelProperty("Implementation specific indication as to whether this is properly registered with this web service")
     private boolean isRegistered;
     @Column
+    @ApiModelProperty("This image has a Dockstore.cwl associated with it")
     private boolean hasCollab;
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
@@ -376,5 +391,14 @@ public class Container {
 
     public boolean removeUser(User user) {
         return users.remove(user);
+    }
+
+    @JsonProperty
+    public ContainerMode getMode() {
+        return mode;
+    }
+
+    public void setMode(ContainerMode mode) {
+        this.mode = mode;
     }
 }

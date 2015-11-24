@@ -16,16 +16,17 @@
  */
 package io.dockstore.webservice.core;
 
-//import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
-import java.util.Date;
+import io.swagger.annotations.ApiModelProperty;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import java.util.Date;
 
 /**
  *
@@ -41,10 +42,12 @@ public class Tag {
     private long id;
 
     @Column
+    @ApiModelProperty("git commit/tag/branch")
     private String name;
 
     @Column
     @JsonProperty("image_id")
+    @ApiModelProperty("Tag for this image in quay.ui/docker hub")
     private String imageId;
 
     @Column
@@ -52,10 +55,21 @@ public class Tag {
     private Date lastModified;
 
     @Column
+    @ApiModelProperty("size of the image")
     private long size;
 
+    //TODO: determine whether this is duplicated information
     @Column
+    @ApiModelProperty("git commit/tag/branch ... may be a duplicate of name or vice versa")
     private String reference;
+
+    @Column(columnDefinition="text")
+    @JsonProperty("dockerfile_path")
+    private String dockerfilePath = "/Dockerfile";
+
+    @Column(columnDefinition="text")
+    @JsonProperty("cwl_path")
+    private String cwlPath = "/Dockstore.cwl";
 
     // @ManyToOne(fetch = FetchType.LAZY)
     // @JoinColumn(name = "containerid", nullable = false)
@@ -119,4 +133,21 @@ public class Tag {
         this.reference = reference;
     }
 
+    @JsonProperty
+    public String getDockerfilePath() {
+        return dockerfilePath;
+    }
+
+    public void setDockerfilePath(String dockerfilePath) {
+        this.dockerfilePath = dockerfilePath;
+    }
+
+    @JsonProperty
+    public String getCwlPath() {
+        return cwlPath;
+    }
+
+    public void setCwlPath(String cwlPath) {
+        this.cwlPath = cwlPath;
+    }
 }
