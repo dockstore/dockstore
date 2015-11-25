@@ -3,7 +3,7 @@
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>0.1.1-SNAPSHOT</version>
+    <version>0.1.1</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
@@ -31,7 +31,7 @@
         <connection>${github.url}</connection>
         <developerConnection>${github.url}</developerConnection>
         <url>${github.url}</url>
-        <tag>HEAD</tag>
+        <tag>0.1.1</tag>
     </scm>
 
     <repositories>
