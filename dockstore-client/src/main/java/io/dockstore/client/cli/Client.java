@@ -24,8 +24,8 @@ import io.swagger.client.Configuration;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.Container;
-import io.swagger.client.model.FileResponse;
 import io.swagger.client.model.RegisterRequest;
+import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.User;
 import java.io.File;
@@ -356,9 +356,9 @@ public class Client {
             Container container = containersApi.getContainerByPath(path);
             if (container.getHasCollab()) {
                 try {
-                    FileResponse collab = containersApi.cwl(container.getId(), tag);
-                    if (collab.getContent() != null && !collab.getContent().isEmpty()) {
-                        out(collab.getContent());
+                    SourceFile file = containersApi.cwl(container.getId(), tag);
+                    if (file.getContent() != null && !file.getContent().isEmpty()) {
+                        out(file.getContent());
                     } else {
                         kill("No cwl file found.");
                     }

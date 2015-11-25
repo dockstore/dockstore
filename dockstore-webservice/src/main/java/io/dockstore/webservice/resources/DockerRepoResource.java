@@ -412,7 +412,7 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/{containerId}/dockerfile")
     @ApiOperation(value = "Get the corresponding Dockerfile on Github. This would be a minimal resource that would need to be implemented "
-            + "by a GA4GH reference server", tags = { "GA4GH", "containers" }, notes = "Does not need authentication", response = Helper.FileResponse.class)
+            + "by a GA4GH reference server", tags = { "GA4GH", "containers" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile dockerfile(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag) {
 
@@ -453,7 +453,7 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/{containerId}/cwl")
     @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github. This would be a minimal resource that would need to be implemented "
-            + "by a GA4GH reference server", tags = { "GA4GH", "containers" }, notes = "Does not need authentication", response = Helper.FileResponse.class)
+            + "by a GA4GH reference server", tags = { "GA4GH", "containers" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile cwl(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag) {
 

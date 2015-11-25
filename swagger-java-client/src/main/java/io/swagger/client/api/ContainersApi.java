@@ -11,7 +11,7 @@ import io.swagger.client.model.*;
 import java.util.*;
 
 import io.swagger.client.model.Container;
-import io.swagger.client.model.FileResponse;
+import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.RegisterRequest;
 import io.swagger.client.model.User;
 
@@ -19,7 +19,7 @@ import java.io.File;
 import java.util.Map;
 import java.util.HashMap;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-25T10:01:44.553-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-25T12:45:12.389-05:00")
 public class ContainersApi {
   private ApiClient apiClient;
 
@@ -396,9 +396,9 @@ public class ContainersApi {
    * Does not need authentication
    * @param containerId Container id
    * @param tag 
-   * @return FileResponse
+   * @return SourceFile
    */
-  public FileResponse cwl (Long containerId, String tag) throws ApiException {
+  public SourceFile cwl (Long containerId, String tag) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'containerId' is set
@@ -436,7 +436,7 @@ public class ContainersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<FileResponse>() {};
+    TypeRef returnType = new TypeRef<SourceFile>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -446,9 +446,9 @@ public class ContainersApi {
    * Does not need authentication
    * @param containerId Container id
    * @param tag 
-   * @return FileResponse
+   * @return SourceFile
    */
-  public FileResponse dockerfile (Long containerId, String tag) throws ApiException {
+  public SourceFile dockerfile (Long containerId, String tag) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'containerId' is set
@@ -486,7 +486,7 @@ public class ContainersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<FileResponse>() {};
+    TypeRef returnType = new TypeRef<SourceFile>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }

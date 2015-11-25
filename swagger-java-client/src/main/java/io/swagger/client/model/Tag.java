@@ -2,7 +2,7 @@ package io.swagger.client.model;
 
 import io.swagger.client.StringUtil;
 import java.util.*;
-import java.io.File;
+import io.swagger.client.model.SourceFile;
 import java.util.Date;
 
 
@@ -12,14 +12,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 @ApiModel(description = "")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-25T10:01:44.553-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-25T12:45:12.389-05:00")
 public class Tag   {
   
   private Long id = null;
   private String name = null;
   private Long size = null;
   private String reference = null;
-  private List<File> files = new ArrayList<File>();
+  private List<SourceFile> sourceFiles = new ArrayList<SourceFile>();
   private String imageId = null;
   private Date lastModified = null;
 
@@ -76,12 +76,12 @@ public class Tag   {
    * Cached files for each tag. Includes Dockerfile and Dockstore.cwl.
    **/
   @ApiModelProperty(value = "Cached files for each tag. Includes Dockerfile and Dockstore.cwl.")
-  @JsonProperty("files")
-  public List<File> getFiles() {
-    return files;
+  @JsonProperty("sourceFiles")
+  public List<SourceFile> getSourceFiles() {
+    return sourceFiles;
   }
-  public void setFiles(List<File> files) {
-    this.files = files;
+  public void setSourceFiles(List<SourceFile> sourceFiles) {
+    this.sourceFiles = sourceFiles;
   }
 
   
@@ -119,7 +119,7 @@ public class Tag   {
     sb.append("    name: ").append(StringUtil.toIndentedString(name)).append("\n");
     sb.append("    size: ").append(StringUtil.toIndentedString(size)).append("\n");
     sb.append("    reference: ").append(StringUtil.toIndentedString(reference)).append("\n");
-    sb.append("    files: ").append(StringUtil.toIndentedString(files)).append("\n");
+    sb.append("    sourceFiles: ").append(StringUtil.toIndentedString(sourceFiles)).append("\n");
     sb.append("    imageId: ").append(StringUtil.toIndentedString(imageId)).append("\n");
     sb.append("    lastModified: ").append(StringUtil.toIndentedString(lastModified)).append("\n");
     sb.append("}");
