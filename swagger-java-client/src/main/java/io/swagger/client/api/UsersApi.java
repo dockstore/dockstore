@@ -19,7 +19,7 @@ import java.io.File;
 import java.util.Map;
 import java.util.HashMap;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-13T14:06:54.737-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-25T12:45:12.389-05:00")
 public class UsersApi {
   private ApiClient apiClient;
 
@@ -479,6 +479,53 @@ public class UsersApi {
 
     
     TypeRef returnType = new TypeRef<User>() {};
+    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    
+  }
+  
+  /**
+   * Test bitbucket
+   * NO authentication
+   * @param userId User ID
+   * @return String
+   */
+  public String getBitbucketUser (Long userId) throws ApiException {
+    Object postBody = null;
+    
+    // verify the required parameter 'userId' is set
+    if (userId == null) {
+      throw new ApiException(400, "Missing the required parameter 'userId' when calling getBitbucketUser");
+    }
+    
+    // create path and map variables
+    String path = "/users/{userId}/bitbucketUser".replaceAll("\\{format\\}","json")
+      .replaceAll("\\{" + "userId" + "\\}", apiClient.escapeString(userId.toString()));
+
+    // query params
+    List<Pair> queryParams = new ArrayList<Pair>();
+    Map<String, String> headerParams = new HashMap<String, String>();
+    Map<String, Object> formParams = new HashMap<String, Object>();
+
+    
+
+    
+
+    
+
+    final String[] accepts = {
+      "application/json"
+    };
+    final String accept = apiClient.selectHeaderAccept(accepts);
+
+    final String[] contentTypes = {
+      
+    };
+    final String contentType = apiClient.selectHeaderContentType(contentTypes);
+
+    String[] authNames = new String[] {  };
+
+    
+    TypeRef returnType = new TypeRef<String>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }

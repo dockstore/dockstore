@@ -30,6 +30,7 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.ContainerDAO;
+import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.GroupDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -77,6 +78,7 @@ public class UserResource {
     private final TokenDAO tokenDAO;
     private final ContainerDAO containerDAO;
     private final TagDAO tagDAO;
+    private final FileDAO fileDAO;
     private final String githubClientID;
     private final String githubClientSecret;
     private final String bitbucketClientID;
@@ -90,8 +92,8 @@ public class UserResource {
 
     @SuppressWarnings("checkstyle:parameternumber")
     public UserResource(ObjectMapper mapper, HttpClient client, TokenDAO tokenDAO, UserDAO userDAO, GroupDAO groupDAO,
-            ContainerDAO containerDAO, TagDAO tagDAO, String githubClientID, String githubClientSecret, String bitbucketClientID,
-            String bitbucketClientSecret) {
+            ContainerDAO containerDAO, TagDAO tagDAO, FileDAO fileDAO, String githubClientID, String githubClientSecret,
+            String bitbucketClientID, String bitbucketClientSecret) {
         this.objectMapper = mapper;
         this.client = client;
         this.userDAO = userDAO;
@@ -99,6 +101,7 @@ public class UserResource {
         this.tokenDAO = tokenDAO;
         this.containerDAO = containerDAO;
         this.tagDAO = tagDAO;
+        this.fileDAO = fileDAO;
         this.githubClientID = githubClientID;
         this.githubClientSecret = githubClientSecret;
         this.bitbucketClientID = bitbucketClientID;
@@ -404,7 +407,7 @@ public class UserResource {
             Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
         }
 
-        List<Container> containers = Helper.refresh(userId, client, objectMapper, userDAO, containerDAO, tokenDAO, tagDAO);
+        List<Container> containers = Helper.refresh(userId, client, objectMapper, userDAO, containerDAO, tokenDAO, tagDAO, fileDAO);
         return containers;
     }
 

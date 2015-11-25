@@ -24,11 +24,13 @@ import io.dockstore.webservice.Helper;
 import io.dockstore.webservice.api.RegisterRequest;
 import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.Label;
+import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.ContainerDAO;
+import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -73,6 +75,7 @@ public class DockerRepoResource {
     private final ContainerDAO containerDAO;
     private final TagDAO tagDAO;
     private final LabelDAO labelDAO;
+    private final FileDAO fileDAO;
     private final HttpClient client;
 
     private final String bitbucketClientID;
@@ -88,12 +91,13 @@ public class DockerRepoResource {
 
     @SuppressWarnings("checkstyle:parameternumber")
     public DockerRepoResource(ObjectMapper mapper, HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ContainerDAO containerDAO,
-            TagDAO tagDAO, LabelDAO labelDAO, String bitbucketClientID, String bitbucketClientSecret) {
+            TagDAO tagDAO, LabelDAO labelDAO, FileDAO fileDAO, String bitbucketClientID, String bitbucketClientSecret) {
         this.objectMapper = mapper;
         this.userDAO = userDAO;
         this.tokenDAO = tokenDAO;
         this.tagDAO = tagDAO;
         this.labelDAO = labelDAO;
+        this.fileDAO = fileDAO;
         this.client = client;
 
         this.bitbucketClientID = bitbucketClientID;
@@ -135,7 +139,7 @@ public class DockerRepoResource {
                     Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
                 }
 
-                containers.addAll(Helper.refresh(user.getId(), client, objectMapper, userDAO, containerDAO, tokenDAO, tagDAO));
+                containers.addAll(Helper.refresh(user.getId(), client, objectMapper, userDAO, containerDAO, tokenDAO, tagDAO, fileDAO));
             } catch (WebApplicationException ex) {
                 LOG.info("Failed to refresh user " + user.getId());
             }
@@ -175,40 +179,37 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/labels")
-    @ApiOperation(value = "Update the labels linked to a container.",
-		notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.",
-		response = Container.class)
+    @ApiOperation(value = "Update the labels linked to a container.", notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Container.class)
     public Container updateLabels(@ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "Container to modify.", required = true)
-    			@PathParam("containerId") Long containerId,
-            @ApiParam(value = "Comma-delimited list of labels.", required = true)
-    			@QueryParam("labels") String labelStrings) {
+            @ApiParam(value = "Container to modify.", required = true) @PathParam("containerId") Long containerId,
+            @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings) {
         Container c = containerDAO.findById(containerId);
         Helper.checkContainer(c);
-        
+
         if (labelStrings.length() == 0) {
-        	c.setLabels(new HashSet<>(0));
+            c.setLabels(new HashSet<>(0));
         } else {
-        	Set<String> labelStringSet = new HashSet<String>(
-        			Arrays.asList(labelStrings.toLowerCase().split("\\s*,\\s*")));
+            Set<String> labelStringSet = new HashSet<String>(Arrays.asList(labelStrings.toLowerCase().split("\\s*,\\s*")));
             final String labelStringPattern = "^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$";
+
+            // This matches the restriction on labels to 255 characters
+            // if this is changed then the java object/mapped db schema needs to be changed
             final int labelMaxLength = 255;
             Set<Label> labels = new HashSet<Label>();
             for (final String labelString : labelStringSet) {
-            	if (labelString.length() <= labelMaxLength
-            			&& labelString.matches(labelStringPattern)) {
-            		Label label = labelDAO.findByLabelValue(labelString);
-            		if (label != null) {
-            			labels.add(label);
-            		} else {
-            			label = new Label();
-            			label.setValue(labelString);
-            			long id = labelDAO.create(label);
-            			labels.add(labelDAO.findById(id));
-            		}
-            	} else {
-            		throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
-            	}
+                if (labelString.length() <= labelMaxLength && labelString.matches(labelStringPattern)) {
+                    Label label = labelDAO.findByLabelValue(labelString);
+                    if (label != null) {
+                        labels.add(label);
+                    } else {
+                        label = new Label();
+                        label.setValue(labelString);
+                        long id = labelDAO.create(label);
+                        labels.add(labelDAO.findById(id));
+                    }
+                } else {
+                    throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+                }
             }
             c.setLabels(labels);
         }
@@ -286,15 +287,12 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/{path}/registered")
-    @ApiOperation(value = "Get a registered container", notes = "NO authentication", response = Container.class)
-    public Container getRegisteredContainerByPath(@ApiParam(value = "Repository path", required = true) @PathParam("path") String path) {
+    @Path("/path/{repository}/registered")
+    @ApiOperation(value = "Get a registered container by path", notes = "NO authentication", response = Container.class)
+    public Container getRegisteredContainerByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         Container c = containerDAO.findRegisteredByPath(path);
-        if (c == null) {
-            throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
-        } else {
-            return c;
-        }
+        Helper.checkContainer(c);
+        return c;
     }
 
     @GET
@@ -303,7 +301,7 @@ public class DockerRepoResource {
     @Path("/path/{repository}")
     @ApiOperation(value = "Get a container by path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Container.class)
     public Container getContainerByPath(@ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "repository", required = true) @PathParam("repository") String path) {
+            @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         Container container = containerDAO.findByPath(path);
         Helper.checkContainer(container);
 
@@ -414,14 +412,40 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/{containerId}/dockerfile")
     @ApiOperation(value = "Get the corresponding Dockerfile on Github. This would be a minimal resource that would need to be implemented "
-            + "by a GA4GH reference server", tags = { "GA4GH", "containers" }, notes = "Does not need authentication", response = Helper.FileResponse.class)
-    public Helper.FileResponse dockerfile(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId) {
+            + "by a GA4GH reference server", tags = { "GA4GH", "containers" }, notes = "Does not need authentication", response = SourceFile.class)
+    public SourceFile dockerfile(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
+            @QueryParam("tag") String tag) {
 
-        // info about this repository path
         Container container = containerDAO.findById(containerId);
         Helper.checkContainer(container);
+        Tag tagInstance = null;
 
-        return Helper.readGitRepositoryFile(container, "Dockerfile", client);
+        if (tag == null) {
+            tag = "latest";
+        }
+
+        for (Tag t : container.getTags()) {
+            if (t.getName().equals(tag)) {
+                tagInstance = t;
+            }
+        }
+
+        if (tagInstance == null) {
+            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+        } else {
+            for (SourceFile file : tagInstance.getSourceFiles()) {
+                if (file.getType().equals(SourceFile.FileType.DOCKERFILE)) {
+                    return file;
+                }
+            }
+        }
+        throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
+
+        // GitHubClient githubClient = new GitHubClient();
+        // RepositoryService service = new RepositoryService(githubClient);
+        // ContentsService cService = new ContentsService(githubClient);
+        //
+        // return Helper.readGitRepositoryFile(container, "Dockerfile", client, tagInstance, service, cService, null);
     }
 
     @GET
@@ -429,13 +453,39 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/{containerId}/cwl")
     @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github. This would be a minimal resource that would need to be implemented "
-            + "by a GA4GH reference server", tags = { "GA4GH", "containers" }, notes = "Does not need authentication", response = Helper.FileResponse.class)
-    public Helper.FileResponse cwl(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId) {
+            + "by a GA4GH reference server", tags = { "GA4GH", "containers" }, notes = "Does not need authentication", response = SourceFile.class)
+    public SourceFile cwl(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
+            @QueryParam("tag") String tag) {
 
-        // info about this repository path
         Container container = containerDAO.findById(containerId);
         Helper.checkContainer(container);
+        Tag tagInstance = null;
 
-        return Helper.readGitRepositoryFile(container, "Dockstore.cwl", client);
+        if (tag == null) {
+            tag = "latest";
+        }
+
+        for (Tag t : container.getTags()) {
+            if (t.getName().equals(tag)) {
+                tagInstance = t;
+            }
+        }
+
+        if (tagInstance == null) {
+            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+        } else {
+            for (SourceFile file : tagInstance.getSourceFiles()) {
+                if (file.getType().equals(SourceFile.FileType.DOCKSTORE_CWL)) {
+                    return file;
+                }
+            }
+        }
+        throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
+
+        // GitHubClient githubClient = new GitHubClient();
+        // RepositoryService service = new RepositoryService(githubClient);
+        // ContentsService cService = new ContentsService(githubClient);
+        //
+        // return Helper.readGitRepositoryFile(container, "Dockstore.cwl", client, tagInstance, service, cService, null);
     }
 }
