@@ -779,7 +779,7 @@ public class Helper {
 
         if (source.equals("github.com")) {
             return readGithubFile(githubRepositoryservice, githubContentsService, gitUsername, gitRepository, fileName, reference);
-        } else if (source.equals("bitbucket.org")) {
+        } else if (source.equals("bitbucket.org") && bitbucketTokenContent != null) {
             return readBitbucketFile(gitUsername, gitRepository, fileName, reference, client, bitbucketTokenContent);
         } else {
             LOG.info("Do not support: " + source);
