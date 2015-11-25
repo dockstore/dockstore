@@ -41,6 +41,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import javassist.NotFoundException;
+import org.apache.http.HttpStatus;
 
 /**
  *
@@ -347,14 +348,24 @@ public class Client {
 
         String path = args.get(0);
 
+        String tag = (args.size() == 2) ? args.get(1) : null;
+
         try {
             Container container = containersApi.getContainerByPath(path);
             if (container.getHasCollab()) {
-                FileResponse collab = containersApi.cwl(container.getId());
-                if (collab.getContent() != null && !collab.getContent().isEmpty()) {
-                    out(collab.getContent());
-                } else {
-                    out("No cwl file found.");
+                try {
+                    FileResponse collab = containersApi.cwl(container.getId(), tag);
+                    if (collab.getContent() != null && !collab.getContent().isEmpty()) {
+                        out(collab.getContent());
+                    } else {
+                        out("No cwl file found.");
+                    }
+                } catch (ApiException ex) {
+                    if (ex.getCode() == HttpStatus.SC_BAD_REQUEST) {
+                        out("Invalid tag.");
+                    } else {
+                        out("No cwl file found.");
+                    }
                 }
             } else {
                 out("No cwl file found.");
@@ -423,18 +434,18 @@ public class Client {
                 out("");
                 out("Possible sub-commands include:");
                 out("");
-                out("  list             :  lists all the containers registered by the user ");
+                out("  list                  :  lists all the containers registered by the user ");
                 out("");
-                out("  search <pattern> :  allows a user to search for all containers that match the criteria");
+                out("  search <pattern>      :  allows a user to search for all containers that match the criteria");
                 out("");
-                out("  publish          :  register a container in the dockstore");
+                out("  publish               :  register a container in the dockstore");
                 out("");
-                out("  info <container> :  print detailed information about a particular container");
+                out("  info <container>      :  print detailed information about a particular container");
                 out("");
-                out("  cwl <container>  :  returns the Common Workflow Language tool definition for this Docker image ");
-                out("                      which enables integration with Global Alliance compliant systems");
+                out("  cwl <container> <tag> :  returns the Common Workflow Language tool definition for this Docker image ");
+                out("                           which enables integration with Global Alliance compliant systems");
                 out("");
-                out("  refresh          :  updates your list of containers stored on Dockstore");
+                out("  refresh               :  updates your list of containers stored on Dockstore");
                 out("------------------");
             } else {
                 try {

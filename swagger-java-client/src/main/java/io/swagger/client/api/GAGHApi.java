@@ -17,7 +17,7 @@ import java.io.File;
 import java.util.Map;
 import java.util.HashMap;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-13T14:06:54.737-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-25T10:01:44.553-05:00")
 public class GAGHApi {
   private ApiClient apiClient;
 
@@ -124,10 +124,11 @@ public class GAGHApi {
   /**
    * Get the corresponding Dockstore.cwl file on Github. This would be a minimal resource that would need to be implemented by a GA4GH reference server
    * Does not need authentication
-   * @param containerId Container id to delete
+   * @param containerId Container id
+   * @param tag 
    * @return FileResponse
    */
-  public FileResponse cwl (Long containerId) throws ApiException {
+  public FileResponse cwl (Long containerId, String tag) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'containerId' is set
@@ -144,6 +145,8 @@ public class GAGHApi {
     Map<String, String> headerParams = new HashMap<String, String>();
     Map<String, Object> formParams = new HashMap<String, Object>();
 
+    
+    queryParams.addAll(apiClient.parameterToPairs("", "tag", tag));
     
 
     
@@ -171,10 +174,11 @@ public class GAGHApi {
   /**
    * Get the corresponding Dockerfile on Github. This would be a minimal resource that would need to be implemented by a GA4GH reference server
    * Does not need authentication
-   * @param containerId Container id to delete
+   * @param containerId Container id
+   * @param tag 
    * @return FileResponse
    */
-  public FileResponse dockerfile (Long containerId) throws ApiException {
+  public FileResponse dockerfile (Long containerId, String tag) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'containerId' is set
@@ -191,6 +195,8 @@ public class GAGHApi {
     Map<String, String> headerParams = new HashMap<String, String>();
     Map<String, Object> formParams = new HashMap<String, Object>();
 
+    
+    queryParams.addAll(apiClient.parameterToPairs("", "tag", tag));
     
 
     

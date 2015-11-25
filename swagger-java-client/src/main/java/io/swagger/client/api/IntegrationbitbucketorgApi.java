@@ -10,21 +10,21 @@ import io.swagger.client.model.*;
 
 import java.util.*;
 
-import io.swagger.client.model.GithubComView;
+import io.swagger.client.model.BitbucketOrgView;
 
 import java.io.File;
 import java.util.Map;
 import java.util.HashMap;
 
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-25T10:01:44.553-05:00")
-public class IntegrationgithubcomApi {
+public class IntegrationbitbucketorgApi {
   private ApiClient apiClient;
 
-  public IntegrationgithubcomApi() {
+  public IntegrationbitbucketorgApi() {
     this(Configuration.getDefaultApiClient());
   }
 
-  public IntegrationgithubcomApi(ApiClient apiClient) {
+  public IntegrationbitbucketorgApi(ApiClient apiClient) {
     this.apiClient = apiClient;
   }
 
@@ -38,15 +38,15 @@ public class IntegrationgithubcomApi {
 
   
   /**
-   * Display an authorization link for github.com
+   * Display an authorization link for bitbucket.org
    * This is a stop-gap GUI for displaying a link that allows a user to start the OAuth 2 web flow
-   * @return GithubComView
+   * @return BitbucketOrgView
    */
-  public GithubComView getView () throws ApiException {
+  public BitbucketOrgView getView () throws ApiException {
     Object postBody = null;
     
     // create path and map variables
-    String path = "/integration.github.com".replaceAll("\\{format\\}","json");
+    String path = "/integration.bitbucket.org".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -72,7 +72,7 @@ public class IntegrationgithubcomApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<GithubComView>() {};
+    TypeRef returnType = new TypeRef<BitbucketOrgView>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }

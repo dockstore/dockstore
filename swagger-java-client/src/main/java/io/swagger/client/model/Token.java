@@ -9,13 +9,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 @ApiModel(description = "")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-13T14:06:54.737-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-25T10:01:44.553-05:00")
 public class Token   {
   
   private Long id = null;
   private String tokenSource = null;
   private String content = null;
   private String username = null;
+  private String refreshToken = null;
   private Long userId = null;
 
   
@@ -70,6 +71,18 @@ public class Token   {
   /**
    **/
   @ApiModelProperty(value = "")
+  @JsonProperty("refreshToken")
+  public String getRefreshToken() {
+    return refreshToken;
+  }
+  public void setRefreshToken(String refreshToken) {
+    this.refreshToken = refreshToken;
+  }
+
+  
+  /**
+   **/
+  @ApiModelProperty(value = "")
   @JsonProperty("userId")
   public Long getUserId() {
     return userId;
@@ -89,6 +102,7 @@ public class Token   {
     sb.append("    tokenSource: ").append(StringUtil.toIndentedString(tokenSource)).append("\n");
     sb.append("    content: ").append(StringUtil.toIndentedString(content)).append("\n");
     sb.append("    username: ").append(StringUtil.toIndentedString(username)).append("\n");
+    sb.append("    refreshToken: ").append(StringUtil.toIndentedString(refreshToken)).append("\n");
     sb.append("    userId: ").append(StringUtil.toIndentedString(userId)).append("\n");
     sb.append("}");
     return sb.toString();

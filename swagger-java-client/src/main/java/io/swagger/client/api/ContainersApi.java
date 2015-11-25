@@ -19,7 +19,7 @@ import java.io.File;
 import java.util.Map;
 import java.util.HashMap;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-13T14:06:54.737-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-25T10:01:44.553-05:00")
 public class ContainersApi {
   private ApiClient apiClient;
 
@@ -83,7 +83,7 @@ public class ContainersApi {
   /**
    * Get a container by path
    * Lists info of container. Enter full path (include quay.io in path).
-   * @param repository repository
+   * @param repository repository path
    * @return Container
    */
   public Container getContainerByPath (String repository) throws ApiException {
@@ -96,6 +96,53 @@ public class ContainersApi {
     
     // create path and map variables
     String path = "/containers/path/{repository}".replaceAll("\\{format\\}","json")
+      .replaceAll("\\{" + "repository" + "\\}", apiClient.escapeString(repository.toString()));
+
+    // query params
+    List<Pair> queryParams = new ArrayList<Pair>();
+    Map<String, String> headerParams = new HashMap<String, String>();
+    Map<String, Object> formParams = new HashMap<String, Object>();
+
+    
+
+    
+
+    
+
+    final String[] accepts = {
+      "application/json"
+    };
+    final String accept = apiClient.selectHeaderAccept(accepts);
+
+    final String[] contentTypes = {
+      
+    };
+    final String contentType = apiClient.selectHeaderContentType(contentTypes);
+
+    String[] authNames = new String[] {  };
+
+    
+    TypeRef returnType = new TypeRef<Container>() {};
+    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    
+  }
+  
+  /**
+   * Get a registered container by path
+   * NO authentication
+   * @param repository repository path
+   * @return Container
+   */
+  public Container getRegisteredContainerByPath (String repository) throws ApiException {
+    Object postBody = null;
+    
+    // verify the required parameter 'repository' is set
+    if (repository == null) {
+      throw new ApiException(400, "Missing the required parameter 'repository' when calling getRegisteredContainerByPath");
+    }
+    
+    // create path and map variables
+    String path = "/containers/path/{repository}/registered".replaceAll("\\{format\\}","json")
       .replaceAll("\\{" + "repository" + "\\}", apiClient.escapeString(repository.toString()));
 
     // query params
@@ -347,10 +394,11 @@ public class ContainersApi {
   /**
    * Get the corresponding Dockstore.cwl file on Github. This would be a minimal resource that would need to be implemented by a GA4GH reference server
    * Does not need authentication
-   * @param containerId Container id to delete
+   * @param containerId Container id
+   * @param tag 
    * @return FileResponse
    */
-  public FileResponse cwl (Long containerId) throws ApiException {
+  public FileResponse cwl (Long containerId, String tag) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'containerId' is set
@@ -367,6 +415,8 @@ public class ContainersApi {
     Map<String, String> headerParams = new HashMap<String, String>();
     Map<String, Object> formParams = new HashMap<String, Object>();
 
+    
+    queryParams.addAll(apiClient.parameterToPairs("", "tag", tag));
     
 
     
@@ -394,10 +444,11 @@ public class ContainersApi {
   /**
    * Get the corresponding Dockerfile on Github. This would be a minimal resource that would need to be implemented by a GA4GH reference server
    * Does not need authentication
-   * @param containerId Container id to delete
+   * @param containerId Container id
+   * @param tag 
    * @return FileResponse
    */
-  public FileResponse dockerfile (Long containerId) throws ApiException {
+  public FileResponse dockerfile (Long containerId, String tag) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'containerId' is set
@@ -414,6 +465,8 @@ public class ContainersApi {
     Map<String, String> headerParams = new HashMap<String, String>();
     Map<String, Object> formParams = new HashMap<String, Object>();
 
+    
+    queryParams.addAll(apiClient.parameterToPairs("", "tag", tag));
     
 
     
@@ -435,6 +488,61 @@ public class ContainersApi {
     
     TypeRef returnType = new TypeRef<FileResponse>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    
+  }
+  
+  /**
+   * Update the labels linked to a container.
+   * Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.
+   * @param containerId Container to modify.
+   * @param labels Comma-delimited list of labels.
+   * @return Container
+   */
+  public Container updateLabels (Long containerId, String labels) throws ApiException {
+    Object postBody = null;
+    
+    // verify the required parameter 'containerId' is set
+    if (containerId == null) {
+      throw new ApiException(400, "Missing the required parameter 'containerId' when calling updateLabels");
+    }
+    
+    // verify the required parameter 'labels' is set
+    if (labels == null) {
+      throw new ApiException(400, "Missing the required parameter 'labels' when calling updateLabels");
+    }
+    
+    // create path and map variables
+    String path = "/containers/{containerId}/labels".replaceAll("\\{format\\}","json")
+      .replaceAll("\\{" + "containerId" + "\\}", apiClient.escapeString(containerId.toString()));
+
+    // query params
+    List<Pair> queryParams = new ArrayList<Pair>();
+    Map<String, String> headerParams = new HashMap<String, String>();
+    Map<String, Object> formParams = new HashMap<String, Object>();
+
+    
+    queryParams.addAll(apiClient.parameterToPairs("", "labels", labels));
+    
+
+    
+
+    
+
+    final String[] accepts = {
+      "application/json"
+    };
+    final String accept = apiClient.selectHeaderAccept(accepts);
+
+    final String[] contentTypes = {
+      
+    };
+    final String contentType = apiClient.selectHeaderContentType(contentTypes);
+
+    String[] authNames = new String[] {  };
+
+    
+    TypeRef returnType = new TypeRef<Container>() {};
+    return apiClient.invokeAPI(path, "PUT", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
   

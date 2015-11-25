@@ -287,15 +287,12 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/{path}/registered")
-    @ApiOperation(value = "Get a registered container", notes = "NO authentication", response = Container.class)
-    public Container getRegisteredContainerByPath(@ApiParam(value = "Repository path", required = true) @PathParam("path") String path) {
+    @Path("/path/{repository}/registered")
+    @ApiOperation(value = "Get a registered container by path", notes = "NO authentication", response = Container.class)
+    public Container getRegisteredContainerByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         Container c = containerDAO.findRegisteredByPath(path);
-        if (c == null) {
-            throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
-        } else {
-            return c;
-        }
+        Helper.checkContainer(c);
+        return c;
     }
 
     @GET
@@ -304,7 +301,7 @@ public class DockerRepoResource {
     @Path("/path/{repository}")
     @ApiOperation(value = "Get a container by path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Container.class)
     public Container getContainerByPath(@ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "repository", required = true) @PathParam("repository") String path) {
+            @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         Container container = containerDAO.findByPath(path);
         Helper.checkContainer(container);
 

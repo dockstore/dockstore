@@ -2,6 +2,7 @@ package io.swagger.client.model;
 
 import io.swagger.client.StringUtil;
 import io.swagger.client.model.User;
+import io.swagger.client.model.Label;
 import java.util.*;
 import io.swagger.client.model.Tag;
 import java.util.Date;
@@ -13,7 +14,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 @ApiModel(description = "")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-13T14:06:54.737-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-25T10:01:44.553-05:00")
 public class Container   {
   
   private Long id = null;
@@ -28,6 +29,7 @@ public class Container   {
   private String gitUrl = null;
   private Boolean hasCollab = null;
   private List<Tag> tags = new ArrayList<Tag>();
+  private List<Label> labels = new ArrayList<Label>();
   private String path = null;
   private Boolean isStarred = null;
   private Boolean isPublic = null;
@@ -190,6 +192,19 @@ public class Container   {
 
   
   /**
+   * Labels (i.e. meta tags) for describing the purpose and contents of containers
+   **/
+  @ApiModelProperty(value = "Labels (i.e. meta tags) for describing the purpose and contents of containers")
+  @JsonProperty("labels")
+  public List<Label> getLabels() {
+    return labels;
+  }
+  public void setLabels(List<Label> labels) {
+    this.labels = labels;
+  }
+
+  
+  /**
    * This is a generated full docker path including registry and namespace
    **/
   @ApiModelProperty(value = "This is a generated full docker path including registry and namespace")
@@ -272,6 +287,7 @@ public class Container   {
     sb.append("    gitUrl: ").append(StringUtil.toIndentedString(gitUrl)).append("\n");
     sb.append("    hasCollab: ").append(StringUtil.toIndentedString(hasCollab)).append("\n");
     sb.append("    tags: ").append(StringUtil.toIndentedString(tags)).append("\n");
+    sb.append("    labels: ").append(StringUtil.toIndentedString(labels)).append("\n");
     sb.append("    path: ").append(StringUtil.toIndentedString(path)).append("\n");
     sb.append("    isStarred: ").append(StringUtil.toIndentedString(isStarred)).append("\n");
     sb.append("    isPublic: ").append(StringUtil.toIndentedString(isPublic)).append("\n");
