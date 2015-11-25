@@ -346,10 +346,13 @@ public class Client {
             kill("Please provide a container.");
         }
 
-        String path = args.get(0);
+        String[] parts = args.get(0).split(":");
 
-        String tag = (args.size() == 2) ? args.get(1) : null;
+        String path = parts[0];
 
+        String tag = (parts.length > 1) ? parts[1] : null;
+
+        out("TAG: " + tag);
         try {
             Container container = containersApi.getContainerByPath(path);
             if (container.getHasCollab()) {
@@ -362,7 +365,7 @@ public class Client {
                     }
                 } catch (ApiException ex) {
                     if (ex.getCode() == HttpStatus.SC_BAD_REQUEST) {
-                        out("Invalid tag.");
+                        out("Invalid tag");
                     } else {
                         out("No cwl file found.");
                     }
@@ -434,18 +437,18 @@ public class Client {
                 out("");
                 out("Possible sub-commands include:");
                 out("");
-                out("  list                  :  lists all the containers registered by the user ");
+                out("  list             :  lists all the containers registered by the user ");
                 out("");
-                out("  search <pattern>      :  allows a user to search for all containers that match the criteria");
+                out("  search <pattern> :  allows a user to search for all containers that match the criteria");
                 out("");
-                out("  publish               :  register a container in the dockstore");
+                out("  publish          :  register a container in the dockstore");
                 out("");
-                out("  info <container>      :  print detailed information about a particular container");
+                out("  info <container> :  print detailed information about a particular container");
                 out("");
-                out("  cwl <container> <tag> :  returns the Common Workflow Language tool definition for this Docker image ");
-                out("                           which enables integration with Global Alliance compliant systems");
+                out("  cwl <container>  :  returns the Common Workflow Language tool definition for this Docker image ");
+                out("                      which enables integration with Global Alliance compliant systems");
                 out("");
-                out("  refresh               :  updates your list of containers stored on Dockstore");
+                out("  refresh          :  updates your list of containers stored on Dockstore");
                 out("------------------");
             } else {
                 try {
