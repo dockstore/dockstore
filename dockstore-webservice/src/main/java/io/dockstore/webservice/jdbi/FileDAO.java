@@ -16,7 +16,7 @@
  */
 package io.dockstore.webservice.jdbi;
 
-import io.dockstore.webservice.core.File;
+import io.dockstore.webservice.core.SourceFile;
 import io.dropwizard.hibernate.AbstractDAO;
 import org.hibernate.SessionFactory;
 
@@ -24,16 +24,16 @@ import org.hibernate.SessionFactory;
  *
  * @author xliu
  */
-public class FileDAO extends AbstractDAO<File> {
+public class FileDAO extends AbstractDAO<SourceFile> {
     public FileDAO(SessionFactory sessionFactory) {
         super(sessionFactory);
     }
 
-    public File findById(Long id) {
+    public SourceFile findById(Long id) {
         return get(id);
     }
 
-    public long create(File file) {
+    public long create(SourceFile file) {
         return persist(file).getId();
     }
 }

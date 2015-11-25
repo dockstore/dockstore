@@ -65,12 +65,12 @@ public class Tag {
     private String reference;
 
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true)
-    @JoinTable(name = "tagfile", joinColumns = { @JoinColumn(name = "tagid", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "fileid", referencedColumnName = "id") })
+    @JoinTable(name = "tagsourcefile", joinColumns = { @JoinColumn(name = "tagid", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "sourcefileid", referencedColumnName = "id") })
     @ApiModelProperty("Cached files for each tag. Includes Dockerfile and Dockstore.cwl.")
-    private Set<File> files;
+    private Set<SourceFile> sourceFiles;
 
     public Tag() {
-        this.files = new HashSet<>(0);
+        this.sourceFiles = new HashSet<>(0);
     }
 
     @JsonProperty
@@ -123,11 +123,11 @@ public class Tag {
         this.reference = reference;
     }
 
-    public Set<File> getFiles() {
-        return files;
+    public Set<SourceFile> getSourceFiles() {
+        return sourceFiles;
     }
 
-    public void addFile(File file) {
-        files.add(file);
+    public void addSourceFile(SourceFile file) {
+        sourceFiles.add(file);
     }
 }

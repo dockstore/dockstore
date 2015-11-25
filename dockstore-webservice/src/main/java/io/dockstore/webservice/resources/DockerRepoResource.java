@@ -23,8 +23,8 @@ import com.google.gson.Gson;
 import io.dockstore.webservice.Helper;
 import io.dockstore.webservice.api.RegisterRequest;
 import io.dockstore.webservice.core.Container;
-import io.dockstore.webservice.core.File;
 import io.dockstore.webservice.core.Label;
+import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
@@ -82,9 +82,6 @@ public class DockerRepoResource {
     private final String bitbucketClientSecret;
 
     public static final String TARGET_URL = "https://quay.io/api/v1/";
-
-    private static final String DOCKSTORE_CWL = "Dockstore.cwl";
-    private static final String DOCKERFILE = "Dockerfile";
 
     private final ObjectMapper objectMapper;
 
@@ -194,6 +191,9 @@ public class DockerRepoResource {
         } else {
             Set<String> labelStringSet = new HashSet<String>(Arrays.asList(labelStrings.toLowerCase().split("\\s*,\\s*")));
             final String labelStringPattern = "^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$";
+
+            // This matches the restriction on labels to 255 characters
+            // if this is changed then the java object/mapped db schema needs to be changed
             final int labelMaxLength = 255;
             Set<Label> labels = new HashSet<Label>();
             for (final String labelString : labelStringSet) {
@@ -413,7 +413,7 @@ public class DockerRepoResource {
     @Path("/{containerId}/dockerfile")
     @ApiOperation(value = "Get the corresponding Dockerfile on Github. This would be a minimal resource that would need to be implemented "
             + "by a GA4GH reference server", tags = { "GA4GH", "containers" }, notes = "Does not need authentication", response = Helper.FileResponse.class)
-    public File dockerfile(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
+    public SourceFile dockerfile(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag) {
 
         Container container = containerDAO.findById(containerId);
@@ -433,8 +433,8 @@ public class DockerRepoResource {
         if (tagInstance == null) {
             throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
         } else {
-            for (File file : tagInstance.getFiles()) {
-                if (file.getType().equals(DOCKERFILE)) {
+            for (SourceFile file : tagInstance.getSourceFiles()) {
+                if (file.getType().equals(SourceFile.FileType.DOCKERFILE)) {
                     return file;
                 }
             }
@@ -454,7 +454,7 @@ public class DockerRepoResource {
     @Path("/{containerId}/cwl")
     @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github. This would be a minimal resource that would need to be implemented "
             + "by a GA4GH reference server", tags = { "GA4GH", "containers" }, notes = "Does not need authentication", response = Helper.FileResponse.class)
-    public File cwl(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
+    public SourceFile cwl(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag) {
 
         Container container = containerDAO.findById(containerId);
@@ -474,8 +474,8 @@ public class DockerRepoResource {
         if (tagInstance == null) {
             throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
         } else {
-            for (File file : tagInstance.getFiles()) {
-                if (file.getType().equals(DOCKSTORE_CWL)) {
+            for (SourceFile file : tagInstance.getSourceFiles()) {
+                if (file.getType().equals(SourceFile.FileType.DOCKSTORE_CWL)) {
                     return file;
                 }
             }

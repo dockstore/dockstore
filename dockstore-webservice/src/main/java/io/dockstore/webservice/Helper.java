@@ -21,7 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
 import io.dockstore.webservice.core.Container;
-import io.dockstore.webservice.core.File;
+import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
@@ -70,6 +70,7 @@ public class Helper {
     private static final String GIT_URL = "https://github.com/";
     private static final String QUAY_URL = "https://quay.io/api/v1/";
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
+    private static final String BITBUCKET_API_URL = "https://bitbucket.org/api/1.0/";
 
     private static final String DOCKSTORE_CWL = "Dockstore.cwl";
     private static final String DOCKERFILE = "Dockerfile";
@@ -215,7 +216,7 @@ public class Helper {
             List<Tag> tags = tagMap.get(container.getPath());
             if (tags != null) {
                 for (Tag tag : tags) {
-                    for (File file : tag.getFiles()) {
+                    for (SourceFile file : tag.getSourceFiles()) {
                         fileDAO.create(file);
                     }
 
@@ -254,7 +255,7 @@ public class Helper {
         List<Container> containerList = new ArrayList<>(0);
 
         for (String namespace : namespaces) {
-            String url = "https://quay.io/api/v1/repository?namespace=" + namespace;
+            String url = QUAY_URL + "repository?namespace=" + namespace;
             Optional<String> asString = ResourceUtilities.asString(url, quayToken.getContent(), client);
 
             if (asString.isPresent()) {
@@ -404,7 +405,7 @@ public class Helper {
                 // throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
             }
 
-            String url = "https://bitbucket.org/api/1.0/repositories/" + m.group(1) + "/" + m.group(2) + "/branches";
+            String url = BITBUCKET_API_URL + "repositories/" + m.group(1) + "/" + m.group(2) + "/branches";
             Optional<String> asString = ResourceUtilities.asString(url, token.getContent(), client);
             LOG.info("RESOURCE CALL: " + url);
             if (asString.isPresent()) {
@@ -421,8 +422,7 @@ public class Helper {
 
                     String content = "";
 
-                    url = "https://bitbucket.org/api/1.0/repositories/" + m.group(1) + "/" + m.group(2) + "/raw/" + branch + "/"
-                            + DOCKSTORE_CWL;
+                    url = BITBUCKET_API_URL + "repositories/" + m.group(1) + "/" + m.group(2) + "/raw/" + branch + "/" + DOCKSTORE_CWL;
                     asString = ResourceUtilities.asString(url, token.getContent(), client);
                     LOG.info("RESOURCE CALL: " + url);
                     if (asString.isPresent()) {
@@ -431,7 +431,7 @@ public class Helper {
                     } else {
                         LOG.info("Branch: " + branch + " has no Dockstore.cwl. Checking for dockstore.cwl.");
 
-                        url = "https://bitbucket.org/api/1.0/repositories/" + m.group(1) + "/" + m.group(2) + "/raw/" + branch + "/"
+                        url = BITBUCKET_API_URL + "repositories/" + m.group(1) + "/" + m.group(2) + "/raw/" + branch + "/"
                                 + DOCKSTORE_CWL.toLowerCase();
                         asString = ResourceUtilities.asString(url, token.getContent(), client);
                         LOG.info("RESOURCE CALL: " + url);
@@ -466,7 +466,7 @@ public class Helper {
     private static List<String> getNamespaces(HttpClient client, Token quayToken) {
         List<String> namespaces = new ArrayList<>();
 
-        String url = "https://quay.io/api/v1/user/";
+        String url = QUAY_URL + "user/";
         Optional<String> asString = ResourceUtilities.asString(url, quayToken.getContent(), client);
         if (asString.isPresent()) {
             String response = asString.get();
@@ -511,7 +511,7 @@ public class Helper {
         for (Container c : containers) {
             LOG.info("======================= Getting tags for: " + c.getPath() + "================================");
             String repo = c.getNamespace() + "/" + c.getName();
-            String repoUrl = "https://quay.io/api/v1/repository/" + repo;
+            String repoUrl = QUAY_URL + "repository/" + repo;
             Optional<String> asStringBuilds = ResourceUtilities.asString(repoUrl, quayToken.getContent(), client);
 
             List<Tag> tags = new ArrayList<>();
@@ -571,19 +571,19 @@ public class Helper {
                             FileResponse cwlResponse = readGitRepositoryFile(c, DOCKSTORE_CWL, client, tag, githubRepositoryService,
                                     githubContentsService, bitbucketToken);
                             if (cwlResponse != null) {
-                                File dockstoreCwl = new File();
-                                dockstoreCwl.setType(DOCKSTORE_CWL);
+                                SourceFile dockstoreCwl = new SourceFile();
+                                dockstoreCwl.setType(SourceFile.FileType.DOCKSTORE_CWL);
                                 dockstoreCwl.setContent(cwlResponse.getContent());
-                                tag.addFile(dockstoreCwl);
+                                tag.addSourceFile(dockstoreCwl);
                             }
 
                             FileResponse dockerfileResponse = readGitRepositoryFile(c, DOCKERFILE, client, tag, githubRepositoryService,
                                     githubContentsService, bitbucketToken);
                             if (dockerfileResponse != null) {
-                                File dockerfile = new File();
-                                dockerfile.setType(DOCKERFILE);
+                                SourceFile dockerfile = new SourceFile();
+                                dockerfile.setType(SourceFile.FileType.DOCKERFILE);
                                 dockerfile.setContent(dockerfileResponse.getContent());
-                                tag.addFile(dockerfile);
+                                tag.addSourceFile(dockerfile);
                             }
 
                             break;
@@ -675,7 +675,7 @@ public class Helper {
 
             // Get the list of builds from the container.
             // Builds contain information such as the Git URL and tags
-            String urlBuilds = "https://quay.io/api/v1/repository/" + repo + "/build/";
+            String urlBuilds = QUAY_URL + "repository/" + repo + "/build/";
             Optional<String> asStringBuilds = ResourceUtilities.asString(urlBuilds, quayToken.getContent(), client);
 
             String gitURL = "";
@@ -847,7 +847,7 @@ public class Helper {
         String branch = null;
 
         if (reference == null) {
-            String mainBranchUrl = "https://bitbucket.org/api/1.0/repositories/" + gitUsername + "/" + gitRepository + "/main-branch";
+            String mainBranchUrl = BITBUCKET_API_URL + "repositories/" + gitUsername + "/" + gitRepository + "/main-branch";
 
             Optional<String> asString = ResourceUtilities.asString(mainBranchUrl, bitbucketTokenContent, client);
             LOG.info("RESOURCE CALL: " + mainBranchUrl);
@@ -872,7 +872,7 @@ public class Helper {
             branch = reference;
         }
 
-        String url = "https://bitbucket.org/api/1.0/repositories/" + gitUsername + "/" + gitRepository + "/raw/" + branch + "/" + fileName;
+        String url = BITBUCKET_API_URL + "repositories/" + gitUsername + "/" + gitRepository + "/raw/" + branch + "/" + fileName;
         Optional<String> asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
         LOG.info("RESOURCE CALL: " + url);
         if (asString.isPresent()) {
@@ -881,8 +881,7 @@ public class Helper {
         } else {
             LOG.info("Branch: " + branch + " has no " + fileName + ". Checking for " + fileName.toLowerCase());
 
-            url = "https://bitbucket.org/api/1.0/repositories/" + gitUsername + "/" + gitRepository + "/raw/" + branch + "/"
-                    + fileName.toLowerCase();
+            url = BITBUCKET_API_URL + "repositories/" + gitUsername + "/" + gitRepository + "/raw/" + branch + "/" + fileName.toLowerCase();
             asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
             LOG.info("RESOURCE CALL: " + url);
             if (asString.isPresent()) {

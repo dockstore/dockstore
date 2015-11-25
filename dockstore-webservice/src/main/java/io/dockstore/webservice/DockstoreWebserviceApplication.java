@@ -18,7 +18,7 @@ package io.dockstore.webservice;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.webservice.core.Container;
-import io.dockstore.webservice.core.File;
+import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Tag;
@@ -78,7 +78,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     }
 
     private final HibernateBundle<DockstoreWebserviceConfiguration> hibernate = new HibernateBundle<DockstoreWebserviceConfiguration>(
-            Token.class, Container.class, User.class, Group.class, Tag.class, Label.class, File.class) {
+            Token.class, Container.class, User.class, Group.class, Tag.class, Label.class, SourceFile.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();

@@ -19,6 +19,8 @@ package io.dockstore.webservice.core;
 import io.swagger.annotations.ApiModel;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -28,16 +30,20 @@ import javax.persistence.Table;
  *
  * @author xliu
  */
-@ApiModel(value = "File")
+@ApiModel(value = "SourceFile")
 @Entity
-@Table(name = "file")
-public class File {
+@Table(name = "sourcefile")
+public class SourceFile {
+    public enum FileType {
+        DOCKSTORE_CWL, DOCKERFILE
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @Column
-    private String type;
+    @Enumerated(EnumType.STRING)
+    private FileType type;
 
     @Column(columnDefinition = "TEXT")
     private String content;
@@ -50,11 +56,11 @@ public class File {
         this.id = id;
     }
 
-    public String getType() {
+    public FileType getType() {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(FileType type) {
         this.type = type;
     }
 
