@@ -24,8 +24,8 @@ import io.swagger.client.Configuration;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.Container;
-import io.swagger.client.model.FileResponse;
 import io.swagger.client.model.RegisterRequest;
+import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.User;
 import java.io.File;
@@ -41,6 +41,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import javassist.NotFoundException;
+import org.apache.http.HttpStatus;
 
 /**
  *
@@ -206,7 +207,7 @@ public class Client {
             List<Container> containers = usersApi.userRegisteredContainers(user.getId());
             printRegisteredList(containers);
         } catch (ApiException ex) {
-            out("Exception: " + ex);
+            kill("Exception: " + ex);
         }
     }
 
@@ -222,7 +223,7 @@ public class Client {
             out("-------------------");
             printContainerList(containers);
         } catch (ApiException ex) {
-            out("Exception: " + ex);
+            kill("Exception: " + ex);
         }
     }
 
@@ -251,10 +252,10 @@ public class Client {
                     if (container != null) {
                         out("Successfully published " + first);
                     } else {
-                        out("Unable to publish " + first);
+                        kill("Unable to publish " + first);
                     }
                 } catch (ApiException ex) {
-                    out("Unable to publish " + first);
+                    kill("Unable to publish " + first);
                 }
             }
         }
@@ -280,7 +281,7 @@ public class Client {
         try {
             Container container = containersApi.getContainerByPath(path);
             if (container == null || !container.getIsRegistered()) {
-                out("This container is not registered.");
+                kill("This container is not registered.");
             } else {
                 // out(container.toString());
                 // out(containersApi.getRegisteredContainer(path).getTags().toString());
@@ -336,7 +337,7 @@ public class Client {
             // } else {
             // out("Exception: " + ex);
             // }
-            out("Could not find container");
+            kill("Could not find container");
         }
     }
 
@@ -345,23 +346,35 @@ public class Client {
             kill("Please provide a container.");
         }
 
-        String path = args.get(0);
+        String[] parts = args.get(0).split(":");
+
+        String path = parts[0];
+
+        String tag = (parts.length > 1) ? parts[1] : null;
 
         try {
             Container container = containersApi.getContainerByPath(path);
             if (container.getHasCollab()) {
-                FileResponse collab = containersApi.cwl(container.getId());
-                if (collab.getContent() != null && !collab.getContent().isEmpty()) {
-                    out(collab.getContent());
-                } else {
-                    out("No cwl file found.");
+                try {
+                    SourceFile file = containersApi.cwl(container.getId(), tag);
+                    if (file.getContent() != null && !file.getContent().isEmpty()) {
+                        out(file.getContent());
+                    } else {
+                        kill("No cwl file found.");
+                    }
+                } catch (ApiException ex) {
+                    if (ex.getCode() == HttpStatus.SC_BAD_REQUEST) {
+                        kill("Invalid tag");
+                    } else {
+                        kill("No cwl file found.");
+                    }
                 }
             } else {
-                out("No cwl file found.");
+                kill("No cwl file found.");
             }
         } catch (ApiException ex) {
             // out("Exception: " + ex);
-            out("Could not find container");
+            kill("Could not find container");
         }
     }
 
@@ -373,7 +386,7 @@ public class Client {
             out("-------------------");
             printContainerList(containers);
         } catch (ApiException ex) {
-            out("Exception: " + ex);
+            kill("Exception: " + ex);
         }
     }
 

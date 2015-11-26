@@ -20,11 +20,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
+import java.util.HashSet;
+import java.util.Set;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import java.util.Date;
 
@@ -71,21 +77,19 @@ public class Tag implements Comparable<Tag>{
     @JsonProperty("cwl_path")
     private String cwlPath = "/Dockstore.cwl";
 
+    @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true)
+    @JoinTable(name = "tagsourcefile", joinColumns = { @JoinColumn(name = "tagid", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "sourcefileid", referencedColumnName = "id") })
+    @ApiModelProperty("Cached files for each tag. Includes Dockerfile and Dockstore.cwl.")
+    private Set<SourceFile> sourceFiles;
+
+    public Tag() {
+        this.sourceFiles = new HashSet<>(0);
+    }
+    
     @Column
     @ApiModelProperty("whether this row is visible to other users aside from the owner")
     private boolean hidden;
 
-    // @ManyToOne(fetch = FetchType.LAZY)
-    // @JoinColumn(name = "containerid", nullable = false)
-    // private Container container;
-    //
-    // public Container getContainer() {
-    // return container;
-    // }
-    //
-    // public void setContainer(Container container) {
-    // this.container = container;
-    // }
 
     public void update(Tag tag) {
         this.setReference(tag.getReference());
@@ -154,6 +158,15 @@ public class Tag implements Comparable<Tag>{
     public void setDockerfilePath(String dockerfilePath) {
         this.dockerfilePath = dockerfilePath;
     }
+    
+    public Set<SourceFile> getSourceFiles() {
+        return sourceFiles;
+    }
+
+    public void addSourceFile(SourceFile file) {
+        sourceFiles.add(file);
+    }
+    
 
     @JsonProperty
     public String getCwlPath() {

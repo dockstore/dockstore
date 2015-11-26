@@ -1,7 +1,7 @@
 package io.swagger.client.model;
 
 import io.swagger.client.StringUtil;
-import io.swagger.client.model.QuayIOAuthenticationResource;
+import io.swagger.client.model.BitbucketOrgAuthenticationResource;
 
 
 
@@ -11,19 +11,19 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @ApiModel(description = "")
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-25T12:45:12.389-05:00")
-public class QuayIOView   {
+public class BitbucketOrgView   {
   
-  private QuayIOAuthenticationResource parent = null;
+  private BitbucketOrgAuthenticationResource parent = null;
 
   
   /**
    **/
   @ApiModelProperty(value = "")
   @JsonProperty("parent")
-  public QuayIOAuthenticationResource getParent() {
+  public BitbucketOrgAuthenticationResource getParent() {
     return parent;
   }
-  public void setParent(QuayIOAuthenticationResource parent) {
+  public void setParent(BitbucketOrgAuthenticationResource parent) {
     this.parent = parent;
   }
 
@@ -32,7 +32,7 @@ public class QuayIOView   {
   @Override
   public String toString()  {
     StringBuilder sb = new StringBuilder();
-    sb.append("class QuayIOView {\n");
+    sb.append("class BitbucketOrgView {\n");
     
     sb.append("    parent: ").append(StringUtil.toIndentedString(parent)).append("\n");
     sb.append("}");

@@ -18,12 +18,14 @@ package io.dockstore.webservice;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.webservice.core.Container;
+import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.ContainerDAO;
+import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.GroupDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
@@ -79,7 +81,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     }
 
     private final HibernateBundle<DockstoreWebserviceConfiguration> hibernate = new HibernateBundle<DockstoreWebserviceConfiguration>(
-            Token.class, Container.class, User.class, Group.class, Tag.class, Label.class) {
+            Token.class, Container.class, User.class, Group.class, Tag.class, Label.class, SourceFile.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
@@ -150,6 +152,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final GroupDAO groupDAO = new GroupDAO(hibernate.getSessionFactory());
         final TagDAO tagDAO = new TagDAO(hibernate.getSessionFactory());
         final LabelDAO labelDAO = new LabelDAO(hibernate.getSessionFactory());
+        final FileDAO fileDAO = new FileDAO(hibernate.getSessionFactory());
 
         LOG.info("This is our custom logger saying that we're about to load authenticators");
         // setup authentication
@@ -162,7 +165,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
         environment.jersey().register(
-                new DockerRepoResource(mapper, httpClient, userDAO, tokenDAO, containerDAO, tagDAO, labelDAO, configuration
+                new DockerRepoResource(mapper, httpClient, userDAO, tokenDAO, containerDAO, tagDAO, labelDAO, fileDAO, configuration
                         .getBitbucketClientID(), configuration.getBitbucketClientSecret()));
         environment.jersey().register(new GitHubRepoResource(httpClient, tokenDAO, userDAO));
         environment.jersey().register(
@@ -180,9 +183,9 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                         configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), httpClient, cachingAuthenticator));
 
         environment.jersey().register(
-                new UserResource(mapper, httpClient, tokenDAO, userDAO, groupDAO, containerDAO, tagDAO, configuration.getGithubClientID(),
-                        configuration.getGithubClientSecret(), configuration.getBitbucketClientID(), configuration
-                                .getBitbucketClientSecret()));
+                new UserResource(mapper, httpClient, tokenDAO, userDAO, groupDAO, containerDAO, tagDAO, fileDAO, configuration
+                        .getGithubClientID(), configuration.getGithubClientSecret(), configuration.getBitbucketClientID(), configuration
+                        .getBitbucketClientSecret()));
 
 
         // swagger stuff

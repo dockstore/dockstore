@@ -1,7 +1,7 @@
 package io.swagger.client.model;
 
 import io.swagger.client.StringUtil;
-import io.swagger.client.model.QuayIOView;
+import io.swagger.client.model.BitbucketOrgView;
 
 
 
@@ -11,11 +11,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @ApiModel(description = "")
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-25T12:45:12.389-05:00")
-public class QuayIOAuthenticationResource   {
+public class BitbucketOrgAuthenticationResource   {
   
   private String clientID = null;
-  private String redirectURI = null;
-  private QuayIOView view = null;
+  private BitbucketOrgView view = null;
 
   
   /**
@@ -33,23 +32,11 @@ public class QuayIOAuthenticationResource   {
   /**
    **/
   @ApiModelProperty(value = "")
-  @JsonProperty("redirectURI")
-  public String getRedirectURI() {
-    return redirectURI;
-  }
-  public void setRedirectURI(String redirectURI) {
-    this.redirectURI = redirectURI;
-  }
-
-  
-  /**
-   **/
-  @ApiModelProperty(value = "")
   @JsonProperty("view")
-  public QuayIOView getView() {
+  public BitbucketOrgView getView() {
     return view;
   }
-  public void setView(QuayIOView view) {
+  public void setView(BitbucketOrgView view) {
     this.view = view;
   }
 
@@ -58,10 +45,9 @@ public class QuayIOAuthenticationResource   {
   @Override
   public String toString()  {
     StringBuilder sb = new StringBuilder();
-    sb.append("class QuayIOAuthenticationResource {\n");
+    sb.append("class BitbucketOrgAuthenticationResource {\n");
     
     sb.append("    clientID: ").append(StringUtil.toIndentedString(clientID)).append("\n");
-    sb.append("    redirectURI: ").append(StringUtil.toIndentedString(redirectURI)).append("\n");
     sb.append("    view: ").append(StringUtil.toIndentedString(view)).append("\n");
     sb.append("}");
     return sb.toString();

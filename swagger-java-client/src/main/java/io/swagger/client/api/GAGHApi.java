@@ -11,13 +11,13 @@ import io.swagger.client.model.*;
 import java.util.*;
 
 import io.swagger.client.model.Container;
-import io.swagger.client.model.FileResponse;
+import io.swagger.client.model.SourceFile;
 
 import java.io.File;
 import java.util.Map;
 import java.util.HashMap;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-13T14:06:54.737-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-25T12:45:12.389-05:00")
 public class GAGHApi {
   private ApiClient apiClient;
 
@@ -124,10 +124,11 @@ public class GAGHApi {
   /**
    * Get the corresponding Dockstore.cwl file on Github. This would be a minimal resource that would need to be implemented by a GA4GH reference server
    * Does not need authentication
-   * @param containerId Container id to delete
-   * @return FileResponse
+   * @param containerId Container id
+   * @param tag 
+   * @return SourceFile
    */
-  public FileResponse cwl (Long containerId) throws ApiException {
+  public SourceFile cwl (Long containerId, String tag) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'containerId' is set
@@ -145,6 +146,8 @@ public class GAGHApi {
     Map<String, Object> formParams = new HashMap<String, Object>();
 
     
+    queryParams.addAll(apiClient.parameterToPairs("", "tag", tag));
+    
 
     
 
@@ -163,7 +166,7 @@ public class GAGHApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<FileResponse>() {};
+    TypeRef returnType = new TypeRef<SourceFile>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -171,10 +174,11 @@ public class GAGHApi {
   /**
    * Get the corresponding Dockerfile on Github. This would be a minimal resource that would need to be implemented by a GA4GH reference server
    * Does not need authentication
-   * @param containerId Container id to delete
-   * @return FileResponse
+   * @param containerId Container id
+   * @param tag 
+   * @return SourceFile
    */
-  public FileResponse dockerfile (Long containerId) throws ApiException {
+  public SourceFile dockerfile (Long containerId, String tag) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'containerId' is set
@@ -192,6 +196,8 @@ public class GAGHApi {
     Map<String, Object> formParams = new HashMap<String, Object>();
 
     
+    queryParams.addAll(apiClient.parameterToPairs("", "tag", tag));
+    
 
     
 
@@ -210,7 +216,7 @@ public class GAGHApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<FileResponse>() {};
+    TypeRef returnType = new TypeRef<SourceFile>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }

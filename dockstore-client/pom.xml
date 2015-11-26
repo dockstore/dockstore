@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
-        <version>0.1.1-SNAPSHOT</version>
+        <version>0.1.2-SNAPSHOT</version>
     </parent>
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore-client</artifactId>
@@ -23,7 +23,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-client</artifactId>
-            <version>0.1.1-SNAPSHOT</version>
+            <version>0.1.2-SNAPSHOT</version>
             
         </dependency>
         
@@ -52,6 +52,12 @@
                     <artifactId>junit</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore</artifactId>
+            <version>4.4.1</version>
         </dependency>
 
     </dependencies>
@@ -234,6 +240,7 @@
                             <ignoreNonCompile>true</ignoreNonCompile>
 
                             <usedDependencies>
+                                <usedDependency>org.apache.httpcomponents:httpcore</usedDependency>
                             </usedDependencies>
 
                         </configuration>
