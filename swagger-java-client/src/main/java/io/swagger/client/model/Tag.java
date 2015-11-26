@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 @ApiModel(description = "")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-25T12:45:12.389-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-26T15:35:08.177-05:00")
 public class Tag   {
   
   private Long id = null;
@@ -20,8 +20,11 @@ public class Tag   {
   private Long size = null;
   private String reference = null;
   private List<SourceFile> sourceFiles = new ArrayList<SourceFile>();
+  private Boolean hidden = null;
   private String imageId = null;
   private Date lastModified = null;
+  private String dockerfilePath = null;
+  private String cwlPath = null;
 
   
   /**
@@ -37,8 +40,9 @@ public class Tag   {
 
   
   /**
+   * git commit/tag/branch
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "git commit/tag/branch")
   @JsonProperty("name")
   public String getName() {
     return name;
@@ -49,8 +53,9 @@ public class Tag   {
 
   
   /**
+   * size of the image
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "size of the image")
   @JsonProperty("size")
   public Long getSize() {
     return size;
@@ -61,8 +66,9 @@ public class Tag   {
 
   
   /**
+   * git commit/tag/branch ... may be a duplicate of name or vice versa
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "git commit/tag/branch ... may be a duplicate of name or vice versa")
   @JsonProperty("reference")
   public String getReference() {
     return reference;
@@ -86,8 +92,22 @@ public class Tag   {
 
   
   /**
+   * whether this row is visible to other users aside from the owner
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "whether this row is visible to other users aside from the owner")
+  @JsonProperty("hidden")
+  public Boolean getHidden() {
+    return hidden;
+  }
+  public void setHidden(Boolean hidden) {
+    this.hidden = hidden;
+  }
+
+  
+  /**
+   * Tag for this image in quay.ui/docker hub
+   **/
+  @ApiModelProperty(value = "Tag for this image in quay.ui/docker hub")
   @JsonProperty("image_id")
   public String getImageId() {
     return imageId;
@@ -109,6 +129,30 @@ public class Tag   {
   }
 
   
+  /**
+   **/
+  @ApiModelProperty(value = "")
+  @JsonProperty("dockerfile_path")
+  public String getDockerfilePath() {
+    return dockerfilePath;
+  }
+  public void setDockerfilePath(String dockerfilePath) {
+    this.dockerfilePath = dockerfilePath;
+  }
+
+  
+  /**
+   **/
+  @ApiModelProperty(value = "")
+  @JsonProperty("cwl_path")
+  public String getCwlPath() {
+    return cwlPath;
+  }
+  public void setCwlPath(String cwlPath) {
+    this.cwlPath = cwlPath;
+  }
+
+  
 
   @Override
   public String toString()  {
@@ -120,8 +164,11 @@ public class Tag   {
     sb.append("    size: ").append(StringUtil.toIndentedString(size)).append("\n");
     sb.append("    reference: ").append(StringUtil.toIndentedString(reference)).append("\n");
     sb.append("    sourceFiles: ").append(StringUtil.toIndentedString(sourceFiles)).append("\n");
+    sb.append("    hidden: ").append(StringUtil.toIndentedString(hidden)).append("\n");
     sb.append("    imageId: ").append(StringUtil.toIndentedString(imageId)).append("\n");
     sb.append("    lastModified: ").append(StringUtil.toIndentedString(lastModified)).append("\n");
+    sb.append("    dockerfilePath: ").append(StringUtil.toIndentedString(dockerfilePath)).append("\n");
+    sb.append("    cwlPath: ").append(StringUtil.toIndentedString(cwlPath)).append("\n");
     sb.append("}");
     return sb.toString();
   }
