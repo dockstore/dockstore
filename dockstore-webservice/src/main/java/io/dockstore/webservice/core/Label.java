@@ -16,16 +16,17 @@
  */
 package io.dockstore.webservice.core;
 
-
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Objects;
 import io.swagger.annotations.ApiModel;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.Table;
 import javax.persistence.NamedQuery;
+import javax.persistence.Table;
 
 /**
  *
@@ -36,7 +37,7 @@ import javax.persistence.NamedQuery;
 @Table(name = "label")
 @NamedQuery(name = "io.dockstore.webservice.core.Label.findByLabelValue",
 			query = "SELECT l FROM Label l WHERE l.value = :labelValue")
-public class Label {
+public class Label implements Comparable<Label>{
 	
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -59,4 +60,21 @@ public class Label {
         this.value = value;
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id, value);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {return true;}
+        if (obj == null || getClass() != obj.getClass()) {return false;}
+        final Label other = (Label) obj;
+        return Objects.equal(this.id, other.id) && Objects.equal(this.value, other.value);
+    }
+
+    @Override
+    public int compareTo(Label o) {
+        return value.compareTo(o.getValue());
+    }
 }

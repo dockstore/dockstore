@@ -33,6 +33,7 @@ import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.resources.BitbucketOrgAuthenticationResource;
 import io.dockstore.webservice.resources.DockerRepoResource;
+import io.dockstore.webservice.resources.DockerRepoTagResource;
 import io.dockstore.webservice.resources.GitHubComAuthenticationResource;
 import io.dockstore.webservice.resources.GitHubRepoResource;
 import io.dockstore.webservice.resources.QuayIOAuthenticationResource;
@@ -53,17 +54,19 @@ import io.dropwizard.views.ViewBundle;
 import io.swagger.jaxrs.config.BeanConfig;
 import io.swagger.jaxrs.listing.ApiListingResource;
 import io.swagger.jaxrs.listing.SwaggerSerializers;
-import java.util.EnumSet;
-import static javax.servlet.DispatcherType.REQUEST;
 import org.apache.http.client.HttpClient;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.EnumSet;
+
+import static javax.servlet.DispatcherType.REQUEST;
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ACCESS_CONTROL_ALLOW_METHODS_HEADER;
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_HEADERS_PARAM;
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_METHODS_PARAM;
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_ORIGINS_PARAM;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -124,14 +127,12 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // serve static html as well
         bootstrap.addBundle(new AssetsBundle("/assets/", "/static/"));
         // enable views
-        bootstrap.addBundle(new ViewBundle<DockstoreWebserviceConfiguration>());
+        bootstrap.addBundle(new ViewBundle<>());
     }
 
     @Override
     public void run(DockstoreWebserviceConfiguration configuration, Environment environment) {
         BeanConfig beanConfig = new BeanConfig();
-        beanConfig.setVersion("1.0.2");
-        beanConfig.setTitle("Dockstore API");
         beanConfig.setSchemes(new String[] { configuration.getScheme() });
         beanConfig.setHost(configuration.getHostname() + ":" + configuration.getPort());
         beanConfig.setBasePath("/");
@@ -158,7 +159,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         SimpleAuthenticator authenticator = new SimpleAuthenticator(tokenDAO);
         CachingAuthenticator<String, Token> cachingAuthenticator = new CachingAuthenticator<>(environment.metrics(), authenticator,
                 configuration.getAuthenticationCachePolicy());
-        environment.jersey().register(AuthFactory.binder(new OAuthFactory<Token>(cachingAuthenticator, "SUPER SECRET STUFF", Token.class)));
+        environment.jersey().register(AuthFactory.binder(new OAuthFactory<>(cachingAuthenticator, "SUPER SECRET STUFF", Token.class)));
 
         final ObjectMapper mapper = environment.getObjectMapper();
 
@@ -167,6 +168,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 new DockerRepoResource(mapper, httpClient, userDAO, tokenDAO, containerDAO, tagDAO, labelDAO, fileDAO, configuration
                         .getBitbucketClientID(), configuration.getBitbucketClientSecret()));
         environment.jersey().register(new GitHubRepoResource(httpClient, tokenDAO, userDAO));
+        environment.jersey().register(
+                new DockerRepoTagResource(httpClient, userDAO, tokenDAO, containerDAO, tagDAO, labelDAO));
 
         final GitHubComAuthenticationResource resource3 = new GitHubComAuthenticationResource(configuration.getGithubClientID(),
                 configuration.getGithubRedirectURI());
@@ -183,6 +186,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 new UserResource(mapper, httpClient, tokenDAO, userDAO, groupDAO, containerDAO, tagDAO, fileDAO, configuration
                         .getGithubClientID(), configuration.getGithubClientSecret(), configuration.getBitbucketClientID(), configuration
                         .getBitbucketClientSecret()));
+
 
         // swagger stuff
 

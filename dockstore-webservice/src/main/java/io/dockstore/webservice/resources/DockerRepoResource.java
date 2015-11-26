@@ -40,13 +40,11 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -56,17 +54,22 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  *
  * @author dyuen
  */
 @Path("/containers")
-@Api(value = "/containers")
+@Api(value = "containers")
 @Produces(MediaType.APPLICATION_JSON)
 public class DockerRepoResource {
 
@@ -104,18 +107,6 @@ public class DockerRepoResource {
         this.bitbucketClientSecret = bitbucketClientSecret;
 
         this.containerDAO = containerDAO;
-
-        // TODO: these need to be removed, Quay.io owes us an API fix to allow us to remove these
-        // namespaces.add("victoroicr");
-        // namespaces.add("xliuoicr");
-        // namespaces.add("oicr_vchung");
-        // namespaces.add("oicr_vchung_org");
-        // namespaces.add("denis-yuen");
-        // namespaces.add("seqware");
-        // namespaces.add("boconnor");
-        // namespaces.add("briandoconnor");
-        // namespaces.add("collaboratory");
-        // namespaces.add("pancancer");
     }
 
     @GET
@@ -187,7 +178,7 @@ public class DockerRepoResource {
         Helper.checkContainer(c);
 
         if (labelStrings.length() == 0) {
-            c.setLabels(new HashSet<>(0));
+        	c.setLabels(new TreeSet<>());
         } else {
             Set<String> labelStringSet = new HashSet<String>(Arrays.asList(labelStrings.toLowerCase().split("\\s*,\\s*")));
             final String labelStringPattern = "^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$";
@@ -195,7 +186,7 @@ public class DockerRepoResource {
             // This matches the restriction on labels to 255 characters
             // if this is changed then the java object/mapped db schema needs to be changed
             final int labelMaxLength = 255;
-            Set<Label> labels = new HashSet<Label>();
+            SortedSet<Label> labels = new TreeSet<Label>();
             for (final String labelString : labelStringSet) {
                 if (labelString.length() <= labelMaxLength && labelString.matches(labelStringPattern)) {
                     Label label = labelDAO.findByLabelValue(labelString);

@@ -16,11 +16,10 @@
  */
 package io.dockstore.webservice.core;
 
-//import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import java.util.Date;
+
 import java.util.HashSet;
 import java.util.Set;
 import javax.persistence.Column;
@@ -33,6 +32,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import java.util.Date;
 
 /**
  *
@@ -42,16 +42,18 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "tag")
 // @JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class, property = "@id")
-public class Tag {
+public class Tag implements Comparable<Tag>{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
     @Column
+    @ApiModelProperty("git commit/tag/branch")
     private String name;
 
     @Column
     @JsonProperty("image_id")
+    @ApiModelProperty("Tag for this image in quay.ui/docker hub")
     private String imageId;
 
     @Column
@@ -59,10 +61,21 @@ public class Tag {
     private Date lastModified;
 
     @Column
+    @ApiModelProperty("size of the image")
     private long size;
 
+    //TODO: determine whether this is duplicated information
     @Column
+    @ApiModelProperty("git commit/tag/branch ... may be a duplicate of name or vice versa")
     private String reference;
+
+    @Column(columnDefinition="text")
+    @JsonProperty("dockerfile_path")
+    private String dockerfilePath = "/Dockerfile";
+
+    @Column(columnDefinition="text")
+    @JsonProperty("cwl_path")
+    private String cwlPath = "/Dockstore.cwl";
 
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true)
     @JoinTable(name = "tagsourcefile", joinColumns = { @JoinColumn(name = "tagid", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "sourcefileid", referencedColumnName = "id") })
@@ -71,6 +84,20 @@ public class Tag {
 
     public Tag() {
         this.sourceFiles = new HashSet<>(0);
+    }
+    
+    @Column
+    @ApiModelProperty("whether this row is visible to other users aside from the owner")
+    private boolean hidden;
+
+
+    public void update(Tag tag) {
+        this.setReference(tag.getReference());
+        this.setName(tag.getName());
+        this.setImageId(tag.getImageId());
+        this.setHidden(tag.isHidden());
+        this.setCwlPath(tag.getCwlPath());
+        this.setDockerfilePath(tag.getDockerfilePath());
     }
 
     @JsonProperty
@@ -123,11 +150,44 @@ public class Tag {
         this.reference = reference;
     }
 
+    @JsonProperty
+    public String getDockerfilePath() {
+        return dockerfilePath;
+    }
+
+    public void setDockerfilePath(String dockerfilePath) {
+        this.dockerfilePath = dockerfilePath;
+    }
+    
     public Set<SourceFile> getSourceFiles() {
         return sourceFiles;
     }
 
     public void addSourceFile(SourceFile file) {
         sourceFiles.add(file);
+    }
+    
+
+    @JsonProperty
+    public String getCwlPath() {
+        return cwlPath;
+    }
+
+    public void setCwlPath(String cwlPath) {
+        this.cwlPath = cwlPath;
+    }
+
+    @JsonProperty
+    public boolean isHidden() {
+        return hidden;
+    }
+
+    public void setHidden(boolean hidden) {
+        this.hidden = hidden;
+    }
+
+    @Override
+    public int compareTo(Tag o) {
+        return Long.compare(this.getId(),o.getId());
     }
 }

@@ -16,17 +16,15 @@
  */
 package io.dockstore.webservice.core;
 
-//import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
+
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -38,8 +36,11 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
-
-//import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  *
@@ -63,6 +64,11 @@ public class Container {
     @ApiModelProperty("Implementation specific ID for the container in this web service")
     private long id;
 
+    @Column(nullable = false, columnDefinition="Text default 'AUTO_DETECT_QUAY_TAGS'")
+    @Enumerated(EnumType.STRING)
+    @ApiModelProperty("This indicates what mode this is in which informs how we do things like refresh")
+    private ContainerMode mode = ContainerMode.AUTO_DETECT_QUAY_TAGS;
+
     @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinTable(name = "usercontainer", inverseJoinColumns = { @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id") }, joinColumns = { @JoinColumn(name = "containerid", nullable = false, updatable = false, referencedColumnName = "id") })
     private Set<User> users;
@@ -70,6 +76,23 @@ public class Container {
     @Column(nullable = false)
     @ApiModelProperty("This is the name of the container, required: GA4GH")
     private String name;
+
+    @Column(columnDefinition="text")
+    @JsonProperty("default_dockerfile_path")
+    private String defaultDockerfilePath = "/Dockerfile";
+
+    @Column(columnDefinition="text")
+    @JsonProperty("default_cwl_path")
+    private String defaultCwlPath = "/Dockstore.cwl";
+
+    @Column
+    @ApiModelProperty("This is the tool name of the container, when not-present this will function just like 0.1 dockstore"
+            + "when present, this can be used to distinguish between two containers based on the same image, but associated with different "
+            + "CWL and Dockerfile documents. i.e. two containers with the same registry+namespace+name but different toolnames "
+            + "will be two different entries in the dockstore registry/namespace/name/tool, different options to edit tags, and "
+            + "only the same insofar as they would \"docker pull\" the same image, required: GA4GH")
+    private String toolname = null;
+
     @Column
     @ApiModelProperty("This is a docker namespace for the container, required: GA4GH")
     private String namespace;
@@ -77,7 +100,7 @@ public class Container {
     @ApiModelProperty("This is a specific docker provider like quay.io or dockerhub or n/a?, required: GA4GH")
     private String registry;
     @Column
-    @ApiModelProperty("This is a generated full docker path including registry and namespace")
+    @ApiModelProperty("This is a generated full docker path including registry and namespace, used for docker pull commands")
     private String path;
     @Column
     @ApiModelProperty("This is the name of the author stated in the Dockstore.cwl")
@@ -109,21 +132,24 @@ public class Container {
     @ApiModelProperty("Implementation specific indication as to whether this is properly registered with this web service")
     private boolean isRegistered;
     @Column
+    @ApiModelProperty("This image has a Dockstore.cwl associated with it")
     private boolean hasCollab;
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinTable(name = "containertag", joinColumns = { @JoinColumn(name = "containerid", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "tagid", referencedColumnName = "id") })
     @ApiModelProperty("Implementation specific tracking of valid build tags for the docker container")
-    private Set<Tag> tags;
+    @javax.persistence.OrderBy("id")
+    private SortedSet<Tag> tags;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "containerlabel", joinColumns = { @JoinColumn(name = "containerid", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "labelid", referencedColumnName = "id") })
     @ApiModelProperty("Labels (i.e. meta tags) for describing the purpose and contents of containers")
-    private Set<Label> labels;
+    @javax.persistence.OrderBy("id")
+    private SortedSet<Label> labels;
 
     public Container() {
-        this.tags = new HashSet<>(0);
-        this.labels = new HashSet<>(0);
+        this.tags = new TreeSet<>();
+        this.labels = new TreeSet<>();
         this.users = new HashSet<>(0);
     }
 
@@ -131,8 +157,8 @@ public class Container {
         this.id = id;
         // this.userId = userId;
         this.name = name;
-        this.tags = new HashSet<>(0);
-        this.labels = new HashSet<>(0);
+        this.tags = new TreeSet<>();
+        this.labels = new TreeSet<>();
         this.users = new HashSet<>(0);
     }
 
@@ -254,7 +280,7 @@ public class Container {
         return labels;
     }
 
-    public void setLabels(Set<Label> labels) {
+    public void setLabels(SortedSet<Label> labels) {
         this.labels = labels;
     }
 
@@ -374,5 +400,32 @@ public class Container {
 
     public boolean removeUser(User user) {
         return users.remove(user);
+    }
+
+    @JsonProperty
+    public ContainerMode getMode() {
+        return mode;
+    }
+
+    public void setMode(ContainerMode mode) {
+        this.mode = mode;
+    }
+
+    @JsonProperty
+    public String getDefaultDockerfilePath() {
+        return defaultDockerfilePath;
+    }
+
+    public void setDefaultDockerfilePath(String defaultDockerfilePath) {
+        this.defaultDockerfilePath = defaultDockerfilePath;
+    }
+
+    @JsonProperty
+    public String getDefaultCwlPath() {
+        return defaultCwlPath;
+    }
+
+    public void setDefaultCwlPath(String defaultCwlPath) {
+        this.defaultCwlPath = defaultCwlPath;
     }
 }
