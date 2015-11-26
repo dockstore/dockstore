@@ -68,7 +68,6 @@ import java.util.regex.Pattern;
 public class Helper {
     private static final Logger LOG = LoggerFactory.getLogger(Helper.class);
 
-    private static final String GIT_URL = "https://github.com/";
     private static final String QUAY_URL = "https://quay.io/api/v1/";
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
     private static final String BITBUCKET_API_URL = "https://bitbucket.org/api/1.0/";
@@ -390,7 +389,6 @@ public class Helper {
      * 
      * @param container
      * @param client
-     * @param tokenDAO
      * @return the updated container
      */
     private static Container findBitbucketCWL(Container container, HttpClient client, Token token) {
@@ -476,7 +474,7 @@ public class Helper {
 
             Map<String, ArrayList> map = new HashMap<>();
             map = (Map<String, ArrayList>) gson.fromJson(response, map.getClass());
-            ArrayList organizations = map.get("organizations");
+            List organizations = map.get("organizations");
 
             for (int i = 0; i < organizations.size(); i++) {
                 Map<String, String> map2 = new HashMap<>();
@@ -539,7 +537,7 @@ public class Helper {
                 }
 
             }
-            ArrayList builds = mapOfBuilds.get(c.getPath());
+            List builds = mapOfBuilds.get(c.getPath());
 
             if (builds != null && !builds.isEmpty()) {
                 for (Tag tag : tags) {
@@ -556,7 +554,7 @@ public class Helper {
                         Map<String, ArrayList<String>> tagsMap = new HashMap<>();
                         tagsMap = (Map<String, ArrayList<String>>) build;
 
-                        ArrayList<String> buildTags = tagsMap.get("tags");
+                        List<String> buildTags = tagsMap.get("tags");
 
                         if (buildTags.contains(tag.getName())) {
                             LOG.info("Build found with tag: " + tag.getName());
@@ -699,7 +697,7 @@ public class Helper {
                     gitURL = map2.get("trigger_metadata").get("git_url");
 
                     Map<String, String> map3 = (Map<String, String>) builds.get(0);
-                    String lastBuild = (String) map3.get("started");
+                    String lastBuild = map3.get("started");
                     LOG.info("LAST BUILD: " + lastBuild);
 
                     Date date = null;
