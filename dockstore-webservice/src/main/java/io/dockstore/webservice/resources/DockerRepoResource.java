@@ -101,18 +101,6 @@ public class DockerRepoResource {
         this.bitbucketClientSecret = bitbucketClientSecret;
 
         this.containerDAO = containerDAO;
-
-        // TODO: these need to be removed, Quay.io owes us an API fix to allow us to remove these
-        // namespaces.add("victoroicr");
-        // namespaces.add("xliuoicr");
-        // namespaces.add("oicr_vchung");
-        // namespaces.add("oicr_vchung_org");
-        // namespaces.add("denis-yuen");
-        // namespaces.add("seqware");
-        // namespaces.add("boconnor");
-        // namespaces.add("briandoconnor");
-        // namespaces.add("collaboratory");
-        // namespaces.add("pancancer");
     }
 
     @GET

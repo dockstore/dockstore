@@ -8,6 +8,7 @@ import io.swagger.annotations.SwaggerDefinition;
 import io.swagger.annotations.Tag;
 
 /**
+ * This is a dummy class used to describe the swagger API as a whole
  * @author dyuen
  */
 @SwaggerDefinition(
@@ -30,6 +31,7 @@ import io.swagger.annotations.Tag;
         produces = {"application/json"},
         tags = {
                 @Tag(name = "containers", description = "List and register entries in the dockstore (pairs of images + metadata (CWL and Dockerfile))"),
+                @Tag(name = "containertags", description = "List and modify tags for containers"),
                 @Tag(name = "GA4GH", description = "A curated subset of resources proposed as a common standard for tool repositories"),
                 @Tag(name = "github.repo", description = "List source code repositories (should be generalized from github)"),
                 @Tag(name = "integration.bitbucket.org", description = "stop-gap allowing developers to associate with bitbucket"),

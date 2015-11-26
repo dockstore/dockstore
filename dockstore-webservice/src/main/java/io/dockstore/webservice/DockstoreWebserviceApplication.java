@@ -31,6 +31,7 @@ import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.resources.BitbucketOrgAuthenticationResource;
 import io.dockstore.webservice.resources.DockerRepoResource;
+import io.dockstore.webservice.resources.DockerRepoTagResource;
 import io.dockstore.webservice.resources.GitHubComAuthenticationResource;
 import io.dockstore.webservice.resources.GitHubRepoResource;
 import io.dockstore.webservice.resources.QuayIOAuthenticationResource;
@@ -155,7 +156,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         SimpleAuthenticator authenticator = new SimpleAuthenticator(tokenDAO);
         CachingAuthenticator<String, Token> cachingAuthenticator = new CachingAuthenticator<>(environment.metrics(), authenticator,
                 configuration.getAuthenticationCachePolicy());
-        environment.jersey().register(AuthFactory.binder(new OAuthFactory<Token>(cachingAuthenticator, "SUPER SECRET STUFF", Token.class)));
+        environment.jersey().register(AuthFactory.binder(new OAuthFactory<>(cachingAuthenticator, "SUPER SECRET STUFF", Token.class)));
 
         final ObjectMapper mapper = environment.getObjectMapper();
 
@@ -164,6 +165,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 new DockerRepoResource(mapper, httpClient, userDAO, tokenDAO, containerDAO, tagDAO, labelDAO, configuration
                         .getBitbucketClientID(), configuration.getBitbucketClientSecret()));
         environment.jersey().register(new GitHubRepoResource(httpClient, tokenDAO, userDAO));
+        environment.jersey().register(
+                new DockerRepoTagResource(httpClient, userDAO, tokenDAO, containerDAO, tagDAO, labelDAO));
 
         final GitHubComAuthenticationResource resource3 = new GitHubComAuthenticationResource(configuration.getGithubClientID(),
                 configuration.getGithubRedirectURI());
@@ -180,6 +183,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 new UserResource(mapper, httpClient, tokenDAO, userDAO, groupDAO, containerDAO, tagDAO, configuration.getGithubClientID(),
                         configuration.getGithubClientSecret(), configuration.getBitbucketClientID(), configuration
                                 .getBitbucketClientSecret()));
+
 
         // swagger stuff
 
