@@ -64,10 +64,10 @@ public class Container {
     @ApiModelProperty("Implementation specific ID for the container in this web service")
     private long id;
 
-    @Column(nullable = false, columnDefinition="Text default 'AUTO_DETECT_QUAY'")
+    @Column(nullable = false, columnDefinition="Text default 'AUTO_DETECT_QUAY_TAGS'")
     @Enumerated(EnumType.STRING)
     @ApiModelProperty("This indicates what mode this is in which informs how we do things like refresh")
-    private ContainerMode mode = ContainerMode.AUTO_DETECT_QUAY;
+    private ContainerMode mode = ContainerMode.AUTO_DETECT_QUAY_TAGS;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinTable(name = "usercontainer", inverseJoinColumns = { @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id") }, joinColumns = { @JoinColumn(name = "containerid", nullable = false, updatable = false, referencedColumnName = "id") })
