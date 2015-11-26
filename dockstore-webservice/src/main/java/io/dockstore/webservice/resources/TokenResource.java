@@ -82,6 +82,8 @@ public class TokenResource {
     private final HttpClient client;
     private final ObjectMapper objectMapper;
 
+    private static final int MAX_ITERATIONS = 5;
+
     private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
     private final CachingAuthenticator<String, Token> cachingAuthenticator;
 
@@ -227,14 +229,35 @@ public class TokenResource {
             + "Once a user has approved permissions for Collaboratory"
             + "Their browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addGithubToken(@QueryParam("code") String code) {
-        Optional<String> asString = ResourceUtilities.asString(GIT_URL + "login/oauth/access_token?code=" + code + "&client_id="
-                + githubClientID + "&client_secret=" + githubClientSecret, null, client);
-        String accessToken;
-        if (asString.isPresent()) {
-            Map<String, String> split = Splitter.on('&').trimResults().withKeyValueSeparator("=").split(asString.get());
-            accessToken = split.get("access_token");
-        } else {
-            throw new WebApplicationException("Could not retrieve github.com token based on code");
+        String accessToken = null;
+        String error = null;
+        int count = MAX_ITERATIONS;
+        while (true) {
+            Optional<String> asString = ResourceUtilities.asString(GIT_URL + "login/oauth/access_token?code=" + code + "&client_id="
+                    + githubClientID + "&client_secret=" + githubClientSecret, null, client);
+
+            if (asString.isPresent()) {
+                Map<String, String> split = Splitter.on('&').trimResults().withKeyValueSeparator("=").split(asString.get());
+                accessToken = split.get("access_token");
+                error = split.get("error");
+            } else {
+                throw new WebApplicationException("Could not retrieve github.com token based on code");
+            }
+
+            if (error != null && error.equals("bad_verification_code")) {
+                LOG.info("ERROR: " + error);
+                if (--count == 0) {
+                    throw new WebApplicationException("Could not retrieve github.com token based on code");
+                } else {
+                    LOG.info("trying again...");
+                }
+            } else if (accessToken != null && !accessToken.isEmpty()) {
+                LOG.info("Successfully recieved accessToken: " + accessToken);
+                break;
+            } else {
+                LOG.info("Retrieving accessToken was unsuccessful");
+                throw new WebApplicationException("Could not retrieve github.com token based on code");
+            }
         }
 
         GitHubClient githubClient = new GitHubClient();
