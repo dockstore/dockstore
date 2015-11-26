@@ -59,6 +59,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  *
@@ -176,13 +178,13 @@ public class DockerRepoResource {
         Helper.checkContainer(c);
         
         if (labelStrings.length() == 0) {
-        	c.setLabels(new HashSet<>(0));
+        	c.setLabels(new TreeSet<>());
         } else {
         	Set<String> labelStringSet = new HashSet<String>(
         			Arrays.asList(labelStrings.toLowerCase().split("\\s*,\\s*")));
             final String labelStringPattern = "^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$";
             final int labelMaxLength = 255;
-            Set<Label> labels = new HashSet<Label>();
+            SortedSet<Label> labels = new TreeSet<Label>();
             for (final String labelString : labelStringSet) {
             	if (labelString.length() <= labelMaxLength
             			&& labelString.matches(labelStringPattern)) {

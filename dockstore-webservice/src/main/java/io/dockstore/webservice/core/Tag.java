@@ -36,7 +36,7 @@ import java.util.Date;
 @Entity
 @Table(name = "tag")
 // @JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class, property = "@id")
-public class Tag {
+public class Tag implements Comparable<Tag>{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
@@ -71,6 +71,10 @@ public class Tag {
     @JsonProperty("cwl_path")
     private String cwlPath = "/Dockstore.cwl";
 
+    @Column
+    @ApiModelProperty("whether this row is visible to other users aside from the owner")
+    private boolean hidden;
+
     // @ManyToOne(fetch = FetchType.LAZY)
     // @JoinColumn(name = "containerid", nullable = false)
     // private Container container;
@@ -82,6 +86,15 @@ public class Tag {
     // public void setContainer(Container container) {
     // this.container = container;
     // }
+
+    public void update(Tag tag) {
+        this.setReference(tag.getReference());
+        this.setName(tag.getName());
+        this.setImageId(tag.getImageId());
+        this.setHidden(tag.isHidden());
+        this.setCwlPath(tag.getCwlPath());
+        this.setDockerfilePath(tag.getDockerfilePath());
+    }
 
     @JsonProperty
     public long getId() {
@@ -149,5 +162,19 @@ public class Tag {
 
     public void setCwlPath(String cwlPath) {
         this.cwlPath = cwlPath;
+    }
+
+    @JsonProperty
+    public boolean isHidden() {
+        return hidden;
+    }
+
+    public void setHidden(boolean hidden) {
+        this.hidden = hidden;
+    }
+
+    @Override
+    public int compareTo(Tag o) {
+        return Long.compare(this.getId(),o.getId());
     }
 }

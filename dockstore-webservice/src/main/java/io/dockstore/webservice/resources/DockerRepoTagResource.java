@@ -37,12 +37,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -101,7 +104,7 @@ public class DockerRepoTagResource {
     @ApiOperation(value = "Update the tags linked to a container",
             notes = "Tag correspond to each row of the versions table listing all information for a docker repo tag",
             response = Tag.class, responseContainer = "List")
-    public Container updateTags(@ApiParam(hidden = true) @Auth Token authToken,
+    public Set<Tag> updateTags(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "Container to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "List of modified tags", required = true) List<Tag> tags) {
 
@@ -111,13 +114,49 @@ public class DockerRepoTagResource {
         User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
 
+        // create a map for quick lookup
+        Map<Long, Tag> mapOfExistingTags = new HashMap<>();
+        for(Tag tag : c.getTags()){
+            mapOfExistingTags.put(tag.getId(), tag);
+        }
+
+        for(Tag tag : tags){
+            if (mapOfExistingTags.containsKey(tag.getId())){
+                // remove existing copy and add the new one
+                final Tag existingTag = mapOfExistingTags.get(tag.getId());
+                existingTag.update(tag);
+            }
+        }
+        Container result = containerDAO.findById(containerId);
+        Helper.checkContainer(result);
+        return result.getTags();
+    }
+
+    @POST
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}/tags")
+    @ApiOperation(value = "Add new tags linked to a container",
+            notes = "Tag correspond to each row of the versions table listing all information for a docker repo tag",
+            response = Tag.class, responseContainer = "List")
+    public Set<Tag> addTags(@ApiParam(hidden = true) @Auth Token authToken,
+            @ApiParam(value = "Container to modify.", required = true) @PathParam("containerId") Long containerId,
+            @ApiParam(value = "List of new tags", required = true) List<Tag> tags) {
+
+        Container c = containerDAO.findById(containerId);
+        Helper.checkContainer(c);
+
+        User user = userDAO.findById(authToken.getUserId());
+        Helper.checkUser(user, c);
+
         for(Tag tag : tags){
             final long tagId = tagDAO.create(tag);
-            tagDAO.findById(tagId);
+            final Tag byId = tagDAO.findById(tagId);
+            c.addTag(byId);
         }
 
         Container result = containerDAO.findById(containerId);
         Helper.checkContainer(result);
-        return result;
+        return result.getTags();
     }
 }

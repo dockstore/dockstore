@@ -39,7 +39,8 @@ import javax.persistence.Table;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
-
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  *
@@ -75,6 +76,14 @@ public class Container {
     @Column(nullable = false)
     @ApiModelProperty("This is the name of the container, required: GA4GH")
     private String name;
+
+    @Column(columnDefinition="text")
+    @JsonProperty("default_dockerfile_path")
+    private String defaultDockerfilePath = "/Dockerfile";
+
+    @Column(columnDefinition="text")
+    @JsonProperty("default_cwl_path")
+    private String defaultCwlPath = "/Dockstore.cwl";
 
     @Column
     @ApiModelProperty("This is the tool name of the container, when not-present this will function just like 0.1 dockstore"
@@ -129,18 +138,20 @@ public class Container {
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinTable(name = "containertag", joinColumns = { @JoinColumn(name = "containerid", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "tagid", referencedColumnName = "id") })
     @ApiModelProperty("Implementation specific tracking of valid build tags for the docker container")
-    private Set<Tag> tags;
+    @javax.persistence.OrderBy("id")
+    private SortedSet<Tag> tags;
     
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "containerlabel",
     			joinColumns = { @JoinColumn(name = "containerid", referencedColumnName = "id") },
     			inverseJoinColumns = { @JoinColumn(name = "labelid", referencedColumnName = "id") })
     @ApiModelProperty("Labels (i.e. meta tags) for describing the purpose and contents of containers")
-    private Set<Label> labels;
+    @javax.persistence.OrderBy("id")
+    private SortedSet<Label> labels;
 
     public Container() {
-        this.tags = new HashSet<>(0);
-        this.labels = new HashSet<>(0);
+        this.tags = new TreeSet<>();
+        this.labels = new TreeSet<>();
         this.users = new HashSet<>(0);
     }
 
@@ -148,8 +159,8 @@ public class Container {
         this.id = id;
         // this.userId = userId;
         this.name = name;
-        this.tags = new HashSet<>(0);
-        this.labels = new HashSet<>(0);
+        this.tags = new TreeSet<>();
+        this.labels = new TreeSet<>();
         this.users = new HashSet<>(0);
     }
 
@@ -271,7 +282,7 @@ public class Container {
         return labels;
     }
 
-    public void setLabels(Set<Label> labels) {
+    public void setLabels(SortedSet<Label> labels) {
         this.labels = labels;
     }
 
@@ -400,5 +411,23 @@ public class Container {
 
     public void setMode(ContainerMode mode) {
         this.mode = mode;
+    }
+
+    @JsonProperty
+    public String getDefaultDockerfilePath() {
+        return defaultDockerfilePath;
+    }
+
+    public void setDefaultDockerfilePath(String defaultDockerfilePath) {
+        this.defaultDockerfilePath = defaultDockerfilePath;
+    }
+
+    @JsonProperty
+    public String getDefaultCwlPath() {
+        return defaultCwlPath;
+    }
+
+    public void setDefaultCwlPath(String defaultCwlPath) {
+        this.defaultCwlPath = defaultCwlPath;
     }
 }
