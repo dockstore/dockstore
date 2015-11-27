@@ -21,10 +21,14 @@ import com.google.common.base.Optional;
 import com.google.gson.Gson;
 import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.SourceFile.FileType;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.helpers.ImageRegistryFactory;
+import io.dockstore.webservice.helpers.ImageRegistryInterface;
+import io.dockstore.webservice.helpers.QuayImageRegistry;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ContainerDAO;
@@ -39,7 +43,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.WebApplicationException;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -59,10 +62,9 @@ import static io.dockstore.webservice.helpers.SourceCodeRepoInterface.FileRespon
 public class Helper {
     private static final Logger LOG = LoggerFactory.getLogger(Helper.class);
 
-    private static final String QUAY_URL = "https://quay.io/api/v1/";
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
 
-    private static final String DOCKSTORE_CWL = "Dockstore.cwl";
+    public static final String DOCKSTORE_CWL = "Dockstore.cwl";
     private static final String DOCKERFILE = "Dockerfile";
 
     public static class RepoList {
@@ -187,72 +189,6 @@ public class Helper {
     }
 
     /**
-     * Retrieve the list of user's repositories from Quay.io.
-     * 
-     * @param client
-     * @param objectMapper
-     * @param namespaces
-     * @param quayToken
-     * @return the list of containers
-     */
-    private static List<Container> getQuayContainers(HttpClient client, ObjectMapper objectMapper, List<String> namespaces, Token quayToken) {
-        List<Container> containerList = new ArrayList<>(0);
-
-        for (String namespace : namespaces) {
-            String url = QUAY_URL + "repository?namespace=" + namespace;
-            Optional<String> asString = ResourceUtilities.asString(url, quayToken.getContent(), client);
-
-            if (asString.isPresent()) {
-                Helper.RepoList repos;
-                try {
-                    repos = objectMapper.readValue(asString.get(), Helper.RepoList.class);
-                    LOG.info("RESOURCE CALL: " + url);
-
-                    List<Container> containers = repos.getRepositories();
-                    containerList.addAll(containers);
-                } catch (IOException ex) {
-                    LOG.info("Exception: " + ex);
-                }
-            }
-        }
-
-        return containerList;
-    }
-
-    /**
-     * Get the list of namespaces and organization that the user is associated to on Quay.io.
-     * 
-     * @param client
-     * @param quayToken
-     * @return list of namespaces
-     */
-    private static List<String> getNamespaces(HttpClient client, Token quayToken) {
-        List<String> namespaces = new ArrayList<>();
-
-        String url = QUAY_URL + "user/";
-        Optional<String> asString = ResourceUtilities.asString(url, quayToken.getContent(), client);
-        if (asString.isPresent()) {
-            String response = asString.get();
-            LOG.info("RESOURCE CALL: " + url);
-            Gson gson = new Gson();
-
-            Map<String, ArrayList> map = new HashMap<>();
-            map = (Map<String, ArrayList>) gson.fromJson(response, map.getClass());
-            List organizations = map.get("organizations");
-
-            for (int i = 0; i < organizations.size(); i++) {
-                Map<String, String> map2 = new HashMap<>();
-                map2 = (Map<String, String>) organizations.get(i);
-                LOG.info("Organization: " + map2.get("name"));
-                namespaces.add(map2.get("name"));
-            }
-        }
-
-        namespaces.add(quayToken.getUsername());
-        return namespaces;
-    }
-
-    /**
      * Get the list of tags for each container from Quay.io.
      * 
      * @param client
@@ -265,74 +201,46 @@ public class Helper {
      * @return a map: key = path; value = list of tags
      */
     @SuppressWarnings("checkstyle:parameternumber")
-    private static Map<String, List<Tag>> getTags(HttpClient client, List<Container> containers, ObjectMapper objectMapper,
-            Token quayToken, Token bitbucketToken, Token githubToken,
-            Map<String, ArrayList> mapOfBuilds) {
-        Map<String, List<Tag>> tagMap = new HashMap<>();
+    private static Map<String, List<Tag>> getTags(final HttpClient client, final List<Container> containers, final ObjectMapper objectMapper,
+            final Token quayToken, final Token bitbucketToken, final Token githubToken,
+            final Map<String, ArrayList> mapOfBuilds) {
+        final Map<String, List<Tag>> tagMap = new HashMap<>();
+
+        ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
 
         for (Container c : containers) {
-            LOG.info("======================= Getting tags for: " + c.getPath() + "================================");
-            String repo = c.getNamespace() + "/" + c.getName();
-            String repoUrl = QUAY_URL + "repository/" + repo;
-            Optional<String> asStringBuilds = ResourceUtilities.asString(repoUrl, quayToken.getContent(), client);
 
-            List<Tag> tags = new ArrayList<>();
-
-            if (asStringBuilds.isPresent()) {
-                String json = asStringBuilds.get();
-                // LOG.info(json);
-
-                Gson gson = new Gson();
-                Map<String, Map<String, Map<String, String>>> map = new HashMap<>();
-                map = (Map<String, Map<String, Map<String, String>>>) gson.fromJson(json, map.getClass());
-
-                Map<String, Map<String, String>> listOfTags = map.get("tags");
-
-                for (String key : listOfTags.keySet()) {
-                    String s = gson.toJson(listOfTags.get(key));
-                    try {
-                        Tag tag = objectMapper.readValue(s, Tag.class);
-                        tags.add(tag);
-                        // LOG.info(gson.toJson(tag));
-                    } catch (IOException ex) {
-                        LOG.info("Exception: " + ex);
-                    }
-                }
-
-            }
+            final ImageRegistryInterface imageRegistry = factory.createImageRegistry(c.getRegistry());
+            final List<Tag> tags = imageRegistry.getTags(c);
             List builds = mapOfBuilds.get(c.getPath());
 
             if (builds != null && !builds.isEmpty()) {
                 for (Tag tag : tags) {
                     LOG.info("TAG: " + tag.getName());
-                    String ref;
 
-                    for (Object build : builds) {
-                        Map<String, String> idMap = new HashMap<>();
-                        idMap = (Map<String, String>) build;
+                    for (final Object build : builds) {
+                        Map<String, String> idMap = (Map<String, String>) build;
                         String buildId = idMap.get("id");
 
-                        LOG.info("Build ID: " + buildId);
+                        LOG.info("Build ID: {}", buildId);
 
-                        Map<String, ArrayList<String>> tagsMap = new HashMap<>();
-                        tagsMap = (Map<String, ArrayList<String>>) build;
+                        Map<String, ArrayList<String>> tagsMap = (Map<String, ArrayList<String>>) build;
 
                         List<String> buildTags = tagsMap.get("tags");
 
                         if (buildTags.contains(tag.getName())) {
-                            LOG.info("Build found with tag: " + tag.getName());
+                            LOG.info("Build found with tag: {}", tag.getName());
 
-                            Map<String, Map<String, String>> triggerMetadataMap = new HashMap<>();
-                            triggerMetadataMap = (Map<String, Map<String, String>>) build;
+                            Map<String, Map<String, String>> triggerMetadataMap = (Map<String, Map<String, String>>) build;
 
-                            ref = triggerMetadataMap.get("trigger_metadata").get("ref");
-                            LOG.info("REFERENCE: " + ref);
+                            String ref = triggerMetadataMap.get("trigger_metadata").get("ref");
+                            LOG.info("REFERENCE: {}", ref);
                             tag.setReference(ref);
 
                             FileResponse cwlResponse = readGitRepositoryFile(c, DOCKSTORE_CWL, client, tag, bitbucketToken, githubToken);
                             if (cwlResponse != null) {
                                 SourceFile dockstoreCwl = new SourceFile();
-                                dockstoreCwl.setType(SourceFile.FileType.DOCKSTORE_CWL);
+                                dockstoreCwl.setType(FileType.DOCKSTORE_CWL);
                                 dockstoreCwl.setContent(cwlResponse.getContent());
                                 tag.addSourceFile(dockstoreCwl);
                             }
@@ -340,7 +248,7 @@ public class Helper {
                             FileResponse dockerfileResponse = readGitRepositoryFile(c, DOCKERFILE, client, tag, bitbucketToken, githubToken);
                             if (dockerfileResponse != null) {
                                 SourceFile dockerfile = new SourceFile();
-                                dockerfile.setType(SourceFile.FileType.DOCKERFILE);
+                                dockerfile.setType(FileType.DOCKERFILE);
                                 dockerfile.setContent(dockerfileResponse.getContent());
                                 tag.addSourceFile(dockerfile);
                             }
@@ -356,6 +264,7 @@ public class Helper {
 
         return tagMap;
     }
+
 
     /**
      * Refreshes user's containers
@@ -379,8 +288,6 @@ public class Helper {
         List<Token> tokens = tokenDAO.findByUserId(userId);
 
         SimpleDateFormat formatter = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
-
-        List<String> namespaces = new ArrayList<>();
 
         Token quayToken = null;
         Token githubToken = null;
@@ -407,23 +314,33 @@ public class Helper {
             LOG.info("WARNING: BITBUCKET token not found!");
         }
 
-        namespaces.addAll(getNamespaces(client, quayToken));
+        ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
+        final List<ImageRegistryInterface> allRegistries = factory.getAllRegistries();
 
-        List<Container> allRepos = getQuayContainers(client, objectMapper, namespaces, quayToken);
+        List<String> namespaces = new ArrayList<>();
+        // TODO: figure out better approach, for now just smash together stuff from DockerHub and quay.io
+        for(ImageRegistryInterface i: allRegistries){
+            namespaces.addAll(i.getNamespaces());
+        }
+
+        List<Container> allRepos = new ArrayList<>();
+        for(ImageRegistryInterface i: allRegistries){
+            allRepos.addAll(i.getContainers(namespaces));
+        }
 
         Map<String, ArrayList> mapOfBuilds = new HashMap<>();
 
         // Go through each container for each namespace
-        for (Container c : allRepos) {
-            String repo = c.getNamespace() + "/" + c.getName();
+        for (Container container : allRepos) {
+            String repo = container.getNamespace() + "/" + container.getName();
             String path = quayToken.getTokenSource() + "/" + repo;
-            c.setPath(path);
+            container.setPath(path);
 
             LOG.info("========== Configuring " + path + " ==========");
 
             // Get the list of builds from the container.
             // Builds contain information such as the Git URL and tags
-            String urlBuilds = QUAY_URL + "repository/" + repo + "/build/";
+            String urlBuilds = QuayImageRegistry.QUAY_URL + "repository/" + repo + "/build/";
             Optional<String> asStringBuilds = ResourceUtilities.asString(urlBuilds, quayToken.getContent(), client);
 
             String gitURL = "";
@@ -453,29 +370,29 @@ public class Helper {
                     Date date = null;
                     try {
                         date = formatter.parse(lastBuild);
-                        c.setLastBuild(date);
+                        container.setLastBuild(date);
                     } catch (ParseException ex) {
                         LOG.info("Build date did not match format 'EEE, d MMM yyyy HH:mm:ss Z'");
                     }
                 }
             }
 
-            c.setRegistry(quayToken.getTokenSource());
-            c.setGitUrl(gitURL);
+            container.setRegistry(quayToken.getTokenSource());
+            container.setGitUrl(gitURL);
 
 
 
-            final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(c.getGitUrl(),
+            final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(container.getGitUrl(),
                     client, bitbucketToken == null ? null : bitbucketToken.getContent(), githubToken.getContent());
             if (sourceCodeRepo != null){
                 // find if there is a Dockstore.cwl file from the git repository
-                sourceCodeRepo.findCWL(c);
+                sourceCodeRepo.findCWL(container);
             }
         }
 
         Map<String, List<Tag>> tagMap = getTags(client, allRepos, objectMapper, quayToken, bitbucketToken, githubToken, mapOfBuilds);
 
-        currentRepos = Helper.updateContainers(allRepos, currentRepos, dockstoreUser, containerDAO, tagDAO, fileDAO, tagMap);
+        updateContainers(allRepos, currentRepos, dockstoreUser, containerDAO, tagDAO, fileDAO, tagMap);
         userDAO.clearCache();
         return new ArrayList(userDAO.findById(userId).getContainers());
     }
@@ -491,8 +408,8 @@ public class Helper {
      * @return a FileResponse instance
      */
     public static FileResponse readGitRepositoryFile(Container container, String fileName, HttpClient client, Tag tag,
-            Token githubToken, Token bitbucketToken) {
-        String bitbucketTokenContent = (bitbucketToken == null) ? null : bitbucketToken.getContent();
+                                                        Token bitbucketToken, Token githubToken) {
+        final String bitbucketTokenContent = bitbucketToken == null ? null : bitbucketToken.getContent();
 
         final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
                 .createSourceCodeRepo(container.getGitUrl(), client, bitbucketTokenContent, githubToken.getContent());

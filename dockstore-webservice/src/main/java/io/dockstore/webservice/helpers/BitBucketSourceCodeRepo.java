@@ -2,6 +2,7 @@ package io.dockstore.webservice.helpers;
 
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
+import io.dockstore.webservice.Helper;
 import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.resources.ResourceUtilities;
 import org.apache.http.client.HttpClient;
@@ -19,7 +20,6 @@ import java.util.regex.Pattern;
  */
 public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     private static final String BITBUCKET_API_URL = "https://bitbucket.org/api/1.0/";
-    private static final String DOCKSTORE_CWL = "Dockstore.cwl";
 
     private static final Logger LOG = LoggerFactory.getLogger(BitBucketSourceCodeRepo.class);
     private final String gitUsername;
@@ -127,7 +127,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
                     String content = "";
 
-                    url = BITBUCKET_API_URL + "repositories/" + m.group(1) + "/" + m.group(2) + "/raw/" + branch + "/" + DOCKSTORE_CWL;
+                    url = BITBUCKET_API_URL + "repositories/" + m.group(1) + "/" + m.group(2) + "/raw/" + branch + "/" + Helper.DOCKSTORE_CWL;
                     asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
                     LOG.info("RESOURCE CALL: " + url);
                     if (asString.isPresent()) {
@@ -137,7 +137,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                         LOG.info("Branch: " + branch + " has no Dockstore.cwl. Checking for dockstore.cwl.");
 
                         url = BITBUCKET_API_URL + "repositories/" + m.group(1) + "/" + m.group(2) + "/raw/" + branch + "/"
-                                + DOCKSTORE_CWL.toLowerCase();
+                                + Helper.DOCKSTORE_CWL.toLowerCase();
                         asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
                         LOG.info("RESOURCE CALL: " + url);
                         if (asString.isPresent()) {
