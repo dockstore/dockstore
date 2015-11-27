@@ -28,6 +28,9 @@ import io.swagger.client.model.RegisterRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.User;
+import javassist.NotFoundException;
+import org.apache.http.HttpStatus;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -40,8 +43,6 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import javassist.NotFoundException;
-import org.apache.http.HttpStatus;
 
 /**
  *
@@ -49,7 +50,6 @@ import org.apache.http.HttpStatus;
  */
 public class Client {
 
-    private static ApiClient defaultApiClient;
     private static ContainersApi containersApi;
     private static UsersApi usersApi;
 
@@ -59,7 +59,6 @@ public class Client {
     private static final String DESCRIPTION_HEADER = "DESCRIPTION";
     private static final String GIT_HEADER = "Git Repo";
 
-    private static final int BAD_REQUEST = 400;
     private static final int PADDING = 3;
     private static final int MAX_DESCRIPTION = 50;
 
@@ -416,7 +415,7 @@ public class Client {
                 System.exit(1);
             }
 
-            defaultApiClient = Configuration.getDefaultApiClient();
+            ApiClient defaultApiClient; defaultApiClient = Configuration.getDefaultApiClient();
             defaultApiClient.addDefaultHeader("Authorization", "Bearer " + token);
             defaultApiClient.setBasePath(serverUrl);
             containersApi = new ContainersApi(defaultApiClient);
@@ -481,13 +480,7 @@ public class Client {
                     System.exit(1);
                 }
             }
-        } catch (FileNotFoundException ex) {
-            out("Exception: " + ex);
-        } catch (YamlException ex) {
-            out("Exception: " + ex);
-        } catch (ApiException ex) {
-            out("Exception: " + ex);
-        } catch (NotFoundException ex) {
+        } catch (FileNotFoundException | YamlException | NotFoundException | ApiException ex) {
             out("Exception: " + ex);
         }
     }

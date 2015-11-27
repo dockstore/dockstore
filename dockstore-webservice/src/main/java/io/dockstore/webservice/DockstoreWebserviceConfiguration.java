@@ -5,9 +5,10 @@ import com.google.common.cache.CacheBuilderSpec;
 import io.dropwizard.Configuration;
 import io.dropwizard.client.HttpClientConfiguration;
 import io.dropwizard.db.DataSourceFactory;
+import org.hibernate.validator.constraints.NotEmpty;
+
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import org.hibernate.validator.constraints.NotEmpty;
 
 public class DockstoreWebserviceConfiguration extends Configuration {
 
@@ -21,9 +22,6 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     @NotEmpty
     private String template;
-
-    @NotEmpty
-    private String defaultName = "Stranger";
 
     @NotEmpty
     private String quayClientID;
@@ -76,16 +74,6 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     @JsonProperty
     public void setTemplate(String template) {
         this.template = template;
-    }
-
-    @JsonProperty
-    public String getDefaultName() {
-        return defaultName;
-    }
-
-    @JsonProperty
-    public void setDefaultName(String name) {
-        this.defaultName = name;
     }
 
     /**

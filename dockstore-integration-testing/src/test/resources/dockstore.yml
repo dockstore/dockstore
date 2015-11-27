@@ -1,5 +1,4 @@
 template: Hello, %s!
-defaultName: Stranger
 quayClientID: <fill me in>
 quayRedirectURI: http://<fill me in>:8080/static/quay_callback.htm
 githubClientID: <fill me in>

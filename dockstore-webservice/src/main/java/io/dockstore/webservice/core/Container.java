@@ -19,7 +19,11 @@ package io.dockstore.webservice.core;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -36,11 +40,6 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 /**
  *
@@ -64,7 +63,7 @@ public class Container {
     @ApiModelProperty("Implementation specific ID for the container in this web service")
     private long id;
 
-    @Column(nullable = false, columnDefinition="Text default 'AUTO_DETECT_QUAY_TAGS'")
+    @Column(nullable = false, columnDefinition = "Text default 'AUTO_DETECT_QUAY_TAGS'")
     @Enumerated(EnumType.STRING)
     @ApiModelProperty("This indicates what mode this is in which informs how we do things like refresh")
     private ContainerMode mode = ContainerMode.AUTO_DETECT_QUAY_TAGS;
@@ -77,11 +76,11 @@ public class Container {
     @ApiModelProperty("This is the name of the container, required: GA4GH")
     private String name;
 
-    @Column(columnDefinition="text")
+    @Column(columnDefinition = "text")
     @JsonProperty("default_dockerfile_path")
     private String defaultDockerfilePath = "/Dockerfile";
 
-    @Column(columnDefinition="text")
+    @Column(columnDefinition = "text")
     @JsonProperty("default_cwl_path")
     private String defaultCwlPath = "/Dockstore.cwl";
 
@@ -235,6 +234,10 @@ public class Container {
         return lastModified;
     }
 
+    /**
+     * 
+     * @return will return the git url or empty string if not present
+     */
     @JsonProperty
     public String getGitUrl() {
         if (gitUrl == null) {

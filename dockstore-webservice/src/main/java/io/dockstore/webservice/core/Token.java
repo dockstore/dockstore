@@ -18,7 +18,7 @@ package io.dockstore.webservice.core;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
-import java.util.Objects;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -27,6 +27,7 @@ import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
+import java.util.Objects;
 
 /**
  *
@@ -162,7 +163,7 @@ public class Token {
     }
 
     /**
-     * @param enduserId
+     * @param userId
      *            the userId to set
      */
     public void setUserId(long userId) {
