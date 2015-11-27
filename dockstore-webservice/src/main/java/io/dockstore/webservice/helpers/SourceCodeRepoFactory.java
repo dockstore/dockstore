@@ -2,8 +2,6 @@ package io.dockstore.webservice.helpers;
 
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
-import org.eclipse.egit.github.core.service.ContentsService;
-import org.eclipse.egit.github.core.service.RepositoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,8 +18,8 @@ public class SourceCodeRepoFactory {
 
     static Logger log = LoggerFactory.getLogger(SourceCodeRepoFactory.class);
 
-    public static SourceCodeRepoInterface createSourceCodeRepo(RepositoryService service, ContentsService cService, String gitUrl,
-            HttpClient client, String bitbucketTokenContent) {
+    public static SourceCodeRepoInterface createSourceCodeRepo(String gitUrl,
+            HttpClient client, String bitbucketTokenContent, String githubTokenContent) {
 
         Map<String, String> repoUrlMap = parseGitUrl(gitUrl);
 
@@ -35,7 +33,7 @@ public class SourceCodeRepoFactory {
 
         SourceCodeRepoInterface repo;
         if (source.equals("github.com")) {
-            repo = new GitHubSourceCodeRepo(service, cService, gitUsername, gitRepository);
+            repo = new GitHubSourceCodeRepo(gitUsername, githubTokenContent, gitRepository);
         } else if (source.equals("bitbucket.org") && bitbucketTokenContent != null) {
             repo = new BitBucketSourceCodeRepo(gitUsername, client, bitbucketTokenContent, gitRepository);
         } else {

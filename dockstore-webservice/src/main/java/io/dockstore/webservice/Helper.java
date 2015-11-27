@@ -35,9 +35,6 @@ import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.resources.ResourceUtilities;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
-import org.eclipse.egit.github.core.client.GitHubClient;
-import org.eclipse.egit.github.core.service.ContentsService;
-import org.eclipse.egit.github.core.service.RepositoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -263,14 +260,13 @@ public class Helper {
      * @param objectMapper
      * @param quayToken
      * @param bitbucketToken
-     * @param githubRepositoryService
-     * @param githubContentsService
+     * @param githubToken
      * @param mapOfBuilds
      * @return a map: key = path; value = list of tags
      */
     @SuppressWarnings("checkstyle:parameternumber")
     private static Map<String, List<Tag>> getTags(HttpClient client, List<Container> containers, ObjectMapper objectMapper,
-            Token quayToken, Token bitbucketToken, RepositoryService githubRepositoryService, ContentsService githubContentsService,
+            Token quayToken, Token bitbucketToken, Token githubToken,
             Map<String, ArrayList> mapOfBuilds) {
         Map<String, List<Tag>> tagMap = new HashMap<>();
 
@@ -333,8 +329,7 @@ public class Helper {
                             LOG.info("REFERENCE: " + ref);
                             tag.setReference(ref);
 
-                            FileResponse cwlResponse = readGitRepositoryFile(c, DOCKSTORE_CWL, client, tag, githubRepositoryService,
-                                    githubContentsService, bitbucketToken);
+                            FileResponse cwlResponse = readGitRepositoryFile(c, DOCKSTORE_CWL, client, tag, bitbucketToken, githubToken);
                             if (cwlResponse != null) {
                                 SourceFile dockstoreCwl = new SourceFile();
                                 dockstoreCwl.setType(SourceFile.FileType.DOCKSTORE_CWL);
@@ -342,8 +337,7 @@ public class Helper {
                                 tag.addSourceFile(dockstoreCwl);
                             }
 
-                            FileResponse dockerfileResponse = readGitRepositoryFile(c, DOCKERFILE, client, tag, githubRepositoryService,
-                                    githubContentsService, bitbucketToken);
+                            FileResponse dockerfileResponse = readGitRepositoryFile(c, DOCKERFILE, client, tag, bitbucketToken, githubToken);
                             if (dockerfileResponse != null) {
                                 SourceFile dockerfile = new SourceFile();
                                 dockerfile.setType(SourceFile.FileType.DOCKERFILE);
@@ -415,12 +409,6 @@ public class Helper {
 
         namespaces.addAll(getNamespaces(client, quayToken));
 
-        GitHubClient githubClient = new GitHubClient();
-        githubClient.setOAuth2Token(githubToken.getContent());
-
-        RepositoryService service = new RepositoryService(githubClient);
-        ContentsService cService = new ContentsService(githubClient);
-
         List<Container> allRepos = getQuayContainers(client, objectMapper, namespaces, quayToken);
 
         Map<String, ArrayList> mapOfBuilds = new HashMap<>();
@@ -477,15 +465,15 @@ public class Helper {
 
 
 
-            final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(service, cService, c.getGitUrl(),
-                    client, bitbucketToken == null ? null : bitbucketToken.getContent());
+            final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(c.getGitUrl(),
+                    client, bitbucketToken == null ? null : bitbucketToken.getContent(), githubToken.getContent());
             if (sourceCodeRepo != null){
                 // find if there is a Dockstore.cwl file from the git repository
                 sourceCodeRepo.findCWL(c);
             }
         }
 
-        Map<String, List<Tag>> tagMap = getTags(client, allRepos, objectMapper, quayToken, bitbucketToken, service, cService, mapOfBuilds);
+        Map<String, List<Tag>> tagMap = getTags(client, allRepos, objectMapper, quayToken, bitbucketToken, githubToken, mapOfBuilds);
 
         currentRepos = Helper.updateContainers(allRepos, currentRepos, dockstoreUser, containerDAO, tagDAO, fileDAO, tagMap);
         userDAO.clearCache();
@@ -499,17 +487,15 @@ public class Helper {
      * @param fileName
      * @param client
      * @param tag
-     * @param githubRepositoryservice
-     * @param githubContentsService
      * @param bitbucketToken
      * @return a FileResponse instance
      */
     public static FileResponse readGitRepositoryFile(Container container, String fileName, HttpClient client, Tag tag,
-            RepositoryService githubRepositoryservice, ContentsService githubContentsService, Token bitbucketToken) {
+            Token githubToken, Token bitbucketToken) {
         String bitbucketTokenContent = (bitbucketToken == null) ? null : bitbucketToken.getContent();
 
         final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
-                .createSourceCodeRepo(githubRepositoryservice, githubContentsService, container.getGitUrl(), client, bitbucketTokenContent);
+                .createSourceCodeRepo(container.getGitUrl(), client, bitbucketTokenContent, githubToken.getContent());
 
         final String reference = sourceCodeRepo.getReference(container.getGitUrl(), tag.getReference());
 
