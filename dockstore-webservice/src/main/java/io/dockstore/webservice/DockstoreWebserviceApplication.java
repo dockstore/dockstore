@@ -167,7 +167,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(
                 new DockerRepoResource(mapper, httpClient, userDAO, tokenDAO, containerDAO, tagDAO, labelDAO, fileDAO, configuration
                         .getBitbucketClientID(), configuration.getBitbucketClientSecret()));
-        environment.jersey().register(new GitHubRepoResource(httpClient, tokenDAO, userDAO));
+        environment.jersey().register(new GitHubRepoResource(tokenDAO, userDAO));
         environment.jersey().register(
                 new DockerRepoTagResource(httpClient, userDAO, tokenDAO, containerDAO, tagDAO, labelDAO));
 
@@ -179,12 +179,11 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(resource4);
 
         environment.jersey().register(
-                new TokenResource(mapper, tokenDAO, userDAO, configuration.getGithubClientID(), configuration.getGithubClientSecret(),
+                new TokenResource(tokenDAO, userDAO, configuration.getGithubClientID(), configuration.getGithubClientSecret(),
                         configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), httpClient, cachingAuthenticator));
 
         environment.jersey().register(
-                new UserResource(mapper, httpClient, tokenDAO, userDAO, groupDAO, containerDAO, tagDAO, fileDAO, configuration
-                        .getGithubClientID(), configuration.getGithubClientSecret(), configuration.getBitbucketClientID(), configuration
+                new UserResource(mapper, httpClient, tokenDAO, userDAO, groupDAO, containerDAO, tagDAO, fileDAO, configuration.getBitbucketClientID(), configuration
                         .getBitbucketClientSecret()));
 
 

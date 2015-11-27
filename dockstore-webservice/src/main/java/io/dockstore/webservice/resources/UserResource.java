@@ -42,12 +42,11 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -59,10 +58,12 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 /**
  *
@@ -79,12 +80,8 @@ public class UserResource {
     private final ContainerDAO containerDAO;
     private final TagDAO tagDAO;
     private final FileDAO fileDAO;
-    private final String githubClientID;
-    private final String githubClientSecret;
     private final String bitbucketClientID;
     private final String bitbucketClientSecret;
-
-    private static final String TARGET_URL = "https://github.com/";
 
     private final ObjectMapper objectMapper;
 
@@ -92,7 +89,7 @@ public class UserResource {
 
     @SuppressWarnings("checkstyle:parameternumber")
     public UserResource(ObjectMapper mapper, HttpClient client, TokenDAO tokenDAO, UserDAO userDAO, GroupDAO groupDAO,
-            ContainerDAO containerDAO, TagDAO tagDAO, FileDAO fileDAO, String githubClientID, String githubClientSecret,
+            ContainerDAO containerDAO, TagDAO tagDAO, FileDAO fileDAO,
             String bitbucketClientID, String bitbucketClientSecret) {
         this.objectMapper = mapper;
         this.client = client;
@@ -102,8 +99,6 @@ public class UserResource {
         this.containerDAO = containerDAO;
         this.tagDAO = tagDAO;
         this.fileDAO = fileDAO;
-        this.githubClientID = githubClientID;
-        this.githubClientSecret = githubClientSecret;
         this.bitbucketClientID = bitbucketClientID;
         this.bitbucketClientSecret = bitbucketClientSecret;
     }

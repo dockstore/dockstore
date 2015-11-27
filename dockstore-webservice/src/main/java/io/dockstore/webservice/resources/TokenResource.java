@@ -17,7 +17,6 @@
 package io.dockstore.webservice.resources;
 
 import com.codahale.metrics.annotation.Timed;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
@@ -38,12 +37,13 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
+import org.eclipse.egit.github.core.client.GitHubClient;
+import org.eclipse.egit.github.core.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -53,12 +53,12 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
-import org.eclipse.egit.github.core.client.GitHubClient;
-import org.eclipse.egit.github.core.service.UserService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 /**
  * The githubToken resource handles operations with tokens. Tokens are needed to talk with the quay.io and github APIs. In addition, they
@@ -80,7 +80,6 @@ public class TokenResource {
     private final String bitbucketClientID;
     private final String bitbucketClientSecret;
     private final HttpClient client;
-    private final ObjectMapper objectMapper;
 
     private static final int MAX_ITERATIONS = 5;
 
@@ -88,10 +87,9 @@ public class TokenResource {
     private final CachingAuthenticator<String, Token> cachingAuthenticator;
 
     @SuppressWarnings("checkstyle:parameternumber")
-    public TokenResource(ObjectMapper mapper, TokenDAO tokenDAO, UserDAO enduserDAO, String githubClientID, String githubClientSecret,
+    public TokenResource(TokenDAO tokenDAO, UserDAO enduserDAO, String githubClientID, String githubClientSecret,
             String bitbucketClientID, String bitbucketClientSecret, HttpClient client,
             CachingAuthenticator<String, Token> cachingAuthenticator) {
-        this.objectMapper = mapper;
         this.tokenDAO = tokenDAO;
         this.userDAO = enduserDAO;
         this.githubClientID = githubClientID;
@@ -100,18 +98,6 @@ public class TokenResource {
         this.bitbucketClientSecret = bitbucketClientSecret;
         this.client = client;
         this.cachingAuthenticator = cachingAuthenticator;
-    }
-
-    private static class QuayUser {
-        private String username;
-
-        public void setUsername(String username) {
-            this.username = username;
-        }
-
-        public String getUsername() {
-            return this.username;
-        }
     }
 
     @GET
