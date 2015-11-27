@@ -28,7 +28,6 @@ import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.helpers.ImageRegistryFactory;
 import io.dockstore.webservice.helpers.ImageRegistryInterface;
-import io.dockstore.webservice.helpers.QuayImageRegistry;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface.FileResponse;
@@ -45,8 +44,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.WebApplicationException;
 import java.io.UnsupportedEncodingException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -236,7 +233,7 @@ public class Helper {
     @SuppressWarnings("checkstyle:parameternumber")
     private static Map<String, List<Tag>> getTags(final HttpClient client, final List<Container> containers, final ObjectMapper objectMapper,
             final Token quayToken, final Token bitbucketToken, final Token githubToken,
-            final Map<String, ArrayList> mapOfBuilds) {
+            final Map<String, ArrayList<?>> mapOfBuilds) {
         final Map<String, List<Tag>> tagMap = new HashMap<>();
 
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
@@ -245,6 +242,9 @@ public class Helper {
 
             final ImageRegistryInterface imageRegistry = factory.createImageRegistry(c.getRegistry());
             final List<Tag> tags = imageRegistry.getTags(c);
+
+            // TODO: this part isn't very good, a true implementation of Docker Hub would need to return
+            // a quay.io-like data structure, we need to replace mapOfBuilds
             List builds = mapOfBuilds.get(c.getPath());
 
             if (builds != null && !builds.isEmpty()) {
@@ -320,8 +320,6 @@ public class Helper {
         List<Container> currentRepos = new ArrayList(dockstoreUser.getContainers());// containerDAO.findByUserId(userId);
         List<Token> tokens = tokenDAO.findByUserId(userId);
 
-        SimpleDateFormat formatter = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
-
         Token quayToken = null;
         Token githubToken = null;
         Token bitbucketToken = null;
@@ -361,64 +359,9 @@ public class Helper {
             allRepos.addAll(i.getContainers(namespaces));
         }
 
-        Map<String, ArrayList> mapOfBuilds = new HashMap<>();
-
-        // Go through each container for each namespace
-        for (Container container : allRepos) {
-            String repo = container.getNamespace() + "/" + container.getName();
-            String path = quayToken.getTokenSource() + "/" + repo;
-            container.setPath(path);
-
-            LOG.info("========== Configuring " + path + " ==========");
-
-            // Get the list of builds from the container.
-            // Builds contain information such as the Git URL and tags
-            String urlBuilds = QuayImageRegistry.QUAY_URL + "repository/" + repo + "/build/";
-            Optional<String> asStringBuilds = ResourceUtilities.asString(urlBuilds, quayToken.getContent(), client);
-
-            String gitURL = "";
-
-            if (asStringBuilds.isPresent()) {
-                String json = asStringBuilds.get();
-                LOG.info("RESOURCE CALL: " + urlBuilds);
-
-                // parse json using Gson to get the git url of repository and the list of tags
-                Gson gson = new Gson();
-                Map<String, ArrayList> map = new HashMap<>();
-                map = (Map<String, ArrayList>) gson.fromJson(json, map.getClass());
-                ArrayList builds = map.get("builds");
-
-                mapOfBuilds.put(path, builds);
-
-                if (!builds.isEmpty()) {
-                    Map<String, Map<String, String>> map2 = new HashMap<>();
-                    map2 = (Map<String, Map<String, String>>) builds.get(0);
-
-                    gitURL = map2.get("trigger_metadata").get("git_url");
-
-                    Map<String, String> map3 = (Map<String, String>) builds.get(0);
-                    String lastBuild = map3.get("started");
-                    LOG.info("LAST BUILD: " + lastBuild);
-
-                    Date date = null;
-                    try {
-                        date = formatter.parse(lastBuild);
-                        container.setLastBuild(date);
-                    } catch (ParseException ex) {
-                        LOG.info("Build date did not match format 'EEE, d MMM yyyy HH:mm:ss Z'");
-                    }
-                }
-            }
-
-            container.setRegistry(quayToken.getTokenSource());
-            container.setGitUrl(gitURL);
-
-            final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(container.getGitUrl(),
-                    client, bitbucketToken == null ? null : bitbucketToken.getContent(), githubToken.getContent());
-            if (sourceCodeRepo != null) {
-                // find if there is a Dockstore.cwl file from the git repository
-                sourceCodeRepo.findCWL(container);
-            }
+        Map<String, ArrayList<?>> mapOfBuilds = new HashMap<>();
+        for(ImageRegistryInterface i: allRegistries) {
+            i.getBuildMap(githubToken, bitbucketToken, allRepos);
         }
 
         Map<String, List<Tag>> tagMap = getTags(client, allRepos, objectMapper, quayToken, bitbucketToken, githubToken, mapOfBuilds);
@@ -427,6 +370,7 @@ public class Helper {
         userDAO.clearCache();
         return new ArrayList(userDAO.findById(userId).getContainers());
     }
+
 
     /**
      * Read a file from the container's git repository.
