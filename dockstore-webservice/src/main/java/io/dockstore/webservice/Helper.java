@@ -134,6 +134,40 @@ public class Helper {
         return map;
     }
 
+    private static void updateTags(Container container, TagDAO tagDAO, FileDAO fileDAO, Map<String, List<Tag>> tagMap) {
+        List<Tag> existingTags = new ArrayList(container.getTags());
+        List<Tag> newTags = tagMap.get(container.getPath());
+
+        List<Tag> toDelete = new ArrayList<>(0);
+        for (Iterator<Tag> iterator = existingTags.iterator(); iterator.hasNext();) {
+            Tag oldContainer = iterator.next();
+            boolean exists = false;
+            for (Tag newContainer : newTags) {
+                if (newContainer.getName().equals(oldContainer.getName())) {
+                    exists = true;
+                    break;
+                }
+            }
+            if (!exists) {
+                toDelete.add(oldContainer);
+                iterator.remove();
+            }
+        }
+
+        if (newTags != null) {
+            for (Tag tag : newTags) {
+                for (SourceFile file : tag.getSourceFiles()) {
+                    fileDAO.create(file);
+                }
+
+                long tagId = tagDAO.create(tag);
+                tag = tagDAO.findById(tagId);
+                container.addTag(tag);
+            }
+        }
+        LOG.info("UPDATED Container: " + container.getPath());
+    }
+
     /**
      * Updates the new list of containers to the database. Deletes containers that has no users.
      * 
