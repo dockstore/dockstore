@@ -31,18 +31,13 @@ import io.dockstore.webservice.helpers.ImageRegistryInterface;
 import io.dockstore.webservice.helpers.QuayImageRegistry;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.helpers.SourceCodeRepoInterface.FileResponse;
 import io.dockstore.webservice.jdbi.ContainerDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.resources.ResourceUtilities;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.ws.rs.WebApplicationException;
 import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -52,8 +47,14 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import static io.dockstore.webservice.helpers.SourceCodeRepoInterface.FileResponse;
+import javax.ws.rs.WebApplicationException;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
+import org.eclipse.egit.github.core.client.GitHubClient;
+import org.eclipse.egit.github.core.service.ContentsService;
+import org.eclipse.egit.github.core.service.RepositoryService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -78,6 +79,40 @@ public class Helper {
         public List<Container> getRepositories() {
             return this.repositories;
         }
+    }
+
+    private static void updateTags(Container container, TagDAO tagDAO, FileDAO fileDAO, Map<String, List<Tag>> tagMap) {
+        List<Tag> existingTags = new ArrayList(container.getTags());
+        List<Tag> newTags = tagMap.get(container.getPath());
+
+        List<Tag> toDelete = new ArrayList<>(0);
+        for (Iterator<Tag> iterator = existingTags.iterator(); iterator.hasNext();) {
+            Tag oldContainer = iterator.next();
+            boolean exists = false;
+            for (Tag newContainer : newTags) {
+                if (newContainer.getName().equals(oldContainer.getName())) {
+                    exists = true;
+                    break;
+                }
+            }
+            if (!exists) {
+                toDelete.add(oldContainer);
+                iterator.remove();
+            }
+        }
+
+        if (newTags != null) {
+            for (Tag tag : newTags) {
+                for (SourceFile file : tag.getSourceFiles()) {
+                    fileDAO.create(file);
+                }
+
+                long tagId = tagDAO.create(tag);
+                tag = tagDAO.findById(tagId);
+                container.addTag(tag);
+            }
+        }
+        LOG.info("UPDATED Container: " + container.getPath());
     }
 
     /**
@@ -380,11 +415,9 @@ public class Helper {
             container.setRegistry(quayToken.getTokenSource());
             container.setGitUrl(gitURL);
 
-
-
             final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(container.getGitUrl(),
                     client, bitbucketToken == null ? null : bitbucketToken.getContent(), githubToken.getContent());
-            if (sourceCodeRepo != null){
+            if (sourceCodeRepo != null) {
                 // find if there is a Dockstore.cwl file from the git repository
                 sourceCodeRepo.findCWL(container);
             }
@@ -411,8 +444,11 @@ public class Helper {
                                                         Token bitbucketToken, Token githubToken) {
         final String bitbucketTokenContent = bitbucketToken == null ? null : bitbucketToken.getContent();
 
-        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
-                .createSourceCodeRepo(container.getGitUrl(), client, bitbucketTokenContent, githubToken.getContent());
+        if (container.getGitUrl() == null || container.getGitUrl().isEmpty()) {
+            return null;
+        }
+        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(githubRepositoryservice,
+                githubContentsService, container.getGitUrl(), client, bitbucketTokenContent);
 
         final String reference = sourceCodeRepo.getReference(container.getGitUrl(), tag.getReference());
 
