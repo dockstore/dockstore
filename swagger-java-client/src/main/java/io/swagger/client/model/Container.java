@@ -14,10 +14,27 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 @ApiModel(description = "")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-25T12:45:12.389-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-26T15:35:08.177-05:00")
 public class Container   {
   
   private Long id = null;
+
+public enum ModeEnum {
+  AUTO_DETECT_QUAY_TAGS("AUTO_DETECT_QUAY_TAGS"), MANUAL_IMAGE_PATH("MANUAL_IMAGE_PATH");
+
+  private String value;
+
+  ModeEnum(String value) {
+    this.value = value;
+  }
+
+  @Override
+  public String toString() {
+    return value;
+  }
+}
+
+  private ModeEnum mode = null;
   private List<User> users = new ArrayList<User>();
   private String name = null;
   private String namespace = null;
@@ -30,6 +47,8 @@ public class Container   {
   private Boolean hasCollab = null;
   private List<Tag> tags = new ArrayList<Tag>();
   private List<Label> labels = new ArrayList<Label>();
+  private String defaultDockerfilePath = null;
+  private String defaultCwlPath = null;
   private String path = null;
   private Boolean isStarred = null;
   private Boolean isPublic = null;
@@ -47,6 +66,19 @@ public class Container   {
   }
   public void setId(Long id) {
     this.id = id;
+  }
+
+  
+  /**
+   * This indicates what mode this is in which informs how we do things like refresh
+   **/
+  @ApiModelProperty(value = "This indicates what mode this is in which informs how we do things like refresh")
+  @JsonProperty("mode")
+  public ModeEnum getMode() {
+    return mode;
+  }
+  public void setMode(ModeEnum mode) {
+    this.mode = mode;
   }
 
   
@@ -167,8 +199,9 @@ public class Container   {
 
   
   /**
+   * This image has a Dockstore.cwl associated with it
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "This image has a Dockstore.cwl associated with it")
   @JsonProperty("hasCollab")
   public Boolean getHasCollab() {
     return hasCollab;
@@ -205,9 +238,33 @@ public class Container   {
 
   
   /**
-   * This is a generated full docker path including registry and namespace
    **/
-  @ApiModelProperty(value = "This is a generated full docker path including registry and namespace")
+  @ApiModelProperty(value = "")
+  @JsonProperty("default_dockerfile_path")
+  public String getDefaultDockerfilePath() {
+    return defaultDockerfilePath;
+  }
+  public void setDefaultDockerfilePath(String defaultDockerfilePath) {
+    this.defaultDockerfilePath = defaultDockerfilePath;
+  }
+
+  
+  /**
+   **/
+  @ApiModelProperty(value = "")
+  @JsonProperty("default_cwl_path")
+  public String getDefaultCwlPath() {
+    return defaultCwlPath;
+  }
+  public void setDefaultCwlPath(String defaultCwlPath) {
+    this.defaultCwlPath = defaultCwlPath;
+  }
+
+  
+  /**
+   * This is a generated full docker path including registry and namespace, used for docker pull commands
+   **/
+  @ApiModelProperty(value = "This is a generated full docker path including registry and namespace, used for docker pull commands")
   @JsonProperty("path")
   public String getPath() {
     return path;
@@ -276,6 +333,7 @@ public class Container   {
     sb.append("class Container {\n");
     
     sb.append("    id: ").append(StringUtil.toIndentedString(id)).append("\n");
+    sb.append("    mode: ").append(StringUtil.toIndentedString(mode)).append("\n");
     sb.append("    users: ").append(StringUtil.toIndentedString(users)).append("\n");
     sb.append("    name: ").append(StringUtil.toIndentedString(name)).append("\n");
     sb.append("    namespace: ").append(StringUtil.toIndentedString(namespace)).append("\n");
@@ -288,6 +346,8 @@ public class Container   {
     sb.append("    hasCollab: ").append(StringUtil.toIndentedString(hasCollab)).append("\n");
     sb.append("    tags: ").append(StringUtil.toIndentedString(tags)).append("\n");
     sb.append("    labels: ").append(StringUtil.toIndentedString(labels)).append("\n");
+    sb.append("    defaultDockerfilePath: ").append(StringUtil.toIndentedString(defaultDockerfilePath)).append("\n");
+    sb.append("    defaultCwlPath: ").append(StringUtil.toIndentedString(defaultCwlPath)).append("\n");
     sb.append("    path: ").append(StringUtil.toIndentedString(path)).append("\n");
     sb.append("    isStarred: ").append(StringUtil.toIndentedString(isStarred)).append("\n");
     sb.append("    isPublic: ").append(StringUtil.toIndentedString(isPublic)).append("\n");

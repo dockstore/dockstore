@@ -140,10 +140,7 @@ public class User {
         if (this.isAdmin != other.isAdmin) {
             return false;
         }
-        if (!Objects.equals(this.groups, other.groups)) {
-            return false;
-        }
-        return true;
+        return Objects.equals(this.groups, other.groups);
     }
 
 }

@@ -16,7 +16,6 @@
  */
 package io.dockstore.common;
 
-import java.io.File;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 
@@ -25,10 +24,6 @@ import org.apache.commons.configuration.HierarchicalINIConfiguration;
  * @author xliu
  */
 public class Utilities {
-    public static HierarchicalINIConfiguration getYouxiaConfig() {
-        File configFile = new File(System.getProperty("user.home"), ".dockstore/config");
-        return Utilities.parseConfig(configFile.getAbsolutePath());
-    }
 
     public static HierarchicalINIConfiguration parseConfig(String path) {
         try {
