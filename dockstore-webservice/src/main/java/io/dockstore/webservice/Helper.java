@@ -361,7 +361,7 @@ public class Helper {
 
         Map<String, ArrayList<?>> mapOfBuilds = new HashMap<>();
         for(ImageRegistryInterface i: allRegistries) {
-            i.getBuildMap(githubToken, bitbucketToken, allRepos);
+            mapOfBuilds.putAll(i.getBuildMap(githubToken, bitbucketToken, allRepos));
         }
 
         Map<String, List<Tag>> tagMap = getTags(client, allRepos, objectMapper, quayToken, bitbucketToken, githubToken, mapOfBuilds);
