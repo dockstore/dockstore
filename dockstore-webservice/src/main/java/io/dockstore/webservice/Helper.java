@@ -165,6 +165,14 @@ public class Helper {
             container.addTag(tag);
         }
 
+        // delete container if it has no users
+        for (Tag t : toDelete) {
+            LOG.info("DELETING tag: " + t.getName());
+            t.getSourceFiles().clear();
+            // tagDAO.delete(t);
+            container.getTags().remove(t);
+        }
+
     }
 
     /**
@@ -334,7 +342,8 @@ public class Helper {
                                 tag.setAutomated(true);
                             }
 
-                            FileResponse cwlResponse = readGitRepositoryFile(c, DOCKSTORE_CWL, client, tag, bitbucketToken, githubToken);
+                            FileResponse cwlResponse = readGitRepositoryFile(c, FileType.DOCKSTORE_CWL, client, tag, bitbucketToken,
+                                    githubToken);
                             if (cwlResponse != null) {
                                 SourceFile dockstoreCwl = new SourceFile();
                                 dockstoreCwl.setType(FileType.DOCKSTORE_CWL);
@@ -342,7 +351,8 @@ public class Helper {
                                 tag.addSourceFile(dockstoreCwl);
                             }
 
-                            FileResponse dockerfileResponse = readGitRepositoryFile(c, DOCKERFILE, client, tag, bitbucketToken, githubToken);
+                            FileResponse dockerfileResponse = readGitRepositoryFile(c, FileType.DOCKERFILE, client, tag, bitbucketToken,
+                                    githubToken);
                             if (dockerfileResponse != null) {
                                 SourceFile dockerfile = new SourceFile();
                                 dockerfile.setType(FileType.DOCKERFILE);
@@ -438,13 +448,13 @@ public class Helper {
      * Read a file from the container's git repository.
      * 
      * @param container
-     * @param fileName
+     * @param fileType
      * @param client
      * @param tag
      * @param bitbucketToken
      * @return a FileResponse instance
      */
-    public static FileResponse readGitRepositoryFile(Container container, String fileName, HttpClient client, Tag tag,
+    public static FileResponse readGitRepositoryFile(Container container, FileType fileType, HttpClient client, Tag tag,
             Token bitbucketToken, Token githubToken) {
         final String bitbucketTokenContent = bitbucketToken == null ? null : bitbucketToken.getContent();
 
@@ -459,6 +469,18 @@ public class Helper {
         }
 
         final String reference = sourceCodeRepo.getReference(container.getGitUrl(), tag.getReference());
+
+        String fileName = "";
+
+        if (fileType.equals(FileType.DOCKERFILE)) {
+            fileName = tag.getDockerfilePath();
+        } else if (fileType.equals(FileType.DOCKSTORE_CWL)) {
+            fileName = tag.getCwlPath();
+        }
+
+        if (fileName.startsWith("/")) {
+            fileName = fileName.substring(1);
+        }
 
         return sourceCodeRepo.readFile(fileName, reference);
     }

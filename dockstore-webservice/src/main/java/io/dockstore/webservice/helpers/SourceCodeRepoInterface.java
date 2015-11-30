@@ -1,14 +1,16 @@
 package io.dockstore.webservice.helpers;
 
-import com.esotericsoftware.yamlbeans.YamlReader;
-import io.dockstore.webservice.core.Container;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.esotericsoftware.yamlbeans.YamlReader;
+
+import io.dockstore.webservice.core.Container;
 
 /**
  * @author dyuen
@@ -61,8 +63,10 @@ public abstract class SourceCodeRepoInterface {
     /**
      * Parses the cwl content to get the author and description. Updates the container with the author, description, and hasCollab fields.
      *
-     * @param container a container to be updated
-     * @param content a cwl document
+     * @param container
+     *            a container to be updated
+     * @param content
+     *            a cwl document
      * @return the updated container
      */
     protected Container parseCWLContent(Container container, String content) {
