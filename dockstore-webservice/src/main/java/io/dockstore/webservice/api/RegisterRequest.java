@@ -25,7 +25,7 @@ import io.swagger.annotations.ApiModel;
  *
  * @author xliu
  */
-@ApiModel(value = "Register request")
+@ApiModel("RegisterRequest")
 public class RegisterRequest {
     private boolean register;
 

@@ -47,7 +47,7 @@ public class ImageRegistryFactory {
      * @return
      */
     public ImageRegistryInterface createImageRegistry(String registry) {
-        if (registry.equals("docker.hub")) {
+        if (registry.isEmpty() || registry.equals(Registry.DOCKER_HUB.toString())) {
             return createImageRegistry(Registry.DOCKER_HUB);
         } else if (registry.equals("quay.io")) {
             return createImageRegistry(Registry.QUAY_IO);
@@ -60,7 +60,7 @@ public class ImageRegistryFactory {
         if (registry == Registry.QUAY_IO) {
             return new QuayImageRegistry(client, objectMapper, quayToken);
         } else if (registry == Registry.DOCKER_HUB) {
-            return new DockerHubRegistry();
+            return new DockerHubRegistry(client);
         } else {
             throw new WebApplicationException(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE);
         }

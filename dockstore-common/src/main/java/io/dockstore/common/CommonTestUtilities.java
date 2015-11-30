@@ -42,7 +42,7 @@ public class CommonTestUtilities {
 
     private static class TestingPostgres extends BasicPostgreSQL {
 
-        public TestingPostgres(HierarchicalINIConfiguration config) {
+        TestingPostgres(HierarchicalINIConfiguration config) {
             super(config);
         }
 

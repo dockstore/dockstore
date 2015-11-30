@@ -5,7 +5,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.http.client.HttpClient;
+
 import io.dockstore.webservice.core.Container;
+import io.dockstore.webservice.core.ContainerMode;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 
@@ -17,7 +20,10 @@ import io.dockstore.webservice.core.Token;
  */
 public class DockerHubRegistry implements ImageRegistryInterface {
 
-    public DockerHubRegistry() {
+    private final HttpClient client;
+
+    public DockerHubRegistry(HttpClient client) {
+        this.client = client;
     }
 
     @Override
@@ -37,6 +43,19 @@ public class DockerHubRegistry implements ImageRegistryInterface {
 
     @Override
     public Map<String, ArrayList<?>> getBuildMap(Token githubToken, Token bitbucketToken, List<Container> allRepos) {
+        // Go through each container for each namespace
+        for (final Container container : allRepos) {
+            if (container.getMode() != ContainerMode.MANUAL_IMAGE_PATH){
+                continue;
+            }
+
+            final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(container.getGitUrl(), client,
+                bitbucketToken == null ? null : bitbucketToken.getContent(), githubToken.getContent());
+            if (sourceCodeRepo != null) {
+                // find if there is a Dockstore.cwl file from the git repository
+                sourceCodeRepo.findCWL(container);
+            }
+        }
         return new HashMap<>();
     }
 }
