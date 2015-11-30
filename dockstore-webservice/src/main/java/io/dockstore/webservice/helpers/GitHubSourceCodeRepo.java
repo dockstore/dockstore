@@ -3,6 +3,7 @@ package io.dockstore.webservice.helpers;
 import io.dockstore.webservice.core.Container;
 import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.RepositoryContents;
+import org.eclipse.egit.github.core.client.GitHubClient;
 import org.eclipse.egit.github.core.service.ContentsService;
 import org.eclipse.egit.github.core.service.RepositoryService;
 import org.slf4j.Logger;
@@ -24,7 +25,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     private final RepositoryService service;
     private final String gitRepository;
 
-    public GitHubSourceCodeRepo(RepositoryService service, ContentsService cService, String gitUsername, String gitRepository) {
+    public GitHubSourceCodeRepo(String gitUsername, String githubTokenContent, String gitRepository) {
+
+        GitHubClient githubClient = new GitHubClient();
+        githubClient.setOAuth2Token(githubTokenContent);
+
+        RepositoryService service = new RepositoryService(githubClient);
+        ContentsService cService = new ContentsService(githubClient);
+
         this.service = service;
         this.cService = cService;
         this.gitUsername = gitUsername;

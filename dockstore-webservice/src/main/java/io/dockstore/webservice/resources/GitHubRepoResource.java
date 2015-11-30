@@ -16,27 +16,17 @@
  */
 package io.dockstore.webservice.resources;
 
-import com.codahale.metrics.annotation.Timed;
-import io.dockstore.webservice.Helper;
-import io.dockstore.webservice.core.Token;
-import io.dockstore.webservice.core.TokenType;
-import io.dockstore.webservice.jdbi.TokenDAO;
-import io.dockstore.webservice.jdbi.UserDAO;
-import io.dropwizard.auth.Auth;
-import io.dropwizard.hibernate.UnitOfWork;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-import org.apache.http.client.HttpClient;
+
 import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.RepositoryContents;
 import org.eclipse.egit.github.core.User;
@@ -47,6 +37,19 @@ import org.eclipse.egit.github.core.service.RepositoryService;
 import org.eclipse.egit.github.core.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.codahale.metrics.annotation.Timed;
+
+import io.dockstore.webservice.Helper;
+import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenType;
+import io.dockstore.webservice.jdbi.TokenDAO;
+import io.dockstore.webservice.jdbi.UserDAO;
+import io.dropwizard.auth.Auth;
+import io.dropwizard.hibernate.UnitOfWork;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 
 /**
  *
@@ -59,13 +62,10 @@ public class GitHubRepoResource {
     private static final Logger LOG = LoggerFactory.getLogger(GitHubRepoResource.class);
     private final TokenDAO dao;
     private final UserDAO userDAO;
-    private final HttpClient client;
-    public static final String TARGET_URL = "https://github.com/";
 
-    public GitHubRepoResource(HttpClient client, TokenDAO dao, UserDAO userDAO) {
+    public GitHubRepoResource(TokenDAO dao, UserDAO userDAO) {
         this.dao = dao;
         this.userDAO = userDAO;
-        this.client = client;
     }
 
     @GET

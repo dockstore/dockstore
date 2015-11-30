@@ -90,8 +90,6 @@ public class DockerRepoResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(DockerRepoResource.class);
 
-    private final List<String> namespaces = new ArrayList<>();
-
     @SuppressWarnings("checkstyle:parameternumber")
     public DockerRepoResource(ObjectMapper mapper, HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ContainerDAO containerDAO,
             TagDAO tagDAO, LabelDAO labelDAO, FileDAO fileDAO, String bitbucketClientID, String bitbucketClientSecret) {
@@ -146,8 +144,7 @@ public class DockerRepoResource {
         User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user);
 
-        List<Container> list = containerDAO.findAll();
-        return list;
+        return containerDAO.findAll();
     }
 
     @GET
@@ -186,7 +183,7 @@ public class DockerRepoResource {
             // This matches the restriction on labels to 255 characters
             // if this is changed then the java object/mapped db schema needs to be changed
             final int labelMaxLength = 255;
-            SortedSet<Label> labels = new TreeSet<Label>();
+            SortedSet<Label> labels = new TreeSet<>();
             for (final String labelString : labelStringSet) {
                 if (labelString.length() <= labelMaxLength && labelString.matches(labelStringPattern)) {
                     Label label = labelDAO.findByLabelValue(labelString);
@@ -271,8 +268,7 @@ public class DockerRepoResource {
     @ApiOperation(value = "List all registered containers. This would be a minimal resource that would need to be implemented "
             + "by a GA4GH reference server", tags = { "GA4GH", "containers" }, notes = "NO authentication", response = Container.class, responseContainer = "List")
     public List<Container> allRegisteredContainers() {
-        List<Container> repositories = containerDAO.findAllRegistered();
-        return repositories;
+        return containerDAO.findAllRegistered();
     }
 
     @GET
@@ -392,7 +388,7 @@ public class DockerRepoResource {
         User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, repository);
 
-        List<Tag> tags = new ArrayList<Tag>();
+        List<Tag> tags = new ArrayList<>();
         tags.addAll(repository.getTags());
         return (List) tags;
     }
@@ -407,6 +403,11 @@ public class DockerRepoResource {
     public SourceFile dockerfile(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag) {
 
+        return getSourceFile(containerId, tag, SourceFile.FileType.DOCKERFILE);
+    }
+
+    private SourceFile getSourceFile(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
+            @QueryParam("tag") String tag, SourceFile.FileType dockerfile) {
         Container container = containerDAO.findById(containerId);
         Helper.checkContainer(container);
         Tag tagInstance = null;
@@ -425,18 +426,12 @@ public class DockerRepoResource {
             throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
         } else {
             for (SourceFile file : tagInstance.getSourceFiles()) {
-                if (file.getType().equals(SourceFile.FileType.DOCKERFILE)) {
+                if (file.getType().equals(dockerfile)) {
                     return file;
                 }
             }
         }
         throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
-
-        // GitHubClient githubClient = new GitHubClient();
-        // RepositoryService service = new RepositoryService(githubClient);
-        // ContentsService cService = new ContentsService(githubClient);
-        //
-        // return Helper.readGitRepositoryFile(container, "Dockerfile", client, tagInstance, service, cService, null);
     }
 
     @GET
@@ -448,35 +443,6 @@ public class DockerRepoResource {
     public SourceFile cwl(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag) {
 
-        Container container = containerDAO.findById(containerId);
-        Helper.checkContainer(container);
-        Tag tagInstance = null;
-
-        if (tag == null) {
-            tag = "latest";
-        }
-
-        for (Tag t : container.getTags()) {
-            if (t.getName().equals(tag)) {
-                tagInstance = t;
-            }
-        }
-
-        if (tagInstance == null) {
-            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
-        } else {
-            for (SourceFile file : tagInstance.getSourceFiles()) {
-                if (file.getType().equals(SourceFile.FileType.DOCKSTORE_CWL)) {
-                    return file;
-                }
-            }
-        }
-        throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
-
-        // GitHubClient githubClient = new GitHubClient();
-        // RepositoryService service = new RepositoryService(githubClient);
-        // ContentsService cService = new ContentsService(githubClient);
-        //
-        // return Helper.readGitRepositoryFile(container, "Dockstore.cwl", client, tagInstance, service, cService, null);
+        return getSourceFile(containerId, tag, SourceFile.FileType.DOCKSTORE_CWL);
     }
 }
