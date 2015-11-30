@@ -6,20 +6,14 @@ import io.swagger.client.Configuration;
 import io.swagger.client.Pair;
 import io.swagger.client.TypeRef;
 
-import io.swagger.client.model.*;
-
-import java.util.*;
-
 import io.swagger.client.model.Container;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.RegisterRequest;
 import io.swagger.client.model.User;
 
-import java.io.File;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.*;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-30T13:59:15.093-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-30T16:25:14.721-05:00")
 public class ContainersApi {
   private ApiClient apiClient;
 
@@ -68,7 +62,7 @@ public class ContainersApi {
     final String accept = apiClient.selectHeaderAccept(accepts);
 
     final String[] contentTypes = {
-      
+      "application/json"
     };
     final String contentType = apiClient.selectHeaderContentType(contentTypes);
 
@@ -115,7 +109,7 @@ public class ContainersApi {
     final String accept = apiClient.selectHeaderAccept(accepts);
 
     final String[] contentTypes = {
-      
+      "application/json"
     };
     final String contentType = apiClient.selectHeaderContentType(contentTypes);
 
@@ -162,7 +156,7 @@ public class ContainersApi {
     final String accept = apiClient.selectHeaderAccept(accepts);
 
     final String[] contentTypes = {
-      
+      "application/json"
     };
     final String contentType = apiClient.selectHeaderContentType(contentTypes);
 
@@ -202,7 +196,7 @@ public class ContainersApi {
     final String accept = apiClient.selectHeaderAccept(accepts);
 
     final String[] contentTypes = {
-      
+      "application/json"
     };
     final String contentType = apiClient.selectHeaderContentType(contentTypes);
 
@@ -242,7 +236,7 @@ public class ContainersApi {
     final String accept = apiClient.selectHeaderAccept(accepts);
 
     final String[] contentTypes = {
-      
+      "application/json"
     };
     final String contentType = apiClient.selectHeaderContentType(contentTypes);
 
@@ -289,7 +283,7 @@ public class ContainersApi {
     final String accept = apiClient.selectHeaderAccept(accepts);
 
     final String[] contentTypes = {
-      
+      "application/json"
     };
     final String contentType = apiClient.selectHeaderContentType(contentTypes);
 
@@ -332,7 +326,7 @@ public class ContainersApi {
     final String accept = apiClient.selectHeaderAccept(accepts);
 
     final String[] contentTypes = {
-      
+      "application/json"
     };
     final String contentType = apiClient.selectHeaderContentType(contentTypes);
 
@@ -379,7 +373,7 @@ public class ContainersApi {
     final String accept = apiClient.selectHeaderAccept(accepts);
 
     final String[] contentTypes = {
-      
+      "application/json"
     };
     final String contentType = apiClient.selectHeaderContentType(contentTypes);
 
@@ -429,7 +423,7 @@ public class ContainersApi {
     final String accept = apiClient.selectHeaderAccept(accepts);
 
     final String[] contentTypes = {
-      
+      "application/json"
     };
     final String contentType = apiClient.selectHeaderContentType(contentTypes);
 
@@ -479,7 +473,7 @@ public class ContainersApi {
     final String accept = apiClient.selectHeaderAccept(accepts);
 
     final String[] contentTypes = {
-      
+      "application/json"
     };
     final String contentType = apiClient.selectHeaderContentType(contentTypes);
 
@@ -534,7 +528,7 @@ public class ContainersApi {
     final String accept = apiClient.selectHeaderAccept(accepts);
 
     final String[] contentTypes = {
-      
+      "application/json"
     };
     final String contentType = apiClient.selectHeaderContentType(contentTypes);
 
@@ -587,7 +581,7 @@ public class ContainersApi {
     final String accept = apiClient.selectHeaderAccept(accepts);
 
     final String[] contentTypes = {
-      
+      "application/json"
     };
     final String contentType = apiClient.selectHeaderContentType(contentTypes);
 
@@ -634,7 +628,7 @@ public class ContainersApi {
     final String accept = apiClient.selectHeaderAccept(accepts);
 
     final String[] contentTypes = {
-      
+      "application/json"
     };
     final String contentType = apiClient.selectHeaderContentType(contentTypes);
 
