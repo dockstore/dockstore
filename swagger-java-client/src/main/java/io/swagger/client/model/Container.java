@@ -14,13 +14,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 @ApiModel(description = "")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-26T15:35:08.177-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-30T13:59:15.093-05:00")
 public class Container   {
   
   private Long id = null;
 
 public enum ModeEnum {
-  AUTO_DETECT_QUAY_TAGS("AUTO_DETECT_QUAY_TAGS"), MANUAL_IMAGE_PATH("MANUAL_IMAGE_PATH");
+  AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS("AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS"), AUTO_DETECT_QUAY_TAGS_WITH_MIXED("AUTO_DETECT_QUAY_TAGS_WITH_MIXED"), MANUAL_IMAGE_PATH("MANUAL_IMAGE_PATH");
 
   private String value;
 
