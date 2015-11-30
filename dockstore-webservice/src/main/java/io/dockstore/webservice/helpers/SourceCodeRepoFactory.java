@@ -4,7 +4,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import javax.ws.rs.WebApplicationException;
+
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
@@ -17,8 +19,8 @@ public class SourceCodeRepoFactory {
 
     static Logger log = LoggerFactory.getLogger(SourceCodeRepoFactory.class);
 
-    public static SourceCodeRepoInterface createSourceCodeRepo(String gitUrl,
-            HttpClient client, String bitbucketTokenContent, String githubTokenContent) {
+    public static SourceCodeRepoInterface createSourceCodeRepo(String gitUrl, HttpClient client, String bitbucketTokenContent,
+            String githubTokenContent) {
 
         Map<String, String> repoUrlMap = parseGitUrl(gitUrl);
 

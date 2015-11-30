@@ -16,9 +16,25 @@
  */
 package io.dockstore.webservice;
 
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import javax.ws.rs.WebApplicationException;
+
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
+
 import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
@@ -37,19 +53,6 @@ import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.resources.ResourceUtilities;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.ws.rs.WebApplicationException;
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 
 /**
  *
@@ -231,8 +234,8 @@ public class Helper {
      * @return a map: key = path; value = list of tags
      */
     @SuppressWarnings("checkstyle:parameternumber")
-    private static Map<String, List<Tag>> getTags(final HttpClient client, final List<Container> containers, final ObjectMapper objectMapper,
-            final Token quayToken, final Token bitbucketToken, final Token githubToken,
+    private static Map<String, List<Tag>> getTags(final HttpClient client, final List<Container> containers,
+            final ObjectMapper objectMapper, final Token quayToken, final Token bitbucketToken, final Token githubToken,
             final Map<String, ArrayList<?>> mapOfBuilds) {
         final Map<String, List<Tag>> tagMap = new HashMap<>();
 
@@ -298,7 +301,6 @@ public class Helper {
         return tagMap;
     }
 
-
     /**
      * Refreshes user's containers
      * 
@@ -350,17 +352,17 @@ public class Helper {
 
         List<String> namespaces = new ArrayList<>();
         // TODO: figure out better approach, for now just smash together stuff from DockerHub and quay.io
-        for(ImageRegistryInterface i: allRegistries){
+        for (ImageRegistryInterface i : allRegistries) {
             namespaces.addAll(i.getNamespaces());
         }
 
         List<Container> allRepos = new ArrayList<>();
-        for(ImageRegistryInterface i: allRegistries){
+        for (ImageRegistryInterface i : allRegistries) {
             allRepos.addAll(i.getContainers(namespaces));
         }
 
         Map<String, ArrayList<?>> mapOfBuilds = new HashMap<>();
-        for(ImageRegistryInterface i: allRegistries) {
+        for (ImageRegistryInterface i : allRegistries) {
             mapOfBuilds.putAll(i.getBuildMap(githubToken, bitbucketToken, allRepos));
         }
 
@@ -370,7 +372,6 @@ public class Helper {
         userDAO.clearCache();
         return new ArrayList(userDAO.findById(userId).getContainers());
     }
-
 
     /**
      * Read a file from the container's git repository.
@@ -383,14 +384,14 @@ public class Helper {
      * @return a FileResponse instance
      */
     public static FileResponse readGitRepositoryFile(Container container, String fileName, HttpClient client, Tag tag,
-                                                        Token bitbucketToken, Token githubToken) {
+            Token bitbucketToken, Token githubToken) {
         final String bitbucketTokenContent = bitbucketToken == null ? null : bitbucketToken.getContent();
 
         if (container.getGitUrl() == null || container.getGitUrl().isEmpty()) {
             return null;
         }
-        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(container.getGitUrl(), client, bitbucketTokenContent,
-            githubToken.getContent());
+        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(container.getGitUrl(), client,
+                bitbucketTokenContent, githubToken.getContent());
 
         final String reference = sourceCodeRepo.getReference(container.getGitUrl(), tag.getReference());
 

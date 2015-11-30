@@ -1,13 +1,13 @@
 package io.dockstore.webservice.helpers;
 
-import io.dockstore.webservice.core.Container;
-import io.dockstore.webservice.core.Tag;
-import io.dockstore.webservice.core.Token;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import io.dockstore.webservice.core.Container;
+import io.dockstore.webservice.core.Tag;
+import io.dockstore.webservice.core.Token;
 
 /**
  * A no-op interface intended as a place-holder for where we will implemnt docker hub functionality when they get around to exposing and
@@ -37,6 +37,6 @@ public class DockerHubRegistry implements ImageRegistryInterface {
 
     @Override
     public Map<String, ArrayList<?>> getBuildMap(Token githubToken, Token bitbucketToken, List<Container> allRepos) {
-       return new HashMap<>();
+        return new HashMap<>();
     }
 }

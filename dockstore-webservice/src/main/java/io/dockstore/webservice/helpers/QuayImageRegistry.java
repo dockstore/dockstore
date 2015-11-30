@@ -1,16 +1,5 @@
 package io.dockstore.webservice.helpers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Optional;
-import com.google.gson.Gson;
-import io.dockstore.webservice.core.Container;
-import io.dockstore.webservice.core.Tag;
-import io.dockstore.webservice.core.Token;
-import io.dockstore.webservice.resources.ResourceUtilities;
-import org.apache.http.client.HttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -19,6 +8,19 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.http.client.HttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Optional;
+import com.google.gson.Gson;
+
+import io.dockstore.webservice.core.Container;
+import io.dockstore.webservice.core.Tag;
+import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.resources.ResourceUtilities;
 
 import static io.dockstore.webservice.Helper.RepoList;
 
@@ -181,8 +183,8 @@ public class QuayImageRegistry implements ImageRegistryInterface {
             container.setRegistry(quayToken.getTokenSource());
             container.setGitUrl(gitURL);
 
-            final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(container.getGitUrl(),
-                client, bitbucketToken == null ? null : bitbucketToken.getContent(), githubToken.getContent());
+            final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(container.getGitUrl(), client,
+                    bitbucketToken == null ? null : bitbucketToken.getContent(), githubToken.getContent());
             if (sourceCodeRepo != null) {
                 // find if there is a Dockstore.cwl file from the git repository
                 sourceCodeRepo.findCWL(container);
