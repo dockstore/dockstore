@@ -16,9 +16,6 @@
  */
 package io.dockstore.webservice;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Optional;
-import com.google.gson.Gson;
 import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -44,6 +41,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.ws.rs.WebApplicationException;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -52,6 +50,9 @@ import org.eclipse.egit.github.core.service.ContentsService;
 import org.eclipse.egit.github.core.service.RepositoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Optional;
+import com.google.gson.Gson;
 
 /**
  *
@@ -82,35 +83,88 @@ public class Helper {
     private static void updateTags(Container container, TagDAO tagDAO, FileDAO fileDAO, Map<String, List<Tag>> tagMap) {
         List<Tag> existingTags = new ArrayList(container.getTags());
         List<Tag> newTags = tagMap.get(container.getPath());
+        Map<String, Set<SourceFile>> fileMap = new HashMap<>();
+
+        if (newTags == null) {
+            LOG.info("Tags for container " + container.getPath() + " did not get updated because new tags were not found");
+            return;
+        }
 
         List<Tag> toDelete = new ArrayList<>(0);
         for (Iterator<Tag> iterator = existingTags.iterator(); iterator.hasNext();) {
-            Tag oldContainer = iterator.next();
+            Tag oldTag = iterator.next();
             boolean exists = false;
-            for (Tag newContainer : newTags) {
-                if (newContainer.getName().equals(oldContainer.getName())) {
+            for (Tag newTag : newTags) {
+                if (newTag.getName().equals(oldTag.getName())) {
                     exists = true;
                     break;
                 }
             }
             if (!exists) {
-                toDelete.add(oldContainer);
+                toDelete.add(oldTag);
                 iterator.remove();
             }
         }
 
-        if (newTags != null) {
-            for (Tag tag : newTags) {
-                for (SourceFile file : tag.getSourceFiles()) {
-                    fileDAO.create(file);
+        for (Tag newTag : newTags) {
+            boolean exists = false;
+
+            // Find if user already has the container
+            for (Tag oldTag : existingTags) {
+                if (newTag.getName().equals(oldTag.getName())) {
+                    exists = true;
+
+                    oldTag.update(newTag);
+
+                    // tagDAO.create(oldTag);
+
+                    break;
+                }
+            }
+
+            // Tag does not already exist
+            if (!exists) {
+                LOG.info("Tag " + newTag.getName() + " is added to " + container.getPath());
+
+                // long id = tagDAO.create(newTag);
+                // Tag tag = tagDAO.findById(id);
+                // container.addTag(tag);
+
+                existingTags.add(newTag);
+            }
+
+            fileMap.put(newTag.getName(), newTag.getSourceFiles());
+        }
+
+        for (Tag tag : existingTags) {
+            Set<SourceFile> newFiles = fileMap.get(tag.getName());
+            Set<SourceFile> oldFiles = tag.getSourceFiles();
+
+            for (SourceFile newFile : newFiles) {
+                boolean exists = false;
+                for (SourceFile oldFile : oldFiles) {
+                    if (oldFile.getType().equals(newFile.getType())) {
+                        exists = true;
+
+                        oldFile.update(newFile);
+                        fileDAO.create(oldFile);
+                    }
                 }
 
-                long tagId = tagDAO.create(tag);
-                tag = tagDAO.findById(tagId);
-                container.addTag(tag);
+                if (!exists) {
+                    long id = fileDAO.create(newFile);
+                    SourceFile file = fileDAO.findById(id);
+                    tag.addSourceFile(file);
+
+                    oldFiles.add(newFile);
+                }
             }
+
+            long id = tagDAO.create(tag);
+            tag = tagDAO.findById(id);
+            container.addTag(tag);
         }
-        LOG.info("UPDATED Container: " + container.getPath());
+
     }
 
     /**
@@ -190,20 +244,21 @@ public class Helper {
             container.addUser(user);
             containerDAO.create(container);
 
-            container.getTags().clear();
-
-            List<Tag> tags = tagMap.get(container.getPath());
-            if (tags != null) {
-                for (Tag tag : tags) {
-                    for (SourceFile file : tag.getSourceFiles()) {
-                        fileDAO.create(file);
-                    }
-
-                    long tagId = tagDAO.create(tag);
-                    tag = tagDAO.findById(tagId);
-                    container.addTag(tag);
-                }
-            }
+            // container.getTags().clear();
+            //
+            // List<Tag> tags = tagMap.get(container.getPath());
+            // if (tags != null) {
+            // for (Tag tag : tags) {
+            // for (SourceFile file : tag.getSourceFiles()) {
+            // fileDAO.create(file);
+            // }
+            //
+            // long tagId = tagDAO.create(tag);
+            // tag = tagDAO.findById(tagId);
+            // container.addTag(tag);
+            // }
+            // }
+            updateTags(container, tagDAO, fileDAO, tagMap);
             LOG.info("UPDATED Container: " + container.getPath());
         }
 
@@ -364,6 +419,12 @@ public class Helper {
                             ref = triggerMetadataMap.get("trigger_metadata").get("ref");
                             LOG.info("REFERENCE: " + ref);
                             tag.setReference(ref);
+
+                            if (ref == null) {
+                                tag.setAutomated(false);
+                            } else {
+                                tag.setAutomated(true);
+                            }
 
                             FileResponse cwlResponse = readGitRepositoryFile(c, DOCKSTORE_CWL, client, tag, githubRepositoryService,
                                     githubContentsService, bitbucketToken);

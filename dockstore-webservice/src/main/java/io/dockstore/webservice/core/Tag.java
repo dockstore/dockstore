@@ -19,7 +19,7 @@ package io.dockstore.webservice.core;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import javax.persistence.Column;
@@ -32,7 +32,6 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
-import java.util.Date;
 
 /**
  *
@@ -42,7 +41,7 @@ import java.util.Date;
 @Entity
 @Table(name = "tag")
 // @JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class, property = "@id")
-public class Tag implements Comparable<Tag>{
+public class Tag implements Comparable<Tag> {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
@@ -64,16 +63,16 @@ public class Tag implements Comparable<Tag>{
     @ApiModelProperty("size of the image")
     private long size;
 
-    //TODO: determine whether this is duplicated information
+    // TODO: determine whether this is duplicated information
     @Column
     @ApiModelProperty("git commit/tag/branch ... may be a duplicate of name or vice versa")
     private String reference;
 
-    @Column(columnDefinition="text")
+    @Column(columnDefinition = "text")
     @JsonProperty("dockerfile_path")
     private String dockerfilePath = "/Dockerfile";
 
-    @Column(columnDefinition="text")
+    @Column(columnDefinition = "text")
     @JsonProperty("cwl_path")
     private String cwlPath = "/Dockstore.cwl";
 
@@ -85,19 +84,34 @@ public class Tag implements Comparable<Tag>{
     public Tag() {
         this.sourceFiles = new HashSet<>(0);
     }
-    
+
     @Column
     @ApiModelProperty("whether this row is visible to other users aside from the owner")
     private boolean hidden;
 
+    @Column
+    @ApiModelProperty()
+    private boolean automated;
 
-    public void update(Tag tag) {
+    public void updateByUser(Tag tag) {
         this.setReference(tag.getReference());
         this.setName(tag.getName());
         this.setImageId(tag.getImageId());
         this.setHidden(tag.isHidden());
         this.setCwlPath(tag.getCwlPath());
         this.setDockerfilePath(tag.getDockerfilePath());
+    }
+
+    public void update(Tag tag) {
+        // If the tag has an automated build, the reference will be overwritten (whether or not the user has edited it).
+        if (tag.isAutomated()) {
+            this.setReference(tag.getReference());
+        }
+
+        this.setAutomated(tag.isAutomated());
+        this.setImageId(tag.getImageId());
+        this.setLastModified(tag.getLastModified());
+        this.setSize(tag.getSize());
     }
 
     @JsonProperty
@@ -158,7 +172,7 @@ public class Tag implements Comparable<Tag>{
     public void setDockerfilePath(String dockerfilePath) {
         this.dockerfilePath = dockerfilePath;
     }
-    
+
     public Set<SourceFile> getSourceFiles() {
         return sourceFiles;
     }
@@ -166,7 +180,6 @@ public class Tag implements Comparable<Tag>{
     public void addSourceFile(SourceFile file) {
         sourceFiles.add(file);
     }
-    
 
     @JsonProperty
     public String getCwlPath() {
@@ -186,8 +199,17 @@ public class Tag implements Comparable<Tag>{
         this.hidden = hidden;
     }
 
+    @JsonProperty
+    public boolean isAutomated() {
+        return automated;
+    }
+
+    public void setAutomated(boolean automated) {
+        this.automated = automated;
+    }
+
     @Override
     public int compareTo(Tag o) {
-        return Long.compare(this.getId(),o.getId());
+        return Long.compare(this.getId(), o.getId());
     }
 }

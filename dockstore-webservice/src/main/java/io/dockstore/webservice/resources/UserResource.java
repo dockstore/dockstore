@@ -16,13 +16,6 @@
  */
 package io.dockstore.webservice.resources;
 
-import com.codahale.metrics.annotation.Timed;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Charsets;
-import com.google.common.base.Optional;
-import com.google.common.hash.Hashing;
-import com.google.common.io.BaseEncoding;
-import com.google.gson.Gson;
 import io.dockstore.webservice.Helper;
 import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.Group;
@@ -63,6 +56,13 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.codahale.metrics.annotation.Timed;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Charsets;
+import com.google.common.base.Optional;
+import com.google.common.hash.Hashing;
+import com.google.common.io.BaseEncoding;
+import com.google.gson.Gson;
 
 /**
  *
