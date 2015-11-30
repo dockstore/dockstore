@@ -1,15 +1,14 @@
 package io.dockstore.webservice.helpers;
 
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.ws.rs.WebApplicationException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.ws.rs.WebApplicationException;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author dyuen
@@ -34,8 +33,12 @@ public class SourceCodeRepoFactory {
         SourceCodeRepoInterface repo;
         if (source.equals("github.com")) {
             repo = new GitHubSourceCodeRepo(gitUsername, githubTokenContent, gitRepository);
-        } else if (source.equals("bitbucket.org") && bitbucketTokenContent != null) {
-            repo = new BitBucketSourceCodeRepo(gitUsername, client, bitbucketTokenContent, gitRepository);
+        } else if (source.equals("bitbucket.org")) {
+            if (bitbucketTokenContent != null) {
+                repo = new BitBucketSourceCodeRepo(gitUsername, client, bitbucketTokenContent, gitRepository);
+            } else {
+                return null;
+            }
         } else {
             log.info("Do not support: " + source);
             throw new WebApplicationException(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE);
