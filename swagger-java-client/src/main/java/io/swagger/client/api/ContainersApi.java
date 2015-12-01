@@ -13,7 +13,7 @@ import io.swagger.client.model.User;
 
 import java.util.*;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-30T16:25:14.721-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-30T16:41:09.863-05:00")
 public class ContainersApi {
   private ApiClient apiClient;
 
@@ -205,6 +205,52 @@ public class ContainersApi {
     
     TypeRef returnType = new TypeRef<List<Container>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    
+  }
+  
+  /**
+   * Register an image manually, along with tags
+   * Register/publish an image manually.
+   * @param body Container to be registered
+   * @return Container
+   */
+  public Container registerManual (Container body) throws ApiException {
+    Object postBody = body;
+    
+    // verify the required parameter 'body' is set
+    if (body == null) {
+      throw new ApiException(400, "Missing the required parameter 'body' when calling registerManual");
+    }
+    
+    // create path and map variables
+    String path = "/containers/registerManual".replaceAll("\\{format\\}","json");
+
+    // query params
+    List<Pair> queryParams = new ArrayList<Pair>();
+    Map<String, String> headerParams = new HashMap<String, String>();
+    Map<String, Object> formParams = new HashMap<String, Object>();
+
+    
+
+    
+
+    
+
+    final String[] accepts = {
+      "application/json"
+    };
+    final String accept = apiClient.selectHeaderAccept(accepts);
+
+    final String[] contentTypes = {
+      "application/json"
+    };
+    final String contentType = apiClient.selectHeaderContentType(contentTypes);
+
+    String[] authNames = new String[] {  };
+
+    
+    TypeRef returnType = new TypeRef<Container>() {};
+    return apiClient.invokeAPI(path, "POST", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
   
@@ -542,8 +588,8 @@ public class ContainersApi {
   
   /**
    * Register or unregister a container
-   * Register a container (public or private). Assumes that user is using quay.io and github.
-   * @param containerId Container id to delete
+   * Register/publish a container (public or private). Assumes that user is using quay.io and github.
+   * @param containerId Container id to register/publish
    * @param body RegisterRequest to refresh the list of repos for a user
    * @return Container
    */

@@ -16,21 +16,6 @@
  */
 package io.dockstore.client.cli;
 
-import com.esotericsoftware.yamlbeans.YamlException;
-import com.esotericsoftware.yamlbeans.YamlReader;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.Configuration;
-import io.swagger.client.api.ContainersApi;
-import io.swagger.client.api.UsersApi;
-import io.swagger.client.model.Container;
-import io.swagger.client.model.RegisterRequest;
-import io.swagger.client.model.SourceFile;
-import io.swagger.client.model.Tag;
-import io.swagger.client.model.User;
-import javassist.NotFoundException;
-import org.apache.http.HttpStatus;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -43,6 +28,23 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.http.HttpStatus;
+
+import com.esotericsoftware.yamlbeans.YamlException;
+import com.esotericsoftware.yamlbeans.YamlReader;
+
+import io.swagger.client.ApiClient;
+import io.swagger.client.ApiException;
+import io.swagger.client.Configuration;
+import io.swagger.client.api.ContainersApi;
+import io.swagger.client.api.UsersApi;
+import io.swagger.client.model.Container;
+import io.swagger.client.model.RegisterRequest;
+import io.swagger.client.model.SourceFile;
+import io.swagger.client.model.Tag;
+import io.swagger.client.model.User;
+import javassist.NotFoundException;
 
 /**
  *
@@ -76,7 +78,7 @@ public class Client {
         }
 
         String first = args.get(0);
-        return first.equals("-h") || first.equals("--help");
+        return isHelpRequest(first);
     }
 
     private static class Kill extends RuntimeException {
@@ -101,6 +103,55 @@ public class Client {
         } else {
             return "No";
         }
+    }
+
+    private static List<String> optVals(List<String> args, String key) {
+        List<String> vals = new ArrayList<>();
+
+        for (int i = 0; i < args.size(); /** do nothing */ i = i) {
+            String s = args.get(i);
+            if (key.equals(s)) {
+                args.remove(i);
+                if (i < args.size()) {
+                    String val = args.remove(i);
+                    if (!val.startsWith("--")) {
+                        String[] ss = val.split(",");
+                        if (ss.length > 0) {
+                            vals.addAll(Arrays.asList(ss));
+                            continue;
+                        }
+                    }
+                }
+                kill("dockstore: missing required argument to '%s'.", key);
+            } else {
+                i++;
+            }
+        }
+
+        return vals;
+    }
+
+    private static String optVal(List<String> args, String key, String defaultVal) {
+        String val = defaultVal;
+
+        List<String> vals = optVals(args, key);
+        if (vals.size() == 1) {
+            val = vals.get(0);
+        } else if (vals.size() > 1) {
+            kill("dockstore: multiple instances of '%s'.", key);
+        }
+
+        return val;
+    }
+
+    private static String reqVal(List<String> args, String key) {
+        String val = optVal(args, key, null);
+
+        if (val == null) {
+            kill("dockstore: missing required flag '%s'.", key);
+        }
+
+        return val;
     }
 
     private static int[] columnWidths(List<Container> containers) {
@@ -239,7 +290,7 @@ public class Client {
             }
         } else {
             String first = args.get(0);
-            if (first.equals("-h") || first.equals("--help")) {
+            if (isHelpRequest(first)) {
                 publishHelp();
             } else {
                 try {
@@ -258,6 +309,57 @@ public class Client {
                 }
             }
         }
+    }
+
+    private static void manualPublish(List<String> args) {
+        if (args.isEmpty()) {
+            publishHelp();
+        } else {
+            String first = args.get(0);
+            if (isHelpRequest(first)) {
+                publishHelp();
+            } else {
+                try {
+                    String name = reqVal(args, "--name");
+                    String namespace = reqVal(args, "--namespace");
+                    String gitURL = reqVal(args, "--git-url");
+
+                    String dockerfilePath = reqVal(args, "--dockerfile-path");
+                    String cwlPath = reqVal(args, "--cwl-path");
+                    String gitReference = reqVal(args, "--git-reference");
+
+                    Container container =new Container();
+                    container.setMode(Container.ModeEnum.MANUAL_IMAGE_PATH);
+                    container.setName(name);
+                    container.setNamespace(namespace);
+                    container.setRegistry("DOCKER_HUB");
+                    container.setDefaultDockerfilePath(dockerfilePath);
+                    container.setDefaultCwlPath(cwlPath);
+                    container.setIsPublic(true);
+                    container.setIsRegistered(true);
+                    container.setGitUrl(gitURL);
+                    Tag tag = new Tag();
+                    tag.setReference(gitReference);
+                    tag.setDockerfilePath(dockerfilePath);
+                    tag.setCwlPath(cwlPath);
+                    container.getTags().add(tag);
+
+                    container = containersApi.registerManual(container);
+
+                    if (container != null) {
+                        out("Successfully published " + first);
+                    } else {
+                        kill("Unable to publish " + first);
+                    }
+                } catch (ApiException ex) {
+                    kill("Unable to publish " + first);
+                }
+            }
+        }
+    }
+
+    private static boolean isHelpRequest(String first) {
+        return first.equals("-h") || first.equals("--help");
     }
 
     private static void publishHelp() {
@@ -441,6 +543,8 @@ public class Client {
                 out("");
                 out("  publish          :  register a container in the dockstore");
                 out("");
+                out("  manual_publish   :  register a Docker Hub container in the dockstore");
+                out("");
                 out("  info <container> :  print detailed information about a particular container");
                 out("");
                 out("  cwl <container>  :  returns the Common Workflow Language tool definition for this Docker image ");
@@ -461,6 +565,9 @@ public class Client {
                             break;
                         case "publish":
                             publish(args);
+                            break;
+                        case "manual_publish":
+                            manualPublish(args);
                             break;
                         case "info":
                             info(args);

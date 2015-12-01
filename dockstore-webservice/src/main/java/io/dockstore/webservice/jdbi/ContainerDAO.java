@@ -16,11 +16,14 @@
  */
 package io.dockstore.webservice.jdbi;
 
-import io.dockstore.webservice.core.Container;
-import io.dropwizard.hibernate.AbstractDAO;
 import java.util.List;
+
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+
+import io.dockstore.webservice.core.Container;
+import io.dockstore.webservice.core.ContainerMode;
+import io.dropwizard.hibernate.AbstractDAO;
 
 /**
  *
@@ -70,6 +73,11 @@ public class ContainerDAO extends AbstractDAO<Container> {
     public Container findByPath(String path) {
         return uniqueResult(namedQuery("io.dockstore.webservice.core.Container.findByPath").setParameter("path", path));
     }
+
+    public List<Container> findByMode(final ContainerMode mode) {
+        return list(namedQuery("io.dockstore.webservice.core.Container.findByMode").setParameter("mode", mode));
+    }
+
 
     public Container findRegisteredByPath(String path) {
         return uniqueResult(namedQuery("io.dockstore.webservice.core.Container.findRegisteredByPath").setParameter("path", path));

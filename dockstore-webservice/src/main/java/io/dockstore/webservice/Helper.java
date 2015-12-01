@@ -37,6 +37,7 @@ import com.google.common.base.Optional;
 import com.google.gson.Gson;
 
 import io.dockstore.webservice.core.Container;
+import io.dockstore.webservice.core.ContainerMode;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
 import io.dockstore.webservice.core.Tag;
@@ -54,6 +55,7 @@ import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.resources.ResourceUtilities;
+import jersey.repackaged.com.google.common.collect.Lists;
 
 /**
  *
@@ -204,7 +206,8 @@ public class Helper {
                     break;
                 }
             }
-            if (!exists) {
+            // TODO: for now, while we don't have a docker hub api, never delete images from Docker Hub
+            if (!exists && oldContainer.getMode() != ContainerMode.MANUAL_IMAGE_PATH) {
                 oldContainer.removeUser(user);
                 // user.removeContainer(oldContainer);
                 toDelete.add(oldContainer);
@@ -309,67 +312,87 @@ public class Helper {
             final ImageRegistryInterface imageRegistry = factory.createImageRegistry(c.getRegistry());
             final List<Tag> tags = imageRegistry.getTags(c);
 
-            // TODO: this part isn't very good, a true implementation of Docker Hub would need to return
-            // a quay.io-like data structure, we need to replace mapOfBuilds
-            List builds = mapOfBuilds.get(c.getPath());
+            if (c.getMode() == ContainerMode.AUTO_DETECT_QUAY_TAGS) {
+                // TODO: this part isn't very good, a true implementation of Docker Hub would need to return
+                // a quay.io-like data structure, we need to replace mapOfBuilds
+                List builds = mapOfBuilds.get(c.getPath());
 
-            if (builds != null && !builds.isEmpty()) {
-                for (Tag tag : tags) {
-                    LOG.info("TAG: " + tag.getName());
+                if (builds != null && !builds.isEmpty()) {
+                    for (Tag tag : tags) {
+                        LOG.info("TAG: " + tag.getName());
 
-                    for (final Object build : builds) {
-                        Map<String, String> idMap = (Map<String, String>) build;
-                        String buildId = idMap.get("id");
+                        for (final Object build : builds) {
+                            Map<String, String> idMap = (Map<String, String>) build;
+                            String buildId = idMap.get("id");
 
-                        LOG.info("Build ID: {}", buildId);
+                            LOG.info("Build ID: {}", buildId);
 
-                        Map<String, ArrayList<String>> tagsMap = (Map<String, ArrayList<String>>) build;
+                            Map<String, ArrayList<String>> tagsMap = (Map<String, ArrayList<String>>) build;
 
-                        List<String> buildTags = tagsMap.get("tags");
+                            List<String> buildTags = tagsMap.get("tags");
 
-                        if (buildTags.contains(tag.getName())) {
-                            LOG.info("Build found with tag: {}", tag.getName());
+                            if (buildTags.contains(tag.getName())) {
+                                LOG.info("Build found with tag: {}", tag.getName());
 
-                            Map<String, Map<String, String>> triggerMetadataMap = (Map<String, Map<String, String>>) build;
+                                Map<String, Map<String, String>> triggerMetadataMap = (Map<String, Map<String, String>>) build;
 
-                            String ref = triggerMetadataMap.get("trigger_metadata").get("ref");
-                            LOG.info("REFERENCE: {}", ref);
-                            tag.setReference(ref);
+                                String ref = triggerMetadataMap.get("trigger_metadata").get("ref");
+                                LOG.info("REFERENCE: {}", ref);
+                                tag.setReference(ref);
+                                if (ref == null) {
+                                  tag.setAutomated(false);
+                                } else {
+                                  tag.setAutomated(true);
+                                }
 
-                            if (ref == null) {
-                                tag.setAutomated(false);
-                            } else {
-                                tag.setAutomated(true);
+
+                                loadFilesIntoTag(client, bitbucketToken, githubToken, c, tag);
+
+                                break;
                             }
-
-                            FileResponse cwlResponse = readGitRepositoryFile(c, FileType.DOCKSTORE_CWL, client, tag, bitbucketToken,
-                                    githubToken);
-                            if (cwlResponse != null) {
-                                SourceFile dockstoreCwl = new SourceFile();
-                                dockstoreCwl.setType(FileType.DOCKSTORE_CWL);
-                                dockstoreCwl.setContent(cwlResponse.getContent());
-                                tag.addSourceFile(dockstoreCwl);
-                            }
-
-                            FileResponse dockerfileResponse = readGitRepositoryFile(c, FileType.DOCKERFILE, client, tag, bitbucketToken,
-                                    githubToken);
-                            if (dockerfileResponse != null) {
-                                SourceFile dockerfile = new SourceFile();
-                                dockerfile.setType(FileType.DOCKERFILE);
-                                dockerfile.setContent(dockerfileResponse.getContent());
-                                tag.addSourceFile(dockerfile);
-                            }
-
-                            break;
                         }
                     }
                 }
+                tagMap.put(c.getPath(), tags);
+            } else if (c.getMode() == ContainerMode.MANUAL_IMAGE_PATH){
+                for(final Tag tag : c.getTags()){
+                    loadFilesIntoTag(client, bitbucketToken, githubToken, c, tag);
+                }
+                // TODO: this assumes paths are unique, not sure this will hold anymore
+                final List<Tag> currentList = tagMap.getOrDefault(c.getPath(), new ArrayList<>());
+                currentList.addAll(Lists.newArrayList(c.getTags()));
+                tagMap.put(c.getPath(), currentList);
             }
-
-            tagMap.put(c.getPath(), tags);
         }
 
         return tagMap;
+    }
+
+    /**
+     * Given a container and tags, load up required files from git repository
+     * @param client
+     * @param bitbucketToken
+     * @param githubToken
+     * @param c
+     * @param tag
+     */
+    private static void loadFilesIntoTag(HttpClient client, Token bitbucketToken, Token githubToken, Container c, Tag tag) {
+        FileResponse cwlResponse = readGitRepositoryFile(c, DOCKSTORE_CWL, client, tag, bitbucketToken, githubToken);
+        if (cwlResponse != null) {
+            SourceFile dockstoreCwl = new SourceFile();
+            dockstoreCwl.setType(FileType.DOCKSTORE_CWL);
+            dockstoreCwl.setContent(cwlResponse.getContent());
+            tag.addSourceFile(dockstoreCwl);
+        }
+
+        FileResponse dockerfileResponse = readGitRepositoryFile(c, DOCKERFILE, client, tag, bitbucketToken,
+            githubToken);
+        if (dockerfileResponse != null) {
+            SourceFile dockerfile = new SourceFile();
+            dockerfile.setType(FileType.DOCKERFILE);
+            dockerfile.setContent(dockerfileResponse.getContent());
+            tag.addSourceFile(dockerfile);
+        }
     }
 
     /**
@@ -409,9 +432,9 @@ public class Helper {
                 bitbucketToken = token;
             }
         }
-
-        if (githubToken == null || quayToken == null) {
-            LOG.info("GIT or QUAY token not found!");
+        // with Docker Hub support it is now possible that there is no quayToken
+        if (githubToken == null) {
+            LOG.info("GIT token not found!");
             throw new WebApplicationException(HttpStatus.SC_CONFLICT);
         }
         if (bitbucketToken == null) {
@@ -431,6 +454,10 @@ public class Helper {
         for (ImageRegistryInterface i : allRegistries) {
             allRepos.addAll(i.getContainers(namespaces));
         }
+
+        // TODO: when we get proper docker hub support, get this above
+        // hack: read relevant containers from database
+        allRepos.addAll(containerDAO.findByMode(ContainerMode.MANUAL_IMAGE_PATH));
 
         Map<String, ArrayList<?>> mapOfBuilds = new HashMap<>();
         for (ImageRegistryInterface i : allRegistries) {

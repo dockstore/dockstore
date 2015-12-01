@@ -243,10 +243,45 @@ public class DockerRepoResource {
     @POST
     @Timed
     @UnitOfWork
+    @Path("/registerManual")
+    @ApiOperation(value = "Register an image manually, along with tags", notes = "Register/publish an image manually.", response = Container.class)
+    public Container registerManual(@ApiParam(hidden = true) @Auth Token authToken,
+                                 @ApiParam(value = "Container to be registered", required = true) Container container) {
+        User user = userDAO.findById(authToken.getUserId());
+        Helper.checkUser(user);
+        // populate user in container
+        container.addUser(user);
+        // create dependent Tags before creating container
+        Set<Tag> createdTags = new HashSet<>();
+        for(Tag tag : container.getTags()){
+            final long l = tagDAO.create(tag);
+            createdTags.add(tagDAO.findById(l));
+        }
+        container.getTags().clear();
+        container.getTags().addAll(createdTags);
+        // create dependent Labels before creating container
+        Set<Label> createdLabels = new HashSet<>();
+        for(Label label : container.getLabels()){
+            final long l = labelDAO.create(label);
+            createdLabels.add(labelDAO.findById(l));
+        }
+        container.getLabels().clear();
+        container.getLabels().addAll(createdLabels);
+
+        long id = containerDAO.create(container);
+        Container created = containerDAO.findById(id);
+        return created;
+    }
+
+
+
+    @POST
+    @Timed
+    @UnitOfWork
     @Path("/{containerId}/register")
-    @ApiOperation(value = "Register or unregister a container", notes = "Register a container (public or private). Assumes that user is using quay.io and github.", response = Container.class)
+    @ApiOperation(value = "Register or unregister a container", notes = "Register/publish a container (public or private). Assumes that user is using quay.io and github.", response = Container.class)
     public Container register(@ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "Container id to delete", required = true) @PathParam("containerId") Long containerId,
+            @ApiParam(value = "Container id to register/publish", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "RegisterRequest to refresh the list of repos for a user", required = true) RegisterRequest request) {
         Container c = containerDAO.findById(containerId);
         Helper.checkContainer(c);
