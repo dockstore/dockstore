@@ -1,19 +1,21 @@
 package io.dockstore.webservice.helpers;
 
-import com.google.common.base.Optional;
-import com.google.gson.Gson;
-import io.dockstore.webservice.Helper;
-import io.dockstore.webservice.core.Container;
-import io.dockstore.webservice.resources.ResourceUtilities;
-import org.apache.http.client.HttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.apache.http.client.HttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Optional;
+import com.google.gson.Gson;
+
+import io.dockstore.webservice.Helper;
+import io.dockstore.webservice.core.Container;
+import io.dockstore.webservice.resources.ResourceUtilities;
 
 /**
  * @author dyuen
@@ -27,8 +29,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     private final String bitbucketTokenContent;
     private final String gitRepository;
 
-    public BitBucketSourceCodeRepo(String gitUsername,
-            HttpClient client, String bitbucketTokenContent, String gitRepository) {
+    public BitBucketSourceCodeRepo(String gitUsername, HttpClient client, String bitbucketTokenContent, String gitRepository) {
         this.client = client;
         this.bitbucketTokenContent = bitbucketTokenContent;
         this.gitUsername = gitUsername;
@@ -127,7 +128,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
                     String content = "";
 
-                    url = BITBUCKET_API_URL + "repositories/" + m.group(1) + "/" + m.group(2) + "/raw/" + branch + "/" + Helper.DOCKSTORE_CWL;
+                    url = BITBUCKET_API_URL + "repositories/" + m.group(1) + "/" + m.group(2) + "/raw/" + branch + "/"
+                            + Helper.DOCKSTORE_CWL;
                     asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
                     LOG.info("RESOURCE CALL: " + url);
                     if (asString.isPresent()) {
