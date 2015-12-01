@@ -2,8 +2,6 @@ package io.dockstore.webservice.helpers;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,36 +27,6 @@ public abstract class SourceCodeRepoInterface {
      * @return an updated container with fields from the CWL filled in
      */
     public abstract Container findCWL(Container c);
-
-    /**
-     *
-     * @param gitURL
-     *            a git url
-     * @param reference
-     *            a raw reference from git like "refs/heads/master"
-     * @return the last segment like master
-     */
-    public String getReference(String gitURL, String reference) {
-        Map<String, String> map = SourceCodeRepoFactory.parseGitUrl(gitURL);
-        if (map == null) {
-            return null;
-        }
-        if (reference != null) {
-            Pattern p = Pattern.compile("(\\S+)/(\\S+)/(\\S+)");
-            Matcher m = p.matcher(reference);
-            if (!m.find()) {
-                LOG.info("Cannot parse reference: " + reference);
-                return null;
-            }
-
-            // These correspond to the positions of the pattern matcher
-            final int refIndex = 3;
-
-            reference = m.group(refIndex);
-            LOG.info("REFERENCE: " + reference);
-        }
-        return reference;
-    }
 
     /**
      * Parses the cwl content to get the author and description. Updates the container with the author, description, and hasCollab fields.

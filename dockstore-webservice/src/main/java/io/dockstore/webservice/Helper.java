@@ -24,6 +24,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.ws.rs.WebApplicationException;
 
@@ -82,97 +84,109 @@ public class Helper {
         }
     }
 
-    private static void updateTags(Container container, TagDAO tagDAO, FileDAO fileDAO, Map<String, List<Tag>> tagMap) {
-        List<Tag> existingTags = new ArrayList(container.getTags());
-        List<Tag> newTags = tagMap.get(container.getPath());
-        Map<String, Set<SourceFile>> fileMap = new HashMap<>();
+    @SuppressWarnings("checkstyle:parameternumber")
+    private static void updateTags(Set<Container> containers, HttpClient client, ContainerDAO containerDAO, TagDAO tagDAO, FileDAO fileDAO,
+            Token githubToken, Token bitbucketToken, Map<String, List<Tag>> tagMap) {
+        for (Container container : containers) {
+            LOG.info("--------------- Updating tags for {} ---------------", container.getPath());
 
-        if (newTags == null) {
-            LOG.info("Tags for container " + container.getPath() + " did not get updated because new tags were not found");
-            return;
-        }
+            List<Tag> existingTags = new ArrayList(container.getTags());
+            List<Tag> newTags = tagMap.get(container.getPath());
+            Map<String, Set<SourceFile>> fileMap = new HashMap<>();
 
-        List<Tag> toDelete = new ArrayList<>(0);
-        for (Iterator<Tag> iterator = existingTags.iterator(); iterator.hasNext();) {
-            Tag oldTag = iterator.next();
-            boolean exists = false;
-            for (Tag newTag : newTags) {
-                if (newTag.getName().equals(oldTag.getName())) {
-                    exists = true;
-                    break;
-                }
-            }
-            if (!exists) {
-                toDelete.add(oldTag);
-                iterator.remove();
-            }
-        }
-
-        for (Tag newTag : newTags) {
-            boolean exists = false;
-
-            // Find if user already has the container
-            for (Tag oldTag : existingTags) {
-                if (newTag.getName().equals(oldTag.getName())) {
-                    exists = true;
-
-                    oldTag.update(newTag);
-
-                    // tagDAO.create(oldTag);
-
-                    break;
-                }
+            if (newTags == null) {
+                LOG.info("Tags for container " + container.getPath() + " did not get updated because new tags were not found");
+                return;
             }
 
-            // Tag does not already exist
-            if (!exists) {
-                LOG.info("Tag " + newTag.getName() + " is added to " + container.getPath());
-
-                // long id = tagDAO.create(newTag);
-                // Tag tag = tagDAO.findById(id);
-                // container.addTag(tag);
-
-                existingTags.add(newTag);
-            }
-
-            fileMap.put(newTag.getName(), newTag.getSourceFiles());
-        }
-
-        for (Tag tag : existingTags) {
-            Set<SourceFile> newFiles = fileMap.get(tag.getName());
-            Set<SourceFile> oldFiles = tag.getSourceFiles();
-
-            for (SourceFile newFile : newFiles) {
+            List<Tag> toDelete = new ArrayList<>(0);
+            for (Iterator<Tag> iterator = existingTags.iterator(); iterator.hasNext();) {
+                Tag oldTag = iterator.next();
                 boolean exists = false;
-                for (SourceFile oldFile : oldFiles) {
-                    if (oldFile.getType().equals(newFile.getType())) {
+                for (Tag newTag : newTags) {
+                    if (newTag.getName().equals(oldTag.getName())) {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (!exists) {
+                    toDelete.add(oldTag);
+                    iterator.remove();
+                }
+            }
+
+            for (Tag newTag : newTags) {
+                boolean exists = false;
+
+                // Find if user already has the container
+                for (Tag oldTag : existingTags) {
+                    if (newTag.getName().equals(oldTag.getName())) {
                         exists = true;
 
-                        oldFile.update(newFile);
-                        fileDAO.create(oldFile);
+                        oldTag.update(newTag);
+
+                        break;
                     }
                 }
 
+                // Tag does not already exist
                 if (!exists) {
-                    long id = fileDAO.create(newFile);
-                    SourceFile file = fileDAO.findById(id);
-                    tag.addSourceFile(file);
+                    existingTags.add(newTag);
+                }
 
-                    oldFiles.add(newFile);
+                fileMap.put(newTag.getName(), newTag.getSourceFiles());
+            }
+
+            boolean allAutomated = true;
+            for (Tag tag : existingTags) {
+                LOG.info("Updating tag {}", tag.getName());
+                // Set<SourceFile> newFiles = fileMap.get(tag.getName());
+                List<SourceFile> newFiles = loadFiles(client, bitbucketToken, githubToken, container, tag);
+                Set<SourceFile> oldFiles = tag.getSourceFiles();
+
+                for (SourceFile newFile : newFiles) {
+                    boolean exists = false;
+                    for (SourceFile oldFile : oldFiles) {
+                        if (oldFile.getType().equals(newFile.getType())) {
+                            exists = true;
+
+                            oldFile.update(newFile);
+                            fileDAO.create(oldFile);
+                        }
+                    }
+
+                    if (!exists) {
+                        long id = fileDAO.create(newFile);
+                        SourceFile file = fileDAO.findById(id);
+                        tag.addSourceFile(file);
+
+                        oldFiles.add(newFile);
+                    }
+                }
+
+                long id = tagDAO.create(tag);
+                tag = tagDAO.findById(id);
+                container.addTag(tag);
+
+                if (!tag.isAutomated()) {
+                    allAutomated = false;
                 }
             }
 
-            long id = tagDAO.create(tag);
-            tag = tagDAO.findById(id);
-            container.addTag(tag);
-        }
+            // delete container if it has no users
+            for (Tag t : toDelete) {
+                LOG.info("DELETING tag: " + t.getName());
+                t.getSourceFiles().clear();
+                // tagDAO.delete(t);
+                container.getTags().remove(t);
+            }
 
-        // delete container if it has no users
-        for (Tag t : toDelete) {
-            LOG.info("DELETING tag: " + t.getName());
-            t.getSourceFiles().clear();
-            // tagDAO.delete(t);
-            container.getTags().remove(t);
+            if (!allAutomated) {
+                container.setMode(ContainerMode.AUTO_DETECT_QUAY_TAGS_WITH_MIXED);
+            } else {
+                container.setMode(ContainerMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
+            }
+            containerDAO.create(container);
         }
 
     }
@@ -255,21 +269,7 @@ public class Helper {
             container.addUser(user);
             containerDAO.create(container);
 
-            // container.getTags().clear();
-            //
-            // List<Tag> tags = tagMap.get(container.getPath());
-            // if (tags != null) {
-            // for (Tag tag : tags) {
-            // for (SourceFile file : tag.getSourceFiles()) {
-            // fileDAO.create(file);
-            // }
-            //
-            // long tagId = tagDAO.create(tag);
-            // tag = tagDAO.findById(tagId);
-            // container.addTag(tag);
-            // }
-            // }
-            updateTags(container, tagDAO, fileDAO, tagMap);
+            // updateTags(container, tagDAO, fileDAO, tagMap);
             LOG.info("UPDATED Container: " + container.getPath());
         }
 
@@ -338,6 +338,7 @@ public class Helper {
                                 Map<String, Map<String, String>> triggerMetadataMap = (Map<String, Map<String, String>>) build;
 
                                 String ref = triggerMetadataMap.get("trigger_metadata").get("ref");
+                                ref = parseReference(ref);
                                 LOG.info("REFERENCE: {}", ref);
                                 tag.setReference(ref);
                                 if (ref == null) {
@@ -346,18 +347,19 @@ public class Helper {
                                     tag.setAutomated(true);
                                 }
 
-                                loadFilesIntoTag(client, bitbucketToken, githubToken, c, tag);
+                                // loadFilesIntoTag(client, bitbucketToken, githubToken, c, tag);
 
                                 break;
                             }
                         }
+                        // loadFilesIntoTag(client, bitbucketToken, githubToken, c, tag);
                     }
                 }
                 tagMap.put(c.getPath(), tags);
             } else if (c.getMode() == ContainerMode.MANUAL_IMAGE_PATH) {
-                for (final Tag tag : c.getTags()) {
-                    loadFilesIntoTag(client, bitbucketToken, githubToken, c, tag);
-                }
+                // for (final Tag tag : c.getTags()) {
+                // loadFilesIntoTag(client, bitbucketToken, githubToken, c, tag);
+                // }
                 // TODO: this assumes paths are unique, not sure this will hold anymore
                 final List<Tag> currentList = tagMap.getOrDefault(c.getPath(), new ArrayList<>());
                 currentList.addAll(Lists.newArrayList(c.getTags()));
@@ -376,14 +378,18 @@ public class Helper {
      * @param githubToken
      * @param c
      * @param tag
+     * @return list of SourceFiles containing cwl and dockerfile.
      */
-    private static void loadFilesIntoTag(HttpClient client, Token bitbucketToken, Token githubToken, Container c, Tag tag) {
+    private static List<SourceFile> loadFiles(HttpClient client, Token bitbucketToken, Token githubToken, Container c, Tag tag) {
+        List<SourceFile> files = new ArrayList<>();
+
         FileResponse cwlResponse = readGitRepositoryFile(c, FileType.DOCKSTORE_CWL, client, tag, bitbucketToken, githubToken);
         if (cwlResponse != null) {
             SourceFile dockstoreCwl = new SourceFile();
             dockstoreCwl.setType(FileType.DOCKSTORE_CWL);
             dockstoreCwl.setContent(cwlResponse.getContent());
-            tag.addSourceFile(dockstoreCwl);
+
+            files.add(dockstoreCwl);
         }
 
         FileResponse dockerfileResponse = readGitRepositoryFile(c, FileType.DOCKERFILE, client, tag, bitbucketToken, githubToken);
@@ -391,8 +397,11 @@ public class Helper {
             SourceFile dockerfile = new SourceFile();
             dockerfile.setType(FileType.DOCKERFILE);
             dockerfile.setContent(dockerfileResponse.getContent());
-            tag.addSourceFile(dockerfile);
+
+            files.add(dockerfile);
         }
+
+        return files;
     }
 
     /**
@@ -468,6 +477,9 @@ public class Helper {
 
         updateContainers(allRepos, currentRepos, dockstoreUser, containerDAO, tagDAO, fileDAO, tagMap);
         userDAO.clearCache();
+
+        updateTags(userDAO.findById(userId).getContainers(), client, containerDAO, tagDAO, fileDAO, githubToken, bitbucketToken, tagMap);
+        userDAO.clearCache();
         return new ArrayList(userDAO.findById(userId).getContainers());
     }
 
@@ -495,7 +507,7 @@ public class Helper {
             return null;
         }
 
-        final String reference = sourceCodeRepo.getReference(container.getGitUrl(), tag.getReference());
+        final String reference = tag.getReference();// sourceCodeRepo.getReference(container.getGitUrl(), tag.getReference());
 
         String fileName = "";
 
@@ -510,6 +522,29 @@ public class Helper {
         }
 
         return sourceCodeRepo.readFile(fileName, reference);
+    }
+
+    /**
+     * @param reference
+     *            a raw reference from git like "refs/heads/master"
+     * @return the last segment like master
+     */
+    public static String parseReference(String reference) {
+        if (reference != null) {
+            Pattern p = Pattern.compile("(\\S+)/(\\S+)/(\\S+)");
+            Matcher m = p.matcher(reference);
+            if (!m.find()) {
+                LOG.info("Cannot parse reference: " + reference);
+                return null;
+            }
+
+            // These correspond to the positions of the pattern matcher
+            final int refIndex = 3;
+
+            reference = m.group(refIndex);
+            LOG.info("REFERENCE: " + reference);
+        }
+        return reference;
     }
 
     /**

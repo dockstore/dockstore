@@ -16,12 +16,10 @@
  */
 package io.dockstore.webservice.core;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -32,6 +30,11 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 /**
  *
@@ -95,7 +98,7 @@ public class Tag implements Comparable<Tag> {
 
     public void updateByUser(Tag tag) {
         this.setReference(tag.getReference());
-        this.setName(tag.getName());
+        // this.setName(tag.getName());
         this.setImageId(tag.getImageId());
         this.setHidden(tag.isHidden());
         this.setCwlPath(tag.getCwlPath());

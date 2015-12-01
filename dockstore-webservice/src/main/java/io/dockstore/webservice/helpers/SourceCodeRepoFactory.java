@@ -70,9 +70,9 @@ public class SourceCodeRepoFactory {
         String source = m.group(sourceIndex);
         String gitUsername = m.group(usernameIndex);
         String gitRepository = m.group(reponameIndex);
-        log.info("Source: " + source);
-        log.info("Username: " + gitUsername);
-        log.info("Repository: " + gitRepository);
+        // log.info("Source: " + source);
+        // log.info("Username: " + gitUsername);
+        // log.info("Repository: " + gitRepository);
 
         Map<String, String> map = new HashMap<>();
         map.put("Source", source);
