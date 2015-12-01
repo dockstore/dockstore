@@ -49,6 +49,10 @@ public class SourceFile {
     @Column(columnDefinition = "TEXT")
     private String content;
 
+    public void update(SourceFile file) {
+        this.setContent(file.getContent());
+    }
+
     public long getId() {
         return id;
     }

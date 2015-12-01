@@ -92,8 +92,7 @@ public class UserResource {
 
     @SuppressWarnings("checkstyle:parameternumber")
     public UserResource(ObjectMapper mapper, HttpClient client, TokenDAO tokenDAO, UserDAO userDAO, GroupDAO groupDAO,
-            ContainerDAO containerDAO, TagDAO tagDAO, FileDAO fileDAO,
-            String bitbucketClientID, String bitbucketClientSecret) {
+            ContainerDAO containerDAO, TagDAO tagDAO, FileDAO fileDAO, String bitbucketClientID, String bitbucketClientSecret) {
         this.objectMapper = mapper;
         this.client = client;
         this.userDAO = userDAO;

@@ -21,6 +21,7 @@ public class Tag   {
   private String reference = null;
   private List<SourceFile> sourceFiles = new ArrayList<SourceFile>();
   private Boolean hidden = null;
+  private Boolean automated = null;
   private String imageId = null;
   private Date lastModified = null;
   private String dockerfilePath = null;
@@ -105,6 +106,18 @@ public class Tag   {
 
   
   /**
+   **/
+  @ApiModelProperty(value = "")
+  @JsonProperty("automated")
+  public Boolean getAutomated() {
+    return automated;
+  }
+  public void setAutomated(Boolean automated) {
+    this.automated = automated;
+  }
+
+  
+  /**
    * Tag for this image in quay.ui/docker hub
    **/
   @ApiModelProperty(value = "Tag for this image in quay.ui/docker hub")
@@ -165,6 +178,7 @@ public class Tag   {
     sb.append("    reference: ").append(StringUtil.toIndentedString(reference)).append("\n");
     sb.append("    sourceFiles: ").append(StringUtil.toIndentedString(sourceFiles)).append("\n");
     sb.append("    hidden: ").append(StringUtil.toIndentedString(hidden)).append("\n");
+    sb.append("    automated: ").append(StringUtil.toIndentedString(automated)).append("\n");
     sb.append("    imageId: ").append(StringUtil.toIndentedString(imageId)).append("\n");
     sb.append("    lastModified: ").append(StringUtil.toIndentedString(lastModified)).append("\n");
     sb.append("    dockerfilePath: ").append(StringUtil.toIndentedString(dockerfilePath)).append("\n");

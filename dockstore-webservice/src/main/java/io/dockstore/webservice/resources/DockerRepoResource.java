@@ -132,11 +132,15 @@ public class DockerRepoResource {
                     Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
                 }
 
-                containers.addAll(Helper.refresh(user.getId(), client, objectMapper, userDAO, containerDAO, tokenDAO, tagDAO, fileDAO));
+                Helper.refresh(user.getId(), client, objectMapper, userDAO, containerDAO, tokenDAO, tagDAO, fileDAO);
+                // containers.addAll(userDAO.findById(user.getId()).getContainers());
             } catch (WebApplicationException ex) {
                 LOG.info("Failed to refresh user " + user.getId());
             }
         }
+
+        containers = containerDAO.findAll();
+
         return containers;
     }
 
@@ -179,7 +183,7 @@ public class DockerRepoResource {
         Helper.checkContainer(c);
 
         if (labelStrings.length() == 0) {
-        	c.setLabels(new TreeSet<>());
+            c.setLabels(new TreeSet<>());
         } else {
             Set<String> labelStringSet = new HashSet<String>(Arrays.asList(labelStrings.toLowerCase().split("\\s*,\\s*")));
             final String labelStringPattern = "^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$";

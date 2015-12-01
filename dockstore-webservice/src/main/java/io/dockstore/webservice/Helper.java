@@ -23,6 +23,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.ws.rs.WebApplicationException;
 
@@ -80,6 +83,113 @@ public class Helper {
         public List<Container> getRepositories() {
             return this.repositories;
         }
+    }
+
+    @SuppressWarnings("checkstyle:parameternumber")
+    private static void updateTags(Set<Container> containers, HttpClient client, ContainerDAO containerDAO, TagDAO tagDAO, FileDAO fileDAO,
+            Token githubToken, Token bitbucketToken, Map<String, List<Tag>> tagMap) {
+        for (Container container : containers) {
+            LOG.info("--------------- Updating tags for {} ---------------", container.getPath());
+
+            List<Tag> existingTags = new ArrayList(container.getTags());
+            List<Tag> newTags = tagMap.get(container.getPath());
+            Map<String, Set<SourceFile>> fileMap = new HashMap<>();
+
+            if (newTags == null) {
+                LOG.info("Tags for container " + container.getPath() + " did not get updated because new tags were not found");
+                return;
+            }
+
+            List<Tag> toDelete = new ArrayList<>(0);
+            for (Iterator<Tag> iterator = existingTags.iterator(); iterator.hasNext();) {
+                Tag oldTag = iterator.next();
+                boolean exists = false;
+                for (Tag newTag : newTags) {
+                    if (newTag.getName().equals(oldTag.getName())) {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (!exists) {
+                    toDelete.add(oldTag);
+                    iterator.remove();
+                }
+            }
+
+            for (Tag newTag : newTags) {
+                boolean exists = false;
+
+                // Find if user already has the container
+                for (Tag oldTag : existingTags) {
+                    if (newTag.getName().equals(oldTag.getName())) {
+                        exists = true;
+
+                        oldTag.update(newTag);
+
+                        break;
+                    }
+                }
+
+                // Tag does not already exist
+                if (!exists) {
+                    existingTags.add(newTag);
+                }
+
+                fileMap.put(newTag.getName(), newTag.getSourceFiles());
+            }
+
+            boolean allAutomated = true;
+            for (Tag tag : existingTags) {
+                LOG.info("Updating tag {}", tag.getName());
+                // Set<SourceFile> newFiles = fileMap.get(tag.getName());
+                List<SourceFile> newFiles = loadFiles(client, bitbucketToken, githubToken, container, tag);
+                Set<SourceFile> oldFiles = tag.getSourceFiles();
+
+                for (SourceFile newFile : newFiles) {
+                    boolean exists = false;
+                    for (SourceFile oldFile : oldFiles) {
+                        if (oldFile.getType().equals(newFile.getType())) {
+                            exists = true;
+
+                            oldFile.update(newFile);
+                            fileDAO.create(oldFile);
+                        }
+                    }
+
+                    if (!exists) {
+                        long id = fileDAO.create(newFile);
+                        SourceFile file = fileDAO.findById(id);
+                        tag.addSourceFile(file);
+
+                        oldFiles.add(newFile);
+                    }
+                }
+
+                long id = tagDAO.create(tag);
+                tag = tagDAO.findById(id);
+                container.addTag(tag);
+
+                if (!tag.isAutomated()) {
+                    allAutomated = false;
+                }
+            }
+
+            // delete container if it has no users
+            for (Tag t : toDelete) {
+                LOG.info("DELETING tag: " + t.getName());
+                t.getSourceFiles().clear();
+                // tagDAO.delete(t);
+                container.getTags().remove(t);
+            }
+
+            if (!allAutomated) {
+                container.setMode(ContainerMode.AUTO_DETECT_QUAY_TAGS_WITH_MIXED);
+            } else {
+                container.setMode(ContainerMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
+            }
+            containerDAO.create(container);
+        }
+
     }
 
     /**
@@ -164,18 +274,6 @@ public class Helper {
 
             // do not re-create tags with manual mode
             // with other types, you can re-create the tags on refresh
-                container.getTags().clear();
-
-                List<Tag> tags = tagMap.get(container.getPath());
-                if (tags != null) {
-                    for (Tag tag : tags) {
-                        tag.getSourceFiles().forEach(fileDAO::create);
-
-                        long tagId = tagDAO.create(tag);
-                        tag = tagDAO.findById(tagId);
-                        container.addTag(tag);
-                    }
-                }
                 LOG.info("UPDATED Container: " + container.getPath());
         }
 
@@ -218,7 +316,8 @@ public class Helper {
             final ImageRegistryInterface imageRegistry = factory.createImageRegistry(c.getRegistry());
             final List<Tag> tags = imageRegistry.getTags(c);
 
-            if (c.getMode() == ContainerMode.AUTO_DETECT_QUAY_TAGS) {
+            if (c.getMode() == ContainerMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS
+                    || c.getMode() == ContainerMode.AUTO_DETECT_QUAY_TAGS_WITH_MIXED) {
                 // TODO: this part isn't very good, a true implementation of Docker Hub would need to return
                 // a quay.io-like data structure, we need to replace mapOfBuilds
                 List builds = mapOfBuilds.get(c.getPath());
@@ -243,22 +342,24 @@ public class Helper {
                                 Map<String, Map<String, String>> triggerMetadataMap = (Map<String, Map<String, String>>) build;
 
                                 String ref = triggerMetadataMap.get("trigger_metadata").get("ref");
+                                ref = parseReference(ref);
                                 LOG.info("REFERENCE: {}", ref);
                                 tag.setReference(ref);
+                                if (ref == null) {
+                                    tag.setAutomated(false);
+                                } else {
+                                    tag.setAutomated(true);
+                                }
 
-                                loadFilesIntoTag(client, bitbucketToken, githubToken, c, tag);
+                                // loadFilesIntoTag(client, bitbucketToken, githubToken, c, tag);
 
                                 break;
                             }
                         }
+                        // loadFilesIntoTag(client, bitbucketToken, githubToken, c, tag);
                     }
                 }
                 tagMap.put(c.getPath(), tags);
-            } else if (c.getMode() == ContainerMode.MANUAL_IMAGE_PATH){
-                for(final Tag tag : c.getTags()){
-                    loadFilesIntoTag(client, bitbucketToken, githubToken, c, tag);
-                }
-                // we do not need to load tags from the DB into tagMap, used only for mixed and auto-detect modes
             }
         }
 
@@ -267,29 +368,36 @@ public class Helper {
 
     /**
      * Given a container and tags, load up required files from git repository
+     * 
      * @param client
      * @param bitbucketToken
      * @param githubToken
      * @param c
      * @param tag
+     * @return list of SourceFiles containing cwl and dockerfile.
      */
-    private static void loadFilesIntoTag(HttpClient client, Token bitbucketToken, Token githubToken, Container c, Tag tag) {
-        FileResponse cwlResponse = readGitRepositoryFile(c, DOCKSTORE_CWL, client, tag, bitbucketToken, githubToken);
+    private static List<SourceFile> loadFiles(HttpClient client, Token bitbucketToken, Token githubToken, Container c, Tag tag) {
+        List<SourceFile> files = new ArrayList<>();
+
+        FileResponse cwlResponse = readGitRepositoryFile(c, FileType.DOCKSTORE_CWL, client, tag, bitbucketToken, githubToken);
         if (cwlResponse != null) {
             SourceFile dockstoreCwl = new SourceFile();
             dockstoreCwl.setType(FileType.DOCKSTORE_CWL);
             dockstoreCwl.setContent(cwlResponse.getContent());
-            tag.addSourceFile(dockstoreCwl);
+
+            files.add(dockstoreCwl);
         }
 
-        FileResponse dockerfileResponse = readGitRepositoryFile(c, DOCKERFILE, client, tag, bitbucketToken,
-            githubToken);
+        FileResponse dockerfileResponse = readGitRepositoryFile(c, FileType.DOCKERFILE, client, tag, bitbucketToken, githubToken);
         if (dockerfileResponse != null) {
             SourceFile dockerfile = new SourceFile();
             dockerfile.setType(FileType.DOCKERFILE);
             dockerfile.setContent(dockerfileResponse.getContent());
-            tag.addSourceFile(dockerfile);
+
+            files.add(dockerfile);
         }
+
+        return files;
     }
 
     /**
@@ -367,6 +475,9 @@ public class Helper {
 
         updateContainers(allRepos, currentRepos, dockstoreUser, containerDAO, tagDAO, fileDAO, tagMap);
         userDAO.clearCache();
+
+        updateTags(userDAO.findById(userId).getContainers(), client, containerDAO, tagDAO, fileDAO, githubToken, bitbucketToken, tagMap);
+        userDAO.clearCache();
         return new ArrayList(userDAO.findById(userId).getContainers());
     }
 
@@ -374,13 +485,13 @@ public class Helper {
      * Read a file from the container's git repository.
      * 
      * @param container
-     * @param fileName
+     * @param fileType
      * @param client
      * @param tag
      * @param bitbucketToken
      * @return a FileResponse instance
      */
-    public static FileResponse readGitRepositoryFile(Container container, String fileName, HttpClient client, Tag tag,
+    public static FileResponse readGitRepositoryFile(Container container, FileType fileType, HttpClient client, Tag tag,
             Token bitbucketToken, Token githubToken) {
         final String bitbucketTokenContent = bitbucketToken == null ? null : bitbucketToken.getContent();
 
@@ -390,9 +501,48 @@ public class Helper {
         final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(container.getGitUrl(), client,
                 bitbucketTokenContent, githubToken.getContent());
 
-        final String reference = sourceCodeRepo.getReference(container.getGitUrl(), tag.getReference());
+        if (sourceCodeRepo == null) {
+            return null;
+        }
+
+        final String reference = tag.getReference();// sourceCodeRepo.getReference(container.getGitUrl(), tag.getReference());
+
+        String fileName = "";
+
+        if (fileType.equals(FileType.DOCKERFILE)) {
+            fileName = tag.getDockerfilePath();
+        } else if (fileType.equals(FileType.DOCKSTORE_CWL)) {
+            fileName = tag.getCwlPath();
+        }
+
+        if (fileName.startsWith("/")) {
+            fileName = fileName.substring(1);
+        }
 
         return sourceCodeRepo.readFile(fileName, reference);
+    }
+
+    /**
+     * @param reference
+     *            a raw reference from git like "refs/heads/master"
+     * @return the last segment like master
+     */
+    public static String parseReference(String reference) {
+        if (reference != null) {
+            Pattern p = Pattern.compile("(\\S+)/(\\S+)/(\\S+)");
+            Matcher m = p.matcher(reference);
+            if (!m.find()) {
+                LOG.info("Cannot parse reference: " + reference);
+                return null;
+            }
+
+            // These correspond to the positions of the pattern matcher
+            final int refIndex = 3;
+
+            reference = m.group(refIndex);
+            LOG.info("REFERENCE: " + reference);
+        }
+        return reference;
     }
 
     /**

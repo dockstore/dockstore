@@ -1,6 +1,10 @@
 package io.dockstore.webservice.helpers;
 
-import io.dockstore.webservice.core.Container;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.List;
+
 import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.RepositoryContents;
 import org.eclipse.egit.github.core.client.GitHubClient;
@@ -9,10 +13,7 @@ import org.eclipse.egit.github.core.service.RepositoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.List;
+import io.dockstore.webservice.core.Container;
 
 /**
  * @author dyuen

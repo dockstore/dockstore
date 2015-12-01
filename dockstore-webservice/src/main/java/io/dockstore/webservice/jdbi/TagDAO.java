@@ -16,9 +16,10 @@
  */
 package io.dockstore.webservice.jdbi;
 
+import org.hibernate.SessionFactory;
+
 import io.dockstore.webservice.core.Tag;
 import io.dropwizard.hibernate.AbstractDAO;
-import org.hibernate.SessionFactory;
 
 /**
  *

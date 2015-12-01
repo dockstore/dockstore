@@ -124,7 +124,8 @@ public class QuayImageRegistry implements ImageRegistryInterface {
                     List<Container> containers = repos.getRepositories();
                     // tag all of these with where they came from
                     containers.stream().forEach(container -> container.setRegistry(Registry.QUAY_IO.name()));
-                    containers.stream().forEach(container -> container.setMode(ContainerMode.AUTO_DETECT_QUAY_TAGS));
+                    // not quite correct, they could be mixed but how can we tell from quay?
+                    containers.stream().forEach(container -> container.setMode(ContainerMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS));
                     containerList.addAll(containers);
                 } catch (IOException ex) {
                     LOG.info("Exception: " + ex);
