@@ -312,7 +312,8 @@ public class Helper {
             final ImageRegistryInterface imageRegistry = factory.createImageRegistry(c.getRegistry());
             final List<Tag> tags = imageRegistry.getTags(c);
 
-            if (c.getMode() == ContainerMode.AUTO_DETECT_QUAY_TAGS) {
+            if (c.getMode() == ContainerMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS
+                    || c.getMode() == ContainerMode.AUTO_DETECT_QUAY_TAGS_WITH_MIXED) {
                 // TODO: this part isn't very good, a true implementation of Docker Hub would need to return
                 // a quay.io-like data structure, we need to replace mapOfBuilds
                 List builds = mapOfBuilds.get(c.getPath());
@@ -340,11 +341,10 @@ public class Helper {
                                 LOG.info("REFERENCE: {}", ref);
                                 tag.setReference(ref);
                                 if (ref == null) {
-                                  tag.setAutomated(false);
+                                    tag.setAutomated(false);
                                 } else {
-                                  tag.setAutomated(true);
+                                    tag.setAutomated(true);
                                 }
-
 
                                 loadFilesIntoTag(client, bitbucketToken, githubToken, c, tag);
 
@@ -354,8 +354,8 @@ public class Helper {
                     }
                 }
                 tagMap.put(c.getPath(), tags);
-            } else if (c.getMode() == ContainerMode.MANUAL_IMAGE_PATH){
-                for(final Tag tag : c.getTags()){
+            } else if (c.getMode() == ContainerMode.MANUAL_IMAGE_PATH) {
+                for (final Tag tag : c.getTags()) {
                     loadFilesIntoTag(client, bitbucketToken, githubToken, c, tag);
                 }
                 // TODO: this assumes paths are unique, not sure this will hold anymore
@@ -370,6 +370,7 @@ public class Helper {
 
     /**
      * Given a container and tags, load up required files from git repository
+     * 
      * @param client
      * @param bitbucketToken
      * @param githubToken
@@ -377,7 +378,7 @@ public class Helper {
      * @param tag
      */
     private static void loadFilesIntoTag(HttpClient client, Token bitbucketToken, Token githubToken, Container c, Tag tag) {
-        FileResponse cwlResponse = readGitRepositoryFile(c, DOCKSTORE_CWL, client, tag, bitbucketToken, githubToken);
+        FileResponse cwlResponse = readGitRepositoryFile(c, FileType.DOCKSTORE_CWL, client, tag, bitbucketToken, githubToken);
         if (cwlResponse != null) {
             SourceFile dockstoreCwl = new SourceFile();
             dockstoreCwl.setType(FileType.DOCKSTORE_CWL);
@@ -385,8 +386,7 @@ public class Helper {
             tag.addSourceFile(dockstoreCwl);
         }
 
-        FileResponse dockerfileResponse = readGitRepositoryFile(c, DOCKERFILE, client, tag, bitbucketToken,
-            githubToken);
+        FileResponse dockerfileResponse = readGitRepositoryFile(c, FileType.DOCKERFILE, client, tag, bitbucketToken, githubToken);
         if (dockerfileResponse != null) {
             SourceFile dockerfile = new SourceFile();
             dockerfile.setType(FileType.DOCKERFILE);
