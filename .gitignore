@@ -18,6 +18,9 @@ dependency-reduced-pom.xml
 hello-world.yml
 /dockstore-webservice/target/
 /dockstore-client/target/
+swagger-java-client/build.gradle
+swagger-java-client/gradle.properties
+swagger-java-client/settings.gradle
 /swagger-java-client/target/
 dockstore-webservice/nbactions.xml
 /dockstore-common/target/

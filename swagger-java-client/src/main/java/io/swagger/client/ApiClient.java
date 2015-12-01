@@ -1,5 +1,20 @@
 package io.swagger.client;
 
+import java.io.File;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TimeZone;
+
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
@@ -18,32 +33,11 @@ import org.glassfish.jersey.media.multipart.MultiPart;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.TimeZone;
-
-import java.net.URLEncoder;
-
-import java.io.IOException;
-import java.io.File;
-import java.io.UnsupportedEncodingException;
-
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.text.ParseException;
-
+import io.swagger.client.auth.ApiKeyAuth;
 import io.swagger.client.auth.Authentication;
 import io.swagger.client.auth.HttpBasicAuth;
-import io.swagger.client.auth.ApiKeyAuth;
-import io.swagger.client.auth.OAuth;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-26T15:35:08.177-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-30T16:41:09.863-05:00")
 public class ApiClient {
   private Map<String, Client> hostMap = new HashMap<String, Client>();
   private Map<String, String> defaultHeaderMap = new HashMap<String, String>();
@@ -213,7 +207,7 @@ public class ApiClient {
   /**
    * Set the date format used to parse/format date parameters.
    */
-  public ApiClient getDateFormat(DateFormat dateFormat) {
+  public ApiClient setDateFormat(DateFormat dateFormat) {
     this.dateFormat = dateFormat;
     return this;
   }
@@ -386,8 +380,15 @@ public class ApiClient {
 
     if (contentType.startsWith("application/json")) {
       return json.deserialize(body, returnType);
+    } else if (returnType.getType().equals(String.class)) {
+      // Expecting string, return the raw response body.
+      return (T) body;
     } else {
-      throw new ApiException(500, "can not deserialize Content-Type: " + contentType);
+      throw new ApiException(
+        500,
+        "Content type \"" + contentType + "\" is not supported for type: "
+          + returnType.getType()
+      );
     }
   }
 
@@ -426,7 +427,7 @@ public class ApiClient {
       }
     }
 
-    Invocation.Builder invocationBuilder = target.request(contentType).accept(accept);
+    Invocation.Builder invocationBuilder = target.request().accept(accept);
 
     for (String key : headerParams.keySet()) {
       String value = headerParams.get(key);

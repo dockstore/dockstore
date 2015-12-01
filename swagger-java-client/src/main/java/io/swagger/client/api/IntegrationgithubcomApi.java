@@ -6,17 +6,11 @@ import io.swagger.client.Configuration;
 import io.swagger.client.Pair;
 import io.swagger.client.TypeRef;
 
-import io.swagger.client.model.*;
+import io.swagger.client.model.GithubComView;
 
 import java.util.*;
 
-import io.swagger.client.model.GithubComView;
-
-import java.io.File;
-import java.util.Map;
-import java.util.HashMap;
-
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-26T15:35:08.177-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-30T16:41:09.863-05:00")
 public class IntegrationgithubcomApi {
   private ApiClient apiClient;
 
@@ -65,7 +59,7 @@ public class IntegrationgithubcomApi {
     final String accept = apiClient.selectHeaderAccept(accepts);
 
     final String[] contentTypes = {
-      
+      "application/json"
     };
     final String contentType = apiClient.selectHeaderContentType(contentTypes);
 

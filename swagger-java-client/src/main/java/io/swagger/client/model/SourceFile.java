@@ -9,13 +9,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 @ApiModel(description = "")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-26T15:35:08.177-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-30T16:41:09.863-05:00")
 public class SourceFile   {
   
   private Long id = null;
 
 public enum TypeEnum {
-  DOCKSTORE_CWL("DOCKSTORE_CWL"), DOCKERFILE("DOCKERFILE");
+  DOCKSTORE_CWL("DOCKSTORE_CWL"),
+  DOCKERFILE("DOCKERFILE");
 
   private String value;
 

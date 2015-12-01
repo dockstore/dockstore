@@ -16,10 +16,36 @@
  */
 package io.dockstore.webservice.resources;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
+
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
+
 import io.dockstore.webservice.Helper;
 import io.dockstore.webservice.api.RegisterRequest;
 import io.dockstore.webservice.core.Container;
@@ -40,29 +66,6 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 /**
  *
@@ -236,10 +239,45 @@ public class DockerRepoResource {
     @POST
     @Timed
     @UnitOfWork
+    @Path("/registerManual")
+    @ApiOperation(value = "Register an image manually, along with tags", notes = "Register/publish an image manually.", response = Container.class)
+    public Container registerManual(@ApiParam(hidden = true) @Auth Token authToken,
+                                 @ApiParam(value = "Container to be registered", required = true) Container container) {
+        User user = userDAO.findById(authToken.getUserId());
+        Helper.checkUser(user);
+        // populate user in container
+        container.addUser(user);
+        // create dependent Tags before creating container
+        Set<Tag> createdTags = new HashSet<>();
+        for(Tag tag : container.getTags()){
+            final long l = tagDAO.create(tag);
+            createdTags.add(tagDAO.findById(l));
+        }
+        container.getTags().clear();
+        container.getTags().addAll(createdTags);
+        // create dependent Labels before creating container
+        Set<Label> createdLabels = new HashSet<>();
+        for(Label label : container.getLabels()){
+            final long l = labelDAO.create(label);
+            createdLabels.add(labelDAO.findById(l));
+        }
+        container.getLabels().clear();
+        container.getLabels().addAll(createdLabels);
+
+        long id = containerDAO.create(container);
+        Container created = containerDAO.findById(id);
+        return created;
+    }
+
+
+
+    @POST
+    @Timed
+    @UnitOfWork
     @Path("/{containerId}/register")
-    @ApiOperation(value = "Register or unregister a container", notes = "Register a container (public or private). Assumes that user is using quay.io and github.", response = Container.class)
+    @ApiOperation(value = "Register or unregister a container", notes = "Register/publish a container (public or private). Assumes that user is using quay.io and github.", response = Container.class)
     public Container register(@ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "Container id to delete", required = true) @PathParam("containerId") Long containerId,
+            @ApiParam(value = "Container id to register/publish", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "RegisterRequest to refresh the list of repos for a user", required = true) RegisterRequest request) {
         Container c = containerDAO.findById(containerId);
         Helper.checkContainer(c);

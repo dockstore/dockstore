@@ -40,6 +40,7 @@ public interface ImageRegistryInterface {
     List<Container> getContainers(List<String> namespaces);
 
     /**
+     * A bit of a misnomer, this not only gets a map of builds but populates the container with CWL-parsed info
      *
      * @param githubToken
      * @param bitbucketToken
