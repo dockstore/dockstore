@@ -11,7 +11,7 @@ import java.util.*;
 
 import java.util.*;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-01T15:39:18.413-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-01T16:59:34.578-05:00")
 public class ContainertagsApi {
   private ApiClient apiClient;
 

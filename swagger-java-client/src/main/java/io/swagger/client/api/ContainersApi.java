@@ -13,7 +13,7 @@ import io.swagger.client.model.User;
 
 import java.util.*;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-01T15:39:18.413-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-01T16:59:34.578-05:00")
 public class ContainersApi {
   private ApiClient apiClient;
 
@@ -75,12 +75,59 @@ public class ContainersApi {
   }
   
   /**
-   * Get a container by path
+   * Get a container by tool path
    * Lists info of container. Enter full path (include quay.io in path).
    * @param repository repository path
    * @return Container
    */
-  public Container getContainerByPath (String repository) throws ApiException {
+  public Container getContainerByToolPath (String repository) throws ApiException {
+    Object postBody = null;
+    
+    // verify the required parameter 'repository' is set
+    if (repository == null) {
+      throw new ApiException(400, "Missing the required parameter 'repository' when calling getContainerByToolPath");
+    }
+    
+    // create path and map variables
+    String path = "/containers/path/tool/{repository}".replaceAll("\\{format\\}","json")
+      .replaceAll("\\{" + "repository" + "\\}", apiClient.escapeString(repository.toString()));
+
+    // query params
+    List<Pair> queryParams = new ArrayList<Pair>();
+    Map<String, String> headerParams = new HashMap<String, String>();
+    Map<String, Object> formParams = new HashMap<String, Object>();
+
+    
+
+    
+
+    
+
+    final String[] accepts = {
+      "application/json"
+    };
+    final String accept = apiClient.selectHeaderAccept(accepts);
+
+    final String[] contentTypes = {
+      "application/json"
+    };
+    final String contentType = apiClient.selectHeaderContentType(contentTypes);
+
+    String[] authNames = new String[] {  };
+
+    
+    TypeRef returnType = new TypeRef<Container>() {};
+    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    
+  }
+  
+  /**
+   * Get a list of containers by path
+   * Lists info of container. Enter full path (include quay.io in path).
+   * @param repository repository path
+   * @return List<Container>
+   */
+  public List<Container> getContainerByPath (String repository) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'repository' is set
@@ -116,7 +163,7 @@ public class ContainersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<Container>() {};
+    TypeRef returnType = new TypeRef<List<Container>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }

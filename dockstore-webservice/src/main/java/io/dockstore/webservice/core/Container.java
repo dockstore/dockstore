@@ -91,13 +91,13 @@ public class Container {
     @JsonProperty("default_cwl_path")
     private String defaultCwlPath = "/Dockstore.cwl";
 
-    @Column
+    @Column(nullable = false)
     @ApiModelProperty("This is the tool name of the container, when not-present this will function just like 0.1 dockstore"
             + "when present, this can be used to distinguish between two containers based on the same image, but associated with different "
             + "CWL and Dockerfile documents. i.e. two containers with the same registry+namespace+name but different toolnames "
             + "will be two different entries in the dockstore registry/namespace/name/tool, different options to edit tags, and "
             + "only the same insofar as they would \"docker pull\" the same image, required: GA4GH")
-    private String toolname = null;
+    private String toolname = "";
 
     @Column
     @ApiModelProperty("This is a docker namespace for the container, required: GA4GH")
@@ -211,6 +211,8 @@ public class Container {
             StringBuilder builder = new StringBuilder();
             if (registry.equals(TokenType.QUAY_IO.toString())) {
                 builder.append("quay.io/");
+            } else {
+                builder.append("registry.hub.docker.com/");
             }
             builder.append(namespace).append("/").append(name);
             repositoryPath = builder.toString();
@@ -441,6 +443,6 @@ public class Container {
 
     @JsonProperty("tool_path")
     public String getToolPath() {
-        return getPath() + (toolname == null ? "" : "/" + toolname);
+        return getPath() + (toolname == null || toolname.isEmpty() ? "" : "/" + toolname);
     }
 }

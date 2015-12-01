@@ -348,13 +348,12 @@ public class DockerRepoResource {
         final String[] split = path.split("/");
         // check that this is a tool path
         final int toolPathLength = 4;
-        if (split.length != toolPathLength){
-            LOG.error("incorrectly formatted path in getContainerByToolPath: " + path);
-            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+        String toolname = "";
+        if (split.length == toolPathLength){
+            toolname = split[toolPathLength - 1];
         }
 
-        final int toolIndex = 3;
-        Container container = containerDAO.findByToolPath(Joiner.on("/").join(split[0],split[1],split[2]),split[toolIndex]);
+        Container container = containerDAO.findByToolPath(Joiner.on("/").join(split[0],split[1],split[2]),toolname);
 
         Helper.checkContainer(container);
 

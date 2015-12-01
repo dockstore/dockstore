@@ -222,7 +222,7 @@ public class Client {
                 }
             }
 
-            out(format, container.getPath(), description, gitUrl, boolWord(container.getIsRegistered()), cwl, automated);
+            out(format, container.getToolPath(), description, gitUrl, boolWord(container.getIsRegistered()), cwl, automated);
         }
     }
 
@@ -299,7 +299,7 @@ public class Client {
                 publishHelp();
             } else {
                 try {
-                    Container container = containersApi.getContainerByPath(first);
+                    Container container = containersApi.getContainerByToolPath(first);
                     RegisterRequest req = new RegisterRequest();
                     req.setRegister(true);
                     container = containersApi.register(container.getId(), req);
@@ -354,12 +354,12 @@ public class Client {
                     container = containersApi.registerManual(container);
 
                     if (container != null) {
-                        out("Successfully published " + first);
+                        out("Successfully published " + name);
                     } else {
-                        kill("Unable to publish " + first);
+                        kill("Unable to publish " + name);
                     }
                 } catch (ApiException ex) {
-                    kill("Unable to publish " + first);
+                    kill("Unable to publish " + args.stream());
                 }
             }
         }
@@ -387,7 +387,7 @@ public class Client {
 
         String path = args.get(0);
         try {
-            Container container = containersApi.getContainerByPath(path);
+            Container container = containersApi.getContainerByToolPath(path);
             if (container == null || !container.getIsRegistered()) {
                 kill("This container is not registered.");
             } else {
@@ -461,7 +461,7 @@ public class Client {
         String tag = (parts.length > 1) ? parts[1] : null;
 
         try {
-            Container container = containersApi.getContainerByPath(path);
+            Container container = containersApi.getContainerByToolPath(path);
             if (container.getHasCollab()) {
                 try {
                     SourceFile file = containersApi.cwl(container.getId(), tag);
