@@ -54,7 +54,8 @@ import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.resources.ResourceUtilities;
-import jersey.repackaged.com.google.common.collect.Lists;
+
+import static io.dockstore.webservice.helpers.ImageRegistryFactory.Registry;
 
 /**
  *
@@ -82,27 +83,30 @@ public class Helper {
     }
 
     /**
-     * Updates the new list of containers to the database. Deletes containers that has no users.
+     * Updates the new list of containers to the database. Deletes containers that have no users.
      * 
-     * @param newList
-     * @param currentList
-     * @param user
+     * @param apiContainerList containers retrieved from quay.io and docker hub
+     * @param dbContainerList containers retrieved from the database for the current user
+     * @param user the current user
      * @param containerDAO
      * @param tagDAO
      * @param fileDAO
-     * @param tagMap
+     * @param tagMap docker image path -> list of corresponding Tags
      * @return list of newly updated containers
      */
-    private static List<Container> updateContainers(List<Container> newList, List<Container> currentList, User user,
-            ContainerDAO containerDAO, TagDAO tagDAO, FileDAO fileDAO, Map<String, List<Tag>> tagMap) {
-        Date time = new Date();
+    private static List<Container> updateContainers(final List<Container> apiContainerList, final List<Container> dbContainerList, final User user,
+            final ContainerDAO containerDAO, final TagDAO tagDAO, final FileDAO fileDAO, final Map<String, List<Tag>> tagMap) {
 
-        List<Container> toDelete = new ArrayList<>(0);
+        // TODO: for now, with no info coming back from Docker Hub, just skip them always
+        dbContainerList.removeIf(container1 -> container1.getRegistry().equals(Registry.DOCKER_HUB.toString()));
+
+
+        final List<Container> toDelete = new ArrayList<>();
         // Find containers that the user no longer has
-        for (Iterator<Container> iterator = currentList.iterator(); iterator.hasNext();) {
-            Container oldContainer = iterator.next();
+        for (final Iterator<Container> iterator = dbContainerList.iterator(); iterator.hasNext();) {
+            final Container oldContainer = iterator.next();
             boolean exists = false;
-            for (Container newContainer : newList) {
+            for (final Container newContainer : apiContainerList) {
                 if (newContainer.getName().equals(oldContainer.getName())
                         && newContainer.getNamespace().equals(oldContainer.getNamespace())
                         && newContainer.getRegistry().equals(oldContainer.getRegistry())) {
@@ -110,7 +114,6 @@ public class Helper {
                     break;
                 }
             }
-            // TODO: for now, while we don't have a docker hub api, never delete images from Docker Hub
             if (!exists && oldContainer.getMode() != ContainerMode.MANUAL_IMAGE_PATH) {
                 oldContainer.removeUser(user);
                 // user.removeContainer(oldContainer);
@@ -119,61 +122,61 @@ public class Helper {
             }
         }
 
-        for (Container newContainer : newList) {
-            String path = newContainer.getRegistry() + "/" + newContainer.getNamespace() + "/" + newContainer.getName();
+        // when a container from the registry (ex: quay.io) has newer content, update it from
+        for (Container newContainer : apiContainerList) {
+            String path = newContainer.getToolPath();
             boolean exists = false;
 
             // Find if user already has the container
-            for (Container oldContainer : currentList) {
-                if (newContainer.getPath().equals(oldContainer.getPath())) {
+            for (Container oldContainer : dbContainerList) {
+                if (newContainer.getToolPath().equals(oldContainer.getToolPath())) {
                     exists = true;
-
                     oldContainer.update(newContainer);
-
                     break;
                 }
             }
 
             // Find if container already exists, but does not belong to user
             if (!exists) {
-                Container oldContainer = containerDAO.findByPath(path);
+                Container oldContainer = containerDAO.findByToolPath(path,newContainer.getToolname());
                 if (oldContainer != null) {
                     exists = true;
                     oldContainer.update(newContainer);
-                    currentList.add(oldContainer);
+                    dbContainerList.add(oldContainer);
                 }
             }
 
             // Container does not already exist
             if (!exists) {
                 // newContainer.setUserId(userId);
-                newContainer.setPath(path);
+                newContainer.setPath(newContainer.getPath());
 
-                currentList.add(newContainer);
+                dbContainerList.add(newContainer);
             }
         }
 
+        final Date time = new Date();
         // Save all new and existing containers, and generate new tags
-        for (Container container : currentList) {
+        for (final Container container : dbContainerList) {
             container.setLastUpdated(time);
             container.addUser(user);
             containerDAO.create(container);
 
-            container.getTags().clear();
+            // do not re-create tags with manual mode
+            // with other types, you can re-create the tags on refresh
+                container.getTags().clear();
 
-            List<Tag> tags = tagMap.get(container.getPath());
-            if (tags != null) {
-                for (Tag tag : tags) {
-                    for (SourceFile file : tag.getSourceFiles()) {
-                        fileDAO.create(file);
+                List<Tag> tags = tagMap.get(container.getPath());
+                if (tags != null) {
+                    for (Tag tag : tags) {
+                        tag.getSourceFiles().forEach(fileDAO::create);
+
+                        long tagId = tagDAO.create(tag);
+                        tag = tagDAO.findById(tagId);
+                        container.addTag(tag);
                     }
-
-                    long tagId = tagDAO.create(tag);
-                    tag = tagDAO.findById(tagId);
-                    container.addTag(tag);
                 }
-            }
-            LOG.info("UPDATED Container: " + container.getPath());
+                LOG.info("UPDATED Container: " + container.getPath());
         }
 
         // delete container if it has no users
@@ -187,7 +190,7 @@ public class Helper {
             }
         }
 
-        return currentList;
+        return dbContainerList;
     }
 
     /**
@@ -255,10 +258,7 @@ public class Helper {
                 for(final Tag tag : c.getTags()){
                     loadFilesIntoTag(client, bitbucketToken, githubToken, c, tag);
                 }
-                // TODO: this assumes paths are unique, not sure this will hold anymore
-                final List<Tag> currentList = tagMap.getOrDefault(c.getPath(), new ArrayList<>());
-                currentList.addAll(Lists.newArrayList(c.getTags()));
-                tagMap.put(c.getPath(), currentList);
+                // we do not need to load tags from the DB into tagMap, used only for mixed and auto-detect modes
             }
         }
 
@@ -306,9 +306,9 @@ public class Helper {
      * @return list of updated containers
      */
     @SuppressWarnings("checkstyle:parameternumber")
-    public static List<Container> refresh(Long userId, HttpClient client, ObjectMapper objectMapper, UserDAO userDAO,
-            ContainerDAO containerDAO, TokenDAO tokenDAO, TagDAO tagDAO, FileDAO fileDAO) {
-        User dockstoreUser = userDAO.findById(userId);
+    public static List<Container> refresh(final Long userId, final HttpClient client, final ObjectMapper objectMapper, final UserDAO userDAO,
+            final ContainerDAO containerDAO, final TokenDAO tokenDAO, final TagDAO tagDAO, final FileDAO fileDAO) {
+        final User dockstoreUser = userDAO.findById(userId);
 
         List<Container> currentRepos = new ArrayList(dockstoreUser.getContainers());// containerDAO.findByUserId(userId);
         List<Token> tokens = tokenDAO.findByUserId(userId);
@@ -356,12 +356,14 @@ public class Helper {
         // hack: read relevant containers from database
         allRepos.addAll(containerDAO.findByMode(ContainerMode.MANUAL_IMAGE_PATH));
 
-        Map<String, ArrayList<?>> mapOfBuilds = new HashMap<>();
-        for (ImageRegistryInterface i : allRegistries) {
-            mapOfBuilds.putAll(i.getBuildMap(githubToken, bitbucketToken, allRepos));
+        // ends up with docker image path -> quay.io data structure representing builds
+        final Map<String, ArrayList<?>> mapOfBuilds = new HashMap<>();
+        for (final ImageRegistryInterface anInterface : allRegistries) {
+            mapOfBuilds.putAll(anInterface.getBuildMap(githubToken, bitbucketToken, allRepos));
         }
 
-        Map<String, List<Tag>> tagMap = getTags(client, allRepos, objectMapper, quayToken, bitbucketToken, githubToken, mapOfBuilds);
+        // end up with  key = path; value = list of tags
+        final Map<String, List<Tag>> tagMap = getTags(client, allRepos, objectMapper, quayToken, bitbucketToken, githubToken, mapOfBuilds);
 
         updateContainers(allRepos, currentRepos, dockstoreUser, containerDAO, tagDAO, fileDAO, tagMap);
         userDAO.clearCache();
@@ -475,6 +477,20 @@ public class Helper {
     }
 
     /**
+     * Check if admin or if container belongs to user
+     *
+     * @param user
+     * @param list
+     */
+    public static void checkUser(User user, List<Container> list) {
+        for(Container container : list) {
+            if (!user.getIsAdmin() && !container.getUsers().contains(user)) {
+                throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
+            }
+        }
+    }
+
+    /**
      * Check if container is null
      * 
      * @param container
@@ -483,5 +499,17 @@ public class Helper {
         if (container == null) {
             throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
         }
+    }
+
+    /**
+     * Check if container is null
+     *
+     * @param container
+     */
+    public static void checkContainer(List<Container> container) {
+        if (container == null) {
+            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+        }
+        container.forEach(Helper::checkContainer);
     }
 }

@@ -16,7 +16,6 @@
  */
 package io.dockstore.webservice.core;
 
-import io.swagger.annotations.ApiModel;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -26,11 +25,13 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import io.swagger.annotations.ApiModel;
+
 /**
  *
  * @author xliu
  */
-@ApiModel(value = "SourceFile")
+@ApiModel("SourceFile")
 @Entity
 @Table(name = "sourcefile")
 public class SourceFile {

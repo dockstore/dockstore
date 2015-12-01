@@ -14,7 +14,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 @ApiModel(description = "")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-30T16:41:09.863-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-01T15:39:18.413-05:00")
 public class Container   {
   
   private Long id = null;
@@ -38,6 +38,7 @@ public enum ModeEnum {
   private ModeEnum mode = null;
   private List<User> users = new ArrayList<User>();
   private String name = null;
+  private String toolname = null;
   private String namespace = null;
   private String registry = null;
   private String author = null;
@@ -55,6 +56,7 @@ public enum ModeEnum {
   private Boolean isPublic = null;
   private Integer lastModified = null;
   private Boolean isRegistered = null;
+  private String toolPath = null;
 
   
   /**
@@ -105,6 +107,19 @@ public enum ModeEnum {
   }
   public void setName(String name) {
     this.name = name;
+  }
+
+  
+  /**
+   * This is the tool name of the container, when not-present this will function just like 0.1 dockstorewhen present, this can be used to distinguish between two containers based on the same image, but associated with different CWL and Dockerfile documents. i.e. two containers with the same registry+namespace+name but different toolnames will be two different entries in the dockstore registry/namespace/name/tool, different options to edit tags, and only the same insofar as they would \"docker pull\" the same image, required: GA4GH
+   **/
+  @ApiModelProperty(value = "This is the tool name of the container, when not-present this will function just like 0.1 dockstorewhen present, this can be used to distinguish between two containers based on the same image, but associated with different CWL and Dockerfile documents. i.e. two containers with the same registry+namespace+name but different toolnames will be two different entries in the dockstore registry/namespace/name/tool, different options to edit tags, and only the same insofar as they would \"docker pull\" the same image, required: GA4GH")
+  @JsonProperty("toolname")
+  public String getToolname() {
+    return toolname;
+  }
+  public void setToolname(String toolname) {
+    this.toolname = toolname;
   }
 
   
@@ -327,6 +342,18 @@ public enum ModeEnum {
   }
 
   
+  /**
+   **/
+  @ApiModelProperty(value = "")
+  @JsonProperty("tool_path")
+  public String getToolPath() {
+    return toolPath;
+  }
+  public void setToolPath(String toolPath) {
+    this.toolPath = toolPath;
+  }
+
+  
 
   @Override
   public String toString()  {
@@ -337,6 +364,7 @@ public enum ModeEnum {
     sb.append("    mode: ").append(StringUtil.toIndentedString(mode)).append("\n");
     sb.append("    users: ").append(StringUtil.toIndentedString(users)).append("\n");
     sb.append("    name: ").append(StringUtil.toIndentedString(name)).append("\n");
+    sb.append("    toolname: ").append(StringUtil.toIndentedString(toolname)).append("\n");
     sb.append("    namespace: ").append(StringUtil.toIndentedString(namespace)).append("\n");
     sb.append("    registry: ").append(StringUtil.toIndentedString(registry)).append("\n");
     sb.append("    author: ").append(StringUtil.toIndentedString(author)).append("\n");
@@ -354,6 +382,7 @@ public enum ModeEnum {
     sb.append("    isPublic: ").append(StringUtil.toIndentedString(isPublic)).append("\n");
     sb.append("    lastModified: ").append(StringUtil.toIndentedString(lastModified)).append("\n");
     sb.append("    isRegistered: ").append(StringUtil.toIndentedString(isRegistered)).append("\n");
+    sb.append("    toolPath: ").append(StringUtil.toIndentedString(toolPath)).append("\n");
     sb.append("}");
     return sb.toString();
   }

@@ -16,12 +16,11 @@
  */
 package io.dockstore.webservice.core;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
+
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -32,13 +31,17 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
-import java.util.Date;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 /**
  *
  * @author xliu
  */
-@ApiModel(value = "Tag")
+@ApiModel("Tag")
 @Entity
 @Table(name = "tag")
 // @JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class, property = "@id")
@@ -48,7 +51,7 @@ public class Tag implements Comparable<Tag>{
     private long id;
 
     @Column
-    @ApiModelProperty("git commit/tag/branch")
+    @ApiModelProperty("quay tag name")
     private String name;
 
     @Column
@@ -64,9 +67,8 @@ public class Tag implements Comparable<Tag>{
     @ApiModelProperty("size of the image")
     private long size;
 
-    //TODO: determine whether this is duplicated information
     @Column
-    @ApiModelProperty("git commit/tag/branch ... may be a duplicate of name or vice versa")
+    @ApiModelProperty("git commit/tag/branch")
     private String reference;
 
     @Column(columnDefinition="text")
@@ -77,7 +79,7 @@ public class Tag implements Comparable<Tag>{
     @JsonProperty("cwl_path")
     private String cwlPath = "/Dockstore.cwl";
 
-    @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true)
+    @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "tagsourcefile", joinColumns = { @JoinColumn(name = "tagid", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "sourcefileid", referencedColumnName = "id") })
     @ApiModelProperty("Cached files for each tag. Includes Dockerfile and Dockstore.cwl.")
     private Set<SourceFile> sourceFiles;

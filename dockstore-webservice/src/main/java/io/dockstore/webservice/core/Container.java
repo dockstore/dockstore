@@ -37,7 +37,9 @@ import javax.persistence.ManyToMany;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.OrderBy;
 import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -48,15 +50,16 @@ import io.swagger.annotations.ApiModelProperty;
  *
  * @author xliu
  */
-@ApiModel(value = "Container")
+@ApiModel("Container")
 @Entity
-@Table(name = "container")
+@Table(name = "container", uniqueConstraints = @UniqueConstraint(columnNames = {"registry", "namespace", "name","toolname"}))
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findByNameAndNamespaceAndRegistry", query = "SELECT c FROM Container c WHERE c.name = :name AND c.namespace = :namespace AND c.registry = :registry"),
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findRegisteredById", query = "SELECT c FROM Container c WHERE c.id = :id AND c.isRegistered = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findAllRegistered", query = "SELECT c FROM Container c WHERE c.isRegistered = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findAll", query = "SELECT c FROM Container c"),
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findByPath", query = "SELECT c FROM Container c WHERE c.path = :path"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Container.findByToolPath", query = "SELECT c FROM Container c WHERE c.path = :path and c.toolname = :toolname"),
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findByMode", query = "SELECT c FROM Container c WHERE c.mode = :mode"),
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findRegisteredByPath", query = "SELECT c FROM Container c WHERE c.path = :path AND c.isRegistered = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Container.searchPattern", query = "SELECT c FROM Container c WHERE ((c.path LIKE :pattern) OR (c.registry LIKE :pattern) OR (c.description LIKE :pattern)) AND c.isRegistered = true") })
@@ -73,7 +76,7 @@ public class Container {
     private ContainerMode mode = ContainerMode.AUTO_DETECT_QUAY_TAGS;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
-    @JoinTable(name = "usercontainer", inverseJoinColumns = { @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id") }, joinColumns = { @JoinColumn(name = "containerid", nullable = false, updatable = false, referencedColumnName = "id") })
+    @JoinTable(name = "usercontainer", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "containerid", nullable = false, updatable = false, referencedColumnName = "id"))
     private Set<User> users;
 
     @Column(nullable = false)
@@ -141,51 +144,50 @@ public class Container {
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinTable(name = "containertag", joinColumns = { @JoinColumn(name = "containerid", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "tagid", referencedColumnName = "id") })
     @ApiModelProperty("Implementation specific tracking of valid build tags for the docker container")
-    @javax.persistence.OrderBy("id")
+    @OrderBy("id")
     private SortedSet<Tag> tags;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "containerlabel", joinColumns = { @JoinColumn(name = "containerid", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "labelid", referencedColumnName = "id") })
     @ApiModelProperty("Labels (i.e. meta tags) for describing the purpose and contents of containers")
-    @javax.persistence.OrderBy("id")
+    @OrderBy("id")
     private SortedSet<Label> labels;
 
     public Container() {
-        this.tags = new TreeSet<>();
-        this.labels = new TreeSet<>();
-        this.users = new HashSet<>(0);
+        tags = new TreeSet<>();
+        labels = new TreeSet<>();
+        users = new HashSet<>(0);
     }
 
     public Container(long id, String name) {
         this.id = id;
         // this.userId = userId;
         this.name = name;
-        this.tags = new TreeSet<>();
-        this.labels = new TreeSet<>();
-        this.users = new HashSet<>(0);
+        tags = new TreeSet<>();
+        labels = new TreeSet<>();
+        users = new HashSet<>(0);
     }
 
+    /**
+     *
+     * @param container
+     */
     public void update(Container container) {
-        this.description = container.getDescription();
-        this.isPublic = container.getIsPublic();
-        this.isStarred = container.getIsStarred();
-        this.lastModified = container.getLastModified();
-        this.lastBuild = container.getLastBuild();
-        this.hasCollab = container.getHasCollab();
-        this.author = container.getAuthor();
+        description = container.getDescription();
+        isPublic = container.getIsPublic();
+        isStarred = container.getIsStarred();
+        lastModified = container.getLastModified();
+        lastBuild = container.getLastBuild();
+        hasCollab = container.getHasCollab();
+        author = container.getAuthor();
 
-        this.gitUrl = container.getGitUrl();
+        gitUrl = container.getGitUrl();
     }
 
     @JsonProperty
     public long getId() {
         return id;
     }
-
-    // @JsonProperty
-    // public long getUserId() {
-    // return userId;
-    // }
 
     @JsonProperty
     public String getName() {
@@ -205,15 +207,15 @@ public class Container {
     @JsonProperty("path")
     public String getPath() {
         String repositoryPath;
-        if (this.path == null) {
+        if (path == null) {
             StringBuilder builder = new StringBuilder();
-            if (this.registry.equals(TokenType.QUAY_IO.toString())) {
+            if (registry.equals(TokenType.QUAY_IO.toString())) {
                 builder.append("quay.io/");
             }
-            builder.append(this.namespace).append("/").append(this.name);
+            builder.append(namespace).append("/").append(name);
             repositoryPath = builder.toString();
         } else {
-            repositoryPath = this.path;
+            repositoryPath = path;
         }
         return repositoryPath;
     }
@@ -298,14 +300,6 @@ public class Container {
     public void setId(long id) {
         this.id = id;
     }
-
-    /**
-     * @param enduserId
-     *            the user ID to set
-     */
-    // public void setUserId(long userId) {
-    // this.userId = userId;
-    // }
 
     /**
      * @param name
@@ -434,5 +428,19 @@ public class Container {
 
     public void setDefaultCwlPath(String defaultCwlPath) {
         this.defaultCwlPath = defaultCwlPath;
+    }
+
+    @JsonProperty
+    public String getToolname() {
+        return toolname;
+    }
+
+    public void setToolname(String toolname) {
+        this.toolname = toolname;
+    }
+
+    @JsonProperty("tool_path")
+    public String getToolPath() {
+        return getPath() + (toolname == null ? "" : "/" + toolname);
     }
 }
