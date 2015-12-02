@@ -17,14 +17,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
 
+import io.dockstore.webservice.Helper.RepoList;
 import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.ContainerMode;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.helpers.ImageRegistryFactory.Registry;
 import io.dockstore.webservice.resources.ResourceUtilities;
-
-import static io.dockstore.webservice.Helper.RepoList;
-import static io.dockstore.webservice.helpers.ImageRegistryFactory.Registry;
 
 /**
  * @author dyuen
@@ -146,7 +145,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
         final Gson gson = new Gson();
         for (final Container container : allRepos) {
 
-            if (!container.getRegistry().equals(Registry.QUAY_IO.toString())){
+            if (!container.getRegistry().equals(Registry.QUAY_IO.toString())) {
                 continue;
             }
 
@@ -195,13 +194,6 @@ public class QuayImageRegistry implements ImageRegistryInterface {
 
             container.setRegistry(quayToken.getTokenSource());
             container.setGitUrl(gitURL);
-
-            final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(container.getGitUrl(), client,
-                    bitbucketToken == null ? null : bitbucketToken.getContent(), githubToken.getContent());
-            if (sourceCodeRepo != null) {
-                // find if there is a Dockstore.cwl file from the git repository
-                sourceCodeRepo.findCWL(container);
-            }
         }
         return mapOfBuilds;
     }
