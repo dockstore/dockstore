@@ -2,7 +2,6 @@ package io.dockstore.webservice.helpers;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -13,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
 
-import io.dockstore.webservice.Helper;
 import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.resources.ResourceUtilities;
 
@@ -38,6 +36,10 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public FileResponse readFile(String fileName, String reference) {
+        if (fileName.startsWith("/")) {
+            fileName = fileName.substring(1);
+        }
+
         FileResponse fileResponse = new FileResponse();
 
         String content;
@@ -73,21 +75,11 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         Optional<String> asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
         LOG.info("RESOURCE CALL: " + url);
         if (asString.isPresent()) {
-            LOG.info("CWL FOUND");
+            LOG.info("FOUND: " + fileName);
             content = asString.get();
         } else {
-            LOG.info("Branch: " + branch + " has no " + fileName + ". Checking for " + fileName.toLowerCase());
-
-            url = BITBUCKET_API_URL + "repositories/" + gitUsername + "/" + gitRepository + "/raw/" + branch + "/" + fileName.toLowerCase();
-            asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
-            LOG.info("RESOURCE CALL: " + url);
-            if (asString.isPresent()) {
-                LOG.info("CWL FOUND");
-                content = asString.get();
-            } else {
-                LOG.info("Branch: " + branch + " has no " + fileName.toLowerCase());
-                return null;
-            }
+            LOG.info("Branch: " + branch + " has no " + fileName);
+            return null;
         }
 
         if (content != null && !content.isEmpty()) {
@@ -99,6 +91,11 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public Container findCWL(Container container) {
+        String fileName = container.getDefaultCwlPath();
+        if (fileName.startsWith("/")) {
+            fileName = fileName.substring(1);
+        }
+
         String giturl = container.getGitUrl();
         if (giturl != null && !giturl.isEmpty()) {
 
@@ -111,51 +108,55 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 // throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
             }
 
-            String url = BITBUCKET_API_URL + "repositories/" + m.group(1) + "/" + m.group(2) + "/branches";
+            String url = BITBUCKET_API_URL + "repositories/" + m.group(1) + "/" + m.group(2) + "/main-branch";
             Optional<String> asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
             LOG.info("RESOURCE CALL: " + url);
             if (asString.isPresent()) {
-                String response = asString.get();
+                String branchJson = asString.get();
 
                 Gson gson = new Gson();
-                Map<String, Object> branchMap = new HashMap<>();
+                Map<String, String> map = new HashMap<>();
+                map = (Map<String, String>) gson.fromJson(branchJson, map.getClass());
 
-                branchMap = (Map<String, Object>) gson.fromJson(response, branchMap.getClass());
-                Set<String> branches = branchMap.keySet();
+                String branch = map.get("name");
 
-                for (String branch : branches) {
-                    LOG.info("Checking branch: " + branch);
-
-                    String content = "";
-
-                    url = BITBUCKET_API_URL + "repositories/" + m.group(1) + "/" + m.group(2) + "/raw/" + branch + "/"
-                            + Helper.DOCKSTORE_CWL;
-                    asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
-                    LOG.info("RESOURCE CALL: " + url);
-                    if (asString.isPresent()) {
-                        LOG.info("CWL FOUND");
-                        content = asString.get();
-                    } else {
-                        LOG.info("Branch: " + branch + " has no Dockstore.cwl. Checking for dockstore.cwl.");
-
-                        url = BITBUCKET_API_URL + "repositories/" + m.group(1) + "/" + m.group(2) + "/raw/" + branch + "/"
-                                + Helper.DOCKSTORE_CWL.toLowerCase();
-                        asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
-                        LOG.info("RESOURCE CALL: " + url);
-                        if (asString.isPresent()) {
-                            LOG.info("CWL FOUND");
-                            content = asString.get();
-                        } else {
-                            LOG.info("Branch: " + branch + " has no dockstore.cwl");
-                        }
-                    }
-
-                    container = parseCWLContent(container, content);
-
-                    if (container.getHasCollab()) {
-                        break;
-                    }
+                if (branch == null) {
+                    LOG.info("Could NOT find bitbucket default branch!");
+                    return null;
+                    // throw new WebApplicationException(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                } else {
+                    LOG.info("Default branch: " + branch);
                 }
+
+                // String response = asString.get();
+                //
+                // Gson gson = new Gson();
+                // Map<String, Object> branchMap = new HashMap<>();
+                //
+                // branchMap = (Map<String, Object>) gson.fromJson(response, branchMap.getClass());
+                // Set<String> branches = branchMap.keySet();
+                //
+                // for (String branch : branches) {
+                LOG.info("Checking {} branch for cwl file", branch);
+
+                String content = "";
+
+                url = BITBUCKET_API_URL + "repositories/" + m.group(1) + "/" + m.group(2) + "/raw/" + branch + "/" + fileName;
+                asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
+                LOG.info("RESOURCE CALL: " + url);
+                if (asString.isPresent()) {
+                    LOG.info("CWL FOUND");
+                    content = asString.get();
+                } else {
+                    LOG.info("Branch: " + branch + " has no " + fileName);
+                }
+
+                container = parseCWLContent(container, content);
+
+                // if (container.getHasCollab()) {
+                // break;
+                // }
+                // }
 
             }
         }

@@ -47,6 +47,7 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.helpers.ImageRegistryFactory;
+import io.dockstore.webservice.helpers.ImageRegistryFactory.Registry;
 import io.dockstore.webservice.helpers.ImageRegistryInterface;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
@@ -57,8 +58,6 @@ import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.resources.ResourceUtilities;
-
-import static io.dockstore.webservice.helpers.ImageRegistryFactory.Registry;
 
 /**
  *
@@ -85,6 +84,19 @@ public class Helper {
         }
     }
 
+    /**
+     * Updates each container's tags.
+     * 
+     * @param containers
+     * @param client
+     * @param containerDAO
+     * @param tagDAO
+     * @param fileDAO
+     * @param githubToken
+     * @param bitbucketToken
+     * @param tagMap
+     *            docker image path -> list of corresponding Tags
+     */
     @SuppressWarnings("checkstyle:parameternumber")
     private static void updateTags(Set<Container> containers, HttpClient client, ContainerDAO containerDAO, TagDAO tagDAO, FileDAO fileDAO,
             Token githubToken, Token bitbucketToken, Map<String, List<Tag>> tagMap) {
@@ -143,26 +155,29 @@ public class Helper {
                 LOG.info("Updating tag {}", tag.getName());
                 // Set<SourceFile> newFiles = fileMap.get(tag.getName());
                 List<SourceFile> newFiles = loadFiles(client, bitbucketToken, githubToken, container, tag);
-                Set<SourceFile> oldFiles = tag.getSourceFiles();
+                // Set<SourceFile> oldFiles = tag.getSourceFiles();
+                tag.getSourceFiles().clear();
 
                 for (SourceFile newFile : newFiles) {
-                    boolean exists = false;
-                    for (SourceFile oldFile : oldFiles) {
-                        if (oldFile.getType().equals(newFile.getType())) {
-                            exists = true;
+                    // boolean exists = false;
+                    // for (SourceFile oldFile : oldFiles) {
+                    // if (oldFile.getType().equals(newFile.getType())) {
+                    // exists = true;
+                    //
+                    // oldFile.update(newFile);
+                    // fileDAO.create(oldFile);
+                    //
+                    // LOG.info("UPDATED FILE " + oldFile.getType());
+                    // }
+                    // }
+                    //
+                    // if (!exists) {
+                    long id = fileDAO.create(newFile);
+                    SourceFile file = fileDAO.findById(id);
+                    tag.addSourceFile(file);
 
-                            oldFile.update(newFile);
-                            fileDAO.create(oldFile);
-                        }
-                    }
-
-                    if (!exists) {
-                        long id = fileDAO.create(newFile);
-                        SourceFile file = fileDAO.findById(id);
-                        tag.addSourceFile(file);
-
-                        oldFiles.add(newFile);
-                    }
+                    // oldFiles.add(newFile);
+                    // }
                 }
 
                 long id = tagDAO.create(tag);
@@ -187,6 +202,15 @@ public class Helper {
             } else {
                 container.setMode(ContainerMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
             }
+
+            final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(container.getGitUrl(), client,
+                    bitbucketToken == null ? null : bitbucketToken.getContent(), githubToken.getContent());
+            if (sourceCodeRepo != null) {
+                LOG.info("Parsing CWL...");
+                // find if there is a Dockstore.cwl file from the git repository
+                sourceCodeRepo.findCWL(container);
+            }
+
             containerDAO.create(container);
         }
 
@@ -195,17 +219,17 @@ public class Helper {
     /**
      * Updates the new list of containers to the database. Deletes containers that have no users.
      * 
-     * @param apiContainerList containers retrieved from quay.io and docker hub
-     * @param dbContainerList containers retrieved from the database for the current user
-     * @param user the current user
+     * @param apiContainerList
+     *            containers retrieved from quay.io and docker hub
+     * @param dbContainerList
+     *            containers retrieved from the database for the current user
+     * @param user
+     *            the current user
      * @param containerDAO
-     * @param tagDAO
-     * @param fileDAO
-     * @param tagMap docker image path -> list of corresponding Tags
      * @return list of newly updated containers
      */
     private static List<Container> updateContainers(final List<Container> apiContainerList, final List<Container> dbContainerList, final User user,
-            final ContainerDAO containerDAO, final TagDAO tagDAO, final FileDAO fileDAO, final Map<String, List<Tag>> tagMap) {
+            final ContainerDAO containerDAO) {
 
         // TODO: for now, with no info coming back from Docker Hub, just skip them always
         dbContainerList.removeIf(container1 -> container1.getRegistry().equals(Registry.DOCKER_HUB.toString()));
@@ -357,6 +381,9 @@ public class Helper {
                             }
                         }
                         // loadFilesIntoTag(client, bitbucketToken, githubToken, c, tag);
+
+                        tag.setCwlPath(c.getDefaultCwlPath());
+                        tag.setDockerfilePath(c.getDefaultDockerfilePath());
                     }
                 }
                 tagMap.put(c.getPath(), tags);
@@ -414,8 +441,8 @@ public class Helper {
      * @return list of updated containers
      */
     @SuppressWarnings("checkstyle:parameternumber")
-    public static List<Container> refresh(final Long userId, final HttpClient client, final ObjectMapper objectMapper, final UserDAO userDAO,
-            final ContainerDAO containerDAO, final TokenDAO tokenDAO, final TagDAO tagDAO, final FileDAO fileDAO) {
+    public static List<Container> refresh(final Long userId, final HttpClient client, final ObjectMapper objectMapper,
+            final UserDAO userDAO, final ContainerDAO containerDAO, final TokenDAO tokenDAO, final TagDAO tagDAO, final FileDAO fileDAO) {
         final User dockstoreUser = userDAO.findById(userId);
 
         List<Container> currentRepos = new ArrayList(dockstoreUser.getContainers());// containerDAO.findByUserId(userId);
@@ -470,11 +497,15 @@ public class Helper {
             mapOfBuilds.putAll(anInterface.getBuildMap(githubToken, bitbucketToken, allRepos));
         }
 
-        // end up with  key = path; value = list of tags
-        final Map<String, List<Tag>> tagMap = getTags(client, allRepos, objectMapper, quayToken, bitbucketToken, githubToken, mapOfBuilds);
+        // end up with key = path; value = list of tags
+        // final Map<String, List<Tag>> tagMap = getTags(client, allRepos, objectMapper, quayToken, bitbucketToken, githubToken,
+        // mapOfBuilds);
 
-        updateContainers(allRepos, currentRepos, dockstoreUser, containerDAO, tagDAO, fileDAO, tagMap);
+        updateContainers(allRepos, currentRepos, dockstoreUser, containerDAO);
         userDAO.clearCache();
+
+        final Map<String, List<Tag>> tagMap = getTags(client, new ArrayList<>(userDAO.findById(userId).getContainers()), objectMapper,
+                quayToken, bitbucketToken, githubToken, mapOfBuilds);
 
         updateTags(userDAO.findById(userId).getContainers(), client, containerDAO, tagDAO, fileDAO, githubToken, bitbucketToken, tagMap);
         userDAO.clearCache();
@@ -513,10 +544,6 @@ public class Helper {
             fileName = tag.getDockerfilePath();
         } else if (fileType.equals(FileType.DOCKSTORE_CWL)) {
             fileName = tag.getCwlPath();
-        }
-
-        if (fileName.startsWith("/")) {
-            fileName = fileName.substring(1);
         }
 
         return sourceCodeRepo.readFile(fileName, reference);
@@ -633,7 +660,7 @@ public class Helper {
      * @param list
      */
     public static void checkUser(User user, List<Container> list) {
-        for(Container container : list) {
+        for (Container container : list) {
             if (!user.getIsAdmin() && !container.getUsers().contains(user)) {
                 throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
             }
