@@ -213,9 +213,6 @@ public final class Helper {
     private static List<Container> updateContainers(final Iterable<Container> apiContainerList, final List<Container> dbContainerList, final User user,
             final ContainerDAO containerDAO) {
 
-        // TODO: for now, with no info coming back from Docker Hub, just skip them always
-        dbContainerList.removeIf(container1 -> container1.getRegistry().equals(Registry.DOCKER_HUB.toString()));
-
 
         final List<Container> toDelete = new ArrayList<>();
         // Find containers that the user no longer has
@@ -422,9 +419,7 @@ public final class Helper {
     @SuppressWarnings("checkstyle:parameternumber")
     public static List<Container> refresh(final Long userId, final HttpClient client, final ObjectMapper objectMapper, final UserDAO userDAO,
             final ContainerDAO containerDAO, final TokenDAO tokenDAO, final TagDAO tagDAO, final FileDAO fileDAO) {
-        final User dockstoreUser = userDAO.findById(userId);
-
-        List<Container> currentRepos = new ArrayList(dockstoreUser.getContainers());// containerDAO.findByUserId(userId);
+        List<Container> dbContainers = new ArrayList(getContainers(userId, userDAO));// containerDAO.findByUserId(userId);
         List<Token> tokens = tokenDAO.findByUserId(userId);
 
         Token quayToken = null;
@@ -461,30 +456,53 @@ public final class Helper {
             namespaces.addAll(anInterface.getNamespaces());
         }
 
-        List<Container> allRepos = new ArrayList<>();
+        List<Container> apiContainers = new ArrayList<>();
         for (ImageRegistryInterface anInterface : allRegistries) {
-            allRepos.addAll(anInterface.getContainers(namespaces));
+            apiContainers.addAll(anInterface.getContainers(namespaces));
         }
 
         // TODO: when we get proper docker hub support, get this above
         // hack: read relevant containers from database
-        allRepos.addAll(containerDAO.findByMode(ContainerMode.MANUAL_IMAGE_PATH));
+        apiContainers.addAll(containerDAO.findByMode(ContainerMode.MANUAL_IMAGE_PATH));
 
         // ends up with docker image path -> quay.io data structure representing builds
         final Map<String, ArrayList<?>> mapOfBuilds = new HashMap<>();
         for (final ImageRegistryInterface anInterface : allRegistries) {
-            mapOfBuilds.putAll(anInterface.getBuildMap(githubToken, bitbucketToken, allRepos));
+            mapOfBuilds.putAll(anInterface.getBuildMap(githubToken, bitbucketToken, apiContainers));
         }
 
         // end up with  key = path; value = list of tags
-        final Map<String, List<Tag>> tagMap = getTags(client, allRepos, objectMapper, quayToken, bitbucketToken, githubToken, mapOfBuilds);
+        final Map<String, List<Tag>> tagMap = getTags(client, apiContainers, objectMapper, quayToken, bitbucketToken, githubToken, mapOfBuilds);
+        removeContainersThatCannotBeUpdated(dbContainers);
 
-        updateContainers(allRepos, currentRepos, dockstoreUser, containerDAO);
+        final User dockstoreUser = userDAO.findById(userId);
+        // update information on a container by container level
+        updateContainers(apiContainers, dbContainers, dockstoreUser, containerDAO);
         userDAO.clearCache();
 
-        updateTags(userDAO.findById(userId).getContainers(), client, containerDAO, tagDAO, fileDAO, githubToken, bitbucketToken, tagMap);
+        final List<Container> newDBContainers = getContainers(userId, userDAO);
+        removeContainersThatCannotBeUpdated(newDBContainers);
+        // update information on a tag by tag level
+        updateTags(newDBContainers, client, containerDAO, tagDAO, fileDAO, githubToken, bitbucketToken, tagMap);
         userDAO.clearCache();
-        return new ArrayList(userDAO.findById(userId).getContainers());
+        return new ArrayList(getContainers(userId, userDAO));
+    }
+
+    private static void removeContainersThatCannotBeUpdated(List<Container> dbContainers) {
+        // TODO: for now, with no info coming back from Docker Hub, just skip them always
+        dbContainers.removeIf(container1 -> container1.getRegistry() == Registry.DOCKER_HUB);
+        // also skip containers on quay.io but in manual mode
+        dbContainers.removeIf(container1 -> container1.getMode() == ContainerMode.MANUAL_IMAGE_PATH);
+    }
+
+    /**
+     * Gets containers for the current user
+     * @param userId
+     * @param userDAO
+     * @return
+     */
+    private static List<Container> getContainers(Long userId, UserDAO userDAO) {
+        return new ArrayList<>(userDAO.findById(userId).getContainers());
     }
 
     /**

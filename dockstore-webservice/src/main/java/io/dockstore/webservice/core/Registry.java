@@ -11,7 +11,7 @@ public enum Registry {
      */
     private final String friendlyName;
 
-    Registry(String friendlyName) {
+    Registry(final String friendlyName) {
         this.friendlyName = friendlyName;
     }
 

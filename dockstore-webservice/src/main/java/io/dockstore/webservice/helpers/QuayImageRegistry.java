@@ -8,6 +8,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
@@ -39,7 +40,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
     private final ObjectMapper objectMapper;
     private final Token quayToken;
 
-    public QuayImageRegistry(HttpClient client, ObjectMapper objectMapper, Token quayToken) {
+    public QuayImageRegistry(final HttpClient client, final ObjectMapper objectMapper, final Token quayToken) {
         this.client = client;
         this.objectMapper = objectMapper;
         this.quayToken = quayToken;
@@ -64,7 +65,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
 
             final Map<String, Map<String, String>> listOfTags = map.get("tags");
 
-            for (Map.Entry<String, Map<String, String>> stringMapEntry : listOfTags.entrySet()) {
+            for (Entry<String, Map<String, String>> stringMapEntry : listOfTags.entrySet()) {
                 final String s = gson.toJson(stringMapEntry.getValue());
                 try {
                     final Tag tag = objectMapper.readValue(s, Tag.class);
@@ -146,7 +147,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
         final Gson gson = new Gson();
         for (final Container container : allRepos) {
 
-            if (!container.getRegistry().equals(Registry.QUAY_IO)){
+            if (container.getRegistry() != Registry.QUAY_IO){
                 continue;
             }
 
@@ -155,46 +156,9 @@ public class QuayImageRegistry implements ImageRegistryInterface {
             container.setPath(path);
 
             LOG.info("========== Configuring " + path + " ==========");
-
-            // Get the list of builds from the container.
-            // Builds contain information such as the Git URL and tags
-            String urlBuilds = QUAY_URL + "repository/" + repo + "/build/";
-            Optional<String> asStringBuilds = ResourceUtilities.asString(urlBuilds, quayToken.getContent(), client);
-
-            String gitURL = "";
-
-            if (asStringBuilds.isPresent()) {
-                String json = asStringBuilds.get();
-                LOG.info("RESOURCE CALL: " + urlBuilds);
-
-                // parse json using Gson to get the git url of repository and the list of tags
-                Map<String, ArrayList> map = new HashMap<>();
-                map = (Map<String, ArrayList>) gson.fromJson(json, map.getClass());
-                ArrayList builds = map.get("builds");
-
-                mapOfBuilds.put(path, builds);
-
-                if (!builds.isEmpty()) {
-                    Map<String, Map<String, String>> map2 = (Map<String, Map<String, String>>) builds.get(0);
-
-                    gitURL = map2.get("trigger_metadata").get("git_url");
-
-                    Map<String, String> map3 = (Map<String, String>) builds.get(0);
-                    String lastBuild = map3.get("started");
-                    LOG.info("LAST BUILD: " + lastBuild);
-
-                    Date date = null;
-                    try {
-                        date = formatter.parse(lastBuild);
-                        container.setLastBuild(date);
-                    } catch (ParseException ex) {
-                        LOG.info("Build date did not match format 'EEE, d MMM yyyy HH:mm:ss Z'");
-                    }
-                }
+            if (container.getMode() != ContainerMode.MANUAL_IMAGE_PATH) {
+                updateContainersWithBuildInfo(formatter, mapOfBuilds, gson, container, repo, path);
             }
-
-            container.setRegistry(Registry.QUAY_IO);
-            container.setGitUrl(gitURL);
 
             final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(container.getGitUrl(), client,
                     bitbucketToken == null ? null : bitbucketToken.getContent(), githubToken.getContent());
@@ -204,5 +168,57 @@ public class QuayImageRegistry implements ImageRegistryInterface {
             }
         }
         return mapOfBuilds;
+    }
+
+    /**
+     * For a given container, update its registry, git, and build information with information from quay.io
+     * @param formatter
+     * @param mapOfBuilds
+     * @param gson
+     * @param container
+     * @param repo
+     * @param path
+     */
+    private void updateContainersWithBuildInfo(SimpleDateFormat formatter, Map<String, ArrayList<?>> mapOfBuilds, Gson gson,
+                                                  Container container, String repo, String path) {
+        // Get the list of builds from the container.
+        // Builds contain information such as the Git URL and tags
+        String urlBuilds = QUAY_URL + "repository/" + repo + "/build/";
+        Optional<String> asStringBuilds = ResourceUtilities.asString(urlBuilds, quayToken.getContent(), client);
+
+        String gitURL = "";
+
+        if (asStringBuilds.isPresent()) {
+            String json = asStringBuilds.get();
+            LOG.info("RESOURCE CALL: " + urlBuilds);
+
+            // parse json using Gson to get the git url of repository and the list of tags
+            Map<String, ArrayList> map = new HashMap<>();
+            map = (Map<String, ArrayList>) gson.fromJson(json, map.getClass());
+            ArrayList builds = map.get("builds");
+
+            mapOfBuilds.put(path, builds);
+
+            if (!builds.isEmpty()) {
+                Map<String, Map<String, String>> map2 = (Map<String, Map<String, String>>) builds.get(0);
+
+                gitURL = map2.get("trigger_metadata").get("git_url");
+
+                Map<String, String> map3 = (Map<String, String>) builds.get(0);
+                String lastBuild = map3.get("started");
+                LOG.info("LAST BUILD: " + lastBuild);
+
+                Date date;
+                try {
+                    date = formatter.parse(lastBuild);
+                    container.setLastBuild(date);
+                } catch (ParseException ex) {
+                    LOG.info("Build date did not match format 'EEE, d MMM yyyy HH:mm:ss Z'");
+                }
+            }
+        }
+
+        container.setRegistry(Registry.QUAY_IO);
+        container.setGitUrl(gitURL);
     }
 }
