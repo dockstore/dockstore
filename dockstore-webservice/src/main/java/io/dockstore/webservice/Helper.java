@@ -98,7 +98,7 @@ public final class Helper {
     private static void updateTags(final Iterable<Container> containers, final HttpClient client, final ContainerDAO containerDAO, final TagDAO tagDAO, final FileDAO fileDAO,
             final Token githubToken, final Token bitbucketToken, final Map<String, List<Tag>> tagMap) {
         for (final Container container : containers) {
-            LOG.info("--------------- Updating tags for {} ---------------", container.getPath());
+            LOG.info("--------------- Updating tags for {} ---------------", container.getToolPath());
 
             List<Tag> existingTags = new ArrayList(container.getTags());
             List<Tag> newTags = tagMap.get(container.getPath());
@@ -141,7 +141,10 @@ public final class Helper {
 
                 // Tag does not already exist
                 if (!exists) {
-                    existingTags.add(newTag);
+                    // this could result in the same tag being added to multiple containers with the same path, need to clone
+                    Tag clonedTag = new Tag();
+                    clonedTag.update(newTag);
+                    existingTags.add(clonedTag);
                 }
 
                 fileMap.put(newTag.getName(), newTag.getSourceFiles());
@@ -301,14 +304,12 @@ public final class Helper {
      * @param containers
      * @param objectMapper
      * @param quayToken
-     * @param bitbucketToken
-     * @param githubToken
      * @param mapOfBuilds
      * @return a map: key = path; value = list of tags
      */
     @SuppressWarnings("checkstyle:parameternumber")
     private static Map<String, List<Tag>> getTags(final HttpClient client, final List<Container> containers,
-            final ObjectMapper objectMapper, final Token quayToken, final Token bitbucketToken, final Token githubToken,
+            final ObjectMapper objectMapper, final Token quayToken,
             final Map<String, ArrayList<?>> mapOfBuilds) {
         final Map<String, List<Tag>> tagMap = new HashMap<>();
 
@@ -354,12 +355,9 @@ public final class Helper {
                                     tag.setAutomated(true);
                                 }
 
-                                // loadFilesIntoTag(client, bitbucketToken, githubToken, c, tag);
-
                                 break;
                             }
                         }
-                        // loadFilesIntoTag(client, bitbucketToken, githubToken, c, tag);
                     }
                 }
                 tagMap.put(c.getPath(), tags);
@@ -472,7 +470,7 @@ public final class Helper {
         }
 
         // end up with  key = path; value = list of tags
-        final Map<String, List<Tag>> tagMap = getTags(client, apiContainers, objectMapper, quayToken, bitbucketToken, githubToken, mapOfBuilds);
+        final Map<String, List<Tag>> tagMap = getTags(client, apiContainers, objectMapper, quayToken, mapOfBuilds);
         removeContainersThatCannotBeUpdated(dbContainers);
 
         final User dockstoreUser = userDAO.findById(userId);

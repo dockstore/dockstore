@@ -300,19 +300,50 @@ public class Client {
             if (isHelpRequest(first)) {
                 publishHelp();
             } else {
-                try {
-                    Container container = containersApi.getContainerByToolPath(first);
-                    RegisterRequest req = new RegisterRequest();
-                    req.setRegister(true);
-                    container = containersApi.register(container.getId(), req);
+                if (args.size() == 1) {
+                    try {
+                        Container container = containersApi.getContainerByToolPath(first);
+                        RegisterRequest req = new RegisterRequest();
+                        req.setRegister(true);
+                        container = containersApi.register(container.getId(), req);
 
-                    if (container != null) {
-                        out("Successfully published " + first);
-                    } else {
+                        if (container != null) {
+                            out("Successfully published " + first);
+                        } else {
+                            kill("Unable to publish " + first);
+                        }
+                    } catch (ApiException ex) {
                         kill("Unable to publish " + first);
                     }
-                } catch (ApiException ex) {
-                    kill("Unable to publish " + first);
+                } else{
+                    String toolname = args.get(1);
+                    try {
+                        Container container = containersApi.getContainerByToolPath(first);
+                        Container newContainer = new Container();
+                        // copy only the fields that we want to replicate, not sure why simply blanking
+                        // the returned container does not work
+                        newContainer.setMode(container.getMode());
+                        newContainer.setName(container.getName());
+                        newContainer.setNamespace(container.getNamespace());
+                        newContainer.setRegistry(container.getRegistry());
+                        newContainer.setDefaultDockerfilePath(container.getDefaultDockerfilePath());
+                        newContainer.setDefaultCwlPath(container.getDefaultCwlPath());
+                        newContainer.setIsPublic(container.getIsPublic());
+                        newContainer.setIsRegistered(container.getIsRegistered());
+                        newContainer.setGitUrl(container.getGitUrl());
+                        newContainer.setPath(container.getPath());
+                        newContainer.setToolname(toolname);
+
+                        newContainer = containersApi.registerManual(newContainer);
+
+                        if (newContainer != null) {
+                            out("Successfully published " + toolname);
+                        } else {
+                            kill("Unable to publish " + toolname);
+                        }
+                    } catch (ApiException ex) {
+                        kill("Unable to publish " + toolname);
+                    }
                 }
             }
         }
@@ -328,7 +359,7 @@ public class Client {
             out("");
             out("Description:");
             out("  Manually register an entry in the dockstore. Currently this is used to "
-                    + " register entries for images on Docker Hub .");
+                    + "register entries for images on Docker Hub .");
             out("");
             out("Required parameters:");
             out("  --name <name>                Name for the docker container");
@@ -392,9 +423,11 @@ public class Client {
         out("------------------");
         out("See https://www.dockstore.org for more information");
         out("");
-        out("dockstore publish              :  lists the current and potential containers to share");
+        out("dockstore publish                          :  lists the current and potential containers to share");
         out("");
-        out("dockstore publish <container>  :  registers that container for use by others in the dockstore");
+        out("dockstore publish <container>              :  registers that container for use by others in the dockstore");
+        out("");
+        out("dockstore publish <container> <toolname>   :  registers that container for use by others in the dockstore under a specific toolname");
     }
 
     private static void info(List<String> args) {
