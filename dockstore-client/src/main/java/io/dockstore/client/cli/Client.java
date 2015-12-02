@@ -46,6 +46,8 @@ import io.swagger.client.model.Tag;
 import io.swagger.client.model.User;
 import javassist.NotFoundException;
 
+import static io.swagger.client.model.Container.ModeEnum;
+
 /**
  *
  * @author xliu
@@ -158,14 +160,17 @@ public class Client {
         int[] maxWidths = { NAME_HEADER.length(), DESCRIPTION_HEADER.length(), GIT_HEADER.length() };
 
         for (Container container : containers) {
-            if (container.getPath() != null && container.getPath().length() > maxWidths[0]) {
-                maxWidths[0] = container.getPath().length();
+            final String toolPath = container.getToolPath();
+            if (toolPath != null && toolPath.length() > maxWidths[0]) {
+                maxWidths[0] = toolPath.length();
             }
-            if (container.getDescription() != null && container.getDescription().length() > maxWidths[1]) {
-                maxWidths[1] = container.getDescription().length();
+            final String description = container.getDescription();
+            if (description != null && description.length() > maxWidths[1]) {
+                maxWidths[1] = description.length();
             }
-            if (container.getGitUrl() != null && container.getGitUrl().length() > maxWidths[2]) {
-                maxWidths[2] = container.getGitUrl().length();
+            final String gitUrl = container.getGitUrl();
+            if (gitUrl != null && gitUrl.length() > maxWidths[2]) {
+                maxWidths[2] = gitUrl.length();
             }
         }
 
@@ -217,7 +222,7 @@ public class Client {
                 }
             }
 
-            out(format, container.getPath(), description, gitUrl, boolWord(container.getIsRegistered()), cwl, automated);
+            out(format, container.getToolPath(), description, gitUrl, boolWord(container.getIsRegistered()), cwl, automated);
         }
     }
 
@@ -247,7 +252,7 @@ public class Client {
                 }
             }
 
-            out(format, container.getPath(), description, gitUrl);
+            out(format, container.getToolPath(), description, gitUrl);
         }
     }
 
@@ -294,7 +299,7 @@ public class Client {
                 publishHelp();
             } else {
                 try {
-                    Container container = containersApi.getContainerByPath(first);
+                    Container container = containersApi.getContainerByToolPath(first);
                     RegisterRequest req = new RegisterRequest();
                     req.setRegister(true);
                     container = containersApi.register(container.getId(), req);
@@ -327,9 +332,10 @@ public class Client {
                     String dockerfilePath = reqVal(args, "--dockerfile-path");
                     String cwlPath = reqVal(args, "--cwl-path");
                     String gitReference = reqVal(args, "--git-reference");
+                    String toolname = optVal(args, "--toolname", null);
 
                     Container container =new Container();
-                    container.setMode(Container.ModeEnum.MANUAL_IMAGE_PATH);
+                    container.setMode(ModeEnum.MANUAL_IMAGE_PATH);
                     container.setName(name);
                     container.setNamespace(namespace);
                     container.setRegistry("DOCKER_HUB");
@@ -338,6 +344,7 @@ public class Client {
                     container.setIsPublic(true);
                     container.setIsRegistered(true);
                     container.setGitUrl(gitURL);
+                    container.setToolname(toolname);
                     Tag tag = new Tag();
                     tag.setReference(gitReference);
                     tag.setDockerfilePath(dockerfilePath);
@@ -347,12 +354,12 @@ public class Client {
                     container = containersApi.registerManual(container);
 
                     if (container != null) {
-                        out("Successfully published " + first);
+                        out("Successfully published " + name);
                     } else {
-                        kill("Unable to publish " + first);
+                        kill("Unable to publish " + name);
                     }
                 } catch (ApiException ex) {
-                    kill("Unable to publish " + first);
+                    kill("Unable to publish " + args.stream());
                 }
             }
         }
@@ -380,7 +387,7 @@ public class Client {
 
         String path = args.get(0);
         try {
-            Container container = containersApi.getContainerByPath(path);
+            Container container = containersApi.getContainerByToolPath(path);
             if (container == null || !container.getIsRegistered()) {
                 kill("This container is not registered.");
             } else {
@@ -454,7 +461,7 @@ public class Client {
         String tag = (parts.length > 1) ? parts[1] : null;
 
         try {
-            Container container = containersApi.getContainerByPath(path);
+            Container container = containersApi.getContainerByToolPath(path);
             if (container.getHasCollab()) {
                 try {
                     SourceFile file = containersApi.cwl(container.getId(), tag);

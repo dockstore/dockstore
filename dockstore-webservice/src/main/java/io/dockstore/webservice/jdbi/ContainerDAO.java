@@ -48,11 +48,6 @@ public class ContainerDAO extends AbstractDAO<Container> {
         session.flush();
     }
 
-    public List<Container> findByNameAndNamespaceAndRegistry(String name, String namespace, String registry) {
-        return list(namedQuery("io.dockstore.webservice.core.Container.findByNameAndNamespaceAndRegistry").setString("name", name)
-                .setString("namespace", namespace).setString("registry", registry));
-    }
-
     public Container findRegisteredById(long id) {
         return uniqueResult(namedQuery("io.dockstore.webservice.core.Container.findRegisteredById").setParameter("id", id));
     }
@@ -70,8 +65,12 @@ public class ContainerDAO extends AbstractDAO<Container> {
         return list(namedQuery("io.dockstore.webservice.core.Container.searchPattern").setParameter("pattern", pattern));
     }
 
-    public Container findByPath(String path) {
-        return uniqueResult(namedQuery("io.dockstore.webservice.core.Container.findByPath").setParameter("path", path));
+    public List<Container> findByPath(String path) {
+        return list(namedQuery("io.dockstore.webservice.core.Container.findByPath").setParameter("path", path));
+    }
+
+    public Container findByToolPath(String path, String tool) {
+        return uniqueResult(namedQuery("io.dockstore.webservice.core.Container.findByToolPath").setParameter("path", path).setParameter("toolname", tool));
     }
 
     public List<Container> findByMode(final ContainerMode mode) {

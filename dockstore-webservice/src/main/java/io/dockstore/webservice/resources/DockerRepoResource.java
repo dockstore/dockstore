@@ -43,6 +43,7 @@ import org.slf4j.LoggerFactory;
 
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
 
@@ -328,10 +329,36 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/path/{repository}")
-    @ApiOperation(value = "Get a container by path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Container.class)
-    public Container getContainerByPath(@ApiParam(hidden = true) @Auth Token authToken,
+    @ApiOperation(value = "Get a list of containers by path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Container.class, responseContainer = "List")
+    public List<Container> getContainerByPath(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
-        Container container = containerDAO.findByPath(path);
+        List<Container> container = containerDAO.findByPath(path);
+
+        Helper.checkContainer(container);
+
+        User user = userDAO.findById(authToken.getUserId());
+        Helper.checkUser(user, container);
+
+        return container;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/path/tool/{repository}")
+    @ApiOperation(value = "Get a container by tool path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Container.class)
+    public Container getContainerByToolPath(@ApiParam(hidden = true) @Auth Token authToken,
+                                                 @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
+        final String[] split = path.split("/");
+        // check that this is a tool path
+        final int toolPathLength = 4;
+        String toolname = "";
+        if (split.length == toolPathLength){
+            toolname = split[toolPathLength - 1];
+        }
+
+        Container container = containerDAO.findByToolPath(Joiner.on("/").join(split[0],split[1],split[2]),toolname);
+
         Helper.checkContainer(container);
 
         User user = userDAO.findById(authToken.getUserId());

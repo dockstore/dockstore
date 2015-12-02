@@ -16,6 +16,16 @@
  */
 package io.dockstore.client.cli;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.TimeoutException;
+
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.io.FileUtils;
+import org.junit.ClassRule;
+import org.junit.Test;
+
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.Constants;
 import io.dockstore.common.Utilities;
@@ -32,16 +42,9 @@ import io.swagger.client.model.Group;
 import io.swagger.client.model.RegisterRequest;
 import io.swagger.client.model.Token;
 import io.swagger.client.model.User;
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-import java.util.concurrent.TimeoutException;
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
-import org.apache.commons.io.FileUtils;
+
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import org.junit.ClassRule;
-import org.junit.Test;
 
 /**
  *
@@ -128,7 +131,7 @@ public class SystemClientIT {
 
         assertTrue(containers.size() == 5);
 
-        Container container = containersApi.getContainerByPath("quay.io/test_org/test2");
+        Container container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
         assertFalse(container.getIsRegistered());
 
         long containerId = container.getId();
@@ -153,7 +156,7 @@ public class SystemClientIT {
 
         assertTrue(containers.size() == 5);
 
-        Container container = containersApi.getContainerByPath("quay.io/test_org/test5");
+        Container container = containersApi.getContainerByToolPath("quay.io/test_org/test5");
         assertFalse(container.getIsRegistered());
 
         long containerId = container.getId();

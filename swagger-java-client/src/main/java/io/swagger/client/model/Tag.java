@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 @ApiModel(description = "")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-11-30T16:41:09.863-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-01T16:59:34.578-05:00")
 public class Tag   {
   
   private Long id = null;
@@ -41,9 +41,9 @@ public class Tag   {
 
   
   /**
-   * git commit/tag/branch
+   * quay tag name
    **/
-  @ApiModelProperty(value = "git commit/tag/branch")
+  @ApiModelProperty(value = "quay tag name")
   @JsonProperty("name")
   public String getName() {
     return name;
@@ -67,9 +67,9 @@ public class Tag   {
 
   
   /**
-   * git commit/tag/branch ... may be a duplicate of name or vice versa
+   * git commit/tag/branch
    **/
-  @ApiModelProperty(value = "git commit/tag/branch ... may be a duplicate of name or vice versa")
+  @ApiModelProperty(value = "git commit/tag/branch")
   @JsonProperty("reference")
   public String getReference() {
     return reference;

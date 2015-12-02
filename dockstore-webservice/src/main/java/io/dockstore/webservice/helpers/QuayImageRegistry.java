@@ -18,11 +18,13 @@ import com.google.common.base.Optional;
 import com.google.gson.Gson;
 
 import io.dockstore.webservice.core.Container;
+import io.dockstore.webservice.core.ContainerMode;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.resources.ResourceUtilities;
 
 import static io.dockstore.webservice.Helper.RepoList;
+import static io.dockstore.webservice.helpers.ImageRegistryFactory.Registry;
 
 /**
  * @author dyuen
@@ -114,10 +116,16 @@ public class QuayImageRegistry implements ImageRegistryInterface {
             if (asString.isPresent()) {
                 RepoList repos;
                 try {
+                    // interesting, this relies upon our container object having the same fields
+                    // as quay.io's repositories
                     repos = objectMapper.readValue(asString.get(), RepoList.class);
                     LOG.info("RESOURCE CALL: " + url);
 
                     List<Container> containers = repos.getRepositories();
+                    // tag all of these with where they came from
+                    containers.stream().forEach(container -> container.setRegistry(Registry.QUAY_IO.name()));
+                    // not quite correct, they could be mixed but how can we tell from quay?
+                    containers.stream().forEach(container -> container.setMode(ContainerMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS));
                     containerList.addAll(containers);
                 } catch (IOException ex) {
                     LOG.info("Exception: " + ex);
@@ -130,14 +138,20 @@ public class QuayImageRegistry implements ImageRegistryInterface {
 
     @Override
     public Map<String, ArrayList<?>> getBuildMap(Token githubToken, Token bitbucketToken, List<Container> allRepos) {
-        SimpleDateFormat formatter = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
+        final SimpleDateFormat formatter = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
 
-        Map<String, ArrayList<?>> mapOfBuilds = new HashMap<>();
+        final Map<String, ArrayList<?>> mapOfBuilds = new HashMap<>();
 
         // Go through each container for each namespace
-        for (Container container : allRepos) {
-            String repo = container.getNamespace() + "/" + container.getName();
-            String path = quayToken.getTokenSource() + "/" + repo;
+        final Gson gson = new Gson();
+        for (final Container container : allRepos) {
+
+            if (!container.getRegistry().equals(Registry.QUAY_IO.toString())){
+                continue;
+            }
+
+            final String repo = container.getNamespace() + "/" + container.getName();
+            final String path = quayToken.getTokenSource() + "/" + repo;
             container.setPath(path);
 
             LOG.info("========== Configuring " + path + " ==========");
@@ -154,7 +168,6 @@ public class QuayImageRegistry implements ImageRegistryInterface {
                 LOG.info("RESOURCE CALL: " + urlBuilds);
 
                 // parse json using Gson to get the git url of repository and the list of tags
-                Gson gson = new Gson();
                 Map<String, ArrayList> map = new HashMap<>();
                 map = (Map<String, ArrayList>) gson.fromJson(json, map.getClass());
                 ArrayList builds = map.get("builds");
