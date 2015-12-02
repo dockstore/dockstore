@@ -40,9 +40,12 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.Container;
 import io.swagger.client.model.Group;
 import io.swagger.client.model.RegisterRequest;
+import io.swagger.client.model.Tag;
 import io.swagger.client.model.Token;
 import io.swagger.client.model.User;
 
+import static io.swagger.client.model.Container.*;
+import static io.swagger.client.model.Container.RegistryEnum;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -140,6 +143,45 @@ public class SystemClientIT {
         req.setRegister(true);
 
         container = containersApi.register(containerId, req);
+    }
+
+    @Test
+    public void testSuccessfulManualImageRegistration() throws IOException, TimeoutException, ApiException {
+        ApiClient client = getAdminWebClient();
+        ContainersApi containersApi = new ContainersApi(client);
+
+        Container c = getContainer();
+
+        containersApi.registerManual(c);
+    }
+
+    private Container getContainer() {
+        Container c = new Container();
+        c.setMode(ModeEnum.MANUAL_IMAGE_PATH);
+        c.setName("seqware_full");
+        c.setName("seqware");
+        c.setGitUrl("git@github.com:denis-yuen/test1.git");
+        c.setDefaultDockerfilePath("/Dockerfile");
+        c.setDefaultCwlPath("/Dockstore.cwl");
+        c.setRegistry(RegistryEnum.DOCKER_HUB);
+        c.setIsRegistered(true);
+        c.setIsPublic(true);
+        Tag tag = new Tag();
+        tag.setReference("refs/heads/master");
+        c.getTags().add(tag);
+        c.setToolname("test5");
+        return c;
+    }
+
+    @Test(expected = ApiException.class)
+    public void testFailedDuplicateManualImageRegistration() throws ApiException, IOException, TimeoutException {
+        ApiClient client = getAdminWebClient();
+        ContainersApi containersApi = new ContainersApi(client);
+
+        Container c = getContainer();
+
+        final Container container = containersApi.registerManual(c);
+        containersApi.registerManual(container);
     }
 
     @Test

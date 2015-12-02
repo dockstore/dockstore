@@ -33,6 +33,7 @@ import org.apache.http.HttpStatus;
 
 import com.esotericsoftware.yamlbeans.YamlException;
 import com.esotericsoftware.yamlbeans.YamlReader;
+import com.google.common.base.Joiner;
 
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -46,6 +47,7 @@ import io.swagger.client.model.Tag;
 import io.swagger.client.model.User;
 import javassist.NotFoundException;
 
+import static io.swagger.client.model.Container.RegistryEnum;
 import static io.swagger.client.model.Container.ModeEnum;
 
 /**
@@ -316,51 +318,66 @@ public class Client {
         }
     }
 
+
+
     private static void manualPublish(List<String> args) {
-        if (args.isEmpty()) {
-            publishHelp();
+        if (isHelp(args, true)) {
+            out("");
+            out("Usage: dockstore manual_publish --help");
+            out("       dockstore manual_publish <params>");
+            out("");
+            out("Description:");
+            out("  Manually register an entry in the dockstore. Currently this is used to "
+                    + " register entries for images on Docker Hub .");
+            out("");
+            out("Required parameters:");
+            out("  --name <name>                Name for the docker container");
+            out("  --namespace <namespace>      Organization for the docker container");
+            out("  --git-url <url>              Reference to the git repo holding CWL and Dockerfile ex: \"git@github.com:user/test1.git\"");
+            out("  --git-reference <reference>  Reference to git branch or tag where the CWL and Dockerfile is checked-in");
+            out("Optional parameters:");
+            out("  --dockerfile-path <file>     Path for the dockerfile, defaults to /Dockerfile/");
+            out("  --cwl-path <file>            Path for the CWL document, defaults to /Dockstore.cwl");
+            out("  --toolname <toolname>        Name of the tool, can be omitted");
+            out("  --registry <registry>        Docker registry, can be omitted, defaults to registry.hub.docker.com");
+            out("");
         } else {
-            String first = args.get(0);
-            if (isHelpRequest(first)) {
-                publishHelp();
-            } else {
-                try {
-                    String name = reqVal(args, "--name");
-                    String namespace = reqVal(args, "--namespace");
-                    String gitURL = reqVal(args, "--git-url");
+            final String name = reqVal(args, "--name");
+            final String namespace = reqVal(args, "--namespace");
+            final String gitURL = reqVal(args, "--git-url");
 
-                    String dockerfilePath = reqVal(args, "--dockerfile-path");
-                    String cwlPath = reqVal(args, "--cwl-path");
-                    String gitReference = reqVal(args, "--git-reference");
-                    String toolname = optVal(args, "--toolname", null);
+            final String dockerfilePath = optVal(args, "--dockerfile-path","/Dockerfile");
+            final String cwlPath = optVal(args, "--cwl-path","Dockerstore.cwl");
+            final String gitReference = reqVal(args, "--git-reference");
+            final String toolname = optVal(args, "--toolname", null);
+            final String registry = optVal(args, "--registry", "registry.hub.docker.com");
 
-                    Container container =new Container();
-                    container.setMode(ModeEnum.MANUAL_IMAGE_PATH);
-                    container.setName(name);
-                    container.setNamespace(namespace);
-                    container.setRegistry("DOCKER_HUB");
-                    container.setDefaultDockerfilePath(dockerfilePath);
-                    container.setDefaultCwlPath(cwlPath);
-                    container.setIsPublic(true);
-                    container.setIsRegistered(true);
-                    container.setGitUrl(gitURL);
-                    container.setToolname(toolname);
-                    Tag tag = new Tag();
-                    tag.setReference(gitReference);
-                    tag.setDockerfilePath(dockerfilePath);
-                    tag.setCwlPath(cwlPath);
-                    container.getTags().add(tag);
-
-                    container = containersApi.registerManual(container);
-
-                    if (container != null) {
-                        out("Successfully published " + name);
-                    } else {
-                        kill("Unable to publish " + name);
-                    }
-                } catch (ApiException ex) {
-                    kill("Unable to publish " + args.stream());
+            Container container = new Container();
+            container.setMode(ModeEnum.MANUAL_IMAGE_PATH);
+            container.setName(name);
+            container.setNamespace(namespace);
+            container.setRegistry("quay.io".equals(registry) ? RegistryEnum.QUAY_IO: RegistryEnum.DOCKER_HUB);
+            container.setDefaultDockerfilePath(dockerfilePath);
+            container.setDefaultCwlPath(cwlPath);
+            container.setIsPublic(true);
+            container.setIsRegistered(true);
+            container.setGitUrl(gitURL);
+            container.setToolname(toolname);
+            Tag tag = new Tag();
+            tag.setReference(gitReference);
+            tag.setDockerfilePath(dockerfilePath);
+            tag.setCwlPath(cwlPath);
+            container.getTags().add(tag);
+            String fullName = Joiner.on("/").skipNulls().join(registry, namespace, name, toolname);
+            try {
+                container = containersApi.registerManual(container);
+                if (container != null) {
+                    out("Successfully published " + fullName);
+                } else {
+                    kill("Unable to publish " + fullName);
                 }
+            } catch (ApiException ex) {
+                kill("Unable to publish " + fullName);
             }
         }
     }

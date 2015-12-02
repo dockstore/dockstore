@@ -40,6 +40,7 @@ import com.google.gson.Gson;
 
 import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.ContainerMode;
+import io.dockstore.webservice.core.Registry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
 import io.dockstore.webservice.core.Tag;
@@ -58,19 +59,16 @@ import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.resources.ResourceUtilities;
 
-import static io.dockstore.webservice.helpers.ImageRegistryFactory.Registry;
-
 /**
  *
  * @author xliu
  */
-public class Helper {
+public final class Helper {
     private static final Logger LOG = LoggerFactory.getLogger(Helper.class);
 
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
 
     public static final String DOCKSTORE_CWL = "Dockstore.cwl";
-    private static final String DOCKERFILE = "Dockerfile";
 
     public static class RepoList {
 
@@ -81,14 +79,25 @@ public class Helper {
         }
 
         public List<Container> getRepositories() {
-            return this.repositories;
+            return repositories;
         }
     }
 
+    /**
+     *
+     * @param containers
+     * @param client
+     * @param containerDAO
+     * @param tagDAO
+     * @param fileDAO
+     * @param githubToken
+     * @param bitbucketToken
+     * @param tagMap docker image path -> list of corresponding Tags
+     */
     @SuppressWarnings("checkstyle:parameternumber")
-    private static void updateTags(Set<Container> containers, HttpClient client, ContainerDAO containerDAO, TagDAO tagDAO, FileDAO fileDAO,
-            Token githubToken, Token bitbucketToken, Map<String, List<Tag>> tagMap) {
-        for (Container container : containers) {
+    private static void updateTags(final Iterable<Container> containers, final HttpClient client, final ContainerDAO containerDAO, final TagDAO tagDAO, final FileDAO fileDAO,
+            final Token githubToken, final Token bitbucketToken, final Map<String, List<Tag>> tagMap) {
+        for (final Container container : containers) {
             LOG.info("--------------- Updating tags for {} ---------------", container.getPath());
 
             List<Tag> existingTags = new ArrayList(container.getTags());
@@ -199,13 +208,10 @@ public class Helper {
      * @param dbContainerList containers retrieved from the database for the current user
      * @param user the current user
      * @param containerDAO
-     * @param tagDAO
-     * @param fileDAO
-     * @param tagMap docker image path -> list of corresponding Tags
      * @return list of newly updated containers
      */
-    private static List<Container> updateContainers(final List<Container> apiContainerList, final List<Container> dbContainerList, final User user,
-            final ContainerDAO containerDAO, final TagDAO tagDAO, final FileDAO fileDAO, final Map<String, List<Tag>> tagMap) {
+    private static List<Container> updateContainers(final Iterable<Container> apiContainerList, final List<Container> dbContainerList, final User user,
+            final ContainerDAO containerDAO) {
 
         // TODO: for now, with no info coming back from Docker Hub, just skip them always
         dbContainerList.removeIf(container1 -> container1.getRegistry().equals(Registry.DOCKER_HUB.toString()));
@@ -451,13 +457,13 @@ public class Helper {
 
         List<String> namespaces = new ArrayList<>();
         // TODO: figure out better approach, for now just smash together stuff from DockerHub and quay.io
-        for (ImageRegistryInterface i : allRegistries) {
-            namespaces.addAll(i.getNamespaces());
+        for (ImageRegistryInterface anInterface : allRegistries) {
+            namespaces.addAll(anInterface.getNamespaces());
         }
 
         List<Container> allRepos = new ArrayList<>();
-        for (ImageRegistryInterface i : allRegistries) {
-            allRepos.addAll(i.getContainers(namespaces));
+        for (ImageRegistryInterface anInterface : allRegistries) {
+            allRepos.addAll(anInterface.getContainers(namespaces));
         }
 
         // TODO: when we get proper docker hub support, get this above
@@ -473,7 +479,7 @@ public class Helper {
         // end up with  key = path; value = list of tags
         final Map<String, List<Tag>> tagMap = getTags(client, allRepos, objectMapper, quayToken, bitbucketToken, githubToken, mapOfBuilds);
 
-        updateContainers(allRepos, currentRepos, dockstoreUser, containerDAO, tagDAO, fileDAO, tagMap);
+        updateContainers(allRepos, currentRepos, dockstoreUser, containerDAO);
         userDAO.clearCache();
 
         updateTags(userDAO.findById(userId).getContainers(), client, containerDAO, tagDAO, fileDAO, githubToken, bitbucketToken, tagMap);

@@ -19,12 +19,12 @@ import com.google.gson.Gson;
 
 import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.ContainerMode;
+import io.dockstore.webservice.core.Registry;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.resources.ResourceUtilities;
 
 import static io.dockstore.webservice.Helper.RepoList;
-import static io.dockstore.webservice.helpers.ImageRegistryFactory.Registry;
 
 /**
  * @author dyuen
@@ -123,7 +123,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
 
                     List<Container> containers = repos.getRepositories();
                     // tag all of these with where they came from
-                    containers.stream().forEach(container -> container.setRegistry(Registry.QUAY_IO.name()));
+                    containers.stream().forEach(container -> container.setRegistry(Registry.QUAY_IO));
                     // not quite correct, they could be mixed but how can we tell from quay?
                     containers.stream().forEach(container -> container.setMode(ContainerMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS));
                     containerList.addAll(containers);
@@ -146,7 +146,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
         final Gson gson = new Gson();
         for (final Container container : allRepos) {
 
-            if (!container.getRegistry().equals(Registry.QUAY_IO.toString())){
+            if (!container.getRegistry().equals(Registry.QUAY_IO)){
                 continue;
             }
 
@@ -193,7 +193,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
                 }
             }
 
-            container.setRegistry(quayToken.getTokenSource());
+            container.setRegistry(Registry.QUAY_IO);
             container.setGitUrl(gitURL);
 
             final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(container.getGitUrl(), client,

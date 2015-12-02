@@ -10,6 +10,7 @@ import org.apache.http.client.HttpClient;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.dockstore.webservice.core.Registry;
 import io.dockstore.webservice.core.Token;
 
 /**
@@ -18,9 +19,6 @@ import io.dockstore.webservice.core.Token;
  * @author dyuen
  */
 public class ImageRegistryFactory {
-    public enum Registry {
-        QUAY_IO, DOCKER_HUB
-    }
 
     private final HttpClient client;
     private final Token quayToken;
@@ -40,21 +38,6 @@ public class ImageRegistryFactory {
         return interfaces;
     }
 
-    /**
-     * TODO: stop-gap until we properly define an enum across the project
-     * 
-     * @param registry
-     * @return
-     */
-    public ImageRegistryInterface createImageRegistry(String registry) {
-        if (registry.isEmpty() || registry.equals(Registry.DOCKER_HUB.toString())) {
-            return createImageRegistry(Registry.DOCKER_HUB);
-        } else if (registry.equals("quay.io")) {
-            return createImageRegistry(Registry.QUAY_IO);
-        } else {
-            throw new WebApplicationException(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE);
-        }
-    }
 
     public ImageRegistryInterface createImageRegistry(Registry registry) {
         if (registry == Registry.QUAY_IO) {

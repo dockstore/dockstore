@@ -49,46 +49,48 @@ public class CommonTestUtilities {
         @Override
         public void clearDatabase() {
             super.clearDatabase();
-            this.runInsertStatement("insert into enduser(id, isAdmin, username) VALUES (1,true,'admin@admin.com');", new KeyedHandler<>(
+            runInsertStatement("insert into enduser(id, isAdmin, username) VALUES (1,true,'admin@admin.com');", new KeyedHandler<>(
                     "id"));
-            this.runInsertStatement("insert into token(id, content, tokensource, userid, username) VALUES (1, '" + DUMMY_TOKEN_1
+            runInsertStatement("insert into token(id, content, tokensource, userid, username) VALUES (1, '" + DUMMY_TOKEN_1
                     + "', 'dockstore', 1, 'admin@admin.com');", new KeyedHandler<>("id"));
 
-            this.runInsertStatement("insert into enduser(id, isAdmin, username) VALUES (2,false,'user1@user.com');", new KeyedHandler<>(
+            runInsertStatement("insert into enduser(id, isAdmin, username) VALUES (2,false,'user1@user.com');", new KeyedHandler<>(
                     "id"));
-            this.runInsertStatement("insert into token(id, content, tokensource, userid, username) VALUES (2, '" + DUMMY_TOKEN_2
+            runInsertStatement("insert into token(id, content, tokensource, userid, username) VALUES (2, '" + DUMMY_TOKEN_2
                     + "', 'dockstore', 2, 'user1@user.com');", new KeyedHandler<>("id"));
 
-            this.runInsertStatement(
-                    "insert into container(id, name, namespace, registry, path, hasCollab, isstarred, ispublic, isregistered, toolname) VALUES (1, 'test1', 'test_org', 'quay.io', 'quay.io/test_org/test1', false, false, false, false,'');",
+            runInsertStatement(
+                    "insert into container(id, name, namespace, registry, path, hasCollab, isstarred, ispublic, isregistered, toolname) VALUES (1, 'test1', 'test_org', 'QUAY_IO', 'quay.io/test_org/test1', false, false, false, false,'');",
                     new KeyedHandler<>("id"));
-            this.runInsertStatement("insert into usercontainer(userid, containerid) VALUES (1, 1);", new KeyedHandler<>("containerid"));
+            runInsertStatement("insert into usercontainer(userid, containerid) VALUES (1, 1);", new KeyedHandler<>("containerid"));
 
-            this.runInsertStatement(
-                    "insert into container(id, name, namespace, registry, path, hasCollab, isstarred, ispublic, isregistered,toolname) VALUES (2, 'test2', 'test_org', 'quay.io', 'quay.io/test_org/test2', false, false, false, false,'');",
+            runInsertStatement(
+                    "insert into container(id, name, namespace, registry, path, hasCollab, isstarred, ispublic, isregistered,toolname) VALUES (2, 'test2', 'test_org', 'QUAY_IO', 'quay.io/test_org/test2', false, false, false, false,'');",
                     new KeyedHandler<>("id"));
-            this.runInsertStatement("insert into usercontainer(userid, containerid) VALUES (2, 2);", new KeyedHandler<>("containerid"));
+            runInsertStatement("insert into usercontainer(userid, containerid) VALUES (2, 2);", new KeyedHandler<>("containerid"));
 
-            this.runInsertStatement(
-                    "insert into container(id, name, namespace, registry, path, hasCollab, isstarred, ispublic, isregistered,toolname) VALUES (3, 'test3', 'test_org', 'quay.io', 'quay.io/test_org/test3', true, false, false, false,'');",
+            runInsertStatement(
+                    "insert into container(id, name, namespace, registry, path, hasCollab, isstarred, ispublic, isregistered,toolname) VALUES (3, 'test3', 'test_org', 'QUAY_IO', 'quay.io/test_org/test3', true, false, false, false,'');",
                     new KeyedHandler<>("id"));
-            this.runInsertStatement("insert into usercontainer(userid, containerid) VALUES (2, 3);", new KeyedHandler<>("containerid"));
+            runInsertStatement("insert into usercontainer(userid, containerid) VALUES (2, 3);", new KeyedHandler<>("containerid"));
 
-            this.runInsertStatement(
-                    "insert into container(id, name, namespace, registry, path, hasCollab, isstarred, ispublic, isregistered, giturl,toolname) VALUES (4, 'test4', 'test_org', 'quay.io', 'quay.io/test_org/test4', false, false, false, false, 'git@github.com:test/test4.git','');",
+            runInsertStatement(
+                    "insert into container(id, name, namespace, registry, path, hasCollab, isstarred, ispublic, isregistered, giturl,toolname) VALUES (4, 'test4', 'test_org', 'QUAY_IO', 'quay.io/test_org/test4', false, false, false, false, 'git@github.com:test/test4.git','');",
                     new KeyedHandler<>("id"));
-            this.runInsertStatement("insert into usercontainer(userid, containerid) VALUES (2, 4);", new KeyedHandler<>("containerid"));
+            runInsertStatement("insert into usercontainer(userid, containerid) VALUES (2, 4);", new KeyedHandler<>("containerid"));
 
-            this.runInsertStatement(
-                    "insert into container(id, name, namespace, registry, path, hasCollab, isstarred, ispublic, isregistered, giturl,toolname) VALUES (5, 'test5', 'test_org', 'quay.io', 'quay.io/test_org/test5', true, false, false, false, 'git@github.com:test/test5.git','');",
+            runInsertStatement(
+                    "insert into container(id, name, namespace, registry, path, hasCollab, isstarred, ispublic, isregistered, giturl,toolname) VALUES (5, 'test5', 'test_org', 'QUAY_IO', 'quay.io/test_org/test5', true, false, false, false, 'git@github.com:test/test5.git','');",
                     new KeyedHandler<>("id"));
-            this.runInsertStatement("insert into usercontainer(userid, containerid) VALUES (2, 5);", new KeyedHandler<>("containerid"));
+            runInsertStatement("insert into usercontainer(userid, containerid) VALUES (2, 5);", new KeyedHandler<>("containerid"));
 
-            this.runInsertStatement(
-                    "insert into container(id, name, namespace, registry, path, hasCollab, isstarred, ispublic, isregistered, giturl,toolname) VALUES (6, 'test6', 'test_org', 'quay.io', 'quay.io/test_org/test6', true, false, false, true, 'git@github.com:test/test6.git','');",
+            runInsertStatement(
+                    "insert into container(id, name, namespace, registry, path, hasCollab, isstarred, ispublic, isregistered, giturl,toolname) VALUES (6, 'test6', 'test_org', 'QUAY_IO', 'quay.io/test_org/test6', true, false, false, true, 'git@github.com:test/test6.git','');",
                     new KeyedHandler<>("id"));
-            this.runInsertStatement("insert into usercontainer(userid, containerid) VALUES (1, 6);", new KeyedHandler<>("containerid"));
-            this.runInsertStatement("insert into usercontainer(userid, containerid) VALUES (2, 6);", new KeyedHandler<>("containerid"));
+            runInsertStatement("insert into usercontainer(userid, containerid) VALUES (1, 6);", new KeyedHandler<>("containerid"));
+            runInsertStatement("insert into usercontainer(userid, containerid) VALUES (2, 6);", new KeyedHandler<>("containerid"));
+            // need to increment past manually entered ids above
+            runUpdateStatement("alter sequence container_id_seq restart with 1000;");
         }
     }
 

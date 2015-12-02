@@ -1,20 +1,18 @@
 package io.swagger.client.model;
 
-import io.swagger.client.StringUtil;
-import io.swagger.client.model.User;
-import io.swagger.client.model.Label;
-import java.util.*;
-import io.swagger.client.model.Tag;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
-
-
-import io.swagger.annotations.*;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import io.swagger.client.StringUtil;
 
 
 @ApiModel(description = "")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-01T16:59:34.578-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-02T14:35:44.113-05:00")
 public class Container   {
   
   private Long id = null;
@@ -41,7 +39,24 @@ public enum ModeEnum {
   private String name = null;
   private String toolname = null;
   private String namespace = null;
-  private String registry = null;
+
+public enum RegistryEnum {
+  QUAY_IO("QUAY_IO"),
+  DOCKER_HUB("DOCKER_HUB");
+
+  private String value;
+
+  RegistryEnum(String value) {
+    this.value = value;
+  }
+
+  @Override
+  public String toString() {
+    return value;
+  }
+}
+
+  private RegistryEnum registry = null;
   private String author = null;
   private String description = null;
   private Date lastUpdated = null;
@@ -142,10 +157,10 @@ public enum ModeEnum {
    **/
   @ApiModelProperty(value = "This is a specific docker provider like quay.io or dockerhub or n/a?, required: GA4GH")
   @JsonProperty("registry")
-  public String getRegistry() {
+  public RegistryEnum getRegistry() {
     return registry;
   }
-  public void setRegistry(String registry) {
+  public void setRegistry(RegistryEnum registry) {
     this.registry = registry;
   }
 
