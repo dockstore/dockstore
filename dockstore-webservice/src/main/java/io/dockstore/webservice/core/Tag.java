@@ -115,6 +115,8 @@ public class Tag implements Comparable<Tag> {
         setImageId(tag.getImageId());
         setLastModified(tag.getLastModified());
         setSize(tag.getSize());
+        this.setCwlPath(tag.getCwlPath());
+        this.setDockerfilePath(tag.getDockerfilePath());
     }
 
     @JsonProperty

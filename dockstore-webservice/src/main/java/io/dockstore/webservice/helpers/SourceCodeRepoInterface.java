@@ -15,7 +15,7 @@ import io.dockstore.webservice.core.Container;
  */
 public abstract class SourceCodeRepoInterface {
 
-    public static final Logger LOG = LoggerFactory.getLogger(GitHubSourceCodeRepo.class);
+    public static final Logger LOG = LoggerFactory.getLogger(SourceCodeRepoInterface.class);
 
     public abstract FileResponse readFile(String fileName, String reference);
 

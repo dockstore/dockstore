@@ -71,7 +71,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public Container findCWL(Container c) {
-        Repository repository = null;
+        String fileName = c.getDefaultCwlPath();
+
+        Repository repository;
         try {
             repository = service.getRepository(gitUsername, gitRepository);
         } catch (IOException e) {
@@ -84,11 +86,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             LOG.info("Github found for: " + repository.getName());
             try {
                 List<RepositoryContents> contents = null;
-                try {
-                    contents = cService.getContents(repository, "Dockstore.cwl");
-                } catch (Exception e) {
-                    contents = cService.getContents(repository, "dockstore.cwl");
-                }
+                contents = cService.getContents(repository, fileName);
                 if (!(contents == null || contents.isEmpty())) {
                     String encoded = contents.get(0).getContent().replace("\n", "");
                     byte[] decode = Base64.getDecoder().decode(encoded);

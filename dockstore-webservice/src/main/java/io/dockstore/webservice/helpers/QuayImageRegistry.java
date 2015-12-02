@@ -18,14 +18,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
 
+import io.dockstore.webservice.Helper.RepoList;
 import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.ContainerMode;
 import io.dockstore.webservice.core.Registry;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.resources.ResourceUtilities;
-
-import static io.dockstore.webservice.Helper.RepoList;
 
 /**
  * @author dyuen

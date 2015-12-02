@@ -378,7 +378,7 @@ public class Client {
             final String gitURL = reqVal(args, "--git-url");
 
             final String dockerfilePath = optVal(args, "--dockerfile-path","/Dockerfile");
-            final String cwlPath = optVal(args, "--cwl-path","Dockerstore.cwl");
+            final String cwlPath = optVal(args, "--cwl-path","Dockstore.cwl");
             final String gitReference = reqVal(args, "--git-reference");
             final String toolname = optVal(args, "--toolname", null);
             final String registry = optVal(args, "--registry", "registry.hub.docker.com");

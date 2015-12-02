@@ -21,14 +21,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
+import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -153,5 +157,40 @@ public class DockerRepoTagResource {
         Container result = containerDAO.findById(containerId);
         Helper.checkContainer(result);
         return result.getTags();
+    }
+
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}/tags/{tagId}")
+    @ApiOperation(value = "Delete tag linked to a container", notes = "Tag correspond to each row of the versions table listing all information for a docker repo tag")
+    public Response deleteTags(@ApiParam(hidden = true) @Auth Token authToken,
+            @ApiParam(value = "Container to modify.", required = true) @PathParam("containerId") Long containerId,
+            @ApiParam(value = "Tag to delete", required = true) @PathParam("tagId") Long tagId) {
+
+        Container c = containerDAO.findById(containerId);
+        Helper.checkContainer(c);
+
+        User user = userDAO.findById(authToken.getUserId());
+        Helper.checkUser(user, c);
+
+        Tag tag = tagDAO.findById(tagId);
+        if (tag == null) {
+            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+        }
+
+        Set<Tag> listOfTags = c.getTags();
+
+        if (listOfTags.contains(tag)) {
+            tag.getSourceFiles().clear();
+
+            if (c.getTags().remove(tag)) {
+                return Response.ok().build();
+            } else {
+                return Response.serverError().build();
+            }
+        } else {
+            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+        }
     }
 }
