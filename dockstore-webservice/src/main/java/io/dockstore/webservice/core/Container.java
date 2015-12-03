@@ -102,9 +102,10 @@ public class Container {
     @Column
     @ApiModelProperty("This is a docker namespace for the container, required: GA4GH")
     private String namespace;
-    @Column
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     @ApiModelProperty("This is a specific docker provider like quay.io or dockerhub or n/a?, required: GA4GH")
-    private String registry;
+    private Registry registry;
     @Column
     @ApiModelProperty("This is a generated full docker path including registry and namespace, used for docker pull commands")
     private String path;
@@ -200,7 +201,7 @@ public class Container {
     }
 
     @JsonProperty
-    public String getRegistry() {
+    public Registry getRegistry() {
         return registry;
     }
 
@@ -209,7 +210,7 @@ public class Container {
         String repositoryPath;
         if (path == null) {
             StringBuilder builder = new StringBuilder();
-            if (registry.equals(TokenType.QUAY_IO.toString())) {
+            if (registry == Registry.QUAY_IO) {
                 builder.append("quay.io/");
             } else {
                 builder.append("registry.hub.docker.com/");
@@ -351,7 +352,7 @@ public class Container {
         this.lastModified = lastModified;
     }
 
-    public void setRegistry(String registry) {
+    public void setRegistry(Registry registry) {
         this.registry = registry;
     }
 

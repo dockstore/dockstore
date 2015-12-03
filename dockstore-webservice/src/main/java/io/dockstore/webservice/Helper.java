@@ -40,6 +40,7 @@ import com.google.gson.Gson;
 
 import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.ContainerMode;
+import io.dockstore.webservice.core.Registry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
 import io.dockstore.webservice.core.Tag;
@@ -47,7 +48,6 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.helpers.ImageRegistryFactory;
-import io.dockstore.webservice.helpers.ImageRegistryFactory.Registry;
 import io.dockstore.webservice.helpers.ImageRegistryInterface;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
@@ -63,13 +63,12 @@ import io.dockstore.webservice.resources.ResourceUtilities;
  *
  * @author xliu
  */
-public class Helper {
+public final class Helper {
     private static final Logger LOG = LoggerFactory.getLogger(Helper.class);
 
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
 
     public static final String DOCKSTORE_CWL = "Dockstore.cwl";
-    private static final String DOCKERFILE = "Dockerfile";
 
     public static class RepoList {
 
@@ -80,7 +79,7 @@ public class Helper {
         }
 
         public List<Container> getRepositories() {
-            return this.repositories;
+            return repositories;
         }
     }
 
@@ -98,109 +97,114 @@ public class Helper {
      *            docker image path -> list of corresponding Tags
      */
     @SuppressWarnings("checkstyle:parameternumber")
-    private static void updateTags(Set<Container> containers, HttpClient client, ContainerDAO containerDAO, TagDAO tagDAO, FileDAO fileDAO,
-            Token githubToken, Token bitbucketToken, Map<String, List<Tag>> tagMap) {
-        for (Container container : containers) {
-            LOG.info("--------------- Updating tags for {} ---------------", container.getPath());
+    private static void updateTags(final Iterable<Container> containers, final HttpClient client, final ContainerDAO containerDAO, final TagDAO tagDAO, final FileDAO fileDAO,
+            final Token githubToken, final Token bitbucketToken, final Map<String, List<Tag>> tagMap) {
+        for (final Container container : containers) {
+            LOG.info("--------------- Updating tags for {} ---------------", container.getToolPath());
 
-            List<Tag> existingTags = new ArrayList(container.getTags());
-            List<Tag> newTags = tagMap.get(container.getPath());
-            Map<String, Set<SourceFile>> fileMap = new HashMap<>();
+            if (container.getMode() != ContainerMode.MANUAL_IMAGE_PATH) {
+                List<Tag> existingTags = new ArrayList(container.getTags());
+                List<Tag> newTags = tagMap.get(container.getPath());
+                Map<String, Set<SourceFile>> fileMap = new HashMap<>();
 
-            if (newTags == null) {
-                LOG.info("Tags for container " + container.getPath() + " did not get updated because new tags were not found");
-                return;
-            }
+                if (newTags == null) {
+                    LOG.info("Tags for container " + container.getPath() + " did not get updated because new tags were not found");
+                    return;
+                }
 
-            List<Tag> toDelete = new ArrayList<>(0);
-            for (Iterator<Tag> iterator = existingTags.iterator(); iterator.hasNext();) {
-                Tag oldTag = iterator.next();
-                boolean exists = false;
+                List<Tag> toDelete = new ArrayList<>(0);
+                for (Iterator<Tag> iterator = existingTags.iterator(); iterator.hasNext();) {
+                    Tag oldTag = iterator.next();
+                    boolean exists = false;
+                    for (Tag newTag : newTags) {
+                        if (newTag.getName().equals(oldTag.getName())) {
+                            exists = true;
+                            break;
+                        }
+                    }
+                    if (!exists) {
+                        toDelete.add(oldTag);
+                        iterator.remove();
+                    }
+                }
+
                 for (Tag newTag : newTags) {
-                    if (newTag.getName().equals(oldTag.getName())) {
-                        exists = true;
-                        break;
+                    boolean exists = false;
+
+                    // Find if user already has the container
+                    for (Tag oldTag : existingTags) {
+                        if (newTag.getName().equals(oldTag.getName())) {
+                            exists = true;
+
+                            oldTag.update(newTag);
+
+                            break;
+                        }
+                    }
+
+                    // Tag does not already exist
+                    if (!exists) {
+                        // this could result in the same tag being added to multiple containers with the same path, need to clone
+                        Tag clonedTag = new Tag();
+                        clonedTag.update(newTag);
+                        existingTags.add(clonedTag);
+                    }
+
+                    fileMap.put(newTag.getName(), newTag.getSourceFiles());
+                }
+
+                boolean allAutomated = true;
+                for (Tag tag : existingTags) {
+                    LOG.info("Updating tag {}", tag.getName());
+                    // Set<SourceFile> newFiles = fileMap.get(tag.getName());
+                    List<SourceFile> newFiles = loadFiles(client, bitbucketToken, githubToken, container, tag);
+                    // Set<SourceFile> oldFiles = tag.getSourceFiles();
+                    tag.getSourceFiles().clear();
+
+                    for (SourceFile newFile : newFiles) {
+                        // boolean exists = false;
+                        // for (SourceFile oldFile : oldFiles) {
+                        // if (oldFile.getType().equals(newFile.getType())) {
+                        // exists = true;
+                        //
+                        // oldFile.update(newFile);
+                        // fileDAO.create(oldFile);
+                        //
+                        // LOG.info("UPDATED FILE " + oldFile.getType());
+                        // }
+                        // }
+                        //
+                        // if (!exists) {
+                        long id = fileDAO.create(newFile);
+                        SourceFile file = fileDAO.findById(id);
+                        tag.addSourceFile(file);
+
+                        // oldFiles.add(newFile);
+                        // }
+                    }
+
+                    long id = tagDAO.create(tag);
+                    tag = tagDAO.findById(id);
+                    container.addTag(tag);
+
+                    if (!tag.isAutomated()) {
+                        allAutomated = false;
                     }
                 }
-                if (!exists) {
-                    toDelete.add(oldTag);
-                    iterator.remove();
-                }
-            }
 
-            for (Tag newTag : newTags) {
-                boolean exists = false;
-
-                // Find if user already has the container
-                for (Tag oldTag : existingTags) {
-                    if (newTag.getName().equals(oldTag.getName())) {
-                        exists = true;
-
-                        oldTag.update(newTag);
-
-                        break;
-                    }
+                // delete container if it has no users
+                for (Tag t : toDelete) {
+                    LOG.info("DELETING tag: " + t.getName());
+                    t.getSourceFiles().clear();
+                    // tagDAO.delete(t);
+                    container.getTags().remove(t);
                 }
 
-                // Tag does not already exist
-                if (!exists) {
-                    existingTags.add(newTag);
+                if (!allAutomated) {
+                    container.setMode(ContainerMode.AUTO_DETECT_QUAY_TAGS_WITH_MIXED);
+                } else {
+                    container.setMode(ContainerMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
                 }
-
-                fileMap.put(newTag.getName(), newTag.getSourceFiles());
-            }
-
-            boolean allAutomated = true;
-            for (Tag tag : existingTags) {
-                LOG.info("Updating tag {}", tag.getName());
-                // Set<SourceFile> newFiles = fileMap.get(tag.getName());
-                List<SourceFile> newFiles = loadFiles(client, bitbucketToken, githubToken, container, tag);
-                // Set<SourceFile> oldFiles = tag.getSourceFiles();
-                tag.getSourceFiles().clear();
-
-                for (SourceFile newFile : newFiles) {
-                    // boolean exists = false;
-                    // for (SourceFile oldFile : oldFiles) {
-                    // if (oldFile.getType().equals(newFile.getType())) {
-                    // exists = true;
-                    //
-                    // oldFile.update(newFile);
-                    // fileDAO.create(oldFile);
-                    //
-                    // LOG.info("UPDATED FILE " + oldFile.getType());
-                    // }
-                    // }
-                    //
-                    // if (!exists) {
-                    long id = fileDAO.create(newFile);
-                    SourceFile file = fileDAO.findById(id);
-                    tag.addSourceFile(file);
-
-                    // oldFiles.add(newFile);
-                    // }
-                }
-
-                long id = tagDAO.create(tag);
-                tag = tagDAO.findById(id);
-                container.addTag(tag);
-
-                if (!tag.isAutomated()) {
-                    allAutomated = false;
-                }
-            }
-
-            // delete container if it has no users
-            for (Tag t : toDelete) {
-                LOG.info("DELETING tag: " + t.getName());
-                t.getSourceFiles().clear();
-                // tagDAO.delete(t);
-                container.getTags().remove(t);
-            }
-
-            if (!allAutomated) {
-                container.setMode(ContainerMode.AUTO_DETECT_QUAY_TAGS_WITH_MIXED);
-            } else {
-                container.setMode(ContainerMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
             }
 
             final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(container.getGitUrl(), client,
@@ -228,11 +232,8 @@ public class Helper {
      * @param containerDAO
      * @return list of newly updated containers
      */
-    private static List<Container> updateContainers(final List<Container> apiContainerList, final List<Container> dbContainerList, final User user,
+    private static List<Container> updateContainers(final Iterable<Container> apiContainerList, final List<Container> dbContainerList, final User user,
             final ContainerDAO containerDAO) {
-
-        // TODO: for now, with no info coming back from Docker Hub, just skip them always
-        dbContainerList.removeIf(container1 -> container1.getRegistry().equals(Registry.DOCKER_HUB.toString()));
 
 
         final List<Container> toDelete = new ArrayList<>();
@@ -322,14 +323,12 @@ public class Helper {
      * @param containers
      * @param objectMapper
      * @param quayToken
-     * @param bitbucketToken
-     * @param githubToken
      * @param mapOfBuilds
      * @return a map: key = path; value = list of tags
      */
     @SuppressWarnings("checkstyle:parameternumber")
     private static Map<String, List<Tag>> getTags(final HttpClient client, final List<Container> containers,
-            final ObjectMapper objectMapper, final Token quayToken, final Token bitbucketToken, final Token githubToken,
+            final ObjectMapper objectMapper, final Token quayToken,
             final Map<String, ArrayList<?>> mapOfBuilds) {
         final Map<String, List<Tag>> tagMap = new HashMap<>();
 
@@ -375,12 +374,9 @@ public class Helper {
                                     tag.setAutomated(true);
                                 }
 
-                                // loadFilesIntoTag(client, bitbucketToken, githubToken, c, tag);
-
                                 break;
                             }
                         }
-                        // loadFilesIntoTag(client, bitbucketToken, githubToken, c, tag);
 
                         tag.setCwlPath(c.getDefaultCwlPath());
                         tag.setDockerfilePath(c.getDefaultDockerfilePath());
@@ -443,9 +439,7 @@ public class Helper {
     @SuppressWarnings("checkstyle:parameternumber")
     public static List<Container> refresh(final Long userId, final HttpClient client, final ObjectMapper objectMapper,
             final UserDAO userDAO, final ContainerDAO containerDAO, final TokenDAO tokenDAO, final TagDAO tagDAO, final FileDAO fileDAO) {
-        final User dockstoreUser = userDAO.findById(userId);
-
-        List<Container> currentRepos = new ArrayList(dockstoreUser.getContainers());// containerDAO.findByUserId(userId);
+        List<Container> dbContainers = new ArrayList(getContainers(userId, userDAO));// containerDAO.findByUserId(userId);
         List<Token> tokens = tokenDAO.findByUserId(userId);
 
         Token quayToken = null;
@@ -478,38 +472,60 @@ public class Helper {
 
         List<String> namespaces = new ArrayList<>();
         // TODO: figure out better approach, for now just smash together stuff from DockerHub and quay.io
-        for (ImageRegistryInterface i : allRegistries) {
-            namespaces.addAll(i.getNamespaces());
+        for (ImageRegistryInterface anInterface : allRegistries) {
+            namespaces.addAll(anInterface.getNamespaces());
         }
 
-        List<Container> allRepos = new ArrayList<>();
-        for (ImageRegistryInterface i : allRegistries) {
-            allRepos.addAll(i.getContainers(namespaces));
+        List<Container> apiContainers = new ArrayList<>();
+        for (ImageRegistryInterface anInterface : allRegistries) {
+            apiContainers.addAll(anInterface.getContainers(namespaces));
         }
 
         // TODO: when we get proper docker hub support, get this above
         // hack: read relevant containers from database
-        allRepos.addAll(containerDAO.findByMode(ContainerMode.MANUAL_IMAGE_PATH));
+        apiContainers.addAll(containerDAO.findByMode(ContainerMode.MANUAL_IMAGE_PATH));
 
         // ends up with docker image path -> quay.io data structure representing builds
         final Map<String, ArrayList<?>> mapOfBuilds = new HashMap<>();
         for (final ImageRegistryInterface anInterface : allRegistries) {
-            mapOfBuilds.putAll(anInterface.getBuildMap(githubToken, bitbucketToken, allRepos));
+            mapOfBuilds.putAll(anInterface.getBuildMap(githubToken, bitbucketToken, apiContainers));
         }
 
         // end up with key = path; value = list of tags
         // final Map<String, List<Tag>> tagMap = getTags(client, allRepos, objectMapper, quayToken, bitbucketToken, githubToken,
         // mapOfBuilds);
+        removeContainersThatCannotBeUpdated(dbContainers);
 
-        updateContainers(allRepos, currentRepos, dockstoreUser, containerDAO);
+        final User dockstoreUser = userDAO.findById(userId);
+        // update information on a container by container level
+        updateContainers(apiContainers, dbContainers, dockstoreUser, containerDAO);
         userDAO.clearCache();
 
+        final List<Container> newDBContainers = getContainers(userId, userDAO);
+        // update information on a tag by tag level
         final Map<String, List<Tag>> tagMap = getTags(client, new ArrayList<>(userDAO.findById(userId).getContainers()), objectMapper,
-                quayToken, bitbucketToken, githubToken, mapOfBuilds);
+                quayToken, mapOfBuilds);
 
-        updateTags(userDAO.findById(userId).getContainers(), client, containerDAO, tagDAO, fileDAO, githubToken, bitbucketToken, tagMap);
+        updateTags(newDBContainers, client, containerDAO, tagDAO, fileDAO, githubToken, bitbucketToken, tagMap);
         userDAO.clearCache();
-        return new ArrayList(userDAO.findById(userId).getContainers());
+        return new ArrayList(getContainers(userId, userDAO));
+    }
+
+    private static void removeContainersThatCannotBeUpdated(List<Container> dbContainers) {
+        // TODO: for now, with no info coming back from Docker Hub, just skip them always
+        dbContainers.removeIf(container1 -> container1.getRegistry() == Registry.DOCKER_HUB);
+        // also skip containers on quay.io but in manual mode
+        dbContainers.removeIf(container1 -> container1.getMode() == ContainerMode.MANUAL_IMAGE_PATH);
+    }
+
+    /**
+     * Gets containers for the current user
+     * @param userId
+     * @param userDAO
+     * @return
+     */
+    private static List<Container> getContainers(Long userId, UserDAO userDAO) {
+        return new ArrayList<>(userDAO.findById(userId).getContainers());
     }
 
     /**

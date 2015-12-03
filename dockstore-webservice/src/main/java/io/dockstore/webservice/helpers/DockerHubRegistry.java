@@ -42,20 +42,6 @@ public class DockerHubRegistry implements ImageRegistryInterface {
 
     @Override
     public Map<String, ArrayList<?>> getBuildMap(Token githubToken, Token bitbucketToken, List<Container> allRepos) {
-        // Go through each container for each namespace
-
-        // for (final Container container : allRepos) {
-        // if (!container.getRegistry().equals(Registry.DOCKER_HUB.toString())) {
-        // continue;
-        // }
-        //
-        // final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(container.getGitUrl(), client,
-        // bitbucketToken == null ? null : bitbucketToken.getContent(), githubToken.getContent());
-        // if (sourceCodeRepo != null) {
-        // // find if there is a Dockstore.cwl file from the git repository
-        // sourceCodeRepo.findCWL(container);
-        // }
-        // }
         return new HashMap<>();
     }
 }

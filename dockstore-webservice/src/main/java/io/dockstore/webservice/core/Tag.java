@@ -85,7 +85,7 @@ public class Tag implements Comparable<Tag> {
     private Set<SourceFile> sourceFiles;
 
     public Tag() {
-        this.sourceFiles = new HashSet<>(0);
+        sourceFiles = new HashSet<>(0);
     }
 
     @Column
@@ -97,24 +97,24 @@ public class Tag implements Comparable<Tag> {
     private boolean automated;
 
     public void updateByUser(Tag tag) {
-        this.setReference(tag.getReference());
+        setReference(tag.getReference());
         // this.setName(tag.getName());
-        this.setImageId(tag.getImageId());
-        this.setHidden(tag.isHidden());
-        this.setCwlPath(tag.getCwlPath());
-        this.setDockerfilePath(tag.getDockerfilePath());
+        setImageId(tag.getImageId());
+        setHidden(tag.isHidden());
+        setCwlPath(tag.getCwlPath());
+        setDockerfilePath(tag.getDockerfilePath());
     }
 
     public void update(Tag tag) {
         // If the tag has an automated build, the reference will be overwritten (whether or not the user has edited it).
         if (tag.isAutomated()) {
-            this.setReference(tag.getReference());
+            setReference(tag.getReference());
         }
 
-        this.setAutomated(tag.isAutomated());
-        this.setImageId(tag.getImageId());
-        this.setLastModified(tag.getLastModified());
-        this.setSize(tag.getSize());
+        setAutomated(tag.isAutomated());
+        setImageId(tag.getImageId());
+        setLastModified(tag.getLastModified());
+        setSize(tag.getSize());
         this.setCwlPath(tag.getCwlPath());
         this.setDockerfilePath(tag.getDockerfilePath());
     }
@@ -215,6 +215,6 @@ public class Tag implements Comparable<Tag> {
 
     @Override
     public int compareTo(Tag o) {
-        return Long.compare(this.getId(), o.getId());
+        return Long.compare(getId(), o.getId());
     }
 }
