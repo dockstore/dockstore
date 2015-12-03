@@ -17,10 +17,10 @@
 package io.dockstore.common;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
+
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.dbutils.ResultSetHandler;
 import org.apache.commons.dbutils.handlers.KeyedHandler;
 import org.apache.commons.io.FileUtils;
 
@@ -43,7 +43,7 @@ public class CommonTestUtilities {
         }
     }
 
-    private static class TestingPostgres extends BasicPostgreSQL {
+    public static class TestingPostgres extends BasicPostgreSQL {
 
         TestingPostgres(HierarchicalINIConfiguration config) {
             super(config);
@@ -95,18 +95,24 @@ public class CommonTestUtilities {
             // need to increment past manually entered ids above
             runUpdateStatement("alter sequence container_id_seq restart with 1000;");
         }
+
+        @Override
+        public <T> T runSelectStatement(String query, ResultSetHandler<T> handler, Object... params) {
+            return super.runSelectStatement(query, handler, params);
+        }
     }
 
     /**
      * Clears database state and known queues for testing.
-     *
-     * @throws IOException
-     * @throws java.util.concurrent.TimeoutException
-     */
-    public static void clearState() throws IOException, TimeoutException {
-        File configFile = FileUtils.getFile("src", "test", "resources", "config");
-        HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
-        TestingPostgres postgres = new TestingPostgres(parseConfig);
+     **/
+    public static void clearState() {
+        final TestingPostgres postgres = getTestingPostgres();
         postgres.clearDatabase();
+    }
+
+    public static TestingPostgres getTestingPostgres() {
+        final File configFile = FileUtils.getFile("src", "test", "resources", "config");
+        final HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+        return new TestingPostgres(parseConfig);
     }
 }

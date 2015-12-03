@@ -333,10 +333,10 @@ public class Client {
                         if (container != null) {
                             out("Successfully published " + first);
                         } else {
-                            kill("Unable to publish " + first);
+                            kill("Unable to publish invalid container " + first);
                         }
                     } catch (ApiException ex) {
-                        kill("Unable to publish " + first);
+                        kill("Unable to publish unknown container " + first);
                     }
                 } else{
                     String toolname = args.get(1);
