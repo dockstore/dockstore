@@ -28,6 +28,9 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.ws.rs.ProcessingException;
 
 import org.apache.http.HttpStatus;
 
@@ -47,8 +50,8 @@ import io.swagger.client.model.Tag;
 import io.swagger.client.model.User;
 import javassist.NotFoundException;
 
-import static io.swagger.client.model.Container.RegistryEnum;
 import static io.swagger.client.model.Container.ModeEnum;
+import static io.swagger.client.model.Container.RegistryEnum;
 
 /**
  *
@@ -68,6 +71,9 @@ public class Client {
     private static final int PADDING = 3;
     private static final int MAX_DESCRIPTION = 50;
 
+    public static final int GENERIC_ERROR = 1;
+    public static final int CONNECTION_ERROR = 150;
+
     private static void out(String format, Object... args) {
         System.out.println(String.format(format, args));
     }
@@ -75,6 +81,8 @@ public class Client {
     private static void err(String format, Object... args) {
         System.err.println(String.format(format, args));
     }
+
+    public static final AtomicBoolean DEBUG = new AtomicBoolean(false);
 
     private static boolean isHelp(List<String> args, boolean valOnEmpty) {
         if (args.isEmpty()) {
@@ -99,6 +107,21 @@ public class Client {
 
     private static void invalid(String cmd, String sub) {
         kill("dockstore: '%s %s' is not a dockstore command. See 'dockstore %s --help'.", cmd, sub, cmd);
+    }
+
+    private static boolean flag(List<String> args, String flag) {
+        boolean found = false;
+        for (int i = 0; i < args.size(); i++) {
+            if (flag.equals(args.get(i))) {
+                if (found) {
+                    kill("consonance: multiple instances of '%s'.", flag);
+                } else {
+                    found = true;
+                    args.remove(i);
+                }
+            }
+        }
+        return found;
     }
 
     private static String boolWord(boolean bool) {
@@ -551,12 +574,17 @@ public class Client {
     public static void main(String[] argv) {
         List<String> args = new ArrayList<>(Arrays.asList(argv));
 
+        if (flag(args, "--debug") || flag(args, "--d")) {
+            DEBUG.set(true);
+        }
+
         // user home dir
         String userHome = System.getProperty("user.home");
 
         try {
-            InputStreamReader f = new InputStreamReader(new FileInputStream(userHome + File.separator + ".dockstore" + File.separator
-                    + "config"), Charset.defaultCharset());
+            String configFile = optVal(args,"--config",userHome + File.separator + ".dockstore" + File.separator
+                                                           + "config");
+            InputStreamReader f = new InputStreamReader(new FileInputStream(configFile), Charset.defaultCharset());
             YamlReader reader = new YamlReader(f);
             Object object = reader.read();
             Map map = (Map) object;
@@ -567,11 +595,11 @@ public class Client {
 
             if (token == null) {
                 err("The token is missing from your config file.");
-                System.exit(1);
+                System.exit(GENERIC_ERROR);
             }
             if (serverUrl == null) {
                 err("The server-url is missing from your config file.");
-                System.exit(1);
+                System.exit(GENERIC_ERROR);
             }
 
             ApiClient defaultApiClient; defaultApiClient = Configuration.getDefaultApiClient();
@@ -580,11 +608,8 @@ public class Client {
             containersApi = new ContainersApi(defaultApiClient);
             usersApi = new UsersApi(defaultApiClient);
 
-            user = usersApi.getUser();
+            defaultApiClient.setDebugging(DEBUG.get());
 
-            if (user == null) {
-                throw new NotFoundException("User not found");
-            }
 
             if (isHelp(args, true)) {
                 out("");
@@ -609,11 +634,26 @@ public class Client {
                 out("");
                 out("  refresh          :  updates your list of containers stored on Dockstore");
                 out("------------------");
+                out("");
+                out("Flags:");
+                out("  --debug              Print debugging information");
+                out("  --version            Print dockstore's version");
+                out("  --config <file>      Override config file");
             } else {
                 try {
+                    // check user info after usage so that users can get usage without live webservice
+                    user = usersApi.getUser();
+                    if (user == null) {
+                        throw new NotFoundException("User not found");
+                    }
+
                     String cmd = args.remove(0);
                     if (null != cmd) {
                         switch (cmd) {
+                        case "-v":
+                        case "--version":
+                            kill("dockstore: version information is provided by the wrapper script.");
+                            break;
                         case "list":
                             list(args);
                             break;
@@ -641,11 +681,15 @@ public class Client {
                         }
                     }
                 } catch (Kill k) {
-                    System.exit(1);
+                    System.exit(GENERIC_ERROR);
                 }
             }
         } catch (FileNotFoundException | YamlException | NotFoundException | ApiException ex) {
             out("Exception: " + ex);
+            System.exit(GENERIC_ERROR);
+        } catch(ProcessingException ex){
+            out("Could not connect to Dockstore web service: " + ex);
+            System.exit(CONNECTION_ERROR);
         }
     }
 }

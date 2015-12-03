@@ -30,6 +30,9 @@ import org.apache.commons.io.FileUtils;
  */
 public class CommonTestUtilities {
     public static final String DUMMY_TOKEN_1 = "08932ab0c9ae39a880905666902f8659633ae0232e94ba9f3d2094cb928397e7";
+    /**
+     * A key used for testing
+     */
     public static final String DUMMY_TOKEN_2 = "3a04647fd0a1bd949637n5fddb164261fc8c80d83f0750fe0e873bc744338fce";
 
     public static HierarchicalINIConfiguration parseConfig(String path) {
