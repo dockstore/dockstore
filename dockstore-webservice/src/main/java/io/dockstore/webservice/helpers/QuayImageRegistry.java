@@ -146,7 +146,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
         final Gson gson = new Gson();
         for (final Container container : allRepos) {
 
-            if (container.getRegistry() != Registry.QUAY_IO){
+            if (container.getRegistry() != Registry.QUAY_IO) {
                 continue;
             }
 
@@ -156,14 +156,10 @@ public class QuayImageRegistry implements ImageRegistryInterface {
 
             LOG.info("========== Configuring " + path + " ==========");
             if (container.getMode() != ContainerMode.MANUAL_IMAGE_PATH) {
+                // checkTriggers(container);
+                // if (container.hasValidTrigger()) {
                 updateContainersWithBuildInfo(formatter, mapOfBuilds, gson, container, repo, path);
-            }
-
-            final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(container.getGitUrl(), client,
-                    bitbucketToken == null ? null : bitbucketToken.getContent(), githubToken.getContent());
-            if (sourceCodeRepo != null) {
-                // find if there is a Dockstore.cwl file from the git repository
-                sourceCodeRepo.findCWL(container);
+                // }
             }
         }
         return mapOfBuilds;
@@ -171,6 +167,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
 
     /**
      * For a given container, update its registry, git, and build information with information from quay.io
+     * 
      * @param formatter
      * @param mapOfBuilds
      * @param gson
@@ -179,17 +176,17 @@ public class QuayImageRegistry implements ImageRegistryInterface {
      * @param path
      */
     private void updateContainersWithBuildInfo(SimpleDateFormat formatter, Map<String, ArrayList<?>> mapOfBuilds, Gson gson,
-                                                  Container container, String repo, String path) {
+            Container container, String repo, String path) {
         // Get the list of builds from the container.
         // Builds contain information such as the Git URL and tags
         String urlBuilds = QUAY_URL + "repository/" + repo + "/build/";
         Optional<String> asStringBuilds = ResourceUtilities.asString(urlBuilds, quayToken.getContent(), client);
+        LOG.info("RESOURCE CALL: " + urlBuilds);
 
         String gitURL = "";
 
         if (asStringBuilds.isPresent()) {
             String json = asStringBuilds.get();
-            LOG.info("RESOURCE CALL: " + urlBuilds);
 
             // parse json using Gson to get the git url of repository and the list of tags
             Map<String, ArrayList> map = new HashMap<>();
@@ -220,4 +217,42 @@ public class QuayImageRegistry implements ImageRegistryInterface {
         container.setRegistry(Registry.QUAY_IO);
         container.setGitUrl(gitURL);
     }
+
+    // private void checkTriggers(Container container) {
+    // final String repo = container.getNamespace() + "/" + container.getName();
+    //
+    // String urlBuilds = QUAY_URL + "repository/" + repo + "/trigger/";
+    // Optional<String> asStringBuilds = ResourceUtilities.asString(urlBuilds, quayToken.getContent(), client);
+    // LOG.info("RESOURCE CALL: " + urlBuilds);
+    //
+    // if (asStringBuilds.isPresent()) {
+    // String json = asStringBuilds.get();
+    //
+    // final Gson gson = new Gson();
+    //
+    // Map<String, ArrayList> map = new HashMap<>();
+    // map = (Map<String, ArrayList>) gson.fromJson(json, map.getClass());
+    // ArrayList triggers = map.get("triggers");
+    //
+    // boolean validTrigger = false;
+    //
+    // // TODO: for now, we only allow user to have only 1 trigger from either github or bitbucket
+    // if (triggers != null && triggers.size() == 1) {
+    // Map<String, String> triggerMap = (Map<String, String>) triggers.get(0);
+    //
+    // String service = triggerMap.get("service");
+    //
+    // if (service.equals("github") || service.equals("bitbucket")) {
+    //
+    // String gitURL = Helper.convertHttpsToSsh(triggerMap.get("repository_url"));
+    //
+    // container.setRegistry(Registry.QUAY_IO);
+    // container.setGitUrl(gitURL);
+    // validTrigger = true;
+    // }
+    // }
+    //
+    // container.setValidTrigger(validTrigger);
+    // }
+    // }
 }

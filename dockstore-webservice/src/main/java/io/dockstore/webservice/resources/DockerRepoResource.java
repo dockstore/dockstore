@@ -247,14 +247,14 @@ public class DockerRepoResource {
     @Path("/registerManual")
     @ApiOperation(value = "Register an image manually, along with tags", notes = "Register/publish an image manually.", response = Container.class)
     public Container registerManual(@ApiParam(hidden = true) @Auth Token authToken,
-                                 @ApiParam(value = "Container to be registered", required = true) Container container) {
+            @ApiParam(value = "Container to be registered", required = true) Container container) {
         User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user);
         // populate user in container
         container.addUser(user);
         // create dependent Tags before creating container
         Set<Tag> createdTags = new HashSet<>();
-        for(Tag tag : container.getTags()){
+        for (Tag tag : container.getTags()) {
             final long l = tagDAO.create(tag);
             createdTags.add(tagDAO.findById(l));
         }
@@ -262,7 +262,7 @@ public class DockerRepoResource {
         container.getTags().addAll(createdTags);
         // create dependent Labels before creating container
         Set<Label> createdLabels = new HashSet<>();
-        for(Label label : container.getLabels()){
+        for (Label label : container.getLabels()) {
             final long l = labelDAO.create(label);
             createdLabels.add(labelDAO.findById(l));
         }
@@ -273,8 +273,6 @@ public class DockerRepoResource {
         Container created = containerDAO.findById(id);
         return created;
     }
-
-
 
     @POST
     @Timed
@@ -290,7 +288,7 @@ public class DockerRepoResource {
         User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
         if (request.getRegister()) {
-            if (c.getHasCollab() && !c.getGitUrl().isEmpty()) {
+            if (c.hasValidTrigger() && !c.getGitUrl().isEmpty()) {
                 c.setIsRegistered(true);
             } else {
                 throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
@@ -348,16 +346,16 @@ public class DockerRepoResource {
     @Path("/path/tool/{repository}")
     @ApiOperation(value = "Get a container by tool path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Container.class)
     public Container getContainerByToolPath(@ApiParam(hidden = true) @Auth Token authToken,
-                                                 @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
+            @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         final String[] split = path.split("/");
         // check that this is a tool path
         final int toolPathLength = 4;
         String toolname = "";
-        if (split.length == toolPathLength){
+        if (split.length == toolPathLength) {
             toolname = split[toolPathLength - 1];
         }
 
-        Container container = containerDAO.findByToolPath(Joiner.on("/").join(split[0],split[1],split[2]),toolname);
+        Container container = containerDAO.findByToolPath(Joiner.on("/").join(split[0], split[1], split[2]), toolname);
 
         Helper.checkContainer(container);
 

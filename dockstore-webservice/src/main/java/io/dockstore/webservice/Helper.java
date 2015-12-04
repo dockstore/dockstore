@@ -68,7 +68,7 @@ public final class Helper {
 
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
 
-    public static final String DOCKSTORE_CWL = "Dockstore.cwl";
+    // public static final String DOCKSTORE_CWL = "Dockstore.cwl";
 
     public static class RepoList {
 
@@ -97,8 +97,9 @@ public final class Helper {
      *            docker image path -> list of corresponding Tags
      */
     @SuppressWarnings("checkstyle:parameternumber")
-    private static void updateTags(final Iterable<Container> containers, final HttpClient client, final ContainerDAO containerDAO, final TagDAO tagDAO, final FileDAO fileDAO,
-            final Token githubToken, final Token bitbucketToken, final Map<String, List<Tag>> tagMap) {
+    private static void updateTags(final Iterable<Container> containers, final HttpClient client, final ContainerDAO containerDAO,
+            final TagDAO tagDAO, final FileDAO fileDAO, final Token githubToken, final Token bitbucketToken,
+            final Map<String, List<Tag>> tagMap) {
         for (final Container container : containers) {
             LOG.info("--------------- Updating tags for {} ---------------", container.getToolPath());
 
@@ -232,9 +233,8 @@ public final class Helper {
      * @param containerDAO
      * @return list of newly updated containers
      */
-    private static List<Container> updateContainers(final Iterable<Container> apiContainerList, final List<Container> dbContainerList, final User user,
-            final ContainerDAO containerDAO) {
-
+    private static List<Container> updateContainers(final Iterable<Container> apiContainerList, final List<Container> dbContainerList,
+            final User user, final ContainerDAO containerDAO) {
 
         final List<Container> toDelete = new ArrayList<>();
         // Find containers that the user no longer has
@@ -273,7 +273,7 @@ public final class Helper {
 
             // Find if container already exists, but does not belong to user
             if (!exists) {
-                Container oldContainer = containerDAO.findByToolPath(path,newContainer.getToolname());
+                Container oldContainer = containerDAO.findByToolPath(path, newContainer.getToolname());
                 if (oldContainer != null) {
                     exists = true;
                     oldContainer.update(newContainer);
@@ -299,7 +299,7 @@ public final class Helper {
 
             // do not re-create tags with manual mode
             // with other types, you can re-create the tags on refresh
-                LOG.info("UPDATED Container: " + container.getPath());
+            LOG.info("UPDATED Container: " + container.getPath());
         }
 
         // delete container if it has no users
@@ -328,8 +328,7 @@ public final class Helper {
      */
     @SuppressWarnings("checkstyle:parameternumber")
     private static Map<String, List<Tag>> getTags(final HttpClient client, final List<Container> containers,
-            final ObjectMapper objectMapper, final Token quayToken,
-            final Map<String, ArrayList<?>> mapOfBuilds) {
+            final ObjectMapper objectMapper, final Token quayToken, final Map<String, ArrayList<?>> mapOfBuilds) {
         final Map<String, List<Tag>> tagMap = new HashMap<>();
 
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
@@ -520,6 +519,7 @@ public final class Helper {
 
     /**
      * Gets containers for the current user
+     * 
      * @param userId
      * @param userDAO
      * @return
@@ -704,5 +704,27 @@ public final class Helper {
             throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
         }
         container.forEach(Helper::checkContainer);
+    }
+
+    public static String convertHttpsToSsh(String url) {
+        Pattern p = Pattern.compile("https://(\\S+)/(\\S+)/(\\S+)/*?");
+        Matcher m = p.matcher(url);
+        if (!m.find()) {
+            LOG.info("Cannot parse url: " + url);
+            return null;
+        }
+
+        // These correspond to the positions of the pattern matcher
+        final int sourceIndex = 1;
+        final int usernameIndex = 2;
+        final int reponameIndex = 3;
+
+        String source = m.group(sourceIndex);
+        String gitUsername = m.group(usernameIndex);
+        String gitRepository = m.group(reponameIndex);
+
+        String ssh = "git@" + source + ":" + gitUsername + "/" + gitRepository + ".git";
+
+        return ssh;
     }
 }

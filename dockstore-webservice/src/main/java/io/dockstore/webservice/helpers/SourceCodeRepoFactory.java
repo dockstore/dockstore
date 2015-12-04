@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
  */
 public class SourceCodeRepoFactory {
 
-    static Logger log = LoggerFactory.getLogger(SourceCodeRepoFactory.class);
+    static Logger LOG = LoggerFactory.getLogger(SourceCodeRepoFactory.class);
 
     public static SourceCodeRepoInterface createSourceCodeRepo(String gitUrl, HttpClient client, String bitbucketTokenContent,
             String githubTokenContent) {
@@ -42,7 +42,7 @@ public class SourceCodeRepoFactory {
                 return null;
             }
         } else {
-            log.info("Do not support: " + source);
+            LOG.info("Do not support: " + source);
             throw new WebApplicationException(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE);
         }
         return repo;
@@ -58,7 +58,7 @@ public class SourceCodeRepoFactory {
         Pattern p = Pattern.compile("git\\@(\\S+):(\\S+)/(\\S+)\\.git");
         Matcher m = p.matcher(url);
         if (!m.find()) {
-            log.info("Cannot parse url: " + url);
+            LOG.info("Cannot parse url: " + url);
             return null;
         }
 
@@ -70,9 +70,9 @@ public class SourceCodeRepoFactory {
         String source = m.group(sourceIndex);
         String gitUsername = m.group(usernameIndex);
         String gitRepository = m.group(reponameIndex);
-        // log.info("Source: " + source);
-        // log.info("Username: " + gitUsername);
-        // log.info("Repository: " + gitRepository);
+        // LOG.info("Source: " + source);
+        // LOG.info("Username: " + gitUsername);
+        // LOG.info("Repository: " + gitRepository);
 
         Map<String, String> map = new HashMap<>();
         map.put("Source", source);

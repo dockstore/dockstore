@@ -60,7 +60,7 @@ public abstract class SourceCodeRepoInterface {
                     LOG.info("Creator not found!");
                 }
 
-                container.setHasCollab(true);
+                // container.setHasCollab(true);
                 LOG.info("Repository has Dockstore.cwl");
             } catch (IOException ex) {
                 LOG.info("CWL file is malformed");

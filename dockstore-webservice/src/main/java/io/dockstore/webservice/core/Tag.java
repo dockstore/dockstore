@@ -93,7 +93,11 @@ public class Tag implements Comparable<Tag> {
     private boolean hidden;
 
     @Column
-    @ApiModelProperty()
+    @ApiModelProperty("whether this tag has valid files or not")
+    private boolean valid;
+
+    @Column
+    @ApiModelProperty("whether this tag has an automated build or not")
     private boolean automated;
 
     public void updateByUser(Tag tag) {
@@ -111,6 +115,7 @@ public class Tag implements Comparable<Tag> {
             setReference(tag.getReference());
         }
 
+        setName(tag.getName());
         setAutomated(tag.isAutomated());
         setImageId(tag.getImageId());
         setLastModified(tag.getLastModified());
@@ -202,6 +207,15 @@ public class Tag implements Comparable<Tag> {
 
     public void setHidden(boolean hidden) {
         this.hidden = hidden;
+    }
+
+    @JsonProperty
+    public boolean isValid() {
+        return valid;
+    }
+
+    public void setValid(boolean valid) {
+        this.valid = valid;
     }
 
     @JsonProperty
