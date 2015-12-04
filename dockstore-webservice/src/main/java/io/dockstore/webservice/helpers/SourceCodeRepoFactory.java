@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
  */
 public class SourceCodeRepoFactory {
 
-    static Logger LOG = LoggerFactory.getLogger(SourceCodeRepoFactory.class);
+    static final Logger LOG = LoggerFactory.getLogger(SourceCodeRepoFactory.class);
 
     public static SourceCodeRepoInterface createSourceCodeRepo(String gitUrl, HttpClient client, String bitbucketTokenContent,
             String githubTokenContent) {
