@@ -249,7 +249,6 @@ public class DockerRepoResource {
     public Container registerManual(@ApiParam(hidden = true) @Auth Token authToken,
                                  @ApiParam(value = "Container to be registered", required = true) Container container) {
         User user = userDAO.findById(authToken.getUserId());
-        Helper.checkUser(user);
         // populate user in container
         container.addUser(user);
         // create dependent Tags before creating container
