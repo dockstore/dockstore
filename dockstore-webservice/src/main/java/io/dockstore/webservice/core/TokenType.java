@@ -16,10 +16,13 @@
  */
 package io.dockstore.webservice.core;
 
+import io.swagger.annotations.ApiModel;
+
 /**
- *
+ * Enumerates the sources for access tokens for the dockstore
  * @author dyuen
  */
+@ApiModel(description = "Enumerates the sources for access tokens for the dockstore")
 public enum TokenType {
     QUAY_IO("quay.io"), GITHUB_COM("github.com"), DOCKSTORE("dockstore"), BITBUCKET_ORG("bitbucket.org");
     private final String friendlyName;

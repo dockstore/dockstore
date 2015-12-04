@@ -26,9 +26,10 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 /**
- *
+ * This describes a cached copy of a remotely accessible file. Implementation specific.
  * @author xliu
  */
 @ApiModel("SourceFile")
@@ -41,16 +42,19 @@ public class SourceFile {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @ApiModelProperty("Implementation specific ID for the source file in this web service")
     private long id;
 
     @Enumerated(EnumType.STRING)
+    @ApiModelProperty(value = "Enumerates the type of file", required = true)
     private FileType type;
 
     @Column(columnDefinition = "TEXT")
+    @ApiModelProperty("Cache for the contents of the target file")
     private String content;
 
     public void update(SourceFile file) {
-        this.setContent(file.getContent());
+        content = file.content;
     }
 
     public long getId() {

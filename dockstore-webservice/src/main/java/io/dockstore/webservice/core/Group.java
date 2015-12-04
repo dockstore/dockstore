@@ -16,10 +16,9 @@
  */
 package io.dockstore.webservice.core;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.annotations.ApiModel;
 import java.util.HashSet;
 import java.util.Set;
+
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -34,15 +33,18 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import io.swagger.annotations.ApiModel;
+
 /**
- *
+ * This describes a grouping of end-users for the purposes of managing sharing.
  * @author xliu
  */
-@ApiModel(value = "Group")
+@ApiModel(value = "Group", description = "This describes a grouping of end-users for the purposes of managing sharing. Implementation-specific.")
 @Entity
 @Table(name = "usergroup")
 @NamedQueries({ @NamedQuery(name = "io.dockstore.webservice.core.Group.findAll", query = "SELECT t FROM Group t") })
-// @JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class, property = "@id")
 public class Group {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

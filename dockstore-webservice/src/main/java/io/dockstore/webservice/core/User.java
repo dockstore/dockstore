@@ -16,11 +16,10 @@
  */
 package io.dockstore.webservice.core;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.annotations.ApiModel;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -35,39 +34,48 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 /**
- *
+ * Stores end user information
  * @author xliu
  */
-@ApiModel(value = "User")
+@ApiModel(value = "User", description = "End users for the dockstore")
 @Entity
 @Table(name = "enduser")
 @NamedQueries({ @NamedQuery(name = "io.dockstore.webservice.core.User.findAll", query = "SELECT t FROM User t"),
         @NamedQuery(name = "io.dockstore.webservice.core.User.findByUsername", query = "SELECT t FROM User t WHERE t.username = :username") })
-// @JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class, property = "@id")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", unique = true, nullable = false)
+    @ApiModelProperty("Implementation specific ID for the container in this web service")
     private long id;
 
     @Column(nullable = false, unique = true)
+    @ApiModelProperty("Username on dockstore")
     private String username;
 
     @Column
+    @ApiModelProperty(value = "Indicates whetehr this user is an admin", required = true)
     private boolean isAdmin;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @JoinTable(name = "endusergroup", joinColumns = { @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "groupid", nullable = false, updatable = false, referencedColumnName = "id") })
+    @JoinTable(name = "endusergroup", joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id") , inverseJoinColumns = @JoinColumn(name = "groupid", nullable = false, updatable = false, referencedColumnName = "id"))
+    @ApiModelProperty("Groups that this user belongs to")
     private Set<Group> groups;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
-    @JoinTable(name = "usercontainer", inverseJoinColumns = { @JoinColumn(name = "containerid", nullable = false, updatable = false, referencedColumnName = "id") }, joinColumns = { @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id") })
+    @JoinTable(name = "usercontainer", inverseJoinColumns = @JoinColumn(name = "containerid", nullable = false, updatable = false, referencedColumnName = "id") , joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
+    @ApiModelProperty("Entries in the dockstore that this user manages")
     private Set<Container> containers;
 
     public User() {
-        this.groups = new HashSet<>(0);
-        this.containers = new HashSet<>(0);
+        groups = new HashSet<>(0);
+        containers = new HashSet<>(0);
     }
 
     @JsonProperty
@@ -94,7 +102,7 @@ public class User {
     }
 
     public Set<Group> getGroups() {
-        return this.groups;
+        return groups;
     }
 
     public void addGroup(Group group) {
@@ -106,7 +114,7 @@ public class User {
     }
 
     public Set<Container> getContainers() {
-        return this.containers;
+        return containers;
     }
 
     public void addContainer(Container container) {
@@ -131,16 +139,16 @@ public class User {
             return false;
         }
         final User other = (User) obj;
-        if (this.id != other.id) {
+        if (id != other.id) {
             return false;
         }
-        if (!Objects.equals(this.username, other.username)) {
+        if (!Objects.equals(username, other.username)) {
             return false;
         }
-        if (this.isAdmin != other.isAdmin) {
+        if (isAdmin != other.isAdmin) {
             return false;
         }
-        return Objects.equals(this.groups, other.groups);
+        return Objects.equals(groups, other.groups);
     }
 
 }

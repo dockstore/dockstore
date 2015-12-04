@@ -38,50 +38,54 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 /**
- *
+ * This describes one tag associated with a container. For our implementation, this means one tag on quay.io or Docker Hub which is associated with a particular image.
  * @author xliu
+ * @author dyuen
  */
-@ApiModel("Tag")
+@ApiModel(value = "Tag", description = "This describes one tag associated with a container.")
 @Entity
 @Table(name = "tag")
-// @JsonIdentityInfo(generator = ObjectIdGenerators.IntSequenceGenerator.class, property = "@id")
 public class Tag implements Comparable<Tag> {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @ApiModelProperty("Implementation specific ID for the tag in this web service")
     private long id;
 
     @Column
-    @ApiModelProperty("quay tag name")
+    @ApiModelProperty(value = "a quay.io or docker hub tag name", required=true)
     private String name;
 
     @Column
     @JsonProperty("image_id")
-    @ApiModelProperty("Tag for this image in quay.ui/docker hub")
+    @ApiModelProperty(value = "Tag for this image in quay.ui/docker hub", required = true)
     private String imageId;
 
     @Column
     @JsonProperty("last_modified")
+    @ApiModelProperty("The last time this image was modified in the image registry")
     private Date lastModified;
 
     @Column
-    @ApiModelProperty("size of the image")
+    @ApiModelProperty("Size of the image")
     private long size;
 
     @Column
-    @ApiModelProperty("git commit/tag/branch")
+    @ApiModelProperty(value = "git commit/tag/branch", required = true)
     private String reference;
 
     @Column(columnDefinition = "text")
     @JsonProperty("dockerfile_path")
+    @ApiModelProperty("Path for the Dockerfile")
     private String dockerfilePath = "/Dockerfile";
 
     @Column(columnDefinition = "text")
     @JsonProperty("cwl_path")
+    @ApiModelProperty("Path for the CWL document")
     private String cwlPath = "/Dockstore.cwl";
 
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "tagsourcefile", joinColumns = { @JoinColumn(name = "tagid", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "sourcefileid", referencedColumnName = "id") })
-    @ApiModelProperty("Cached files for each tag. Includes Dockerfile and Dockstore.cwl.")
+    @ApiModelProperty("Cached files for each tag. Includes Dockerfile and Dockstore.cwl")
     private Set<SourceFile> sourceFiles;
 
     public Tag() {
@@ -89,35 +93,35 @@ public class Tag implements Comparable<Tag> {
     }
 
     @Column
-    @ApiModelProperty("whether this row is visible to other users aside from the owner")
+    @ApiModelProperty("Implementation specific, whether this row is visible to other users aside from the owner")
     private boolean hidden;
 
     @Column
-    @ApiModelProperty()
+    @ApiModelProperty("Implementation specific, indicates whether this is an automated build on quay.io")
     private boolean automated;
 
-    public void updateByUser(Tag tag) {
-        setReference(tag.getReference());
+    public void updateByUser(final Tag tag) {
+        reference = tag.reference;
         // this.setName(tag.getName());
-        setImageId(tag.getImageId());
-        setHidden(tag.isHidden());
-        setCwlPath(tag.getCwlPath());
-        setDockerfilePath(tag.getDockerfilePath());
+        imageId = tag.imageId;
+        hidden = tag.hidden;
+        cwlPath = tag.cwlPath;
+        dockerfilePath = tag.dockerfilePath;
     }
 
     public void update(Tag tag) {
         // If the tag has an automated build, the reference will be overwritten (whether or not the user has edited it).
-        if (tag.isAutomated()) {
-            setReference(tag.getReference());
+        if (tag.automated) {
+            reference = tag.reference;
         }
 
-        setName(tag.getName());
-        setAutomated(tag.isAutomated());
-        setImageId(tag.getImageId());
-        setLastModified(tag.getLastModified());
-        setSize(tag.getSize());
-        this.setCwlPath(tag.getCwlPath());
-        this.setDockerfilePath(tag.getDockerfilePath());
+        name = tag.name;
+        automated = tag.automated;
+        imageId = tag.imageId;
+        lastModified = tag.lastModified;
+        size = tag.size;
+        cwlPath = tag.cwlPath;
+        dockerfilePath = tag.dockerfilePath;
     }
 
     @JsonProperty
@@ -216,6 +220,6 @@ public class Tag implements Comparable<Tag> {
 
     @Override
     public int compareTo(Tag o) {
-        return Long.compare(getId(), o.getId());
+        return Long.compare(id, o.id);
     }
 }

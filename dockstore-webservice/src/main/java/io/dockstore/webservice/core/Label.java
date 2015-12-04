@@ -28,12 +28,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Objects;
 
 import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 /**
- *
+ * This describes a descriptive label that can be placed on an entry in the dockstore, implementation specific.
  * @author oicr-vchung
  */
-@ApiModel("Label")
+@ApiModel(value = "Label", description = "This describes a descriptive label that can be placed on an entry in the dockstore")
 @Entity
 @Table(name = "label")
 @NamedQuery(name = "io.dockstore.webservice.core.Label.findByLabelValue",
@@ -42,9 +43,11 @@ public class Label implements Comparable<Label>{
 	
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @ApiModelProperty("Implementation specific ID for the container in this web service")
     private long id;
 
     @Column(unique = true)
+    @ApiModelProperty(value = "String representation of the tag", required = true)
     private String value;
 
     @JsonProperty

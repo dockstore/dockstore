@@ -56,7 +56,7 @@ import io.swagger.annotations.ApiParam;
  * @author dyuen
  */
 @Path("/github.repo")
-@Api(value = "/github.repo")
+@Api("/github.repo")
 @Produces(MediaType.APPLICATION_JSON)
 public class GitHubRepoResource {
     private static final Logger LOG = LoggerFactory.getLogger(GitHubRepoResource.class);

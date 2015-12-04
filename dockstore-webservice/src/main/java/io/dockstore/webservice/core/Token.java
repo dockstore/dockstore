@@ -16,8 +16,7 @@
  */
 package io.dockstore.webservice.core;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.annotations.ApiModel;
+import java.util.Objects;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -27,13 +26,17 @@ import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
-import java.util.Objects;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 /**
- *
+ * Access tokens for this web service and integrated services like quay.io and github.
  * @author dyuen
  */
-@ApiModel(value = "Token")
+@ApiModel(value = "Token", description = "Access tokens for this web service and integrated services like quay.io and github")
 @Entity
 @Table(name = "token")
 @NamedQueries({
@@ -49,14 +52,19 @@ public class Token {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @ApiModelProperty("Implementation specific ID for the token in this web service")
     private long id;
     @Column(nullable = false)
+    @ApiModelProperty("Source website for this token")
     private String tokenSource;
     @Column(nullable = false)
+    @ApiModelProperty("Contents of the access token")
     private String content;
     @Column(nullable = false)
+    @ApiModelProperty("When an integrated service is not aware of the username, we store it")
     private String username;
     @Column
+    @ApiModelProperty("")
     private String refreshToken;
 
     // TODO: tokens will need to be associated with a particular user
