@@ -162,6 +162,9 @@ public final class Helper {
                     // Set<SourceFile> oldFiles = tag.getSourceFiles();
                     tag.getSourceFiles().clear();
 
+                    boolean hasCwl = false;
+                    boolean hasDockerfile = false;
+
                     for (SourceFile newFile : newFiles) {
                         // boolean exists = false;
                         // for (SourceFile oldFile : oldFiles) {
@@ -182,7 +185,16 @@ public final class Helper {
 
                         // oldFiles.add(newFile);
                         // }
+
+                        if (file.getType() == FileType.DOCKERFILE) {
+                            hasDockerfile = true;
+                        }
+                        if (file.getType() == FileType.DOCKSTORE_CWL) {
+                            hasCwl = true;
+                        }
                     }
+
+                    tag.setValid(hasCwl && hasDockerfile);
 
                     long id = tagDAO.create(tag);
                     tag = tagDAO.findById(id);
