@@ -86,7 +86,7 @@ public class Container {
     @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinTable(name = "usercontainer", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "containerid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty(value = "This indicates the users that have control over this entry, dockstore specific", required = false)
-    private Set<User> users;
+    private final Set<User> users;
 
     @Column(nullable = false)
     @ApiModelProperty(value = "This is the name of the container, required: GA4GH", required = true)
@@ -158,7 +158,7 @@ public class Container {
     @JoinTable(name = "containertag", joinColumns = { @JoinColumn(name = "containerid", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "tagid", referencedColumnName = "id") })
     @ApiModelProperty("Implementation specific tracking of valid build tags for the docker container")
     @OrderBy("id")
-    private SortedSet<Tag> tags;
+    private final SortedSet<Tag> tags;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "containerlabel", joinColumns = { @JoinColumn(name = "containerid", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "labelid", referencedColumnName = "id") })
@@ -227,7 +227,7 @@ public class Container {
             } else {
                 builder.append("registry.hub.docker.com/");
             }
-            builder.append(namespace).append("/").append(name);
+            builder.append(namespace).append('/').append(name);
             repositoryPath = builder.toString();
         } else {
             repositoryPath = path;
@@ -456,6 +456,6 @@ public class Container {
 
     @JsonProperty("tool_path")
     public String getToolPath() {
-        return getPath() + (toolname == null || toolname.isEmpty() ? "" : "/" + toolname);
+        return getPath() + (toolname == null || toolname.isEmpty() ? "" : '/' + toolname);
     }
 }

@@ -66,12 +66,12 @@ public class User {
     @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinTable(name = "endusergroup", joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id") , inverseJoinColumns = @JoinColumn(name = "groupid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty("Groups that this user belongs to")
-    private Set<Group> groups;
+    private final Set<Group> groups;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinTable(name = "usercontainer", inverseJoinColumns = @JoinColumn(name = "containerid", nullable = false, updatable = false, referencedColumnName = "id") , joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty("Entries in the dockstore that this user manages")
-    private Set<Container> containers;
+    private final Set<Container> containers;
 
     public User() {
         groups = new HashSet<>(0);

@@ -77,13 +77,13 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             repository = service.getRepository(gitUsername, gitRepository);
         } catch (IOException e) {
-            LOG.error("Repo: " + c.getGitUrl() + " could not be retrieved");
+            LOG.error("Repo: {} could not be retrieved", c.getGitUrl());
             throw new RuntimeException();
         }
         if (repository == null) {
-            LOG.info("Github repository not found for " + c.getPath());
+            LOG.info("Github repository not found for {}", c.getPath());
         } else {
-            LOG.info("Github found for: " + repository.getName());
+            LOG.info("Github found for: {}", repository.getName());
             try {
                 List<RepositoryContents> contents = null;
                 contents = cService.getContents(repository, fileName);
@@ -95,7 +95,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     c = parseCWLContent(c, content);
                 }
             } catch (IOException ex) {
-                LOG.info("Repo: " + repository.getName() + " has no Dockstore.cwl");
+                LOG.info("Repo: {} has no Dockstore.cwl", repository.getName());
             }
         }
         return c;

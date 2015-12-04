@@ -60,7 +60,7 @@ public class ResourceUtilities {
             throws UnsupportedEncodingException {
         HttpPost httpPost = new HttpPost(input);
         if (token == null) {
-            String string = client_id + ":" + secret;
+            String string = client_id + ':' + secret;
             byte[] b = string.getBytes(StandardCharsets.UTF_8);
             String encoding = Base64.getEncoder().encodeToString(b);
 
@@ -79,11 +79,11 @@ public class ResourceUtilities {
             ResponseHandler<String> responseHandler = new BasicResponseHandler();
             result = Optional.of(client.execute(httpGet, responseHandler));
         } catch (HttpResponseException httpResponseException) {
-            LOG.error("getResponseAsString(): caught 'HttpResponseException' while processing request <" + httpGet.toString() + "> :=> <"
-                    + httpResponseException.getMessage() + ">");
+            LOG.error("getResponseAsString(): caught 'HttpResponseException' while processing request <{}> :=> <{}>", httpGet,
+                httpResponseException.getMessage());
         } catch (IOException ioe) {
-            LOG.error("getResponseAsString(): caught 'IOException' while processing request <" + httpGet.toString() + "> :=> <"
-                    + ioe.getMessage() + ">");
+            LOG.error("getResponseAsString(): caught 'IOException' while processing request <{}> :=> <{}>", httpGet,
+                ioe.getMessage());
         } finally {
             httpGet.releaseConnection();
         }
@@ -96,11 +96,11 @@ public class ResourceUtilities {
             ResponseHandler<String> responseHandler = new BasicResponseHandler();
             result = Optional.of(client.execute(httpPost, responseHandler));
         } catch (HttpResponseException httpResponseException) {
-            LOG.error("getResponseAsString(): caught 'HttpResponseException' while processing request <" + httpPost.toString() + "> :=> <"
-                    + httpResponseException.getMessage() + ">");
+            LOG.error("getResponseAsString(): caught 'HttpResponseException' while processing request <{}> :=> <{}>", httpPost,
+                httpResponseException.getMessage());
         } catch (IOException ioe) {
-            LOG.error("getResponseAsString(): caught 'IOException' while processing request <" + httpPost.toString() + "> :=> <"
-                    + ioe.getMessage() + ">");
+            LOG.error("getResponseAsString(): caught 'IOException' while processing request <{}> :=> <{}>", httpPost,
+                ioe.getMessage());
         } finally {
             httpPost.releaseConnection();
         }

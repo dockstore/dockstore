@@ -66,7 +66,7 @@ public class BitbucketOrgAuthenticationResource {
 
         public BitbucketOrgView() {
             super("bitbucket.org.auth.view.ftl");
-            this.parent = BitbucketOrgAuthenticationResource.this;
+            parent = BitbucketOrgAuthenticationResource.this;
         }
 
         /**

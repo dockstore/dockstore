@@ -93,7 +93,7 @@ public class UserResource {
     @SuppressWarnings("checkstyle:parameternumber")
     public UserResource(ObjectMapper mapper, HttpClient client, TokenDAO tokenDAO, UserDAO userDAO, GroupDAO groupDAO,
             ContainerDAO containerDAO, TagDAO tagDAO, FileDAO fileDAO, String bitbucketClientID, String bitbucketClientSecret) {
-        this.objectMapper = mapper;
+        objectMapper = mapper;
         this.client = client;
         this.userDAO = userDAO;
         this.groupDAO = groupDAO;
@@ -453,7 +453,7 @@ public class UserResource {
         Optional<String> asString = ResourceUtilities.asString(url, token.getContent(), client);
         if (asString.isPresent()) {
             String response = asString.get();
-            LOG.info("RESOURCE CALL: " + url);
+            LOG.info("RESOURCE CALL: {}", url);
 
             Gson gson = new Gson();
             // Map<String, String> map = new HashMap<>();

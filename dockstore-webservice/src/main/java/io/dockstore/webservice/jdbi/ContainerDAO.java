@@ -61,7 +61,7 @@ public class ContainerDAO extends AbstractDAO<Container> {
     }
 
     public List<Container> searchPattern(String pattern) {
-        pattern = "%" + pattern + "%";
+        pattern = '%' + pattern + '%';
         return list(namedQuery("io.dockstore.webservice.core.Container.searchPattern").setParameter("pattern", pattern));
     }
 

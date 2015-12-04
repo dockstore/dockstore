@@ -65,7 +65,7 @@ public class GitHubComAuthenticationResource {
 
         public GithubComView() {
             super("github.com.auth.view.ftl");
-            this.parent = GitHubComAuthenticationResource.this;
+            parent = GitHubComAuthenticationResource.this;
         }
 
         /**

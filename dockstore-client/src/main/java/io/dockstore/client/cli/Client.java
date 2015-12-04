@@ -125,11 +125,7 @@ public class Client {
     }
 
     private static String boolWord(boolean bool) {
-        if (bool) {
-            return "Yes";
-        } else {
-            return "No";
-        }
+        return bool ? "Yes" : "No";
     }
 
     private static List<String> optVals(List<String> args, String key) {
@@ -437,7 +433,7 @@ public class Client {
     }
 
     private static boolean isHelpRequest(String first) {
-        return first.equals("-h") || first.equals("--help");
+        return "-h".equals(first) || "--help".equals(first);
     }
 
     private static void publishHelp() {

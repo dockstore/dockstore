@@ -86,7 +86,7 @@ public class Tag implements Comparable<Tag> {
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "tagsourcefile", joinColumns = { @JoinColumn(name = "tagid", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "sourcefileid", referencedColumnName = "id") })
     @ApiModelProperty("Cached files for each tag. Includes Dockerfile and Dockstore.cwl")
-    private Set<SourceFile> sourceFiles;
+    private final Set<SourceFile> sourceFiles;
 
     public Tag() {
         sourceFiles = new HashSet<>(0);

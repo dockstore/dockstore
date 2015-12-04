@@ -56,10 +56,10 @@ public class Group {
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinTable(name = "endusergroup", inverseJoinColumns = { @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id") }, joinColumns = { @JoinColumn(name = "groupid", nullable = false, updatable = false, referencedColumnName = "id") })
-    private Set<User> users;
+    private final Set<User> users;
 
     public Group() {
-        this.users = new HashSet<>(0);
+        users = new HashSet<>(0);
     }
 
     @JsonProperty

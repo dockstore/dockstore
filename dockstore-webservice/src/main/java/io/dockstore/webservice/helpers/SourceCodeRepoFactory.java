@@ -42,7 +42,7 @@ public class SourceCodeRepoFactory {
                 return null;
             }
         } else {
-            log.info("Do not support: " + source);
+            log.info("Do not support: {}", source);
             throw new WebApplicationException(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE);
         }
         return repo;
@@ -58,7 +58,7 @@ public class SourceCodeRepoFactory {
         Pattern p = Pattern.compile("git\\@(\\S+):(\\S+)/(\\S+)\\.git");
         Matcher m = p.matcher(url);
         if (!m.find()) {
-            log.info("Cannot parse url: " + url);
+            log.info("Cannot parse url: {}", url);
             return null;
         }
 

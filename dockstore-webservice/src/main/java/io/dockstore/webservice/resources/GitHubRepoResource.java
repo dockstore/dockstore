@@ -114,7 +114,7 @@ public class GitHubRepoResource {
                     User user = uService.getUser();
 
                     builder.append("Token: ").append(token.getId()).append(" is ").append(user.getName()).append(" login is ")
-                            .append(user.getLogin()).append("\n");
+                            .append(user.getLogin()).append('\n');
                     for (Repository repo : service.getRepositories(user.getLogin())) {
                         try {
                             List<RepositoryContents> contents = cService.getContents(repo, "collab.json");
@@ -149,10 +149,10 @@ public class GitHubRepoResource {
                         }
                     }
 
-                    builder.append("\n");
+                    builder.append('\n');
                 } catch (IOException ex) {
                     LOG.warn("IOException", ex);
-                    builder.append("Token ignored due to IOException: ").append(token.getId()).append("\n");
+                    builder.append("Token ignored due to IOException: ").append(token.getId()).append('\n');
                 }
             }
         }

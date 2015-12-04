@@ -94,7 +94,7 @@ public class TokenResource {
             String bitbucketClientID, String bitbucketClientSecret, HttpClient client,
             CachingAuthenticator<String, Token> cachingAuthenticator) {
         this.tokenDAO = tokenDAO;
-        this.userDAO = enduserDAO;
+        userDAO = enduserDAO;
         this.githubClientID = githubClientID;
         this.githubClientSecret = githubClientSecret;
         this.bitbucketClientID = bitbucketClientID;
@@ -149,7 +149,7 @@ public class TokenResource {
 
         String username = null;
         if (asString.isPresent()) {
-            LOG.info("RESOURCE CALL: " + url);
+            LOG.info("RESOURCE CALL: {}", url);
 
             String response = asString.get();
             Gson gson = new Gson();
@@ -157,7 +157,7 @@ public class TokenResource {
             map = (Map<String, String>) gson.fromJson(response, map.getClass());
 
             username = map.get("username");
-            LOG.info("Username: " + username);
+            LOG.info("Username: {}", username);
         }
 
         if (user != null) {
@@ -175,10 +175,10 @@ public class TokenResource {
                     throw new WebApplicationException("Username not found from resource call " + url);
                 }
                 long create = tokenDAO.create(token);
-                LOG.info("Quay token created for " + user.getUsername());
+                LOG.info("Quay token created for {}", user.getUsername());
                 return tokenDAO.findById(create);
             } else {
-                LOG.info("Quay token already exists for " + user.getUsername());
+                LOG.info("Quay token already exists for {}", user.getUsername());
             }
         } else {
             LOG.info("Could not find user");
@@ -234,14 +234,14 @@ public class TokenResource {
             }
 
             if (error != null && error.equals("bad_verification_code")) {
-                LOG.info("ERROR: " + error);
+                LOG.info("ERROR: {}", error);
                 if (--count == 0) {
                     throw new WebApplicationException("Could not retrieve github.com token based on code");
                 } else {
                     LOG.info("trying again...");
                 }
             } else if (accessToken != null && !accessToken.isEmpty()) {
-                LOG.info("Successfully recieved accessToken: " + accessToken);
+                LOG.info("Successfully recieved accessToken: {}", accessToken);
                 break;
             } else {
                 LOG.info("Retrieving accessToken was unsuccessful");
@@ -326,7 +326,7 @@ public class TokenResource {
             githubToken.setUserId(userID);
             githubToken.setUsername(githubLogin);
             tokenDAO.create(githubToken);
-            LOG.info("Github token created for " + githubLogin);
+            LOG.info("Github token created for {}", githubLogin);
         }
 
         return dockstoreToken;
@@ -354,7 +354,7 @@ public class TokenResource {
         String accessToken;
         String refreshToken;
         if (asString.isPresent()) {
-            LOG.info("RESOURCE CALL: " + url);
+            LOG.info("RESOURCE CALL: {}", url);
             String json = asString.get();
             LOG.info(json);
 
@@ -374,7 +374,7 @@ public class TokenResource {
         Optional<String> asString2 = ResourceUtilities.asString(url, accessToken, client);
 
         if (asString2.isPresent()) {
-            LOG.info("RESOURCE CALL: " + url);
+            LOG.info("RESOURCE CALL: {}", url);
 
             String response = asString2.get();
             Gson gson = new Gson();
@@ -382,7 +382,7 @@ public class TokenResource {
             map = (Map<String, String>) gson.fromJson(response, map.getClass());
 
             username = map.get("username");
-            LOG.info("Username: " + username);
+            LOG.info("Username: {}", username);
         }
 
         if (user != null) {
@@ -401,10 +401,10 @@ public class TokenResource {
                     throw new WebApplicationException("Username not found from resource call " + url);
                 }
                 long create = tokenDAO.create(token);
-                LOG.info("Bitbucket token created for " + user.getUsername());
+                LOG.info("Bitbucket token created for {}", user.getUsername());
                 return tokenDAO.findById(create);
             } else {
-                LOG.info("Bitbucket token already exists for " + user.getUsername());
+                LOG.info("Bitbucket token already exists for {}", user.getUsername());
             }
         } else {
             LOG.info("Could not find user");

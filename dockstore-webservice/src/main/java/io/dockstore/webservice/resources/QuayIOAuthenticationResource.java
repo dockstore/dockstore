@@ -65,7 +65,7 @@ public class QuayIOAuthenticationResource {
 
         public QuayIOView() {
             super("quay.io.auth.view.ftl");
-            this.parent = QuayIOAuthenticationResource.this;
+            parent = QuayIOAuthenticationResource.this;
         }
 
         /**

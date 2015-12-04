@@ -154,7 +154,7 @@ public class Token {
 
         final Token that = (Token) o;
 
-        return Objects.equals(this.id, that.id) && Objects.equals(this.content, that.content);
+        return Objects.equals(id, that.id) && Objects.equals(content, that.content);
     }
 
     @Override
