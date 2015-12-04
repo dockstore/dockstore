@@ -707,7 +707,7 @@ public final class Helper {
     }
 
     public static String convertHttpsToSsh(String url) {
-        Pattern p = Pattern.compile("https://(\\S+)/(\\S+)/(\\S+)/*?");
+        Pattern p = Pattern.compile("^(https?:)?\\/\\/(www\\.)?(github\\.com|bitbucket\\.org)\\/([\\w-]+)\\/([\\w-]+)$");
         Matcher m = p.matcher(url);
         if (!m.find()) {
             LOG.info("Cannot parse url: " + url);
@@ -715,9 +715,9 @@ public final class Helper {
         }
 
         // These correspond to the positions of the pattern matcher
-        final int sourceIndex = 1;
-        final int usernameIndex = 2;
-        final int reponameIndex = 3;
+        final int sourceIndex = 3;
+        final int usernameIndex = 4;
+        final int reponameIndex = 5;
 
         String source = m.group(sourceIndex);
         String gitUsername = m.group(usernameIndex);
