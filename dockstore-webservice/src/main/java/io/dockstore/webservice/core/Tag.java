@@ -38,7 +38,9 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 /**
- * This describes one tag associated with a container. For our implementation, this means one tag on quay.io or Docker Hub which is associated with a particular image.
+ * This describes one tag associated with a container. For our implementation, this means one tag on quay.io or Docker Hub which is
+ * associated with a particular image.
+ * 
  * @author xliu
  * @author dyuen
  */
@@ -52,7 +54,7 @@ public class Tag implements Comparable<Tag> {
     private long id;
 
     @Column
-    @ApiModelProperty(value = "a quay.io or docker hub tag name", required=true)
+    @ApiModelProperty(value = "a quay.io or docker hub tag name", required = true)
     private String name;
 
     @Column
@@ -84,7 +86,7 @@ public class Tag implements Comparable<Tag> {
     private String cwlPath = "/Dockstore.cwl";
 
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
-    @JoinTable(name = "tagsourcefile", joinColumns = { @JoinColumn(name = "tagid", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "sourcefileid", referencedColumnName = "id") })
+    @JoinTable(name = "tagsourcefile", joinColumns = @JoinColumn(name = "tagid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "sourcefileid", referencedColumnName = "id"))
     @ApiModelProperty("Cached files for each tag. Includes Dockerfile and Dockstore.cwl")
     private final Set<SourceFile> sourceFiles;
 

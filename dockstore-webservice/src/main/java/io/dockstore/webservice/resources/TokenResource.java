@@ -90,9 +90,8 @@ public class TokenResource {
     private final CachingAuthenticator<String, Token> cachingAuthenticator;
 
     @SuppressWarnings("checkstyle:parameternumber")
-    public TokenResource(TokenDAO tokenDAO, UserDAO enduserDAO, String githubClientID, String githubClientSecret,
-            String bitbucketClientID, String bitbucketClientSecret, HttpClient client,
-            CachingAuthenticator<String, Token> cachingAuthenticator) {
+    public TokenResource(TokenDAO tokenDAO, UserDAO enduserDAO, String githubClientID, String githubClientSecret, String bitbucketClientID,
+            String bitbucketClientSecret, HttpClient client, CachingAuthenticator<String, Token> cachingAuthenticator) {
         this.tokenDAO = tokenDAO;
         userDAO = enduserDAO;
         this.githubClientID = githubClientID;
@@ -119,10 +118,10 @@ public class TokenResource {
     @Timed
     @UnitOfWork
     @ApiOperation(value = "Get a specific token by id", notes = "Get a specific token by id", response = Token.class)
-    @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid ID supplied"),
+    @ApiResponses({ @ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid ID supplied"),
             @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = "Token not found") })
     public Token listToken(@ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "ID of token to return") @PathParam("tokenId") Long tokenId) {
+            @ApiParam("ID of token to return") @PathParam("tokenId") Long tokenId) {
         User user = userDAO.findById(authToken.getUserId());
         Token t = tokenDAO.findById(tokenId);
         Helper.checkUser(user, t.getUserId());
@@ -189,8 +188,8 @@ public class TokenResource {
     @DELETE
     @Path("/{tokenId}")
     @UnitOfWork
-    @ApiOperation(value = "Deletes a token")
-    @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid token value") })
+    @ApiOperation("Deletes a token")
+    @ApiResponses(@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid token value"))
     public Response deleteToken(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "Token id to delete", required = true) @PathParam("tokenId") Long tokenId) {
         User user = userDAO.findById(authToken.getUserId());
@@ -218,8 +217,8 @@ public class TokenResource {
             + "Once a user has approved permissions for Collaboratory"
             + "Their browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addGithubToken(@QueryParam("code") String code) {
-        String accessToken = null;
-        String error = null;
+        String accessToken;
+        String error;
         int count = MAX_ITERATIONS;
         while (true) {
             Optional<String> asString = ResourceUtilities.asString(GIT_URL + "login/oauth/access_token?code=" + code + "&client_id="
@@ -233,7 +232,7 @@ public class TokenResource {
                 throw new WebApplicationException("Could not retrieve github.com token based on code");
             }
 
-            if (error != null && error.equals("bad_verification_code")) {
+            if (error != null && "bad_verification_code".equals(error)) {
                 LOG.info("ERROR: {}", error);
                 if (--count == 0) {
                     throw new WebApplicationException("Could not retrieve github.com token based on code");
@@ -251,7 +250,7 @@ public class TokenResource {
 
         GitHubClient githubClient = new GitHubClient();
         githubClient.setOAuth2Token(accessToken);
-        long userID = 0;
+        long userID;
         String githubLogin;
         Token dockstoreToken = null;
         Token githubToken = null;

@@ -34,6 +34,7 @@ import io.swagger.annotations.ApiModelProperty;
 
 /**
  * Access tokens for this web service and integrated services like quay.io and github.
+ * 
  * @author dyuen
  */
 @ApiModel(value = "Token", description = "Access tokens for this web service and integrated services like quay.io and github")

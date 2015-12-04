@@ -146,7 +146,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
         final Gson gson = new Gson();
         for (final Container container : allRepos) {
 
-            if (container.getRegistry() != Registry.QUAY_IO){
+            if (container.getRegistry() != Registry.QUAY_IO) {
                 continue;
             }
 
@@ -171,6 +171,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
 
     /**
      * For a given container, update its registry, git, and build information with information from quay.io
+     * 
      * @param formatter
      * @param mapOfBuilds
      * @param gson
@@ -179,7 +180,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
      * @param path
      */
     private void updateContainersWithBuildInfo(SimpleDateFormat formatter, Map<String, ArrayList<?>> mapOfBuilds, Gson gson,
-                                                  Container container, String repo, String path) {
+            Container container, String repo, String path) {
         // Get the list of builds from the container.
         // Builds contain information such as the Git URL and tags
         String urlBuilds = QUAY_URL + "repository/" + repo + "/build/";

@@ -56,9 +56,9 @@ import io.swagger.annotations.ApiModelProperty;
  * @author dyuen
  */
 @ApiModel(value = "Container", description = "This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be\n"
-                                                 + " * associated with CWL and Dockerfile documents")
+        + " * associated with CWL and Dockerfile documents")
 @Entity
-@Table(name = "container", uniqueConstraints = @UniqueConstraint(columnNames = {"registry", "namespace", "name","toolname"}))
+@Table(name = "container", uniqueConstraints = @UniqueConstraint(columnNames = { "registry", "namespace", "name", "toolname" }))
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findByNameAndNamespaceAndRegistry", query = "SELECT c FROM Container c WHERE c.name = :name AND c.namespace = :namespace AND c.registry = :registry"),
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findRegisteredById", query = "SELECT c FROM Container c WHERE c.id = :id AND c.isRegistered = true"),
@@ -78,9 +78,7 @@ public class Container {
 
     @Column(nullable = false, columnDefinition = "Text default 'AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS'")
     @Enumerated(EnumType.STRING)
-    @ApiModelProperty(value = "This indicates what mode this is in which informs how we do things like refresh, dockstore specific",
-        required = true
-    )
+    @ApiModelProperty(value = "This indicates what mode this is in which informs how we do things like refresh, dockstore specific", required = true)
     private ContainerMode mode = ContainerMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
@@ -107,8 +105,7 @@ public class Container {
             + "when present, this can be used to distinguish between two containers based on the same image, but associated with different "
             + "CWL and Dockerfile documents. i.e. two containers with the same registry+namespace+name but different toolnames "
             + "will be two different entries in the dockstore registry/namespace/name/tool, different options to edit tags, and "
-            + "only the same insofar as they would \"docker pull\" the same image, required: GA4GH",
-    required = true)
+            + "only the same insofar as they would \"docker pull\" the same image, required: GA4GH", required = true)
     private String toolname = "";
 
     @Column
@@ -155,13 +152,13 @@ public class Container {
     private boolean hasCollab;
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
-    @JoinTable(name = "containertag", joinColumns = { @JoinColumn(name = "containerid", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "tagid", referencedColumnName = "id") })
+    @JoinTable(name = "containertag", joinColumns = @JoinColumn(name = "containerid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "tagid", referencedColumnName = "id"))
     @ApiModelProperty("Implementation specific tracking of valid build tags for the docker container")
     @OrderBy("id")
     private final SortedSet<Tag> tags;
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "containerlabel", joinColumns = { @JoinColumn(name = "containerid", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "labelid", referencedColumnName = "id") })
+    @JoinTable(name = "containerlabel", joinColumns = @JoinColumn(name = "containerid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "labelid", referencedColumnName = "id"))
     @ApiModelProperty("Labels (i.e. meta tags) for describing the purpose and contents of containers")
     @OrderBy("id")
     private SortedSet<Label> labels;

@@ -32,15 +32,15 @@ import io.swagger.annotations.ApiModelProperty;
 
 /**
  * This describes a descriptive label that can be placed on an entry in the dockstore, implementation specific.
+ * 
  * @author oicr-vchung
  */
 @ApiModel(value = "Label", description = "This describes a descriptive label that can be placed on an entry in the dockstore")
 @Entity
 @Table(name = "label")
-@NamedQuery(name = "io.dockstore.webservice.core.Label.findByLabelValue",
-			query = "SELECT l FROM Label l WHERE l.value = :labelValue")
-public class Label implements Comparable<Label>{
-	
+@NamedQuery(name = "io.dockstore.webservice.core.Label.findByLabelValue", query = "SELECT l FROM Label l WHERE l.value = :labelValue")
+public class Label implements Comparable<Label> {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @ApiModelProperty("Implementation specific ID for the container in this web service")

@@ -38,7 +38,6 @@ public class ImageRegistryFactory {
         return interfaces;
     }
 
-
     public ImageRegistryInterface createImageRegistry(Registry registry) {
         if (registry == Registry.QUAY_IO) {
             return new QuayImageRegistry(client, objectMapper, quayToken);

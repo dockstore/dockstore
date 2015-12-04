@@ -29,7 +29,7 @@ import javax.ws.rs.core.MediaType;
  * @author dyuen
  */
 @Path("/integration.quay.io")
-@Api(value = "/integration.quay.io")
+@Api("/integration.quay.io")
 @Produces(MediaType.TEXT_HTML)
 public class QuayIOAuthenticationResource {
     private final String clientID;

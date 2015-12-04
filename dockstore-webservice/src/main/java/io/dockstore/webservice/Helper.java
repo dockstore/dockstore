@@ -95,8 +95,9 @@ public final class Helper {
      *            docker image path -> list of corresponding Tags
      */
     @SuppressWarnings("checkstyle:parameternumber")
-    private static void updateTags(final Iterable<Container> containers, final HttpClient client, final ContainerDAO containerDAO, final TagDAO tagDAO, final FileDAO fileDAO,
-            final Token githubToken, final Token bitbucketToken, final Map<String, List<Tag>> tagMap) {
+    private static void updateTags(final Iterable<Container> containers, final HttpClient client, final ContainerDAO containerDAO,
+            final TagDAO tagDAO, final FileDAO fileDAO, final Token githubToken, final Token bitbucketToken,
+            final Map<String, List<Tag>> tagMap) {
         for (final Container container : containers) {
             LOG.info("--------------- Updating tags for {} ---------------", container.getToolPath());
 
@@ -230,9 +231,8 @@ public final class Helper {
      * @param containerDAO
      * @return list of newly updated containers
      */
-    private static List<Container> updateContainers(final Iterable<Container> apiContainerList, final List<Container> dbContainerList, final User user,
-            final ContainerDAO containerDAO) {
-
+    private static List<Container> updateContainers(final Iterable<Container> apiContainerList, final List<Container> dbContainerList,
+            final User user, final ContainerDAO containerDAO) {
 
         final List<Container> toDelete = new ArrayList<>();
         // Find containers that the user no longer has
@@ -242,7 +242,7 @@ public final class Helper {
             for (final Container newContainer : apiContainerList) {
                 if (newContainer.getName().equals(oldContainer.getName())
                         && newContainer.getNamespace().equals(oldContainer.getNamespace())
-                        && newContainer.getRegistry().equals(oldContainer.getRegistry())) {
+                        && newContainer.getRegistry() == oldContainer.getRegistry()) {
                     exists = true;
                     break;
                 }
@@ -271,7 +271,7 @@ public final class Helper {
 
             // Find if container already exists, but does not belong to user
             if (!exists) {
-                Container oldContainer = containerDAO.findByToolPath(path,newContainer.getToolname());
+                Container oldContainer = containerDAO.findByToolPath(path, newContainer.getToolname());
                 if (oldContainer != null) {
                     exists = true;
                     oldContainer.update(newContainer);
@@ -326,8 +326,7 @@ public final class Helper {
      */
     @SuppressWarnings("checkstyle:parameternumber")
     private static Map<String, List<Tag>> getTags(final HttpClient client, final List<Container> containers,
-            final ObjectMapper objectMapper, final Token quayToken,
-            final Map<String, ArrayList<?>> mapOfBuilds) {
+            final ObjectMapper objectMapper, final Token quayToken, final Map<String, ArrayList<?>> mapOfBuilds) {
         final Map<String, List<Tag>> tagMap = new HashMap<>();
 
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
@@ -518,6 +517,7 @@ public final class Helper {
 
     /**
      * Gets containers for the current user
+     * 
      * @param userId
      * @param userDAO
      * @return
@@ -554,9 +554,9 @@ public final class Helper {
 
         String fileName = "";
 
-        if (fileType.equals(FileType.DOCKERFILE)) {
+        if (fileType == FileType.DOCKERFILE) {
             fileName = tag.getDockerfilePath();
-        } else if (fileType.equals(FileType.DOCKSTORE_CWL)) {
+        } else if (fileType == FileType.DOCKSTORE_CWL) {
             fileName = tag.getCwlPath();
         }
 
@@ -605,9 +605,9 @@ public final class Helper {
             Optional<String> asString = ResourceUtilities.bitbucketPost(url, null, client, bitbucketClientID, bitbucketClientSecret,
                     "grant_type=refresh_token&refresh_token=" + token.getRefreshToken());
 
-            String accessToken;
-            String refreshToken;
             if (asString.isPresent()) {
+                String accessToken;
+                String refreshToken;
                 LOG.info("RESOURCE CALL: {}", url);
                 String json = asString.get();
 

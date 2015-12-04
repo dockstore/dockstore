@@ -5,6 +5,7 @@ import io.swagger.annotations.ApiModelProperty;
 
 /**
  * This enumerates the types of docker registry that we can associate an entry with.
+ * 
  * @author dyuen
  */
 @ApiModel(description = "This enumerates the types of docker registry that we can associate an entry with. ")

@@ -85,7 +85,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         } else {
             LOG.info("Github found for: {}", repository.getName());
             try {
-                List<RepositoryContents> contents = null;
+                List<RepositoryContents> contents;
                 contents = cService.getContents(repository, fileName);
                 if (!(contents == null || contents.isEmpty())) {
                     String encoded = contents.get(0).getContent().replace("\n", "");

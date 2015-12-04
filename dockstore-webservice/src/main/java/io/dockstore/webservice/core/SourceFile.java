@@ -30,6 +30,7 @@ import io.swagger.annotations.ApiModelProperty;
 
 /**
  * This describes a cached copy of a remotely accessible file. Implementation specific.
+ * 
  * @author xliu
  */
 @ApiModel("SourceFile")

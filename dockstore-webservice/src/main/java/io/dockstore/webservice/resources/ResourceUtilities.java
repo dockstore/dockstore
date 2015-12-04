@@ -80,10 +80,9 @@ public class ResourceUtilities {
             result = Optional.of(client.execute(httpGet, responseHandler));
         } catch (HttpResponseException httpResponseException) {
             LOG.error("getResponseAsString(): caught 'HttpResponseException' while processing request <{}> :=> <{}>", httpGet,
-                httpResponseException.getMessage());
+                    httpResponseException.getMessage());
         } catch (IOException ioe) {
-            LOG.error("getResponseAsString(): caught 'IOException' while processing request <{}> :=> <{}>", httpGet,
-                ioe.getMessage());
+            LOG.error("getResponseAsString(): caught 'IOException' while processing request <{}> :=> <{}>", httpGet, ioe.getMessage());
         } finally {
             httpGet.releaseConnection();
         }
@@ -97,10 +96,9 @@ public class ResourceUtilities {
             result = Optional.of(client.execute(httpPost, responseHandler));
         } catch (HttpResponseException httpResponseException) {
             LOG.error("getResponseAsString(): caught 'HttpResponseException' while processing request <{}> :=> <{}>", httpPost,
-                httpResponseException.getMessage());
+                    httpResponseException.getMessage());
         } catch (IOException ioe) {
-            LOG.error("getResponseAsString(): caught 'IOException' while processing request <{}> :=> <{}>", httpPost,
-                ioe.getMessage());
+            LOG.error("getResponseAsString(): caught 'IOException' while processing request <{}> :=> <{}>", httpPost, ioe.getMessage());
         } finally {
             httpPost.releaseConnection();
         }

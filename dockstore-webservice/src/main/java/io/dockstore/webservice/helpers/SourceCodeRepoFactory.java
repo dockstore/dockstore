@@ -33,9 +33,9 @@ public class SourceCodeRepoFactory {
         String gitRepository = repoUrlMap.get("Repository");
 
         SourceCodeRepoInterface repo;
-        if (source.equals("github.com")) {
+        if ("github.com".equals(source)) {
             repo = new GitHubSourceCodeRepo(gitUsername, githubTokenContent, gitRepository);
-        } else if (source.equals("bitbucket.org")) {
+        } else if ("bitbucket.org".equals(source)) {
             if (bitbucketTokenContent != null) {
                 repo = new BitBucketSourceCodeRepo(gitUsername, client, bitbucketTokenContent, gitRepository);
             } else {

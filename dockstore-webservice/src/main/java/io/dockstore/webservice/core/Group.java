@@ -39,12 +39,13 @@ import io.swagger.annotations.ApiModel;
 
 /**
  * This describes a grouping of end-users for the purposes of managing sharing.
+ * 
  * @author xliu
  */
 @ApiModel(value = "Group", description = "This describes a grouping of end-users for the purposes of managing sharing. Implementation-specific.")
 @Entity
 @Table(name = "usergroup")
-@NamedQueries({ @NamedQuery(name = "io.dockstore.webservice.core.Group.findAll", query = "SELECT t FROM Group t") })
+@NamedQueries(@NamedQuery(name = "io.dockstore.webservice.core.Group.findAll", query = "SELECT t FROM Group t"))
 public class Group {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -55,7 +56,7 @@ public class Group {
     private String name;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
-    @JoinTable(name = "endusergroup", inverseJoinColumns = { @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id") }, joinColumns = { @JoinColumn(name = "groupid", nullable = false, updatable = false, referencedColumnName = "id") })
+    @JoinTable(name = "endusergroup", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "groupid", nullable = false, updatable = false, referencedColumnName = "id"))
     private final Set<User> users;
 
     public Group() {
