@@ -68,8 +68,6 @@ public final class Helper {
 
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
 
-    public static final String DOCKSTORE_CWL = "Dockstore.cwl";
-
     public static class RepoList {
 
         private List<Container> repositories;
