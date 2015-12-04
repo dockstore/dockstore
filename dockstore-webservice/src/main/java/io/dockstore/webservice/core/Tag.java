@@ -111,6 +111,7 @@ public class Tag implements Comparable<Tag> {
             setReference(tag.getReference());
         }
 
+        setName(tag.getName());
         setAutomated(tag.isAutomated());
         setImageId(tag.getImageId());
         setLastModified(tag.getLastModified());
