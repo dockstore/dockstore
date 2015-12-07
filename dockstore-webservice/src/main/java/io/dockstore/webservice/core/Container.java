@@ -221,8 +221,8 @@ public class Container {
             StringBuilder builder = new StringBuilder();
             if (registry == Registry.QUAY_IO) {
                 builder.append("quay.io/");
-                // } else {
-                // builder.append("registry.hub.docker.com/");
+            } else {
+                builder.append("registry.hub.docker.com/");
             }
             builder.append(namespace).append('/').append(name);
             repositoryPath = builder.toString();

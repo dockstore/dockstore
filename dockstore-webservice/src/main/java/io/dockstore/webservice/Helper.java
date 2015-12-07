@@ -254,9 +254,7 @@ public final class Helper {
             final Container oldContainer = iterator.next();
             boolean exists = false;
             for (final Container newContainer : apiContainerList) {
-                if (newContainer.getName().equals(oldContainer.getName())
-                        && newContainer.getNamespace().equals(oldContainer.getNamespace())
-                        && newContainer.getRegistry() == oldContainer.getRegistry()) {
+                if (newContainer.getToolPath().equals(oldContainer.getToolPath())) {
                     exists = true;
                     break;
                 }
