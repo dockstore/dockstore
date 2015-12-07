@@ -90,8 +90,18 @@ public class CommonTestUtilities {
                     new KeyedHandler<>("id"));
             runInsertStatement("insert into usercontainer(userid, containerid) VALUES (1, 6);", new KeyedHandler<>("containerid"));
             runInsertStatement("insert into usercontainer(userid, containerid) VALUES (2, 6);", new KeyedHandler<>("containerid"));
+
+            runInsertStatement("insert into tag(id, valid, automated, hidden, size) VALUES (1, true, true, false, 0);", new KeyedHandler<>(
+                    "id"));
+            runInsertStatement("insert into containertag(containerid, tagid) VALUES (6, 1);", new KeyedHandler<>("tagid"));
+
+            runInsertStatement("insert into tag(id, valid, automated, hidden, size) VALUES (2, true, true, false, 0);", new KeyedHandler<>(
+                    "id"));
+            runInsertStatement("insert into containertag(containerid, tagid) VALUES (5, 2);", new KeyedHandler<>("tagid"));
+
             // need to increment past manually entered ids above
             runUpdateStatement("alter sequence container_id_seq restart with 1000;");
+            runUpdateStatement("alter sequence tag_id_seq restart with 1000;");
         }
 
         @Override

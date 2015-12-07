@@ -16,6 +16,9 @@
  */
 package io.dockstore.client.cli;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -38,16 +41,13 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.Container;
+import io.swagger.client.model.Container.ModeEnum;
+import io.swagger.client.model.Container.RegistryEnum;
 import io.swagger.client.model.Group;
 import io.swagger.client.model.RegisterRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Token;
 import io.swagger.client.model.User;
-
-import static io.swagger.client.model.Container.*;
-import static io.swagger.client.model.Container.RegistryEnum;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  *
@@ -160,14 +160,16 @@ public class SystemClientIT {
         c.setMode(ModeEnum.MANUAL_IMAGE_PATH);
         c.setName("seqware_full");
         c.setName("seqware");
-        c.setGitUrl("git@github.com:denis-yuen/test1.git");
+        c.setGitUrl("https://github.com/denis-yuen/test1");
         c.setDefaultDockerfilePath("/Dockerfile");
         c.setDefaultCwlPath("/Dockstore.cwl");
         c.setRegistry(RegistryEnum.DOCKER_HUB);
         c.setIsRegistered(true);
         c.setIsPublic(true);
+        c.setValidTrigger(true);
         Tag tag = new Tag();
         tag.setReference("refs/heads/master");
+        tag.setValid(true);
         c.getTags().add(tag);
         c.setToolname("test5");
         return c;

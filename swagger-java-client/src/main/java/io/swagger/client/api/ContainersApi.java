@@ -1,21 +1,19 @@
 package io.swagger.client.api;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
+import io.swagger.client.ApiClient;
 import io.swagger.client.Configuration;
 import io.swagger.client.Pair;
 import io.swagger.client.TypeRef;
+
 import io.swagger.client.model.Container;
-import io.swagger.client.model.RegisterRequest;
 import io.swagger.client.model.SourceFile;
+import io.swagger.client.model.RegisterRequest;
 import io.swagger.client.model.User;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-02T14:35:44.113-05:00")
+import java.util.*;
+
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-07T10:37:32.809-05:00")
 public class ContainersApi {
   private ApiClient apiClient;
 

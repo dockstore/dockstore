@@ -44,14 +44,13 @@ import io.swagger.client.Configuration;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.Container;
+import io.swagger.client.model.Container.ModeEnum;
+import io.swagger.client.model.Container.RegistryEnum;
 import io.swagger.client.model.RegisterRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.User;
 import javassist.NotFoundException;
-
-import static io.swagger.client.model.Container.ModeEnum;
-import static io.swagger.client.model.Container.RegistryEnum;
 
 /**
  *
@@ -236,7 +235,7 @@ public class Client {
             String description = "";
             String gitUrl = "";
 
-            if (container.getHasCollab()) {
+            if (container.getValidTrigger()) {
                 cwl = "Yes";
             }
 
@@ -537,7 +536,7 @@ public class Client {
 
         try {
             Container container = containersApi.getContainerByToolPath(path);
-            if (container.getHasCollab()) {
+            if (container.getValidTrigger()) {
                 try {
                     SourceFile file = containersApi.cwl(container.getId(), tag);
                     if (file.getContent() != null && !file.getContent().isEmpty()) {

@@ -179,7 +179,7 @@ public class Container {
         isStarred = container.getIsStarred();
         lastModified = container.getLastModified();
         lastBuild = container.getLastBuild();
-        validTrigger = container.hasValidTrigger();
+        validTrigger = container.getValidTrigger();
         author = container.getAuthor();
 
         gitUrl = container.getGitUrl();
@@ -271,7 +271,7 @@ public class Container {
     }
 
     @JsonProperty
-    public boolean hasValidTrigger() {
+    public boolean getValidTrigger() {
         return validTrigger;
     }
 

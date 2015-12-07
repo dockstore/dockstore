@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 @ApiModel(description = "")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-02T14:35:44.113-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-07T10:37:32.809-05:00")
 public class Tag   {
   
   private Long id = null;
@@ -21,6 +21,7 @@ public class Tag   {
   private String reference = null;
   private List<SourceFile> sourceFiles = new ArrayList<SourceFile>();
   private Boolean hidden = null;
+  private Boolean valid = null;
   private Boolean automated = null;
   private String imageId = null;
   private Date lastModified = null;
@@ -106,8 +107,22 @@ public class Tag   {
 
   
   /**
+   * whether this tag has valid files or not
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "whether this tag has valid files or not")
+  @JsonProperty("valid")
+  public Boolean getValid() {
+    return valid;
+  }
+  public void setValid(Boolean valid) {
+    this.valid = valid;
+  }
+
+  
+  /**
+   * whether this tag has an automated build or not
+   **/
+  @ApiModelProperty(value = "whether this tag has an automated build or not")
   @JsonProperty("automated")
   public Boolean getAutomated() {
     return automated;
@@ -178,6 +193,7 @@ public class Tag   {
     sb.append("    reference: ").append(StringUtil.toIndentedString(reference)).append("\n");
     sb.append("    sourceFiles: ").append(StringUtil.toIndentedString(sourceFiles)).append("\n");
     sb.append("    hidden: ").append(StringUtil.toIndentedString(hidden)).append("\n");
+    sb.append("    valid: ").append(StringUtil.toIndentedString(valid)).append("\n");
     sb.append("    automated: ").append(StringUtil.toIndentedString(automated)).append("\n");
     sb.append("    imageId: ").append(StringUtil.toIndentedString(imageId)).append("\n");
     sb.append("    lastModified: ").append(StringUtil.toIndentedString(lastModified)).append("\n");

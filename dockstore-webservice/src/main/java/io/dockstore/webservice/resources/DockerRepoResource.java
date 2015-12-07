@@ -305,7 +305,7 @@ public class DockerRepoResource {
                 }
             }
 
-            if (validTag && c.hasValidTrigger() && !c.getGitUrl().isEmpty()) {
+            if (validTag && c.getValidTrigger() && !c.getGitUrl().isEmpty()) {
                 c.setIsRegistered(true);
             } else {
                 throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
