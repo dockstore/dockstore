@@ -149,7 +149,7 @@ public class Container {
     private boolean isRegistered;
     @Column
     @ApiModelProperty("Implementation specific, this image has a Dockstore.cwl associated with it")
-    private boolean hasCollab;
+    private boolean validTrigger;
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinTable(name = "containertag", joinColumns = @JoinColumn(name = "containerid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "tagid", referencedColumnName = "id"))
@@ -188,7 +188,7 @@ public class Container {
         isStarred = container.getIsStarred();
         lastModified = container.getLastModified();
         lastBuild = container.getLastBuild();
-        hasCollab = container.getHasCollab();
+        validTrigger = container.getValidTrigger();
         author = container.getAuthor();
 
         gitUrl = container.getGitUrl();
@@ -280,8 +280,8 @@ public class Container {
     }
 
     @JsonProperty
-    public boolean getHasCollab() {
-        return hasCollab;
+    public boolean getValidTrigger() {
+        return validTrigger;
     }
 
     @JsonProperty
@@ -381,8 +381,8 @@ public class Container {
         this.lastBuild = lastBuild;
     }
 
-    public void setHasCollab(boolean hasCollab) {
-        this.hasCollab = hasCollab;
+    public void setValidTrigger(boolean validTrigger) {
+        this.validTrigger = validTrigger;
     }
 
     public void setAuthor(String author) {

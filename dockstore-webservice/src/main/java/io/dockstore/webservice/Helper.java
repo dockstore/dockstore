@@ -68,6 +68,8 @@ public final class Helper {
 
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
 
+    // public static final String DOCKSTORE_CWL = "Dockstore.cwl";
+
     public static class RepoList {
 
         private List<Container> repositories;
@@ -160,6 +162,9 @@ public final class Helper {
                     // Set<SourceFile> oldFiles = tag.getSourceFiles();
                     tag.getSourceFiles().clear();
 
+                    boolean hasCwl = false;
+                    boolean hasDockerfile = false;
+
                     for (SourceFile newFile : newFiles) {
                         // boolean exists = false;
                         // for (SourceFile oldFile : oldFiles) {
@@ -180,7 +185,16 @@ public final class Helper {
 
                         // oldFiles.add(newFile);
                         // }
+
+                        if (file.getType() == FileType.DOCKERFILE) {
+                            hasDockerfile = true;
+                        }
+                        if (file.getType() == FileType.DOCKSTORE_CWL) {
+                            hasCwl = true;
+                        }
                     }
+
+                    tag.setValid(hasCwl && hasDockerfile);
 
                     long id = tagDAO.create(tag);
                     tag = tagDAO.findById(id);
@@ -240,9 +254,7 @@ public final class Helper {
             final Container oldContainer = iterator.next();
             boolean exists = false;
             for (final Container newContainer : apiContainerList) {
-                if (newContainer.getName().equals(oldContainer.getName())
-                        && newContainer.getNamespace().equals(oldContainer.getNamespace())
-                        && newContainer.getRegistry() == oldContainer.getRegistry()) {
+                if (newContainer.getToolPath().equals(oldContainer.getToolPath())) {
                     exists = true;
                     break;
                 }
@@ -702,5 +714,27 @@ public final class Helper {
             throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
         }
         container.forEach(Helper::checkContainer);
+    }
+
+    public static String convertHttpsToSsh(String url) {
+        Pattern p = Pattern.compile("^(https?:)?\\/\\/(www\\.)?(github\\.com|bitbucket\\.org)\\/([\\w-]+)\\/([\\w-]+)$");
+        Matcher m = p.matcher(url);
+        if (!m.find()) {
+            LOG.info("Cannot parse url: " + url);
+            return null;
+        }
+
+        // These correspond to the positions of the pattern matcher
+        final int sourceIndex = 3;
+        final int usernameIndex = 4;
+        final int reponameIndex = 5;
+
+        String source = m.group(sourceIndex);
+        String gitUsername = m.group(usernameIndex);
+        String gitRepository = m.group(reponameIndex);
+
+        String ssh = "git@" + source + ":" + gitUsername + "/" + gitRepository + ".git";
+
+        return ssh;
     }
 }

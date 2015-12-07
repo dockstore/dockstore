@@ -11,7 +11,7 @@ import java.util.*;
 
 import java.util.*;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-02T14:35:44.113-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-07T10:37:32.809-05:00")
 public class ContainertagsApi {
   private ApiClient apiClient;
 
@@ -182,6 +182,59 @@ public class ContainertagsApi {
     
     TypeRef returnType = new TypeRef<List<Tag>>() {};
     return apiClient.invokeAPI(path, "POST", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    
+  }
+  
+  /**
+   * Delete tag linked to a container
+   * Tag correspond to each row of the versions table listing all information for a docker repo tag
+   * @param containerId Container to modify.
+   * @param tagId Tag to delete
+   * @return void
+   */
+  public void deleteTags (Long containerId, Long tagId) throws ApiException {
+    Object postBody = null;
+    
+    // verify the required parameter 'containerId' is set
+    if (containerId == null) {
+      throw new ApiException(400, "Missing the required parameter 'containerId' when calling deleteTags");
+    }
+    
+    // verify the required parameter 'tagId' is set
+    if (tagId == null) {
+      throw new ApiException(400, "Missing the required parameter 'tagId' when calling deleteTags");
+    }
+    
+    // create path and map variables
+    String path = "/containers/{containerId}/tags/{tagId}".replaceAll("\\{format\\}","json")
+      .replaceAll("\\{" + "containerId" + "\\}", apiClient.escapeString(containerId.toString()))
+      .replaceAll("\\{" + "tagId" + "\\}", apiClient.escapeString(tagId.toString()));
+
+    // query params
+    List<Pair> queryParams = new ArrayList<Pair>();
+    Map<String, String> headerParams = new HashMap<String, String>();
+    Map<String, Object> formParams = new HashMap<String, Object>();
+
+    
+
+    
+
+    
+
+    final String[] accepts = {
+      "application/json"
+    };
+    final String accept = apiClient.selectHeaderAccept(accepts);
+
+    final String[] contentTypes = {
+      "application/json"
+    };
+    final String contentType = apiClient.selectHeaderContentType(contentTypes);
+
+    String[] authNames = new String[] {  };
+
+    
+    apiClient.invokeAPI(path, "DELETE", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, null);
     
   }
   

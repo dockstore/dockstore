@@ -50,6 +50,7 @@ import com.google.gson.Gson;
 import io.dockstore.webservice.Helper;
 import io.dockstore.webservice.api.RegisterRequest;
 import io.dockstore.webservice.core.Container;
+import io.dockstore.webservice.core.ContainerMode;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
@@ -269,6 +270,8 @@ public class DockerRepoResource {
         container.getLabels().clear();
         container.getLabels().addAll(createdLabels);
 
+        container.setGitUrl(Helper.convertHttpsToSsh(container.getGitUrl()));
+
         long id = containerDAO.create(container);
         Container created = containerDAO.findById(id);
         return created;
@@ -287,8 +290,23 @@ public class DockerRepoResource {
 
         User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
+
         if (request.getRegister()) {
-            if (c.getHasCollab() && !c.getGitUrl().isEmpty()) {
+            boolean validTag = false;
+
+            if (c.getMode() == ContainerMode.MANUAL_IMAGE_PATH) {
+                validTag = true;
+            } else {
+                Set<Tag> tags = c.getTags();
+                for (Tag tag : tags) {
+                    if (tag.isValid()) {
+                        validTag = true;
+                        break;
+                    }
+                }
+            }
+
+            if (validTag && c.getValidTrigger() && !c.getGitUrl().isEmpty()) {
                 c.setIsRegistered(true);
             } else {
                 throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);

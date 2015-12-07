@@ -99,6 +99,10 @@ public class Tag implements Comparable<Tag> {
     private boolean hidden;
 
     @Column
+    @ApiModelProperty("Implementation specific, whether this tag has valid files from source code repo")
+    private boolean valid;
+
+    @Column
     @ApiModelProperty("Implementation specific, indicates whether this is an automated build on quay.io")
     private boolean automated;
 
@@ -209,6 +213,15 @@ public class Tag implements Comparable<Tag> {
 
     public void setHidden(boolean hidden) {
         this.hidden = hidden;
+    }
+
+    @JsonProperty
+    public boolean isValid() {
+        return valid;
+    }
+
+    public void setValid(boolean valid) {
+        this.valid = valid;
     }
 
     @JsonProperty

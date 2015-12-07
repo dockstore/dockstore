@@ -1,18 +1,20 @@
 package io.swagger.client.model;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 import io.swagger.client.StringUtil;
+import io.swagger.client.model.User;
+import io.swagger.client.model.Label;
+import java.util.*;
+import io.swagger.client.model.Tag;
+import java.util.Date;
+
+
+
+import io.swagger.annotations.*;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 @ApiModel(description = "")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-02T14:35:44.113-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-07T10:37:32.809-05:00")
 public class Container   {
   
   private Long id = null;
@@ -62,7 +64,7 @@ public enum RegistryEnum {
   private Date lastUpdated = null;
   private Date lastBuild = null;
   private String gitUrl = null;
-  private Boolean hasCollab = null;
+  private Boolean validTrigger = null;
   private List<Tag> tags = new ArrayList<Tag>();
   private List<Label> labels = new ArrayList<Label>();
   private String defaultDockerfilePath = null;
@@ -234,12 +236,12 @@ public enum RegistryEnum {
    * This image has a Dockstore.cwl associated with it
    **/
   @ApiModelProperty(value = "This image has a Dockstore.cwl associated with it")
-  @JsonProperty("hasCollab")
-  public Boolean getHasCollab() {
-    return hasCollab;
+  @JsonProperty("validTrigger")
+  public Boolean getValidTrigger() {
+    return validTrigger;
   }
-  public void setHasCollab(Boolean hasCollab) {
-    this.hasCollab = hasCollab;
+  public void setValidTrigger(Boolean validTrigger) {
+    this.validTrigger = validTrigger;
   }
 
   
@@ -388,7 +390,7 @@ public enum RegistryEnum {
     sb.append("    lastUpdated: ").append(StringUtil.toIndentedString(lastUpdated)).append("\n");
     sb.append("    lastBuild: ").append(StringUtil.toIndentedString(lastBuild)).append("\n");
     sb.append("    gitUrl: ").append(StringUtil.toIndentedString(gitUrl)).append("\n");
-    sb.append("    hasCollab: ").append(StringUtil.toIndentedString(hasCollab)).append("\n");
+    sb.append("    validTrigger: ").append(StringUtil.toIndentedString(validTrigger)).append("\n");
     sb.append("    tags: ").append(StringUtil.toIndentedString(tags)).append("\n");
     sb.append("    labels: ").append(StringUtil.toIndentedString(labels)).append("\n");
     sb.append("    defaultDockerfilePath: ").append(StringUtil.toIndentedString(defaultDockerfilePath)).append("\n");

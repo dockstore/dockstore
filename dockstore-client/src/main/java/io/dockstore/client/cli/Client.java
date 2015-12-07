@@ -44,14 +44,13 @@ import io.swagger.client.Configuration;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.Container;
+import io.swagger.client.model.Container.ModeEnum;
+import io.swagger.client.model.Container.RegistryEnum;
 import io.swagger.client.model.RegisterRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.User;
 import javassist.NotFoundException;
-
-import static io.swagger.client.model.Container.ModeEnum;
-import static io.swagger.client.model.Container.RegistryEnum;
 
 /**
  *
@@ -76,6 +75,10 @@ public class Client {
 
     private static void out(String format, Object... args) {
         System.out.println(String.format(format, args));
+    }
+
+    private static void out(String arg) {
+        System.out.println(arg);
     }
 
     private static void err(String format, Object... args) {
@@ -131,7 +134,8 @@ public class Client {
     private static List<String> optVals(List<String> args, String key) {
         List<String> vals = new ArrayList<>();
 
-        for (int i = 0; i < args.size(); /** do nothing */ i = i) {
+        for (int i = 0; i < args.size(); /** do nothing */
+        i = i) {
             String s = args.get(i);
             if (key.equals(s)) {
                 args.remove(i);
@@ -227,7 +231,7 @@ public class Client {
             String description = "";
             String gitUrl = "";
 
-            if (container.getHasCollab()) {
+            if (container.getValidTrigger()) {
                 cwl = "Yes";
             }
 
@@ -334,7 +338,7 @@ public class Client {
                     } catch (ApiException ex) {
                         kill("Unable to publish unknown container " + first);
                     }
-                } else{
+                } else {
                     String toolname = args.get(1);
                     try {
                         Container container = containersApi.getContainerByToolPath(first);
@@ -368,8 +372,6 @@ public class Client {
         }
     }
 
-
-
     private static void manualPublish(List<String> args) {
         if (isHelp(args, true)) {
             out("");
@@ -377,8 +379,7 @@ public class Client {
             out("       dockstore manual_publish <params>");
             out("");
             out("Description:");
-            out("  Manually register an entry in the dockstore. Currently this is used to "
-                    + "register entries for images on Docker Hub .");
+            out("  Manually register an entry in the dockstore. Currently this is used to " + "register entries for images on Docker Hub .");
             out("");
             out("Required parameters:");
             out("  --name <name>                Name for the docker container");
@@ -396,8 +397,8 @@ public class Client {
             final String namespace = reqVal(args, "--namespace");
             final String gitURL = reqVal(args, "--git-url");
 
-            final String dockerfilePath = optVal(args, "--dockerfile-path","/Dockerfile");
-            final String cwlPath = optVal(args, "--cwl-path","Dockstore.cwl");
+            final String dockerfilePath = optVal(args, "--dockerfile-path", "/Dockerfile");
+            final String cwlPath = optVal(args, "--cwl-path", "/Dockstore.cwl");
             final String gitReference = reqVal(args, "--git-reference");
             final String toolname = optVal(args, "--toolname", null);
             final String registry = optVal(args, "--registry", "registry.hub.docker.com");
@@ -406,7 +407,7 @@ public class Client {
             container.setMode(ModeEnum.MANUAL_IMAGE_PATH);
             container.setName(name);
             container.setNamespace(namespace);
-            container.setRegistry("quay.io".equals(registry) ? RegistryEnum.QUAY_IO: RegistryEnum.DOCKER_HUB);
+            container.setRegistry("quay.io".equals(registry) ? RegistryEnum.QUAY_IO : RegistryEnum.DOCKER_HUB);
             container.setDefaultDockerfilePath(dockerfilePath);
             container.setDefaultCwlPath(cwlPath);
             container.setIsPublic(true);
@@ -531,7 +532,7 @@ public class Client {
 
         try {
             Container container = containersApi.getContainerByToolPath(path);
-            if (container.getHasCollab()) {
+            if (container.getValidTrigger()) {
                 try {
                     SourceFile file = containersApi.cwl(container.getId(), tag);
                     if (file.getContent() != null && !file.getContent().isEmpty()) {
@@ -578,8 +579,7 @@ public class Client {
         String userHome = System.getProperty("user.home");
 
         try {
-            String configFile = optVal(args,"--config",userHome + File.separator + ".dockstore" + File.separator
-                                                           + "config");
+            String configFile = optVal(args, "--config", userHome + File.separator + ".dockstore" + File.separator + "config");
             InputStreamReader f = new InputStreamReader(new FileInputStream(configFile), Charset.defaultCharset());
             YamlReader reader = new YamlReader(f);
             Object object = reader.read();
@@ -598,14 +598,14 @@ public class Client {
                 System.exit(GENERIC_ERROR);
             }
 
-            ApiClient defaultApiClient; defaultApiClient = Configuration.getDefaultApiClient();
+            ApiClient defaultApiClient;
+            defaultApiClient = Configuration.getDefaultApiClient();
             defaultApiClient.addDefaultHeader("Authorization", "Bearer " + token);
             defaultApiClient.setBasePath(serverUrl);
             containersApi = new ContainersApi(defaultApiClient);
             usersApi = new UsersApi(defaultApiClient);
 
             defaultApiClient.setDebugging(DEBUG.get());
-
 
             if (isHelp(args, true)) {
                 out("");
@@ -683,7 +683,7 @@ public class Client {
         } catch (FileNotFoundException | YamlException | NotFoundException | ApiException ex) {
             out("Exception: " + ex);
             System.exit(GENERIC_ERROR);
-        } catch(ProcessingException ex){
+        } catch (ProcessingException ex) {
             out("Could not connect to Dockstore web service: " + ex);
             System.exit(CONNECTION_ERROR);
         }
