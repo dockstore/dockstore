@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
 
+import io.dockstore.webservice.Helper;
 import io.dockstore.webservice.Helper.RepoList;
 import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.ContainerMode;
@@ -218,41 +219,43 @@ public class QuayImageRegistry implements ImageRegistryInterface {
         container.setGitUrl(gitURL);
     }
 
-    // private void checkTriggers(Container container) {
-    // final String repo = container.getNamespace() + "/" + container.getName();
-    //
-    // String urlBuilds = QUAY_URL + "repository/" + repo + "/trigger/";
-    // Optional<String> asStringBuilds = ResourceUtilities.asString(urlBuilds, quayToken.getContent(), client);
-    // LOG.info("RESOURCE CALL: " + urlBuilds);
-    //
-    // if (asStringBuilds.isPresent()) {
-    // String json = asStringBuilds.get();
-    //
-    // final Gson gson = new Gson();
-    //
-    // Map<String, ArrayList> map = new HashMap<>();
-    // map = (Map<String, ArrayList>) gson.fromJson(json, map.getClass());
-    // ArrayList triggers = map.get("triggers");
-    //
-    // boolean validTrigger = false;
-    //
-    // // TODO: for now, we only allow user to have only 1 trigger from either github or bitbucket
-    // if (triggers != null && triggers.size() == 1) {
-    // Map<String, String> triggerMap = (Map<String, String>) triggers.get(0);
-    //
-    // String service = triggerMap.get("service");
-    //
-    // if (service.equals("github") || service.equals("bitbucket")) {
-    //
-    // String gitURL = Helper.convertHttpsToSsh(triggerMap.get("repository_url"));
-    //
-    // container.setRegistry(Registry.QUAY_IO);
-    // container.setGitUrl(gitURL);
-    // validTrigger = true;
-    // }
-    // }
-    //
-    // container.setValidTrigger(validTrigger);
-    // }
-    // }
+    // TODO: This method may have some use later. It uses /api/v1/repository/{repository}/trigger/ to get the git URL for a container, and
+    // checks if it has only one trigger from one source (bitbucket/github).
+    private void checkTriggers(Container container) {
+        final String repo = container.getNamespace() + "/" + container.getName();
+
+        String urlBuilds = QUAY_URL + "repository/" + repo + "/trigger/";
+        Optional<String> asStringBuilds = ResourceUtilities.asString(urlBuilds, quayToken.getContent(), client);
+        LOG.info("RESOURCE CALL: " + urlBuilds);
+
+        if (asStringBuilds.isPresent()) {
+            String json = asStringBuilds.get();
+
+            final Gson gson = new Gson();
+
+            Map<String, ArrayList> map = new HashMap<>();
+            map = (Map<String, ArrayList>) gson.fromJson(json, map.getClass());
+            ArrayList triggers = map.get("triggers");
+
+            boolean validTrigger = false;
+
+            // TODO: for now, we only allow user to have only 1 trigger from either github or bitbucket
+            if (triggers != null && triggers.size() == 1) {
+                Map<String, String> triggerMap = (Map<String, String>) triggers.get(0);
+
+                String service = triggerMap.get("service");
+
+                if (service.equals("github") || service.equals("bitbucket")) {
+
+                    String gitURL = Helper.convertHttpsToSsh(triggerMap.get("repository_url"));
+
+                    container.setRegistry(Registry.QUAY_IO);
+                    container.setGitUrl(gitURL);
+                    validTrigger = true;
+                }
+            }
+
+            container.setValidTrigger(validTrigger);
+        }
+    }
 }
