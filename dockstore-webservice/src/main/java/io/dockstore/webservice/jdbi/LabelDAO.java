@@ -33,11 +33,9 @@ public class LabelDAO extends AbstractDAO<Label> {
     public Label findById(Long id) {
         return get(id);
     }
-    
+
     public Label findByLabelValue(String labelValue) {
-    	return uniqueResult(
-    		namedQuery("io.dockstore.webservice.core.Label.findByLabelValue")
-    		.setParameter("labelValue", labelValue));
+        return uniqueResult(namedQuery("io.dockstore.webservice.core.Label.findByLabelValue").setParameter("labelValue", labelValue));
     }
 
     public long create(Label label) {

@@ -53,6 +53,7 @@ import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.ContainerMode;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.SourceFile.FileType;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
@@ -74,7 +75,7 @@ import io.swagger.annotations.ApiParam;
  * @author dyuen
  */
 @Path("/containers")
-@Api(value = "containers")
+@Api("containers")
 @Produces(MediaType.APPLICATION_JSON)
 public class DockerRepoResource {
 
@@ -98,7 +99,7 @@ public class DockerRepoResource {
     @SuppressWarnings("checkstyle:parameternumber")
     public DockerRepoResource(ObjectMapper mapper, HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ContainerDAO containerDAO,
             TagDAO tagDAO, LabelDAO labelDAO, FileDAO fileDAO, String bitbucketClientID, String bitbucketClientSecret) {
-        this.objectMapper = mapper;
+        objectMapper = mapper;
         this.userDAO = userDAO;
         this.tokenDAO = tokenDAO;
         this.tagDAO = tagDAO;
@@ -122,7 +123,7 @@ public class DockerRepoResource {
         User authUser = userDAO.findById(authToken.getUserId());
         Helper.checkUser(authUser);
 
-        List<Container> containers = new ArrayList<>();
+        List<Container> containers;
         List<User> users = userDAO.findAll();
         for (User user : users) {
             try {
@@ -136,7 +137,7 @@ public class DockerRepoResource {
                 Helper.refresh(user.getId(), client, objectMapper, userDAO, containerDAO, tokenDAO, tagDAO, fileDAO);
                 // containers.addAll(userDAO.findById(user.getId()).getContainers());
             } catch (WebApplicationException ex) {
-                LOG.info("Failed to refresh user " + user.getId());
+                LOG.info("Failed to refresh user {}", user.getId());
             }
         }
 
@@ -420,13 +421,13 @@ public class DockerRepoResource {
 
                 if (asString.isPresent()) {
                     String json = asString.get();
-                    LOG.info("RESOURCE CALL: " + url);
+                    LOG.info("RESOURCE CALL: {}", url);
 
                     Gson gson = new Gson();
                     Map<String, ArrayList> map = new HashMap<>();
                     map = (Map<String, ArrayList>) gson.fromJson(json, map.getClass());
 
-                    Map<String, Map<String, String>> map2 = new HashMap<>();
+                    Map<String, Map<String, String>> map2;
 
                     if (!map.get("builds").isEmpty()) {
                         map2 = (Map<String, Map<String, String>>) map.get("builds").get(0);
@@ -442,7 +443,7 @@ public class DockerRepoResource {
 
                     builder.append(asString.get());
                 }
-                builder.append("\n");
+                builder.append('\n');
             }
         }
 
@@ -487,11 +488,11 @@ public class DockerRepoResource {
     public SourceFile dockerfile(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag) {
 
-        return getSourceFile(containerId, tag, SourceFile.FileType.DOCKERFILE);
+        return getSourceFile(containerId, tag, FileType.DOCKERFILE);
     }
 
     private SourceFile getSourceFile(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
-            @QueryParam("tag") String tag, SourceFile.FileType dockerfile) {
+            @QueryParam("tag") String tag, FileType dockerfile) {
         Container container = containerDAO.findById(containerId);
         Helper.checkContainer(container);
         Tag tagInstance = null;
@@ -510,7 +511,7 @@ public class DockerRepoResource {
             throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
         } else {
             for (SourceFile file : tagInstance.getSourceFiles()) {
-                if (file.getType().equals(dockerfile)) {
+                if (file.getType() == dockerfile) {
                     return file;
                 }
             }
@@ -527,6 +528,6 @@ public class DockerRepoResource {
     public SourceFile cwl(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag) {
 
-        return getSourceFile(containerId, tag, SourceFile.FileType.DOCKSTORE_CWL);
+        return getSourceFile(containerId, tag, FileType.DOCKSTORE_CWL);
     }
 }

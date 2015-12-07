@@ -1,11 +1,14 @@
 package io.dockstore.webservice.core;
 
+import io.swagger.annotations.ApiModel;
+
 /**
  * This enumerates the types of containers (really, images) that we can add to the dockstore. This will become more prominent later if we
  * proceed with privacy and http link support.
  * 
  * @author dyuen
  */
+@ApiModel(description = "This enumerates the types of containers (really, images) that we can add to the dockstore. Implementation specific.")
 public enum ContainerMode {
     /**
      * from quay.io automated builds or not, try to track back to source control regardless of whether it is github or bitbucket and find

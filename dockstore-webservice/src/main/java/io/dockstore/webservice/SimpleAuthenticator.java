@@ -16,13 +16,15 @@
  */
 package io.dockstore.webservice;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.base.Optional;
+
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dropwizard.auth.AuthenticationException;
 import io.dropwizard.auth.Authenticator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -38,7 +40,7 @@ public class SimpleAuthenticator implements Authenticator<String, Token> {
 
     @Override
     public Optional<Token> authenticate(String credentials) throws AuthenticationException {
-        LOG.info("SimpleAuthenticator called with " + credentials);
+        LOG.info("SimpleAuthenticator called with {}", credentials);
         final Token token = dao.findByContent(credentials);
         if (token != null) {
             return Optional.of(token);

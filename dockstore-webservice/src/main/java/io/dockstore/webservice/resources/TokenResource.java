@@ -90,11 +90,10 @@ public class TokenResource {
     private final CachingAuthenticator<String, Token> cachingAuthenticator;
 
     @SuppressWarnings("checkstyle:parameternumber")
-    public TokenResource(TokenDAO tokenDAO, UserDAO enduserDAO, String githubClientID, String githubClientSecret,
-            String bitbucketClientID, String bitbucketClientSecret, HttpClient client,
-            CachingAuthenticator<String, Token> cachingAuthenticator) {
+    public TokenResource(TokenDAO tokenDAO, UserDAO enduserDAO, String githubClientID, String githubClientSecret, String bitbucketClientID,
+            String bitbucketClientSecret, HttpClient client, CachingAuthenticator<String, Token> cachingAuthenticator) {
         this.tokenDAO = tokenDAO;
-        this.userDAO = enduserDAO;
+        userDAO = enduserDAO;
         this.githubClientID = githubClientID;
         this.githubClientSecret = githubClientSecret;
         this.bitbucketClientID = bitbucketClientID;
@@ -119,10 +118,10 @@ public class TokenResource {
     @Timed
     @UnitOfWork
     @ApiOperation(value = "Get a specific token by id", notes = "Get a specific token by id", response = Token.class)
-    @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid ID supplied"),
+    @ApiResponses({ @ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid ID supplied"),
             @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = "Token not found") })
     public Token listToken(@ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "ID of token to return") @PathParam("tokenId") Long tokenId) {
+            @ApiParam("ID of token to return") @PathParam("tokenId") Long tokenId) {
         User user = userDAO.findById(authToken.getUserId());
         Token t = tokenDAO.findById(tokenId);
         Helper.checkUser(user, t.getUserId());
@@ -149,7 +148,7 @@ public class TokenResource {
 
         String username = null;
         if (asString.isPresent()) {
-            LOG.info("RESOURCE CALL: " + url);
+            LOG.info("RESOURCE CALL: {}", url);
 
             String response = asString.get();
             Gson gson = new Gson();
@@ -157,7 +156,7 @@ public class TokenResource {
             map = (Map<String, String>) gson.fromJson(response, map.getClass());
 
             username = map.get("username");
-            LOG.info("Username: " + username);
+            LOG.info("Username: {}", username);
         }
 
         if (user != null) {
@@ -175,10 +174,10 @@ public class TokenResource {
                     throw new WebApplicationException("Username not found from resource call " + url);
                 }
                 long create = tokenDAO.create(token);
-                LOG.info("Quay token created for " + user.getUsername());
+                LOG.info("Quay token created for {}", user.getUsername());
                 return tokenDAO.findById(create);
             } else {
-                LOG.info("Quay token already exists for " + user.getUsername());
+                LOG.info("Quay token already exists for {}", user.getUsername());
             }
         } else {
             LOG.info("Could not find user");
@@ -189,8 +188,8 @@ public class TokenResource {
     @DELETE
     @Path("/{tokenId}")
     @UnitOfWork
-    @ApiOperation(value = "Deletes a token")
-    @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid token value") })
+    @ApiOperation("Deletes a token")
+    @ApiResponses(@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid token value"))
     public Response deleteToken(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "Token id to delete", required = true) @PathParam("tokenId") Long tokenId) {
         User user = userDAO.findById(authToken.getUserId());
@@ -218,8 +217,8 @@ public class TokenResource {
             + "Once a user has approved permissions for Collaboratory"
             + "Their browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addGithubToken(@QueryParam("code") String code) {
-        String accessToken = null;
-        String error = null;
+        String accessToken;
+        String error;
         int count = MAX_ITERATIONS;
         while (true) {
             Optional<String> asString = ResourceUtilities.asString(GIT_URL + "login/oauth/access_token?code=" + code + "&client_id="
@@ -233,15 +232,15 @@ public class TokenResource {
                 throw new WebApplicationException("Could not retrieve github.com token based on code");
             }
 
-            if (error != null && error.equals("bad_verification_code")) {
-                LOG.info("ERROR: " + error);
+            if (error != null && "bad_verification_code".equals(error)) {
+                LOG.info("ERROR: {}", error);
                 if (--count == 0) {
                     throw new WebApplicationException("Could not retrieve github.com token based on code");
                 } else {
                     LOG.info("trying again...");
                 }
             } else if (accessToken != null && !accessToken.isEmpty()) {
-                LOG.info("Successfully recieved accessToken: " + accessToken);
+                LOG.info("Successfully recieved accessToken: {}", accessToken);
                 break;
             } else {
                 LOG.info("Retrieving accessToken was unsuccessful");
@@ -251,7 +250,7 @@ public class TokenResource {
 
         GitHubClient githubClient = new GitHubClient();
         githubClient.setOAuth2Token(accessToken);
-        long userID = 0;
+        long userID;
         String githubLogin;
         Token dockstoreToken = null;
         Token githubToken = null;
@@ -326,7 +325,7 @@ public class TokenResource {
             githubToken.setUserId(userID);
             githubToken.setUsername(githubLogin);
             tokenDAO.create(githubToken);
-            LOG.info("Github token created for " + githubLogin);
+            LOG.info("Github token created for {}", githubLogin);
         }
 
         return dockstoreToken;
@@ -354,7 +353,7 @@ public class TokenResource {
         String accessToken;
         String refreshToken;
         if (asString.isPresent()) {
-            LOG.info("RESOURCE CALL: " + url);
+            LOG.info("RESOURCE CALL: {}", url);
             String json = asString.get();
             LOG.info(json);
 
@@ -374,7 +373,7 @@ public class TokenResource {
         Optional<String> asString2 = ResourceUtilities.asString(url, accessToken, client);
 
         if (asString2.isPresent()) {
-            LOG.info("RESOURCE CALL: " + url);
+            LOG.info("RESOURCE CALL: {}", url);
 
             String response = asString2.get();
             Gson gson = new Gson();
@@ -382,7 +381,7 @@ public class TokenResource {
             map = (Map<String, String>) gson.fromJson(response, map.getClass());
 
             username = map.get("username");
-            LOG.info("Username: " + username);
+            LOG.info("Username: {}", username);
         }
 
         if (user != null) {
@@ -401,10 +400,10 @@ public class TokenResource {
                     throw new WebApplicationException("Username not found from resource call " + url);
                 }
                 long create = tokenDAO.create(token);
-                LOG.info("Bitbucket token created for " + user.getUsername());
+                LOG.info("Bitbucket token created for {}", user.getUsername());
                 return tokenDAO.findById(create);
             } else {
-                LOG.info("Bitbucket token already exists for " + user.getUsername());
+                LOG.info("Bitbucket token already exists for {}", user.getUsername());
             }
         } else {
             LOG.info("Could not find user");

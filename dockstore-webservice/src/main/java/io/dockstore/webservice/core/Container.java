@@ -47,10 +47,16 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 /**
+ * This describes one entry in the dockstore.
+ *
+ * Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be
+ * associated with CWL and Dockerfile documents
  *
  * @author xliu
+ * @author dyuen
  */
-@ApiModel("Container")
+@ApiModel(value = "Container", description = "This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be\n"
+        + " * associated with CWL and Dockerfile documents")
 @Entity
 @Table(name = "container", uniqueConstraints = @UniqueConstraint(columnNames = { "registry", "namespace", "name", "toolname" }))
 @NamedQueries({
@@ -72,42 +78,45 @@ public class Container {
 
     @Column(nullable = false, columnDefinition = "Text default 'AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS'")
     @Enumerated(EnumType.STRING)
-    @ApiModelProperty("This indicates what mode this is in which informs how we do things like refresh")
+    @ApiModelProperty(value = "This indicates what mode this is in which informs how we do things like refresh, dockstore specific", required = true)
     private ContainerMode mode = ContainerMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinTable(name = "usercontainer", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "containerid", nullable = false, updatable = false, referencedColumnName = "id"))
-    private Set<User> users;
+    @ApiModelProperty(value = "This indicates the users that have control over this entry, dockstore specific", required = false)
+    private final Set<User> users;
 
     @Column(nullable = false)
-    @ApiModelProperty("This is the name of the container, required: GA4GH")
+    @ApiModelProperty(value = "This is the name of the container, required: GA4GH", required = true)
     private String name;
 
     @Column(columnDefinition = "text")
     @JsonProperty("default_dockerfile_path")
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the Dockerfile, required: GA4GH", required = true)
     private String defaultDockerfilePath = "/Dockerfile";
 
     @Column(columnDefinition = "text")
     @JsonProperty("default_cwl_path")
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL document, required: GA4GH", required = true)
     private String defaultCwlPath = "/Dockstore.cwl";
 
     @Column(nullable = false)
-    @ApiModelProperty("This is the tool name of the container, when not-present this will function just like 0.1 dockstore"
+    @ApiModelProperty(value = "This is the tool name of the container, when not-present this will function just like 0.1 dockstore"
             + "when present, this can be used to distinguish between two containers based on the same image, but associated with different "
             + "CWL and Dockerfile documents. i.e. two containers with the same registry+namespace+name but different toolnames "
             + "will be two different entries in the dockstore registry/namespace/name/tool, different options to edit tags, and "
-            + "only the same insofar as they would \"docker pull\" the same image, required: GA4GH")
+            + "only the same insofar as they would \"docker pull\" the same image, required: GA4GH", required = true)
     private String toolname = "";
 
     @Column
-    @ApiModelProperty("This is a docker namespace for the container, required: GA4GH")
+    @ApiModelProperty(value = "This is a docker namespace for the container, required: GA4GH", required = true)
     private String namespace;
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    @ApiModelProperty("This is a specific docker provider like quay.io or dockerhub or n/a?, required: GA4GH")
+    @ApiModelProperty(value = "This is a specific docker provider like quay.io or dockerhub or n/a?, required: GA4GH", required = true, allowableValues = "QUAY_IO,DOCKER_HUB")
     private Registry registry;
     @Column
-    @ApiModelProperty("This is a generated full docker path including registry and namespace, used for docker pull commands")
+    @ApiModelProperty(value = "This is a generated full docker path including registry and namespace, used for docker pull commands", readOnly = true)
     private String path;
     @Column
     @ApiModelProperty("This is the name of the author stated in the Dockstore.cwl")
@@ -133,23 +142,23 @@ public class Container {
     @ApiModelProperty("Implementation specific timestamp for last built")
     private Date lastBuild;
     @Column
-    @ApiModelProperty("This is a link to the associated repo with a descriptor, required GA4GH")
+    @ApiModelProperty(value = "This is a link to the associated repo with a descriptor, required GA4GH", required = true)
     private String gitUrl;
     @Column
     @ApiModelProperty("Implementation specific indication as to whether this is properly registered with this web service")
     private boolean isRegistered;
     @Column
-    @ApiModelProperty("This image has a Dockstore.cwl associated with it")
+    @ApiModelProperty("Implementation specific, this image has a Dockstore.cwl associated with it")
     private boolean validTrigger;
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
-    @JoinTable(name = "containertag", joinColumns = { @JoinColumn(name = "containerid", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "tagid", referencedColumnName = "id") })
+    @JoinTable(name = "containertag", joinColumns = @JoinColumn(name = "containerid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "tagid", referencedColumnName = "id"))
     @ApiModelProperty("Implementation specific tracking of valid build tags for the docker container")
     @OrderBy("id")
-    private SortedSet<Tag> tags;
+    private final SortedSet<Tag> tags;
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "containerlabel", joinColumns = { @JoinColumn(name = "containerid", referencedColumnName = "id") }, inverseJoinColumns = { @JoinColumn(name = "labelid", referencedColumnName = "id") })
+    @JoinTable(name = "containerlabel", joinColumns = @JoinColumn(name = "containerid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "labelid", referencedColumnName = "id"))
     @ApiModelProperty("Labels (i.e. meta tags) for describing the purpose and contents of containers")
     @OrderBy("id")
     private SortedSet<Label> labels;
@@ -215,7 +224,7 @@ public class Container {
                 // } else {
                 // builder.append("registry.hub.docker.com/");
             }
-            builder.append(namespace).append("/").append(name);
+            builder.append(namespace).append('/').append(name);
             repositoryPath = builder.toString();
         } else {
             repositoryPath = path;
@@ -444,6 +453,6 @@ public class Container {
 
     @JsonProperty("tool_path")
     public String getToolPath() {
-        return getPath() + (toolname == null || toolname.isEmpty() ? "" : "/" + toolname);
+        return getPath() + (toolname == null || toolname.isEmpty() ? "" : '/' + toolname);
     }
 }
