@@ -147,6 +147,25 @@ public class DockerRepoResource {
     }
 
     @GET
+    @Path("/{containerId}/refresh")
+    @Timed
+    @UnitOfWork
+    @ApiOperation(value = "Refresh one particular repo", response = Container.class)
+    public Container refresh(@ApiParam(hidden = true) @Auth Token authToken,
+            @ApiParam(value = "Container ID", required = true) @PathParam("containerId") Long containerId) {
+        Container c = containerDAO.findById(containerId);
+        Helper.checkContainer(c);
+
+        User user = userDAO.findById(authToken.getUserId());
+        Helper.checkUser(user, c);
+
+        Container container = Helper.refreshContainer(c, authToken.getUserId(), client, objectMapper, userDAO, containerDAO, tokenDAO,
+                tagDAO, fileDAO);
+
+        return container;
+    }
+
+    @GET
     @Timed
     @UnitOfWork
     @ApiOperation(value = "List all docker containers cached in database", notes = "List docker container repos currently known. Admin Only", response = Container.class, responseContainer = "List")
