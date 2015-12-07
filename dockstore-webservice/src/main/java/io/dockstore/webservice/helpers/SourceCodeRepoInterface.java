@@ -78,7 +78,7 @@ public abstract class SourceCodeRepoInterface {
         }
 
         public String getContent() {
-            return this.content;
+            return content;
         }
     }
 }

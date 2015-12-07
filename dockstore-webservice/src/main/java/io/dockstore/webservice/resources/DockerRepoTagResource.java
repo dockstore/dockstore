@@ -33,7 +33,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,9 +44,7 @@ import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.ContainerDAO;
-import io.dockstore.webservice.jdbi.LabelDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
-import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
@@ -60,26 +57,19 @@ import io.swagger.annotations.ApiParam;
  * @author dyuen
  */
 @Path("/containers")
-@Api(value = "containertags")
+@Api("containertags")
 @Produces(MediaType.APPLICATION_JSON)
 public class DockerRepoTagResource {
 
     private final UserDAO userDAO;
-    private final TokenDAO tokenDAO;
     private final ContainerDAO containerDAO;
     private final TagDAO tagDAO;
-    private final LabelDAO labelDAO;
-    private final HttpClient client;
 
     private static final Logger LOG = LoggerFactory.getLogger(DockerRepoTagResource.class);
 
-    public DockerRepoTagResource(HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ContainerDAO containerDAO, TagDAO tagDAO,
-            LabelDAO labelDAO) {
+    public DockerRepoTagResource(UserDAO userDAO, ContainerDAO containerDAO, TagDAO tagDAO) {
         this.userDAO = userDAO;
-        this.tokenDAO = tokenDAO;
         this.tagDAO = tagDAO;
-        this.labelDAO = labelDAO;
-        this.client = client;
 
         this.containerDAO = containerDAO;
     }

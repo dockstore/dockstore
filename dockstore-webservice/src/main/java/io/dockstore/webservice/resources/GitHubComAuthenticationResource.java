@@ -16,20 +16,21 @@
  */
 package io.dockstore.webservice.resources;
 
-import io.dropwizard.views.View;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+
+import io.dropwizard.views.View;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 
 /**
  *
  * @author dyuen
  */
 @Path("/integration.github.com")
-@Api(value = "/integration.github.com")
+@Api("/integration.github.com")
 @Produces(MediaType.TEXT_HTML)
 public class GitHubComAuthenticationResource {
     private final String clientID;
@@ -65,7 +66,7 @@ public class GitHubComAuthenticationResource {
 
         public GithubComView() {
             super("github.com.auth.view.ftl");
-            this.parent = GitHubComAuthenticationResource.this;
+            parent = GitHubComAuthenticationResource.this;
         }
 
         /**

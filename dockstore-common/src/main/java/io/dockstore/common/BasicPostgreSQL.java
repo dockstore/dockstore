@@ -67,7 +67,7 @@ public class BasicPostgreSQL {
 
                 String maxConnections = settings.getString(Constants.POSTGRES_MAX_CONNECTIONS, "5");
 
-                if (nullConfigs.trim().length() > 0) {
+                if (!nullConfigs.trim().isEmpty()) {
                     throw new NullPointerException("The following configuration values are null: " + nullConfigs
                             + ". Please check your configuration file.");
                 }

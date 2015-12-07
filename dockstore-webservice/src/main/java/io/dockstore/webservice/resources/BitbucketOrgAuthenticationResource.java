@@ -16,25 +16,25 @@
  */
 package io.dockstore.webservice.resources;
 
-import io.dropwizard.views.View;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import io.dropwizard.views.View;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+
 /**
- *
+ * This resource is a stop-gap GUI for web service developers to integrate with BitBucket
+ * 
  * @author xliu
  */
 @Path("/integration.bitbucket.org")
-@Api(value = "/integration.bitbucket.org")
+@Api("/integration.bitbucket.org")
 @Produces(MediaType.TEXT_HTML)
 public class BitbucketOrgAuthenticationResource {
     private final String clientID;
-
-    // private final String redirectURI;
 
     public BitbucketOrgAuthenticationResource(String clientID) {
         this.clientID = clientID;
@@ -54,19 +54,12 @@ public class BitbucketOrgAuthenticationResource {
         return clientID;
     }
 
-    /**
-     * @return the redirectURI
-     */
-    // public String getRedirectURI() {
-    // return redirectURI;
-    // }
-
     public class BitbucketOrgView extends View {
         private final BitbucketOrgAuthenticationResource parent;
 
         public BitbucketOrgView() {
             super("bitbucket.org.auth.view.ftl");
-            this.parent = BitbucketOrgAuthenticationResource.this;
+            parent = BitbucketOrgAuthenticationResource.this;
         }
 
         /**

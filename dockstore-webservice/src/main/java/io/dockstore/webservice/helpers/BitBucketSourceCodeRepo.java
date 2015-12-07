@@ -46,10 +46,10 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         String branch = null;
 
         if (reference == null) {
-            String mainBranchUrl = BITBUCKET_API_URL + "repositories/" + gitUsername + "/" + gitRepository + "/main-branch";
+            String mainBranchUrl = BITBUCKET_API_URL + "repositories/" + gitUsername + '/' + gitRepository + "/main-branch";
 
             Optional<String> asString = ResourceUtilities.asString(mainBranchUrl, bitbucketTokenContent, client);
-            LOG.info("RESOURCE CALL: " + mainBranchUrl);
+            LOG.info("RESOURCE CALL: {}", mainBranchUrl);
             if (asString.isPresent()) {
                 String branchJson = asString.get();
 
@@ -64,21 +64,21 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                     return null;
                     // throw new WebApplicationException(HttpStatus.SC_INTERNAL_SERVER_ERROR);
                 } else {
-                    LOG.info("Default branch: " + branch);
+                    LOG.info("Default branch: {}", branch);
                 }
             }
         } else {
             branch = reference;
         }
 
-        String url = BITBUCKET_API_URL + "repositories/" + gitUsername + "/" + gitRepository + "/raw/" + branch + "/" + fileName;
+        String url = BITBUCKET_API_URL + "repositories/" + gitUsername + '/' + gitRepository + "/raw/" + branch + '/' + fileName;
         Optional<String> asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
-        LOG.info("RESOURCE CALL: " + url);
+        LOG.info("RESOURCE CALL: {}", url);
         if (asString.isPresent()) {
-            LOG.info("FOUND: " + fileName);
+            LOG.info("FOUND: {}", fileName);
             content = asString.get();
         } else {
-            LOG.info("Branch: " + branch + " has no " + fileName);
+            LOG.info("Branch: {} has no {}", branch, fileName);
             return null;
         }
 
@@ -108,9 +108,9 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 // throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
             }
 
-            String url = BITBUCKET_API_URL + "repositories/" + m.group(1) + "/" + m.group(2) + "/main-branch";
+            String url = BITBUCKET_API_URL + "repositories/" + m.group(1) + '/' + m.group(2) + "/main-branch";
             Optional<String> asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
-            LOG.info("RESOURCE CALL: " + url);
+            LOG.info("RESOURCE CALL: {}", url);
             if (asString.isPresent()) {
                 String branchJson = asString.get();
 
@@ -125,7 +125,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                     return null;
                     // throw new WebApplicationException(HttpStatus.SC_INTERNAL_SERVER_ERROR);
                 } else {
-                    LOG.info("Default branch: " + branch);
+                    LOG.info("Default branch: {}", branch);
                 }
 
                 // String response = asString.get();
@@ -141,14 +141,14 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
                 String content = "";
 
-                url = BITBUCKET_API_URL + "repositories/" + m.group(1) + "/" + m.group(2) + "/raw/" + branch + "/" + fileName;
+                url = BITBUCKET_API_URL + "repositories/" + m.group(1) + '/' + m.group(2) + "/raw/" + branch + '/' + fileName;
                 asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
-                LOG.info("RESOURCE CALL: " + url);
+                LOG.info("RESOURCE CALL: {}", url);
                 if (asString.isPresent()) {
                     LOG.info("CWL FOUND");
                     content = asString.get();
                 } else {
-                    LOG.info("Branch: " + branch + " has no " + fileName);
+                    LOG.info("Branch: {} has no {}", branch, fileName);
                 }
 
                 container = parseCWLContent(container, content);

@@ -48,7 +48,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
     @Override
     public List<Tag> getTags(Container container) {
         LOG.info("======================= Getting tags for: {}================================", container.getPath());
-        final String repo = container.getNamespace() + "/" + container.getName();
+        final String repo = container.getNamespace() + '/' + container.getName();
         final String repoUrl = QUAY_URL + "repository/" + repo;
         final Optional<String> asStringBuilds = ResourceUtilities.asString(repoUrl, quayToken.getContent(), client);
 
@@ -87,7 +87,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
         Optional<String> asString = ResourceUtilities.asString(url, quayToken.getContent(), client);
         if (asString.isPresent()) {
             String response = asString.get();
-            LOG.info("RESOURCE CALL: " + url);
+            LOG.info("RESOURCE CALL: {}", url);
             Gson gson = new Gson();
 
             Map<String, ArrayList> map = new HashMap<>();
@@ -96,7 +96,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
 
             for (int i = 0; i < organizations.size(); i++) {
                 Map<String, String> map2 = (Map<String, String>) organizations.get(i);
-                LOG.info("Organization: " + map2.get("name"));
+                LOG.info("Organization: {}", map2.get("name"));
                 namespaces.add(map2.get("name"));
             }
         }
@@ -119,7 +119,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
                     // interesting, this relies upon our container object having the same fields
                     // as quay.io's repositories
                     repos = objectMapper.readValue(asString.get(), RepoList.class);
-                    LOG.info("RESOURCE CALL: " + url);
+                    LOG.info("RESOURCE CALL: {}", url);
 
                     List<Container> containers = repos.getRepositories();
                     // tag all of these with where they came from
@@ -128,7 +128,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
                     containers.stream().forEach(container -> container.setMode(ContainerMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS));
                     containerList.addAll(containers);
                 } catch (IOException ex) {
-                    LOG.info("Exception: " + ex);
+                    LOG.info("Exception: {}", ex);
                 }
             }
         }
@@ -146,15 +146,15 @@ public class QuayImageRegistry implements ImageRegistryInterface {
         final Gson gson = new Gson();
         for (final Container container : allRepos) {
 
-            if (container.getRegistry() != Registry.QUAY_IO){
+            if (container.getRegistry() != Registry.QUAY_IO) {
                 continue;
             }
 
-            final String repo = container.getNamespace() + "/" + container.getName();
-            final String path = quayToken.getTokenSource() + "/" + repo;
+            final String repo = container.getNamespace() + '/' + container.getName();
+            final String path = quayToken.getTokenSource() + '/' + repo;
             container.setPath(path);
 
-            LOG.info("========== Configuring " + path + " ==========");
+            LOG.info("========== Configuring {} ==========", path);
             if (container.getMode() != ContainerMode.MANUAL_IMAGE_PATH) {
                 updateContainersWithBuildInfo(formatter, mapOfBuilds, gson, container, repo, path);
             }
@@ -171,6 +171,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
 
     /**
      * For a given container, update its registry, git, and build information with information from quay.io
+     * 
      * @param formatter
      * @param mapOfBuilds
      * @param gson
@@ -179,7 +180,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
      * @param path
      */
     private void updateContainersWithBuildInfo(SimpleDateFormat formatter, Map<String, ArrayList<?>> mapOfBuilds, Gson gson,
-                                                  Container container, String repo, String path) {
+            Container container, String repo, String path) {
         // Get the list of builds from the container.
         // Builds contain information such as the Git URL and tags
         String urlBuilds = QUAY_URL + "repository/" + repo + "/build/";
@@ -189,7 +190,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
 
         if (asStringBuilds.isPresent()) {
             String json = asStringBuilds.get();
-            LOG.info("RESOURCE CALL: " + urlBuilds);
+            LOG.info("RESOURCE CALL: {}", urlBuilds);
 
             // parse json using Gson to get the git url of repository and the list of tags
             Map<String, ArrayList> map = new HashMap<>();
@@ -205,7 +206,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
 
                 Map<String, String> map3 = (Map<String, String>) builds.get(0);
                 String lastBuild = map3.get("started");
-                LOG.info("LAST BUILD: " + lastBuild);
+                LOG.info("LAST BUILD: {}", lastBuild);
 
                 Date date;
                 try {

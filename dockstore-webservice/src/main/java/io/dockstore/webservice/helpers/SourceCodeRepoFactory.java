@@ -33,16 +33,16 @@ public class SourceCodeRepoFactory {
         String gitRepository = repoUrlMap.get("Repository");
 
         SourceCodeRepoInterface repo;
-        if (source.equals("github.com")) {
+        if ("github.com".equals(source)) {
             repo = new GitHubSourceCodeRepo(gitUsername, githubTokenContent, gitRepository);
-        } else if (source.equals("bitbucket.org")) {
+        } else if ("bitbucket.org".equals(source)) {
             if (bitbucketTokenContent != null) {
                 repo = new BitBucketSourceCodeRepo(gitUsername, client, bitbucketTokenContent, gitRepository);
             } else {
                 return null;
             }
         } else {
-            log.info("Do not support: " + source);
+            log.info("Do not support: {}", source);
             throw new WebApplicationException(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE);
         }
         return repo;
@@ -58,7 +58,7 @@ public class SourceCodeRepoFactory {
         Pattern p = Pattern.compile("git\\@(\\S+):(\\S+)/(\\S+)\\.git");
         Matcher m = p.matcher(url);
         if (!m.find()) {
-            log.info("Cannot parse url: " + url);
+            log.info("Cannot parse url: {}", url);
             return null;
         }
 

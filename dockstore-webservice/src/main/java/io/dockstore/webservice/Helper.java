@@ -95,8 +95,9 @@ public final class Helper {
      *            docker image path -> list of corresponding Tags
      */
     @SuppressWarnings("checkstyle:parameternumber")
-    private static void updateTags(final Iterable<Container> containers, final HttpClient client, final ContainerDAO containerDAO, final TagDAO tagDAO, final FileDAO fileDAO,
-            final Token githubToken, final Token bitbucketToken, final Map<String, List<Tag>> tagMap) {
+    private static void updateTags(final Iterable<Container> containers, final HttpClient client, final ContainerDAO containerDAO,
+            final TagDAO tagDAO, final FileDAO fileDAO, final Token githubToken, final Token bitbucketToken,
+            final Map<String, List<Tag>> tagMap) {
         for (final Container container : containers) {
             LOG.info("--------------- Updating tags for {} ---------------", container.getToolPath());
 
@@ -106,7 +107,7 @@ public final class Helper {
                 Map<String, Set<SourceFile>> fileMap = new HashMap<>();
 
                 if (newTags == null) {
-                    LOG.info("Tags for container " + container.getPath() + " did not get updated because new tags were not found");
+                    LOG.info("Tags for container {} did not get updated because new tags were not found", container.getPath());
                     return;
                 }
 
@@ -192,16 +193,16 @@ public final class Helper {
 
                 // delete container if it has no users
                 for (Tag t : toDelete) {
-                    LOG.info("DELETING tag: " + t.getName());
+                    LOG.info("DELETING tag: {}", t.getName());
                     t.getSourceFiles().clear();
                     // tagDAO.delete(t);
                     container.getTags().remove(t);
                 }
 
-                if (!allAutomated) {
-                    container.setMode(ContainerMode.AUTO_DETECT_QUAY_TAGS_WITH_MIXED);
-                } else {
+                if (allAutomated) {
                     container.setMode(ContainerMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
+                } else {
+                    container.setMode(ContainerMode.AUTO_DETECT_QUAY_TAGS_WITH_MIXED);
                 }
             }
 
@@ -230,9 +231,8 @@ public final class Helper {
      * @param containerDAO
      * @return list of newly updated containers
      */
-    private static List<Container> updateContainers(final Iterable<Container> apiContainerList, final List<Container> dbContainerList, final User user,
-            final ContainerDAO containerDAO) {
-
+    private static List<Container> updateContainers(final Iterable<Container> apiContainerList, final List<Container> dbContainerList,
+            final User user, final ContainerDAO containerDAO) {
 
         final List<Container> toDelete = new ArrayList<>();
         // Find containers that the user no longer has
@@ -242,7 +242,7 @@ public final class Helper {
             for (final Container newContainer : apiContainerList) {
                 if (newContainer.getName().equals(oldContainer.getName())
                         && newContainer.getNamespace().equals(oldContainer.getNamespace())
-                        && newContainer.getRegistry().equals(oldContainer.getRegistry())) {
+                        && newContainer.getRegistry() == oldContainer.getRegistry()) {
                     exists = true;
                     break;
                 }
@@ -271,7 +271,7 @@ public final class Helper {
 
             // Find if container already exists, but does not belong to user
             if (!exists) {
-                Container oldContainer = containerDAO.findByToolPath(path,newContainer.getToolname());
+                Container oldContainer = containerDAO.findByToolPath(path, newContainer.getToolname());
                 if (oldContainer != null) {
                     exists = true;
                     oldContainer.update(newContainer);
@@ -297,15 +297,15 @@ public final class Helper {
 
             // do not re-create tags with manual mode
             // with other types, you can re-create the tags on refresh
-                LOG.info("UPDATED Container: " + container.getPath());
+            LOG.info("UPDATED Container: {}", container.getPath());
         }
 
         // delete container if it has no users
         for (Container c : toDelete) {
-            LOG.info(c.getPath() + " " + c.getUsers().size());
+            LOG.info("{} {}", c.getPath(), c.getUsers().size());
 
             if (c.getUsers().isEmpty()) {
-                LOG.info("DELETING: " + c.getPath());
+                LOG.info("DELETING: {}", c.getPath());
                 c.getTags().clear();
                 containerDAO.delete(c);
             }
@@ -326,13 +326,12 @@ public final class Helper {
      */
     @SuppressWarnings("checkstyle:parameternumber")
     private static Map<String, List<Tag>> getTags(final HttpClient client, final List<Container> containers,
-            final ObjectMapper objectMapper, final Token quayToken,
-            final Map<String, ArrayList<?>> mapOfBuilds) {
+            final ObjectMapper objectMapper, final Token quayToken, final Map<String, ArrayList<?>> mapOfBuilds) {
         final Map<String, List<Tag>> tagMap = new HashMap<>();
 
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
 
-        for (Container c : containers) {
+        for (final Container c : containers) {
 
             final ImageRegistryInterface imageRegistry = factory.createImageRegistry(c.getRegistry());
             final List<Tag> tags = imageRegistry.getTags(c);
@@ -345,7 +344,7 @@ public final class Helper {
 
                 if (builds != null && !builds.isEmpty()) {
                     for (Tag tag : tags) {
-                        LOG.info("TAG: " + tag.getName());
+                        LOG.info("TAG: {}", tag.getName());
 
                         for (final Object build : builds) {
                             Map<String, String> idMap = (Map<String, String>) build;
@@ -518,6 +517,7 @@ public final class Helper {
 
     /**
      * Gets containers for the current user
+     * 
      * @param userId
      * @param userDAO
      * @return
@@ -554,9 +554,9 @@ public final class Helper {
 
         String fileName = "";
 
-        if (fileType.equals(FileType.DOCKERFILE)) {
+        if (fileType == FileType.DOCKERFILE) {
             fileName = tag.getDockerfilePath();
-        } else if (fileType.equals(FileType.DOCKSTORE_CWL)) {
+        } else if (fileType == FileType.DOCKSTORE_CWL) {
             fileName = tag.getCwlPath();
         }
 
@@ -573,7 +573,7 @@ public final class Helper {
             Pattern p = Pattern.compile("(\\S+)/(\\S+)/(\\S+)");
             Matcher m = p.matcher(reference);
             if (!m.find()) {
-                LOG.info("Cannot parse reference: " + reference);
+                LOG.info("Cannot parse reference: {}", reference);
                 return null;
             }
 
@@ -581,7 +581,7 @@ public final class Helper {
             final int refIndex = 3;
 
             reference = m.group(refIndex);
-            LOG.info("REFERENCE: " + reference);
+            LOG.info("REFERENCE: {}", reference);
         }
         return reference;
     }
@@ -605,10 +605,10 @@ public final class Helper {
             Optional<String> asString = ResourceUtilities.bitbucketPost(url, null, client, bitbucketClientID, bitbucketClientSecret,
                     "grant_type=refresh_token&refresh_token=" + token.getRefreshToken());
 
-            String accessToken;
-            String refreshToken;
             if (asString.isPresent()) {
-                LOG.info("RESOURCE CALL: " + url);
+                String accessToken;
+                String refreshToken;
+                LOG.info("RESOURCE CALL: {}", url);
                 String json = asString.get();
 
                 Gson gson = new Gson();

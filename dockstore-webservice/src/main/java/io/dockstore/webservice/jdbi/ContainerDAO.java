@@ -61,7 +61,7 @@ public class ContainerDAO extends AbstractDAO<Container> {
     }
 
     public List<Container> searchPattern(String pattern) {
-        pattern = "%" + pattern + "%";
+        pattern = '%' + pattern + '%';
         return list(namedQuery("io.dockstore.webservice.core.Container.searchPattern").setParameter("pattern", pattern));
     }
 
@@ -70,13 +70,13 @@ public class ContainerDAO extends AbstractDAO<Container> {
     }
 
     public Container findByToolPath(String path, String tool) {
-        return uniqueResult(namedQuery("io.dockstore.webservice.core.Container.findByToolPath").setParameter("path", path).setParameter("toolname", tool));
+        return uniqueResult(namedQuery("io.dockstore.webservice.core.Container.findByToolPath").setParameter("path", path).setParameter(
+                "toolname", tool));
     }
 
     public List<Container> findByMode(final ContainerMode mode) {
         return list(namedQuery("io.dockstore.webservice.core.Container.findByMode").setParameter("mode", mode));
     }
-
 
     public Container findRegisteredByPath(String path) {
         return uniqueResult(namedQuery("io.dockstore.webservice.core.Container.findRegisteredByPath").setParameter("path", path));

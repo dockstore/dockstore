@@ -16,11 +16,20 @@
  */
 package io.dockstore.webservice;
 
+import java.util.EnumSet;
+
+import org.apache.http.client.HttpClient;
+import org.eclipse.jetty.servlet.FilterHolder;
+import org.eclipse.jetty.servlets.CrossOriginFilter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.dockstore.webservice.core.Container;
-import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.core.Label;
+import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.User;
@@ -54,13 +63,6 @@ import io.dropwizard.views.ViewBundle;
 import io.swagger.jaxrs.config.BeanConfig;
 import io.swagger.jaxrs.listing.ApiListingResource;
 import io.swagger.jaxrs.listing.SwaggerSerializers;
-import org.apache.http.client.HttpClient;
-import org.eclipse.jetty.servlet.FilterHolder;
-import org.eclipse.jetty.servlets.CrossOriginFilter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.EnumSet;
 
 import static javax.servlet.DispatcherType.REQUEST;
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ACCESS_CONTROL_ALLOW_METHODS_HEADER;
@@ -95,31 +97,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
     @Override
     public void initialize(Bootstrap<DockstoreWebserviceConfiguration> bootstrap) {
-        // String ip = "localhost";
-        // try {
-        // NetworkInterface ni = NetworkInterface.getByName("eth0");
-        // Enumeration<InetAddress> inetAddresses = ni.getInetAddresses();
-        //
-        // while (inetAddresses.hasMoreElements()) {
-        // InetAddress ia = inetAddresses.nextElement();
-        // if (!ia.isLinkLocalAddress()) {
-        // System.out.println("IP: " + ia.getHostAddress());
-        // ip = ia.getHostAddress();
-        // }
-        // }
-        // } catch (SocketException ex) {
-        // System.out.println("SocketException: " + ex);
-        // }
-
-        // setup swagger
-        // BeanConfig beanConfig = new BeanConfig();
-        // beanConfig.setVersion("1.0.2");
-        // beanConfig.setSchemes(new String[] { "http" });
-        // beanConfig.setHost(ip + ":8080");
-        // beanConfig.setBasePath("/");
-        // beanConfig.setResourcePackage("io.dockstore.webservice.resources");
-        // beanConfig.setScan(true);
-        // beanConfig.setTitle("Swagger Remote Registry Prototype");
 
         // setup hibernate+postgres
         bootstrap.addBundle(hibernate);
@@ -134,7 +111,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     public void run(DockstoreWebserviceConfiguration configuration, Environment environment) {
         BeanConfig beanConfig = new BeanConfig();
         beanConfig.setSchemes(new String[] { configuration.getScheme() });
-        beanConfig.setHost(configuration.getHostname() + ":" + configuration.getPort());
+        beanConfig.setHost(configuration.getHostname() + ':' + configuration.getPort());
         beanConfig.setBasePath("/");
         beanConfig.setResourcePackage("io.dockstore.webservice.resources");
         beanConfig.setScan(true);
@@ -168,8 +145,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 new DockerRepoResource(mapper, httpClient, userDAO, tokenDAO, containerDAO, tagDAO, labelDAO, fileDAO, configuration
                         .getBitbucketClientID(), configuration.getBitbucketClientSecret()));
         environment.jersey().register(new GitHubRepoResource(tokenDAO, userDAO));
-        environment.jersey().register(
-                new DockerRepoTagResource(httpClient, userDAO, tokenDAO, containerDAO, tagDAO, labelDAO));
+        environment.jersey().register(new DockerRepoTagResource(userDAO, containerDAO, tagDAO));
 
         final GitHubComAuthenticationResource resource3 = new GitHubComAuthenticationResource(configuration.getGithubClientID(),
                 configuration.getGithubRedirectURI());
@@ -183,9 +159,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                         configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), httpClient, cachingAuthenticator));
 
         environment.jersey().register(
-                new UserResource(mapper, httpClient, tokenDAO, userDAO, groupDAO, containerDAO, tagDAO, fileDAO, configuration.getBitbucketClientID(), configuration
-                        .getBitbucketClientSecret()));
-
+                new UserResource(mapper, httpClient, tokenDAO, userDAO, groupDAO, containerDAO, tagDAO, fileDAO, configuration
+                        .getBitbucketClientID(), configuration.getBitbucketClientSecret()));
 
         // swagger stuff
 
