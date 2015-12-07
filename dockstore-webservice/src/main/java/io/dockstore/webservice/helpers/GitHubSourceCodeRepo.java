@@ -73,12 +73,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public Container findCWL(Container c) {
         String fileName = c.getDefaultCwlPath();
 
-        Repository repository;
+        Repository repository = null;
         try {
             repository = service.getRepository(gitUsername, gitRepository);
         } catch (IOException e) {
             LOG.error("Repo: {} could not be retrieved", c.getGitUrl());
-            throw new RuntimeException();
+            // throw new RuntimeException();
         }
         if (repository == null) {
             LOG.info("Github repository not found for {}", c.getPath());
