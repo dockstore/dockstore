@@ -138,7 +138,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
     }
 
     @Override
-    public Map<String, ArrayList<?>> getBuildMap(Token githubToken, Token bitbucketToken, List<Container> allRepos) {
+    public Map<String, ArrayList<?>> getBuildMap(List<Container> allRepos) {
         final SimpleDateFormat formatter = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
 
         final Map<String, ArrayList<?>> mapOfBuilds = new HashMap<>();

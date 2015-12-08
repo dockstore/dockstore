@@ -64,12 +64,12 @@ import io.dockstore.webservice.resources.ResourceUtilities;
  * @author xliu
  */
 public final class Helper {
+
     private static final Logger LOG = LoggerFactory.getLogger(Helper.class);
 
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
 
     // public static final String DOCKSTORE_CWL = "Dockstore.cwl";
-
     public static class RepoList {
 
         private List<Container> repositories;
@@ -85,7 +85,7 @@ public final class Helper {
 
     /**
      * Updates each container's tags.
-     * 
+     *
      * @param containers
      * @param client
      * @param containerDAO
@@ -185,7 +185,6 @@ public final class Helper {
 
                         // oldFiles.add(newFile);
                         // }
-
                         if (file.getType() == FileType.DOCKERFILE) {
                             hasDockerfile = true;
                         }
@@ -235,7 +234,7 @@ public final class Helper {
 
     /**
      * Updates the new list of containers to the database. Deletes containers that have no users.
-     * 
+     *
      * @param apiContainerList
      *            containers retrieved from quay.io and docker hub
      * @param dbContainerList
@@ -328,7 +327,7 @@ public final class Helper {
 
     /**
      * Get the list of tags for each container from Quay.io.
-     * 
+     *
      * @param client
      * @param containers
      * @param objectMapper
@@ -400,7 +399,7 @@ public final class Helper {
 
     /**
      * Given a container and tags, load up required files from git repository
-     * 
+     *
      * @param client
      * @param bitbucketToken
      * @param githubToken
@@ -434,7 +433,7 @@ public final class Helper {
 
     /**
      * Refreshes user's containers
-     * 
+     *
      * @param userId
      * @param client
      * @param objectMapper
@@ -449,24 +448,13 @@ public final class Helper {
     public static List<Container> refresh(final Long userId, final HttpClient client, final ObjectMapper objectMapper,
             final UserDAO userDAO, final ContainerDAO containerDAO, final TokenDAO tokenDAO, final TagDAO tagDAO, final FileDAO fileDAO) {
         List<Container> dbContainers = new ArrayList(getContainers(userId, userDAO));// containerDAO.findByUserId(userId);
-        List<Token> tokens = tokenDAO.findByUserId(userId);
-
-        Token quayToken = null;
-        Token githubToken = null;
-        Token bitbucketToken = null;
 
         // Get user's quay and git tokens
-        for (Token token : tokens) {
-            if (token.getTokenSource().equals(TokenType.QUAY_IO.toString())) {
-                quayToken = token;
-            }
-            if (token.getTokenSource().equals(TokenType.GITHUB_COM.toString())) {
-                githubToken = token;
-            }
-            if (token.getTokenSource().equals(TokenType.BITBUCKET_ORG.toString())) {
-                bitbucketToken = token;
-            }
-        }
+        List<Token> tokens = tokenDAO.findByUserId(userId);
+        Token quayToken = extractToken(tokens, TokenType.QUAY_IO.toString());
+        Token githubToken = extractToken(tokens, TokenType.GITHUB_COM.toString());
+        Token bitbucketToken = extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
+
         // with Docker Hub support it is now possible that there is no quayToken
         if (githubToken == null) {
             LOG.info("GIT token not found!");
@@ -497,7 +485,7 @@ public final class Helper {
         // ends up with docker image path -> quay.io data structure representing builds
         final Map<String, ArrayList<?>> mapOfBuilds = new HashMap<>();
         for (final ImageRegistryInterface anInterface : allRegistries) {
-            mapOfBuilds.putAll(anInterface.getBuildMap(githubToken, bitbucketToken, apiContainers));
+            mapOfBuilds.putAll(anInterface.getBuildMap(apiContainers));
         }
 
         // end up with key = path; value = list of tags
@@ -512,12 +500,11 @@ public final class Helper {
 
         final List<Container> newDBContainers = getContainers(userId, userDAO);
         // update information on a tag by tag level
-        final Map<String, List<Tag>> tagMap = getTags(client, new ArrayList<>(userDAO.findById(userId).getContainers()), objectMapper,
-                quayToken, mapOfBuilds);
+        final Map<String, List<Tag>> tagMap = getTags(client, newDBContainers, objectMapper, quayToken, mapOfBuilds);
 
         updateTags(newDBContainers, client, containerDAO, tagDAO, fileDAO, githubToken, bitbucketToken, tagMap);
         userDAO.clearCache();
-        return new ArrayList(getContainers(userId, userDAO));
+        return getContainers(userId, userDAO);
     }
 
     @SuppressWarnings("checkstyle:parameternumber")
@@ -533,35 +520,22 @@ public final class Helper {
             return container;
         }
 
-        String source = gitMap.get("Source");
+        String gitSource = gitMap.get("Source");
         String gitUsername = gitMap.get("Username");
         String gitRepository = gitMap.get("Repository");
 
-        List<Token> tokens = tokenDAO.findByUserId(userId);
-
-        Token quayToken = null;
-        Token githubToken = null;
-        Token bitbucketToken = null;
-
         // Get user's quay and git tokens
-        for (Token token : tokens) {
-            if (token.getTokenSource().equals(TokenType.QUAY_IO.toString())) {
-                quayToken = token;
-            }
-            if (token.getTokenSource().equals(TokenType.GITHUB_COM.toString())) {
-                githubToken = token;
-            }
-            if (token.getTokenSource().equals(TokenType.BITBUCKET_ORG.toString())) {
-                bitbucketToken = token;
-            }
-        }
+        List<Token> tokens = tokenDAO.findByUserId(userId);
+        Token quayToken = extractToken(tokens, TokenType.QUAY_IO.toString());
+        Token githubToken = extractToken(tokens, TokenType.GITHUB_COM.toString());
+        Token bitbucketToken = extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
 
         // with Docker Hub support it is now possible that there is no quayToken
-        if (source.equals("github.com") && githubToken == null) {
+        if (gitSource.equals("github.com") && githubToken == null) {
             LOG.info("GIT token not found!");
             throw new WebApplicationException(HttpStatus.SC_CONFLICT);
         }
-        if (source.equals("bitbucket.org") && bitbucketToken == null) {
+        if (gitSource.equals("bitbucket.org") && bitbucketToken == null) {
             LOG.info("WARNING: BITBUCKET token not found!");
         }
 
@@ -579,13 +553,13 @@ public final class Helper {
             apiContainers.addAll(anInterface.getContainers(namespaces));
         }
 
-        final Map<String, ArrayList<?>> mapOfBuilds = anInterface.getBuildMap(githubToken, bitbucketToken, apiContainers);
+        final Map<String, ArrayList<?>> mapOfBuilds = anInterface.getBuildMap(apiContainers);
 
         List<Container> dbContainers = new ArrayList<>();
         dbContainers.add(container);
 
         removeContainersThatCannotBeUpdated(dbContainers);
-        
+
         apiContainers.removeIf(container1 -> !container1.getPath().equals(container.getPath()));
 
         final User dockstoreUser = userDAO.findById(userId);
@@ -612,9 +586,18 @@ public final class Helper {
         dbContainers.removeIf(container1 -> container1.getMode() == ContainerMode.MANUAL_IMAGE_PATH);
     }
 
+    private static Token extractToken(List<Token> tokens, String source) {
+        for (Token token : tokens) {
+            if (token.getTokenSource().equals(source)) {
+                return token;
+            }
+        }
+        return null;
+    }
+
     /**
      * Gets containers for the current user
-     * 
+     *
      * @param userId
      * @param userDAO
      * @return
@@ -625,7 +608,7 @@ public final class Helper {
 
     /**
      * Read a file from the container's git repository.
-     * 
+     *
      * @param container
      * @param fileType
      * @param client
@@ -685,7 +668,7 @@ public final class Helper {
 
     /**
      * Refreshes user's Bitbucket token.
-     * 
+     *
      * @param token
      * @param client
      * @param tokenDAO
@@ -731,7 +714,7 @@ public final class Helper {
 
     /**
      * Check if admin
-     * 
+     *
      * @param user
      */
     public static void checkUser(User user) {
@@ -742,7 +725,7 @@ public final class Helper {
 
     /**
      * Check if admin or correct user
-     * 
+     *
      * @param user
      * @param id
      */
@@ -754,7 +737,7 @@ public final class Helper {
 
     /**
      * Check if admin or if container belongs to user
-     * 
+     *
      * @param user
      * @param container
      */
@@ -780,7 +763,7 @@ public final class Helper {
 
     /**
      * Check if container is null
-     * 
+     *
      * @param container
      */
     public static void checkContainer(Container container) {
