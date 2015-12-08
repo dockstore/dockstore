@@ -65,7 +65,8 @@ import io.swagger.annotations.ApiModelProperty;
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findAllRegistered", query = "SELECT c FROM Container c WHERE c.isRegistered = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findAll", query = "SELECT c FROM Container c"),
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findByPath", query = "SELECT c FROM Container c WHERE c.path = :path"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Container.findByToolPath", query = "SELECT c FROM Container c WHERE c.path = :path and c.toolname = :toolname"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Container.findByToolPath", query = "SELECT c FROM Container c WHERE c.path = :path AND c.toolname = :toolname"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Container.findRegisteredByToolPath", query = "SELECT c FROM Container c WHERE c.path = :path AND c.toolname = :toolname AND c.isRegistered = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findByMode", query = "SELECT c FROM Container c WHERE c.mode = :mode"),
         @NamedQuery(name = "io.dockstore.webservice.core.Container.findRegisteredByPath", query = "SELECT c FROM Container c WHERE c.path = :path AND c.isRegistered = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Container.searchPattern", query = "SELECT c FROM Container c WHERE ((c.path LIKE :pattern) OR (c.registry LIKE :pattern) OR (c.description LIKE :pattern)) AND c.isRegistered = true") })
