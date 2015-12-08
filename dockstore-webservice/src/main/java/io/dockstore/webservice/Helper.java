@@ -529,7 +529,8 @@ public final class Helper {
         Map<String, String> gitMap = SourceCodeRepoFactory.parseGitUrl(gitUrl);
 
         if (gitMap == null) {
-            return null;
+            LOG.info("Could not parse Git URL. Unable to refresh container!");
+            return container;
         }
 
         String source = gitMap.get("Source");

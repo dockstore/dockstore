@@ -78,7 +78,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             repository = service.getRepository(gitUsername, gitRepository);
         } catch (IOException e) {
             LOG.error("Repo: {} could not be retrieved", c.getGitUrl());
-            // throw new RuntimeException();
         }
         if (repository == null) {
             LOG.info("Github repository not found for {}", c.getPath());
