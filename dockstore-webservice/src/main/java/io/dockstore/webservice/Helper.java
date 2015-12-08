@@ -521,9 +521,10 @@ public final class Helper {
     }
 
     @SuppressWarnings("checkstyle:parameternumber")
-    public static Container refreshContainer(Container container, final long userId, final HttpClient client,
+    public static Container refreshContainer(final long containerId, final long userId, final HttpClient client,
             final ObjectMapper objectMapper, final UserDAO userDAO, final ContainerDAO containerDAO, final TokenDAO tokenDAO,
             final TagDAO tagDAO, final FileDAO fileDAO) {
+        Container container = containerDAO.findById(containerId);
         String gitUrl = container.getGitUrl();
         Map<String, String> gitMap = SourceCodeRepoFactory.parseGitUrl(gitUrl);
 
@@ -583,21 +584,24 @@ public final class Helper {
         dbContainers.add(container);
 
         removeContainersThatCannotBeUpdated(dbContainers);
+        
+        apiContainers.removeIf(container1 -> !container1.getPath().equals(container.getPath()));
 
         final User dockstoreUser = userDAO.findById(userId);
         // update information on a container by container level
         updateContainers(apiContainers, dbContainers, dockstoreUser, containerDAO);
         userDAO.clearCache();
 
-        final List<Container> newDBContainers = getContainers(userId, userDAO);
+        final List<Container> newDBContainers = new ArrayList<>();
+        newDBContainers.add(containerDAO.findById(container.getId()));
+
         // update information on a tag by tag level
-        final Map<String, List<Tag>> tagMap = getTags(client, containerDAO.findByPath(container.getId()), objectMapper, quayToken,
-                mapOfBuilds);
+        final Map<String, List<Tag>> tagMap = getTags(client, newDBContainers, objectMapper, quayToken, mapOfBuilds);
 
         updateTags(newDBContainers, client, containerDAO, tagDAO, fileDAO, githubToken, bitbucketToken, tagMap);
         userDAO.clearCache();
 
-        return container;
+        return containerDAO.findById(container.getId());
     }
 
     private static void removeContainersThatCannotBeUpdated(List<Container> dbContainers) {

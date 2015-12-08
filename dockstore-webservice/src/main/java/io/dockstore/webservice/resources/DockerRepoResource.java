@@ -159,8 +159,8 @@ public class DockerRepoResource {
         User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
 
-        Container container = Helper.refreshContainer(c, authToken.getUserId(), client, objectMapper, userDAO, containerDAO, tokenDAO,
-                tagDAO, fileDAO);
+        Container container = Helper.refreshContainer(containerId, authToken.getUserId(), client, objectMapper, userDAO, containerDAO,
+                tokenDAO, tagDAO, fileDAO);
 
         return container;
     }
@@ -293,6 +293,8 @@ public class DockerRepoResource {
 
         long id = containerDAO.create(container);
         Container created = containerDAO.findById(id);
+
+        Helper.refreshContainer(id, authToken.getUserId(), client, objectMapper, userDAO, containerDAO, tokenDAO, tagDAO, fileDAO);
         return created;
     }
 
