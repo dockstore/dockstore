@@ -294,7 +294,7 @@ public class DockerRepoResource {
         long id = containerDAO.create(container);
         Container created = containerDAO.findById(id);
 
-        Helper.refreshContainer(id, authToken.getUserId(), client, objectMapper, userDAO, containerDAO, tokenDAO, tagDAO, fileDAO);
+        // Helper.refreshContainer(id, authToken.getUserId(), client, objectMapper, userDAO, containerDAO, tokenDAO, tagDAO, fileDAO);
         return created;
     }
 
