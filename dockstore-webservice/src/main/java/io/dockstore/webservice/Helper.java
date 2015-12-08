@@ -520,6 +520,90 @@ public final class Helper {
         return new ArrayList(getContainers(userId, userDAO));
     }
 
+    @SuppressWarnings("checkstyle:parameternumber")
+    public static Container refreshContainer(final long containerId, final long userId, final HttpClient client,
+            final ObjectMapper objectMapper, final UserDAO userDAO, final ContainerDAO containerDAO, final TokenDAO tokenDAO,
+            final TagDAO tagDAO, final FileDAO fileDAO) {
+        Container container = containerDAO.findById(containerId);
+        String gitUrl = container.getGitUrl();
+        Map<String, String> gitMap = SourceCodeRepoFactory.parseGitUrl(gitUrl);
+
+        if (gitMap == null) {
+            return null;
+        }
+
+        String source = gitMap.get("Source");
+        String gitUsername = gitMap.get("Username");
+        String gitRepository = gitMap.get("Repository");
+
+        List<Token> tokens = tokenDAO.findByUserId(userId);
+
+        Token quayToken = null;
+        Token githubToken = null;
+        Token bitbucketToken = null;
+
+        // Get user's quay and git tokens
+        for (Token token : tokens) {
+            if (token.getTokenSource().equals(TokenType.QUAY_IO.toString())) {
+                quayToken = token;
+            }
+            if (token.getTokenSource().equals(TokenType.GITHUB_COM.toString())) {
+                githubToken = token;
+            }
+            if (token.getTokenSource().equals(TokenType.BITBUCKET_ORG.toString())) {
+                bitbucketToken = token;
+            }
+        }
+
+        // with Docker Hub support it is now possible that there is no quayToken
+        if (source.equals("github.com") && githubToken == null) {
+            LOG.info("GIT token not found!");
+            throw new WebApplicationException(HttpStatus.SC_CONFLICT);
+        }
+        if (source.equals("bitbucket.org") && bitbucketToken == null) {
+            LOG.info("WARNING: BITBUCKET token not found!");
+        }
+
+        ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
+        final ImageRegistryInterface anInterface = factory.createImageRegistry(container.getRegistry());
+
+        List<Container> apiContainers = new ArrayList<>();
+
+        if (container.getMode() == ContainerMode.MANUAL_IMAGE_PATH) {
+            apiContainers.add(container);
+        } else {
+            List<String> namespaces = new ArrayList<>();
+            namespaces.add(container.getNamespace());
+
+            apiContainers.addAll(anInterface.getContainers(namespaces));
+        }
+
+        final Map<String, ArrayList<?>> mapOfBuilds = anInterface.getBuildMap(githubToken, bitbucketToken, apiContainers);
+
+        List<Container> dbContainers = new ArrayList<>();
+        dbContainers.add(container);
+
+        removeContainersThatCannotBeUpdated(dbContainers);
+        
+        apiContainers.removeIf(container1 -> !container1.getPath().equals(container.getPath()));
+
+        final User dockstoreUser = userDAO.findById(userId);
+        // update information on a container by container level
+        updateContainers(apiContainers, dbContainers, dockstoreUser, containerDAO);
+        userDAO.clearCache();
+
+        final List<Container> newDBContainers = new ArrayList<>();
+        newDBContainers.add(containerDAO.findById(container.getId()));
+
+        // update information on a tag by tag level
+        final Map<String, List<Tag>> tagMap = getTags(client, newDBContainers, objectMapper, quayToken, mapOfBuilds);
+
+        updateTags(newDBContainers, client, containerDAO, tagDAO, fileDAO, githubToken, bitbucketToken, tagMap);
+        userDAO.clearCache();
+
+        return containerDAO.findById(container.getId());
+    }
+
     private static void removeContainersThatCannotBeUpdated(List<Container> dbContainers) {
         // TODO: for now, with no info coming back from Docker Hub, just skip them always
         dbContainers.removeIf(container1 -> container1.getRegistry() == Registry.DOCKER_HUB);
