@@ -408,7 +408,7 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/path/tool/{repository}")
+    @Path("/path/tool/{repository}/registered")
     @ApiOperation(value = "Get a container by tool path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Container.class)
     public Container getRegisteredContainerByToolPath(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
