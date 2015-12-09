@@ -39,6 +39,7 @@ public class SourceCodeRepoFactory {
             if (bitbucketTokenContent != null) {
                 repo = new BitBucketSourceCodeRepo(gitUsername, client, bitbucketTokenContent, gitRepository);
             } else {
+                LOG.info("WARNING: Source is from Bitbucket, but user does not have Bitbucket token!");
                 return null;
             }
         } else {

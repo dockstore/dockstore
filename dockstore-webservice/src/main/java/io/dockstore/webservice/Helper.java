@@ -147,7 +147,7 @@ public final class Helper {
                     if (!exists) {
                         // this could result in the same tag being added to multiple containers with the same path, need to clone
                         Tag clonedTag = new Tag();
-                        clonedTag.update(newTag);
+                        clonedTag.clone(newTag);
                         existingTags.add(clonedTag);
                     }
 
@@ -532,11 +532,12 @@ public final class Helper {
 
         // with Docker Hub support it is now possible that there is no quayToken
         if (gitSource.equals("github.com") && githubToken == null) {
-            LOG.info("GIT token not found!");
-            throw new WebApplicationException(HttpStatus.SC_CONFLICT);
+            LOG.info("WARNING: GITHUB token not found!");
+            throw new WebApplicationException("A valid GitHub token is required to refresh this container.", HttpStatus.SC_CONFLICT);
         }
         if (gitSource.equals("bitbucket.org") && bitbucketToken == null) {
             LOG.info("WARNING: BITBUCKET token not found!");
+            throw new WebApplicationException("A valid Bitbucket token is required to refresh this container.", HttpStatus.SC_BAD_REQUEST);
         }
 
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);

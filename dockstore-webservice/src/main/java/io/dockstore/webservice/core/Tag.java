@@ -126,6 +126,19 @@ public class Tag implements Comparable<Tag> {
         imageId = tag.imageId;
         lastModified = tag.lastModified;
         size = tag.size;
+    }
+
+    public void clone(Tag tag) {
+        // If the tag has an automated build, the reference will be overwritten (whether or not the user has edited it).
+        if (tag.automated) {
+            reference = tag.reference;
+        }
+
+        name = tag.name;
+        automated = tag.automated;
+        imageId = tag.imageId;
+        lastModified = tag.lastModified;
+        size = tag.size;
         cwlPath = tag.cwlPath;
         dockerfilePath = tag.dockerfilePath;
     }
