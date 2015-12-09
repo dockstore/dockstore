@@ -54,7 +54,7 @@ public class SourceCodeRepoFactory {
      * @param url
      * @return a map with keys: Source, Username, Repository
      */
-    static Map<String, String> parseGitUrl(String url) {
+    public static Map<String, String> parseGitUrl(String url) {
         Pattern p = Pattern.compile("git\\@(\\S+):(\\S+)/(\\S+)\\.git");
         Matcher m = p.matcher(url);
         if (!m.find()) {

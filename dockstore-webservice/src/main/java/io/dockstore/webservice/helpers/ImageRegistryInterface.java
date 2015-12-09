@@ -6,7 +6,6 @@ import java.util.Map;
 
 import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.Tag;
-import io.dockstore.webservice.core.Token;
 
 /**
  * Interface for how to grab data from a registry for docker containers.
@@ -48,5 +47,5 @@ public interface ImageRegistryInterface {
      *            a list of images that gets modified with data from builds like data modified, size, etc.
      * @return map of path -> list of quay.io build data structure
      */
-    Map<String, ArrayList<?>> getBuildMap(Token githubToken, Token bitbucketToken, List<Container> allRepos);
+    Map<String, ArrayList<?>> getBuildMap(List<Container> allRepos);
 }

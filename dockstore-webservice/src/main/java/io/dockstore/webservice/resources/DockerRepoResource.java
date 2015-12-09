@@ -147,6 +147,25 @@ public class DockerRepoResource {
     }
 
     @GET
+    @Path("/{containerId}/refresh")
+    @Timed
+    @UnitOfWork
+    @ApiOperation(value = "Refresh one particular repo", response = Container.class)
+    public Container refresh(@ApiParam(hidden = true) @Auth Token authToken,
+            @ApiParam(value = "Container ID", required = true) @PathParam("containerId") Long containerId) {
+        Container c = containerDAO.findById(containerId);
+        Helper.checkContainer(c);
+
+        User user = userDAO.findById(authToken.getUserId());
+        Helper.checkUser(user, c);
+
+        Container container = Helper.refreshContainer(containerId, authToken.getUserId(), client, objectMapper, userDAO, containerDAO,
+                tokenDAO, tagDAO, fileDAO);
+
+        return container;
+    }
+
+    @GET
     @Timed
     @UnitOfWork
     @ApiOperation(value = "List all docker containers cached in database", notes = "List docker container repos currently known. Admin Only", response = Container.class, responseContainer = "List")
@@ -274,6 +293,8 @@ public class DockerRepoResource {
 
         long id = containerDAO.create(container);
         Container created = containerDAO.findById(id);
+
+        // Helper.refreshContainer(id, authToken.getUserId(), client, objectMapper, userDAO, containerDAO, tokenDAO, tagDAO, fileDAO);
         return created;
     }
 
@@ -334,11 +355,12 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/path/{repository}/registered")
-    @ApiOperation(value = "Get a registered container by path", notes = "NO authentication", response = Container.class)
-    public Container getRegisteredContainerByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
-        Container c = containerDAO.findRegisteredByPath(path);
-        Helper.checkContainer(c);
-        return c;
+    @ApiOperation(value = "Get a registered container by path", notes = "NO authentication", response = Container.class, responseContainer = "List")
+    public List<Container> getRegisteredContainerByPath(
+            @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
+        List<Container> container = containerDAO.findRegisteredByPath(path);
+        Helper.checkContainer(container);
+        return container;
     }
 
     @GET
@@ -379,6 +401,27 @@ public class DockerRepoResource {
 
         User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, container);
+
+        return container;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/path/tool/{repository}/registered")
+    @ApiOperation(value = "Get a container by tool path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Container.class)
+    public Container getRegisteredContainerByToolPath(@ApiParam(hidden = true) @Auth Token authToken,
+            @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
+        final String[] split = path.split("/");
+        // check that this is a tool path
+        final int toolPathLength = 4;
+        String toolname = "";
+        if (split.length == toolPathLength) {
+            toolname = split[toolPathLength - 1];
+        }
+
+        Container container = containerDAO.findRegisteredByToolPath(Joiner.on("/").join(split[0], split[1], split[2]), toolname);
+        Helper.checkContainer(container);
 
         return container;
     }

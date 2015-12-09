@@ -78,7 +78,12 @@ public class ContainerDAO extends AbstractDAO<Container> {
         return list(namedQuery("io.dockstore.webservice.core.Container.findByMode").setParameter("mode", mode));
     }
 
-    public Container findRegisteredByPath(String path) {
-        return uniqueResult(namedQuery("io.dockstore.webservice.core.Container.findRegisteredByPath").setParameter("path", path));
+    public List<Container> findRegisteredByPath(String path) {
+        return list(namedQuery("io.dockstore.webservice.core.Container.findRegisteredByPath").setParameter("path", path));
+    }
+
+    public Container findRegisteredByToolPath(String path, String tool) {
+        return uniqueResult(namedQuery("io.dockstore.webservice.core.Container.findRegisteredByToolPath").setParameter("path", path)
+                .setParameter("toolname", tool));
     }
 }

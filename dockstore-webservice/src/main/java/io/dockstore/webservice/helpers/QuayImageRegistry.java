@@ -113,6 +113,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
         for (String namespace : namespaces) {
             String url = QUAY_URL + "repository?namespace=" + namespace;
             Optional<String> asString = ResourceUtilities.asString(url, quayToken.getContent(), client);
+            LOG.info("RESOURCE CALL: {}", url);
 
             if (asString.isPresent()) {
                 RepoList repos;
@@ -120,7 +121,6 @@ public class QuayImageRegistry implements ImageRegistryInterface {
                     // interesting, this relies upon our container object having the same fields
                     // as quay.io's repositories
                     repos = objectMapper.readValue(asString.get(), RepoList.class);
-                    LOG.info("RESOURCE CALL: {}", url);
 
                     List<Container> containers = repos.getRepositories();
                     // tag all of these with where they came from
@@ -138,7 +138,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
     }
 
     @Override
-    public Map<String, ArrayList<?>> getBuildMap(Token githubToken, Token bitbucketToken, List<Container> allRepos) {
+    public Map<String, ArrayList<?>> getBuildMap(List<Container> allRepos) {
         final SimpleDateFormat formatter = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
 
         final Map<String, ArrayList<?>> mapOfBuilds = new HashMap<>();
