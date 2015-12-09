@@ -3,7 +3,7 @@
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>0.1.2-SNAPSHOT</version>
+    <version>0.2.0</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
@@ -31,7 +31,7 @@
         <connection>${github.url}</connection>
         <developerConnection>${github.url}</developerConnection>
         <url>${github.url}</url>
-        <tag>HEAD</tag>
+        <tag>0.2.0</tag>
     </scm>
 
     <repositories>
@@ -411,7 +411,7 @@
                 <artifactId>cobertura-maven-plugin</artifactId>
                 <version>2.7</version>
                 <configuration>
-                    <check/>
+                    <check />
                     <formats>
                         <format>xml</format>
                         <format>html</format>
@@ -458,7 +458,7 @@
                         <artifactId>cobertura-maven-plugin</artifactId>
                         <version>2.7</version>
                         <configuration>
-                            <check/>
+                            <check />
                             <formats>
                                 <format>xml</format>
                             </formats>

@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
-        <version>0.1.2-SNAPSHOT</version>
+        <version>0.2.0</version>
     </parent>
     <artifactId>dockstore-client</artifactId>
     <packaging>jar</packaging>
@@ -22,7 +22,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-client</artifactId>
-            <version>0.1.2-SNAPSHOT</version>
+            <version>0.2.0</version>
             
         </dependency>
         
@@ -321,7 +321,7 @@
                 <artifactId>cobertura-maven-plugin</artifactId>
                 <version>2.7</version>
                 <configuration>
-                    <check/>
+                    <check />
                     <formats>
                         <format>xml</format>
                         <format>html</format>
