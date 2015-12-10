@@ -105,6 +105,21 @@ To regenerate the swagger client:
 3. Run `java -jar modules/swagger-codegen-cli/target/swagger-codegen-cli.jar generate -i http://localhost:8080/swagger.json -l java -o <output directory> --library jersey2`. The output directory is where you have dockstore/swagger-java-client/.
 4. NOTE: Rengenerating the swagger client will probably generate an incorrect pom file. Use git checkout on the pom file to undo the changes to it.
 
+## CWL Avro documents
+
+Background:
+* The CWL specification is defined in something similar to but not entirely like Avro
+* Use the schema salad project to convert to an avro-ish schema document
+* Generate the Java classes for the schema
+* We cannot use these classes directly since CWL documents are not json or avro binaries, use cwl-tool to convert to json and 
+then gson to convert from json due to some incompatibilities between CWL avro and normal avro.  
+
+To regenerate:
+1. Get schema salad from the common-workflow-language organization and run `python -mschema_salad --print-avro ~/common-workflow-language/draft-3/cwl-avro.yml`
+2. Get the avro tools jar and CWL avsc and call `java -jar avro-tools-1.7.7.jar compile schema cwl.avsc cwl`
+3. Copy them to the appropriate directory in dockstore-client (you will need to refactor and insert package names)
+
+
 ## TODO
 
 1. items from Brian

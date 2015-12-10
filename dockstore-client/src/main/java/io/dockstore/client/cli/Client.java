@@ -1,4 +1,4 @@
-/*
+package io.dockstore.client.cli;/*
  * Copyright (C) 2015 Collaboratory
  *
  * This program is free software: you can redistribute it and/or modify
@@ -14,30 +14,51 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package io.dockstore.client.cli;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Type;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.ws.rs.ProcessingException;
 
+import org.apache.avro.specific.SpecificRecordBase;
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecuteResultHandler;
+import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.ExecuteException;
+import org.apache.commons.exec.Executor;
+import org.apache.commons.exec.PumpStreamHandler;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 
-import com.esotericsoftware.yamlbeans.YamlException;
 import com.esotericsoftware.yamlbeans.YamlReader;
 import com.google.common.base.Joiner;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.reflect.TypeToken;
 
+import io.dockstore.client.cli.cwl.Any;
+import io.dockstore.client.cli.cwl.CommandInputParameter;
+import io.dockstore.client.cli.cwl.CommandLineTool;
+import io.dockstore.client.cli.cwl.CommandOutputParameter;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;
@@ -427,11 +448,237 @@ public class Client {
                 } else {
                     kill("Unable to publish " + fullName);
                 }
-            } catch (ApiException ex) {
+            } catch (final ApiException ex) {
                 kill("Unable to publish " + fullName);
             }
         }
     }
+
+    private static void dev(final List<String> args) throws ApiException {
+        if (isHelp(args, true)) {
+            out("");
+            out("Usage: dockstore dev --help");
+            out("       dockstore dev cwl2json");
+            out("       dockstore dev tool2json <container>");
+            out("");
+            out("Description:");
+            out("  Experimental features not quite ready for prime-time.");
+            out("");
+        } else {
+            String cmd = args.remove(0);
+            if (null != cmd) {
+                switch (cmd) {
+                case "cwl2json":
+                    cwl2json(args);
+                    break;
+                case "tool2json":
+                    tool2json(args);
+                    break;
+                default:
+                    invalid(cmd);
+                    break;
+                }
+            }
+        }
+    }
+
+    private static void tool2json(final List<String> args) throws ApiException {
+        if (isHelp(args, true)) {
+            out("");
+            out("Usage: dockstore dev --help");
+            out("       dockstore dev tool2json");
+            out("");
+            out("Description:");
+            out("  Spit out a json run file for a given cwl document.");
+            out("Required parameters:");
+            out("  --cwl <file>                Path to cwl file");
+            out("");
+        } else {
+
+            final SourceFile cwlFromServer = getCWLFromServer(args);
+            final Map<String, Object> runJson = extractRunJson(cwlFromServer.getContent());
+            final Gson gson = getTypeSafeCWLToolDocument();
+            out(gson.toJson(runJson));
+        }
+    }
+
+    private static void cwl2json(final List<String> args) {
+        if (isHelp(args, true)) {
+            out("");
+            out("Usage: dockstore dev --help");
+            out("       dockstore dev cwl2json");
+            out("");
+            out("Description:");
+            out("  Spit out a json run file for a given cwl document.");
+            out("Required parameters:");
+            out("  --cwl <file>                Path to cwl file");
+            out("");
+        } else {
+
+            final String cwlPath = reqVal(args, "--cwl");
+            final ImmutablePair<String, String> output = parseCWL(cwlPath, true);
+
+            final Gson gson = getTypeSafeCWLToolDocument();
+            final Map<String, Object> runJson = extractRunJson(output.getLeft());
+            out(gson.toJson(runJson));
+        }
+    }
+
+    /**
+     * Convert a String representation of a CWL file to a run json
+     * @param output
+     * @return
+     */
+    static Map<String, Object> extractRunJson(final String output) {
+        final Gson gson = getTypeSafeCWLToolDocument();
+        final CommandLineTool commandLineTool = gson.fromJson(output, CommandLineTool.class);
+        final Map<String, Object> runJson = new HashMap<>();
+        final List<CommandInputParameter> inputs = commandLineTool.getInputs();
+        final List<CommandOutputParameter> outputs = commandLineTool.getOutputs();
+
+        for(final CommandInputParameter inputParam : inputs){
+            final String idString = inputParam.getId().toString();
+            final Object stub = getStub(inputParam.getType());
+            runJson.put(idString.substring(idString.lastIndexOf('#') + 1), stub);
+        }
+        for(final CommandOutputParameter outParam : outputs){
+            final String idString = outParam.getId().toString();
+            final Object stub = getStub(outParam.getType());
+            runJson.put(idString.substring(idString.lastIndexOf('#') + 1), stub);
+        }
+        return runJson;
+    }
+
+    /**
+     * This is an ugly mapping between CWL's primitives and Java primitives
+     * @param type
+     * @return
+     */
+    private static Object getStub(Object type) {
+        Object stub = "fill me in";
+        String strType = type.toString();
+        switch (strType) {
+        case "File":
+            Map<String, String> file = new HashMap<>();
+            file.put("class", "File");
+            file.put("path", "fill me in");
+            stub = file;
+            break;
+        case "boolean":
+            stub = Boolean.FALSE;
+            break;
+        case "int":
+            stub = 0;
+            break;
+        case "long":
+            stub = 0L;
+            break;
+        case "float":
+            stub = 0.0;
+            break;
+        case "double":
+            stub = Double.MAX_VALUE;
+        default:
+            break;
+        }
+        return stub;
+    }
+
+    /**
+     * @return a gson instance that can properly convert CWL tools into a typesafe Java object
+     */
+    static Gson getTypeSafeCWLToolDocument() {
+        final Type hintType = new TypeToken<List<Any>>() {}.getType();
+        final Gson sequenceSafeGson = new GsonBuilder().registerTypeAdapter(CharSequence.class,
+            (JsonDeserializer<CharSequence>) (json, typeOfT, context) -> json.getAsString()).create();
+
+        return new GsonBuilder().registerTypeAdapter(CharSequence.class,
+            (JsonDeserializer<CharSequence>) (json, typeOfT, context) -> json.getAsString())
+                        .registerTypeAdapter(hintType, (JsonDeserializer) (json, typeOfT, context) -> {
+                            Collection<Object> hints = new ArrayList<>();
+                            for (final JsonElement jsonElement : json.getAsJsonArray()) {
+                                final Object o = getCWLObject(sequenceSafeGson, jsonElement);
+                                hints.add(o);
+                            }
+                            return hints;
+                        })
+                   .registerTypeAdapter(CommandInputParameter.class, (JsonDeserializer<CommandInputParameter>) (json, typeOfT, context) -> {
+                       final CommandInputParameter commandInputParameter = sequenceSafeGson.fromJson(json,
+                           CommandInputParameter.class);
+                       // default has a dollar sign in the schema but not in sample jsons, we could do something here if we wanted
+                       return commandInputParameter;
+                   })
+                   .serializeNulls().setPrettyPrinting()
+            .create();
+    }
+
+    private static Object getCWLObject(Gson gson1, JsonElement jsonElement) {
+        final String elementClass = jsonElement.getAsJsonObject().get("class").getAsString();
+        Class<SpecificRecordBase> anyClass;
+        try {
+            anyClass = (Class<SpecificRecordBase>) Class.forName("io.dockstore.client.cli.cwl." + elementClass);
+        } catch (ClassNotFoundException e) {
+            //TODO: this should be a log
+            e.printStackTrace();
+            anyClass = null;
+        }
+        return gson1.fromJson(jsonElement, anyClass);
+    }
+
+    private static ImmutablePair<String, String> parseCWL(String cwlFile, boolean validate) {
+        // update seems to just output the JSON version without checking file links
+        String[] s = new String[] { "cwltool", validate ? "--print-pre" : "--update", cwlFile };
+        final ImmutablePair<String, String> execute = executeCommand(Joiner.on(" ").join(Arrays.asList(s)));
+        return execute;
+    }
+
+    //  pseudo copied from dockstore-launcher-descriptor, switch to import if this works
+
+    /**
+     * Execute a command and return stdout and stderr
+     * @param command the command to execute
+     * @return the stdout and stderr
+     */
+    private static ImmutablePair<String, String> executeCommand(String command) {
+
+        out("CMD: " + command);
+        // TODO: limit our output in case the called program goes crazy
+
+        // these are for returning the output for use by this
+        ByteArrayOutputStream localStdoutStream = new ByteArrayOutputStream();
+        ByteArrayOutputStream localStdErrStream = new ByteArrayOutputStream();
+
+        DefaultExecuteResultHandler resultHandler = new DefaultExecuteResultHandler();
+        String utf8 = StandardCharsets.UTF_8.name();
+        try {
+            final CommandLine parse = CommandLine.parse(command);
+            Executor executor = new DefaultExecutor();
+            executor.setExitValue(0);
+            System.out.println("CMD: " + command);
+            // get stdout and stderr
+            executor.setStreamHandler(new PumpStreamHandler(localStdoutStream, localStdErrStream));
+            executor.execute(parse, resultHandler);
+            resultHandler.waitFor();
+            // not sure why commons-exec does not throw an exception
+            if (resultHandler.getExitValue() != 0) {
+                resultHandler.getException().printStackTrace();
+                throw new ExecuteException("problems running command: " + command, resultHandler.getExitValue());
+            }
+            return new ImmutablePair<>(localStdoutStream.toString(utf8), localStdErrStream.toString(utf8));
+        } catch (InterruptedException | IOException e) {
+            throw new RuntimeException("problems running command: " + command, e);
+        } finally {
+            System.out.println("exit code: " + resultHandler.getExitValue());
+            try {
+                System.err.println("stderr was: " + localStdErrStream.toString(utf8));
+                System.out.println("stdout was: " + localStdoutStream.toString(utf8));
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException("utf-8 does not exist?", e);
+            }
+        }
+    }
+
+    /** this ends the section from dockstore-descriptor launcher **/
 
     private static boolean isHelpRequest(String first) {
         return "-h".equals(first) || "--help".equals(first);
@@ -524,36 +771,44 @@ public class Client {
             kill("Please provide a container.");
         }
 
+        try {
+            SourceFile file = getCWLFromServer(args);
+
+            if (file.getContent() != null && !file.getContent().isEmpty()) {
+                out(file.getContent());
+            } else {
+                kill("No cwl file found.");
+            }
+
+        } catch (ApiException ex) {
+            // out("Exception: " + ex);
+            kill("Could not find container");
+        }
+    }
+
+    private static SourceFile getCWLFromServer(List<String> args) throws ApiException {
         String[] parts = args.get(0).split(":");
 
         String path = parts[0];
 
         String tag = (parts.length > 1) ? parts[1] : null;
+        SourceFile file = new SourceFile();
+        Container container = containersApi.getContainerByToolPath(path);
+        if (container.getValidTrigger()) {
+            try {
+                file = containersApi.cwl(container.getId(), tag);
 
-        try {
-            Container container = containersApi.getContainerByToolPath(path);
-            if (container.getValidTrigger()) {
-                try {
-                    SourceFile file = containersApi.cwl(container.getId(), tag);
-                    if (file.getContent() != null && !file.getContent().isEmpty()) {
-                        out(file.getContent());
-                    } else {
-                        kill("No cwl file found.");
-                    }
-                } catch (ApiException ex) {
-                    if (ex.getCode() == HttpStatus.SC_BAD_REQUEST) {
-                        kill("Invalid tag");
-                    } else {
-                        kill("No cwl file found.");
-                    }
+            } catch (ApiException ex) {
+                if (ex.getCode() == HttpStatus.SC_BAD_REQUEST) {
+                    kill("Invalid tag");
+                } else {
+                    kill("No cwl file found.");
                 }
-            } else {
-                kill("No cwl file found.");
             }
-        } catch (ApiException ex) {
-            // out("Exception: " + ex);
-            kill("Could not find container");
+        } else {
+            kill("No cwl file found.");
         }
+        return file;
     }
 
     private static void refresh(List<String> args) {
@@ -625,7 +880,7 @@ public class Client {
                 out("");
                 out("  info <container> :  print detailed information about a particular container");
                 out("");
-                out("  cwl <container>  :  returns the Common Workflow Language tool definition for this Docker image ");
+                out("  cwl <container>  :  returns the Common io.dockstore.client.cli.cwl.Workflow Language tool definition for this Docker image ");
                 out("                      which enables integration with Global Alliance compliant systems");
                 out("");
                 out("  refresh          :  updates your list of containers stored on Dockstore");
@@ -671,6 +926,9 @@ public class Client {
                         case "refresh":
                             refresh(args);
                             break;
+                        case "dev":
+                            dev(args);
+                            break;
                         default:
                             invalid(cmd);
                             break;
@@ -680,7 +938,7 @@ public class Client {
                     System.exit(GENERIC_ERROR);
                 }
             }
-        } catch (FileNotFoundException | YamlException | NotFoundException | ApiException ex) {
+        } catch (IOException | NotFoundException | ApiException ex) {
             out("Exception: " + ex);
             System.exit(GENERIC_ERROR);
         } catch (ProcessingException ex) {
