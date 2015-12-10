@@ -47,6 +47,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
 
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.Helper;
 import io.dockstore.webservice.api.RegisterRequest;
 import io.dockstore.webservice.core.Container;
@@ -225,7 +226,7 @@ public class DockerRepoResource {
                         labels.add(labelDAO.findById(id));
                     }
                 } else {
-                    throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+                    throw new CustomWebApplicationException("Invalid label format", HttpStatus.SC_BAD_REQUEST);
                 }
             }
             c.setLabels(labels);
@@ -330,7 +331,7 @@ public class DockerRepoResource {
             if (validTag && c.getValidTrigger() && !c.getGitUrl().isEmpty()) {
                 c.setIsRegistered(true);
             } else {
-                throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException("Repository does not meet requirements to publish.", HttpStatus.SC_BAD_REQUEST);
             }
         } else {
             c.setIsRegistered(false);
@@ -551,7 +552,7 @@ public class DockerRepoResource {
         }
 
         if (tagInstance == null) {
-            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Invalid tag.", HttpStatus.SC_BAD_REQUEST);
         } else {
             for (SourceFile file : tagInstance.getSourceFiles()) {
                 if (file.getType() == dockerfile) {
@@ -559,7 +560,7 @@ public class DockerRepoResource {
                 }
             }
         }
-        throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
+        throw new CustomWebApplicationException("File not found.", HttpStatus.SC_NOT_FOUND);
     }
 
     @GET

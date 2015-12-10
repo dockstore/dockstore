@@ -62,7 +62,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 if (branch == null) {
                     LOG.info("Could NOT find bitbucket default branch!");
                     return null;
-                    // throw new WebApplicationException(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                    // throw new CustomWebApplicationException(HttpStatus.SC_INTERNAL_SERVER_ERROR);
                 } else {
                     LOG.info("Default branch: {}", branch);
                 }
@@ -105,7 +105,6 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             if (!m.find()) {
                 LOG.info("Namespace and/or repository name could not be found from container's giturl");
                 return container;
-                // throw new WebApplicationException(HttpStatus.SC_NOT_FOUND);
             }
 
             String url = BITBUCKET_API_URL + "repositories/" + m.group(1) + '/' + m.group(2) + "/main-branch";
@@ -123,7 +122,6 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 if (branch == null) {
                     LOG.info("Could NOT find bitbucket default branch!");
                     return null;
-                    // throw new WebApplicationException(HttpStatus.SC_INTERNAL_SERVER_ERROR);
                 } else {
                     LOG.info("Default branch: {}", branch);
                 }

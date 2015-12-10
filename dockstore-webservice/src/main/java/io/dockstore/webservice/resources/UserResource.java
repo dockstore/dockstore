@@ -31,7 +31,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -48,6 +47,7 @@ import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
 import com.google.gson.Gson;
 
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.Helper;
 import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.Group;
@@ -175,7 +175,7 @@ public class UserResource {
 
         User user = userDAO.findById(userId);
         if (user == null) {
-            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("User not found.", HttpStatus.SC_BAD_REQUEST);
         }
         return user;
     }
@@ -270,7 +270,7 @@ public class UserResource {
 
         User user = userDAO.findById(userId);
         if (user == null) {
-            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("User not found.", HttpStatus.SC_BAD_REQUEST);
         }
 
         List grouplist = new ArrayList(user.getGroups());
@@ -286,7 +286,7 @@ public class UserResource {
             @ApiParam("Group") @PathParam("groupId") long groupId) {
         Group group = groupDAO.findById(groupId);
         if (group == null) {
-            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Group not found.", HttpStatus.SC_BAD_REQUEST);
         }
 
         List userlist = new ArrayList(group.getUsers());
@@ -330,7 +330,7 @@ public class UserResource {
             user.addGroup(group);
         } else {
             LOG.info("user or group is null");
-            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Group and/or user not found.", HttpStatus.SC_BAD_REQUEST);
         }
 
         return user;
@@ -355,7 +355,7 @@ public class UserResource {
             user.removeGroup(group);
         } else {
             LOG.info("user or group is null");
-            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Group and/or user not found.", HttpStatus.SC_BAD_REQUEST);
         }
         return user;
     }
@@ -442,7 +442,7 @@ public class UserResource {
         List<Token> tokens = tokenDAO.findQuayByUserId(authUser.getId());
         Token token;
         if (tokens.isEmpty()) {
-            throw new WebApplicationException(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            throw new CustomWebApplicationException("Quay.io token not found.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         } else {
             token = tokens.get(0);
         }
@@ -485,7 +485,7 @@ public class UserResource {
 
         if (tokens.isEmpty()) {
             LOG.info("BITBUCKET token not found!");
-            throw new WebApplicationException(HttpStatus.SC_CONFLICT);
+            throw new CustomWebApplicationException("Bitbucket token not found", HttpStatus.SC_CONFLICT);
         } else {
             bitbucketToken = tokens.get(0);
         }

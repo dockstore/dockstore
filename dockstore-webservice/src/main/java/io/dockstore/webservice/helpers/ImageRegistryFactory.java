@@ -3,13 +3,12 @@ package io.dockstore.webservice.helpers;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.ws.rs.WebApplicationException;
-
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Registry;
 import io.dockstore.webservice.core.Token;
 
@@ -44,7 +43,7 @@ public class ImageRegistryFactory {
         } else if (registry == Registry.DOCKER_HUB) {
             return new DockerHubRegistry(client);
         } else {
-            throw new WebApplicationException(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE);
+            throw new CustomWebApplicationException("Sorry, we do not support " + registry + ".", HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE);
         }
     }
 }

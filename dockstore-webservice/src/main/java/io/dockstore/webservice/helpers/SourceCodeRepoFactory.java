@@ -5,12 +5,12 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.ws.rs.WebApplicationException;
-
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.dockstore.webservice.CustomWebApplicationException;
 
 /**
  * @author dyuen
@@ -44,7 +44,7 @@ public class SourceCodeRepoFactory {
             }
         } else {
             LOG.info("Do not support: " + source);
-            throw new WebApplicationException(HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE);
+            throw new CustomWebApplicationException("Sorry, we do not support " + source + ".", HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE);
         }
         return repo;
     }

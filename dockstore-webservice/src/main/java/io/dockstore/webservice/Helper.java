@@ -27,8 +27,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.ws.rs.WebApplicationException;
-
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
@@ -102,9 +100,13 @@ public final class Helper {
             final Map<String, List<Tag>> tagMap) {
         for (final Container container : containers) {
             LOG.info("--------------- Updating tags for {} ---------------", container.getToolPath());
+            List<Tag> existingTags = new ArrayList(container.getTags());
 
-            if (container.getMode() != ContainerMode.MANUAL_IMAGE_PATH) {
-                List<Tag> existingTags = new ArrayList(container.getTags());
+            // TODO: For a manually added container with a Quay.io registry, auto-populate its tags if it does not have any.
+            // May find another way so that tags are initially auto-populated, and never auto-populated again.
+            if (container.getMode() != ContainerMode.MANUAL_IMAGE_PATH
+                    || (container.getRegistry() == Registry.QUAY_IO && existingTags.isEmpty())) {
+
                 List<Tag> newTags = tagMap.get(container.getPath());
                 Map<String, Set<SourceFile>> fileMap = new HashMap<>();
 
@@ -212,10 +214,12 @@ public final class Helper {
                     container.getTags().remove(t);
                 }
 
-                if (allAutomated) {
-                    container.setMode(ContainerMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
-                } else {
-                    container.setMode(ContainerMode.AUTO_DETECT_QUAY_TAGS_WITH_MIXED);
+                if (container.getMode() != ContainerMode.MANUAL_IMAGE_PATH) {
+                    if (allAutomated) {
+                        container.setMode(ContainerMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
+                    } else {
+                        container.setMode(ContainerMode.AUTO_DETECT_QUAY_TAGS_WITH_MIXED);
+                    }
                 }
             }
 
@@ -390,8 +394,9 @@ public final class Helper {
                         tag.setDockerfilePath(c.getDefaultDockerfilePath());
                     }
                 }
-                tagMap.put(c.getPath(), tags);
+                // tagMap.put(c.getPath(), tags);
             }
+            tagMap.put(c.getPath(), tags);
         }
 
         return tagMap;
@@ -458,7 +463,7 @@ public final class Helper {
         // with Docker Hub support it is now possible that there is no quayToken
         if (githubToken == null) {
             LOG.info("GIT token not found!");
-            throw new WebApplicationException(HttpStatus.SC_CONFLICT);
+            throw new CustomWebApplicationException("Git token not found.", HttpStatus.SC_CONFLICT);
         }
         if (bitbucketToken == null) {
             LOG.info("WARNING: BITBUCKET token not found!");
@@ -533,11 +538,12 @@ public final class Helper {
         // with Docker Hub support it is now possible that there is no quayToken
         if (gitSource.equals("github.com") && githubToken == null) {
             LOG.info("WARNING: GITHUB token not found!");
-            throw new WebApplicationException("A valid GitHub token is required to refresh this container.", HttpStatus.SC_CONFLICT);
+            throw new CustomWebApplicationException("A valid GitHub token is required to refresh this container.", HttpStatus.SC_CONFLICT);
+            //throw new CustomWebApplicationException("A valid GitHub token is required to refresh this container.", HttpStatus.SC_CONFLICT);
         }
         if (gitSource.equals("bitbucket.org") && bitbucketToken == null) {
             LOG.info("WARNING: BITBUCKET token not found!");
-            throw new WebApplicationException("A valid Bitbucket token is required to refresh this container.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("A valid Bitbucket token is required to refresh this container.", HttpStatus.SC_BAD_REQUEST);
         }
 
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
@@ -710,11 +716,12 @@ public final class Helper {
                 long create = tokenDAO.create(token);
                 return tokenDAO.findById(create);
             } else {
-                throw new WebApplicationException("Could not retrieve bitbucket.org token based on code");
+                throw new CustomWebApplicationException("Could not retrieve bitbucket.org token based on code",
+                        HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
         } catch (UnsupportedEncodingException ex) {
             LOG.info(ex.toString());
-            throw new WebApplicationException(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            throw new CustomWebApplicationException(ex.toString(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -725,7 +732,7 @@ public final class Helper {
      */
     public static void checkUser(User user) {
         if (!user.getIsAdmin()) {
-            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
+            throw new CustomWebApplicationException("Forbidden: please check your credentials.", HttpStatus.SC_FORBIDDEN);
         }
     }
 
@@ -737,7 +744,7 @@ public final class Helper {
      */
     public static void checkUser(User user, long id) {
         if (!user.getIsAdmin() && user.getId() != id) {
-            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
+            throw new CustomWebApplicationException("Forbidden: please check your credentials.", HttpStatus.SC_FORBIDDEN);
         }
     }
 
@@ -749,7 +756,7 @@ public final class Helper {
      */
     public static void checkUser(User user, Container container) {
         if (!user.getIsAdmin() && !container.getUsers().contains(user)) {
-            throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
+            throw new CustomWebApplicationException("Forbidden: please check your credentials.", HttpStatus.SC_FORBIDDEN);
         }
     }
 
@@ -762,7 +769,7 @@ public final class Helper {
     public static void checkUser(User user, List<Container> list) {
         for (Container container : list) {
             if (!user.getIsAdmin() && !container.getUsers().contains(user)) {
-                throw new WebApplicationException(HttpStatus.SC_FORBIDDEN);
+                throw new CustomWebApplicationException("Forbidden: please check your credentials.", HttpStatus.SC_FORBIDDEN);
             }
         }
     }
@@ -774,7 +781,7 @@ public final class Helper {
      */
     public static void checkContainer(Container container) {
         if (container == null) {
-            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Container not found", HttpStatus.SC_BAD_REQUEST);
         }
     }
 
@@ -785,7 +792,7 @@ public final class Helper {
      */
     public static void checkContainer(List<Container> container) {
         if (container == null) {
-            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("No containers provided", HttpStatus.SC_BAD_REQUEST);
         }
         container.forEach(Helper::checkContainer);
     }

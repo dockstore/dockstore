@@ -28,7 +28,6 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -38,6 +37,7 @@ import org.slf4j.LoggerFactory;
 
 import com.codahale.metrics.annotation.Timed;
 
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.Helper;
 import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.Tag;
@@ -166,7 +166,7 @@ public class DockerRepoTagResource {
 
         Tag tag = tagDAO.findById(tagId);
         if (tag == null) {
-            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Tag not found.", HttpStatus.SC_BAD_REQUEST);
         }
 
         Set<Tag> listOfTags = c.getTags();
@@ -180,7 +180,7 @@ public class DockerRepoTagResource {
                 return Response.serverError().build();
             }
         } else {
-            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Tag not found.", HttpStatus.SC_BAD_REQUEST);
         }
     }
 }

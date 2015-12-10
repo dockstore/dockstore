@@ -29,7 +29,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -48,6 +47,7 @@ import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
 import com.google.gson.Gson;
 
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.Helper;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
@@ -138,7 +138,7 @@ public class TokenResource {
             + "Their browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addQuayToken(@ApiParam(hidden = true) @Auth Token authToken, @QueryParam("access_token") String accessToken) {
         if (accessToken.isEmpty()) {
-            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Please provide an access token.", HttpStatus.SC_BAD_REQUEST);
         }
 
         User user = userDAO.findById(authToken.getUserId());
@@ -171,18 +171,19 @@ public class TokenResource {
                     token.setUsername(username);
                 } else {
                     LOG.info("Quay.io tokenusername is null, did not create token");
-                    throw new WebApplicationException("Username not found from resource call " + url);
+                    throw new CustomWebApplicationException("Username not found from resource call " + url, HttpStatus.SC_CONFLICT);
                 }
                 long create = tokenDAO.create(token);
                 LOG.info("Quay token created for {}", user.getUsername());
                 return tokenDAO.findById(create);
             } else {
                 LOG.info("Quay token already exists for {}", user.getUsername());
+                throw new CustomWebApplicationException("Quay token already exists for " + user.getUsername(), HttpStatus.SC_CONFLICT);
             }
         } else {
             LOG.info("Could not find user");
+            throw new CustomWebApplicationException("User not found", HttpStatus.SC_CONFLICT);
         }
-        throw new WebApplicationException(HttpStatus.SC_CONFLICT);
     }
 
     @DELETE
@@ -229,13 +230,13 @@ public class TokenResource {
                 accessToken = split.get("access_token");
                 error = split.get("error");
             } else {
-                throw new WebApplicationException("Could not retrieve github.com token based on code");
+                throw new CustomWebApplicationException("Could not retrieve github.com token based on code", HttpStatus.SC_BAD_REQUEST);
             }
 
             if (error != null && "bad_verification_code".equals(error)) {
                 LOG.info("ERROR: {}", error);
                 if (--count == 0) {
-                    throw new WebApplicationException("Could not retrieve github.com token based on code");
+                    throw new CustomWebApplicationException("Could not retrieve github.com token based on code", HttpStatus.SC_BAD_REQUEST);
                 } else {
                     LOG.info("trying again...");
                 }
@@ -244,7 +245,7 @@ public class TokenResource {
                 break;
             } else {
                 LOG.info("Retrieving accessToken was unsuccessful");
-                throw new WebApplicationException("Could not retrieve github.com token based on code");
+                throw new CustomWebApplicationException("Could not retrieve github.com token based on code", HttpStatus.SC_BAD_REQUEST);
             }
         }
 
@@ -260,7 +261,7 @@ public class TokenResource {
 
             githubLogin = githubUser.getLogin();
         } catch (IOException ex) {
-            throw new WebApplicationException("Token ignored due to IOException");
+            throw new CustomWebApplicationException("Token ignored due to IOException", HttpStatus.SC_CONFLICT);
         }
 
         User user = userDAO.findByUsername(githubLogin);
@@ -341,7 +342,7 @@ public class TokenResource {
     public Token addBitbucketToken(@ApiParam(hidden = true) @Auth Token authToken, @QueryParam("code") String code)
             throws UnsupportedEncodingException {
         if (code.isEmpty()) {
-            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Please provide an access code", HttpStatus.SC_BAD_REQUEST);
         }
 
         User user = userDAO.findById(authToken.getUserId());
@@ -364,7 +365,7 @@ public class TokenResource {
             accessToken = map.get("access_token");
             refreshToken = map.get("refresh_token");
         } else {
-            throw new WebApplicationException("Could not retrieve bitbucket.org token based on code");
+            throw new CustomWebApplicationException("Could not retrieve bitbucket.org token based on code", HttpStatus.SC_BAD_REQUEST);
         }
 
         String username = null;
@@ -397,18 +398,19 @@ public class TokenResource {
                     token.setUsername(username);
                 } else {
                     LOG.info("Bitbucket.org token username is null, did not create token");
-                    throw new WebApplicationException("Username not found from resource call " + url);
+                    throw new CustomWebApplicationException("Username not found from resource call " + url, HttpStatus.SC_CONFLICT);
                 }
                 long create = tokenDAO.create(token);
                 LOG.info("Bitbucket token created for {}", user.getUsername());
                 return tokenDAO.findById(create);
             } else {
                 LOG.info("Bitbucket token already exists for {}", user.getUsername());
+                throw new CustomWebApplicationException("Bitbucket token already exists for " + user.getUsername(), HttpStatus.SC_CONFLICT);
             }
         } else {
             LOG.info("Could not find user");
+            throw new CustomWebApplicationException("User not found", HttpStatus.SC_CONFLICT);
         }
-        throw new WebApplicationException(HttpStatus.SC_CONFLICT);
     }
 
     @GET
@@ -420,7 +422,7 @@ public class TokenResource {
         List<Token> tokens = tokenDAO.findBitbucketByUserId(authToken.getUserId());
 
         if (tokens.isEmpty()) {
-            throw new WebApplicationException(HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("User's Bitbucket token not found.", HttpStatus.SC_BAD_REQUEST);
         }
 
         Token bitbucketToken = tokens.get(0);
