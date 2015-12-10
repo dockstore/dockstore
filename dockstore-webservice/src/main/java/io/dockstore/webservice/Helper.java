@@ -633,6 +633,11 @@ public final class Helper {
 
         final String reference = tag.getReference();// sourceCodeRepo.getReference(container.getGitUrl(), tag.getReference());
 
+        // Do not try to get file if the reference is not available
+        if (reference == null) {
+            return null;
+        }
+
         String fileName = "";
 
         if (fileType == FileType.DOCKERFILE) {
