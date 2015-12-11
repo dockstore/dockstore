@@ -545,6 +545,10 @@ public final class Helper {
             LOG.info("WARNING: BITBUCKET token not found!");
             throw new CustomWebApplicationException("A valid Bitbucket token is required to refresh this container.", HttpStatus.SC_BAD_REQUEST);
         }
+        if (container.getRegistry() == Registry.QUAY_IO && quayToken == null){
+            LOG.info("WARNING: QUAY.IO token not found!");
+            throw new CustomWebApplicationException("A valid Quay.io token is required to refresh this container.", HttpStatus.SC_BAD_REQUEST);
+        }
 
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
         final ImageRegistryInterface anInterface = factory.createImageRegistry(container.getRegistry());

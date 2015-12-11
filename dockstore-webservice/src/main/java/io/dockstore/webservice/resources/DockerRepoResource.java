@@ -292,6 +292,13 @@ public class DockerRepoResource {
 
         container.setGitUrl(Helper.convertHttpsToSsh(container.getGitUrl()));
 
+        Container duplicate = containerDAO.findByToolPath(container.getPath(), container.getToolname());
+
+        if (duplicate != null) {
+            LOG.info("duplicate container found: {}" + container.getToolPath());
+            throw new CustomWebApplicationException("Container " + container.getToolPath() + " already exists.", HttpStatus.SC_BAD_REQUEST);
+        }
+
         long id = containerDAO.create(container);
         Container created = containerDAO.findById(id);
 
@@ -328,7 +335,10 @@ public class DockerRepoResource {
                 }
             }
 
-            if (validTag && c.getValidTrigger() && !c.getGitUrl().isEmpty()) {
+            // TODO: for now, validTrigger signals if the user has a cwl file in their git repository's default branch. Don't need to check
+            // this if we check the cwl in the tags.
+            // if (validTag && c.getValidTrigger() && !c.getGitUrl().isEmpty()) {
+            if (validTag && !c.getGitUrl().isEmpty()) {
                 c.setIsRegistered(true);
             } else {
                 throw new CustomWebApplicationException("Repository does not meet requirements to publish.", HttpStatus.SC_BAD_REQUEST);
