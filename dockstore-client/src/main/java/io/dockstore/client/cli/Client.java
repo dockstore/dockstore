@@ -1,19 +1,4 @@
-package io.dockstore.client.cli;/*
- * Copyright (C) 2015 Collaboratory
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+package io.dockstore.client.cli;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -73,9 +58,24 @@ import io.swagger.client.model.Tag;
 import io.swagger.client.model.User;
 import javassist.NotFoundException;
 
-/**
+/*
+ * Copyright (C) 2015 Collaboratory
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * @author xliu
+ *
  */
 public class Client {
 
@@ -880,7 +880,7 @@ public class Client {
                 out("");
                 out("  info <container> :  print detailed information about a particular container");
                 out("");
-                out("  cwl <container>  :  returns the Common io.dockstore.client.cli.cwl.Workflow Language tool definition for this Docker image ");
+                out("  cwl <container>  :  returns the Common Workflow Language tool definition for this Docker image ");
                 out("                      which enables integration with Global Alliance compliant systems");
                 out("");
                 out("  refresh          :  updates your list of containers stored on Dockstore");
