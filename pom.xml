@@ -14,17 +14,20 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <github.url>scm:git:git@github.com:CancerCollaboratory/dockstore.git</github.url>
+        <github.url>scm:git:git@github.com:ga4gh/dockstore.git</github.url>
         <cobertura.version>2.1.1</cobertura.version>
         <dropwizard.version>0.8.4</dropwizard.version>
-        <swagger.version>1.5.3</swagger.version>
+        <swagger-annotations-version>1.5.3</swagger-annotations-version>
         <assertj.version>3.2.0</assertj.version>
         <jackson.version>2.5.1</jackson.version>
+        <jersey-version>2.21</jersey-version>
+        <junit-version>4.12</junit-version>
+
     </properties>
 
     <organization>
-        <name>Collaboratory</name>
-	<url>http://labs.oicr.on.ca/ferretti-lab/collaboratory-core-1</url>
+        <name>Dockstore</name>
+	    <url>https://www.dockstore.org/</url>
     </organization>
 
     <scm>
@@ -116,12 +119,12 @@
             <dependency>
                 <groupId>org.glassfish.jersey.media</groupId>
                 <artifactId>jersey-media-multipart</artifactId>
-                <version>2.21</version>
+                <version>${jersey-version}</version>
             </dependency>
             <dependency>
                 <groupId>io.swagger</groupId>
                 <artifactId>swagger-annotations</artifactId>
-                <version>1.5.3</version>
+                <version>${swagger-annotations-version}</version>
             </dependency>
             <dependency>
                 <groupId>net.sourceforge.cobertura</groupId>
@@ -142,7 +145,7 @@
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
-                <version>4.12</version>
+                <version>${junit-version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -158,6 +161,11 @@
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>18.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.javassist</groupId>
+                <artifactId>javassist</artifactId>
+                <version>3.18.2-GA</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -278,6 +286,26 @@
                         <autoVersionSubmodules>true</autoVersionSubmodules>
                     </configuration>
                 </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>cobertura-maven-plugin</artifactId>
+                    <version>2.7</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.eluder.coveralls</groupId>
+                    <artifactId>coveralls-maven-plugin</artifactId>
+                    <version>3.1.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>findbugs-maven-plugin</artifactId>
+                    <version>3.0.1</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>2.3</version>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -357,13 +385,6 @@
                             <failOnWarning>true</failOnWarning>
                             <outputXML>true</outputXML>
                             <ignoreNonCompile>true</ignoreNonCompile>
-
-<!--                            <usedDependencies>
-                                <usedDependency>javax.ws.rs:jsr311-api</usedDependency>
-                                <usedDependency>io.swagger:swagger-jersey2-jaxrs</usedDependency>
-                                <usedDependency>io.dropwizard:dropwizard-views-freemarker</usedDependency>
-                            </usedDependencies>-->
-
                         </configuration>
                     </execution>
                 </executions>
@@ -483,7 +504,6 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>cobertura-maven-plugin</artifactId>
-                        <version>2.7</version>
                         <configuration>
                             <check />
                             <formats>
