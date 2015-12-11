@@ -1,49 +1,29 @@
 package io.dockstore.client.cli;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Type;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.ws.rs.ProcessingException;
 
-import org.apache.avro.specific.SpecificRecordBase;
-import org.apache.commons.exec.CommandLine;
-import org.apache.commons.exec.DefaultExecuteResultHandler;
-import org.apache.commons.exec.DefaultExecutor;
-import org.apache.commons.exec.ExecuteException;
-import org.apache.commons.exec.Executor;
-import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 
 import com.esotericsoftware.yamlbeans.YamlReader;
 import com.google.common.base.Joiner;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.reflect.TypeToken;
 
-import io.dockstore.client.cli.cwl.Any;
-import io.dockstore.client.cli.cwl.CommandInputParameter;
-import io.dockstore.client.cli.cwl.CommandLineTool;
-import io.dockstore.client.cli.cwl.CommandOutputParameter;
+import io.dockstore.common.CWL;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;
@@ -81,8 +61,8 @@ public class Client {
 
     private static ContainersApi containersApi;
     private static UsersApi usersApi;
-
     private static User user;
+    private static CWL cwl;
 
     private static final String NAME_HEADER = "NAME";
     private static final String DESCRIPTION_HEADER = "DESCRIPTION";
@@ -494,10 +474,9 @@ public class Client {
             out("  --cwl <file>                Path to cwl file");
             out("");
         } else {
-
             final SourceFile cwlFromServer = getCWLFromServer(args);
-            final Map<String, Object> runJson = extractRunJson(cwlFromServer.getContent());
-            final Gson gson = getTypeSafeCWLToolDocument();
+            final Map<String, Object> runJson = cwl.extractRunJson(cwlFromServer.getContent());
+            final Gson gson = cwl.getTypeSafeCWLToolDocument();
             out(gson.toJson(runJson));
         }
     }
@@ -516,167 +495,14 @@ public class Client {
         } else {
 
             final String cwlPath = reqVal(args, "--cwl");
-            final ImmutablePair<String, String> output = parseCWL(cwlPath, true);
+            final ImmutablePair<String, String> output = cwl.parseCWL(cwlPath, true);
 
-            final Gson gson = getTypeSafeCWLToolDocument();
-            final Map<String, Object> runJson = extractRunJson(output.getLeft());
+            final Gson gson = CWL.getTypeSafeCWLToolDocument();
+            final Map<String, Object> runJson = cwl.extractRunJson(output.getLeft());
             out(gson.toJson(runJson));
         }
     }
 
-    /**
-     * Convert a String representation of a CWL file to a run json
-     * @param output
-     * @return
-     */
-    static Map<String, Object> extractRunJson(final String output) {
-        final Gson gson = getTypeSafeCWLToolDocument();
-        final CommandLineTool commandLineTool = gson.fromJson(output, CommandLineTool.class);
-        final Map<String, Object> runJson = new HashMap<>();
-        final List<CommandInputParameter> inputs = commandLineTool.getInputs();
-        final List<CommandOutputParameter> outputs = commandLineTool.getOutputs();
-
-        for(final CommandInputParameter inputParam : inputs){
-            final String idString = inputParam.getId().toString();
-            final Object stub = getStub(inputParam.getType());
-            runJson.put(idString.substring(idString.lastIndexOf('#') + 1), stub);
-        }
-        for(final CommandOutputParameter outParam : outputs){
-            final String idString = outParam.getId().toString();
-            final Object stub = getStub(outParam.getType());
-            runJson.put(idString.substring(idString.lastIndexOf('#') + 1), stub);
-        }
-        return runJson;
-    }
-
-    /**
-     * This is an ugly mapping between CWL's primitives and Java primitives
-     * @param type
-     * @return
-     */
-    private static Object getStub(Object type) {
-        Object stub = "fill me in";
-        String strType = type.toString();
-        switch (strType) {
-        case "File":
-            Map<String, String> file = new HashMap<>();
-            file.put("class", "File");
-            file.put("path", "fill me in");
-            stub = file;
-            break;
-        case "boolean":
-            stub = Boolean.FALSE;
-            break;
-        case "int":
-            stub = 0;
-            break;
-        case "long":
-            stub = 0L;
-            break;
-        case "float":
-            stub = 0.0;
-            break;
-        case "double":
-            stub = Double.MAX_VALUE;
-        default:
-            break;
-        }
-        return stub;
-    }
-
-    /**
-     * @return a gson instance that can properly convert CWL tools into a typesafe Java object
-     */
-    static Gson getTypeSafeCWLToolDocument() {
-        final Type hintType = new TypeToken<List<Any>>() {}.getType();
-        final Gson sequenceSafeGson = new GsonBuilder().registerTypeAdapter(CharSequence.class,
-            (JsonDeserializer<CharSequence>) (json, typeOfT, context) -> json.getAsString()).create();
-
-        return new GsonBuilder().registerTypeAdapter(CharSequence.class,
-            (JsonDeserializer<CharSequence>) (json, typeOfT, context) -> json.getAsString())
-                        .registerTypeAdapter(hintType, (JsonDeserializer) (json, typeOfT, context) -> {
-                            Collection<Object> hints = new ArrayList<>();
-                            for (final JsonElement jsonElement : json.getAsJsonArray()) {
-                                final Object o = getCWLObject(sequenceSafeGson, jsonElement);
-                                hints.add(o);
-                            }
-                            return hints;
-                        })
-                   .registerTypeAdapter(CommandInputParameter.class, (JsonDeserializer<CommandInputParameter>) (json, typeOfT, context) -> {
-                       final CommandInputParameter commandInputParameter = sequenceSafeGson.fromJson(json,
-                           CommandInputParameter.class);
-                       // default has a dollar sign in the schema but not in sample jsons, we could do something here if we wanted
-                       return commandInputParameter;
-                   })
-                   .serializeNulls().setPrettyPrinting()
-            .create();
-    }
-
-    private static Object getCWLObject(Gson gson1, JsonElement jsonElement) {
-        final String elementClass = jsonElement.getAsJsonObject().get("class").getAsString();
-        Class<SpecificRecordBase> anyClass;
-        try {
-            anyClass = (Class<SpecificRecordBase>) Class.forName("io.dockstore.client.cli.cwl." + elementClass);
-        } catch (ClassNotFoundException e) {
-            //TODO: this should be a log
-            e.printStackTrace();
-            anyClass = null;
-        }
-        return gson1.fromJson(jsonElement, anyClass);
-    }
-
-    private static ImmutablePair<String, String> parseCWL(String cwlFile, boolean validate) {
-        // update seems to just output the JSON version without checking file links
-        String[] s = new String[] { "cwltool", validate ? "--print-pre" : "--update", cwlFile };
-        final ImmutablePair<String, String> execute = executeCommand(Joiner.on(" ").join(Arrays.asList(s)));
-        return execute;
-    }
-
-    //  pseudo copied from dockstore-launcher-descriptor, switch to import if this works
-
-    /**
-     * Execute a command and return stdout and stderr
-     * @param command the command to execute
-     * @return the stdout and stderr
-     */
-    private static ImmutablePair<String, String> executeCommand(String command) {
-
-        out("CMD: " + command);
-        // TODO: limit our output in case the called program goes crazy
-
-        // these are for returning the output for use by this
-        ByteArrayOutputStream localStdoutStream = new ByteArrayOutputStream();
-        ByteArrayOutputStream localStdErrStream = new ByteArrayOutputStream();
-
-        DefaultExecuteResultHandler resultHandler = new DefaultExecuteResultHandler();
-        String utf8 = StandardCharsets.UTF_8.name();
-        try {
-            final CommandLine parse = CommandLine.parse(command);
-            Executor executor = new DefaultExecutor();
-            executor.setExitValue(0);
-            System.out.println("CMD: " + command);
-            // get stdout and stderr
-            executor.setStreamHandler(new PumpStreamHandler(localStdoutStream, localStdErrStream));
-            executor.execute(parse, resultHandler);
-            resultHandler.waitFor();
-            // not sure why commons-exec does not throw an exception
-            if (resultHandler.getExitValue() != 0) {
-                resultHandler.getException().printStackTrace();
-                throw new ExecuteException("problems running command: " + command, resultHandler.getExitValue());
-            }
-            return new ImmutablePair<>(localStdoutStream.toString(utf8), localStdErrStream.toString(utf8));
-        } catch (InterruptedException | IOException e) {
-            throw new RuntimeException("problems running command: " + command, e);
-        } finally {
-            System.out.println("exit code: " + resultHandler.getExitValue());
-            try {
-                System.err.println("stderr was: " + localStdErrStream.toString(utf8));
-                System.out.println("stdout was: " + localStdoutStream.toString(utf8));
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException("utf-8 does not exist?", e);
-            }
-        }
-    }
 
     /** this ends the section from dockstore-descriptor launcher **/
 

@@ -25,6 +25,8 @@ import org.junit.Test;
 import com.google.common.io.Resources;
 import com.google.gson.Gson;
 
+import io.dockstore.common.CWL;
+
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -39,8 +41,10 @@ public class CWLClientTest {
         final URL resource = Resources.getResource("cwl.json");
         final String cwlJson = Resources.toString(resource, StandardCharsets.UTF_8);
 
-        final Gson gson = Client.getTypeSafeCWLToolDocument();
-        final Map<String, Object> runJson = Client.extractRunJson(cwlJson);
+        CWL cwl = new CWL();
+
+        final Gson gson = CWL.getTypeSafeCWLToolDocument();
+        final Map<String, Object> runJson = cwl.extractRunJson(cwlJson);
         final String s = gson.toJson(runJson);
         assertTrue(s.length() > 10);
     }
