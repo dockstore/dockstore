@@ -1,0 +1,64 @@
+{
+  "cwlVersion": "https://w3id.org/cwl/cwl#draft-3.dev2",
+  "inputs": [
+    {
+      "default": 4,
+      "inputBinding": {
+        "position": 1
+      },
+      "type": "int",
+      "id": "file:///home/dyuen/dockstore-tool-bamstats/Dockstore.cwl#mem_gb",
+      "description": "The memory, in GB, for the reporting tool"
+    },
+    {
+      "inputBinding": {
+        "position": 2
+      },
+      "type": "File",
+      "id": "file:///home/dyuen/dockstore-tool-bamstats/Dockstore.cwl#bam_input",
+      "description": "The BAM file used as input, it must be sorted."
+    }
+  ],
+  "requirements": [
+    {
+      "dockerPull": "quay.io/briandoconnor/dockstore-tool-bamstats:1.25-2",
+      "class": "DockerRequirement"
+    },
+    {
+      "class": "InlineJavascriptRequirement"
+    }
+  ],
+  "description": "A Docker container for the BAMStats command. See the [BAMStats](http://bamstats.sourceforge.net/) website for more information.",
+  "name": "file:///home/dyuen/dockstore-tool-bamstats/Dockstore.cwl",
+  "outputs": [
+    {
+      "outputBinding": {
+        "glob": "bamstats_report.zip"
+      },
+      "type": "File",
+      "id": "file:///home/dyuen/dockstore-tool-bamstats/Dockstore.cwl#bamstats_report",
+      "description": "A zip file that contains the HTML report and various graphics."
+    }
+  ],
+  "id": "file:///home/dyuen/dockstore-tool-bamstats/Dockstore.cwl#BAMStats",
+  "baseCommand": [
+    "bash",
+    "/usr/local/bin/bamstats"
+  ],
+  "label": "BAMStats tool",
+  "http://purl.org/dc/terms/creator": {
+    "http://xmlns.com/foaf/0.1/name": "Brian O'Connor",
+    "http://xmlns.com/foaf/0.1/mbox": "mailto:briandoconnor@gmail.com",
+    "@id": "http://orcid.org/0000-0002-7681-6415"
+  },
+  "class": "CommandLineTool",
+  "hints": [
+    {
+      "coresMin": 1,
+      "ramMin": 4092,
+      "class": "ResourceRequirement",
+      "outdirMin": 512000,
+      "description": "the process requires at least 4G of RAM"
+    }
+  ]
+}

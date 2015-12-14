@@ -1,0 +1,10 @@
+[webservice]
+base_path = http://localhost:8000
+tokenUser1= 08932ab0c9ae39a880905666902f8659633ae0232e94ba9f3d2094cb928397e7
+tokenUser2 = 3a04647fd0a1bd949637n5fddb164261fc8c80d83f0750fe0e873bc744338fce
+
+[database]
+postgresHost = 127.0.0.1
+postgresUser = dockstore
+postgresPass = dockstore
+postgresDBName = webservice_test

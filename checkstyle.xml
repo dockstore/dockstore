@@ -86,6 +86,13 @@
     <property name="influenceFormat" value="$1" />
   </module>
 
+<module name="SuppressWarningsFilter" />
+   <module name="TreeWalker">
+       <module name="SuppressWarningsHolder" />
+   </module>
+
+
+
     <!--
         If you set the basedir property below, then all reported file
         names will be relative to the specified directory. See
@@ -201,7 +208,9 @@
             <property name="max" value="140"/>
             <property name="severity" value="ignore"/>
         </module>
-	<module name="MethodLength"/>
+	    <module name="MethodLength">
+            <property name="max" value="150"/>
+        </module>
         <module name="ParameterNumber"/>
 
         <!-- Checks for whitespace                               -->
@@ -250,7 +259,9 @@
 		<property name="ignoreHashCodeMethod" value="true"/>
 	</module>
         <module name="MissingSwitchDefault"/>
+        <!-- broken by maven-checkstyle-plugin 2.16
         <module name="RedundantThrows"/>
+        -->
         <module name="SimplifyBooleanExpression"/>
         <module name="SimplifyBooleanReturn"/>
 
