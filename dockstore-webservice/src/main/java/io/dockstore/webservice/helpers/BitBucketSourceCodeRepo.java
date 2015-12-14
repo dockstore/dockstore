@@ -84,6 +84,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
         if (content != null && !content.isEmpty()) {
             fileResponse.setContent(content);
+        } else {
+            return null;
         }
 
         return fileResponse;

@@ -65,6 +65,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         } catch (IOException e) {
             // e.printStackTrace();
             LOG.error(e.getMessage());
+            return null;
         }
         return cwl;
     }

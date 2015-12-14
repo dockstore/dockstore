@@ -81,6 +81,40 @@ public final class Helper {
         }
     }
 
+    private static void updateFiles(Container container, final HttpClient client, final TagDAO tagDAO, final FileDAO fileDAO,
+            final Token githubToken, final Token bitbucketToken) {
+        Set<Tag> tags = container.getTags();
+
+        for (Tag tag : tags) {
+            LOG.info("Updateing files for tag {}", tag.getName());
+
+            List<SourceFile> newFiles = loadFiles(client, bitbucketToken, githubToken, container, tag);
+            tag.getSourceFiles().clear();
+
+            boolean hasCwl = false;
+            boolean hasDockerfile = false;
+
+            for (SourceFile newFile : newFiles) {
+                long id = fileDAO.create(newFile);
+                SourceFile file = fileDAO.findById(id);
+                tag.addSourceFile(file);
+
+                // oldFiles.add(newFile);
+                // }
+                if (file.getType() == FileType.DOCKERFILE) {
+                    hasDockerfile = true;
+                    LOG.info("HAS Dockerfile");
+                }
+                if (file.getType() == FileType.DOCKSTORE_CWL) {
+                    hasCwl = true;
+                    LOG.info("HAS Dockstore.cwl");
+                }
+            }
+
+            tag.setValid(hasCwl && hasDockerfile);
+        }
+    }
+
     /**
      * Updates each container's tags.
      *
@@ -159,43 +193,6 @@ public final class Helper {
                 boolean allAutomated = true;
                 for (Tag tag : existingTags) {
                     LOG.info("Updating tag {}", tag.getName());
-                    // Set<SourceFile> newFiles = fileMap.get(tag.getName());
-                    List<SourceFile> newFiles = loadFiles(client, bitbucketToken, githubToken, container, tag);
-                    // Set<SourceFile> oldFiles = tag.getSourceFiles();
-                    tag.getSourceFiles().clear();
-
-                    boolean hasCwl = false;
-                    boolean hasDockerfile = false;
-
-                    for (SourceFile newFile : newFiles) {
-                        // boolean exists = false;
-                        // for (SourceFile oldFile : oldFiles) {
-                        // if (oldFile.getType().equals(newFile.getType())) {
-                        // exists = true;
-                        //
-                        // oldFile.update(newFile);
-                        // fileDAO.create(oldFile);
-                        //
-                        // LOG.info("UPDATED FILE " + oldFile.getType());
-                        // }
-                        // }
-                        //
-                        // if (!exists) {
-                        long id = fileDAO.create(newFile);
-                        SourceFile file = fileDAO.findById(id);
-                        tag.addSourceFile(file);
-
-                        // oldFiles.add(newFile);
-                        // }
-                        if (file.getType() == FileType.DOCKERFILE) {
-                            hasDockerfile = true;
-                        }
-                        if (file.getType() == FileType.DOCKSTORE_CWL) {
-                            hasCwl = true;
-                        }
-                    }
-
-                    tag.setValid(hasCwl && hasDockerfile);
 
                     long id = tagDAO.create(tag);
                     tag = tagDAO.findById(id);
@@ -222,6 +219,8 @@ public final class Helper {
                     }
                 }
             }
+
+            updateFiles(container, client, tagDAO, fileDAO, githubToken, bitbucketToken);
 
             final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(container.getGitUrl(), client,
                     bitbucketToken == null ? null : bitbucketToken.getContent(), githubToken.getContent());
@@ -485,7 +484,10 @@ public final class Helper {
 
         // TODO: when we get proper docker hub support, get this above
         // hack: read relevant containers from database
-        apiContainers.addAll(containerDAO.findByMode(ContainerMode.MANUAL_IMAGE_PATH));
+        User currentUser = userDAO.findById(userId);
+        List<Container> findByMode = containerDAO.findByMode(ContainerMode.MANUAL_IMAGE_PATH);
+        findByMode.removeIf(test -> !test.getUsers().contains(currentUser));
+        apiContainers.addAll(findByMode);
 
         // ends up with docker image path -> quay.io data structure representing builds
         final Map<String, ArrayList<?>> mapOfBuilds = new HashMap<>();
