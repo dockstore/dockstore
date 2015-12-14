@@ -6,7 +6,7 @@
     <name>swagger-java-quay-client</name>
   
     <parent>
-        <version>0.2.1</version>
+        <version>0.3-SNAPSHOT</version>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
         <relativePath>../pom.xml</relativePath>
