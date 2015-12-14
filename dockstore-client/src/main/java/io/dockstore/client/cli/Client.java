@@ -18,7 +18,7 @@ package io.dockstore.client.cli;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -32,12 +32,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.ws.rs.ProcessingException;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 
-import com.esotericsoftware.yamlbeans.YamlException;
 import com.esotericsoftware.yamlbeans.YamlReader;
 import com.google.common.base.Joiner;
+import com.google.gson.Gson;
 
+import io.dockstore.common.CWL;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;
@@ -52,16 +54,17 @@ import io.swagger.client.model.Tag;
 import io.swagger.client.model.User;
 import javassist.NotFoundException;
 
-/**
- *
+/*
+ * Main entrypoint for the dockstore CLI. 
  * @author xliu
+ *
  */
 public class Client {
 
     private static ContainersApi containersApi;
     private static UsersApi usersApi;
-
     private static User user;
+    private static CWL cwl;
 
     private static final String NAME_HEADER = "NAME";
     private static final String DESCRIPTION_HEADER = "DESCRIPTION";
@@ -427,11 +430,83 @@ public class Client {
                 } else {
                     kill("Unable to publish " + fullName);
                 }
-            } catch (ApiException ex) {
+            } catch (final ApiException ex) {
                 kill("Unable to publish " + fullName);
             }
         }
     }
+
+    private static void dev(final List<String> args) throws ApiException {
+        if (isHelp(args, true)) {
+            out("");
+            out("Usage: dockstore dev --help");
+            out("       dockstore dev cwl2json");
+            out("       dockstore dev tool2json <container>");
+            out("");
+            out("Description:");
+            out("  Experimental features not quite ready for prime-time.");
+            out("");
+        } else {
+            String cmd = args.remove(0);
+            if (null != cmd) {
+                switch (cmd) {
+                case "cwl2json":
+                    cwl2json(args);
+                    break;
+                case "tool2json":
+                    tool2json(args);
+                    break;
+                default:
+                    invalid(cmd);
+                    break;
+                }
+            }
+        }
+    }
+
+    private static void tool2json(final List<String> args) throws ApiException {
+        if (isHelp(args, true)) {
+            out("");
+            out("Usage: dockstore dev --help");
+            out("       dockstore dev tool2json");
+            out("");
+            out("Description:");
+            out("  Spit out a json run file for a given cwl document.");
+            out("Required parameters:");
+            out("  --cwl <file>                Path to cwl file");
+            out("");
+        } else {
+            final SourceFile cwlFromServer = getCWLFromServer(args);
+            final Map<String, Object> runJson = cwl.extractRunJson(cwlFromServer.getContent());
+            final Gson gson = cwl.getTypeSafeCWLToolDocument();
+            out(gson.toJson(runJson));
+        }
+    }
+
+    private static void cwl2json(final List<String> args) {
+        if (isHelp(args, true)) {
+            out("");
+            out("Usage: dockstore dev --help");
+            out("       dockstore dev cwl2json");
+            out("");
+            out("Description:");
+            out("  Spit out a json run file for a given cwl document.");
+            out("Required parameters:");
+            out("  --cwl <file>                Path to cwl file");
+            out("");
+        } else {
+
+            final String cwlPath = reqVal(args, "--cwl");
+            final ImmutablePair<String, String> output = cwl.parseCWL(cwlPath, true);
+
+            final Gson gson = CWL.getTypeSafeCWLToolDocument();
+            final Map<String, Object> runJson = cwl.extractRunJson(output.getLeft());
+            out(gson.toJson(runJson));
+        }
+    }
+
+
+    /** this ends the section from dockstore-descriptor launcher **/
 
     private static boolean isHelpRequest(String first) {
         return "-h".equals(first) || "--help".equals(first);
@@ -524,36 +599,44 @@ public class Client {
             kill("Please provide a container.");
         }
 
+        try {
+            SourceFile file = getCWLFromServer(args);
+
+            if (file.getContent() != null && !file.getContent().isEmpty()) {
+                out(file.getContent());
+            } else {
+                kill("No cwl file found.");
+            }
+
+        } catch (ApiException ex) {
+            // out("Exception: " + ex);
+            kill("Could not find container");
+        }
+    }
+
+    private static SourceFile getCWLFromServer(List<String> args) throws ApiException {
         String[] parts = args.get(0).split(":");
 
         String path = parts[0];
 
         String tag = (parts.length > 1) ? parts[1] : null;
+        SourceFile file = new SourceFile();
+        Container container = containersApi.getContainerByToolPath(path);
+        if (container.getValidTrigger()) {
+            try {
+                file = containersApi.cwl(container.getId(), tag);
 
-        try {
-            Container container = containersApi.getContainerByToolPath(path);
-            if (container.getValidTrigger()) {
-                try {
-                    SourceFile file = containersApi.cwl(container.getId(), tag);
-                    if (file.getContent() != null && !file.getContent().isEmpty()) {
-                        out(file.getContent());
-                    } else {
-                        kill("No cwl file found.");
-                    }
-                } catch (ApiException ex) {
-                    if (ex.getCode() == HttpStatus.SC_BAD_REQUEST) {
-                        kill("Invalid tag");
-                    } else {
-                        kill("No cwl file found.");
-                    }
+            } catch (ApiException ex) {
+                if (ex.getCode() == HttpStatus.SC_BAD_REQUEST) {
+                    kill("Invalid tag");
+                } else {
+                    kill("No cwl file found.");
                 }
-            } else {
-                kill("No cwl file found.");
             }
-        } catch (ApiException ex) {
-            // out("Exception: " + ex);
-            kill("Could not find container");
+        } else {
+            kill("No cwl file found.");
         }
+        return file;
     }
 
     private static void refresh(List<String> args) {
@@ -671,6 +754,9 @@ public class Client {
                         case "refresh":
                             refresh(args);
                             break;
+                        case "dev":
+                            dev(args);
+                            break;
                         default:
                             invalid(cmd);
                             break;
@@ -680,7 +766,7 @@ public class Client {
                     System.exit(GENERIC_ERROR);
                 }
             }
-        } catch (FileNotFoundException | YamlException | NotFoundException | ApiException ex) {
+        } catch (IOException | NotFoundException | ApiException ex) {
             out("Exception: " + ex);
             System.exit(GENERIC_ERROR);
         } catch (ProcessingException ex) {

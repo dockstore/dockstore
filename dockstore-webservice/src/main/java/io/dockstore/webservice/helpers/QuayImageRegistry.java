@@ -26,6 +26,11 @@ import io.dockstore.webservice.core.Registry;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.resources.ResourceUtilities;
+import io.swagger.quay.client.ApiClient;
+import io.swagger.quay.client.ApiException;
+import io.swagger.quay.client.Configuration;
+import io.swagger.quay.client.api.UserApi;
+import io.swagger.quay.client.model.UserView;
 
 /**
  * @author dyuen
@@ -39,11 +44,16 @@ public class QuayImageRegistry implements ImageRegistryInterface {
     private final HttpClient client;
     private final ObjectMapper objectMapper;
     private final Token quayToken;
+    private final ApiClient apiClient;
 
     public QuayImageRegistry(final HttpClient client, final ObjectMapper objectMapper, final Token quayToken) {
         this.client = client;
         this.objectMapper = objectMapper;
         this.quayToken = quayToken;
+
+        apiClient = Configuration.getDefaultApiClient();
+        apiClient.addDefaultHeader("Authorization", "Bearer " + quayToken.getContent());
+        //apiClient.setBasePath(QUAY_URL);
     }
 
     @Override
@@ -84,22 +94,16 @@ public class QuayImageRegistry implements ImageRegistryInterface {
     public List<String> getNamespaces() {
         List<String> namespaces = new ArrayList<>();
 
-        String url = QUAY_URL + "user/";
-        Optional<String> asString = ResourceUtilities.asString(url, quayToken.getContent(), client);
-        if (asString.isPresent()) {
-            String response = asString.get();
-            LOG.info("RESOURCE CALL: {}", url);
-            Gson gson = new Gson();
-
-            Map<String, ArrayList> map = new HashMap<>();
-            map = (Map<String, ArrayList>) gson.fromJson(response, map.getClass());
-            List organizations = map.get("organizations");
-
-            for (int i = 0; i < organizations.size(); i++) {
-                Map<String, String> map2 = (Map<String, String>) organizations.get(i);
-                LOG.info("Organization: {}", map2.get("name"));
-                namespaces.add(map2.get("name"));
+        UserApi api = new UserApi(apiClient);
+        try {
+            final UserView loggedInUser = api.getLoggedInUser();
+            final List organizations = loggedInUser.getOrganizations();
+            for(Object organization : organizations){
+                Map<String, String> organizationMap = (Map)organization;
+                namespaces.add(organizationMap.get("name"));
             }
+        } catch (ApiException e) {
+            LOG.info("Exception: {}", e);
         }
 
         namespaces.add(quayToken.getUsername());
