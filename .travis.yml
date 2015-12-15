@@ -16,6 +16,8 @@ jdk:
 
 install: 
   - pip2.7 install --user cwl-runner
+  - docker pull commonworkflowlanguage/nodejs-engine
+
 
 script: 
   - cd launcher
