@@ -1,18 +1,20 @@
 package io.github.collaboratory;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.SignerFactory;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.S3ClientOptions;
-import com.amazonaws.services.s3.internal.S3Signer;
-import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.S3Object;
-import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
-import com.google.common.collect.Lists;
-import com.google.common.io.Files;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -40,20 +42,19 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.composer.ComposerException;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.auth.SignerFactory;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.S3ClientOptions;
+import com.amazonaws.services.s3.internal.S3Signer;
+import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.S3Object;
+import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
+import com.google.common.collect.Lists;
+import com.google.common.io.Files;
 
 /**
  * @author boconnor 9/24/15
@@ -227,9 +228,9 @@ public class LauncherCWL {
 
         for (String paramName : inputsAndOutputsJson.keySet()) {
 
-            if (inputsAndOutputsJson.get(paramName) instanceof Map) {
-
-                Map<String, Object> param = (Map<String, Object>) inputsAndOutputsJson.get(paramName);
+            final Object currentParam = inputsAndOutputsJson.get(paramName);
+            if (currentParam instanceof Map) {
+                Map<String, Object> param = (Map<String, Object>) currentParam;
                 String path = (String) param.get("path");
                 LOG.info("PATH: " + path + " PARAM_NAME: " + paramName);
                 // will be null for output
@@ -249,16 +250,10 @@ public class LauncherCWL {
                 newJSON.put(paramName, newRecord);
 
                 // TODO: fill in for all possible types
-            } else if (inputsAndOutputsJson.get(paramName) instanceof Integer) {
-                Integer param = (Integer)inputsAndOutputsJson.get(paramName);
-                newJSON.put(paramName, param);
-            } else if (inputsAndOutputsJson.get(paramName) instanceof Float) {
-                Float param = (Float)inputsAndOutputsJson.get(paramName);
-                newJSON.put(paramName, param);
+            } else if (currentParam instanceof Integer || currentParam instanceof Float || currentParam instanceof Boolean || currentParam instanceof String) {
+                newJSON.put(paramName, currentParam);
             } else {
-                // TODO: will need to deal wit multiple types here
-                String param = inputsAndOutputsJson.get(paramName).toString();
-                newJSON.put(paramName, param);
+                throw new RuntimeException("we found an unexpected datatype as follows: " + currentParam.getClass() + "\n with content " + currentParam.toString());
             }
         }
 
@@ -305,7 +300,7 @@ public class LauncherCWL {
     }
 
     private Map<String, Object> runCWLCommand(String cwlFile, String jsonSettings, String workingDir) {
-        String[] s = new String[]{"cwltool","--outdir", workingDir, cwlFile, jsonSettings};
+        String[] s = new String[]{"cwltool","--non-strict","--outdir", workingDir, cwlFile, jsonSettings};
         final ImmutablePair<String, String> execute = this.executeCommand(Joiner.on(" ").join(Arrays.asList(s)));
         Map<String, Object> obj = (Map<String, Object>)yaml.load(execute.getLeft());
         return obj;
@@ -526,7 +521,7 @@ public class LauncherCWL {
     private Map<String, Object> parseCWL(String cwlFile, boolean validate) {
         try {
             // update seems to just output the JSON version without checking file links
-            String[] s = new String[]{"cwltool", validate ? "--print-pre" : "--update", cwlFile };
+            String[] s = new String[]{"cwltool","--non-strict", validate ? "--print-pre" : "--update", cwlFile };
             final ImmutablePair<String, String> execute = this.executeCommand(Joiner.on(" ").join(Arrays.asList(s)));
             Map<String, Object> obj = (Map<String, Object>)yaml.load(execute.getLeft());
             return obj;
