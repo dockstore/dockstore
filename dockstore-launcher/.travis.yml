@@ -1,0 +1,27 @@
+sudo: required
+
+services:
+  - docker
+
+notifications:
+  slack: 
+    on_success: never
+    on_failure: always
+    rooms:
+      - oicr:S9k4EowgQv9AnbCfEZHSzCsg
+
+language: java
+jdk: 
+  - oraclejdk8
+
+install: 
+  - pip2.7 install --user cwl-runner
+  - docker pull commonworkflowlanguage/nodejs-engine
+
+
+script: 
+  - cd launcher
+  - mvn -B clean install -DskipITs=false
+
+after_success:
+  - mvn -B clean install -DskipITs=false cobertura:cobertura coveralls:report
