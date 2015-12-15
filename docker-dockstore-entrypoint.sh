@@ -10,11 +10,14 @@ trap "echo TRAPed signal" HUP INT QUIT KILL TERM
 # the entrypoint provided by the base Postgres container
 echo "Starting Postgres"
 bash /docker-entrypoint.sh postgres &
-sleep 30
+sleep 10
 
 # todo put the web service startup here
 echo "Starting Java Web Service"
-/usr/lib/jvm/java-8-oracle/bin/java -jar /gitroot/dockstore-webservice/target/dockstore-webservice-*.jar server /dockstore.yml
+psql -c "create user webservice with password 'iAMs00perSecrEET' createdb;" -U postgres
+psql -c "ALTER USER webservice WITH superuser;" -U postgres                                                                                                      
+psql -c 'create database webservice with owner = webservice;' -U postgres 
+/usr/lib/jvm/java-8-oracle/bin/java -Xmx1g -jar /dockstore-webservice-*.jar server /dockstore.yml
 
 #echo "[hit enter key to exit] or run 'docker stop <container>'"
 #read
