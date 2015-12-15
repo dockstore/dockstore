@@ -29,11 +29,18 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.ws.rs.ProcessingException;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
+import org.eclipse.egit.github.core.Repository;
+import org.eclipse.egit.github.core.RepositoryContents;
+import org.eclipse.egit.github.core.client.GitHubClient;
+import org.eclipse.egit.github.core.service.ContentsService;
+import org.eclipse.egit.github.core.service.RepositoryService;
 
 import com.esotericsoftware.yamlbeans.YamlReader;
 import com.google.common.base.Joiner;
@@ -51,6 +58,7 @@ import io.swagger.client.model.Container.RegistryEnum;
 import io.swagger.client.model.RegisterRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
+import io.swagger.client.model.Token;
 import io.swagger.client.model.User;
 import javassist.NotFoundException;
 
@@ -442,6 +450,11 @@ public class Client {
             out("Usage: dockstore dev --help");
             out("       dockstore dev cwl2json");
             out("       dockstore dev tool2json <container>");
+
+            if (user.getIsAdmin()) {
+                out("       dockstore dev bulk_import");
+            }
+
             out("");
             out("Description:");
             out("  Experimental features not quite ready for prime-time.");
@@ -455,6 +468,13 @@ public class Client {
                     break;
                 case "tool2json":
                     tool2json(args);
+                    break;
+                case "bulk_import":
+                    if (user.getIsAdmin()) {
+                        bulkImport();
+                    } else {
+                        out("Admin access only");
+                    }
                     break;
                 default:
                     invalid(cmd);
@@ -505,6 +525,93 @@ public class Client {
         }
     }
 
+    private static void bulkImport() {
+        GitHubClient githubClient = new GitHubClient();
+        try {
+            List<Token> githubToken = usersApi.getGithubUserTokens(user.getId());
+            githubClient.setOAuth2Token(githubToken.get(0).getContent());
+        } catch (final ApiException ex) {
+            err(ex.getResponseBody());
+            kill("Unable to get Github token");
+        }
+
+        RepositoryService service = new RepositoryService(githubClient);
+        ContentsService cService = new ContentsService(githubClient);
+
+        List<RepositoryContents> contents = null;
+
+        String ref = "draft2";
+
+        try {
+            Repository repo = service.getRepository("common-workflow-language", "workflows");
+            try {
+                contents = cService.getContents(repo, "/tools", ref);
+            } catch (Exception e) {
+                out(e.toString());
+            }
+
+        } catch (IOException ex) {
+            out(ex.toString());
+        }
+
+        Gson gson = new Gson();
+        String json = gson.toJson(contents);
+
+        // out(json);
+
+        for (RepositoryContents content : contents) {
+            if (!content.getType().equals("file")) {
+                continue;
+            }
+
+            String name = content.getName();
+
+            Pattern p = Pattern.compile("^([\\w-]+)\\.cwl$");
+            Matcher m = p.matcher(name);
+            if (!m.find()) {
+                err("skipping: " + name);
+                continue;
+            }
+            name = m.group(1);
+            out(name);
+
+            String path = content.getPath();
+            String namespace = "common-workflow-language";
+            String registry = "registry.hub.docker.com";
+
+            Container container = new Container();
+            container.setMode(ModeEnum.MANUAL_IMAGE_PATH);
+            container.setName(name);
+            container.setNamespace(namespace);
+            container.setRegistry("quay.io".equals(registry) ? RegistryEnum.QUAY_IO : RegistryEnum.DOCKER_HUB);
+            // container.setDefaultDockerfilePath(dockerfilePath);
+            container.setDefaultCwlPath(path);
+            container.setIsPublic(true);
+            container.setIsRegistered(true);
+            container.setGitUrl("https://github.com/common-workflow-language/workflows");
+            // container.setToolname(toolname);
+            Tag tag = new Tag();
+            tag.setName(ref);
+            tag.setReference(ref);
+            // tag.setDockerfilePath();
+            tag.setCwlPath(path);
+            container.getTags().add(tag);
+            String fullName = Joiner.on("/").skipNulls().join(registry, namespace, name);
+            try {
+                container = containersApi.registerManual(container);
+                if (container == null) {
+                    // out("Successfully published " + fullName);
+                    // } else {
+                    kill("Unable to publish " + fullName);
+                }
+            } catch (final ApiException ex) {
+                kill("Unable to publish " + fullName);
+            }
+
+        }
+        refresh(null);
+
+    }
 
     /** this ends the section from dockstore-descriptor launcher **/
 

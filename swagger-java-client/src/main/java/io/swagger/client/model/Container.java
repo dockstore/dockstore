@@ -13,8 +13,11 @@ import io.swagger.annotations.*;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 
-@ApiModel(description = "")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-07T10:37:32.809-05:00")
+/**
+ * This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be\n * associated with CWL and Dockerfile documents
+ **/
+@ApiModel(description = "This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be\n * associated with CWL and Dockerfile documents")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-15T14:54:13.311-05:00")
 public class Container   {
   
   private Long id = null;
@@ -91,9 +94,9 @@ public enum RegistryEnum {
 
   
   /**
-   * This indicates what mode this is in which informs how we do things like refresh
+   * This indicates what mode this is in which informs how we do things like refresh, dockstore specific
    **/
-  @ApiModelProperty(value = "This indicates what mode this is in which informs how we do things like refresh")
+  @ApiModelProperty(required = true, value = "This indicates what mode this is in which informs how we do things like refresh, dockstore specific")
   @JsonProperty("mode")
   public ModeEnum getMode() {
     return mode;
@@ -104,8 +107,9 @@ public enum RegistryEnum {
 
   
   /**
+   * This indicates the users that have control over this entry, dockstore specific
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "This indicates the users that have control over this entry, dockstore specific")
   @JsonProperty("users")
   public List<User> getUsers() {
     return users;
@@ -118,7 +122,7 @@ public enum RegistryEnum {
   /**
    * This is the name of the container, required: GA4GH
    **/
-  @ApiModelProperty(value = "This is the name of the container, required: GA4GH")
+  @ApiModelProperty(required = true, value = "This is the name of the container, required: GA4GH")
   @JsonProperty("name")
   public String getName() {
     return name;
@@ -131,7 +135,7 @@ public enum RegistryEnum {
   /**
    * This is the tool name of the container, when not-present this will function just like 0.1 dockstorewhen present, this can be used to distinguish between two containers based on the same image, but associated with different CWL and Dockerfile documents. i.e. two containers with the same registry+namespace+name but different toolnames will be two different entries in the dockstore registry/namespace/name/tool, different options to edit tags, and only the same insofar as they would \"docker pull\" the same image, required: GA4GH
    **/
-  @ApiModelProperty(value = "This is the tool name of the container, when not-present this will function just like 0.1 dockstorewhen present, this can be used to distinguish between two containers based on the same image, but associated with different CWL and Dockerfile documents. i.e. two containers with the same registry+namespace+name but different toolnames will be two different entries in the dockstore registry/namespace/name/tool, different options to edit tags, and only the same insofar as they would \"docker pull\" the same image, required: GA4GH")
+  @ApiModelProperty(required = true, value = "This is the tool name of the container, when not-present this will function just like 0.1 dockstorewhen present, this can be used to distinguish between two containers based on the same image, but associated with different CWL and Dockerfile documents. i.e. two containers with the same registry+namespace+name but different toolnames will be two different entries in the dockstore registry/namespace/name/tool, different options to edit tags, and only the same insofar as they would \"docker pull\" the same image, required: GA4GH")
   @JsonProperty("toolname")
   public String getToolname() {
     return toolname;
@@ -144,7 +148,7 @@ public enum RegistryEnum {
   /**
    * This is a docker namespace for the container, required: GA4GH
    **/
-  @ApiModelProperty(value = "This is a docker namespace for the container, required: GA4GH")
+  @ApiModelProperty(required = true, value = "This is a docker namespace for the container, required: GA4GH")
   @JsonProperty("namespace")
   public String getNamespace() {
     return namespace;
@@ -157,7 +161,7 @@ public enum RegistryEnum {
   /**
    * This is a specific docker provider like quay.io or dockerhub or n/a?, required: GA4GH
    **/
-  @ApiModelProperty(value = "This is a specific docker provider like quay.io or dockerhub or n/a?, required: GA4GH")
+  @ApiModelProperty(required = true, value = "This is a specific docker provider like quay.io or dockerhub or n/a?, required: GA4GH")
   @JsonProperty("registry")
   public RegistryEnum getRegistry() {
     return registry;
@@ -222,7 +226,7 @@ public enum RegistryEnum {
   /**
    * This is a link to the associated repo with a descriptor, required GA4GH
    **/
-  @ApiModelProperty(value = "This is a link to the associated repo with a descriptor, required GA4GH")
+  @ApiModelProperty(required = true, value = "This is a link to the associated repo with a descriptor, required GA4GH")
   @JsonProperty("gitUrl")
   public String getGitUrl() {
     return gitUrl;
@@ -233,9 +237,9 @@ public enum RegistryEnum {
 
   
   /**
-   * This image has a Dockstore.cwl associated with it
+   * Implementation specific, this image has a Dockstore.cwl associated with it
    **/
-  @ApiModelProperty(value = "This image has a Dockstore.cwl associated with it")
+  @ApiModelProperty(value = "Implementation specific, this image has a Dockstore.cwl associated with it")
   @JsonProperty("validTrigger")
   public Boolean getValidTrigger() {
     return validTrigger;
@@ -272,8 +276,9 @@ public enum RegistryEnum {
 
   
   /**
+   * This indicates for the associated git repository, the default path to the Dockerfile, required: GA4GH
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(required = true, value = "This indicates for the associated git repository, the default path to the Dockerfile, required: GA4GH")
   @JsonProperty("default_dockerfile_path")
   public String getDefaultDockerfilePath() {
     return defaultDockerfilePath;
@@ -284,8 +289,9 @@ public enum RegistryEnum {
 
   
   /**
+   * This indicates for the associated git repository, the default path to the CWL document, required: GA4GH
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(required = true, value = "This indicates for the associated git repository, the default path to the CWL document, required: GA4GH")
   @JsonProperty("default_cwl_path")
   public String getDefaultCwlPath() {
     return defaultCwlPath;
