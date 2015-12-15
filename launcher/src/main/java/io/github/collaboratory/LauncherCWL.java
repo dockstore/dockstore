@@ -299,7 +299,7 @@ public class LauncherCWL {
     }
 
     private Map<String, Object> runCWLCommand(String cwlFile, String jsonSettings, String workingDir) {
-        String[] s = new String[]{"cwltool","--outdir", workingDir, cwlFile, jsonSettings};
+        String[] s = new String[]{"cwltool","--non-strict","--outdir", workingDir, cwlFile, jsonSettings};
         final ImmutablePair<String, String> execute = this.executeCommand(Joiner.on(" ").join(Arrays.asList(s)));
         Map<String, Object> obj = (Map<String, Object>)yaml.load(execute.getLeft());
         return obj;
