@@ -437,6 +437,7 @@ public class LauncherCWL {
                             try {
                                 FileUtils.copyInputStreamToFile(object.getObjectContent(), new File(targetFilePath));
                             } catch (IOException e) {
+                                LOG.error(e.getMessage());
                                 throw new RuntimeException("Could not provision input files from S3", e);
                             }
                         } else {

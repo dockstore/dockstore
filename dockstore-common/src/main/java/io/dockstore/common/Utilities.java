@@ -54,13 +54,16 @@ public class Utilities {
         }
     }
 
+    public static ImmutablePair<String, String> executeCommand(String command, Optional<OutputStream> stdoutStream, Optional<OutputStream> stderrStream) {
+        return executeCommand(command, true, stdoutStream, stderrStream);
+    }
+
     /**
      * Execute a command and return stdout and stderr
      * @param command the command to execute
      * @return the stdout and stderr
      */
-    public static ImmutablePair<String, String> executeCommand(String command, Optional<OutputStream> stdoutStream, Optional<OutputStream> stderrStream) {
-        LOG.info("CMD: {}", command);
+    public static ImmutablePair<String, String> executeCommand(String command, final boolean dumpOutput, Optional<OutputStream> stdoutStream, Optional<OutputStream> stderrStream) {
         // TODO: limit our output in case the called program goes crazy
 
         // these are for returning the output for use by this
@@ -82,7 +85,9 @@ public class Utilities {
                 final CommandLine parse = CommandLine.parse(command);
                 Executor executor = new DefaultExecutor();
                 executor.setExitValue(0);
-                System.out.println("CMD: " + command);
+                if (dumpOutput) {
+                    System.out.println("CMD: " + command);
+                }
                 // get stdout and stderr
                 executor.setStreamHandler(new PumpStreamHandler(stdout, stderr));
                 executor.execute(parse, resultHandler);
@@ -92,18 +97,18 @@ public class Utilities {
                     resultHandler.getException().printStackTrace();
                     throw new ExecuteException("problems running command: " + command, resultHandler.getExitValue());
                 }
-                stdout.close();
-                stderr.close();
                 return new ImmutablePair<>(localStdoutStream.toString(utf8), localStdErrStream.toString(utf8));
             } catch (InterruptedException | IOException e) {
                 throw new RuntimeException("problems running command: " + command, e);
             } finally {
-                System.out.println("exit code: " + resultHandler.getExitValue());
-                try {
-                    System.err.println("stderr was: " + localStdErrStream.toString(utf8));
-                    System.out.println("stdout was: " + localStdoutStream.toString(utf8));
-                } catch (UnsupportedEncodingException e) {
-                    throw new RuntimeException("utf-8 does not exist?", e);
+                if (dumpOutput) {
+                    System.out.println("exit code: " + resultHandler.getExitValue());
+                    try {
+                        System.err.println("stderr was: " + localStdErrStream.toString(utf8));
+                        System.out.println("stdout was: " + localStdoutStream.toString(utf8));
+                    } catch (UnsupportedEncodingException e) {
+                        throw new RuntimeException("utf-8 does not exist?", e);
+                    }
                 }
             }
         } catch (IOException e) {

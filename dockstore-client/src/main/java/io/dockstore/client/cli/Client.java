@@ -21,6 +21,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -37,6 +38,7 @@ import org.apache.http.HttpStatus;
 
 import com.esotericsoftware.yamlbeans.YamlReader;
 import com.google.common.base.Joiner;
+import com.google.common.io.Files;
 import com.google.gson.Gson;
 
 import io.dockstore.common.CWL;
@@ -65,7 +67,7 @@ public class Client {
     private static ContainersApi containersApi;
     private static UsersApi usersApi;
     private static User user;
-    private static CWL cwl;
+    private static CWL cwl = new CWL();
 
     private static final String NAME_HEADER = "NAME";
     private static final String DESCRIPTION_HEADER = "DESCRIPTION";
@@ -437,12 +439,13 @@ public class Client {
         }
     }
 
-    private static void dev(final List<String> args) throws ApiException {
+    private static void dev(final List<String> args) throws ApiException, IOException {
         if (isHelp(args, true)) {
             out("");
             out("Usage: dockstore dev --help");
             out("       dockstore dev cwl2json");
-            out("       dockstore dev tool2json <container>");
+            out("       dockstore dev tool2json");
+            out("       dockstore dev launch");
             out("");
             out("Description:");
             out("  Experimental features not quite ready for prime-time.");
@@ -468,7 +471,7 @@ public class Client {
         }
     }
 
-    private static void launch(final List<String> args) throws ApiException {
+    private static void launch(final List<String> args) throws ApiException, IOException {
         if (isHelp(args, true)) {
             out("");
             out("Usage: dockstore dev --help");
@@ -477,22 +480,26 @@ public class Client {
             out("Description:");
             out("  Launch an entry locally.");
             out("Required parameters:");
-            out("  --entry <full path>          Path to cwl file in the dockstore");
             out("  --run <json file>            Parameters to the json in the dockstore");
+            out("  --entry <entry>                Complete tool path in the Dockstore");
             out("");
         } else {
-            final SourceFile cwlFromServer = getCWLFromServer(args);
-            final Map<String, Object> runJson = cwl.extractRunJson(cwlFromServer.getContent());
-            final Gson gson = cwl.getTypeSafeCWLToolDocument();
+            final String entry = reqVal(args, "--entry");
+            final String run = reqVal(args, "--run");
+            final SourceFile cwlFromServer = getCWLFromServer(entry);
+            final File tempCWL = File.createTempFile("temp", ".cwl", Files.createTempDir());
+            Files.write(cwlFromServer.getContent(), tempCWL, StandardCharsets.UTF_8);
 
-            // stub out invocation
-            LauncherCWL cwlLauncher = new LauncherCWL(null);
-            System.out.println(cwlLauncher);
-            out(gson.toJson(runJson));
+            // stub out invocation and fake out a config file
+            final File tempConfig = File.createTempFile("temp", ".cwl", Files.createTempDir());
+            Files.write("working-directory=./datastore/", tempConfig, StandardCharsets.UTF_8);
+
+            LauncherCWL cwlLauncher = new LauncherCWL(tempConfig.getAbsolutePath(), tempCWL.getAbsolutePath(), run, System.out, System.err);
+            cwlLauncher.run();
         }
     }
 
-    private static void tool2json(final List<String> args) throws ApiException {
+    private static void tool2json(final List<String> args) throws ApiException, IOException {
         if (isHelp(args, true)) {
             out("");
             out("Usage: dockstore dev --help");
@@ -501,11 +508,16 @@ public class Client {
             out("Description:");
             out("  Spit out a json run file for a given cwl document.");
             out("Required parameters:");
-            out("  --cwl <file>                Path to cwl file");
+            out("  --entry <entry>                Complete tool path in the Dockstore");
             out("");
         } else {
-            final SourceFile cwlFromServer = getCWLFromServer(args);
-            final Map<String, Object> runJson = cwl.extractRunJson(cwlFromServer.getContent());
+            final String entry = reqVal(args, "--entry");
+            final SourceFile cwlFromServer = getCWLFromServer(entry);
+            final File tempCWL = File.createTempFile("temp", ".cwl", Files.createTempDir());
+            Files.write(cwlFromServer.getContent(), tempCWL, StandardCharsets.UTF_8);
+            // need to suppress output
+            final ImmutablePair<String, String> output = cwl.parseCWL(tempCWL.getAbsolutePath(), true);
+            final Map<String, Object> runJson = cwl.extractRunJson(output.getLeft());
             final Gson gson = cwl.getTypeSafeCWLToolDocument();
             out(gson.toJson(runJson));
         }
@@ -628,7 +640,7 @@ public class Client {
         }
 
         try {
-            SourceFile file = getCWLFromServer(args);
+            SourceFile file = getCWLFromServer(args.get(0));
 
             if (file.getContent() != null && !file.getContent().isEmpty()) {
                 out(file.getContent());
@@ -642,8 +654,8 @@ public class Client {
         }
     }
 
-    private static SourceFile getCWLFromServer(List<String> args) throws ApiException {
-        String[] parts = args.get(0).split(":");
+    private static SourceFile getCWLFromServer(String entry) throws ApiException {
+        String[] parts = entry.split(":");
 
         String path = parts[0];
 
@@ -800,6 +812,9 @@ public class Client {
         } catch (ProcessingException ex) {
             out("Could not connect to Dockstore web service: " + ex);
             System.exit(CONNECTION_ERROR);
+        } catch (Exception ex) {
+            out("Exception: " + ex);
+            System.exit(GENERIC_ERROR);
         }
     }
 }

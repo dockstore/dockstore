@@ -70,6 +70,16 @@ public class CWL {
      */
     private static Object getStub(Object type) {
         Object stub = "fill me in";
+        if (type instanceof List){
+            // if its a list, call recursively and return first non-stub entry
+            for(Object entry : (List)type){
+                final Object stub1 = getStub(entry);
+                if (stub1 != stub){
+                    return stub1;
+                }
+            }
+            return stub;
+        }
         String strType = type.toString();
         switch (strType) {
         case "File":
@@ -142,8 +152,8 @@ public class CWL {
 
     public ImmutablePair<String, String> parseCWL(String cwlFile, boolean validate) {
         // update seems to just output the JSON version without checking file links
-        String[] s = { "cwltool", validate ? "--print-pre" : "--update", cwlFile };
-        final ImmutablePair<String, String> execute = Utilities.executeCommand(Joiner.on(" ").join(Arrays.asList(s)), Optional.absent(), Optional.absent());
+        String[] s = { "cwltool", "--non-strict", validate ? "--print-pre" : "--update", cwlFile };
+        final ImmutablePair<String, String> execute = Utilities.executeCommand(Joiner.on(" ").join(Arrays.asList(s)), false,  Optional.absent(), Optional.absent());
         return execute;
     }
 }
