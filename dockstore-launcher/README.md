@@ -1,11 +1,8 @@
-[![Build Status](https://travis-ci.org/CancerCollaboratory/dockstore-descriptor.svg)](https://travis-ci.org/CancerCollaboratory/dockstore-descriptor)
-[![Coverage Status](https://coveralls.io/repos/CancerCollaboratory/dockstore-descriptor/badge.svg?branch=develop)](https://coveralls.io/github/CancerCollaboratory/dockstore-descriptor?branch=develop)
-
 # Dockstore Descriptor
 
 The purpose of this tool is to show how [CWL](http://ga4gh.org/#/cwf-team) can be used to describe and run a tool inside a Docker container.
 
-This repo contains an example HelloWorld workflow that simply generates a "helloworld" text file and sticks it in an output location on the filesystem, an example Descriptor for how to run this Docker-ized HelloWorld workflow (in JSON and CWL), and a sample Java Launcher that interprets the Descriptor, provisions files, and launches the constructed command.  The goal of this repo is to provide a concrete example of this working so I can get feedback from the community on the goal of using CWL with Docker.  This prototype can also be adapted into [Consonance](https://github.com/Consonance/), our cloud orchestration framework, for real production use. Finally, it's useful for developers to use as a testing tool with their Dockers described using CWL. 
+This repo contains an example HelloWorld workflow that simply generates a "helloworld" text file and sticks it in an output location on the filesystem, an example Descriptor for how to run this Docker-ized HelloWorld workflow (in CWL), and a sample Java Launcher that interprets the Descriptor, provisions files, and launches the constructed command.  The goal of this repo is to provide a concrete example of this working so I can get feedback from the community on the goal of using CWL with Docker.  This prototype can also be adapted into [Consonance](https://github.com/Consonance/), our cloud orchestration framework, for real production use. Finally, it's useful for developers to use as a testing tool with their Dockers described using CWL. 
 
 ## Dependencies
 
@@ -24,9 +21,7 @@ $ pip install cwl-runner
 
 ## The CWL-Based Launcher
 
-The CWL Launcher Java program is just a proof of concept.  The code will eventually be folded into the Consonance worker daemon which needs to do the items below in addition to interacting with the consonance queue to pull orders.  This launcher below is a simplification and just focuses on constructing a command and dealing with inputs/outputs as a prototype.
-
-The difference between this one and the regular Launcher is the nature of the descriptor files used.  Instead of using a JSON descriptor it takes a CWL-based descriptor along with a JSON file that specifies parameters to the tool.  The config file is unchanged and the pattern is very similar to the JSON-based Launcher above.
+This takes a CWL-based descriptor along with a JSON file that specifies parameters to the tool.  It also uses a config file.
 
 0. pulls over config file to `~/.consonance/launcher.config`, uses same mechanism as other config files but needs to be done first, see below. For this demo it assumes the config file is provided on the command line.
 0. makes a working directory in `/datastore/launcher-<uuid>` (from the config file above, this demo assumes `/datastore` is the big disk to use here but it could be any path)
