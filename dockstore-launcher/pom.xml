@@ -76,7 +76,7 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-    r        <groupId>com.google.code.gson</groupId>
+            <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
         </dependency>
         <dependency>
