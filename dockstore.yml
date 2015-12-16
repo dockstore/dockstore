@@ -1,10 +1,11 @@
 template: Hello, %s!
-defaultName: Stranger
 quayClientID: <fill me in>
 quayRedirectURI: http://<fill me in>:8080/accounts
 githubClientID: <fill me in>
 githubClientSecret: <fill me in>
 githubRedirectURI: http://<fill me in>:8080/login
+bitbucketClientID: <fill me in>
+bitbucketClientSecret:  <fill me in>
 hostname: <fill me in>
 scheme: https
 port: 8443
