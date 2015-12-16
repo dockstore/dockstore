@@ -1,10 +1,6 @@
 package io.dockstore.common;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -13,17 +9,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.avro.specific.SpecificRecordBase;
-import org.apache.commons.exec.CommandLine;
-import org.apache.commons.exec.DefaultExecuteResultHandler;
-import org.apache.commons.exec.DefaultExecutor;
-import org.apache.commons.exec.ExecuteException;
-import org.apache.commons.exec.Executor;
-import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializer;
@@ -42,7 +33,7 @@ import io.dockstore.common.cwl.CommandOutputParameter;
 public class CWL {
 
     private final Gson gson;
-    private Logger log = LoggerFactory.getLogger(CWL.class);
+    private final Logger log = LoggerFactory.getLogger(CWL.class);
 
     public CWL(){
         gson =  getTypeSafeCWLToolDocument();
@@ -101,6 +92,7 @@ public class CWL {
             break;
         case "double":
             stub = Double.MAX_VALUE;
+            break;
         default:
             break;
         }
@@ -148,54 +140,10 @@ public class CWL {
         return gson1.fromJson(jsonElement, anyClass);
     }
 
-    /**
-     * Execute a command and return stdout and stderr
-     * @param command the command to execute
-     * @return the stdout and stderr
-     */
-    private ImmutablePair<String, String> executeCommand(String command) {
-
-        log.info("CMD: " + command);
-        // TODO: limit our output in case the called program goes crazy
-
-        // these are for returning the output for use by this
-        ByteArrayOutputStream localStdoutStream = new ByteArrayOutputStream();
-        ByteArrayOutputStream localStdErrStream = new ByteArrayOutputStream();
-
-        DefaultExecuteResultHandler resultHandler = new DefaultExecuteResultHandler();
-        String utf8 = StandardCharsets.UTF_8.name();
-        try {
-            final CommandLine parse = CommandLine.parse(command);
-            Executor executor = new DefaultExecutor();
-            executor.setExitValue(0);
-            log.info("CMD: " + command);
-            // get stdout and stderr
-            executor.setStreamHandler(new PumpStreamHandler(localStdoutStream, localStdErrStream));
-            executor.execute(parse, resultHandler);
-            resultHandler.waitFor();
-            // not sure why commons-exec does not throw an exception
-            if (resultHandler.getExitValue() != 0) {
-                resultHandler.getException().printStackTrace();
-                throw new ExecuteException("problems running command: " + command, resultHandler.getExitValue());
-            }
-            return new ImmutablePair<>(localStdoutStream.toString(utf8), localStdErrStream.toString(utf8));
-        } catch (InterruptedException | IOException e) {
-            throw new RuntimeException("problems running command: " + command, e);
-        } finally {
-            log.info("exit code: " + resultHandler.getExitValue());
-            try {
-                log.info("stderr was: " + localStdErrStream.toString(utf8));
-                log.info("stdout was: " + localStdoutStream.toString(utf8));
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException("utf-8 does not exist?", e);
-            }
-        }
-    }
-
     public ImmutablePair<String, String> parseCWL(String cwlFile, boolean validate) {
         // update seems to just output the JSON version without checking file links
-        String[] s = new String[] { "cwltool", validate ? "--print-pre" : "--update", cwlFile };
-        final ImmutablePair<String, String> execute = executeCommand(Joiner.on(" ").join(Arrays.asList(s)));
+        String[] s = { "cwltool", validate ? "--print-pre" : "--update", cwlFile };
+        final ImmutablePair<String, String> execute = Utilities.executeCommand(Joiner.on(" ").join(Arrays.asList(s)), Optional.absent(), Optional.absent());
         return execute;
     }
 }

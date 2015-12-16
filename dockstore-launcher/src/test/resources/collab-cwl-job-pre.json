@@ -1,15 +1,15 @@
 {
     "hello_input": {
         "class": "File",
-        "path": "https://raw.githubusercontent.com/CancerCollaboratory/dockstore-descriptor/develop/dockstore-launcher/launcher/data/hello-input.txt"
+        "path": "https://raw.githubusercontent.com/CancerCollaboratory/dockstore-descriptor/develop/launcher/data/hello-input.txt"
     },
     "ref_file_1": {
         "class": "File",
-        "path": "https://raw.githubusercontent.com/CancerCollaboratory/dockstore-descriptor/develop/dockstore-launcher/launcher/data/8e888694-9c56-4529-a750-d6bfbd4a74e7.txt"
+        "path": "https://raw.githubusercontent.com/CancerCollaboratory/dockstore-descriptor/develop/launcher/data/8e888694-9c56-4529-a750-d6bfbd4a74e7.txt"
     },
     "ref_file_2": {
         "class": "File",
-        "path": "https://raw.githubusercontent.com/CancerCollaboratory/dockstore-descriptor/develop/dockstore-launcher/launcher/data/b4cdad91-676a-446c-a635-57453f17617a.txt"
+        "path": "https://raw.githubusercontent.com/CancerCollaboratory/dockstore-descriptor/develop/launcher/data/b4cdad91-676a-446c-a635-57453f17617a.txt"
     },
     "hello_output": {
         "class": "File",
