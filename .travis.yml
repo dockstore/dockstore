@@ -15,6 +15,7 @@ jdk:
   - oraclejdk8
 
 install:
+  - docker version
   - pip2.7 install --user cwl-runner
   - docker pull commonworkflowlanguage/nodejs-engine
 
