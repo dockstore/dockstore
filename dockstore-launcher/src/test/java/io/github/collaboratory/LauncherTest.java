@@ -1,13 +1,14 @@
 package io.github.collaboratory;
 
-import com.amazonaws.AmazonClientException;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+
 import org.apache.commons.io.FileUtils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
+import com.amazonaws.AmazonClientException;
 
 import static org.junit.Assert.assertTrue;
 

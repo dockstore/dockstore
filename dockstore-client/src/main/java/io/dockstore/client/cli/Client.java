@@ -40,6 +40,7 @@ import com.google.common.base.Joiner;
 import com.google.gson.Gson;
 
 import io.dockstore.common.CWL;
+import io.github.collaboratory.LauncherCWL;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;
@@ -456,11 +457,38 @@ public class Client {
                 case "tool2json":
                     tool2json(args);
                     break;
+                case "launch":
+                    launch(args);
+                    break;
                 default:
                     invalid(cmd);
                     break;
                 }
             }
+        }
+    }
+
+    private static void launch(final List<String> args) throws ApiException {
+        if (isHelp(args, true)) {
+            out("");
+            out("Usage: dockstore dev --help");
+            out("       dockstore dev launch");
+            out("");
+            out("Description:");
+            out("  Launch an entry locally.");
+            out("Required parameters:");
+            out("  --entry <full path>          Path to cwl file in the dockstore");
+            out("  --run <json file>            Parameters to the json in the dockstore");
+            out("");
+        } else {
+            final SourceFile cwlFromServer = getCWLFromServer(args);
+            final Map<String, Object> runJson = cwl.extractRunJson(cwlFromServer.getContent());
+            final Gson gson = cwl.getTypeSafeCWLToolDocument();
+
+            // stub out invocation
+            LauncherCWL cwlLauncher = new LauncherCWL(null);
+            System.out.println(cwlLauncher);
+            out(gson.toJson(runJson));
         }
     }
 
