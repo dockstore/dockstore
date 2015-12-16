@@ -75,8 +75,8 @@ public class LauncherCWL {
     private final String configFilePath;
     private final String imageDescriptorPath;
     private final String runtimeDescriptorPath;
-    private HierarchicalINIConfiguration config = null;
-    private String globalWorkingDir = null;
+    private HierarchicalINIConfiguration config;
+    private String globalWorkingDir;
     private final Yaml yaml = new Yaml(new SafeConstructor());
     private final Optional<OutputStream> stdoutStream;
     private final Optional<OutputStream> stderrStream;
@@ -91,9 +91,9 @@ public class LauncherCWL {
         CommandLineParser parser = new DefaultParser();
         // parse command line
         CommandLine line = parseCommandLine(parser, args);
-        this.configFilePath = line.getOptionValue("config");
-        this.imageDescriptorPath = line.getOptionValue("descriptor");
-        this.runtimeDescriptorPath = line.getOptionValue("job");
+        configFilePath = line.getOptionValue("config");
+        imageDescriptorPath = line.getOptionValue("descriptor");
+        runtimeDescriptorPath = line.getOptionValue("job");
         // do not forward stdout and stderr
         stdoutStream = Optional.absent();
         stderrStream = Optional.absent();
@@ -130,7 +130,7 @@ public class LauncherCWL {
             return;
         }
 
-        if (!(cwl.get("class")).equals("CommandLineTool")) {
+        if (!cwl.get("class").equals("CommandLineTool")) {
             LOG.info("Must be CommandLineTool");
             return;
         }
@@ -177,10 +177,10 @@ public class LauncherCWL {
             // pull back the name of the input from the CWL
             LOG.info(file.toString());
             String cwlID = ((String)((Map) file).get("id")).substring(1);
-            LOG.info("ID: " + cwlID);
+            LOG.info("ID: {}", cwlID);
 
             // now that I have an input name from the CWL I can find it in the JSON parameterization for this run
-            LOG.info("JSON: " + inputsOutputs.toString());
+            LOG.info("JSON: {}", inputsOutputs);
             for (String paramName : inputsOutputs.keySet()) {
 
                 if (inputsOutputs.get(paramName) instanceof HashMap) {
@@ -191,7 +191,7 @@ public class LauncherCWL {
                     if (paramName.equals(cwlID)) {
 
                         // if it's the current one
-                        LOG.info("PATH TO UPLOAD TO: " + path + " FOR " + cwlID + " FOR " + paramName);
+                        LOG.info("PATH TO UPLOAD TO: {} FOR {} FOR {}", path, cwlID, paramName);
 
                         // output
                         // TODO: poor naming here, need to cleanup the variables
@@ -214,7 +214,7 @@ public class LauncherCWL {
                         new1.setLocalPath(uuidPath);
                         fileMap.put(cwlID, new1);
 
-                        LOG.info("UPLOAD FILE: LOCAL: " + cwlID + " URL: " + path);
+                        LOG.info("UPLOAD FILE: LOCAL: {} URL: {}", cwlID, path);
                     }
                 }
             }
@@ -232,16 +232,16 @@ public class LauncherCWL {
             if (currentParam instanceof Map) {
                 Map<String, Object> param = (Map<String, Object>) currentParam;
                 String path = (String) param.get("path");
-                LOG.info("PATH: " + path + " PARAM_NAME: " + paramName);
+                LOG.info("PATH: {} PARAM_NAME: {}", path, paramName);
                 // will be null for output
                 if (fileMap.get(paramName) != null) {
                     final String localPath = fileMap.get(paramName).getLocalPath();
                     param.put("path", localPath);
-                    LOG.info("NEW FULL PATH: " + localPath);
+                    LOG.info("NEW FULL PATH: {}", localPath);
                 } else if (outputMap.get(paramName) != null) {
                     final String localPath = outputMap.get(paramName).getLocalPath();
                     param.put("path", localPath);
-                    LOG.info("NEW FULL PATH: " + localPath);
+                    LOG.info("NEW FULL PATH: {}", localPath);
                 }
                 // now add to the new JSON structure
                 JSONObject newRecord = new JSONObject();
@@ -253,13 +253,13 @@ public class LauncherCWL {
             } else if (currentParam instanceof Integer || currentParam instanceof Float || currentParam instanceof Boolean || currentParam instanceof String) {
                 newJSON.put(paramName, currentParam);
             } else {
-                throw new RuntimeException("we found an unexpected datatype as follows: " + currentParam.getClass() + "\n with content " + currentParam.toString());
+                throw new RuntimeException("we found an unexpected datatype as follows: " + currentParam.getClass() + "\n with content " + currentParam);
             }
         }
 
         writeJob("foo.json", newJSON);
 
-        return("foo.json");
+        return "foo.json";
     }
 
     private Map<String, Object> loadJob(String jobPath) {
@@ -288,20 +288,20 @@ public class LauncherCWL {
         // make UUID
         UUID uuid = UUID.randomUUID();
         // setup directories
-        globalWorkingDir = workingDir + "/launcher-" + uuid.toString();
-        executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid.toString());
-        executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/configs");
-        executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/working");
-        executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/inputs");
-        executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/logs");
-        executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid.toString() + "/outputs");
+        globalWorkingDir = workingDir + "/launcher-" + uuid;
+        executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid);
+        executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid + "/configs");
+        executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid + "/working");
+        executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid + "/inputs");
+        executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid + "/logs");
+        executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid + "/outputs");
 
-        return (new File(workingDir + "/launcher-" + uuid.toString()).getAbsolutePath());
+        return new File(workingDir + "/launcher-" + uuid).getAbsolutePath();
     }
 
     private Map<String, Object> runCWLCommand(String cwlFile, String jsonSettings, String workingDir) {
-        String[] s = new String[]{"cwltool","--non-strict","--outdir", workingDir, cwlFile, jsonSettings};
-        final ImmutablePair<String, String> execute = this.executeCommand(Joiner.on(" ").join(Arrays.asList(s)));
+        String[] s = {"cwltool","--non-strict","--outdir", workingDir, cwlFile, jsonSettings};
+        final ImmutablePair<String, String> execute = executeCommand(Joiner.on(" ").join(Arrays.asList(s)));
         Map<String, Object> obj = (Map<String, Object>)yaml.load(execute.getLeft());
         return obj;
     }
@@ -315,14 +315,13 @@ public class LauncherCWL {
 
             String cwlOutputPath = (String)((Map)((Map)outputObject).get(fileName)).get("path");
 
-            LOG.info("NAME: " + file.getLocalPath() + " URL: " + file.getUrl() + " FILENAME: " + fileName + " CWL OUTPUT PATH: "
-                    + cwlOutputPath);
+            LOG.info("NAME: {} URL: {} FILENAME: {} CWL OUTPUT PATH: {}", file.getLocalPath(), file.getUrl(), fileName, cwlOutputPath);
 
             if (file.getUrl().startsWith("s3://")) {
                 AmazonS3 s3Client = new AmazonS3Client(new ClientConfiguration().withSignerOverride("S3Signer"));
-                if (config.containsKey(LauncherCWL.S3_ENDPOINT)){
-                    final String endpoint = config.getString(LauncherCWL.S3_ENDPOINT);
-                    LOG.info("found custom S3 endpoint, setting to " + endpoint);
+                if (config.containsKey(S3_ENDPOINT)){
+                    final String endpoint = config.getString(S3_ENDPOINT);
+                    LOG.info("found custom S3 endpoint, setting to {}", endpoint);
                     s3Client.setEndpoint(endpoint);
                     s3Client.setS3ClientOptions(new S3ClientOptions().withPathStyleAccess(true));
                 }
@@ -353,49 +352,55 @@ public class LauncherCWL {
      * @return the stdout and stderr
      */
     private ImmutablePair<String, String> executeCommand(String command) {
-        LOG.info("CMD: " + command);
+        LOG.info("CMD: {}", command);
         // TODO: limit our output in case the called program goes crazy
 
         // these are for returning the output for use by this
-        ByteArrayOutputStream localStdoutStream = new ByteArrayOutputStream();
-        ByteArrayOutputStream localStdErrStream = new ByteArrayOutputStream();
-        OutputStream stdout =  localStdoutStream;
-        OutputStream stderr = localStdErrStream;
-        if (this.stdoutStream.isPresent()){
-            assert(this.stderrStream.isPresent());
-            // in this branch, we want a copy of the output for Consonance
-            stdout = new TeeOutputStream(localStdoutStream, this.stdoutStream.get());
-            stderr = new TeeOutputStream(localStdErrStream, this.stderrStream.get());
-        }
+        try (ByteArrayOutputStream localStdoutStream = new ByteArrayOutputStream();
+                ByteArrayOutputStream localStdErrStream = new ByteArrayOutputStream()
+        ) {
+            OutputStream stdout = localStdoutStream;
+            OutputStream stderr = localStdErrStream;
+            if (stdoutStream.isPresent()) {
+                assert stderrStream.isPresent();
+                // in this branch, we want a copy of the output for Consonance
+                stdout = new TeeOutputStream(localStdoutStream, stdoutStream.get());
+                stderr = new TeeOutputStream(localStdErrStream, stderrStream.get());
+            }
 
-        DefaultExecuteResultHandler resultHandler = new DefaultExecuteResultHandler();
-        String utf8 = StandardCharsets.UTF_8.name();
-        try {
-            final org.apache.commons.exec.CommandLine parse = org.apache.commons.exec.CommandLine.parse(command);
-            Executor executor = new DefaultExecutor();
-            executor.setExitValue(0);
-            System.out.println("CMD: " + command);
-            // get stdout and stderr
-            executor.setStreamHandler(new PumpStreamHandler(stdout, stderr));
-            executor.execute(parse, resultHandler);
-            resultHandler.waitFor();
-            // not sure why commons-exec does not throw an exception
-            if (resultHandler.getExitValue() != 0) {
-            	resultHandler.getException().printStackTrace();
-                throw new ExecuteException("problems running command: " + command, resultHandler.getExitValue());
-            }
-            return new ImmutablePair<>(localStdoutStream.toString(utf8), localStdErrStream.toString(utf8));
-        } catch (InterruptedException | IOException e) {
-            throw new RuntimeException("problems running command: " + command, e);
-        } finally {
-            System.out.println("exit code: " + resultHandler.getExitValue());
+            DefaultExecuteResultHandler resultHandler = new DefaultExecuteResultHandler();
+            String utf8 = StandardCharsets.UTF_8.name();
             try {
-                System.err.println("stderr was: " + localStdErrStream.toString(utf8));
-                System.out.println("stdout was: " + localStdoutStream.toString(utf8));
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException("utf-8 does not exist?", e);
+                final org.apache.commons.exec.CommandLine parse = org.apache.commons.exec.CommandLine.parse(command);
+                Executor executor = new DefaultExecutor();
+                executor.setExitValue(0);
+                System.out.println("CMD: " + command);
+                // get stdout and stderr
+                executor.setStreamHandler(new PumpStreamHandler(stdout, stderr));
+                executor.execute(parse, resultHandler);
+                resultHandler.waitFor();
+                // not sure why commons-exec does not throw an exception
+                if (resultHandler.getExitValue() != 0) {
+                    resultHandler.getException().printStackTrace();
+                    throw new ExecuteException("problems running command: " + command, resultHandler.getExitValue());
+                }
+                stdout.close();
+                stderr.close();
+                return new ImmutablePair<>(localStdoutStream.toString(utf8), localStdErrStream.toString(utf8));
+            } catch (InterruptedException | IOException e) {
+                throw new RuntimeException("problems running command: " + command, e);
+            } finally {
+                System.out.println("exit code: " + resultHandler.getExitValue());
+                try {
+                    System.err.println("stderr was: " + localStdErrStream.toString(utf8));
+                    System.out.println("stdout was: " + localStdoutStream.toString(utf8));
+                } catch (UnsupportedEncodingException e) {
+                    throw new RuntimeException("utf-8 does not exist?", e);
+                }
             }
-         }
+        } catch (IOException e) {
+            throw new RuntimeException("could not close output streams", e);
+        }
     }
     
     private String getStorageClient() {
@@ -428,10 +433,10 @@ public class LauncherCWL {
             LOG.info(file.toString());
             // remove the hash from the cwlInputFileID
             String cwlInputFileID = ((String)file.get("id")).substring(1);
-            LOG.info("ID: " + cwlInputFileID);
+            LOG.info("ID: {}", cwlInputFileID);
 
             // now that I have an input name from the CWL I can find it in the JSON parameterization for this run
-            LOG.info("JSON: " + inputsOutputs.toString());
+            LOG.info("JSON: {}", inputsOutputs);
             for (String paramName : inputsOutputs.keySet()) {
 
                 if (inputsOutputs.get(paramName) instanceof HashMap) {
@@ -441,10 +446,10 @@ public class LauncherCWL {
 
                     if (paramName.equals(cwlInputFileID)) {
                         // if it's the current one
-                        LOG.info("PATH TO DOWNLOAD FROM: " + path + " FOR " + cwlInputFileID + " FOR " + paramName);
+                        LOG.info("PATH TO DOWNLOAD FROM: {} FOR {} FOR {}", path, cwlInputFileID, paramName);
 
                         // set up output paths
-                        String downloadDirectory = globalWorkingDir + "/inputs/" + UUID.randomUUID().toString();
+                        String downloadDirectory = globalWorkingDir + "/inputs/" + UUID.randomUUID();
                         executeCommand("mkdir -p " + downloadDirectory);
                         File downloadDirFileObj = new File(downloadDirectory);
 
@@ -469,9 +474,9 @@ public class LauncherCWL {
                             }
                         } else if (path.startsWith("s3://")) {
                             AmazonS3 s3Client = new AmazonS3Client(new ClientConfiguration().withSignerOverride("S3Signer"));
-                            if (config.containsKey(LauncherCWL.S3_ENDPOINT)) {
-                                final String endpoint = config.getString(LauncherCWL.S3_ENDPOINT);
-                                LOG.info("found custom S3 endpoint, setting to " + endpoint);
+                            if (config.containsKey(S3_ENDPOINT)) {
+                                final String endpoint = config.getString(S3_ENDPOINT);
+                                LOG.info("found custom S3 endpoint, setting to {}", endpoint);
                                 s3Client.setEndpoint(endpoint);
                                 s3Client.setS3ClientOptions(new S3ClientOptions().withPathStyleAccess(true));
                             }
@@ -509,7 +514,7 @@ public class LauncherCWL {
                         info.setUrl(path);
 
                         fileMap.put(cwlInputFileID, info);
-                        LOG.info("DOWNLOADED FILE: LOCAL: " + cwlInputFileID + " URL: " + path);
+                        LOG.info("DOWNLOADED FILE: LOCAL: {} URL: {}", cwlInputFileID, path);
                     }
                 }
             }
@@ -521,8 +526,8 @@ public class LauncherCWL {
     private Map<String, Object> parseCWL(String cwlFile, boolean validate) {
         try {
             // update seems to just output the JSON version without checking file links
-            String[] s = new String[]{"cwltool","--non-strict", validate ? "--print-pre" : "--update", cwlFile };
-            final ImmutablePair<String, String> execute = this.executeCommand(Joiner.on(" ").join(Arrays.asList(s)));
+            String[] s = {"cwltool","--non-strict", validate ? "--print-pre" : "--update", cwlFile };
+            final ImmutablePair<String, String> execute = executeCommand(Joiner.on(" ").join(Arrays.asList(s)));
             Map<String, Object> obj = (Map<String, Object>)yaml.load(execute.getLeft());
             return obj;
         } catch (ComposerException e){
@@ -539,7 +544,7 @@ public class LauncherCWL {
             options.addOption("j", "job", true, "a JSON parameterization of the CWL tool, includes URLs for inputs and outputs");
             return parser.parse(options, args);
         } catch (ParseException exp) {
-            LOG.error("Unexpected exception:" + exp.getMessage());
+            LOG.error("Unexpected exception:{}", exp.getMessage());
             throw new RuntimeException("Could not parse command-line", exp);
         }
     }
@@ -547,7 +552,7 @@ public class LauncherCWL {
     public static class PathInfo {
         private static final Logger LOG = LoggerFactory.getLogger(PathInfo.class);
         public static final String DCC_STORAGE_SCHEME = "icgc";
-    	private boolean objectIdType = false;
+    	private boolean objectIdType;
     	private String objectId = "";
     	
 		public boolean isObjectIdType() {
@@ -559,8 +564,7 @@ public class LauncherCWL {
 		}
 		
 		public PathInfo(String path) {
-			super();
-			try {
+            try {
 		    	URI objectIdentifier = URI.create(path);	// throws IllegalArgumentException if it isn't a valid URI
 		    	if (objectIdentifier.getScheme().equalsIgnoreCase(DCC_STORAGE_SCHEME)) {
 		    		objectIdType = true;

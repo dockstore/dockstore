@@ -1,10 +1,22 @@
 notifications:
-  slack: oicr:S9k4EowgQv9AnbCfEZHSzCsg
+  slack:
+    on_success: never
+    on_failure: always
+    rooms:
+      - oicr:S9k4EowgQv9AnbCfEZHSzCsg
 
-sudo: false
+sudo: required
+
+services:
+  - docker
+
 language: java
 jdk: 
   - oraclejdk8
+
+install:
+  - pip2.7 install --user cwl-runner
+  - docker pull commonworkflowlanguage/nodejs-engine
 
 before_script:
   - psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
