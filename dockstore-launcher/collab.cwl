@@ -12,7 +12,7 @@ dct:creator:
 
 requirements:
   - class: DockerRequirement
-    dockerPull: "quay.io/collaboratory/workflow-helloworld:1.0.0"
+    dockerPull: "quay.io/collaboratory/workflow-helloworld:1.0.0-travis-fix"
   - { import: node-engine.cwl }
 
 hints:
