@@ -467,6 +467,9 @@ public final class Helper {
         if (bitbucketToken == null) {
             LOG.info("WARNING: BITBUCKET token not found!");
         }
+        if (quayToken == null) {
+            LOG.info("WARNING: QUAY token not found!");
+        }
 
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
         final List<ImageRegistryInterface> allRegistries = factory.getAllRegistries();
