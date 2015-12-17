@@ -20,6 +20,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.junit.Test;
 
 import com.google.common.io.Resources;
@@ -47,6 +48,15 @@ public class CWLClientTest {
         final Map<String, Object> runJson = cwl.extractRunJson(cwlJson);
         final String s = gson.toJson(runJson);
         assertTrue(s.length() > 10);
+    }
+
+    @Test
+    public void parseCWL() throws Exception{
+        final URL resource = Resources.getResource("cwl.json");
+        CWL cwl = new CWL();
+        final ImmutablePair<String, String> output = cwl.parseCWL(resource.getFile(), true);
+        assertTrue(!output.getLeft().isEmpty() && output.getLeft().contains("cwlVersion"));
+        assertTrue(!output.getRight().isEmpty() && output.getRight().contains("cwltool"));
     }
 
 

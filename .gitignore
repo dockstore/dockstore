@@ -16,8 +16,10 @@ hs_err_pid*
 /target/
 dependency-reduced-pom.xml
 hello-world.yml
-/dockstore-webservice/target/
-/dockstore-client/target/
+dockstore-webservice/target/
+dockstore-client/target/
+dockstore-launcher/target/
+dockstore-launcher/foo.json
 swagger-java-client/build.gradle
 swagger-java-client/gradle.properties
 swagger-java-client/settings.gradle
