@@ -30,6 +30,10 @@ any state in the DB is lost.
 1. Fill in the template dockstore.yml and stash it somewhere outside the git repo (like ~/.dockstore)
 2. Start with `docker run -it -v ~/.dockstore/dockstore.yml:/dockstore.yml -e POSTGRES_PASSWORD=iAMs00perSecrEET -e POSTGRES_USER=webservice -p 8080:8080 dockstore:1.0.0`
 
+You can also run with defaults using
+
+1. `docker run -P -ti --rm dockstore`
+
 ### Running Locally
 
 You can also run it on your local computer but will need to setup postgres separately.

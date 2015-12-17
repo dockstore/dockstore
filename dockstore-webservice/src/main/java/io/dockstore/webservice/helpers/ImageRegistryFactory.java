@@ -32,13 +32,20 @@ public class ImageRegistryFactory {
     public List<ImageRegistryInterface> getAllRegistries() {
         List<ImageRegistryInterface> interfaces = new ArrayList<>();
         for (Registry r : Registry.values()) {
-            interfaces.add(createImageRegistry(r));
+            ImageRegistryInterface anInterface = createImageRegistry(r);
+            if (anInterface != null) {
+                interfaces.add(anInterface);
+            }
         }
         return interfaces;
     }
 
     public ImageRegistryInterface createImageRegistry(Registry registry) {
         if (registry == Registry.QUAY_IO) {
+            if (quayToken == null) {
+                return null;
+            }
+
             return new QuayImageRegistry(client, objectMapper, quayToken);
         } else if (registry == Registry.DOCKER_HUB) {
             return new DockerHubRegistry(client);
