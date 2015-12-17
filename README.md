@@ -139,6 +139,19 @@ To regenerate:
 2. Get the avro tools jar and CWL avsc and call `java -jar avro-tools-1.7.7.jar compile schema cwl.avsc cwl`
 3. Copy them to the appropriate directory in dockstore-client (you will need to refactor and insert package names)
 
+## How to perform a Maven release 
+
+Where 0.2.2 should be modified to the version number of your next release
+
+1. Start a release branch `git hf release start 0.2.2`
+2. Iterate the verion numbers for your Maven pom files `mvn versions:set -DnewVersion=0.2.2`
+3. Check that everything still builds and tests properly `mvn clean install -DskipITs=false`
+4. Finish the release (which creates a tag) `git hf release finish 0.2.2`. Accept proposed merges to develop and master if they look reasonable. 
+5. Use the maven release plugin to perform the release (due to a bug, use maven-release-plugin 2.3.2) or failing that upload manually to artifactory `mvn release:perform -DconnectionUrl=scm:git:git@github.com:ga4gh/dockstore.git -Dtag=0.2.2 `
+7. Remember to iterate the version numbers on the develop branch to the snapshot version of your next release `mvn versions:set -DnewVersion=0.2.3-SNAPSHOT ; git add pom.xml \*/pom.xml ; git push`
+8. Fiddle with github releases and update docs
+
+
 
 ## TODO
 
