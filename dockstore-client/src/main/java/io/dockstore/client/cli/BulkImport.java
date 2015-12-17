@@ -81,7 +81,7 @@ public class BulkImport {
     }
 
     private String getDockerSource(RepositoryContents file, ContentsService cService, Repository repo, String reference) {
-        String dockerPull = null;
+        String dockerSource = null;
 
         try {
             List<RepositoryContents> contents;
@@ -96,8 +96,6 @@ public class BulkImport {
                         YamlReader reader = new YamlReader(content);
                         Object object = reader.read();
 
-                        // need to parse this to get the imports
-                        // use the dockerPull from the DockerRequirement class to obtain the Docker Hub path and tag version
                         Map<String, List<Map<String, String>>> map = new HashMap<>();
 
                         map = (Map<String, List<Map<String, String>>>) object;
@@ -113,6 +111,33 @@ public class BulkImport {
                                 }
                                 if (importCwl != null) {
                                     out("Import: " + importCwl);
+                                    List<RepositoryContents> contentsImport;
+                                    contentsImport = cService.getContents(repo, "/tools/" + importCwl, reference);
+
+                                    if (!(contentsImport == null || contentsImport.isEmpty())) {
+                                        String encodedImport = contentsImport.get(0).getContent().replace("\n", "");
+                                        byte[] decodeImport = Base64.getDecoder().decode(encodedImport);
+                                        String contentImport = new String(decodeImport, StandardCharsets.UTF_8);
+
+                                        try {
+                                            YamlReader readerImport = new YamlReader(contentImport);
+                                            Object objectImport = readerImport.read();
+
+                                            Map<String, String> mapImport = new HashMap<>();
+
+                                            mapImport = (Map<String, String>) objectImport;
+
+                                            String cwlClass = mapImport.get("class");
+
+                                            if (cwlClass != null && cwlClass.equals("DockerRequirement")) {
+                                                dockerSource = mapImport.get("dockerPull");
+                                                out("VERSION: " + dockerSource);
+                                            }
+
+                                        } catch (IOException ex) {
+                                            err("Could not parse cwl for ", importCwl);
+                                        }
+                                    }
                                 }
                             }
                         } else {
@@ -120,7 +145,7 @@ public class BulkImport {
                         }
 
                     } catch (IOException ex) {
-                        err("Could not parse cwl for ", file.getName());
+                        err("Could not parse cwl for ", file.getPath());
                     }
 
                 }
@@ -129,7 +154,7 @@ public class BulkImport {
             kill(e.toString());
         }
 
-        return dockerPull;
+        return dockerSource;
     }
 
     private void removeNonCwl(List<RepositoryContents> contents, String stringToAppend) {
@@ -198,7 +223,14 @@ public class BulkImport {
                 continue;
             }
 
-            String dockerPull = getDockerSource(content, cService, repo, reference);
+            String dockerSource = getDockerSource(content, cService, repo, reference);
+
+            Pattern p = Pattern.compile("^([\\w-]+)\\.cwl$");
+            Matcher m = p.matcher(dockerSource);
+            if (!m.find()) {
+
+            }
+            String sdfname = m.group(1);
 
             String name = content.getName();
             out(name);
@@ -232,10 +264,6 @@ public class BulkImport {
             } catch (final ApiException ex) {
                 err("Unable to publish " + fullName);
             }
-
         }
-        out("updating...");
-        // refresh(null);
-
     }
 }

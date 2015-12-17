@@ -465,6 +465,9 @@ public class Client {
                     if (user.getIsAdmin()) {
                         BulkImport bulkImport = new BulkImport(containersApi, usersApi, user);
                         bulkImport.run();
+
+                        out("Updating...");
+                        // refresh(null);
                     } else {
                         out("Admin access only");
                     }
