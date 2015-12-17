@@ -21,29 +21,19 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.ws.rs.ProcessingException;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
-import org.eclipse.egit.github.core.Repository;
-import org.eclipse.egit.github.core.RepositoryContents;
-import org.eclipse.egit.github.core.client.GitHubClient;
-import org.eclipse.egit.github.core.service.ContentsService;
-import org.eclipse.egit.github.core.service.RepositoryService;
 
 import com.esotericsoftware.yamlbeans.YamlReader;
 import com.google.common.base.Joiner;
@@ -61,7 +51,6 @@ import io.swagger.client.model.Container.RegistryEnum;
 import io.swagger.client.model.RegisterRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
-import io.swagger.client.model.Token;
 import io.swagger.client.model.User;
 import javassist.NotFoundException;
 
@@ -474,7 +463,8 @@ public class Client {
                     break;
                 case "bulk_import":
                     if (user.getIsAdmin()) {
-                        bulkImport();
+                        BulkImport bulkImport = new BulkImport(containersApi, usersApi, user);
+                        bulkImport.run();
                     } else {
                         out("Admin access only");
                     }
@@ -526,153 +516,6 @@ public class Client {
             final Map<String, Object> runJson = cwl.extractRunJson(output.getLeft());
             out(gson.toJson(runJson));
         }
-    }
-
-    private static String getDockerSource(RepositoryContents file, ContentsService cService, Repository repo, String reference) {
-        String dockerPull = null;
-
-        try {
-            List<RepositoryContents> contents;
-            contents = cService.getContents(repo, file.getPath(), reference);
-            if (!(contents == null || contents.isEmpty())) {
-                String encoded = contents.get(0).getContent().replace("\n", "");
-                byte[] decode = Base64.getDecoder().decode(encoded);
-                String content = new String(decode, StandardCharsets.UTF_8);
-
-                if (content != null && !content.isEmpty()) {
-                    try {
-                        YamlReader reader = new YamlReader(content);
-                        Object object = reader.read();
-
-                        // need to parse this to get the imports
-                        // use the dockerPull from the DockerRequirement class to obtain the Docker Hub path and tag version
-                        Map map = (Map) object;
-
-                        // if (file.getName().equals("bedtools-closest-bulk")) {
-                        // Gson gson = new Gson();
-                        // String json = gson.toJson(map);
-                        //
-                        // out(json);
-                        // }
-
-                    } catch (IOException ex) {
-                        err("Could not parse cwl for ", file.getName());
-                    }
-
-                }
-            }
-        } catch (Exception e) {
-            kill(e.toString());
-        }
-
-        return dockerPull;
-    }
-
-    private static void removeNonCwl(List<RepositoryContents> contents, String stringToAppend) {
-        for (Iterator<RepositoryContents> iterator = contents.iterator(); iterator.hasNext();) {
-            RepositoryContents content = iterator.next();
-            String name = content.getName();
-            Pattern p = Pattern.compile("^([\\w-]+)\\.cwl$");
-            Matcher m = p.matcher(name);
-            if (!m.find()) {
-                iterator.remove();
-                continue;
-            }
-            name = m.group(1);
-            content.setName(name.concat(stringToAppend));
-        }
-    }
-
-    private static void bulkImport() {
-        GitHubClient githubClient = new GitHubClient();
-        try {
-            List<Token> githubToken = usersApi.getGithubUserTokens(user.getId());
-            githubClient.setOAuth2Token(githubToken.get(0).getContent());
-        } catch (final ApiException ex) {
-            err(ex.getResponseBody());
-            kill("Unable to get Github token");
-        }
-
-        RepositoryService service = new RepositoryService(githubClient);
-        ContentsService cService = new ContentsService(githubClient);
-
-        List<RepositoryContents> contents = new ArrayList<>();
-        List<RepositoryContents> bulkContents = new ArrayList<>();
-
-        final String reference = "draft2";
-        Repository repo = null;
-
-        try {
-            repo = service.getRepository("common-workflow-language", "workflows");
-            try {
-                contents.addAll(cService.getContents(repo, "/tools", reference));
-            } catch (Exception e) {
-                kill(e.toString());
-            }
-            try {
-                bulkContents.addAll(cService.getContents(repo, "/tools/bulk", reference));
-            } catch (Exception e) {
-                kill(e.toString());
-            }
-
-        } catch (IOException ex) {
-            err("Unable to find repository");
-            kill(ex.toString());
-        }
-
-        removeNonCwl(contents, "");
-        removeNonCwl(bulkContents, "-bulk");
-        contents.addAll(bulkContents);
-
-        Gson gson = new Gson();
-        String json = gson.toJson(contents);
-
-        // out(json);
-
-        for (RepositoryContents content : contents) {
-            if (!content.getType().equals("file")) {
-                continue;
-            }
-
-            String dockerPull = getDockerSource(content, cService, repo, reference);
-
-            String name = content.getName();
-            out(name);
-            String path = content.getPath();
-            String namespace = "common-workflow-language";
-            String registry = "registry.hub.docker.com";
-
-            Container container = new Container();
-            container.setMode(ModeEnum.MANUAL_IMAGE_PATH);
-            container.setName(name);
-            container.setNamespace(namespace);
-            container.setRegistry("quay.io".equals(registry) ? RegistryEnum.QUAY_IO : RegistryEnum.DOCKER_HUB);
-            // container.setDefaultDockerfilePath(dockerfilePath);
-            container.setDefaultCwlPath(path);
-            container.setIsPublic(true);
-            container.setIsRegistered(true);
-            container.setGitUrl("https://github.com/common-workflow-language/workflows");
-            // container.setToolname(toolname);
-            Tag tag = new Tag();
-            tag.setName(reference);
-            tag.setReference(reference);
-            // tag.setDockerfilePath();
-            tag.setCwlPath(path);
-            container.getTags().add(tag);
-            String fullName = Joiner.on("/").skipNulls().join(registry, namespace, name);
-            try {
-                container = containersApi.registerManual(container);
-                if (container == null) {
-                    err("Unable to publish " + fullName);
-                }
-            } catch (final ApiException ex) {
-                err("Unable to publish " + fullName);
-            }
-
-        }
-        out("updating...");
-        refresh(null);
-
     }
 
     /** this ends the section from dockstore-descriptor launcher **/
