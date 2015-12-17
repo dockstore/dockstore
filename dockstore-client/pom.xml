@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
-        <version>0.3-SNAPSHOT</version>
+        <version>0.2.2</version>
     </parent>
     <artifactId>dockstore-client</artifactId>
     <packaging>jar</packaging>
@@ -22,12 +22,12 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-client</artifactId>
-            <version>0.3-SNAPSHOT</version>
+            <version>0.2.2</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>0.3-SNAPSHOT</version>
+            <version>0.2.2</version>
         </dependency>
         
         <dependency>
@@ -71,7 +71,16 @@
             <artifactId>junit</artifactId>
             <version>4.12</version>
         </dependency>
-
+        <dependency>
+          <groupId>org.javassist</groupId>
+          <artifactId>javassist</artifactId>
+          <version>3.18.2-GA</version>
+        </dependency>
+        <dependency>
+          <groupId>javax.ws.rs</groupId>
+          <artifactId>javax.ws.rs-api</artifactId>
+          <version>2.0.1</version>
+        </dependency>
     </dependencies>
 
 
@@ -130,6 +139,8 @@
 
                             <usedDependencies>
                                 <usedDependency>org.apache.httpcomponents:httpcore</usedDependency>
+                                <usedDependency>javax.ws.rs:javax.ws.rs-api</usedDependency>
+                                <usedDependency>org.javassist:javassist</usedDependency>
                             </usedDependencies>
 
                         </configuration>
