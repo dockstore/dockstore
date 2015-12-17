@@ -20,18 +20,11 @@ RUN echo "deb http://http.debian.net/debian jessie-backports main" >> /etc/apt/s
 RUN apt-get update && apt-get install -y maven
 
 # build app
-RUN mkdir /gitroot
-COPY checkstyle.xml /gitroot/
-COPY dependency-reduced-pom.xml /gitroot/
-COPY findbugs-exclude.xml /gitroot/
-COPY pom.xml /gitroot/
-COPY docker-entrypoint.sh /gitroot/
-COPY dockstore-webservice /gitroot/dockstore-webservice
-COPY swagger-java-client /gitroot/swagger-java-client
-COPY dockstore-client /gitroot/dockstore-client
-# now build this
-RUN cd /gitroot && mvn clean install
-RUN chmod a+x /gitroot/docker-entrypoint.sh
+COPY dockstore.yml /dockstore.yml
+COPY docker-dockstore-entrypoint.sh /docker-dockstore-entrypoint.sh
+RUN wget https://seqwaremaven.oicr.on.ca/artifactory/collab-release/io/dockstore/dockstore-webservice/0.2.1/dockstore-webservice-0.2.1.jar
+RUN chmod a+x /docker-dockstore-entrypoint.sh
+EXPOSE 8080
 
 # default command launches daemons
-CMD /gitroot/docker-entrypoint.sh
+CMD /docker-dockstore-entrypoint.sh
