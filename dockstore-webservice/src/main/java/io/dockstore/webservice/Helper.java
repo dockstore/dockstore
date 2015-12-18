@@ -348,10 +348,14 @@ public final class Helper {
         for (final Container c : containers) {
 
             final ImageRegistryInterface imageRegistry = factory.createImageRegistry(c.getRegistry());
+            if (imageRegistry == null) {
+                continue;
+            }
             final List<Tag> tags = imageRegistry.getTags(c);
 
-            if (c.getMode() == ContainerMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS
-                    || c.getMode() == ContainerMode.AUTO_DETECT_QUAY_TAGS_WITH_MIXED) {
+            // if (c.getMode() == ContainerMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS
+            // || c.getMode() == ContainerMode.AUTO_DETECT_QUAY_TAGS_WITH_MIXED) {
+            if (c.getRegistry() == Registry.QUAY_IO) {
                 // TODO: this part isn't very good, a true implementation of Docker Hub would need to return
                 // a quay.io-like data structure, we need to replace mapOfBuilds
                 List builds = mapOfBuilds.get(c.getPath());
@@ -375,14 +379,19 @@ public final class Helper {
 
                                 Map<String, Map<String, String>> triggerMetadataMap = (Map<String, Map<String, String>>) build;
 
-                                String ref = triggerMetadataMap.get("trigger_metadata").get("ref");
-                                ref = parseReference(ref);
-                                LOG.info("REFERENCE: {}", ref);
-                                tag.setReference(ref);
-                                if (ref == null) {
-                                    tag.setAutomated(false);
+                                Map<String, String> triggerMetadata = (Map<String, String>) triggerMetadataMap.get("trigger_metadata");
+
+                                if (triggerMetadata != null) {
+                                    String ref = triggerMetadata.get("ref");
+                                    ref = parseReference(ref);
+                                    tag.setReference(ref);
+                                    if (ref == null) {
+                                        tag.setAutomated(false);
+                                    } else {
+                                        tag.setAutomated(true);
+                                    }
                                 } else {
-                                    tag.setAutomated(true);
+                                    LOG.error("WARNING: trigger_metadata is NULL. Could not parse to get reference!");
                                 }
 
                                 break;
@@ -550,7 +559,7 @@ public final class Helper {
             LOG.info("WARNING: BITBUCKET token not found!");
             throw new CustomWebApplicationException("A valid Bitbucket token is required to refresh this container.", HttpStatus.SC_BAD_REQUEST);
         }
-        if (container.getRegistry() == Registry.QUAY_IO && quayToken == null){
+        if (container.getRegistry() == Registry.QUAY_IO && quayToken == null) {
             LOG.info("WARNING: QUAY.IO token not found!");
             throw new CustomWebApplicationException("A valid Quay.io token is required to refresh this container.", HttpStatus.SC_BAD_REQUEST);
         }
@@ -565,11 +574,15 @@ public final class Helper {
         } else {
             List<String> namespaces = new ArrayList<>();
             namespaces.add(container.getNamespace());
-
-            apiContainers.addAll(anInterface.getContainers(namespaces));
+            if (anInterface != null) {
+                apiContainers.addAll(anInterface.getContainers(namespaces));
+            }
         }
 
-        final Map<String, ArrayList<?>> mapOfBuilds = anInterface.getBuildMap(apiContainers);
+        Map<String, ArrayList<?>> mapOfBuilds = new HashMap<>();
+        if (anInterface != null) {
+            mapOfBuilds.putAll(anInterface.getBuildMap(apiContainers));
+        }
 
         List<Container> dbContainers = new ArrayList<>();
         dbContainers.add(container);
