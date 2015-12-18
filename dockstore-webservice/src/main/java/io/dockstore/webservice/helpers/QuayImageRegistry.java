@@ -203,7 +203,11 @@ public class QuayImageRegistry implements ImageRegistryInterface {
             if (!builds.isEmpty()) {
                 Map<String, Map<String, String>> map2 = (Map<String, Map<String, String>>) builds.get(0);
 
-                gitURL = map2.get("trigger_metadata").get("git_url");
+                Map<String, String> triggerMetadata = (Map<String, String>) map2.get("trigger_metadata");
+
+                if (triggerMetadata != null) {
+                    gitURL = triggerMetadata.get("git_url");
+                }
 
                 Map<String, String> map3 = (Map<String, String>) builds.get(0);
                 String lastBuild = map3.get("started");
@@ -219,8 +223,10 @@ public class QuayImageRegistry implements ImageRegistryInterface {
             }
         }
 
-        container.setRegistry(Registry.QUAY_IO);
-        container.setGitUrl(gitURL);
+        if (container.getMode() != ContainerMode.MANUAL_IMAGE_PATH) {
+            container.setRegistry(Registry.QUAY_IO);
+            container.setGitUrl(gitURL);
+        }
     }
 
     // TODO: This method may have some use later. It uses /api/v1/repository/{repository}/trigger/ to get the git URL for a container, and

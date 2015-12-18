@@ -379,14 +379,19 @@ public final class Helper {
 
                                 Map<String, Map<String, String>> triggerMetadataMap = (Map<String, Map<String, String>>) build;
 
-                                String ref = triggerMetadataMap.get("trigger_metadata").get("ref");
-                                ref = parseReference(ref);
-                                LOG.info("REFERENCE: {}", ref);
-                                tag.setReference(ref);
-                                if (ref == null) {
-                                    tag.setAutomated(false);
+                                Map<String, String> triggerMetadata = (Map<String, String>) triggerMetadataMap.get("trigger_metadata");
+
+                                if (triggerMetadata != null) {
+                                    String ref = triggerMetadata.get("ref");
+                                    ref = parseReference(ref);
+                                    tag.setReference(ref);
+                                    if (ref == null) {
+                                        tag.setAutomated(false);
+                                    } else {
+                                        tag.setAutomated(true);
+                                    }
                                 } else {
-                                    tag.setAutomated(true);
+                                    LOG.error("WARNING: trigger_metadata is NULL. Could not parse to get reference!");
                                 }
 
                                 break;
