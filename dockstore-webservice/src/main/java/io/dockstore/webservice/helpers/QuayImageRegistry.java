@@ -53,7 +53,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
 
         apiClient = Configuration.getDefaultApiClient();
         apiClient.addDefaultHeader("Authorization", "Bearer " + quayToken.getContent());
-        //apiClient.setBasePath(QUAY_URL);
+        // apiClient.setBasePath(QUAY_URL);
     }
 
     @Override
@@ -98,8 +98,8 @@ public class QuayImageRegistry implements ImageRegistryInterface {
         try {
             final UserView loggedInUser = api.getLoggedInUser();
             final List organizations = loggedInUser.getOrganizations();
-            for(Object organization : organizations){
-                Map<String, String> organizationMap = (Map)organization;
+            for (Object organization : organizations) {
+                Map<String, String> organizationMap = (Map) organization;
                 namespaces.add(organizationMap.get("name"));
             }
         } catch (ApiException e) {
@@ -160,12 +160,12 @@ public class QuayImageRegistry implements ImageRegistryInterface {
             container.setPath(path);
 
             LOG.info("========== Configuring {} ==========", path);
-            if (container.getMode() != ContainerMode.MANUAL_IMAGE_PATH) {
-                // checkTriggers(container);
-                // if (container.hasValidTrigger()) {
-                updateContainersWithBuildInfo(formatter, mapOfBuilds, gson, container, repo, path);
-                // }
-            }
+            // if (container.getMode() != ContainerMode.MANUAL_IMAGE_PATH) {
+            // checkTriggers(container);
+            // if (container.hasValidTrigger()) {
+            updateContainersWithBuildInfo(formatter, mapOfBuilds, gson, container, repo, path);
+            // }
+            // }
         }
         return mapOfBuilds;
     }
