@@ -135,6 +135,7 @@ Background:
 then gson to convert from json due to some incompatibilities between CWL avro and normal avro.  
 
 To regenerate:
+
 1. Get schema salad from the common-workflow-language organization and run `python -mschema_salad --print-avro ~/common-workflow-language/draft-3/cwl-avro.yml`
 2. Get the avro tools jar and CWL avsc and call `java -jar avro-tools-1.7.7.jar compile schema cwl.avsc cwl`
 3. Copy them to the appropriate directory in dockstore-client (you will need to refactor and insert package names)
