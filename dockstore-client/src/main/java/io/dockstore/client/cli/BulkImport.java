@@ -228,7 +228,7 @@ public class BulkImport {
             Pattern p = Pattern.compile("^([\\w-]+)\\.cwl$");
             Matcher m = p.matcher(dockerSource);
             if (!m.find()) {
-
+                kill("uanble to parse cwl file name");
             }
             String sdfname = m.group(1);
 
