@@ -105,11 +105,11 @@ public class BulkImport {
                         if (listOfImports != null) {
                             for (Map<String, String> anImport : listOfImports) {
                                 String cwlClass = anImport.get("class");
-                                out("cwlClass" + cwlClass);
+                                // out("cwlClass" + cwlClass);
 
                                 if (cwlClass != null && cwlClass.equals("DockerRequirement")) {
                                     dockerSource = anImport.get("dockerPull");
-                                    out("VERSION: " + dockerSource);
+                                    // out("VERSION: " + dockerSource);
                                     return dockerSource;
                                 }
 
@@ -122,7 +122,7 @@ public class BulkImport {
                                     importCwl = anImport.get("@import");
                                 }
                                 if (importCwl != null) {
-                                    out("Import: " + importCwl);
+                                    // out("Import: " + importCwl);
                                     List<RepositoryContents> contentsImport;
                                     contentsImport = cService.getContents(repo, "/tools/" + importCwl, reference);
 
@@ -143,21 +143,22 @@ public class BulkImport {
 
                                             if (cwlClass != null && cwlClass.equals("DockerRequirement")) {
                                                 dockerSource = mapImport.get("dockerPull");
-                                                out("VERSION: " + dockerSource);
+                                                // out("VERSION: " + dockerSource);
                                             }
 
                                         } catch (IOException ex) {
-                                            err("Could not parse cwl for ", importCwl);
+                                            err("Could not parse cwl for cwl: ", importCwl);
                                         }
                                     }
                                 }
                             }
-                        } else {
-                            out("does not include requirements");
+                            // } else {
+                            // err("does not include requirements");
                         }
 
                     } catch (IOException ex) {
-                        err("Could not parse cwl for ", file.getPath());
+                        err("Could not parse cwl for file: ", file.getPath());
+                        err("name: ", file.getName());
                     }
 
                 }
@@ -236,8 +237,8 @@ public class BulkImport {
             }
 
             String toolName = content.getName();
+            out(toolName);
             String name = content.getName();
-            out(name);
             String path = content.getPath();
             String namespace = "common-workflow-language";
             String registry = "registry.hub.docker.com";
@@ -247,7 +248,7 @@ public class BulkImport {
 
             Container container = new Container();
             if (dockerSource != null) {
-                out("DOCKER SOURCE: " + dockerSource);
+                // out("DOCKER SOURCE: " + dockerSource);
                 Pattern p = Pattern.compile("^(quay.io/)?(([\\w.]+)/)?([\\w-]+)(:([\\w-.]+))?$");
                 Matcher m = p.matcher(dockerSource);
                 if (!m.find()) {
@@ -288,7 +289,7 @@ public class BulkImport {
             Tag tag = new Tag();
             tag.setName(tagVersion);
             tag.setReference(reference);
-            // tag.setDockerfilePath();
+            tag.setDockerfilePath("/docker/" + name + "/Dockerfile");
             tag.setCwlPath(path);
             container.getTags().add(tag);
             String fullName = Joiner.on("/").skipNulls().join(registry, namespace, name);
@@ -297,6 +298,8 @@ public class BulkImport {
                 container = containersApi.registerManual(container);
                 if (container == null) {
                     err("Unable to publish " + fullName);
+                } else {
+                    out("Successfully published: " + container.getToolPath());
                 }
             } catch (final ApiException ex) {
                 err("Unable to publish " + fullName);
