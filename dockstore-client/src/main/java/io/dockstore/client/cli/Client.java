@@ -27,12 +27,19 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.ws.rs.ProcessingException;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 
@@ -378,7 +385,7 @@ public class Client {
         }
     }
 
-    private static void manualPublish(List<String> args) {
+    private static void manualPublish(final List<String> args) {
         if (isHelp(args, true)) {
             out("");
             out("Usage: dockstore manual_publish --help");
@@ -420,12 +427,12 @@ public class Client {
             container.setIsRegistered(true);
             container.setGitUrl(gitURL);
             container.setToolname(toolname);
-            Tag tag = new Tag();
+            final Tag tag = new Tag();
             tag.setReference(gitReference);
             tag.setDockerfilePath(dockerfilePath);
             tag.setCwlPath(cwlPath);
             container.getTags().add(tag);
-            String fullName = Joiner.on("/").skipNulls().join(registry, namespace, name, toolname);
+            final String fullName = Joiner.on("/").skipNulls().join(registry, namespace, name, toolname);
             try {
                 container = containersApi.registerManual(container);
                 if (container != null) {
@@ -445,13 +452,14 @@ public class Client {
             out("Usage: dockstore dev --help");
             out("       dockstore dev cwl2json");
             out("       dockstore dev tool2json");
+            out("       dockstore dev tool2csv");
             out("       dockstore dev launch");
             out("");
             out("Description:");
             out("  Experimental features not quite ready for prime-time.");
             out("");
         } else {
-            String cmd = args.remove(0);
+            final String cmd = args.remove(0);
             if (null != cmd) {
                 switch (cmd) {
                 case "cwl2json":
@@ -459,6 +467,9 @@ public class Client {
                     break;
                 case "tool2json":
                     tool2json(args);
+                    break;
+                case "tool2csv":
+                    tool2csv(args);
                     break;
                 case "launch":
                     launch(args);
@@ -480,12 +491,16 @@ public class Client {
             out("Description:");
             out("  Launch an entry locally.");
             out("Required parameters:");
-            out("  --run <json file>            Parameters to the json in the dockstore");
             out("  --entry <entry>                Complete tool path in the Dockstore");
+            out("Optional parameters:");
+            out("  --run <json file>            Parameters to the entry in the dockstore");
+            out("  --csv <csv file>             Multiple sets of parameters to the entry in the dockstore");
             out("");
         } else {
             final String entry = reqVal(args, "--entry");
-            final String run = reqVal(args, "--run");
+            final String jsonRun = optVal(args, "--run", null);
+            final String csvRuns = optVal(args, "--csv", null);
+
             final SourceFile cwlFromServer = getCWLFromServer(entry);
             final File tempCWL = File.createTempFile("temp", ".cwl", Files.createTempDir());
             Files.write(cwlFromServer.getContent(), tempCWL, StandardCharsets.UTF_8);
@@ -494,15 +509,48 @@ public class Client {
             final File tempConfig = File.createTempFile("temp", ".cwl", Files.createTempDir());
             Files.write("working-directory=./datastore/", tempConfig, StandardCharsets.UTF_8);
 
-            LauncherCWL cwlLauncher = new LauncherCWL(tempConfig.getAbsolutePath(), tempCWL.getAbsolutePath(), run, System.out, System.err);
-            cwlLauncher.run();
+            if (jsonRun != null) {
+                final LauncherCWL cwlLauncher = new LauncherCWL(tempConfig.getAbsolutePath(), tempCWL.getAbsolutePath(), jsonRun, System.out, System.err);
+                cwlLauncher.run();
+            }
+
+            if (csvRuns != null){
+                final Gson gson = CWL.getTypeSafeCWLToolDocument();
+                final File csvData = new File(csvRuns);
+                try (CSVParser parser = CSVParser.parse(csvData, StandardCharsets.UTF_8, CSVFormat.DEFAULT)) {
+                    // grab header
+                    final Iterator<CSVRecord> iterator = parser.iterator();
+                    final CSVRecord headers = iterator.next();
+                    // grab types
+                    final CSVRecord types = iterator.next();
+                    // process rows
+                    while(iterator.hasNext()){
+                        final CSVRecord csvRecord = iterator.next();
+                        // transform a record into a csv and output it
+                        final Map<String, Object> stringMap = new HashMap<>();
+                        for(int i = 0; i < csvRecord.size(); i++){
+                            final String key = headers.get(i);
+                            final String value = csvRecord.get(i);
+                            final String type = types.get(i);
+                            final Object finalValue = CWL.getStub(type, value);
+                            stringMap.put(key, finalValue);
+                        }
+
+                        final File tempJson = File.createTempFile("temp", ".json", Files.createTempDir());
+                        final String stringMapAsString = gson.toJson(stringMap);
+                        Files.write(stringMapAsString, tempJson, StandardCharsets.UTF_8);
+                        final LauncherCWL cwlLauncher = new LauncherCWL(tempConfig.getAbsolutePath(), tempCWL.getAbsolutePath(), tempJson.getAbsolutePath(), System.out, System.err);
+                        cwlLauncher.run();
+                    }
+                }
+            }
         }
     }
 
     private static void tool2json(final List<String> args) throws ApiException, IOException {
         if (isHelp(args, true)) {
             out("");
-            out("Usage: dockstore dev --help");
+            out("Usage: dockstore dev tool2json --help");
             out("       dockstore dev tool2json");
             out("");
             out("Description:");
@@ -511,15 +559,66 @@ public class Client {
             out("  --entry <entry>                Complete tool path in the Dockstore");
             out("");
         } else {
-            final String entry = reqVal(args, "--entry");
-            final SourceFile cwlFromServer = getCWLFromServer(entry);
-            final File tempCWL = File.createTempFile("temp", ".cwl", Files.createTempDir());
-            Files.write(cwlFromServer.getContent(), tempCWL, StandardCharsets.UTF_8);
-            // need to suppress output
-            final ImmutablePair<String, String> output = cwl.parseCWL(tempCWL.getAbsolutePath(), true);
-            final Map<String, Object> runJson = cwl.extractRunJson(output.getLeft());
-            final Gson gson = cwl.getTypeSafeCWLToolDocument();
-            out(gson.toJson(runJson));
+            final String runString = runString(args, true);
+            out(runString);
+        }
+    }
+
+    private static String runString(final List<String> args, final boolean json) throws ApiException, IOException {
+        final String entry = reqVal(args, "--entry");
+        final SourceFile cwlFromServer = getCWLFromServer(entry);
+        final File tempCWL = File.createTempFile("temp", ".cwl", Files.createTempDir());
+        Files.write(cwlFromServer.getContent(), tempCWL, StandardCharsets.UTF_8);
+        // need to suppress output
+        final ImmutablePair<String, String> output = cwl.parseCWL(tempCWL.getAbsolutePath(), true);
+        final Map<String, Object> stringObjectMap = cwl.extractRunJson(output.getLeft());
+        if (json){
+            final Gson gson = CWL.getTypeSafeCWLToolDocument();
+            return gson.toJson(stringObjectMap);
+        } else{
+            // re-arrange as rows and columns
+            final Map<String, String> typeMap = cwl.extractCWLTypes(output.getLeft());
+            final List<String> headers = new ArrayList<>();
+            final List<String> types = new ArrayList<>();
+            final List<String> entries = new ArrayList<>();
+            for(final Entry<String, Object> objectEntry : stringObjectMap.entrySet()){
+                headers.add(objectEntry.getKey());
+                types.add(typeMap.get(objectEntry.getKey()));
+                Object value = objectEntry.getValue();
+                if (value instanceof Map){
+                    Map map = (Map)value;
+                    if (map.containsKey("class") && "File".equals(map.get("class"))){
+                        value = map.get("path");
+                    }
+                }
+                entries.add(value.toString());
+            }
+            final StringBuffer buffer = new StringBuffer();
+            try (CSVPrinter printer = new CSVPrinter(buffer, CSVFormat.DEFAULT)) {
+                printer.printRecord(headers);
+                printer.printComment("do not edit the following row, describes CWL types");
+                printer.printRecord(types);
+                printer.printComment("duplicate the following row and fill in the values for each run you wish to set parameters for");
+                printer.printRecord(entries);
+            }
+            return buffer.toString();
+        }
+    }
+
+    private static void tool2csv(final List<String> args) throws ApiException, IOException {
+        if (isHelp(args, true)) {
+            out("");
+            out("Usage: dockstore dev tool2csv --help");
+            out("       dockstore dev tool2csv");
+            out("");
+            out("Description:");
+            out("  Spit out a csv run file for a given cwl document.");
+            out("Required parameters:");
+            out("  --entry <entry>                Complete tool path in the Dockstore");
+            out("");
+        } else {
+            final String runString = runString(args, false);
+            out(runString);
         }
     }
 

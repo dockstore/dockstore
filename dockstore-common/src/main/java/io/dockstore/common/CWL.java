@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.apache.avro.specific.SpecificRecordBase;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -47,61 +48,94 @@ public class CWL {
     public Map<String, Object> extractRunJson(final String output) {
         final CommandLineTool commandLineTool = gson.fromJson(output, CommandLineTool.class);
         final Map<String, Object> runJson = new HashMap<>();
-        final List<CommandInputParameter> inputs = commandLineTool.getInputs();
-        final List<CommandOutputParameter> outputs = commandLineTool.getOutputs();
 
-        for(final CommandInputParameter inputParam : inputs){
+        for(final CommandInputParameter inputParam : commandLineTool.getInputs()){
             final String idString = inputParam.getId().toString();
-            final Object stub = getStub(inputParam.getType());
+            final Object stub = getStub(inputParam.getType(), null);
             runJson.put(idString.substring(idString.lastIndexOf('#') + 1), stub);
         }
-        for(final CommandOutputParameter outParam : outputs){
+        for(final CommandOutputParameter outParam : commandLineTool.getOutputs()){
             final String idString = outParam.getId().toString();
-            final Object stub = getStub(outParam.getType());
+            final Object stub = getStub(outParam.getType(), null);
             runJson.put(idString.substring(idString.lastIndexOf('#') + 1), stub);
         }
         return runJson;
     }
 
+    public Map<String, String> extractCWLTypes(final String output){
+        final CommandLineTool commandLineTool = gson.fromJson(output, CommandLineTool.class);
+        final Map<String, String> typeJson = new HashMap<>();
+
+        for(final CommandInputParameter inputParam : commandLineTool.getInputs()){
+            final String idString = inputParam.getId().toString();
+            String type = convertCWLType(inputParam.getType());
+            typeJson.put(idString.substring(idString.lastIndexOf('#') + 1), type);
+        }
+        for(final CommandOutputParameter outParam : commandLineTool.getOutputs()){
+            final String idString = outParam.getId().toString();
+            String type = convertCWLType(outParam.getType());
+            typeJson.put(idString.substring(idString.lastIndexOf('#') + 1), outParam.getType().toString());
+        }
+        return typeJson;
+    }
+
+    private String convertCWLType(Object cwlType) {
+        String type = null;
+        if (cwlType instanceof List){
+            for(final Object entry : (Iterable) cwlType){
+                if (entry != null){
+                    type = entry.toString();
+                }
+            }
+            if (type == null) {
+                throw new RuntimeException("CWL format unknown");
+            }
+        } else{
+            type = cwlType.toString();
+        }
+        return type;
+    }
+
     /**
      * This is an ugly mapping between CWL's primitives and Java primitives
-     * @param type
-     * @return
+     * @param type the CWL type
+     * @param value
+     * @return a stub Java object corresponding to type
      */
-    private static Object getStub(Object type) {
-        Object stub = "fill me in";
+    public static Object getStub(final Object type, final String value) {
+        Object stub = value == null? "fill me in" : value;
         if (type instanceof List){
             // if its a list, call recursively and return first non-stub entry
-            for(Object entry : (List)type){
-                final Object stub1 = getStub(entry);
-                if (stub1 != stub){
-                    return stub1;
+            for(final Object entry : (Iterable) type){
+                final Object arrayStub = getStub(entry, value);
+                if (!Objects.equals(arrayStub, stub)){
+                    return arrayStub;
                 }
             }
             return stub;
         }
-        String strType = type.toString();
+        final String strType = type.toString();
         switch (strType) {
         case "File":
-            Map<String, String> file = new HashMap<>();
+            final Map<String, String> file = new HashMap<>();
             file.put("class", "File");
-            file.put("path", "fill me in");
+            file.put("path", value != null ? value : "fill me in");
             stub = file;
             break;
         case "boolean":
-            stub = Boolean.FALSE;
+            stub = value != null? Boolean.parseBoolean(value) : Boolean.FALSE;
             break;
         case "int":
-            stub = 0;
+            stub = value != null? Integer.parseInt(value) :0;
             break;
         case "long":
-            stub = 0L;
+            stub = value != null? Long.parseLong(value) :0L;
             break;
         case "float":
-            stub = 0.0;
+            stub = value != null? Float.parseFloat(value) :0.0;
             break;
         case "double":
-            stub = Double.MAX_VALUE;
+            stub = value != null? Double.parseDouble(value) : Double.MAX_VALUE;
             break;
         default:
             break;
@@ -150,9 +184,9 @@ public class CWL {
         return gson1.fromJson(jsonElement, anyClass);
     }
 
-    public ImmutablePair<String, String> parseCWL(String cwlFile, boolean validate) {
+    public ImmutablePair<String, String> parseCWL(final String cwlFile, final boolean validate) {
         // update seems to just output the JSON version without checking file links
-        String[] s = { "cwltool", "--non-strict", validate ? "--print-pre" : "--update", cwlFile };
+        final String[] s = { "cwltool", "--non-strict", validate ? "--print-pre" : "--update", cwlFile };
         final ImmutablePair<String, String> execute = Utilities.executeCommand(Joiner.on(" ").join(Arrays.asList(s)), false,  Optional.absent(), Optional.absent());
         return execute;
     }
