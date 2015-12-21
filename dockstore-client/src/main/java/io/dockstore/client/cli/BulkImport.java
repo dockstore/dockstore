@@ -104,8 +104,20 @@ public class BulkImport {
 
                         if (listOfImports != null) {
                             for (Map<String, String> anImport : listOfImports) {
+                                String cwlClass = anImport.get("class");
+                                out("cwlClass" + cwlClass);
+
+                                if (cwlClass != null && cwlClass.equals("DockerRequirement")) {
+                                    dockerSource = anImport.get("dockerPull");
+                                    out("VERSION: " + dockerSource);
+                                    return dockerSource;
+                                }
+
                                 String importCwl = anImport.get("import");
 
+                                if (importCwl == null) {
+                                    importCwl = anImport.get("$import");
+                                }
                                 if (importCwl == null) {
                                     importCwl = anImport.get("@import");
                                 }
@@ -127,7 +139,7 @@ public class BulkImport {
 
                                             mapImport = (Map<String, String>) objectImport;
 
-                                            String cwlClass = mapImport.get("class");
+                                            cwlClass = mapImport.get("class");
 
                                             if (cwlClass != null && cwlClass.equals("DockerRequirement")) {
                                                 dockerSource = mapImport.get("dockerPull");
@@ -223,26 +235,50 @@ public class BulkImport {
                 continue;
             }
 
-            String dockerSource = getDockerSource(content, cService, repo, reference);
-
-            Pattern p = Pattern.compile("^([\\w-]+)\\.cwl$");
-            Matcher m = p.matcher(dockerSource);
-            if (!m.find()) {
-                kill("uanble to parse cwl file name");
-            }
-            String sdfname = m.group(1);
-
+            String toolName = content.getName();
             String name = content.getName();
             out(name);
             String path = content.getPath();
             String namespace = "common-workflow-language";
             String registry = "registry.hub.docker.com";
+            String tagVersion = null;
+
+            String dockerSource = getDockerSource(content, cService, repo, reference);
 
             Container container = new Container();
+            if (dockerSource != null) {
+                out("DOCKER SOURCE: " + dockerSource);
+                Pattern p = Pattern.compile("^(quay.io/)?(([\\w.]+)/)?([\\w-]+)(:([\\w-.]+))?$");
+                Matcher m = p.matcher(dockerSource);
+                if (!m.find()) {
+                    kill("unable to parse Docker Source Requirement.");
+                }
+
+                final int registryIndex = 1;
+                final int namespaceIndex = 3;
+                final int nameIndex = 4;
+                final int tagVersionIndex = 6;
+                registry = m.group(registryIndex);
+                namespace = m.group(namespaceIndex);
+                name = m.group(nameIndex);
+                tagVersion = m.group(tagVersionIndex);
+
+                if (namespace == null) {
+                    namespace = "_";
+                }
+                container.setToolname(toolName);
+            }
+
+            if (tagVersion == null) {
+                err("Unable to publish " + toolName + ". No version available.");
+                continue;
+            }
+
+            // Container container = new Container();
             container.setMode(Container.ModeEnum.MANUAL_IMAGE_PATH);
             container.setName(name);
             container.setNamespace(namespace);
-            container.setRegistry("quay.io".equals(registry) ? Container.RegistryEnum.QUAY_IO : Container.RegistryEnum.DOCKER_HUB);
+            container.setRegistry("quay.io/".equals(registry) ? Container.RegistryEnum.QUAY_IO : Container.RegistryEnum.DOCKER_HUB);
             // container.setDefaultDockerfilePath(dockerfilePath);
             container.setDefaultCwlPath(path);
             container.setIsPublic(true);
@@ -250,12 +286,13 @@ public class BulkImport {
             container.setGitUrl("https://github.com/common-workflow-language/workflows");
             // container.setToolname(toolname);
             Tag tag = new Tag();
-            tag.setName(reference);
+            tag.setName(tagVersion);
             tag.setReference(reference);
             // tag.setDockerfilePath();
             tag.setCwlPath(path);
             container.getTags().add(tag);
             String fullName = Joiner.on("/").skipNulls().join(registry, namespace, name);
+            // out("Success: " + toolName);
             try {
                 container = containersApi.registerManual(container);
                 if (container == null) {
