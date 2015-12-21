@@ -42,7 +42,7 @@ public class CWLClientTest {
         final URL resource = Resources.getResource("cwl.json");
         final String cwlJson = Resources.toString(resource, StandardCharsets.UTF_8);
 
-        CWL cwl = new CWL();
+        final CWL cwl = new CWL();
 
         final Gson gson = CWL.getTypeSafeCWLToolDocument();
         final Map<String, Object> runJson = cwl.extractRunJson(cwlJson);
@@ -53,10 +53,29 @@ public class CWLClientTest {
     @Test
     public void parseCWL() throws Exception{
         final URL resource = Resources.getResource("cwl.json");
-        CWL cwl = new CWL();
+        final CWL cwl = new CWL();
         final ImmutablePair<String, String> output = cwl.parseCWL(resource.getFile(), true);
         assertTrue(!output.getLeft().isEmpty() && output.getLeft().contains("cwlVersion"));
         assertTrue(!output.getRight().isEmpty() && output.getRight().contains("cwltool"));
+    }
+
+    @Test
+    public void extractCWLTypes() throws Exception{
+        final URL resource = Resources.getResource("cwl.json");
+        final CWL cwl = new CWL();
+        final ImmutablePair<String, String> output = cwl.parseCWL(resource.getFile(), true);
+        final Map<String, String> typeMap = cwl.extractCWLTypes(output.getLeft());
+        assertTrue(typeMap.size() == 3);
+        assertTrue("int".equals(typeMap.get("mem_gb")));
+        assertTrue("File".equals(typeMap.get("bam_input")));
+    }
+
+    @Test
+    public void testFileConversions() throws Exception{
+        final Object file1 = CWL.getStub("File", null);
+        assertTrue(file1 instanceof Map && "fill me in".equals(((Map)file1).get("path")));
+        final Object file2 = CWL.getStub("File", "foobar");
+        assertTrue(file2 instanceof Map && "foobar".equals(((Map)file2).get("path")));
     }
 
 
