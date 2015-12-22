@@ -77,8 +77,8 @@ public class BulkImport {
         throw new Kill();
     }
 
-    private String getDockerSource(RepositoryContents file, ContentsService cService, Repository repo, String reference) {
-        String dockerSource = null;
+    private String getImageSource(RepositoryContents file, ContentsService cService, Repository repo, String reference) {
+        String imageSource = null;
 
         try {
             List<RepositoryContents> contents;
@@ -107,9 +107,9 @@ public class BulkImport {
 
                                 // if the cwl itself is a DockerRequirement, no need to get any imports.
                                 if (cwlClass != null && cwlClass.equals("DockerRequirement")) {
-                                    dockerSource = anImport.get("dockerPull");
-                                    // out("VERSION: (requirement) " + dockerSource);
-                                    return dockerSource;
+                                    imageSource = anImport.get("dockerPull");
+                                    // out("VERSION: (requirement) " + imageSource);
+                                    return imageSource;
                                 }
 
                                 // get the import, could be $import or @import
@@ -142,8 +142,8 @@ public class BulkImport {
                                             cwlClass = mapImport.get("class");
 
                                             if (cwlClass != null && cwlClass.equals("DockerRequirement")) {
-                                                dockerSource = mapImport.get("dockerPull");
-                                                // out("VERSION (import): " + dockerSource);
+                                                imageSource = mapImport.get("dockerPull");
+                                                // out("VERSION (import): " + imageSource);
                                             }
 
                                         } catch (IOException ex) {
@@ -157,9 +157,9 @@ public class BulkImport {
                             map2 = (Map<String, String>) object;
                             String cwlClass = map2.get("class");
                             if (cwlClass != null && cwlClass.equals("DockerRequirement")) {
-                                dockerSource = map2.get("dockerPull");
-                                // out("VERSION: (requirement) " + dockerSource);
-                                return dockerSource;
+                                imageSource = map2.get("dockerPull");
+                                // out("VERSION: (requirement) " + imageSource);
+                                return imageSource;
                             }
                         }
 
@@ -173,7 +173,7 @@ public class BulkImport {
             err(e.toString());
         }
 
-        return dockerSource;
+        return imageSource;
     }
 
     private void removeNonCwl(List<RepositoryContents> contents, String stringToAppend) {
@@ -245,7 +245,7 @@ public class BulkImport {
             // - have class of DockerRequirement or have an import that is a DockerRequirement
             // - have a dockerPull with a tag
 
-            // TODO: The naming convention will be
+            // TODO: Use namespace and name from image source for the Dockstore image name. Use the cwl file name for its tool name.
             String toolName = content.getName();
             out("");
             out("IMPORTING: " + toolName);
@@ -255,17 +255,17 @@ public class BulkImport {
             String registry = "registry.hub.docker.com";
             String tagVersion = null;
 
-            String dockerSource = getDockerSource(content, cService, repo, reference);
+            String imageSource = getImageSource(content, cService, repo, reference);
 
             Container container = new Container();
-            if (dockerSource != null) {
-                // dockerSource is in the form: quay.io/<namespace>/<name>:<version>
+            if (imageSource != null) {
+                // imageSource is in the form: quay.io/<namespace>/<name>:<version>
                 // where quay.io is optional (omitted for Docker Hub) and namespace is optional (ex. ubuntu)
-                // dockerSource is used for the Quay.io/Docker Hub URLs
+                // imageSource is used for the Quay.io/Docker Hub URLs
                 Pattern p = Pattern.compile("^(quay.io/)?(([\\w.]+)/)?([\\w-]+)(:([\\w-.]+))?$");
-                Matcher m = p.matcher(dockerSource);
+                Matcher m = p.matcher(imageSource);
                 if (!m.find()) {
-                    err("Unable to parse Docker Source Requirement for " + toolName);
+                    err("Unable to parse Image Source Requirement for " + toolName);
                     continue;
                 }
 
