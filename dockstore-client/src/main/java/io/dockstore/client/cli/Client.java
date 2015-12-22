@@ -466,7 +466,8 @@ public class Client {
                         BulkImport bulkImport = new BulkImport(containersApi, usersApi, user);
                         bulkImport.run();
 
-                        out("Updating...");
+                        // uncomment next 2 lines if you want to refresh all containers after bulk import
+                        // out("Updating...");
                         // refresh(null);
                     } else {
                         out("Admin access only");
