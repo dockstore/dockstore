@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -35,6 +36,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -70,6 +72,8 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 
 /**
  *
@@ -304,6 +308,34 @@ public class DockerRepoResource {
 
         // Helper.refreshContainer(id, authToken.getUserId(), client, objectMapper, userDAO, containerDAO, tokenDAO, tagDAO, fileDAO);
         return created;
+    }
+
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}")
+    @ApiOperation(value = "Delete manually registered image")
+    @ApiResponses(@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid "))
+    public Response deleteContainer(@ApiParam(hidden = true) @Auth Token authToken,
+            @ApiParam(value = "Container id to delete", required = true) @PathParam("containerId") Long containerId) {
+        User user = userDAO.findById(authToken.getUserId());
+        Container container = containerDAO.findById(containerId);
+        Helper.checkUser(user, container);
+
+        // only allow users to delete manually added images
+        if (container.getMode() == ContainerMode.MANUAL_IMAGE_PATH) {
+            container.getTags().clear();
+            containerDAO.delete(container);
+
+            container = containerDAO.findById(containerId);
+            if (container == null) {
+                return Response.ok().build();
+            } else {
+                return Response.serverError().build();
+            }
+        } else {
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
     }
 
     @POST
