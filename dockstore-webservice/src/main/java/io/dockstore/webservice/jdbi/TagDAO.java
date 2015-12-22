@@ -35,7 +35,7 @@ public class TagDAO extends AbstractDAO<Tag> {
         return get(id);
     }
 
-    public long create(Tag token) {
-        return persist(token).getId();
+    public long create(Tag tag) {
+        return persist(tag).getId();
     }
 }

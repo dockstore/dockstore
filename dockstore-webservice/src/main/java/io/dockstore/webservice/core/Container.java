@@ -298,6 +298,10 @@ public class Container {
         tags.add(tag);
     }
 
+    public boolean removeTag(Tag tag) {
+        return tags.remove(tag);
+    }
+
     public Set<Label> getLabels() {
         return labels;
     }

@@ -264,6 +264,18 @@ public class DockerRepoResource {
         Container c = containerDAO.findRegisteredById(containerId);
         Helper.checkContainer(c);
 
+        // need to have this evict so that hibernate does not actually delete the tags
+        containerDAO.evict(c);
+
+        List<Tag> tags = new ArrayList<>();
+        tags.addAll(c.getTags());
+
+        for (Tag t : tags) {
+            if (t.isHidden()) {
+                c.removeTag(t);
+            }
+        }
+
         return c;
     }
 
@@ -391,7 +403,22 @@ public class DockerRepoResource {
     @ApiOperation(value = "List all registered containers. This would be a minimal resource that would need to be implemented "
             + "by a GA4GH reference server", tags = { "GA4GH", "containers" }, notes = "NO authentication", response = Container.class, responseContainer = "List")
     public List<Container> allRegisteredContainers() {
-        return containerDAO.findAllRegistered();
+        List<Container> containers = containerDAO.findAllRegistered();
+
+        for (Container c : containers) {
+            containerDAO.evict(c);
+
+            List<Tag> tags = new ArrayList<>();
+            tags.addAll(c.getTags());
+
+            for (Tag t : tags) {
+                if (t.isHidden()) {
+                    c.removeTag(t);
+                }
+            }
+        }
+
+        return containers;
     }
 
     @GET
