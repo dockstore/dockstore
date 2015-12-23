@@ -126,6 +126,9 @@ public class Container {
     @ApiModelProperty("This is a human-readable description of this container and what it is trying to accomplish, required GA4GH")
     private String description;
     @Column
+    @ApiModelProperty("This is the email of the git organization")
+    private String email;
+    @Column
     @ApiModelProperty("Implementation specific hook for social starring in this web service")
     @JsonProperty("is_starred")
     private boolean isStarred;
@@ -459,5 +462,14 @@ public class Container {
     @JsonProperty("tool_path")
     public String getToolPath() {
         return getPath() + (toolname == null || toolname.isEmpty() ? "" : '/' + toolname);
+    }
+
+    @JsonProperty
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 }

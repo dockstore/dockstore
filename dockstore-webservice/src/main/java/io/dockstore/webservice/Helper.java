@@ -224,11 +224,15 @@ public final class Helper {
 
             final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(container.getGitUrl(), client,
                     bitbucketToken == null ? null : bitbucketToken.getContent(), githubToken.getContent());
+            String email = "";
             if (sourceCodeRepo != null) {
                 LOG.info("Parsing CWL...");
                 // find if there is a Dockstore.cwl file from the git repository
                 sourceCodeRepo.findCWL(container);
+
+                email = sourceCodeRepo.getOrganizationEmail();
             }
+            container.setEmail(email);
 
             containerDAO.create(container);
         }
