@@ -442,6 +442,11 @@ public class Client {
             out("Usage: dockstore dev --help");
             out("       dockstore dev cwl2json");
             out("       dockstore dev tool2json <container>");
+
+            if (user.getIsAdmin()) {
+                out("       dockstore dev bulk_import");
+            }
+
             out("");
             out("Description:");
             out("  Experimental features not quite ready for prime-time.");
@@ -455,6 +460,18 @@ public class Client {
                     break;
                 case "tool2json":
                     tool2json(args);
+                    break;
+                case "bulk_import":
+                    if (user.getIsAdmin()) {
+                        BulkImport bulkImport = new BulkImport(containersApi, usersApi, user);
+                        bulkImport.run();
+
+                        // uncomment next 2 lines if you want to refresh all containers after bulk import
+                        // out("Updating...");
+                        // refresh(null);
+                    } else {
+                        out("Admin access only");
+                    }
                     break;
                 default:
                     invalid(cmd);
@@ -504,7 +521,6 @@ public class Client {
             out(gson.toJson(runJson));
         }
     }
-
 
     /** this ends the section from dockstore-descriptor launcher **/
 

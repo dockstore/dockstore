@@ -307,6 +307,7 @@ public class DockerRepoResource {
         container.getLabels().addAll(createdLabels);
 
         container.setGitUrl(Helper.convertHttpsToSsh(container.getGitUrl()));
+        container.setPath(container.getPath());
 
         Container duplicate = containerDAO.findByToolPath(container.getPath(), container.getToolname());
 

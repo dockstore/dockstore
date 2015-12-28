@@ -1,0 +1,329 @@
+/*
+ * Copyright (C) 2015 Dockstore
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+package io.dockstore.client.cli;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.eclipse.egit.github.core.Repository;
+import org.eclipse.egit.github.core.RepositoryContents;
+import org.eclipse.egit.github.core.client.GitHubClient;
+import org.eclipse.egit.github.core.service.ContentsService;
+import org.eclipse.egit.github.core.service.RepositoryService;
+
+import com.esotericsoftware.yamlbeans.YamlReader;
+import com.google.common.base.Joiner;
+
+import io.swagger.client.ApiException;
+import io.swagger.client.api.ContainersApi;
+import io.swagger.client.api.UsersApi;
+import io.swagger.client.model.Container;
+import io.swagger.client.model.Tag;
+import io.swagger.client.model.Token;
+import io.swagger.client.model.User;
+
+/**
+ *
+ * Bulk import tools from https://github.com/common-workflow-language/workflows
+ * 
+ * @author xliu
+ */
+public class BulkImport {
+    private final ContainersApi containersApi;
+    private final UsersApi usersApi;
+    private final User user;
+
+    public BulkImport(ContainersApi containersApi, UsersApi usersApi, User user) {
+        this.containersApi = containersApi;
+        this.usersApi = usersApi;
+        this.user = user;
+    }
+
+    private void out(String arg) {
+        System.out.println(arg);
+    }
+
+    private void err(String format, Object... args) {
+        System.err.println(String.format(format, args));
+    }
+
+    private class Kill extends RuntimeException {
+    }
+
+    private void kill(String format, Object... args) {
+        err(format, args);
+        throw new Kill();
+    }
+
+    private String getImageSource(RepositoryContents file, ContentsService cService, Repository repo, String reference) {
+        String imageSource = null;
+
+        try {
+            List<RepositoryContents> contents;
+            contents = cService.getContents(repo, file.getPath(), reference);
+            if (!(contents == null || contents.isEmpty())) {
+                String encoded = contents.get(0).getContent().replace("\n", "");
+                byte[] decode = Base64.getDecoder().decode(encoded);
+                String content = new String(decode, StandardCharsets.UTF_8);
+
+                if (content != null && !content.isEmpty()) {
+                    try {
+                        YamlReader reader = new YamlReader(content);
+                        Object object = reader.read();
+
+                        Map<String, List<Map<String, String>>> map = new HashMap<>();
+
+                        map = (Map<String, List<Map<String, String>>>) object;
+
+                        List<Map<String, String>> listOfImports = map.get("requirements");
+                        // out(file.getName() + " has requirements");
+
+                        if (listOfImports != null) {
+                            for (Map<String, String> anImport : listOfImports) {
+                                String cwlClass = anImport.get("class");
+                                // out("cwlClass" + cwlClass);
+
+                                // if the cwl itself is a DockerRequirement, no need to get any imports.
+                                if (cwlClass != null && cwlClass.equals("DockerRequirement")) {
+                                    imageSource = anImport.get("dockerPull");
+                                    // out("VERSION: (requirement) " + imageSource);
+                                    return imageSource;
+                                }
+
+                                // get the import, could be $import or @import
+                                String importCwl = anImport.get("import");
+
+                                if (importCwl == null) {
+                                    importCwl = anImport.get("$import");
+                                }
+                                if (importCwl == null) {
+                                    importCwl = anImport.get("@import");
+                                }
+                                if (importCwl != null) {
+                                    // out("Import: " + importCwl);
+                                    List<RepositoryContents> contentsImport;
+                                    contentsImport = cService.getContents(repo, "/tools/" + importCwl, reference);
+
+                                    if (!(contentsImport == null || contentsImport.isEmpty())) {
+                                        String encodedImport = contentsImport.get(0).getContent().replace("\n", "");
+                                        byte[] decodeImport = Base64.getDecoder().decode(encodedImport);
+                                        String contentImport = new String(decodeImport, StandardCharsets.UTF_8);
+
+                                        try {
+                                            YamlReader readerImport = new YamlReader(contentImport);
+                                            Object objectImport = readerImport.read();
+
+                                            Map<String, String> mapImport = new HashMap<>();
+
+                                            mapImport = (Map<String, String>) objectImport;
+
+                                            cwlClass = mapImport.get("class");
+
+                                            if (cwlClass != null && cwlClass.equals("DockerRequirement")) {
+                                                imageSource = mapImport.get("dockerPull");
+                                                // out("VERSION (import): " + imageSource);
+                                            }
+
+                                        } catch (IOException ex) {
+                                            err("Could not parse cwl for cwl: " + importCwl);
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            Map<String, String> map2 = new HashMap<>();
+                            map2 = (Map<String, String>) object;
+                            String cwlClass = map2.get("class");
+                            if (cwlClass != null && cwlClass.equals("DockerRequirement")) {
+                                imageSource = map2.get("dockerPull");
+                                // out("VERSION: (requirement) " + imageSource);
+                                return imageSource;
+                            }
+                        }
+
+                    } catch (IOException ex) {
+                        err("Could not parse cwl for " + file.getName());
+                    }
+
+                }
+            }
+        } catch (Exception e) {
+            err(e.toString());
+        }
+
+        return imageSource;
+    }
+
+    private void removeNonCwl(List<RepositoryContents> contents, String stringToAppend) {
+        for (Iterator<RepositoryContents> iterator = contents.iterator(); iterator.hasNext();) {
+            RepositoryContents content = iterator.next();
+            String name = content.getName();
+            Pattern p = Pattern.compile("^([\\w-]+)\\.cwl$");
+            Matcher m = p.matcher(name);
+            if (!m.find()) {
+                iterator.remove();
+                continue;
+            }
+            name = m.group(1);
+            content.setName(name.concat(stringToAppend));
+        }
+    }
+
+    public void run() {
+        GitHubClient githubClient = new GitHubClient();
+        try {
+            List<Token> githubToken = usersApi.getGithubUserTokens(user.getId());
+            githubClient.setOAuth2Token(githubToken.get(0).getContent());
+        } catch (final ApiException ex) {
+            err(ex.getResponseBody());
+            kill("Unable to get Github token");
+        }
+
+        RepositoryService service = new RepositoryService(githubClient);
+        ContentsService cService = new ContentsService(githubClient);
+
+        List<RepositoryContents> contents = new ArrayList<>();
+        List<RepositoryContents> bulkContents = new ArrayList<>();
+
+        // TODO: using draft2 as the git tag reference
+        final String reference = "draft2";
+        final String gitUrl = "https://github.com/common-workflow-language/workflows";
+        Repository repo = null;
+
+        try {
+            // import all cwl files from /tools and /tools/bulk
+            repo = service.getRepository("common-workflow-language", "workflows");
+            try {
+                contents.addAll(cService.getContents(repo, "/tools", reference));
+            } catch (Exception e) {
+                kill(e.toString());
+            }
+            try {
+                bulkContents.addAll(cService.getContents(repo, "/tools/bulk", reference));
+            } catch (Exception e) {
+                kill(e.toString());
+            }
+
+        } catch (IOException ex) {
+            err("Unable to find repository");
+            kill(ex.toString());
+        }
+
+        removeNonCwl(contents, "");
+        removeNonCwl(bulkContents, "-bulk"); // concatenate bulk to the end of the toolname if the tool is from /tools/bulk
+        contents.addAll(bulkContents);
+
+        for (RepositoryContents content : contents) {
+            if (!content.getType().equals("file")) {
+                continue;
+            }
+
+            // Requirements to import the tool
+            // - must be in valid yaml format (including imports)
+            // - have class of DockerRequirement or have an import that is a DockerRequirement
+            // - have a dockerPull with a tag
+
+            // TODO: Use namespace and name from image source for the Dockstore image name. Use the cwl file name for its tool name.
+            String toolName = content.getName();
+            out("");
+            out("IMPORTING: " + toolName);
+            String name = content.getName();
+            String path = content.getPath();
+            String namespace = "common-workflow-language";
+            String registry = "registry.hub.docker.com";
+            String tagVersion = null;
+
+            String imageSource = getImageSource(content, cService, repo, reference);
+
+            Container container = new Container();
+            if (imageSource != null) {
+                // imageSource is in the form: quay.io/<namespace>/<name>:<version>
+                // where quay.io is optional (omitted for Docker Hub) and namespace is optional (ex. ubuntu)
+                // imageSource is used for the Quay.io/Docker Hub URLs
+                Pattern p = Pattern.compile("^(quay.io/)?(([\\w.]+)/)?([\\w-]+)(:([\\w-.]+))?$");
+                Matcher m = p.matcher(imageSource);
+                if (!m.find()) {
+                    err("Unable to parse Image Source Requirement for " + toolName);
+                    continue;
+                }
+
+                final int registryIndex = 1;
+                final int namespaceIndex = 3;
+                final int nameIndex = 4;
+                final int tagVersionIndex = 6;
+                registry = m.group(registryIndex);
+                namespace = m.group(namespaceIndex);
+                name = m.group(nameIndex);
+                tagVersion = m.group(tagVersionIndex);
+                // out("TAG: " + tagVersion);
+
+                // if the namespace is missing (ex. ubuntu), then replace it with "_"
+                // this is done in Docker Hub, so we are doing it too
+                if (namespace == null) {
+                    namespace = "_";
+                }
+                container.setToolname(toolName);
+            }
+
+            if (tagVersion == null) {
+                err("Unable to publish " + toolName + ". Could not find valid image source with version.");
+                continue;
+            }
+
+            // assume that the corresponding Dockerfile is in /docker/<name>
+            // TODO: the name is usually in lower case. This will not work for tools such as STAR
+            final String dockerFilePath = "/docker/" + name + "/Dockerfile";
+
+            container.setMode(Container.ModeEnum.MANUAL_IMAGE_PATH);
+            container.setName(name);
+            container.setNamespace(namespace);
+            container.setRegistry("quay.io/".equals(registry) ? Container.RegistryEnum.QUAY_IO : Container.RegistryEnum.DOCKER_HUB);
+            container.setDefaultDockerfilePath(dockerFilePath);
+            container.setDefaultCwlPath(path);
+            container.setIsPublic(true);
+            container.setIsRegistered(true);
+            container.setGitUrl(gitUrl);
+            // container.setToolname(toolname);
+            Tag tag = new Tag();
+            tag.setName(tagVersion);
+            tag.setReference(reference);
+            tag.setDockerfilePath(dockerFilePath);
+            tag.setCwlPath(path);
+            container.getTags().add(tag);
+            String fullName = Joiner.on("/").skipNulls().join(registry, namespace, name);
+            // out("Success: " + toolName);
+            try {
+                container = containersApi.registerManual(container);
+                if (container == null) {
+                    err("Unable to publish " + fullName);
+                } else {
+                    out("Successfully published: " + container.getToolPath());
+                }
+            } catch (final ApiException ex) {
+                err("Unable to publish " + fullName);
+            }
+        }
+    }
+}
