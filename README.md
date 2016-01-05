@@ -159,7 +159,7 @@ Where 0.2.2 should be modified to the version number of your next release
 ## Encrypted Documents for Travis-CI
 
 Encrypted documents necessary for confidential testing are handled as indicated in the documents at Travis-CI for  
-[https://docs.travis-ci.com/user/encrypting-files/](files) and [https://docs.travis-ci.com/user/encryption-keys/](environment variables). The contents of the files should be described (but not stored obviously) so that future developers can re-create them as necessary. 
+[https://docs.travis-ci.com/user/encrypting-files/#Encrypting-multiple-files](files) and [https://docs.travis-ci.com/user/encryption-keys/](environment variables). The contents of the files should be described (but not stored obviously) so that future developers can re-create them as necessary. 
 
 
 
