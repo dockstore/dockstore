@@ -20,6 +20,8 @@ If you maven build in the root directory this will build not only the web servic
 
     mvn clean install
 
+As a pre-requisite, you will need to have postgres installed and setup with the database user specified in .travis.yml. 
+
 ### Build Docker Version
 
     docker build -t dockstore:1.0.0 .
@@ -153,6 +155,12 @@ Where 0.2.2 should be modified to the version number of your next release
 5. Use the maven release plugin to perform the release (due to a bug, use maven-release-plugin 2.3.2) or failing that upload manually to artifactory `mvn release:perform -DconnectionUrl=scm:git:git@github.com:ga4gh/dockstore.git -Dtag=0.2.2 `
 7. Remember to iterate the version numbers on the develop branch to the snapshot version of your next release `mvn versions:set -DnewVersion=0.2.3-SNAPSHOT ; git add pom.xml \*/pom.xml ; git push`
 8. Fiddle with github releases and update docs
+
+## Encrypted Documents for Travis-CI
+
+Encrypted documents necessary for confidential testing are handled as indicated in the documents at Travis-CI for  
+[https://docs.travis-ci.com/user/encrypting-files/](files) and [https://docs.travis-ci.com/user/encryption-keys/](environment variables). The contents of the files should be described (but not stored obviously) so that future developers can re-create them as necessary. 
+
 
 
 
