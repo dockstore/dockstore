@@ -1,0 +1,16 @@
+Any file dropped into this folder will be symlinked into the final workflow under the "data" directory. It is intended for use when files are too large to be saved into artifactory (<2GB) or git, or if they contain proprietary information. Symlinking the files into their final location also speeds up build times.
+
+Example:
+
+$ pwd
+/u/user/workflow-hello-world/links
+$ ln -s /u/user/myhugereference.fasta .
+$ ls -l
+lrwxrwxrwx 1 user user   19 Nov 27 17:37 myhugereference.fasta -> /u/user/myhugereference.fasta
+$ cd .. ; mvn clean install
+....
+$ ls -l target/Workflow_Bundle_HelloWorld_1.0-SNAPSHOT_SeqWare_1.0.8-SNAPSHOT/Workflow_Bundle_HelloWorld/1.0-SNAPSHOT/data
+lrwxrwxrwx 1 user user   19 Nov 27 17:41 myhugereference.fasta -> /u/user/workflow-hello-world/links/myhugereference.fasta
+
+
+Please note that you will need to "mvn clean install" in order to symlink any new files after the initial build.

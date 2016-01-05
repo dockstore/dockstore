@@ -1,0 +1,9 @@
+<bundle version="1.0.0">
+  <workflow name="HelloWorld" version="${workflow-version}" seqware_version="${seqware-version}"
+  basedir="${workflow_bundle_dir}/Workflow_Bundle_HelloWorld/${workflow-version}">
+    <description>${workflow-description}</description>
+    <workflow_class path="${workflow_bundle_dir}/Workflow_Bundle_HelloWorld/${workflow-version}/classes/io/github/cancercollaboratory/workflows/helloworld/HelloWorldWorkflow.java"/>
+    <config path="${workflow_bundle_dir}/Workflow_Bundle_HelloWorld/${workflow-version}/config/HelloWorldWorkflow.ini"/>
+    <requirements compute="single" memory="20M" network="local"  workflow_engine="Oozie" workflow_type="java"/>
+  </workflow>
+</bundle>
