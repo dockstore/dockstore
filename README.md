@@ -19,6 +19,10 @@ For the related web UI see the [dockstore-ui](https://github.com/ga4gh/dockstore
 If you maven build in the root directory this will build not only the web service but the client tool:
 
     mvn clean install
+    
+If you have access to our confidential data package for extended testing, you can activate that profile via
+
+    mvn clean install -Pconfidential-tests
 
 As a pre-requisite, you will need to have postgres installed and setup with the database user specified in .travis.yml. 
 
