@@ -159,9 +159,9 @@ Where 0.2.2 should be modified to the version number of your next release
 ## Encrypted Documents for Travis-CI
 
 Encrypted documents necessary for confidential testing are handled as indicated in the documents at Travis-CI for  
-[files](https://docs.travis-ci.com/user/encrypting-files/#Encrypting-multiple-files) and [environment variables](https://docs.travis-ci.com/user/encryption-keys). The contents of the files should be described (but not stored obviously) so that future developers can re-create them as necessary. 
+[files](https://docs.travis-ci.com/user/encrypting-files/#Encrypting-multiple-files) and [environment variables](https://docs.travis-ci.com/user/encryption-keys).
 
-
+A convenience script is provided as encrypt.sh which will compress confidential files, encrypt them, and then update an encrypted archive on GitHub. Confidential files should also be added to .gitignore to prevent accidental check-in. The unencrypted secrets.tar should be privately distributed among members of the team that need to work with confidential data. 
 
 
 ## TODO
