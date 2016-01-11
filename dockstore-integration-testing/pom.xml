@@ -93,4 +93,30 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>confidential-tests</id>
+            <build>
+                <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-failsafe-plugin</artifactId>
+                            <configuration>
+                                <includes>
+                                    <!-- standard inclusions -->
+                                    <include>**/IT*.java</include>
+                                    <include>**/*IT.java</include>
+                                    <include>**/*ITCase.java</include>
+                                    <!-- additional confidential tests-->
+                                    <include>**/*ET.java</include>
+                                </includes>
+                            </configuration>
+                        </plugin>
+                </plugins>
+            </build>
+
+
+        </profile>
+    </profiles>
 </project>

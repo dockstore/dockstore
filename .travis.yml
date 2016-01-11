@@ -3,28 +3,26 @@ notifications:
     on_success: never
     on_failure: always
     rooms:
-      - oicr:S9k4EowgQv9AnbCfEZHSzCsg
-
+    - oicr:S9k4EowgQv9AnbCfEZHSzCsg
 sudo: required
-
 services:
-  - docker
-
+- docker
 language: java
-jdk: 
-  - oraclejdk8
-
+jdk:
+- oraclejdk8
 install:
-  - docker version
-  - pip2.7 install --user cwl-runner
-  - docker pull commonworkflowlanguage/nodejs-engine
-
+- docker version
+- pip2.7 install --user cwl-runner
+- docker pull commonworkflowlanguage/nodejs-engine
 before_script:
-  - psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
-  - psql -c "ALTER USER dockstore WITH superuser;" -U postgres
-  - psql -c 'create database webservice_test with owner = dockstore;' -U postgres
-
+- psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
+- psql -c "ALTER USER dockstore WITH superuser;" -U postgres
+- psql -c 'create database webservice_test with owner = dockstore;' -U postgres
 script: mvn -B clean install -DskipITs=false
-
 after_success:
-  - mvn -B clean -DskipITs=false cobertura:cobertura cobertura:cobertura-integration-test coveralls:report
+- mvn -B clean -DskipITs=false cobertura:cobertura cobertura:cobertura-integration-test
+  coveralls:report
+before_install:
+- openssl aes-256-cbc -K $encrypted_51e5f010c2d6_key -iv $encrypted_51e5f010c2d6_iv
+  -in secrets.tar.enc -out secrets.tar -d
+- tar xvf secrets.tar

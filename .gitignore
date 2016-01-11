@@ -28,3 +28,7 @@ swagger-java-client/settings.gradle
 dockstore-webservice/nbactions.xml
 /dockstore-common/target/
 /dockstore-integration-testing/target/
+
+# confidential testing files
+secrets.tar
+dockstore-integration-testing/src/test/resources/confidential_test.txt

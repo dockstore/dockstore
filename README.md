@@ -19,6 +19,12 @@ For the related web UI see the [dockstore-ui](https://github.com/ga4gh/dockstore
 If you maven build in the root directory this will build not only the web service but the client tool:
 
     mvn clean install
+    
+If you have access to our confidential data package for extended testing, you can activate that profile via
+
+    mvn clean install -Pconfidential-tests
+
+As a pre-requisite, you will need to have postgres installed and setup with the database user specified in .travis.yml. 
 
 ### Build Docker Version
 
@@ -154,6 +160,12 @@ Where 0.2.2 should be modified to the version number of your next release
 7. Remember to iterate the version numbers on the develop branch to the snapshot version of your next release `mvn versions:set -DnewVersion=0.2.3-SNAPSHOT ; git add pom.xml \*/pom.xml ; git push`
 8. Fiddle with github releases and update docs
 
+## Encrypted Documents for Travis-CI
+
+Encrypted documents necessary for confidential testing are handled as indicated in the documents at Travis-CI for  
+[files](https://docs.travis-ci.com/user/encrypting-files/#Encrypting-multiple-files) and [environment variables](https://docs.travis-ci.com/user/encryption-keys).
+
+A convenience script is provided as encrypt.sh which will compress confidential files, encrypt them, and then update an encrypted archive on GitHub. Confidential files should also be added to .gitignore to prevent accidental check-in. The unencrypted secrets.tar should be privately distributed among members of the team that need to work with confidential data. 
 
 
 ## TODO
