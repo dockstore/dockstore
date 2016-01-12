@@ -51,9 +51,9 @@ import com.google.gson.Gson;
 
 import io.dockstore.common.CWL;
 import io.dockstore.common.Utilities;
-import io.dockstore.common.cwl.CommandInputParameter;
-import io.dockstore.common.cwl.CommandLineTool;
-import io.dockstore.common.cwl.CommandOutputParameter;
+import cwl.CommandInputParameter;
+import cwl.CommandLineTool;
+import cwl.CommandOutputParameter;
 
 /**
  * @author boconnor 9/24/15

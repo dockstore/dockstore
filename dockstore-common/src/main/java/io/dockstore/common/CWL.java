@@ -22,10 +22,10 @@ import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
 
-import io.dockstore.common.cwl.Any;
-import io.dockstore.common.cwl.CommandInputParameter;
-import io.dockstore.common.cwl.CommandLineTool;
-import io.dockstore.common.cwl.CommandOutputParameter;
+import cwl.Any;
+import cwl.CommandInputParameter;
+import cwl.CommandLineTool;
+import cwl.CommandOutputParameter;
 
 /**
  * Helper class that performs utility functions relating to CWL parsing and manipulation.
@@ -175,7 +175,7 @@ public class CWL {
         final String elementClass = jsonElement.getAsJsonObject().get("class").getAsString();
         Class<SpecificRecordBase> anyClass;
         try {
-            anyClass = (Class<SpecificRecordBase>) Class.forName("io.dockstore.common.cwl." + elementClass);
+            anyClass = (Class<SpecificRecordBase>) Class.forName("cwl." + elementClass);
         } catch (ClassNotFoundException e) {
             //TODO: this should be a log
             e.printStackTrace();
