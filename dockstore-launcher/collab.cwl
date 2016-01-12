@@ -5,6 +5,8 @@ description: "Markdown description text here"
 id: "HelloWorld"
 label: "HelloWorld Tool"
 
+cwlVersion: "cwl:draft-3.dev1"
+
 dct:creator:
   "@id": "http://orcid.org/0000-0003-3566-7705"
   foaf:name: Peter Amstutz
@@ -13,7 +15,7 @@ dct:creator:
 requirements:
   - class: DockerRequirement
     dockerPull: "quay.io/collaboratory/workflow-helloworld:master"
-  - { import: node-engine.cwl }
+  - class: InlineJavascriptRequirement
 
 hints:
   - class: ResourceRequirement
@@ -44,9 +46,6 @@ outputs:
 
 baseCommand: ["bash", "-c"]
 arguments:
-  - valueFrom:
-      engine: node-engine.cwl
-      script: |
-        "cat " + $job.hello_input.path + " > hello-output.txt &&"
-            + " ls " + $job.ref_file_1.path + " >> hello-output.txt && "
-            + " head -20 " + $job.ref_file_2.path + " >> hello-output.txt"
+  - valueFrom: $("cat " + inputs.hello_input.path + " > hello-output.txt &&"
+              + " ls " + inputs.ref_file_1.path + " >> hello-output.txt && "
+              + " head -20 " + inputs.ref_file_2.path + " >> hello-output.txt")
