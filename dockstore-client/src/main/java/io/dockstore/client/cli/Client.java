@@ -366,8 +366,7 @@ public class Client {
                         kill("Unable to unpublish unknown container " + first);
                     }
                 }
-            } else
-             {
+            } else {
                 if (args.size() == 1) {
                     try {
                         Container container = containersApi.getContainerByToolPath(first);
