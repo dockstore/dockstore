@@ -140,10 +140,21 @@ public class Client {
         return found;
     }
 
+    /**
+     *
+     * @param bool
+     * @return
+         */
     private static String boolWord(boolean bool) {
         return bool ? "Yes" : "No";
     }
 
+    /**
+     *
+     * @param args
+     * @param key
+     * @return
+     */
     private static List<String> optVals(List<String> args, String key) {
         List<String> vals = new ArrayList<>();
 
@@ -335,7 +346,28 @@ public class Client {
             String first = args.get(0);
             if (isHelpRequest(first)) {
                 publishHelp();
-            } else {
+            } else if (isUnpublishRequest(first)) {
+                if (args.size() == 1) {
+                    publishHelp();
+                } else {
+                    String second = args.get(1);
+                    try {
+                        Container container = containersApi.getContainerByToolPath(second);
+                        RegisterRequest req = new RegisterRequest();
+                        req.setRegister(false);
+                        container = containersApi.register(container.getId(), req);
+
+                        if (container != null) {
+                            out("Successfully unpublished " + second);
+                        } else {
+                            kill("Unable to unpublish invalid container " + second);
+                        }
+                    } catch (ApiException e) {
+                        kill("Unable to unpublish unknown container " + first);
+                    }
+                }
+            } else
+             {
                 if (args.size() == 1) {
                     try {
                         Container container = containersApi.getContainerByToolPath(first);
@@ -651,6 +683,10 @@ public class Client {
         return "-h".equals(first) || "--help".equals(first);
     }
 
+    private static boolean isUnpublishRequest(String first) {
+        return "--unpub".equals(first);
+    }
+
     private static void publishHelp() {
         out("");
         out("HELP FOR DOCKSTORE");
@@ -662,6 +698,8 @@ public class Client {
         out("dockstore publish <container>              :  registers that container for use by others in the dockstore");
         out("");
         out("dockstore publish <container> <toolname>   :  registers that container for use by others in the dockstore under a specific toolname");
+        out("");
+        out("dockstore publish --unpub <toolname_path>   :  unregisters that container from use by others in the dockstore under a specific toolname");
     }
 
     private static void info(List<String> args) {
@@ -841,7 +879,7 @@ public class Client {
                 out("");
                 out("  search <pattern> :  allows a user to search for all containers that match the criteria");
                 out("");
-                out("  publish          :  register a container in the dockstore");
+                out("  publish          :  register/unregister a container in the dockstore");
                 out("");
                 out("  manual_publish   :  register a Docker Hub container in the dockstore");
                 out("");

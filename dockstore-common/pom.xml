@@ -87,6 +87,11 @@
             <version>3.4</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>io.dropwizard</groupId>
+            <artifactId>dropwizard-testing</artifactId>
+            <version>0.8.4</version>
+        </dependency>
     </dependencies>
     
     <build>
