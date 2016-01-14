@@ -90,7 +90,7 @@
         <dependency>
             <groupId>io.dropwizard</groupId>
             <artifactId>dropwizard-testing</artifactId>
-            <version>0.8.4</version>
+            <version>${dropwizard.version}</version>
         </dependency>
     </dependencies>
     
