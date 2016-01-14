@@ -113,7 +113,7 @@ public class CommonTestUtilities {
         public void clearDatabaseMakePrivate() throws IOException {
             super.clearDatabase();
 
-            BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(ResourceHelpers.resourceFilePath("db_dump.sql")), "utf-8"));
+            BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(ResourceHelpers.resourceFilePath("db_confidential_dump.sql")), "utf-8"));
             String line = null;
 
             while ((line = br.readLine()) != null) {
