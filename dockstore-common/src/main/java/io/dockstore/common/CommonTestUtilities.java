@@ -16,17 +16,19 @@
  */
 package io.dockstore.common;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-
 import io.dropwizard.testing.ResourceHelpers;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.dbutils.ResultSetHandler;
 import org.apache.commons.dbutils.handlers.KeyedHandler;
 import org.apache.commons.io.FileUtils;
+
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.File;
+
 
 /**
  *
@@ -111,7 +113,7 @@ public class CommonTestUtilities {
         public void clearDatabaseMakePrivate() throws IOException {
             super.clearDatabase();
 
-            BufferedReader br = new BufferedReader(new FileReader(ResourceHelpers.resourceFilePath("db_dump.sql")));
+            BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(ResourceHelpers.resourceFilePath("db_dump.sql")), "utf-8"));
             String line = null;
 
             while ((line = br.readLine()) != null) {
