@@ -3,8 +3,8 @@ set -o errexit
 set -o nounset
 set -o xtrace
 
-tar cvf secrets.tar dockstore-integration-testing/src/test/resources/confidential_test.txt
-travis encrypt-file secrets.tar
-git add secrets.tar.enc
+tar cvf dockstore-integration-testing/src/test/resources/secrets.tar dockstore-integration-testing/src/test/resources/config_file.txt dockstore-integration-testing/src/test/resources/db_dump.sql dockstore-integration-testing/src/test/resources/dockstoreTest.yml
+travis encrypt-file dockstore-integration-testing/src/test/resources/secrets.tar
+git add dockstore-integration-testing/src/test/resources/secrets.tar.enc
 git commit -m 'update secret archive'
 git push

@@ -32,3 +32,7 @@ dockstore-webservice/nbactions.xml
 # confidential testing files
 secrets.tar
 dockstore-integration-testing/src/test/resources/confidential_test.txt
+dockstore-integration-testing/src/test/resources/config_file.txt
+dockstore-integration-testing/src/test/resources/db_dump.sql
+dockstore-integration-testing/src/test/resources/dockstoreTest.yml
+dockstore-integration-testing/src/test/resources/secrets.tar
