@@ -140,4 +140,15 @@ public class BasicPostgreSQL {
             throw new RuntimeException(e);
         }
     }
+
+    protected boolean runUpdateStatementConfidential(String query) {
+        try {
+            QueryRunner run = new QueryRunner(dataSource);
+            run.update(query);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+    }
 }
