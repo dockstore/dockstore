@@ -108,6 +108,11 @@ public class CommonTestUtilities {
         public <T> T runSelectStatement(String query, ResultSetHandler<T> handler, Object... params) {
             return super.runSelectStatement(query, handler, params);
         }
+
+        @Override
+        public boolean runUpdateStatement(String query, Object... params){
+            return super.runUpdateStatement(query, params);
+        }
     }
 
     /**

@@ -7,7 +7,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import org.apache.avro.specific.SpecificRecordBase;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -104,16 +103,6 @@ public class CWL {
      */
     public static Object getStub(final Object type, final String value) {
         Object stub = value == null? "fill me in" : value;
-        if (type instanceof List){
-            // if its a list, call recursively and return first non-stub entry
-            for(final Object entry : (Iterable) type){
-                final Object arrayStub = getStub(entry, value);
-                if (!Objects.equals(arrayStub, stub)){
-                    return arrayStub;
-                }
-            }
-            return stub;
-        }
         final String strType = type.toString();
         switch (strType) {
         case "File":

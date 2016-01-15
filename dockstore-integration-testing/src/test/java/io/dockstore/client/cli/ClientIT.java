@@ -16,10 +16,6 @@
  */
 package io.dockstore.client.cli;
 
-import static io.dockstore.common.CommonTestUtilities.DUMMY_TOKEN_1;
-import static io.dockstore.common.CommonTestUtilities.clearState;
-import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
@@ -29,6 +25,7 @@ import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -42,6 +39,10 @@ import io.dockstore.webservice.core.Registry;
 import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit.DropwizardAppRule;
 import io.swagger.client.ApiException;
+
+import static io.dockstore.common.CommonTestUtilities.DUMMY_TOKEN_1;
+import static io.dockstore.common.CommonTestUtilities.clearState;
+import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 
 /**
  *
@@ -168,5 +169,27 @@ public class ClientIT {
                 "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url", "git@github.com:funky-user/test2.git", "--git-reference",
                 "refs/head/master", "--toolname", "test1" });
     }
+
+    @Test
+    @Ignore("this guy should be transfered over to the confidential tests when that's working")
+    public void runLaunchOneJson() throws IOException{
+        Client.main(new String[] { "--config", getConfigFileLocation(true), "dev", "launch", "--entry",
+            "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testOneRun.json") });
+    }
+
+    @Test
+    @Ignore("this guy should be transfered over to the confidential tests when that's working")
+    public void runLaunchNJson() throws IOException{
+        Client.main(new String[] { "--config", getConfigFileLocation(true), "dev", "launch", "--entry",
+            "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testMultipleRun.json") });
+    }
+
+    @Test
+    @Ignore("this guy should be transfered over to the confidential tests when that's working")
+    public void runLaunchTSV() throws IOException{
+        Client.main(new String[] { "--config", getConfigFileLocation(true), "dev", "launch", "--entry",
+            "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testMultipleRun.tsv") });
+    }
+
 
 }
