@@ -40,7 +40,7 @@ import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 public class BasicET {
 
         @ClassRule
-        public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
+        public static  final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
                 DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstoreTest.yml"));
 
         @Rule
@@ -53,41 +53,53 @@ public class BasicET {
         }
 
         // General tests
+        /**
+         * Checks that all quay containers have been found by dockstore and are not registered/published
+         */
         @Test
         public void testListAvailableContainers() {
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from container", new ScalarHandler<>());
+                final long count = testingPostgres.runSelectStatement("select count(*) from container where isregistered='f'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 4 entries", count == 4);
         }
 
-        @Test
-        public void testListRegisteredContainers() {
-                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from container where isregistered='t'", new ScalarHandler<>());
-                Assert.assertTrue("there should be 0 registered", count == 0);
-        }
-
+        /**
+         * Will test adding/editing/deleting container related tags (for search)
+         */
         @Ignore
         public void testAddEditRemoveTag() {
                 // Todo : test adding/editing/removing tags to a container (should be available to search)
         }
 
+        /**
+         * Will test altering the cwl and dockerfile paths to valid and invalid locations
+         */
         @Ignore
-        public void testVersionTagCWLAndDockerfilePAthsAlteration() {
+        public void testVersionTagCWLAndDockerfilePathsAlteration() {
                 // Todo : test editing cwl path (valid and invalid) and  dockerfile path (valid and invalid)
         }
 
+        /**
+         * Will test adding version tags to a manually registered container
+         */
         @Ignore
         public void testAddVersionTagManualContainer() {
                 // Todo : test adding version tags to a manually added container
         }
 
+        /**
+         * Will test hiding and unhiding different versions of a container
+         */
         @Ignore
         public void testVersionTagHide() {
                 // Todo : test hiding and unhiding different versions of a container
         }
 
         // Test Quay and Github
+
+        /**
+         * Checks that the two Quay/Github containers were automatically found
+         */
         @Test
         public void testQuayGithubAutoRegistration(){
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
@@ -95,6 +107,9 @@ public class BasicET {
                 Assert.assertTrue("there should be 2 registered from Quay and Github", count == 2);
         }
 
+        /**
+         * Ensures that you can't publish an automatically added Quay/Github container with an alternate structure unless you change the Dockerfile and Dockstore.cwl locations
+         */
         @Test
         public void testQuayGithubPublishAlternateStructure(){
                 systemExit.expectSystemExitWithStatus(1);
@@ -103,6 +118,9 @@ public class BasicET {
                 // TODO: change the version tag locations of Dockerfile and Dockstore.cwl, now should be able to publish
         }
 
+        /**
+         * Checks that you can properly publish and unpublish a Quay/Github container
+         */
         @Test
         public void testQuayGithubPublishAndUnpublishAContainer() {
                 // Publish
@@ -119,6 +137,9 @@ public class BasicET {
                 Assert.assertTrue("there should be 0 registered", count2 == 0);
         }
 
+        /**
+         * Checks that you can manually publish and unpublish a Quay/Github container with an alternate structure, if the CWL and Dockerfile paths are defined properly
+         */
         @Ignore
         public void testQuayGithubManualPublishAndUnpublishAlternateStructure(){
                 // TODO Need to get working with other locations of cwl path and dockerfile path
@@ -142,6 +163,9 @@ public class BasicET {
                 Assert.assertTrue("there should be 0 entries", count2 == 0);
         }
 
+        /**
+         * Ensures that one cannot register an existing Quay/Github container if you don't give it an alternate toolname
+         */
         @Test
         public void testQuayGithubManuallyRegisterDuplicate() {
                 systemExit.expectSystemExitWithStatus(1);
@@ -151,6 +175,9 @@ public class BasicET {
         }
 
         // Test Quay and Bitbucket
+        /**
+         * Checks that the two Quay/Bitbucket containers were automatically found
+         */
         @Test
         public void testQuayBitbucketAutoRegistration(){
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
@@ -158,6 +185,9 @@ public class BasicET {
                 Assert.assertTrue("there should be 2 registered from Quay and Bitbucket", count == 2);
         }
 
+        /**
+         * Ensures that you can't publish an automatically added Quay/Bitbucket container with an alternate structure unless you change the Dockerfile and Dockstore.cwl locations
+         */
         @Test
         public void testQuayBitbucketPublishAlternateStructure(){
                 systemExit.expectSystemExitWithStatus(1);
@@ -166,6 +196,9 @@ public class BasicET {
                 // TODO: change the version tag locations of Dockerfile and Dockstore.cwl, now should be able to publish
         }
 
+        /**
+         * Checks that you can properly publish and unpublish a Quay/Bitbucket container
+         */
         @Test
         public void testQuayAndBitbucketPublishAndUnpublishAContainer() {
                 // Publish
@@ -182,6 +215,9 @@ public class BasicET {
                 Assert.assertTrue("there should be 0 registered", count2 == 0);
         }
 
+        /**
+         * Checks that you can manually publish and unpublish a Quay/Bitbucket container with an alternate structure, if the CWL and Dockerfile paths are defined properly
+         */
         @Ignore
         public void testQuayBitbucketManualPublishAndUnpublishAlternateStructure(){
                 // TODO Need to get working with other locations of cwl path and dockerfile path
@@ -206,16 +242,21 @@ public class BasicET {
 
         }
 
+        /**
+         * Ensures that one cannot register an existing Quay/Bitbucket container if you don't give it an alternate toolname
+         */
         @Test
         public void testQuayBitbucketManuallyRegisterDuplicate() {
                 systemExit.expectSystemExitWithStatus(1);
-
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.QUAY_IO.toString(),
                         "--namespace", "dockstoretestuser", "--name", "quayandbitbucket", "--git-url", "git@bitbucket.org:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
                         "master" });
         }
 
         // Test dockerhub and github
+        /**
+         * Tests manual registration and unpublishing of a Dockerhub/Github container
+         */
         @Test
         public void testDockerhubGithubManualRegistration(){
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.DOCKER_HUB.toString(),
@@ -238,6 +279,9 @@ public class BasicET {
 
         }
 
+        /**
+         * Will test manually publishing and unpublishing a Dockerhub/Github container with an alternate structure
+         */
         @Ignore
         public void testDockerhubGithubAlternateStructure(){
                 // Todo : Manual publish container with alternate structure/layout, should be able to publish/unpublish and view associated cwl and dockerfile files
@@ -246,6 +290,9 @@ public class BasicET {
                         "master", "--toolname", "alternate", "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile" });
         }
 
+        /**
+         * Will test attempting to manually publish a Dockerhub/Github container using incorrect CWL and/or dockerfile locations
+         */
         @Ignore
         public void testDockerhubGithubWrongStructure(){
                 // Todo : Manual publish container with wrong cwl and dockerfile locations, should not be able to manual publish
@@ -255,6 +302,9 @@ public class BasicET {
                         "master", "--toolname", "regular", "--cwl-path", "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile" });
         }
 
+        /**
+         * Checks that you can manually publish and unpublish a Dockerhub/Github duplicate if different toolnames are set (but same Path)
+         */
         @Test
         public void testDockerhubGithubManualRegistrationDuplicates(){
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.DOCKER_HUB.toString(),
@@ -291,6 +341,10 @@ public class BasicET {
         }
 
         // Test dockerhub and bitbucket
+
+        /**
+         * Tests manual registration and unpublishing of a Dockerhub/Bitbucket container
+         */
         @Test
         public void testDockerhubBitbucketManualRegistration(){
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.DOCKER_HUB.toString(),
@@ -312,6 +366,9 @@ public class BasicET {
                 Assert.assertTrue("there should be 0 entries", count2 == 0);
         }
 
+        /**
+         * Will test manually publishing and unpublishing a Dockerhub/Bitbucket container with an alternate structure
+         */
         @Ignore
         public void testDockerhubBitbucketAlternateStructure(){
                 // Todo : Manual publish container with alternate structure/layout, should be able to publish/unpublish and view associated cwl and dockerfile files
@@ -320,6 +377,9 @@ public class BasicET {
                         "master", "--toolname", "alternate", "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile" });
         }
 
+        /**
+         * Will test attempting to manually publish a Dockerhub/Bitbucket container using incorrect CWL and/or dockerfile locations
+         */
         @Ignore
         public void testDockerhubBitbucketWrongStructure(){
                 // Todo : Manual publish container with wrong cwl and dockerfile locations, should not be able to manual publish
@@ -329,6 +389,9 @@ public class BasicET {
                         "master", "--toolname", "alternate", "--cwl-path", "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile" });
         }
 
+        /**
+         * Checks that you can manually publish and unpublish a Dockerhub/Github duplicate if different toolnames are set (but same Path)
+         */
         @Test
         public void testDockerhubBitbucketManualRegistrationDuplicates(){
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.DOCKER_HUB.toString(),
