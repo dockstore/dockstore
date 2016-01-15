@@ -27,5 +27,5 @@ before_install:
   -in dockstore-integration-testing/src/test/resources/secrets.tar.enc -out dockstore-integration-testing/src/test/resources/secrets.tar -d
 - pwd
 - ls dockstore-integration-testing/src/test/resources/
-- tar xvf dockstore-integration-testing/src/test/resources/secrets.tar -C dockstore-integration-testing/src/test/resources/
+- tar xvf dockstore-integration-testing/src/test/resources/secrets.tar
 - ls dockstore-integration-testing/src/test/resources/
