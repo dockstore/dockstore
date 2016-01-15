@@ -25,4 +25,4 @@ after_success:
 before_install:
 - openssl aes-256-cbc -K $encrypted_8c393341f536_key -iv $encrypted_8c393341f536_iv
   -in dockstore-integration-testing/src/test/resources/secrets.tar.enc -out dockstore-integration-testing/src/test/resources/secrets.tar -d
-- tar xvf dockstore-integration-testing/src/test/resources/secrets.tar -C dockstore-integration-testing/src/test/resources/
+- tar xvf dockstore-integration-testing/src/test/resources/secrets.tar
