@@ -3,7 +3,12 @@ set -o errexit
 set -o nounset
 set -o xtrace
 
+<<<<<<< HEAD
 tar cvf secrets.tar dockstore-integration-testing/src/test/resources/confidential_test.txt
+=======
+tar cvf dockstore-integration-testing/src/test/resources/secrets.tar dockstore-integration-testing/src/test/resources/config_file.txt dockstore-integration-testing/src/test/resources/db_confidential_dump.sql dockstore-integration-testing/src/test/resources/dockstoreTest.yml
+
+>>>>>>> cebbf8d... update secret archive
 # store working dir
 GIT_DIR=`pwd`
 # execute always in the same place to keep generated variable names consistent (sigh)
