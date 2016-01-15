@@ -152,7 +152,7 @@ public class ClientIT {
         final TestingPostgres testingPostgres = getTestingPostgres();
         final long count = testingPostgres.runSelectStatement("select count(*) from container where name = 'bd2k-python-lib'",
                 new ScalarHandler<>());
-        Assert.assertTrue("should see five entries", count == 5);
+        Assert.assertTrue("should see three entries", count == 5);
     }
 
     @Test
