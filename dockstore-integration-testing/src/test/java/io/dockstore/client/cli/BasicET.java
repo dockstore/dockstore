@@ -40,7 +40,7 @@ import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 public class BasicET {
 
         @ClassRule
-        public static  final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
+        public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
                 DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstoreTest.yml"));
 
         @Rule
@@ -67,8 +67,8 @@ public class BasicET {
          * Will test adding/editing/deleting container related tags (for search)
          */
         @Ignore
-        public void testAddEditRemoveTag() {
-                // Todo : test adding/editing/removing tags to a container (should be available to search)
+        public void testAddEditRemoveLabel() {
+                // Todo : test adding/editing/removing labels to a container (should be available to search)
         }
 
         /**
@@ -103,7 +103,7 @@ public class BasicET {
         @Test
         public void testQuayGithubAutoRegistration(){
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from container where registry = 'QUAY_IO' and giturl like 'git@github.com%'", new ScalarHandler<>());
+                final long count = testingPostgres.runSelectStatement("select count(*) from container where path like \'" + Registry.QUAY_IO.toString() + "%\' and giturl like 'git@github.com%'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 2 registered from Quay and Github", count == 2);
         }
 
@@ -181,7 +181,7 @@ public class BasicET {
         @Test
         public void testQuayBitbucketAutoRegistration(){
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from container where registry = 'QUAY_IO' and giturl like 'git@bitbucket.org%'", new ScalarHandler<>());
+                final long count = testingPostgres.runSelectStatement("select count(*) from container where path like \'" + Registry.QUAY_IO.toString() + "%\' and giturl like 'git@bitbucket.org%'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 2 registered from Quay and Bitbucket", count == 2);
         }
 
