@@ -22,7 +22,6 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
-import com.sun.org.apache.regexp.internal.REUtil;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
@@ -96,9 +95,10 @@ public class ResourceUtilities {
 
     public static Optional<String> getResponseAsString(HttpPost httpPost, HttpClient client) {
         Optional<String> result = Optional.absent();
+        final int waitTime = 30000;
         try {
             ResponseHandler<String> responseHandler = new BasicResponseHandler();
-            RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(30000).setConnectTimeout(30000).setConnectionRequestTimeout(30000).build();
+            RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(waitTime).setConnectTimeout(waitTime).setConnectionRequestTimeout(waitTime).build();
             httpPost.setConfig(requestConfig);
             result = Optional.of(client.execute(httpPost, responseHandler));
         } catch (HttpResponseException httpResponseException) {
