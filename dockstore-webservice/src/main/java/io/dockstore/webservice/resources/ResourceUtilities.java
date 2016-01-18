@@ -21,9 +21,12 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+
+import com.sun.org.apache.regexp.internal.REUtil;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -73,6 +76,8 @@ public class ResourceUtilities {
         return httpPost;
     }
 
+    // Todo: Implement a backoff algorithm for below HTTP calls
+
     public static Optional<String> getResponseAsString(HttpGet httpGet, HttpClient client) {
         Optional<String> result = Optional.absent();
         try {
@@ -93,6 +98,8 @@ public class ResourceUtilities {
         Optional<String> result = Optional.absent();
         try {
             ResponseHandler<String> responseHandler = new BasicResponseHandler();
+            RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(30000).setConnectTimeout(30000).setConnectionRequestTimeout(30000).build();
+            httpPost.setConfig(requestConfig);
             result = Optional.of(client.execute(httpPost, responseHandler));
         } catch (HttpResponseException httpResponseException) {
             LOG.error("getResponseAsString(): caught 'HttpResponseException' while processing request <{}> :=> <{}>", httpPost,

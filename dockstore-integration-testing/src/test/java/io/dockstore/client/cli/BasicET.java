@@ -35,6 +35,7 @@ import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 
 /**
  * Basic confidential integration tests, focusing on publishing/unpublishing both automatic and manually added containers
+ * This is important as it tests the web service with real data instead of dummy data, using actual services like Github and Quay
  * @author aduncan
  */
 public class BasicET {
@@ -50,6 +51,7 @@ public class BasicET {
         public void clearDBandSetup() throws IOException, TimeoutException {
                 clearStateMakePrivate();
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh" });
+
         }
 
         /*
