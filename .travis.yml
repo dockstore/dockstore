@@ -18,11 +18,11 @@ before_script:
 - psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
 - psql -c "ALTER USER dockstore WITH superuser;" -U postgres
 - psql -c 'create database webservice_test with owner = dockstore;' -U postgres
-script: mvn -B clean install -DskipITs=false
+script: mvn -B clean install -DskipITs=false -Pconfidential-tests
 after_success:
 - mvn -B clean -DskipITs=false cobertura:cobertura cobertura:cobertura-integration-test
   coveralls:report
 before_install:
 - openssl aes-256-cbc -K $encrypted_8c393341f536_key -iv $encrypted_8c393341f536_iv
-  -in secrets.tar.enc -out secrets.tar -d
-- tar xvf secrets.tar
+  -in dockstore-integration-testing/src/test/resources/secrets.tar.enc -out dockstore-integration-testing/src/test/resources/secrets.tar -d
+- tar xvf dockstore-integration-testing/src/test/resources/secrets.tar
