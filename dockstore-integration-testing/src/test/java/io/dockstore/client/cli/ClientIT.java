@@ -25,7 +25,6 @@ import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -62,11 +61,11 @@ public class ClientIT {
         clearState();
     }
 
-    public String getConfigFileLocation(boolean correctUser) throws IOException {
+    public static String getConfigFileLocation(boolean correctUser) throws IOException {
         return getConfigFileLocation(correctUser, true);
     }
 
-    public String getConfigFileLocation(boolean correctUser, boolean validPort) throws IOException {
+    public static String getConfigFileLocation(boolean correctUser, boolean validPort) throws IOException {
         File tempDir = Files.createTempDir();
         final File tempFile = File.createTempFile("config", "config", tempDir);
         FileUtils.write(tempFile, "token: " + (correctUser ? DUMMY_TOKEN_1 : "foobar") + "\n");
@@ -170,26 +169,7 @@ public class ClientIT {
                 "refs/head/master", "--toolname", "test1" });
     }
 
-    @Test
-    @Ignore("this guy should be transfered over to the confidential tests when that's working")
-    public void runLaunchOneJson() throws IOException{
-        Client.main(new String[] { "--config", getConfigFileLocation(true), "dev", "launch", "--entry",
-            "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testOneRun.json") });
-    }
 
-    @Test
-    @Ignore("this guy should be transfered over to the confidential tests when that's working")
-    public void runLaunchNJson() throws IOException{
-        Client.main(new String[] { "--config", getConfigFileLocation(true), "dev", "launch", "--entry",
-            "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testMultipleRun.json") });
-    }
-
-    @Test
-    @Ignore("this guy should be transfered over to the confidential tests when that's working")
-    public void runLaunchTSV() throws IOException{
-        Client.main(new String[] { "--config", getConfigFileLocation(true), "dev", "launch", "--entry",
-            "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testMultipleRun.tsv") });
-    }
 
 
 }

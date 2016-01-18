@@ -525,7 +525,7 @@ public class Client {
                         final String finalString = gson.toJson(element);
                         final File tempJson = File.createTempFile("temp", ".json", Files.createTempDir());
                         FileUtils.write(tempJson, finalString);
-                        final LauncherCWL cwlLauncher = new LauncherCWL(tempConfig.getAbsolutePath(), tempCWL.getAbsolutePath(), finalString, System.out, System.err);
+                        final LauncherCWL cwlLauncher = new LauncherCWL(tempConfig.getAbsolutePath(), tempCWL.getAbsolutePath(), tempJson.getAbsolutePath(), System.out, System.err);
                         cwlLauncher.run();
                     }
                 } else {
@@ -787,7 +787,7 @@ public class Client {
         }
     }
 
-    private static SourceFile getCWLFromServer(String entry) throws ApiException {
+    public static SourceFile getCWLFromServer(String entry) throws ApiException {
         String[] parts = entry.split(":");
 
         String path = parts[0];
