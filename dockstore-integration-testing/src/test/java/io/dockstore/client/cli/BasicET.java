@@ -52,9 +52,12 @@ public class BasicET {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh" });
         }
 
-        // General tests
+        /*
+         General tests -
+         Not based on Quay/Dockerhub or Github/Bitbucket
+          */
         /**
-         * Checks that all quay containers have been found by dockstore and are not registered/published
+         * Checks that all automatic containers have been found by dockstore and are not registered/published
          */
         @Test
         public void testListAvailableContainers() {
@@ -64,7 +67,7 @@ public class BasicET {
         }
 
         /**
-         * Will test adding/editing/deleting container related tags (for search)
+         * Will test adding/editing/deleting container related labels (for search)
          */
         @Ignore
         public void testAddEditRemoveLabel() {
@@ -95,8 +98,10 @@ public class BasicET {
                 // Todo : test hiding and unhiding different versions of a container
         }
 
-        // Test Quay and Github
-
+        /*
+         Test Quay and Github -
+         These tests are focused on testing containers created from Quay and Github repositories
+          */
         /**
          * Checks that the two Quay/Github containers were automatically found
          */
@@ -174,7 +179,10 @@ public class BasicET {
                         "master" });
         }
 
-        // Test Quay and Bitbucket
+        /*
+         Test Quay and Bitbucket -
+         These tests are focused on testing containers created from Quay and Bitbucket repositories
+          */
         /**
          * Checks that the two Quay/Bitbucket containers were automatically found
          */
@@ -253,7 +261,10 @@ public class BasicET {
                         "master" });
         }
 
-        // Test dockerhub and github
+        /*
+         Test dockerhub and github -
+         These tests are focused on testing containers created from Dockerhub and Github repositories
+          */
         /**
          * Tests manual registration and unpublishing of a Dockerhub/Github container
          */
@@ -321,7 +332,7 @@ public class BasicET {
                         "--namespace", "dockstoretestuser", "--name", "dockerhubandgithub", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
                         "master", "--toolname", "regular2" });
 
-                // Replace this with individual refresh once individual refresh is updated to set the path
+                // Todo: Replace this with individual refresh once individual refresh is updated to set the path
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh" });
 
                 // Unpublish the duplicate containers
@@ -340,7 +351,10 @@ public class BasicET {
 
         }
 
-        // Test dockerhub and bitbucket
+        /*
+         Test dockerhub and bitbucket -
+         These tests are focused on testing containers created from Dockerhub and Bitbucket repositories
+          */
 
         /**
          * Tests manual registration and unpublishing of a Dockerhub/Bitbucket container
@@ -408,7 +422,7 @@ public class BasicET {
                         "--namespace", "dockstoretestuser", "--name", "dockerhubandbitbucket", "--git-url", "git@bitbucket.org:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
                         "master", "--toolname", "regular2" });
 
-                // Replace this with individual refresh once individual refresh is updated to set the path
+                // Todo: Replace this with individual refresh once individual refresh is updated to set the path
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh" });
 
                 // Unpublish the duplicate containers
