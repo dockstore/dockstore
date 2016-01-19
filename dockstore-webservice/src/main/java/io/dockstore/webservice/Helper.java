@@ -86,7 +86,7 @@ public final class Helper {
         Set<Tag> tags = container.getTags();
 
         for (Tag tag : tags) {
-            LOG.info("Updateing files for tag {}", tag.getName());
+            LOG.info("Updating files for tag {}", tag.getName());
 
             List<SourceFile> newFiles = loadFiles(client, bitbucketToken, githubToken, container, tag);
             tag.getSourceFiles().clear();

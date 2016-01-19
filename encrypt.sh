@@ -3,6 +3,7 @@ set -o errexit
 set -o nounset
 set -o xtrace
 
+
 tar cvf dockstore-integration-testing/src/test/resources/secrets.tar dockstore-integration-testing/src/test/resources/config_file.txt dockstore-integration-testing/src/test/resources/db_confidential_dump.sql dockstore-integration-testing/src/test/resources/dockstoreTest.yml
 
 # store working dir

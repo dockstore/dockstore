@@ -51,9 +51,9 @@ import com.google.gson.Gson;
 
 import io.dockstore.common.CWL;
 import io.dockstore.common.Utilities;
-import io.dockstore.common.cwl.CommandInputParameter;
-import io.dockstore.common.cwl.CommandLineTool;
-import io.dockstore.common.cwl.CommandOutputParameter;
+import cwl.CommandInputParameter;
+import cwl.CommandLineTool;
+import cwl.CommandOutputParameter;
 
 /**
  * @author boconnor 9/24/15
@@ -253,7 +253,8 @@ public class LauncherCWL {
                 newJSON.put(paramName, newRecord);
 
                 // TODO: fill in for all possible types
-            } else if (currentParam instanceof Integer || currentParam instanceof Float || currentParam instanceof Boolean || currentParam instanceof String) {
+            } else if (currentParam instanceof Integer || currentParam instanceof Float || currentParam instanceof Boolean || currentParam instanceof String
+                                                                    || currentParam instanceof List) {
                 newJSON.put(paramName, currentParam);
             } else {
                 throw new RuntimeException("we found an unexpected datatype as follows: " + currentParam.getClass() + "\n with content " + currentParam);

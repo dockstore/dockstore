@@ -16,10 +16,6 @@
  */
 package io.dockstore.client.cli;
 
-import static io.dockstore.common.CommonTestUtilities.DUMMY_TOKEN_1;
-import static io.dockstore.common.CommonTestUtilities.clearState;
-import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
@@ -43,6 +39,10 @@ import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit.DropwizardAppRule;
 import io.swagger.client.ApiException;
 
+import static io.dockstore.common.CommonTestUtilities.DUMMY_TOKEN_1;
+import static io.dockstore.common.CommonTestUtilities.clearState;
+import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
+
 /**
  *
  * @author dyuen
@@ -61,11 +61,11 @@ public class ClientIT {
         clearState();
     }
 
-    public String getConfigFileLocation(boolean correctUser) throws IOException {
+    public static String getConfigFileLocation(boolean correctUser) throws IOException {
         return getConfigFileLocation(correctUser, true);
     }
 
-    public String getConfigFileLocation(boolean correctUser, boolean validPort) throws IOException {
+    public static String getConfigFileLocation(boolean correctUser, boolean validPort) throws IOException {
         File tempDir = Files.createTempDir();
         final File tempFile = File.createTempFile("config", "config", tempDir);
         FileUtils.write(tempFile, "token: " + (correctUser ? DUMMY_TOKEN_1 : "foobar") + "\n");
@@ -168,5 +168,8 @@ public class ClientIT {
                 "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url", "git@github.com:funky-user/test2.git", "--git-reference",
                 "refs/head/master", "--toolname", "test1" });
     }
+
+
+
 
 }

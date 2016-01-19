@@ -7,7 +7,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import org.apache.avro.specific.SpecificRecordBase;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -22,10 +21,10 @@ import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
 
-import io.dockstore.common.cwl.Any;
-import io.dockstore.common.cwl.CommandInputParameter;
-import io.dockstore.common.cwl.CommandLineTool;
-import io.dockstore.common.cwl.CommandOutputParameter;
+import cwl.Any;
+import cwl.CommandInputParameter;
+import cwl.CommandLineTool;
+import cwl.CommandOutputParameter;
 
 /**
  * Helper class that performs utility functions relating to CWL parsing and manipulation.
@@ -104,16 +103,6 @@ public class CWL {
      */
     public static Object getStub(final Object type, final String value) {
         Object stub = value == null? "fill me in" : value;
-        if (type instanceof List){
-            // if its a list, call recursively and return first non-stub entry
-            for(final Object entry : (Iterable) type){
-                final Object arrayStub = getStub(entry, value);
-                if (!Objects.equals(arrayStub, stub)){
-                    return arrayStub;
-                }
-            }
-            return stub;
-        }
         final String strType = type.toString();
         switch (strType) {
         case "File":
@@ -175,7 +164,7 @@ public class CWL {
         final String elementClass = jsonElement.getAsJsonObject().get("class").getAsString();
         Class<SpecificRecordBase> anyClass;
         try {
-            anyClass = (Class<SpecificRecordBase>) Class.forName("io.dockstore.common.cwl." + elementClass);
+            anyClass = (Class<SpecificRecordBase>) Class.forName("cwl." + elementClass);
         } catch (ClassNotFoundException e) {
             //TODO: this should be a log
             e.printStackTrace();

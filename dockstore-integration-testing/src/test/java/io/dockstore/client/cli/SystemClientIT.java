@@ -16,9 +16,6 @@
  */
 package io.dockstore.client.cli;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -48,6 +45,9 @@ import io.swagger.client.model.RegisterRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Token;
 import io.swagger.client.model.User;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
@@ -142,7 +142,7 @@ public class SystemClientIT {
         RegisterRequest req = new RegisterRequest();
         req.setRegister(true);
 
-        container = containersApi.register(containerId, req);
+        containersApi.register(containerId, req);
     }
 
     @Test

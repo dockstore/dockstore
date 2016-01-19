@@ -1,0 +1,5 @@
+input	allocatedResources	key	output
+{items=File, type=array}	something	{items=string, inputBinding={prefix=-k}, type=array}	string
+[{"path":"example.bedGraph","class":"File"}]	{"cpu":1,"mem":1000}	["1,1","2,2n"]	"example.bedGraph.sorted1"
+[{"path":"example.bedGraph","class":"File"}]	{"cpu":1,"mem":1000}	["1,1","2,2n"]	"example.bedGraph.sorted2"
+[{"path":"example.bedGraph","class":"File"}]	{"cpu":1,"mem":1000}	["1,1","2,2n"]	"example.bedGraph.sorted3"
