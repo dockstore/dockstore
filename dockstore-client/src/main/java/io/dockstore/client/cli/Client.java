@@ -871,7 +871,8 @@ public class Client {
                 refreshHelp();
             } else {
                 try {
-                    Container container = containersApi.getContainerByToolPath(reqVal(args, "--toolpath"));
+                    final String toolpath = reqVal(args, "--toolpath");
+                    Container container = containersApi.getContainerByToolPath(toolpath);
                     final Long containerId = container.getId();
                     Container updatedContainer = containersApi.refreshContainer(containerId);
                     List<Container> containerList = new ArrayList<>();

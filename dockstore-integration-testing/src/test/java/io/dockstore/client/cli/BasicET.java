@@ -51,10 +51,8 @@ public class BasicET {
         public void clearDBandSetup() throws IOException, TimeoutException {
                 clearStateMakePrivate();
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh" });
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--help" });
-
         }
-
+        
         /*
          General tests -
          Not based on Quay/Dockerhub or Github/Bitbucket
