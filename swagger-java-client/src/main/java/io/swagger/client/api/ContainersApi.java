@@ -254,6 +254,48 @@ public class ContainersApi {
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
+
+  /**
+   * Refresh given repo owned by the logged-in user
+   * Updates some metadata
+   * @param  containerId Container ID
+   * @return Container
+   */
+  public Container refreshContainer (Long containerId) throws ApiException {
+    Object postBody = null;
+
+    // verify the required parameter 'userId' is set
+    if (containerId == null) {
+      throw new ApiException(400, "Missing the required parameter 'containerId' when calling refresh");
+    }
+
+    // create path and map variables
+    String path = "/containers/{containerId}/refresh".replaceAll("\\{format\\}","json")
+            .replaceAll("\\{" + "containerId" + "\\}", apiClient.escapeString(containerId.toString()));
+
+    // query params
+    List<Pair> queryParams = new ArrayList<Pair>();
+    Map<String, String> headerParams = new HashMap<String, String>();
+    Map<String, Object> formParams = new HashMap<String, Object>();
+
+
+    final String[] accepts = {
+            "application/json"
+    };
+    final String accept = apiClient.selectHeaderAccept(accepts);
+
+    final String[] contentTypes = {
+            "application/json"
+    };
+    final String contentType = apiClient.selectHeaderContentType(contentTypes);
+
+    String[] authNames = new String[] {  };
+
+
+    TypeRef returnType = new TypeRef<Container>() {};
+    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
+
+  }
   
   /**
    * Register an image manually, along with tags

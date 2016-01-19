@@ -51,6 +51,7 @@ public class BasicET {
         public void clearDBandSetup() throws IOException, TimeoutException {
                 clearStateMakePrivate();
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--help" });
 
         }
 
@@ -160,9 +161,6 @@ public class BasicET {
 
                 Assert.assertTrue("there should be 1 entries", count == 1);
 
-                // TODO Replace this with individual refresh once individual refresh is updated to set the path
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh" });
-
                 // Unpublish
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "publish", "--unpub", "quay.io/dockstoretestuser/quayandgithub/alternate" });
                 final long count2 = testingPostgres.runSelectStatement("select count(*) from container where toolname = 'alternate' and isregistered='t'", new ScalarHandler<>());
@@ -241,9 +239,6 @@ public class BasicET {
 
                 Assert.assertTrue("there should be 1 entries", count == 1);
 
-                // TODO Replace this with individual refresh once individual refresh is updated to set the path
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh" });
-
                 // Unpublish
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "publish", "--unpub", "quay.io/dockstoretestuser/quayandgithub/alternate" });
                 final long count2 = testingPostgres.runSelectStatement("select count(*) from container where toolname = 'alternate' and isregistered='t'", new ScalarHandler<>());
@@ -280,9 +275,6 @@ public class BasicET {
                 final long count = testingPostgres.runSelectStatement("select count(*) from container where toolname = 'regular' and isregistered='t'", new ScalarHandler<>());
 
                 Assert.assertTrue("there should be 1 entries", count == 1);
-
-                // Replace this with individual refresh once individual refresh is updated to set the path
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh" });
 
                 // Unpublish
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "publish", "--unpub", "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub/regular" });
@@ -334,9 +326,6 @@ public class BasicET {
                         "--namespace", "dockstoretestuser", "--name", "dockerhubandgithub", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
                         "master", "--toolname", "regular2" });
 
-                // Todo: Replace this with individual refresh once individual refresh is updated to set the path
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh" });
-
                 // Unpublish the duplicate containers
                 final long count2 = testingPostgres.runSelectStatement("select count(*) from container where toolname like 'regular%' and isregistered='t'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 2 entries", count2 == 2);
@@ -371,9 +360,6 @@ public class BasicET {
                 final long count = testingPostgres.runSelectStatement("select count(*) from container where toolname = 'regular' and isregistered='t'", new ScalarHandler<>());
 
                 Assert.assertTrue("there should be 1 entries", count == 1);
-
-                // Replace this with individual refresh once individual refresh is updated to set the path
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh" });
 
                 // Unpublish
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "publish", "--unpub", "registry.hub.docker.com/dockstoretestuser/dockerhubandbitbucket/regular" });
@@ -423,9 +409,6 @@ public class BasicET {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.DOCKER_HUB.toString(),
                         "--namespace", "dockstoretestuser", "--name", "dockerhubandbitbucket", "--git-url", "git@bitbucket.org:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
                         "master", "--toolname", "regular2" });
-
-                // Todo: Replace this with individual refresh once individual refresh is updated to set the path
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh" });
 
                 // Unpublish the duplicate containers
                 final long count2 = testingPostgres.runSelectStatement("select count(*) from container where toolname like 'regular%' and isregistered='t'", new ScalarHandler<>());

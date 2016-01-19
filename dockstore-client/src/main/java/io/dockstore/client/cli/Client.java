@@ -471,6 +471,7 @@ public class Client {
             final String fullName = Joiner.on("/").skipNulls().join(registry, namespace, name, toolname);
             try {
                 container = containersApi.registerManual(container);
+                containersApi.refreshContainer(container.getId());
                 if (container != null) {
                     out("Successfully published " + fullName);
                 } else {
@@ -733,6 +734,21 @@ public class Client {
         out("dockstore publish <container> <toolname>   :  registers that container for use by others in the dockstore under a specific toolname");
         out("");
         out("dockstore publish --unpub <toolname_path>   :  unregisters that container from use by others in the dockstore under a specific toolname");
+        out("------------------");
+        out("");
+    }
+
+    private static void refreshHelp() {
+        out("");
+        out("HELP FOR DOCKSTORE");
+        out("------------------");
+        out("See https://www.dockstore.org for more information");
+        out("");
+        out("dockstore refresh                         :  updates your list of containers on Dockstore");
+        out("");
+        out("dockstore refresh --toolpath <toolpath>   :  updates a given container on Dockstore");
+        out("------------------");
+        out("");
     }
 
     private static void info(List<String> args) {
@@ -850,14 +866,33 @@ public class Client {
     }
 
     private static void refresh(List<String> args) {
-        try {
-            List<Container> containers = usersApi.refresh(user.getId());
+        if (args.size() > 0) {
+            if (isHelpRequest(args.get(0))) {
+                refreshHelp();
+            } else {
+                try {
+                    Container container = containersApi.getContainerByToolPath(reqVal(args, "--toolpath"));
+                    final Long containerId = container.getId();
+                    Container updatedContainer = containersApi.refreshContainer(containerId);
+                    List<Container> containerList = new ArrayList<>();
+                    containerList.add(updatedContainer);
+                    out("YOUR UPDATED CONTAINER");
+                    out("-------------------");
+                    printContainerList(containerList);
+                } catch (ApiException ex) {
+                    kill("Exception: " + ex);
+                }
+            }
+        } else {
+            try {
+                List<Container> containers = usersApi.refresh(user.getId());
 
-            out("YOUR UPDATED CONTAINERS");
-            out("-------------------");
-            printContainerList(containers);
-        } catch (ApiException ex) {
-            kill("Exception: " + ex);
+                out("YOUR UPDATED CONTAINERS");
+                out("-------------------");
+                printContainerList(containers);
+            } catch (ApiException ex) {
+                kill("Exception: " + ex);
+            }
         }
     }
 
@@ -921,7 +956,7 @@ public class Client {
                 out("  cwl <container>  :  returns the Common Workflow Language tool definition for this Docker image ");
                 out("                      which enables integration with Global Alliance compliant systems");
                 out("");
-                out("  refresh          :  updates your list of containers stored on Dockstore");
+                out("  refresh          :  updates your list of containers stored on Dockstore or an individual container");
                 out("------------------");
                 out("");
                 out("Flags:");
