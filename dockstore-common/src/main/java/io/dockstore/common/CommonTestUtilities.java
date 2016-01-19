@@ -16,13 +16,19 @@
  */
 package io.dockstore.common;
 
-import java.io.File;
-
+import io.dropwizard.testing.ResourceHelpers;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.dbutils.ResultSetHandler;
 import org.apache.commons.dbutils.handlers.KeyedHandler;
 import org.apache.commons.io.FileUtils;
+
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.File;
+
 
 /**
  *
@@ -104,6 +110,19 @@ public class CommonTestUtilities {
             runUpdateStatement("alter sequence tag_id_seq restart with 1000;");
         }
 
+        public void clearDatabaseMakePrivate() throws IOException {
+            super.clearDatabase();
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(ResourceHelpers.resourceFilePath("db_confidential_dump.sql")), "utf-8"));
+            String line = null;
+
+            while ((line = br.readLine()) != null) {
+                runUpdateStatementConfidential(line);
+            }
+            br.close();
+
+        }
+
         @Override
         public <T> T runSelectStatement(String query, ResultSetHandler<T> handler, Object... params) {
             return super.runSelectStatement(query, handler, params);
@@ -121,6 +140,16 @@ public class CommonTestUtilities {
     public static void clearState() {
         final TestingPostgres postgres = getTestingPostgres();
         postgres.clearDatabase();
+    }
+
+    /**
+     * Clears database state and known queues for confidential testing.
+     * @throws IOException
+         */
+    public static void clearStateMakePrivate() throws IOException {
+        final TestingPostgres postgres = getTestingPostgres();
+        postgres.clearDatabaseMakePrivate();
+
     }
 
     public static TestingPostgres getTestingPostgres() {

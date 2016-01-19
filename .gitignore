@@ -30,5 +30,14 @@ dockstore-webservice/nbactions.xml
 /dockstore-integration-testing/target/
 
 # confidential testing files
-secrets.tar
-dockstore-integration-testing/src/test/resources/confidential_test.txt
+# The dockstore CLI config file for testing confidential data
+dockstore-integration-testing/src/test/resources/config_file.txt
+
+# Contains SQL statements to initialize testing DB with a confidential user and tokens
+dockstore-integration-testing/src/test/resources/db_confidential_dump.sql
+
+# The dockstore.yml file for running the confidential tests
+dockstore-integration-testing/src/test/resources/dockstoreTest.yml
+
+# The tarball of the above three confidential files
+dockstore-integration-testing/src/test/resources/secrets.tar
