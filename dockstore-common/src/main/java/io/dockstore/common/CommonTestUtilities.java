@@ -122,9 +122,9 @@ public class CommonTestUtilities {
             br.close();
 
             // need to increment past manually entered ids above
-            runUpdateStatement("alter sequence container_id_seq restart with 1000;");
-            runUpdateStatement("alter sequence tag_id_seq restart with 1000;");
-            runUpdateStatement("alter sequence sourcefile_id_seq restart with 1000;");
+            runUpdateStatementConfidential("alter sequence container_id_seq restart with 1000;");
+            runUpdateStatementConfidential("alter sequence tag_id_seq restart with 1000;");
+            runUpdateStatementConfidential("alter sequence sourcefile_id_seq restart with 1000;");
 
         }
 
