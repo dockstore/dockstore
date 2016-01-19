@@ -113,13 +113,18 @@ public class CommonTestUtilities {
         public void clearDatabaseMakePrivate() throws IOException {
             super.clearDatabase();
 
-            BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(ResourceHelpers.resourceFilePath("db_confidential_dump.sql")), "utf-8"));
+            BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(ResourceHelpers.resourceFilePath("db_confidential_dump_full.sql")), "utf-8"));
             String line = null;
 
             while ((line = br.readLine()) != null) {
                 runUpdateStatementConfidential(line);
             }
             br.close();
+
+            // need to increment past manually entered ids above
+            runUpdateStatement("alter sequence container_id_seq restart with 1000;");
+            runUpdateStatement("alter sequence tag_id_seq restart with 1000;");
+            runUpdateStatement("alter sequence sourcefile_id_seq restart with 1000;");
 
         }
 

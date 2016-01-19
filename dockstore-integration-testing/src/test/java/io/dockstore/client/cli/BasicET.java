@@ -50,13 +50,8 @@ public class BasicET {
         @Before
         public void clearDBandSetup() throws IOException, TimeoutException {
                 clearStateMakePrivate();
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh" });
         }
-        
-        /*
-         General tests -
-         Not based on Quay/Dockerhub or Github/Bitbucket
-          */
+
         /**
          * Checks that all automatic containers have been found by dockstore and are not registered/published
          */

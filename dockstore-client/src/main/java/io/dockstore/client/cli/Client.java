@@ -471,8 +471,8 @@ public class Client {
             final String fullName = Joiner.on("/").skipNulls().join(registry, namespace, name, toolname);
             try {
                 container = containersApi.registerManual(container);
-                containersApi.refreshContainer(container.getId());
                 if (container != null) {
+                    containersApi.refreshContainer(container.getId());
                     out("Successfully published " + fullName);
                 } else {
                     kill("Unable to publish " + fullName);
