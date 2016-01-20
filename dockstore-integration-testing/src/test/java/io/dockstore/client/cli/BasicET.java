@@ -59,7 +59,7 @@ public class BasicET {
         public void testListAvailableContainers() {
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
                 final long count = testingPostgres.runSelectStatement("select count(*) from container where isregistered='f'", new ScalarHandler<>());
-                Assert.assertTrue("there should be 4 entries", count == 4);
+                Assert.assertTrue("there should be 5 entries", count == 5);
         }
 
         /**
@@ -126,9 +126,10 @@ public class BasicET {
         /**
          * Check that a user can't refresh another users container
          */
-        @Ignore
+        @Test
         public void testRefreshOtherUsersContainer(){
-                // Todo: Add another user to the backup db so that this feature can be tested
+                systemExit.expectSystemExitWithStatus(1);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/test_org/test1" });
         }
 
         /*
