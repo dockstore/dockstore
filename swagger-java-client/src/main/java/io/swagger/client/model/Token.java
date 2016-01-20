@@ -8,8 +8,11 @@ import io.swagger.annotations.*;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 
-@ApiModel(description = "")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-07T10:37:32.809-05:00")
+/**
+ * Access tokens for this web service and integrated services like quay.io and github
+ **/
+@ApiModel(description = "Access tokens for this web service and integrated services like quay.io and github")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-01-20T15:45:39.248-05:00")
 public class Token   {
   
   private Long id = null;
@@ -21,8 +24,9 @@ public class Token   {
 
   
   /**
+   * Implementation specific ID for the token in this web service
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "Implementation specific ID for the token in this web service")
   @JsonProperty("id")
   public Long getId() {
     return id;
@@ -33,8 +37,9 @@ public class Token   {
 
   
   /**
+   * Source website for this token
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "Source website for this token")
   @JsonProperty("tokenSource")
   public String getTokenSource() {
     return tokenSource;
@@ -45,8 +50,9 @@ public class Token   {
 
   
   /**
+   * Contents of the access token
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "Contents of the access token")
   @JsonProperty("content")
   public String getContent() {
     return content;
@@ -57,8 +63,9 @@ public class Token   {
 
   
   /**
+   * When an integrated service is not aware of the username, we store it
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "When an integrated service is not aware of the username, we store it")
   @JsonProperty("username")
   public String getUsername() {
     return username;

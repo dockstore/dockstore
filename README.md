@@ -113,10 +113,12 @@ Background:
 To regenerate the swagger client:
 
 1. Have the dockstore webservice running
-2. Pull the code from their repo and cd to the directory. Build using `mvn package`
+2. Pull the code from their repo and cd to the directory. We are using v2.1.4. Build using `mvn clean install`
 3. Run `java -jar modules/swagger-codegen-cli/target/swagger-codegen-cli.jar generate -i http://localhost:8080/swagger.json -l java -o <output directory> --library jersey2`. The output directory is where you have dockstore/swagger-java-client/.
 4. NOTE: Rengenerating the swagger client will probably generate an incorrect pom file. Use git checkout on the pom file to undo the changes to it.
 
+ * v2.1.5 is a major update for swagger, and should be explored in the future
+ 
 ## Swagger Java Client for quay.io
 
 Background:

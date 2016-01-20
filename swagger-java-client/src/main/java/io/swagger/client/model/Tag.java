@@ -11,8 +11,11 @@ import io.swagger.annotations.*;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 
-@ApiModel(description = "")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-07T10:37:32.809-05:00")
+/**
+ * This describes one tag associated with a container.
+ **/
+@ApiModel(description = "This describes one tag associated with a container.")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-01-20T15:45:39.248-05:00")
 public class Tag   {
   
   private Long id = null;
@@ -30,8 +33,9 @@ public class Tag   {
 
   
   /**
+   * Implementation specific ID for the tag in this web service
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "Implementation specific ID for the tag in this web service")
   @JsonProperty("id")
   public Long getId() {
     return id;
@@ -42,9 +46,9 @@ public class Tag   {
 
   
   /**
-   * quay tag name
+   * a quay.io or docker hub tag name
    **/
-  @ApiModelProperty(value = "quay tag name")
+  @ApiModelProperty(required = true, value = "a quay.io or docker hub tag name")
   @JsonProperty("name")
   public String getName() {
     return name;
@@ -55,9 +59,9 @@ public class Tag   {
 
   
   /**
-   * size of the image
+   * Size of the image
    **/
-  @ApiModelProperty(value = "size of the image")
+  @ApiModelProperty(value = "Size of the image")
   @JsonProperty("size")
   public Long getSize() {
     return size;
@@ -70,7 +74,7 @@ public class Tag   {
   /**
    * git commit/tag/branch
    **/
-  @ApiModelProperty(value = "git commit/tag/branch")
+  @ApiModelProperty(required = true, value = "git commit/tag/branch")
   @JsonProperty("reference")
   public String getReference() {
     return reference;
@@ -81,9 +85,9 @@ public class Tag   {
 
   
   /**
-   * Cached files for each tag. Includes Dockerfile and Dockstore.cwl.
+   * Cached files for each tag. Includes Dockerfile and Dockstore.cwl
    **/
-  @ApiModelProperty(value = "Cached files for each tag. Includes Dockerfile and Dockstore.cwl.")
+  @ApiModelProperty(value = "Cached files for each tag. Includes Dockerfile and Dockstore.cwl")
   @JsonProperty("sourceFiles")
   public List<SourceFile> getSourceFiles() {
     return sourceFiles;
@@ -94,9 +98,9 @@ public class Tag   {
 
   
   /**
-   * whether this row is visible to other users aside from the owner
+   * Implementation specific, whether this row is visible to other users aside from the owner
    **/
-  @ApiModelProperty(value = "whether this row is visible to other users aside from the owner")
+  @ApiModelProperty(value = "Implementation specific, whether this row is visible to other users aside from the owner")
   @JsonProperty("hidden")
   public Boolean getHidden() {
     return hidden;
@@ -107,9 +111,9 @@ public class Tag   {
 
   
   /**
-   * whether this tag has valid files or not
+   * Implementation specific, whether this tag has valid files from source code repo
    **/
-  @ApiModelProperty(value = "whether this tag has valid files or not")
+  @ApiModelProperty(value = "Implementation specific, whether this tag has valid files from source code repo")
   @JsonProperty("valid")
   public Boolean getValid() {
     return valid;
@@ -120,9 +124,9 @@ public class Tag   {
 
   
   /**
-   * whether this tag has an automated build or not
+   * Implementation specific, indicates whether this is an automated build on quay.io
    **/
-  @ApiModelProperty(value = "whether this tag has an automated build or not")
+  @ApiModelProperty(value = "Implementation specific, indicates whether this is an automated build on quay.io")
   @JsonProperty("automated")
   public Boolean getAutomated() {
     return automated;
@@ -135,7 +139,7 @@ public class Tag   {
   /**
    * Tag for this image in quay.ui/docker hub
    **/
-  @ApiModelProperty(value = "Tag for this image in quay.ui/docker hub")
+  @ApiModelProperty(required = true, value = "Tag for this image in quay.ui/docker hub")
   @JsonProperty("image_id")
   public String getImageId() {
     return imageId;
@@ -146,8 +150,9 @@ public class Tag   {
 
   
   /**
+   * The last time this image was modified in the image registry
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "The last time this image was modified in the image registry")
   @JsonProperty("last_modified")
   public Date getLastModified() {
     return lastModified;
@@ -158,8 +163,9 @@ public class Tag   {
 
   
   /**
+   * Path for the Dockerfile
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "Path for the Dockerfile")
   @JsonProperty("dockerfile_path")
   public String getDockerfilePath() {
     return dockerfilePath;
@@ -170,8 +176,9 @@ public class Tag   {
 
   
   /**
+   * Path for the CWL document
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "Path for the CWL document")
   @JsonProperty("cwl_path")
   public String getCwlPath() {
     return cwlPath;
