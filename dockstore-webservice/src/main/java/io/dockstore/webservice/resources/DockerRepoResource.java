@@ -164,6 +164,13 @@ public class DockerRepoResource {
         User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
 
+        List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
+
+        if (!tokens.isEmpty()) {
+            Token bitbucketToken = tokens.get(0);
+            Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
+        }
+
         Container container = Helper.refreshContainer(containerId, authToken.getUserId(), client, objectMapper, userDAO, containerDAO,
                 tokenDAO, tagDAO, fileDAO);
 

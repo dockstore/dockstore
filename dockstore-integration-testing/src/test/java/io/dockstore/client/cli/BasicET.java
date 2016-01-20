@@ -94,6 +94,43 @@ public class BasicET {
                 // Todo : test hiding and unhiding different versions of a container
         }
 
+        /**
+         * Check that refreshing an incorrect individual container won't work
+         */
+        @Test
+        public void testRefreshIncorrectContainer(){
+                systemExit.expectSystemExitWithStatus(1);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser/unknowncontainer" });
+        }
+
+        /**
+         * Check that refreshing an existing container will not throw an error
+         * Todo: Update test to check the outcome of a refresh
+         */
+        @Test
+        public void testRefreshCorrectContainer(){
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser/quayandgithub" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser/quayandbitbucket" });
+
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.DOCKER_HUB.toString(),
+                        "--namespace", "dockstoretestuser", "--name", "dockerhubandgithub", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
+                        "master", "--toolname", "regular" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub/regular" });
+
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.DOCKER_HUB.toString(),
+                        "--namespace", "dockstoretestuser", "--name", "dockerhubandbitbucket", "--git-url", "git@bitbucket.org:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
+                        "master", "--toolname", "regular" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "registry.hub.docker.com/dockstoretestuser/dockerhubandbitbucket/regular" });
+        }
+
+        /**
+         * Check that a user can't refresh another users container
+         */
+        @Ignore
+        public void testRefreshOtherUsersContainer(){
+                // Todo: Add another user to the backup db so that this feature can be tested
+        }
+
         /*
          Test Quay and Github -
          These tests are focused on testing containers created from Quay and Github repositories
@@ -141,9 +178,8 @@ public class BasicET {
         /**
          * Checks that you can manually publish and unpublish a Quay/Github container with an alternate structure, if the CWL and Dockerfile paths are defined properly
          */
-        @Ignore
+        @Test
         public void testQuayGithubManualPublishAndUnpublishAlternateStructure(){
-                // TODO Need to get working with other locations of cwl path and dockerfile path
                 // Manual publish
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.QUAY_IO.toString(),
                         "--namespace", "dockstoretestuser", "--name", "quayandgithubalternate", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git", "--git-reference",
@@ -155,7 +191,7 @@ public class BasicET {
                 Assert.assertTrue("there should be 1 entries", count == 1);
 
                 // Unpublish
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "publish", "--unpub", "quay.io/dockstoretestuser/quayandgithub/alternate" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "publish", "--unpub", "quay.io/dockstoretestuser/quayandgithubalternate/alternate" });
                 final long count2 = testingPostgres.runSelectStatement("select count(*) from container where toolname = 'alternate' and isregistered='t'", new ScalarHandler<>());
 
                 Assert.assertTrue("there should be 0 entries", count2 == 0);
@@ -219,7 +255,7 @@ public class BasicET {
         /**
          * Checks that you can manually publish and unpublish a Quay/Bitbucket container with an alternate structure, if the CWL and Dockerfile paths are defined properly
          */
-        @Ignore
+        @Test
         public void testQuayBitbucketManualPublishAndUnpublishAlternateStructure(){
                 // TODO Need to get working with other locations of cwl path and dockerfile path
                 // Manual Publish
@@ -233,7 +269,7 @@ public class BasicET {
                 Assert.assertTrue("there should be 1 entries", count == 1);
 
                 // Unpublish
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "publish", "--unpub", "quay.io/dockstoretestuser/quayandgithub/alternate" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "publish", "--unpub", "quay.io/dockstoretestuser/quayandbitbucketalternate/alternate" });
                 final long count2 = testingPostgres.runSelectStatement("select count(*) from container where toolname = 'alternate' and isregistered='t'", new ScalarHandler<>());
 
                 Assert.assertTrue("there should be 0 entries", count2 == 0);
@@ -280,12 +316,22 @@ public class BasicET {
         /**
          * Will test manually publishing and unpublishing a Dockerhub/Github container with an alternate structure
          */
-        @Ignore
+        @Test
         public void testDockerhubGithubAlternateStructure(){
-                // Todo : Manual publish container with alternate structure/layout, should be able to publish/unpublish and view associated cwl and dockerfile files
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.DOCKER_HUB.toString(),
                         "--namespace", "dockstoretestuser", "--name", "dockerhubandgithub", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git", "--git-reference",
                         "master", "--toolname", "alternate", "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile" });
+
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+                final long count = testingPostgres.runSelectStatement("select count(*) from container where toolname = 'alternate' and isregistered='t' and validtrigger='t'", new ScalarHandler<>());
+
+                Assert.assertTrue("there should be 1 entry", count == 1);
+
+                // Unpublish
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "publish", "--unpub", "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub/alternate" });
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from container where toolname = 'alternate' and isregistered='f' and validtrigger='t'", new ScalarHandler<>());
+
+                Assert.assertTrue("there should be 1 entry", count2 == 1);
         }
 
         /**
@@ -364,12 +410,22 @@ public class BasicET {
         /**
          * Will test manually publishing and unpublishing a Dockerhub/Bitbucket container with an alternate structure
          */
-        @Ignore
+        @Test
         public void testDockerhubBitbucketAlternateStructure(){
-                // Todo : Manual publish container with alternate structure/layout, should be able to publish/unpublish and view associated cwl and dockerfile files
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.DOCKER_HUB.toString(),
-                        "--namespace", "dockstoretestuser", "--name", "dockerhubandbitbucket", "--git-url", "git@bitbucket.org:DockstoreTestUser/quayandbitbucketalterante.git", "--git-reference",
+                        "--namespace", "dockstoretestuser", "--name", "dockerhubandbitbucket", "--git-url", "git@bitbucket.org:DockstoreTestUser/quayandbitbucketalternate.git", "--git-reference",
                         "master", "--toolname", "alternate", "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile" });
+
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+                final long count = testingPostgres.runSelectStatement("select count(*) from container where toolname = 'alternate' and isregistered='t' and validtrigger='t'", new ScalarHandler<>());
+
+                Assert.assertTrue("there should be 1 entry", count == 1);
+
+                // Unpublish
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "publish", "--unpub", "registry.hub.docker.com/dockstoretestuser/dockerhubandbitbucket/alternate" });
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from container where toolname = 'alternate' and isregistered='f' and validtrigger='t'", new ScalarHandler<>());
+
+                Assert.assertTrue("there should be 1 entry", count2 == 1);
         }
 
         /**
