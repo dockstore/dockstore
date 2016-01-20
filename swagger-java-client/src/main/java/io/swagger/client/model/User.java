@@ -11,8 +11,11 @@ import io.swagger.annotations.*;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 
-@ApiModel(description = "")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-07T10:37:32.809-05:00")
+/**
+ * End users for the dockstore
+ **/
+@ApiModel(description = "End users for the dockstore")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-01-20T15:45:39.248-05:00")
 public class User   {
   
   private Long id = null;
@@ -23,8 +26,9 @@ public class User   {
 
   
   /**
+   * Implementation specific ID for the container in this web service
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "Implementation specific ID for the container in this web service")
   @JsonProperty("id")
   public Long getId() {
     return id;
@@ -35,8 +39,9 @@ public class User   {
 
   
   /**
+   * Username on dockstore
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "Username on dockstore")
   @JsonProperty("username")
   public String getUsername() {
     return username;
@@ -47,8 +52,9 @@ public class User   {
 
   
   /**
+   * Indicates whetehr this user is an admin
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(required = true, value = "Indicates whetehr this user is an admin")
   @JsonProperty("isAdmin")
   public Boolean getIsAdmin() {
     return isAdmin;
@@ -59,8 +65,9 @@ public class User   {
 
   
   /**
+   * Groups that this user belongs to
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "Groups that this user belongs to")
   @JsonProperty("groups")
   public List<Group> getGroups() {
     return groups;
@@ -71,8 +78,9 @@ public class User   {
 
   
   /**
+   * Entries in the dockstore that this user manages
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "Entries in the dockstore that this user manages")
   @JsonProperty("containers")
   public List<Container> getContainers() {
     return containers;

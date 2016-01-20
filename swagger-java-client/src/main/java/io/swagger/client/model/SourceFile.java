@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 @ApiModel(description = "")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-07T10:37:32.809-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-01-20T15:45:39.248-05:00")
 public class SourceFile   {
   
   private Long id = null;
@@ -35,8 +35,9 @@ public enum TypeEnum {
 
   
   /**
+   * Implementation specific ID for the source file in this web service
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "Implementation specific ID for the source file in this web service")
   @JsonProperty("id")
   public Long getId() {
     return id;
@@ -47,8 +48,9 @@ public enum TypeEnum {
 
   
   /**
+   * Enumerates the type of file
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(required = true, value = "Enumerates the type of file")
   @JsonProperty("type")
   public TypeEnum getType() {
     return type;
@@ -59,8 +61,9 @@ public enum TypeEnum {
 
   
   /**
+   * Cache for the contents of the target file
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "Cache for the contents of the target file")
   @JsonProperty("content")
   public String getContent() {
     return content;

@@ -472,7 +472,7 @@ public class Client {
             try {
                 container = containersApi.registerManual(container);
                 if (container != null) {
-                    containersApi.refreshContainer(container.getId());
+                    containersApi.refresh(container.getId());
                     out("Successfully published " + fullName);
                 } else {
                     kill("Unable to publish " + fullName);
@@ -874,7 +874,7 @@ public class Client {
                     final String toolpath = reqVal(args, "--toolpath");
                     Container container = containersApi.getContainerByToolPath(toolpath);
                     final Long containerId = container.getId();
-                    Container updatedContainer = containersApi.refreshContainer(containerId);
+                    Container updatedContainer = containersApi.refresh(containerId);
                     List<Container> containerList = new ArrayList<>();
                     containerList.add(updatedContainer);
                     out("YOUR UPDATED CONTAINER");
