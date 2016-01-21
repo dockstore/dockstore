@@ -51,14 +51,7 @@ public class BasicET {
         public void clearDBandSetup() throws IOException, TimeoutException {
                 clearStateMakePrivate();
         }
-
-        @Test
-        public void testLabel(){
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "label", "--entry", "quay.io/dockstoretestuser/quayandgithub",
-                        "--add", "testLabel1","--add", "testLabel2","--add", "testLabel3", "--remove", "testLabel4"});
-                //Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "label"});
-        }
-
+        
         /**
          * Checks that all automatic containers have been found by dockstore and are not registered/published
          */
