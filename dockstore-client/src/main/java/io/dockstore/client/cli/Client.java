@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.ws.rs.ProcessingException;
 
+import org.apache.avro.generic.GenericData;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
@@ -67,6 +68,7 @@ import io.swagger.client.model.RegisterRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.User;
+import io.swagger.client.model.Label;
 import javassist.NotFoundException;
 
 /*
@@ -896,6 +898,73 @@ public class Client {
             }
         }
     }
+    private static void labelHelp() {
+        out("");
+        out("HELP FOR DOCKSTORE");
+        out("------------------");
+        out("See https://www.dockstore.org for more information");
+        out("");
+        out("dockstore label --add <label> (--add <label>) --remove (--remove <label>) --entry <path to tool>         :  Add or remove label(s) for a given dockstore container");
+        out("");
+        out("------------------");
+        out("");
+    }
+
+    public static void label(List<String> args) {
+        if (args.size() > 0) {
+            final String toolpath = reqVal(args, "--entry");
+            final List<String> adds = optVals(args, "--add");
+            final List<String> removes = optVals(args, "--remove");
+
+            // Todo : What happens if commas exist in the add or remove lists? Should they be split?
+            // Todo : Does Add take precedence over remove?
+            try {
+                Container container = containersApi.getContainerByToolPath(toolpath);
+                long containerId = container.getId();
+                List<Label> existingLabels = container.getLabels();
+                List<String> newLabelList = new ArrayList<>();
+                String combinedLabelString = "";
+
+                // Get existing labels and store in a List
+                for (int i = 0; i < existingLabels.size(); i++) {
+                    newLabelList.add(existingLabels.get(i).getValue());
+                }
+
+                // Add new labels to the List of labels
+                for (int i = 0; i < adds.size(); i++) {
+                    final String label = adds.get(i);
+                    if (newLabelList.indexOf(label) == -1) {
+                        newLabelList.add(label);
+                    }
+                }
+                // Remove labels from the list of labels
+                for (int i = 0; i < removes.size(); i++){
+                    final String label = removes.get(i);
+                    newLabelList.remove(label);
+                }
+
+                // Create string with all labels, separated by commas
+                for (int i = 0; i < newLabelList.size(); i++) {
+                    if (i == 0) {
+                        combinedLabelString += newLabelList.get(i);
+                    } else {
+                        combinedLabelString += "," + newLabelList.get(i);
+                    }
+                }
+
+                //Container updatedContainer = containersApi.updateLabels(containerId, combinedLabelString);
+
+                // Todo : Print updated container information (with labels)
+
+            } catch (ApiException e) {
+                e.printStackTrace();
+            }
+
+        } else {
+            labelHelp();
+        }
+    }
+
 
     public static void main(String[] argv) {
         List<String> args = new ArrayList<>(Arrays.asList(argv));
@@ -958,6 +1027,8 @@ public class Client {
                 out("                      which enables integration with Global Alliance compliant systems");
                 out("");
                 out("  refresh          :  updates your list of containers stored on Dockstore or an individual container");
+                out("");
+                out("  label          :  updates labels for an individual container");
                 out("------------------");
                 out("");
                 out("Flags:");
@@ -1002,6 +1073,9 @@ public class Client {
                             break;
                         case "dev":
                             dev(args);
+                            break;
+                        case "label":
+                            label(args);
                             break;
                         default:
                             invalid(cmd);

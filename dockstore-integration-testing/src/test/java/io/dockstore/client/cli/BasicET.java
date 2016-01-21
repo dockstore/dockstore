@@ -52,6 +52,13 @@ public class BasicET {
                 clearStateMakePrivate();
         }
 
+        @Test
+        public void testLabel(){
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "label", "--entry", "quay.io/dockstoretestuser/quayandgithub",
+                        "--add", "testLabel1","--add", "testLabel2","--add", "testLabel3", "--remove", "testLabel4"});
+                //Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "label"});
+        }
+
         /**
          * Checks that all automatic containers have been found by dockstore and are not registered/published
          */
@@ -67,7 +74,15 @@ public class BasicET {
          */
         @Ignore
         public void testAddEditRemoveLabel() {
-                // Todo : test adding/editing/removing labels to a container (should be available to search)
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "label", "--entry", "quay.io/dockstoretestuser/quayandgithub",
+                        "--add", "testLabel1","--add", "testLabel2", "--remove", "testLabel3"});
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "label", "--entry", "quay.io/dockstoretestuser/quayandgithub",
+                        "--add", "testLabel2","--add", "testLabel3", "--remove", "testLabel1"});
+
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+                final long count = testingPostgres.runSelectStatement("select count(*) from containerlabel where containerId = '1'", new ScalarHandler<>());
+                Assert.assertTrue("there should be 2 labels for the given container", count == 2);
+
         }
 
         /**
