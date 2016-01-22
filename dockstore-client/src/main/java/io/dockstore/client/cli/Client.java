@@ -929,10 +929,13 @@ public class Client {
                     if (adds.get(i).equals(removes.get(j))) {
                         err("The following label is present in both add and remove : " + adds.get(i));
                         System.exit(INPUT_ERROR);
-                    } else if (!removes.get(j).matches(labelStringPattern) && j == 0) {
-                        err("The following label does not match the proper label format : " + removes.get(j));
-                        System.exit(INPUT_ERROR);
                     }
+                }
+            }
+            for (int i = 0; i < removes.size(); i++) {
+                if (!removes.get(i).matches(labelStringPattern) && i == 0) {
+                    err("The following label does not match the proper label format : " + removes.get(i));
+                    System.exit(INPUT_ERROR);
                 }
             }
 
@@ -973,7 +976,6 @@ public class Client {
 
                 Container updatedContainer = containersApi.updateLabels(containerId, combinedLabelString, new Body());
 
-                // Todo : Print updated container information (with labels)
                 List<Label> newLabels = updatedContainer.getLabels();
                 out("The container now has the following tags:");
                 for (int i = 0; i < newLabels.size(); i++) {

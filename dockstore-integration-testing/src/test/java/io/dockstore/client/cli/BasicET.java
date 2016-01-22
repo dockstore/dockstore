@@ -75,7 +75,7 @@ public class BasicET {
         public void testLabelIncorrectInput() {
                 systemExit.expectSystemExitWithStatus(INPUT_ERROR);
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "label", "--entry", "quay.io/dockstoretestuser/quayandgithub",
-                        "--add", "docker-hub","--add", "quay-" });
+                        "--add", "docker-hub","--add", "quay.io" });
         }
 
         /**
