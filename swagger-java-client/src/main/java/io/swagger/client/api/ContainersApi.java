@@ -8,12 +8,13 @@ import io.swagger.client.TypeRef;
 
 import io.swagger.client.model.Container;
 import io.swagger.client.model.SourceFile;
+import io.swagger.client.model.Body;
 import io.swagger.client.model.RegisterRequest;
 import io.swagger.client.model.User;
 
 import java.util.*;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-01-20T15:45:39.248-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-01-22T14:43:50.832-05:00")
 public class ContainersApi {
   private ApiClient apiClient;
 
@@ -676,10 +677,11 @@ public class ContainersApi {
    * Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.
    * @param containerId Container to modify.
    * @param labels Comma-delimited list of labels.
+   * @param body This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.
    * @return Container
    */
-  public Container updateLabels (Long containerId, String labels) throws ApiException {
-    Object postBody = null;
+  public Container updateLabels (Long containerId, String labels, Body body) throws ApiException {
+    Object postBody = body;
     
     // verify the required parameter 'containerId' is set
     if (containerId == null) {

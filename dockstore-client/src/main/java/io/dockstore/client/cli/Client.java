@@ -27,14 +27,24 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.ws.rs.ProcessingException;
 
+import io.swagger.client.model.Body;
+import io.swagger.client.model.RegisterRequest;
+import io.swagger.client.model.SourceFile;
+import io.swagger.client.model.Container;
+import io.swagger.client.model.Tag;
+
+import io.swagger.client.model.User;
+import io.swagger.client.model.Label;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
@@ -60,13 +70,8 @@ import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.UsersApi;
-import io.swagger.client.model.Container;
 import io.swagger.client.model.Container.ModeEnum;
 import io.swagger.client.model.Container.RegistryEnum;
-import io.swagger.client.model.RegisterRequest;
-import io.swagger.client.model.SourceFile;
-import io.swagger.client.model.Tag;
-import io.swagger.client.model.User;
 import javassist.NotFoundException;
 
 /*
@@ -90,6 +95,7 @@ public class Client {
 
     public static final int GENERIC_ERROR = 1;
     public static final int CONNECTION_ERROR = 150;
+    public static final int INPUT_ERROR = 3;
 
     private static void out(String format, Object... args) {
         System.out.println(String.format(format, args));
@@ -896,6 +902,90 @@ public class Client {
             }
         }
     }
+    private static void labelHelp() {
+        out("");
+        out("HELP FOR DOCKSTORE");
+        out("------------------");
+        out("See https://www.dockstore.org for more information");
+        out("");
+        out("dockstore label --add <label> (--add <label>) --remove (--remove <label>) --entry <path to tool>         :  Add or remove label(s) for a given dockstore container");
+        out("");
+        out("------------------");
+        out("");
+    }
+
+    public static void label(List<String> args) {
+        if (args.size() > 0) {
+            final String toolpath = reqVal(args, "--entry");
+            final List<String> adds = optVals(args, "--add");
+            final Set<String> addsSet =  adds.isEmpty() ? new HashSet<>() : new HashSet<>(adds);
+            final List<String> removes = optVals(args, "--remove");
+            final Set<String> removesSet =  removes.isEmpty() ? new HashSet<>() : new HashSet<>(removes);
+
+            // Do a check on the input
+            final String labelStringPattern = "^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$";
+
+            for (String add : addsSet) {
+                if (!add.matches(labelStringPattern)) {
+                    err("The following label does not match the proper label format : " + add);
+                    System.exit(INPUT_ERROR);
+                } else if (removesSet.contains(add)) {
+                    err("The following label is present in both add and remove : " + add);
+                    System.exit(INPUT_ERROR);
+                }
+            }
+
+            for (String remove : removesSet) {
+                if (!remove.matches(labelStringPattern)) {
+                    err("The following label does not match the proper label format : " + remove);
+                    System.exit(INPUT_ERROR);
+                }
+            }
+
+            // Try and update the labels for the given container
+            try {
+                Container container = containersApi.getContainerByToolPath(toolpath);
+                long containerId = container.getId();
+                List<Label> existingLabels = container.getLabels();
+                Set<String> newLabelSet = new HashSet<>();
+
+
+                // Get existing labels and store in a List
+                for (int i = 0; i < existingLabels.size(); i++) {
+                    newLabelSet.add(existingLabels.get(i).getValue());
+                }
+
+                // Add new labels to the List of labels
+                for (String add : addsSet) {
+                    final String label = add.toLowerCase();
+                    newLabelSet.add(label);
+                }
+                // Remove labels from the list of labels
+                for (String remove : removesSet) {
+                    final String label = remove.toLowerCase();
+                    newLabelSet.remove(label);
+                }
+
+                String combinedLabelString = Joiner.on(",").join(newLabelSet);
+
+                Container updatedContainer = containersApi.updateLabels(containerId, combinedLabelString, new Body());
+
+                List<Label> newLabels = updatedContainer.getLabels();
+                out("The container now has the following tags:");
+                for (int i = 0; i < newLabels.size(); i++) {
+                    out(newLabels.get(i).getValue());
+                }
+
+
+            } catch (ApiException e) {
+                e.printStackTrace();
+            }
+
+        } else {
+            labelHelp();
+        }
+    }
+
 
     public static void main(String[] argv) {
         List<String> args = new ArrayList<>(Arrays.asList(argv));
@@ -931,6 +1021,7 @@ public class Client {
             defaultApiClient = Configuration.getDefaultApiClient();
             defaultApiClient.addDefaultHeader("Authorization", "Bearer " + token);
             defaultApiClient.setBasePath(serverUrl);
+
             containersApi = new ContainersApi(defaultApiClient);
             usersApi = new UsersApi(defaultApiClient);
 
@@ -958,6 +1049,8 @@ public class Client {
                 out("                      which enables integration with Global Alliance compliant systems");
                 out("");
                 out("  refresh          :  updates your list of containers stored on Dockstore or an individual container");
+                out("");
+                out("  label            :  updates labels for an individual container");
                 out("------------------");
                 out("");
                 out("Flags:");
@@ -1002,6 +1095,9 @@ public class Client {
                             break;
                         case "dev":
                             dev(args);
+                            break;
+                        case "label":
+                            label(args);
                             break;
                         default:
                             invalid(cmd);

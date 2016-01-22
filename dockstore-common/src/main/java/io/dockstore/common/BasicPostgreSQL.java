@@ -108,6 +108,8 @@ public class BasicPostgreSQL {
         runUpdateStatement("delete from sourcefile;");
         runUpdateStatement("delete from containertag;");
         runUpdateStatement("delete from tag;");
+        runUpdateStatement("delete from containerlabel;");
+        runUpdateStatement("delete from label;");
         runUpdateStatement("delete from container;");
         runUpdateStatement("delete from usergroup;");
     }
