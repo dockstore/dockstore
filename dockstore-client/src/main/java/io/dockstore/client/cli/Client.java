@@ -919,7 +919,7 @@ public class Client {
             // Do a check on the input
             final String labelStringPattern = "^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$";
             for (int i = 0; i < adds.size(); i++) {
-                if (adds.get(i).matches(labelStringPattern) == false) {
+                if (!adds.get(i).matches(labelStringPattern)) {
                     err("A given label does not match the proper label format : " + adds.get(i));
                     System.exit(INPUT_ERROR);
                 }
@@ -927,7 +927,7 @@ public class Client {
                     if (adds.get(i).equals(removes.get(j))) {
                         err("The following label is present in both add and remove : " + adds.get(i));
                         System.exit(INPUT_ERROR);
-                    } else if (removes.get(j).matches(labelStringPattern) == false && j == 0) {
+                    } else if (!removes.get(j).matches(labelStringPattern) && j == 0) {
                         err("The following label does not match the proper label format : " + removes.get(j));
                         System.exit(INPUT_ERROR);
                     }
