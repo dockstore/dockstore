@@ -39,6 +39,8 @@ import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
  * @author aduncan
  */
 public class BasicET {
+        public static final int INPUT_ERROR = 3;
+        public static final int GENERIC_ERROR = 1;
 
         @ClassRule
         public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
@@ -51,7 +53,11 @@ public class BasicET {
         public void clearDBandSetup() throws IOException, TimeoutException {
                 clearStateMakePrivate();
         }
-        
+
+        /*
+         General Tests -
+         These tests are general tests that don't rely on the type of repository used (Github, Dockerhub, Quay.io, Bitbucket)
+          */
         /**
          * Checks that all automatic containers have been found by dockstore and are not registered/published
          */
@@ -63,18 +69,53 @@ public class BasicET {
         }
 
         /**
-         * Will test adding/editing/deleting container related labels (for search)
+         * Checks that you can't add/remove labels unless they all are of proper format
          */
-        @Ignore
+        @Test
+        public void testLabelIncorrectInput() {
+                systemExit.expectSystemExitWithStatus(INPUT_ERROR);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "label", "--entry", "quay.io/dockstoretestuser/quayandgithub",
+                        "--add", "docker-hub","--add", "quay-" });
+        }
+
+        /**
+         * Checks that you can't add/remove labels if there is a duplicate label being added and removed
+         */
+        @Test
+        public void testLabelMatchingAddAndRemove() {
+                systemExit.expectSystemExitWithStatus(INPUT_ERROR);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "label", "--entry", "quay.io/dockstoretestuser/quayandgithub",
+                        "--add", "quay","--add", "dockerhub", "--remove", "dockerhub"});
+        }
+
+        /**
+         * Tests adding/editing/deleting container related labels (for search)
+         */
+        @Test
         public void testAddEditRemoveLabel() {
+                // Test adding/removing labels for different containers
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "label", "--entry", "quay.io/dockstoretestuser/quayandgithub",
-                        "--add", "testLabel1","--add", "testLabel2", "--remove", "testLabel3"});
+                        "--add", "quay","--add", "github", "--remove", "dockerhub"});
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "label", "--entry", "quay.io/dockstoretestuser/quayandgithub",
-                        "--add", "testLabel2","--add", "testLabel3", "--remove", "testLabel1"});
+                        "--add", "github","--add", "dockerhub", "--remove", "quay"});
+
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "label", "--entry", "quay.io/dockstoretestuser/quayandgithubalternate",
+                        "--add", "alternate","--add", "github"});
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "label", "--entry", "quay.io/dockstoretestuser/quayandgithubalternate",
+                        "--remove", "github"});
+
+                // Don't add/remove any labels
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "label", "--entry", "quay.io/dockstoretestuser/quayandgithubalternate" });
+
+                // Print help
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "label" });
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
                 final long count = testingPostgres.runSelectStatement("select count(*) from containerlabel where containerId = '1'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 2 labels for the given container", count == 2);
+
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from label where value = 'quay' or value = 'github' or value = 'dockerhub' or value = 'alternate'", new ScalarHandler<>());
+                Assert.assertTrue("there should be 4 labels in the database (No Duplicates)", count2 == 4);
 
         }
 
@@ -107,7 +148,7 @@ public class BasicET {
          */
         @Test
         public void testRefreshIncorrectContainer(){
-                systemExit.expectSystemExitWithStatus(1);
+                systemExit.expectSystemExitWithStatus(GENERIC_ERROR);
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser/unknowncontainer" });
         }
 
@@ -136,7 +177,7 @@ public class BasicET {
          */
         @Test
         public void testRefreshOtherUsersContainer(){
-                systemExit.expectSystemExitWithStatus(1);
+                systemExit.expectSystemExitWithStatus(GENERIC_ERROR);
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/test_org/test1" });
         }
 
@@ -159,7 +200,7 @@ public class BasicET {
          */
         @Test
         public void testQuayGithubPublishAlternateStructure(){
-                systemExit.expectSystemExitWithStatus(1);
+                systemExit.expectSystemExitWithStatus(GENERIC_ERROR);
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "publish", "quay.io/dockstoretestuser/quayandgithubalternate" });
 
                 // TODO: change the version tag locations of Dockerfile and Dockstore.cwl, now should be able to publish
@@ -211,7 +252,7 @@ public class BasicET {
          */
         @Test
         public void testQuayGithubManuallyRegisterDuplicate() {
-                systemExit.expectSystemExitWithStatus(1);
+                systemExit.expectSystemExitWithStatus(GENERIC_ERROR);
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.QUAY_IO.toString(),
                         "--namespace", "dockstoretestuser", "--name", "quayandgithub", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
                         "master" });
@@ -236,7 +277,7 @@ public class BasicET {
          */
         @Test
         public void testQuayBitbucketPublishAlternateStructure(){
-                systemExit.expectSystemExitWithStatus(1);
+                systemExit.expectSystemExitWithStatus(GENERIC_ERROR);
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "publish", "quay.io/dockstoretestuser/quayandbitbucketalternate" });
 
                 // TODO: change the version tag locations of Dockerfile and Dockstore.cwl, now should be able to publish
@@ -290,7 +331,7 @@ public class BasicET {
          */
         @Test
         public void testQuayBitbucketManuallyRegisterDuplicate() {
-                systemExit.expectSystemExitWithStatus(1);
+                systemExit.expectSystemExitWithStatus(GENERIC_ERROR);
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.QUAY_IO.toString(),
                         "--namespace", "dockstoretestuser", "--name", "quayandbitbucket", "--git-url", "git@bitbucket.org:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
                         "master" });
@@ -349,7 +390,7 @@ public class BasicET {
         @Ignore
         public void testDockerhubGithubWrongStructure(){
                 // Todo : Manual publish container with wrong cwl and dockerfile locations, should not be able to manual publish
-                systemExit.expectSystemExitWithStatus(1);
+                systemExit.expectSystemExitWithStatus(GENERIC_ERROR);
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.DOCKER_HUB.toString(),
                         "--namespace", "dockstoretestuser", "--name", "dockerhubandgithubalternate", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git", "--git-reference",
                         "master", "--toolname", "regular", "--cwl-path", "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile" });
@@ -443,7 +484,7 @@ public class BasicET {
         @Ignore
         public void testDockerhubBitbucketWrongStructure(){
                 // Todo : Manual publish container with wrong cwl and dockerfile locations, should not be able to manual publish
-                systemExit.expectSystemExitWithStatus(1);
+                systemExit.expectSystemExitWithStatus(GENERIC_ERROR);
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.DOCKER_HUB.toString(),
                         "--namespace", "dockstoretestuser", "--name", "dockerhubandbitbucketalternate", "--git-url", "git@bitbucket.org:DockstoreTestUser/quayandbitbucketalterante.git", "--git-reference",
                         "master", "--toolname", "alternate", "--cwl-path", "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile" });

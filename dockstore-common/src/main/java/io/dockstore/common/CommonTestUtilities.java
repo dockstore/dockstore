@@ -140,6 +140,7 @@ public class CommonTestUtilities {
             runUpdateStatementConfidential("alter sequence container_id_seq restart with 1000;");
             runUpdateStatementConfidential("alter sequence tag_id_seq restart with 1000;");
             runUpdateStatementConfidential("alter sequence sourcefile_id_seq restart with 1000;");
+            runUpdateStatementConfidential("alter sequence label_id_seq restart with 1000;");
 
         }
 

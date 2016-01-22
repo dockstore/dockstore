@@ -35,7 +35,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.ws.rs.ProcessingException;
 
-import org.apache.avro.generic.GenericData;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
@@ -92,6 +91,7 @@ public class Client {
 
     public static final int GENERIC_ERROR = 1;
     public static final int CONNECTION_ERROR = 150;
+    public static final int INPUT_ERROR = 3;
 
     private static void out(String format, Object... args) {
         System.out.println(String.format(format, args));
@@ -916,8 +916,24 @@ public class Client {
             final List<String> adds = optVals(args, "--add");
             final List<String> removes = optVals(args, "--remove");
 
-            // Todo : What happens if commas exist in the add or remove lists? Should they be split?
-            // Todo : Does Add take precedence over remove?
+            // Do a check on the input
+            final String labelStringPattern = "^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$";
+            for (int i = 0; i < adds.size(); i++) {
+                if (adds.get(i).matches(labelStringPattern) == false) {
+                    err("A given label does not match the proper label format : " + adds.get(i));
+                    System.exit(INPUT_ERROR);
+                }
+                for (int j = 0; j < removes.size(); j++) {
+                    if (adds.get(i).equals(removes.get(j))) {
+                        err("The following label is present in both add and remove : " + adds.get(i));
+                        System.exit(INPUT_ERROR);
+                    } else if (removes.get(j).matches(labelStringPattern) == false && j == 0) {
+                        err("The following label does not match the proper label format : " + removes.get(j));
+                        System.exit(INPUT_ERROR);
+                    }
+                }
+            }
+
             try {
                 Container container = containersApi.getContainerByToolPath(toolpath);
                 long containerId = container.getId();
@@ -939,7 +955,7 @@ public class Client {
                 }
                 // Remove labels from the list of labels
                 for (int i = 0; i < removes.size(); i++){
-                    final String label = removes.get(i);
+                    final String label = removes.get(i).toLowerCase();
                     newLabelList.remove(label);
                 }
 
@@ -952,7 +968,7 @@ public class Client {
                     }
                 }
 
-                //Container updatedContainer = containersApi.updateLabels(containerId, combinedLabelString);
+                Container updatedContainer = containersApi.updateLabels(containerId, combinedLabelString);
 
                 // Todo : Print updated container information (with labels)
 
@@ -1000,6 +1016,7 @@ public class Client {
             defaultApiClient = Configuration.getDefaultApiClient();
             defaultApiClient.addDefaultHeader("Authorization", "Bearer " + token);
             defaultApiClient.setBasePath(serverUrl);
+
             containersApi = new ContainersApi(defaultApiClient);
             usersApi = new UsersApi(defaultApiClient);
 
@@ -1028,7 +1045,7 @@ public class Client {
                 out("");
                 out("  refresh          :  updates your list of containers stored on Dockstore or an individual container");
                 out("");
-                out("  label          :  updates labels for an individual container");
+                out("  label            :  updates labels for an individual container");
                 out("------------------");
                 out("");
                 out("Flags:");
