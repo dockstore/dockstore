@@ -35,6 +35,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.ws.rs.ProcessingException;
 
+import io.swagger.client.model.Body;
+import io.swagger.client.model.RegisterRequest;
+import io.swagger.client.model.SourceFile;
+import io.swagger.client.model.Container;
+import io.swagger.client.model.Tag;
+
+import io.swagger.client.model.User;
+import io.swagger.client.model.Label;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
@@ -60,14 +68,8 @@ import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.UsersApi;
-import io.swagger.client.model.Container;
 import io.swagger.client.model.Container.ModeEnum;
 import io.swagger.client.model.Container.RegistryEnum;
-import io.swagger.client.model.RegisterRequest;
-import io.swagger.client.model.SourceFile;
-import io.swagger.client.model.Tag;
-import io.swagger.client.model.User;
-import io.swagger.client.model.Label;
 import javassist.NotFoundException;
 
 /*
@@ -934,6 +936,7 @@ public class Client {
                 }
             }
 
+            // Try and update the labels for the given container
             try {
                 Container container = containersApi.getContainerByToolPath(toolpath);
                 long containerId = container.getId();
@@ -968,9 +971,15 @@ public class Client {
                     }
                 }
 
-                Container updatedContainer = containersApi.updateLabels(containerId, combinedLabelString);
+                Container updatedContainer = containersApi.updateLabels(containerId, combinedLabelString, new Body());
 
                 // Todo : Print updated container information (with labels)
+                List<Label> newLabels = updatedContainer.getLabels();
+                out("The container now has the following tags:");
+                for (int i = 0; i < newLabels.size(); i++) {
+                    out(newLabels.get(i).getValue());
+                }
+
 
             } catch (ApiException e) {
                 e.printStackTrace();

@@ -14,7 +14,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * This describes a grouping of end-users for the purposes of managing sharing. Implementation-specific.
  **/
 @ApiModel(description = "This describes a grouping of end-users for the purposes of managing sharing. Implementation-specific.")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-01-20T15:45:39.248-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-01-22T14:43:50.832-05:00")
 public class Group   {
   
   private Long id = null;

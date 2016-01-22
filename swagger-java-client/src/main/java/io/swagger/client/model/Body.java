@@ -10,30 +10,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @ApiModel(description = "")
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-01-22T14:43:50.832-05:00")
-public class RegisterRequest   {
+public class Body   {
   
-  private Boolean register = null;
-
-  
-  /**
-   **/
-  @ApiModelProperty(value = "")
-  @JsonProperty("register")
-  public Boolean getRegister() {
-    return register;
-  }
-  public void setRegister(Boolean register) {
-    this.register = register;
-  }
 
   
 
   @Override
   public String toString()  {
     StringBuilder sb = new StringBuilder();
-    sb.append("class RegisterRequest {\n");
+    sb.append("class Body {\n");
     
-    sb.append("    register: ").append(StringUtil.toIndentedString(register)).append("\n");
     sb.append("}");
     return sb.toString();
   }

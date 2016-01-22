@@ -211,7 +211,8 @@ public class DockerRepoResource {
     @ApiOperation(value = "Update the labels linked to a container.", notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Container.class)
     public Container updateLabels(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "Container to modify.", required = true) @PathParam("containerId") Long containerId,
-            @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings) {
+            @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings,
+            @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", defaultValue = "") String emptyBody) {
         Container c = containerDAO.findById(containerId);
         Helper.checkContainer(c);
 
