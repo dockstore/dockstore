@@ -60,6 +60,7 @@ import io.dropwizard.hibernate.HibernateBundle;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.views.ViewBundle;
+import io.swagger.api.ToolsApi;
 import io.swagger.jaxrs.config.BeanConfig;
 import io.swagger.jaxrs.listing.ApiListingResource;
 import io.swagger.jaxrs.listing.SwaggerSerializers;
@@ -113,7 +114,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         beanConfig.setSchemes(new String[] { configuration.getScheme() });
         beanConfig.setHost(configuration.getHostname() + ':' + configuration.getPort());
         beanConfig.setBasePath("/");
-        beanConfig.setResourcePackage("io.dockstore.webservice.resources");
+        beanConfig.setResourcePackage("io.dockstore.webservice.resources,io.swagger.api");
         beanConfig.setScan(true);
 
         final QuayIOAuthenticationResource resource2 = new QuayIOAuthenticationResource(configuration.getQuayClientID(),
@@ -161,6 +162,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(
                 new UserResource(mapper, httpClient, tokenDAO, userDAO, groupDAO, containerDAO, tagDAO, fileDAO, configuration
                         .getBitbucketClientID(), configuration.getBitbucketClientSecret()));
+
+        environment.jersey().register(new ToolsApi());
 
         // swagger stuff
 
