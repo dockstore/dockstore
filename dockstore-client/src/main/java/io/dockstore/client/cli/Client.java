@@ -27,10 +27,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.ws.rs.ProcessingException;
@@ -916,25 +918,26 @@ public class Client {
         if (args.size() > 0) {
             final String toolpath = reqVal(args, "--entry");
             final List<String> adds = optVals(args, "--add");
+            final Set<String> addsSet =  adds.isEmpty() ? new HashSet<>() : new HashSet<>(adds);
             final List<String> removes = optVals(args, "--remove");
+            final Set<String> removesSet =  removes.isEmpty() ? new HashSet<>() : new HashSet<>(removes);
 
             // Do a check on the input
             final String labelStringPattern = "^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$";
-            for (int i = 0; i < adds.size(); i++) {
-                if (!adds.get(i).matches(labelStringPattern)) {
-                    err("A given label does not match the proper label format : " + adds.get(i));
+
+            for (String add : addsSet) {
+                if (!add.matches(labelStringPattern)) {
+                    err("The following label does not match the proper label format : " + add);
+                    System.exit(INPUT_ERROR);
+                } else if (removesSet.contains(add)) {
+                    err("The following label is present in both add and remove : " + add);
                     System.exit(INPUT_ERROR);
                 }
-                for (int j = 0; j < removes.size(); j++) {
-                    if (adds.get(i).equals(removes.get(j))) {
-                        err("The following label is present in both add and remove : " + adds.get(i));
-                        System.exit(INPUT_ERROR);
-                    }
-                }
             }
-            for (int i = 0; i < removes.size(); i++) {
-                if (!removes.get(i).matches(labelStringPattern) && i == 0) {
-                    err("The following label does not match the proper label format : " + removes.get(i));
+
+            for (String remove : removesSet) {
+                if (!remove.matches(labelStringPattern)) {
+                    err("The following label does not match the proper label format : " + remove);
                     System.exit(INPUT_ERROR);
                 }
             }
@@ -944,35 +947,26 @@ public class Client {
                 Container container = containersApi.getContainerByToolPath(toolpath);
                 long containerId = container.getId();
                 List<Label> existingLabels = container.getLabels();
-                List<String> newLabelList = new ArrayList<>();
-                String combinedLabelString = "";
+                Set<String> newLabelSet = new HashSet<>();
+
 
                 // Get existing labels and store in a List
                 for (int i = 0; i < existingLabels.size(); i++) {
-                    newLabelList.add(existingLabels.get(i).getValue());
+                    newLabelSet.add(existingLabels.get(i).getValue());
                 }
 
                 // Add new labels to the List of labels
-                for (int i = 0; i < adds.size(); i++) {
-                    final String label = adds.get(i);
-                    if (newLabelList.indexOf(label) == -1) {
-                        newLabelList.add(label);
-                    }
+                for (String add : addsSet) {
+                    final String label = add.toLowerCase();
+                    newLabelSet.add(label);
                 }
                 // Remove labels from the list of labels
-                for (int i = 0; i < removes.size(); i++){
-                    final String label = removes.get(i).toLowerCase();
-                    newLabelList.remove(label);
+                for (String remove : removesSet) {
+                    final String label = remove.toLowerCase();
+                    newLabelSet.remove(label);
                 }
 
-                // Create string with all labels, separated by commas
-                for (int i = 0; i < newLabelList.size(); i++) {
-                    if (i == 0) {
-                        combinedLabelString += newLabelList.get(i);
-                    } else {
-                        combinedLabelString += "," + newLabelList.get(i);
-                    }
-                }
+                String combinedLabelString = Joiner.on(",").join(newLabelSet);
 
                 Container updatedContainer = containersApi.updateLabels(containerId, combinedLabelString, new Body());
 
