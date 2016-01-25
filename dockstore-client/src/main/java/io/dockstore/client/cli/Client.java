@@ -446,6 +446,7 @@ public class Client {
             out("  --cwl-path <file>            Path for the CWL document, defaults to /Dockstore.cwl");
             out("  --toolname <toolname>        Name of the tool, can be omitted");
             out("  --registry <registry>        Docker registry, can be omitted, defaults to registry.hub.docker.com");
+            out("  --version-name <version>     Version tag name for Dockerhub containers only, defaults to git-reference");
             out("");
         } else {
             final String name = reqVal(args, "--name");
@@ -469,11 +470,17 @@ public class Client {
             container.setIsRegistered(true);
             container.setGitUrl(gitURL);
             container.setToolname(toolname);
-            final Tag tag = new Tag();
-            tag.setReference(gitReference);
-            tag.setDockerfilePath(dockerfilePath);
-            tag.setCwlPath(cwlPath);
-            container.getTags().add(tag);
+
+            if (!"quay.io".equals(registry)) {
+                final String versionName = optVal(args, "--version-name", gitReference);
+                final Tag tag = new Tag();
+                tag.setReference(gitReference);
+                tag.setDockerfilePath(dockerfilePath);
+                tag.setCwlPath(cwlPath);
+                tag.setName(versionName);
+                container.getTags().add(tag);
+            }
+
             final String fullName = Joiner.on("/").skipNulls().join(registry, namespace, name, toolname);
             try {
                 container = containersApi.registerManual(container);
