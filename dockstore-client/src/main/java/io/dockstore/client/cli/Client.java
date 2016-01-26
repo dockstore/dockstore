@@ -97,6 +97,21 @@ public class Client {
     public static final int CONNECTION_ERROR = 150;
     public static final int INPUT_ERROR = 3;
 
+    // This should be linked to common, but we won't do this now because we don't want dependencies changing during testing
+    public enum Registry {
+        QUAY_IO("quay.io"), DOCKER_HUB("registry.hub.docker.com");
+        private String value;
+
+        Registry(String value) {
+            this.value = value;
+        }
+
+        @Override
+        public String toString() {
+            return value;
+        }
+    }
+
     private static void out(String format, Object... args) {
         System.out.println(String.format(format, args));
     }
@@ -471,7 +486,7 @@ public class Client {
             container.setGitUrl(gitURL);
             container.setToolname(toolname);
 
-            if (!"quay.io".equals(registry)) {
+            if (!Registry.QUAY_IO.toString().equals(registry)) {
                 final String versionName = optVal(args, "--version-name", gitReference);
                 final Tag tag = new Tag();
                 tag.setReference(gitReference);
