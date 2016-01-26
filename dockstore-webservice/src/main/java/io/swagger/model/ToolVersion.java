@@ -14,11 +14,12 @@ import io.swagger.model.ToolDescriptor;
  **/
 
 @ApiModel(description = "A tool version describes a particular iteration of a tool as described by a reference to a specific image and dockerfile.")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JaxRSServerCodegen", date = "2016-01-22T21:28:57.577Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JaxRSServerCodegen", date = "2016-01-26T18:50:10.120Z")
 public class ToolVersion   {
   
   private String name = null;
-  private String id = null;
+  private String globalId = null;
+  private String registryId = null;
   private ToolDescriptor descriptor = null;
   private String image = null;
   private String dockerfile = null;
@@ -39,16 +40,30 @@ public class ToolVersion   {
 
   
   /**
-   * The unique identifier for this version of a tool. (Proposed - This id should be globally unique across systems and should also identify the system that it comes from for example This id should be globally unique across systems, should also identify the system that it comes from, and be a URL that resolves for example http://agora.broadinstitute.org/tools/123456/v1)
+   * The unique identifier for this version of a tool. (Proposed - This id should be globally unique across systems and should also identify the system that it comes from for example This id should be globally unique across systems, should also identify the system that it comes from, and be a URL that resolves for example `http://agora.broadinstitute.org/tools/123456/v1` This can be the same as the registry-id depending on the structure of your registry)
    **/
   
-  @ApiModelProperty(required = true, value = "The unique identifier for this version of a tool. (Proposed - This id should be globally unique across systems and should also identify the system that it comes from for example This id should be globally unique across systems, should also identify the system that it comes from, and be a URL that resolves for example http://agora.broadinstitute.org/tools/123456/v1)")
-  @JsonProperty("id")
-  public String getId() {
-    return id;
+  @ApiModelProperty(required = true, value = "The unique identifier for this version of a tool. (Proposed - This id should be globally unique across systems and should also identify the system that it comes from for example This id should be globally unique across systems, should also identify the system that it comes from, and be a URL that resolves for example `http://agora.broadinstitute.org/tools/123456/v1` This can be the same as the registry-id depending on the structure of your registry)")
+  @JsonProperty("global-id")
+  public String getGlobalId() {
+    return globalId;
   }
-  public void setId(String id) {
-    this.id = id;
+  public void setGlobalId(String globalId) {
+    this.globalId = globalId;
+  }
+
+  
+  /**
+   * A unique identifier of the tool for this particular tool registry, for example `123456` or `123456_v1`
+   **/
+  
+  @ApiModelProperty(value = "A unique identifier of the tool for this particular tool registry, for example `123456` or `123456_v1`")
+  @JsonProperty("registry-id")
+  public String getRegistryId() {
+    return registryId;
+  }
+  public void setRegistryId(String registryId) {
+    this.registryId = registryId;
   }
 
   
@@ -104,7 +119,8 @@ public class ToolVersion   {
     }
     ToolVersion toolVersion = (ToolVersion) o;
     return Objects.equals(name, toolVersion.name) &&
-        Objects.equals(id, toolVersion.id) &&
+        Objects.equals(globalId, toolVersion.globalId) &&
+        Objects.equals(registryId, toolVersion.registryId) &&
         Objects.equals(descriptor, toolVersion.descriptor) &&
         Objects.equals(image, toolVersion.image) &&
         Objects.equals(dockerfile, toolVersion.dockerfile);
@@ -112,7 +128,7 @@ public class ToolVersion   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(name, id, descriptor, image, dockerfile);
+    return Objects.hash(name, globalId, registryId, descriptor, image, dockerfile);
   }
 
   @Override
@@ -121,7 +137,8 @@ public class ToolVersion   {
     sb.append("class ToolVersion {\n");
     
     sb.append("    name: ").append(toIndentedString(name)).append("\n");
-    sb.append("    id: ").append(toIndentedString(id)).append("\n");
+    sb.append("    globalId: ").append(toIndentedString(globalId)).append("\n");
+    sb.append("    registryId: ").append(toIndentedString(registryId)).append("\n");
     sb.append("    descriptor: ").append(toIndentedString(descriptor)).append("\n");
     sb.append("    image: ").append(toIndentedString(image)).append("\n");
     sb.append("    dockerfile: ").append(toIndentedString(dockerfile)).append("\n");

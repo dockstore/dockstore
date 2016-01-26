@@ -16,10 +16,11 @@ import java.util.*;
  **/
 
 @ApiModel(description = "A tool (or described tool) describes one pairing of a tool as described in a descriptor file (which potentially describes multiple tools) and a Docker image.")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JaxRSServerCodegen", date = "2016-01-22T21:28:57.577Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JaxRSServerCodegen", date = "2016-01-26T18:50:10.120Z")
 public class Tool   {
   
-  private String id = null;
+  private String globalId = null;
+  private String registryId = null;
   private String registry = null;
   private String organization = null;
   private String name = null;
@@ -33,16 +34,30 @@ public class Tool   {
 
   
   /**
-   * The unique identifier for the image. (Proposed - This id should be globally unique across systems and should also identify the system that it comes from for example This id should be globally unique across systems, should also identify the system that it comes from, and be a URL that resolves for example http://agora.broadinstitute.org/tools/123456)
+   * The unique identifier for the image. (Proposed - This id should be globally unique across systems and should also identify the system that it comes from for example This id should be globally unique across systems, should also identify the system that it comes from, and be a URL that resolves for example `http://agora.broadinstitute.org/tools/123456`)
    **/
   
-  @ApiModelProperty(required = true, value = "The unique identifier for the image. (Proposed - This id should be globally unique across systems and should also identify the system that it comes from for example This id should be globally unique across systems, should also identify the system that it comes from, and be a URL that resolves for example http://agora.broadinstitute.org/tools/123456)")
-  @JsonProperty("id")
-  public String getId() {
-    return id;
+  @ApiModelProperty(required = true, value = "The unique identifier for the image. (Proposed - This id should be globally unique across systems and should also identify the system that it comes from for example This id should be globally unique across systems, should also identify the system that it comes from, and be a URL that resolves for example `http://agora.broadinstitute.org/tools/123456`)")
+  @JsonProperty("global-id")
+  public String getGlobalId() {
+    return globalId;
   }
-  public void setId(String id) {
-    this.id = id;
+  public void setGlobalId(String globalId) {
+    this.globalId = globalId;
+  }
+
+  
+  /**
+   * A unique identifier of the tool for this particular tool registry, for example `123456` or `123456_v1`
+   **/
+  
+  @ApiModelProperty(required = true, value = "A unique identifier of the tool for this particular tool registry, for example `123456` or `123456_v1`")
+  @JsonProperty("registry-id")
+  public String getRegistryId() {
+    return registryId;
+  }
+  public void setRegistryId(String registryId) {
+    this.registryId = registryId;
   }
 
   
@@ -159,10 +174,10 @@ public class Tool   {
 
   
   /**
-   * An array of IDs for the applications that are stored inside this tool (for example https://bio.tools/tool/mytum.de/SNAP2/1 )
+   * An array of IDs for the applications that are stored inside this tool (for example `https://bio.tools/tool/mytum.de/SNAP2/1`)
    **/
   
-  @ApiModelProperty(value = "An array of IDs for the applications that are stored inside this tool (for example https://bio.tools/tool/mytum.de/SNAP2/1 )")
+  @ApiModelProperty(value = "An array of IDs for the applications that are stored inside this tool (for example `https://bio.tools/tool/mytum.de/SNAP2/1`)")
   @JsonProperty("contains")
   public List<String> getContains() {
     return contains;
@@ -195,7 +210,8 @@ public class Tool   {
       return false;
     }
     Tool tool = (Tool) o;
-    return Objects.equals(id, tool.id) &&
+    return Objects.equals(globalId, tool.globalId) &&
+        Objects.equals(registryId, tool.registryId) &&
         Objects.equals(registry, tool.registry) &&
         Objects.equals(organization, tool.organization) &&
         Objects.equals(name, tool.name) &&
@@ -210,7 +226,7 @@ public class Tool   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, registry, organization, name, toolname, tooltype, description, author, metaVersion, contains, versions);
+    return Objects.hash(globalId, registryId, registry, organization, name, toolname, tooltype, description, author, metaVersion, contains, versions);
   }
 
   @Override
@@ -218,7 +234,8 @@ public class Tool   {
     StringBuilder sb = new StringBuilder();
     sb.append("class Tool {\n");
     
-    sb.append("    id: ").append(toIndentedString(id)).append("\n");
+    sb.append("    globalId: ").append(toIndentedString(globalId)).append("\n");
+    sb.append("    registryId: ").append(toIndentedString(registryId)).append("\n");
     sb.append("    registry: ").append(toIndentedString(registry)).append("\n");
     sb.append("    organization: ").append(toIndentedString(organization)).append("\n");
     sb.append("    name: ").append(toIndentedString(name)).append("\n");
