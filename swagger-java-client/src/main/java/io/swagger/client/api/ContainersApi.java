@@ -14,7 +14,7 @@ import io.swagger.client.model.User;
 
 import java.util.*;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-01-22T14:43:50.832-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-01-26T15:51:26.437-05:00")
 public class ContainersApi {
   private ApiClient apiClient;
 
@@ -350,7 +350,7 @@ public class ContainersApi {
   }
   
   /**
-   * List all registered containers. This would be a minimal resource that would need to be implemented by a GA4GH reference server
+   * List all registered containers.
    * NO authentication
    * @return List<Container>
    */
@@ -437,7 +437,7 @@ public class ContainersApi {
   }
   
   /**
-   * Search for matching registered containers. This would be a minimal resource that would need to be implemented by a GA4GH reference server
+   * Search for matching registered containers.
    * Search on the name (full path name) and description. NO authentication
    * @param pattern 
    * @return List<Container>
@@ -573,7 +573,7 @@ public class ContainersApi {
   }
   
   /**
-   * Get the corresponding Dockstore.cwl file on Github. This would be a minimal resource that would need to be implemented by a GA4GH reference server
+   * Get the corresponding Dockstore.cwl file on Github.
    * Does not need authentication
    * @param containerId Container id
    * @param tag 
@@ -623,7 +623,7 @@ public class ContainersApi {
   }
   
   /**
-   * Get the corresponding Dockerfile on Github. This would be a minimal resource that would need to be implemented by a GA4GH reference server
+   * Get the corresponding Dockerfile on Github.
    * Does not need authentication
    * @param containerId Container id
    * @param tag 
