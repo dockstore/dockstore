@@ -25,6 +25,7 @@ import io.swagger.api.NotFoundException;
 import io.swagger.api.ToolsApiService;
 import io.swagger.model.Tool;
 import io.swagger.model.ToolDescriptor;
+import io.swagger.model.ToolDockerfile;
 import io.swagger.model.ToolType;
 import io.swagger.model.ToolVersion;
 
@@ -225,12 +226,22 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                 if (tag.getId() == Long.parseLong(ids[1])) {
                     for (SourceFile file : tag.getSourceFiles()) {
                         if (file.getType() == type) {
-                            ToolDescriptor descriptor = new ToolDescriptor();
-                            descriptor.setDescriptor(file.getContent());
-                            return Response.ok(descriptor).build();
+                            latestDate = tag.getLastModified();
+                            latestFile = file;
                         }
                     }
                 }
+            }
+            if (latestFile != null){
+              if(type == SourceFile.FileType.DOCKERFILE) {
+                  ToolDockerfile dockerfile = new ToolDockerfile();
+                  dockerfile.setDockerfile(latestFile.getContent());
+                  return Response.ok(dockerfile).build();
+              } else if (type == SourceFile.FileType.DOCKSTORE_CWL){
+                  ToolDescriptor descriptor = new ToolDescriptor();
+                  descriptor.setDescriptor(latestFile.getContent());
+                  return Response.ok(descriptor).build();
+              }
             }
         }
         return Response.status(Response.Status.NOT_FOUND).build();

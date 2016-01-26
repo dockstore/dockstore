@@ -1,16 +1,18 @@
 package io.swagger.client.api;
 
-import io.swagger.client.ApiException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import io.swagger.client.ApiClient;
+import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;
 import io.swagger.client.Pair;
 import io.swagger.client.TypeRef;
-
 import io.swagger.client.model.Tool;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.ToolDockerfile;
-
-import java.util.*;
 
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-01-26T15:51:26.437-05:00")
 public class GAGHApi {
@@ -100,7 +102,7 @@ public class GAGHApi {
    * @param registryId A unique identifier of the tool for this particular tool registry, for example `123456` or `123456_v1`
    * @return List<Tool>
    */
-  public List<Tool> toolsRegistryIdGet (String registryId) throws ApiException {
+  public Tool toolsRegistryIdGet (String registryId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'registryId' is set
@@ -136,7 +138,7 @@ public class GAGHApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<List<Tool>>() {};
+    TypeRef returnType = new TypeRef<Tool>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
