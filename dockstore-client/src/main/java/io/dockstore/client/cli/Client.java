@@ -97,6 +97,21 @@ public class Client {
     public static final int CONNECTION_ERROR = 150;
     public static final int INPUT_ERROR = 3;
 
+    // This should be linked to common, but we won't do this now because we don't want dependencies changing during testing
+    public enum Registry {
+        QUAY_IO("quay.io"), DOCKER_HUB("registry.hub.docker.com");
+        private String value;
+
+        Registry(String value) {
+            this.value = value;
+        }
+
+        @Override
+        public String toString() {
+            return value;
+        }
+    }
+
     private static void out(String format, Object... args) {
         System.out.println(String.format(format, args));
     }
@@ -446,6 +461,7 @@ public class Client {
             out("  --cwl-path <file>            Path for the CWL document, defaults to /Dockstore.cwl");
             out("  --toolname <toolname>        Name of the tool, can be omitted");
             out("  --registry <registry>        Docker registry, can be omitted, defaults to registry.hub.docker.com");
+            out("  --version-name <version>     Version tag name for Dockerhub containers only, defaults to latest");
             out("");
         } else {
             final String name = reqVal(args, "--name");
@@ -469,11 +485,17 @@ public class Client {
             container.setIsRegistered(true);
             container.setGitUrl(gitURL);
             container.setToolname(toolname);
-            final Tag tag = new Tag();
-            tag.setReference(gitReference);
-            tag.setDockerfilePath(dockerfilePath);
-            tag.setCwlPath(cwlPath);
-            container.getTags().add(tag);
+
+            if (!Registry.QUAY_IO.toString().equals(registry)) {
+                final String versionName = optVal(args, "--version-name", "latest");
+                final Tag tag = new Tag();
+                tag.setReference(gitReference);
+                tag.setDockerfilePath(dockerfilePath);
+                tag.setCwlPath(cwlPath);
+                tag.setName(versionName);
+                container.getTags().add(tag);
+            }
+
             final String fullName = Joiner.on("/").skipNulls().join(registry, namespace, name, toolname);
             try {
                 container = containersApi.registerManual(container);

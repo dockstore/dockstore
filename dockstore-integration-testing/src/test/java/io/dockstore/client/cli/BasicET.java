@@ -467,15 +467,20 @@ public class BasicET {
                         "master", "--toolname", "alternate", "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile" });
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from container where toolname = 'alternate' and isregistered='t' and validtrigger='t'", new ScalarHandler<>());
-
+                final long count = testingPostgres.runSelectStatement("select count(*) from container where toolname = 'alternate' and isregistered='t'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 1 entry", count == 1);
+
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from container where toolname = 'alternate'  and validtrigger='t'", new ScalarHandler<>());
+                Assert.assertTrue("there should be 1 valid entry", count2 == 1);
 
                 // Unpublish
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "publish", "--unpub", "registry.hub.docker.com/dockstoretestuser/dockerhubandbitbucket/alternate" });
-                final long count2 = testingPostgres.runSelectStatement("select count(*) from container where toolname = 'alternate' and isregistered='f' and validtrigger='t'", new ScalarHandler<>());
 
-                Assert.assertTrue("there should be 1 entry", count2 == 1);
+                final long count3 = testingPostgres.runSelectStatement("select count(*) from container where toolname = 'alternate' and isregistered='f'", new ScalarHandler<>());
+                Assert.assertTrue("there should be 1 entry", count3 == 1);
+
+                final long count4 = testingPostgres.runSelectStatement("select count(*) from container where toolname = 'alternate' and validtrigger='t'", new ScalarHandler<>());
+                Assert.assertTrue("there should be 1 valid entry", count4 == 1);
         }
 
         /**
