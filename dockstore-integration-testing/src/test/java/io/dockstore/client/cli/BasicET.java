@@ -133,6 +133,14 @@ public class BasicET {
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
                 final long count = testingPostgres.runSelectStatement("select count(*) from tag where valid = 'f'", new ScalarHandler<>());
                 Assert.assertTrue("there should now be 5 invalid tags", count == 5);
+
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "versionTag", "--entry", "quay.io/dockstoretestuser/quayandgithub",
+                        "--update", "master", "--cwl-path", "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile" });
+
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser/quayandgithub" });
+
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from tag where valid = 'f'", new ScalarHandler<>());
+                Assert.assertTrue("there should now be 4 invalid tags", count2 == 4);
         }
 
         /**
