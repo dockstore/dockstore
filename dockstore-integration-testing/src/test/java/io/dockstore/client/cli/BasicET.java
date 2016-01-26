@@ -136,6 +136,26 @@ public class BasicET {
         }
 
         /**
+         * Test trying to add a version tag for auto build
+         */
+        @Test
+        public void testVersionTagAddAutoContainer() {
+                systemExit.expectSystemExitWithStatus(GENERIC_ERROR);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "versionTag", "--entry", "quay.io/dockstoretestuser/quayandgithub",
+                        "--remove", "master" });
+        }
+
+        /**
+         * Test trying to remove a version tag for auto build
+         */
+        @Test
+        public void testVersionTagRemoveAutoContainer() {
+                systemExit.expectSystemExitWithStatus(GENERIC_ERROR);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "versionTag", "--entry", "quay.io/dockstoretestuser/quayandgithub",
+                        "--add", "masterTest", "--image-id", "4728f8f5ce1709ec8b8a5282e274e63de3c67b95f03a519191e6ea675c5d34e8", "--git-reference", "master" });
+        }
+
+        /**
          * Tests adding version tags to a manually registered container
          */
         @Test
@@ -174,15 +194,7 @@ public class BasicET {
                 final long count2 = testingPostgres.runSelectStatement("select count(*) from tag where hidden = 't'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 0 hidden tag", count2 == 0);
         }
-
-        /**
-         * Will test changing the image Id to a valid and then invalid id
-         */
-        @Ignore
-        public void testVersionTagChangeImageId() {
-
-        }
-
+        
         /**
          * Will test deleting a version tag from a manually registered container
          */
@@ -200,15 +212,58 @@ public class BasicET {
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
                 final long count = testingPostgres.runSelectStatement("select count(*) from tag where name = 'masterTest'", new ScalarHandler<>());
-                Assert.assertTrue("there should be only 5 tags, all from the automated quay containers", count == 5);
+                Assert.assertTrue("there should be no tags with the name masterTest", count == 0);
         }
 
         /**
          * Will test manually adding, updating, and removing a dockerhub container
          */
-        @Ignore
+        @Test
         public void testVersionTagDockerhub(){
-                
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.DOCKER_HUB.toString(),
+                        "--namespace", "dockstoretestuser", "--name", "dockerhubandgithub", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
+                        "master", "--toolname", "regular" });
+
+                // Add a tag
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "versionTag", "--entry", "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub/regular",
+                        "--add", "masterTest", "--image-id", "4728f8f5ce1709ec8b8a5282e274e63de3c67b95f03a519191e6ea675c5d34e8", "--git-reference", "master" });
+
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub/regular" });
+
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+                final long count = testingPostgres.runSelectStatement("select count(*) from tag where name = 'masterTest'", new ScalarHandler<>());
+                Assert.assertTrue("there should be one tag", count == 1);
+
+                // Update tag
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "versionTag", "--entry", "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub/regular",
+                        "--update", "masterTest", "--hidden", "true" });
+
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from tag where name = 'masterTest' and hidden='t'", new ScalarHandler<>());
+                Assert.assertTrue("there should be one tag", count2 == 1);
+
+                // Remove tag
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "versionTag", "--entry", "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub/regular",
+                        "--remove", "masterTest" });
+
+                final long count3 = testingPostgres.runSelectStatement("select count(*) from tag where name = 'masterTest'", new ScalarHandler<>());
+                Assert.assertTrue("there should be no tags", count3 == 0);
+
+        }
+
+        /**
+         * Will test the case where a manually registered quay container matching an automated build should be treated as a separate auto build (see issue 106)
+         */
+        @Ignore
+        public void testManualQuaySameAsAutoQuay() {
+
+        }
+
+        /**
+         * Will test the case where a manually registered quay container does not have any automated builds set up (see issue 107)
+         */
+        @Ignore
+        public void testManualQuayNoAutobuild() {
+
         }
 
         /**
