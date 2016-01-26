@@ -136,20 +136,20 @@ public class BasicET {
         }
 
         /**
-         * Test trying to add a version tag for auto build
+         * Test trying to remove a version tag for auto build
          */
         @Test
-        public void testVersionTagAddAutoContainer() {
+        public void testVersionTagRemoveAutoContainer() {
                 systemExit.expectSystemExitWithStatus(GENERIC_ERROR);
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "versionTag", "--entry", "quay.io/dockstoretestuser/quayandgithub",
                         "--remove", "master" });
         }
 
         /**
-         * Test trying to remove a version tag for auto build
+         * Test trying to add a version tag for auto build
          */
         @Test
-        public void testVersionTagRemoveAutoContainer() {
+        public void testVersionTagAddAutoContainer() {
                 systemExit.expectSystemExitWithStatus(GENERIC_ERROR);
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "versionTag", "--entry", "quay.io/dockstoretestuser/quayandgithub",
                         "--add", "masterTest", "--image-id", "4728f8f5ce1709ec8b8a5282e274e63de3c67b95f03a519191e6ea675c5d34e8", "--git-reference", "master" });
@@ -167,6 +167,7 @@ public class BasicET {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "versionTag", "--entry", "quay.io/dockstoretestuser/quayandgithub/normal",
                         "--add", "masterTest", "--image-id", "4728f8f5ce1709ec8b8a5282e274e63de3c67b95f03a519191e6ea675c5d34e8", "--git-reference", "master" });
 
+                // Refresh to check if tag is valid
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser/quayandgithub/normal" });
 
 
@@ -216,7 +217,7 @@ public class BasicET {
         }
 
         /**
-         * Will test manually adding, updating, and removing a dockerhub container
+         * Tests manually adding, updating, and removing a dockerhub container
          */
         @Test
         public void testVersionTagDockerhub(){
