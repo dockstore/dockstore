@@ -79,8 +79,11 @@ public class ResourceUtilities {
 
     public static Optional<String> getResponseAsString(HttpGet httpGet, HttpClient client) {
         Optional<String> result = Optional.absent();
+        final int waitTime = 30000;
         try {
             ResponseHandler<String> responseHandler = new BasicResponseHandler();
+            RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(waitTime).setConnectTimeout(waitTime).setConnectionRequestTimeout(waitTime).build();
+            httpGet.setConfig(requestConfig);
             result = Optional.of(client.execute(httpGet, responseHandler));
         } catch (HttpResponseException httpResponseException) {
             LOG.error("getResponseAsString(): caught 'HttpResponseException' while processing request <{}> :=> <{}>", httpGet,
