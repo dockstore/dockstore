@@ -222,7 +222,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                     }
                 }
             } else {
-                if (tag.getName().equals(ids[1])) {
+                if (tag.getId() == Long.parseLong(ids[1])) {
                     for (SourceFile file : tag.getSourceFiles()) {
                         if (file.getType() == type) {
                             ToolDescriptor descriptor = new ToolDescriptor();
