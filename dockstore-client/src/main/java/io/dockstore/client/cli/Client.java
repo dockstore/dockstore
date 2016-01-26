@@ -461,7 +461,7 @@ public class Client {
             out("  --cwl-path <file>            Path for the CWL document, defaults to /Dockstore.cwl");
             out("  --toolname <toolname>        Name of the tool, can be omitted");
             out("  --registry <registry>        Docker registry, can be omitted, defaults to registry.hub.docker.com");
-            out("  --version-name <version>     Version tag name for Dockerhub containers only, defaults to git-reference");
+            out("  --version-name <version>     Version tag name for Dockerhub containers only, defaults to latest");
             out("");
         } else {
             final String name = reqVal(args, "--name");
@@ -487,7 +487,7 @@ public class Client {
             container.setToolname(toolname);
 
             if (!Registry.QUAY_IO.toString().equals(registry)) {
-                final String versionName = optVal(args, "--version-name", gitReference);
+                final String versionName = optVal(args, "--version-name", "latest");
                 final Tag tag = new Tag();
                 tag.setReference(gitReference);
                 tag.setDockerfilePath(dockerfilePath);
