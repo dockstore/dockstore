@@ -37,14 +37,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.ws.rs.ProcessingException;
 
-import io.swagger.client.model.Body;
-import io.swagger.client.model.RegisterRequest;
-import io.swagger.client.model.SourceFile;
-import io.swagger.client.model.Container;
-import io.swagger.client.model.Tag;
-
-import io.swagger.client.model.User;
-import io.swagger.client.model.Label;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
@@ -71,8 +63,15 @@ import io.swagger.client.Configuration;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.UsersApi;
+import io.swagger.client.model.Body;
+import io.swagger.client.model.Container;
 import io.swagger.client.model.Container.ModeEnum;
 import io.swagger.client.model.Container.RegistryEnum;
+import io.swagger.client.model.Label;
+import io.swagger.client.model.RegisterRequest;
+import io.swagger.client.model.SourceFile;
+import io.swagger.client.model.Tag;
+import io.swagger.client.model.User;
 import javassist.NotFoundException;
 
 /*
@@ -82,6 +81,8 @@ import javassist.NotFoundException;
  */
 public class Client {
 
+    private static final String CONVERT = "convert";
+    private static final String LAUNCH = "launch";
     private static ContainersApi containersApi;
     private static ContainertagsApi containerTagsApi;
     private static UsersApi usersApi;
@@ -513,17 +514,17 @@ public class Client {
         }
     }
 
-    private static void dev(final List<String> args) throws ApiException, IOException {
+    private static void convert(final List<String> args) throws ApiException, IOException {
         if (isHelp(args, true)) {
             out("");
-            out("Usage: dockstore dev --help");
-            out("       dockstore dev cwl2json");
-            out("       dockstore dev tool2json");
-            out("       dockstore dev tool2tsv");
-            out("       dockstore dev launch");
+            out("Usage: dockstore " + CONVERT + " --help");
+            out("       dockstore " + CONVERT + " cwl2json");
+            out("       dockstore " + CONVERT + " tool2json");
+            out("       dockstore " + CONVERT + " tool2tsv");
             out("");
             out("Description:");
-            out("  Experimental features not quite ready for prime-time.");
+            out("  These are preview features that will be finalized for the next major release.");
+            out("  They allow you to convert between file representations.");
             out("");
         } else {
             final String cmd = args.remove(0);
@@ -538,9 +539,6 @@ public class Client {
                 case "tool2tsv":
                     tool2tsv(args);
                     break;
-                case "launch":
-                    launch(args);
-                    break;
                 default:
                     invalid(cmd);
                     break;
@@ -552,8 +550,8 @@ public class Client {
     private static void launch(final List<String> args) throws ApiException, IOException {
         if (isHelp(args, true)) {
             out("");
-            out("Usage: dockstore dev --help");
-            out("       dockstore dev launch");
+            out("Usage: dockstore " + LAUNCH + " --help");
+            out("       dockstore " + LAUNCH);
             out("");
             out("Description:");
             out("  Launch an entry locally.");
@@ -638,7 +636,7 @@ public class Client {
                     }
                 }
             } else {
-                kill("Missing required parameters, one of  --run or --tsv is required");
+                kill("Missing required parameters, one of  --json or --tsv is required");
             }
         }
     }
@@ -646,8 +644,8 @@ public class Client {
     private static void tool2json(final List<String> args) throws ApiException, IOException {
         if (isHelp(args, true)) {
             out("");
-            out("Usage: dockstore dev tool2json --help");
-            out("       dockstore dev tool2json");
+            out("Usage: dockstore " + CONVERT + " tool2json --help");
+            out("       dockstore " + CONVERT + " tool2json");
             out("");
             out("Description:");
             out("  Spit out a json run file for a given cwl document.");
@@ -704,8 +702,8 @@ public class Client {
     private static void tool2tsv(final List<String> args) throws ApiException, IOException {
         if (isHelp(args, true)) {
             out("");
-            out("Usage: dockstore dev tool2tsv --help");
-            out("       dockstore dev tool2tsv");
+            out("Usage: dockstore " + CONVERT + " tool2tsv --help");
+            out("       dockstore " + CONVERT + " tool2tsv");
             out("");
             out("Description:");
             out("  Spit out a tsv run file for a given cwl document.");
@@ -721,8 +719,8 @@ public class Client {
     private static void cwl2json(final List<String> args) {
         if (isHelp(args, true)) {
             out("");
-            out("Usage: dockstore dev --help");
-            out("       dockstore dev cwl2json");
+            out("Usage: dockstore " + CONVERT + " --help");
+            out("       dockstore " + CONVERT + " cwl2json");
             out("");
             out("Description:");
             out("  Spit out a json run file for a given cwl document.");
@@ -1206,6 +1204,11 @@ public class Client {
                 out("  label            :  updates labels for an individual container");
                 out("");
                 out("  versionTag       :  updates version tags for an individual container");
+                out("");
+                out("  " + CONVERT + "          :  utilities that allow you to convert file types");
+                out("");
+                out("  " + LAUNCH + "           :  launch containers (locally)");
+                out("");
                 out("------------------");
                 out("");
                 out("Flags:");
@@ -1248,8 +1251,11 @@ public class Client {
                         case "refresh":
                             refresh(args);
                             break;
-                        case "dev":
-                            dev(args);
+                        case CONVERT:
+                            convert(args);
+                            break;
+                        case LAUNCH:
+                            launch(args);
                             break;
                         case "label":
                             label(args);
