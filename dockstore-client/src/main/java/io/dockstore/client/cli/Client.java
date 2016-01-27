@@ -1041,6 +1041,7 @@ public class Client {
                     tags.add(tag);
 
                     List<Tag> updatedTags =  containerTagsApi.addTags(containerId, tags);
+                    containersApi.refresh(container.getId());
 
                     out("The container now has the following tags:");
                     for (Tag newTag: updatedTags) {
@@ -1068,6 +1069,7 @@ public class Client {
                             newTags.add(tag);
 
                             containerTagsApi.updateTags(containerId, newTags);
+                            containersApi.refresh(container.getId());
                             out("Tag " + tagName + " has been updated.");
                             updated = true;
                             break;
