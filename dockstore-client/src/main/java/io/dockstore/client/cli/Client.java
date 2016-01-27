@@ -1112,6 +1112,7 @@ public class Client {
                 }
             } catch (ApiException e) {
                 e.printStackTrace();
+                kill("Could not find container");
 
             }
 
