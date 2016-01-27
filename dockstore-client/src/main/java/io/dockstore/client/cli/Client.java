@@ -939,7 +939,7 @@ public class Client {
     }
 
     public static void label(List<String> args) {
-        if (args.size() > 0) {
+        if (args.size() > 0 && !isHelpRequest(args.get(0))) {
             final String toolpath = reqVal(args, "--entry");
             final List<String> adds = optVals(args, "--add");
             final Set<String> addsSet =  adds.isEmpty() ? new HashSet<>() : new HashSet<>(adds);
@@ -1011,14 +1011,15 @@ public class Client {
     }
 
     public static void versionTag(List<String> args) {
-        if (args.size() > 0) {
+        if (args.size() > 0 && !isHelpRequest(args.get(0))) {
             final String toolpath = reqVal(args, "--entry");
             try {
                 Container container = containersApi.getContainerByToolPath(toolpath);
                 long containerId = container.getId();
                 if (args.contains("--add")) {
                     if (container.getMode() != ModeEnum.MANUAL_IMAGE_PATH){
-                        kill("Only manually added images can add version tags");
+                        err("Only manually added images can add version tags.");
+                        System.exit(INPUT_ERROR);
                     }
 
                     final String tagName = reqVal(args, "--add");
@@ -1041,13 +1042,17 @@ public class Client {
 
                     List<Tag> updatedTags =  containerTagsApi.addTags(containerId, tags);
 
+                    out("The container now has the following tags:");
+                    for (Tag newTag: updatedTags) {
+                        out(newTag.getName());
+                    }
+
                 } else if (args.contains("--update")) {
                     final String tagName = reqVal(args, "--update");
                     List<Tag> tags = container.getTags();
+                    Boolean updated = false;
 
-                    for (int i = 0; i < tags.size(); i++) {
-                        Tag tag = tags.get(i);
-
+                    for (Tag tag: tags) {
                         if (tag.getName().equals(tagName)) {
                             final Boolean hidden = Boolean.valueOf(optVal(args, "--hidden", tag.getHidden().toString()));
                             final String cwlPath = optVal(args, "--cwl-path", tag.getCwlPath());
@@ -1063,34 +1068,55 @@ public class Client {
                             newTags.add(tag);
 
                             containerTagsApi.updateTags(containerId, newTags);
+                            out("Tag " + tagName + " has been updated.");
+                            updated = true;
                             break;
                         }
                     }
+                    if (!updated) {
+                        err("Tag " + tagName + " does not exist.");
+                        System.exit(INPUT_ERROR);
+                    }
                 } else if (args.contains("--remove")) {
                     if (container.getMode() != ModeEnum.MANUAL_IMAGE_PATH){
-                        kill("Only manually added images can add version tags");
+                        err("Only manually added images can add version tags.");
+                        System.exit(INPUT_ERROR);
                     }
 
                     final String tagName = reqVal(args, "--remove");
                     List<Tag> tags = containerTagsApi.getTagsByPath(containerId);
                     long tagId;
+                    Boolean removed = false;
 
-                    for (int i = 0; i < tags.size(); i++) {
-                        if (tags.get(i).getName().equals(tagName)) {
-                            tagId = tags.get(i).getId();
+                    for (Tag tag: tags) {
+                        if (tag.getName().equals(tagName)) {
+                            tagId = tag.getId();
                             containerTagsApi.deleteTags(containerId, tagId);
+                            removed = true;
+
+                            tags = containerTagsApi.getTagsByPath(containerId);
+                            out("The container now has the following tags:");
+                            for (Tag newTag: tags) {
+                                out(newTag.getName());
+                            }
                             break;
                         }
+                    }
+                    if (!removed) {
+                        err("Tag " + tagName + " does not exist.");
+                        System.exit(INPUT_ERROR);
                     }
 
                 } else {
                     versionTagHelp();
-
                 }
             } catch (ApiException e) {
                 e.printStackTrace();
+
             }
 
+        } else {
+            versionTagHelp();
         }
     }
 

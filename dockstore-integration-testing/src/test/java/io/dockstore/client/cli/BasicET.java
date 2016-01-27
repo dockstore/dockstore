@@ -148,7 +148,7 @@ public class BasicET {
          */
         @Test
         public void testVersionTagRemoveAutoContainer() {
-                systemExit.expectSystemExitWithStatus(GENERIC_ERROR);
+                systemExit.expectSystemExitWithStatus(INPUT_ERROR);
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "versionTag", "--entry", "quay.io/dockstoretestuser/quayandgithub",
                         "--remove", "master" });
         }
@@ -158,7 +158,7 @@ public class BasicET {
          */
         @Test
         public void testVersionTagAddAutoContainer() {
-                systemExit.expectSystemExitWithStatus(GENERIC_ERROR);
+                systemExit.expectSystemExitWithStatus(INPUT_ERROR);
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "versionTag", "--entry", "quay.io/dockstoretestuser/quayandgithub",
                         "--add", "masterTest", "--image-id", "4728f8f5ce1709ec8b8a5282e274e63de3c67b95f03a519191e6ea675c5d34e8", "--git-reference", "master" });
         }
