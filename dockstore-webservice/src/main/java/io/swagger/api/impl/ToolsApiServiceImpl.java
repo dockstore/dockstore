@@ -1,12 +1,15 @@
 package io.swagger.api.impl;
 
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
@@ -46,8 +49,8 @@ public class ToolsApiServiceImpl extends ToolsApiService {
 
     @Override
     public Response toolsRegistryIdGet(String id, SecurityContext securityContext) throws NotFoundException {
-        String[] ids = id.split("_");
-        Container container = containerDAO.findById(Long.valueOf(ids[0]));
+        ParsedRegistryID parsedID = new ParsedRegistryID(id);
+        Container container = containerDAO.findRegisteredByToolPath(parsedID.getPath(),parsedID.getToolName());
         // check whether this is registered
         if (container == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
@@ -56,9 +59,10 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
         Tool tool = convertContainer2Tool(container);
+        assert(tool != null);
         // filter out other versions if we're narrowing to a specific version
-        if (ids.length > 1){
-            tool.getVersions().removeIf( v -> !v.getRegistryId().equals(ids[1]));
+        if (parsedID.getVersion() != null){
+            tool.getVersions().removeIf( v -> !v.getImage().equals(parsedID.getVersion()));
         }
 
         return Response.ok(tool).build();
@@ -70,38 +74,38 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         final List<Container> all = containerDAO.findAllRegistered();
         List<Tool> results = new ArrayList<>();
         for (Container c : all) {
-            // check each criteria, can we do this better with reflection?
+            // check each criteria. This sucks. Can we do this better with reflection? Or should we pre-convert?
             if (registryId != null) {
-                if (!String.valueOf(c.getId()).equals(registryId)) {
+                if (!registryId.contains(c.getToolPath())) {
                     continue;
                 }
             }
-            if (registry != null) {
+            if (registry != null && c.getRegistry() != null) {
                 if (!c.getRegistry().toString().contains(registry)) {
                     continue;
                 }
             }
-            if (organization != null) {
+            if (organization != null && c.getNamespace() != null) {
                 if (!c.getNamespace().contains(organization)) {
                     continue;
                 }
             }
-            if (name != null) {
+            if (name != null && c.getName() != null) {
                 if (!c.getName().contains(name)) {
                     continue;
                 }
             }
-            if (toolname != null) {
+            if (toolname != null && c.getToolname() != null) {
                 if (!c.getToolname().contains(toolname)) {
                     continue;
                 }
             }
-            if (description != null) {
+            if (description != null && c.getDescription() != null) {
                 if (!c.getDescription().contains(description)) {
                     continue;
                 }
             }
-            if (author != null) {
+            if (author != null && c.getAuthor() != null) {
                 if (!c.getAuthor().contains(author)) {
                     continue;
                 }
@@ -117,16 +121,20 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     /**
      * Convert our Container object to a standard Tool format
      * 
-     * @param container
-     * @return
+     * @param container our data object
+     * @return standardised data object
      */
     private static Tool convertContainer2Tool(Container container) {
         String globalId;
         // TODO: properly pass this information
+        String newID;
         try {
-            URI uri = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()), "/tools/" + container.getId(), null, null);
+            // construct escaped ID
+            newID = container.getToolPath();
+            String escapedID = URLEncoder.encode(newID, StandardCharsets.UTF_8.displayName());
+            URI uri = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()), "/tools/" + escapedID, null, null);
             globalId = uri.toURL().toString();
-        } catch (URISyntaxException | MalformedURLException e) {
+        } catch (URISyntaxException | MalformedURLException | UnsupportedEncodingException e) {
             LOG.error("Could not construct URL for our container with id: " + container.getId());
             return null;
         }
@@ -145,21 +153,23 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         tool.setName(container.getName());
         tool.setRegistry(container.getRegistry().toString());
         tool.setTooltype(type);
-        tool.setRegistryId(String.valueOf(container.getId()));
+        tool.setRegistryId(newID);
         tool.setGlobalId(globalId);
         // TODO: contains has no counterpart in our DB
         // setup versions as well
         for (Tag tag : container.getTags()) {
             ToolVersion version = new ToolVersion();
-            version.setRegistryId(String.valueOf(tag.getId()));
-
             // version id
             String globalVersionId;
             // TODO: properly pass this information
             try {
-                URI uri = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()), "/tools/" + container.getId() + "_" + tag.getId(), null, null);
+                // construct escaped ID
+                String nestedNewID = container.getToolPath() + ":" + tag.getName();
+                version.setRegistryId(nestedNewID);
+                String escapedID = URLEncoder.encode(nestedNewID, StandardCharsets.UTF_8.displayName());
+                URI uri = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()), "/tools/" + escapedID, null, null);
                 globalVersionId = uri.toURL().toString();
-            } catch (URISyntaxException | MalformedURLException e) {
+            } catch (URISyntaxException | MalformedURLException | UnsupportedEncodingException e) {
                 LOG.error("Could not construct URL for our container with id: " + container.getId());
                 return null;
             }
@@ -202,14 +212,14 @@ public class ToolsApiServiceImpl extends ToolsApiService {
 
     private Response getFileByToolVersionID(String registryId, SourceFile.FileType type) {
         // if a version is provided, get that version, otherwise return the newest
-        String[] ids = registryId.split("_");
-        boolean latest = ids.length == 1;
-        Container container = containerDAO.findById(Long.valueOf(ids[0]));
+        ParsedRegistryID parsedID = new ParsedRegistryID(registryId);
+        boolean latest = parsedID.getVersion() == null;
+        Container container = containerDAO.findRegisteredByToolPath(parsedID.getPath(),parsedID.getToolName());
         // check whether this is registered
         if (!container.getIsRegistered()){
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
-        // convert our tool model to that expected
+        // convert our toolName model to that expected
         SourceFile latestFile = null;
         Date latestDate = null;
         for (Tag tag : container.getTags()) {
@@ -223,7 +233,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                     }
                 }
             } else {
-                if (tag.getId() == Long.parseLong(ids[1])) {
+                if (tag.getName().equals(parsedID.getVersion())) {
                     for (SourceFile file : tag.getSourceFiles()) {
                         if (file.getType() == type) {
                             latestDate = tag.getLastModified();
@@ -248,19 +258,14 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     }
 
     /**
-     * May be useful if we need to parse global IDs
+     * Used to parse localised IDs (no URL)
      */
-    private class ParsedID {
-        private String id;
+    private class ParsedRegistryID {
         private String registry;
         private String organization;
         private String name;
-        private String tool;
+        private String toolName;
         private String version;
-
-        public ParsedID(String id) {
-            this.id = id;
-        }
 
         public String getRegistry() {
             return registry;
@@ -274,26 +279,35 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             return name;
         }
 
-        public String getTool() {
-            return tool;
+        public String getToolName() {
+            return toolName;
         }
 
         public String getVersion() {
             return version;
         }
 
-        public ParsedID invoke() throws URISyntaxException {
-            URI uri = new URI(id);
-            final List<String> segments = Splitter.on('/').omitEmptyStrings().splitToList(uri.getPath());
-            registry = segments.get(1);
-            organization = segments.get(2);
-            name = segments.get(3);
-            tool = segments.size() > 4 ? segments.get(4) : "";
-            // which version do we want?
-            final String query = uri.getQuery();
-            final Map<String, String> map = Splitter.on('&').trimResults().withKeyValueSeparator("=").split(query);
-            version = map.get("toolVersion");
-            return this;
+        public ParsedRegistryID(String id) {
+            try {
+                id = URLDecoder.decode(id, StandardCharsets.UTF_8.displayName());
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
+            final List<String> segments = Splitter.on(':').omitEmptyStrings().splitToList(id);
+            if (segments.size() > 1){
+                version = segments.get(1);
+            } else{
+                version = null;
+            }
+            final List<String> textSegments = Splitter.on('/').omitEmptyStrings().splitToList(segments.get(0));
+            registry = textSegments.get(0);
+            organization = textSegments.get(1);
+            name = textSegments.get(2);
+            toolName = textSegments.size() > 3 ? textSegments.get(3) : "";
+        }
+
+        public String getPath(){
+            return registry + "/" + organization + "/" + name;
         }
     }
 }
