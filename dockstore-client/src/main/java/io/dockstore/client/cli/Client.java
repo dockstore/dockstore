@@ -69,6 +69,7 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;
 import io.swagger.client.api.ContainersApi;
+import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.Container.ModeEnum;
 import io.swagger.client.model.Container.RegistryEnum;
@@ -82,6 +83,7 @@ import javassist.NotFoundException;
 public class Client {
 
     private static ContainersApi containersApi;
+    private static ContainertagsApi containerTagsApi;
     private static UsersApi usersApi;
     private static User user;
     private static CWL cwl = new CWL();
@@ -937,7 +939,7 @@ public class Client {
     }
 
     public static void label(List<String> args) {
-        if (args.size() > 0) {
+        if (args.size() > 0 && !isHelpRequest(args.get(0))) {
             final String toolpath = reqVal(args, "--entry");
             final List<String> adds = optVals(args, "--add");
             final Set<String> addsSet =  adds.isEmpty() ? new HashSet<>() : new HashSet<>(adds);
@@ -1008,6 +1010,134 @@ public class Client {
         }
     }
 
+    public static void versionTag(List<String> args) {
+        if (args.size() > 0 && !isHelpRequest(args.get(0))) {
+            final String toolpath = reqVal(args, "--entry");
+            try {
+                Container container = containersApi.getContainerByToolPath(toolpath);
+                long containerId = container.getId();
+                if (args.contains("--add")) {
+                    if (container.getMode() != ModeEnum.MANUAL_IMAGE_PATH){
+                        err("Only manually added images can add version tags.");
+                        System.exit(INPUT_ERROR);
+                    }
+
+                    final String tagName = reqVal(args, "--add");
+                    final String gitReference = reqVal(args, "--git-reference");
+                    final Boolean hidden = Boolean.valueOf(optVal(args, "--hidden", "f"));
+                    final String cwlPath = optVal(args, "--cwl-path", "/Dockstore.cwl");
+                    final String dockerfilePath = optVal(args, "--dockerfile-path", "/Dockerfile");
+                    final String imageId = reqVal(args, "--image-id");
+
+                    final Tag tag = new Tag();
+                    tag.setName(tagName);
+                    tag.setHidden(hidden);
+                    tag.setCwlPath(cwlPath);
+                    tag.setDockerfilePath(dockerfilePath);
+                    tag.setImageId(imageId);
+                    tag.setReference(gitReference);
+
+                    List<Tag> tags = new ArrayList<>();
+                    tags.add(tag);
+
+                    List<Tag> updatedTags =  containerTagsApi.addTags(containerId, tags);
+                    containersApi.refresh(container.getId());
+
+                    out("The container now has the following tags:");
+                    for (Tag newTag: updatedTags) {
+                        out(newTag.getName());
+                    }
+
+                } else if (args.contains("--update")) {
+                    final String tagName = reqVal(args, "--update");
+                    List<Tag> tags = container.getTags();
+                    Boolean updated = false;
+
+                    for (Tag tag: tags) {
+                        if (tag.getName().equals(tagName)) {
+                            final Boolean hidden = Boolean.valueOf(optVal(args, "--hidden", tag.getHidden().toString()));
+                            final String cwlPath = optVal(args, "--cwl-path", tag.getCwlPath());
+                            final String dockerfilePath = optVal(args, "--dockerfile-path", tag.getDockerfilePath());
+                            final String imageId = optVal(args, "--image-id", tag.getImageId());
+
+                            tag.setName(tagName);
+                            tag.setHidden(hidden);
+                            tag.setCwlPath(cwlPath);
+                            tag.setDockerfilePath(dockerfilePath);
+                            tag.setImageId(imageId);
+                            List<Tag> newTags = new ArrayList<>();
+                            newTags.add(tag);
+
+                            containerTagsApi.updateTags(containerId, newTags);
+                            containersApi.refresh(container.getId());
+                            out("Tag " + tagName + " has been updated.");
+                            updated = true;
+                            break;
+                        }
+                    }
+                    if (!updated) {
+                        err("Tag " + tagName + " does not exist.");
+                        System.exit(INPUT_ERROR);
+                    }
+                } else if (args.contains("--remove")) {
+                    if (container.getMode() != ModeEnum.MANUAL_IMAGE_PATH){
+                        err("Only manually added images can add version tags.");
+                        System.exit(INPUT_ERROR);
+                    }
+
+                    final String tagName = reqVal(args, "--remove");
+                    List<Tag> tags = containerTagsApi.getTagsByPath(containerId);
+                    long tagId;
+                    Boolean removed = false;
+
+                    for (Tag tag: tags) {
+                        if (tag.getName().equals(tagName)) {
+                            tagId = tag.getId();
+                            containerTagsApi.deleteTags(containerId, tagId);
+                            removed = true;
+
+                            tags = containerTagsApi.getTagsByPath(containerId);
+                            out("The container now has the following tags:");
+                            for (Tag newTag: tags) {
+                                out(newTag.getName());
+                            }
+                            break;
+                        }
+                    }
+                    if (!removed) {
+                        err("Tag " + tagName + " does not exist.");
+                        System.exit(INPUT_ERROR);
+                    }
+
+                } else {
+                    versionTagHelp();
+                }
+            } catch (ApiException e) {
+                e.printStackTrace();
+                kill("Could not find container");
+
+            }
+
+        } else {
+            versionTagHelp();
+        }
+    }
+
+    private static void versionTagHelp() {
+        out("");
+        out("HELP FOR DOCKSTORE");
+        out("------------------");
+        out("See https://www.dockstore.org for more information");
+        out("");
+        out("dockstore versionTag --add <name> --entry <path to tool> --git-reference <git reference> --hidden <true/false> --cwl-path <cwl path> --dockerfile-path <dockerfile path> --image-id <image id>         :  Add version tag for a manually registered dockstore container");
+        out("");
+        out("dockstore versionTag --update <name> --entry <path to tool>  --hidden <true/false> --cwl-path <cwl path> --dockerfile-path <dockerfile path> --image-id <image id>                                     :  Update version tag for a dockstore container");
+        out("");
+        out("dockstore versionTag --remove <name> --entry <path to tool>                                                                                                                                            :  Remove version tag from a manually registered dockstore container");
+        out("");
+        out("------------------");
+        out("");
+    }
 
     public static void main(String[] argv) {
         List<String> args = new ArrayList<>(Arrays.asList(argv));
@@ -1045,6 +1175,7 @@ public class Client {
             defaultApiClient.setBasePath(serverUrl);
 
             containersApi = new ContainersApi(defaultApiClient);
+            containerTagsApi = new ContainertagsApi(defaultApiClient);
             usersApi = new UsersApi(defaultApiClient);
 
             defaultApiClient.setDebugging(DEBUG.get());
@@ -1073,6 +1204,8 @@ public class Client {
                 out("  refresh          :  updates your list of containers stored on Dockstore or an individual container");
                 out("");
                 out("  label            :  updates labels for an individual container");
+                out("");
+                out("  versionTag       :  updates version tags for an individual container");
                 out("------------------");
                 out("");
                 out("Flags:");
@@ -1120,6 +1253,9 @@ public class Client {
                             break;
                         case "label":
                             label(args);
+                            break;
+                        case "versionTag":
+                            versionTag(args);
                             break;
                         default:
                             invalid(cmd);
