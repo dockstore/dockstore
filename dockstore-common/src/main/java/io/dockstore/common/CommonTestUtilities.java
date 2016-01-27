@@ -16,13 +16,19 @@
  */
 package io.dockstore.common;
 
-import java.io.File;
-
+import io.dropwizard.testing.ResourceHelpers;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.dbutils.ResultSetHandler;
 import org.apache.commons.dbutils.handlers.KeyedHandler;
 import org.apache.commons.io.FileUtils;
+
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.File;
+
 
 /**
  *
@@ -104,9 +110,48 @@ public class CommonTestUtilities {
             runUpdateStatement("alter sequence tag_id_seq restart with 1000;");
         }
 
+        public void clearDatabaseMakePrivate() throws IOException {
+            super.clearDatabase();
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(ResourceHelpers.resourceFilePath("db_confidential_dump_full.sql")), "utf-8"));
+            String line = null;
+
+            while ((line = br.readLine()) != null) {
+                runUpdateStatementConfidential(line);
+            }
+            br.close();
+
+            /*
+             Todo: When features that require multiple users for testing, which depend on other sources such as Github,
+             the below inserts will need to be replaced with an actual user in the db dump file
+            */
+            // Add extra user with container for testing user access
+            runInsertStatement("insert into enduser(id, isAdmin, username) VALUES (2,true,'admin@admin.com');", new KeyedHandler<>("id"));
+            runInsertStatement("insert into token(id, content, tokensource, userid, username) VALUES (5, '" + DUMMY_TOKEN_1
+                    + "', 'dockstore', 2, 'admin@admin.com');", new KeyedHandler<>("id"));
+
+            runInsertStatement(
+                    "insert into container(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered, toolname) VALUES (5, 'test1', 'test_org', 'QUAY_IO', 'quay.io/test_org/test1', false, false, false, false,'');",
+                    new KeyedHandler<>("id"));
+            runInsertStatement("insert into usercontainer(userid, containerid) VALUES (2, 5);", new KeyedHandler<>("containerid"));
+
+
+            // need to increment past manually entered ids above
+            runUpdateStatementConfidential("alter sequence container_id_seq restart with 1000;");
+            runUpdateStatementConfidential("alter sequence tag_id_seq restart with 1000;");
+            runUpdateStatementConfidential("alter sequence sourcefile_id_seq restart with 1000;");
+            runUpdateStatementConfidential("alter sequence label_id_seq restart with 1000;");
+
+        }
+
         @Override
         public <T> T runSelectStatement(String query, ResultSetHandler<T> handler, Object... params) {
             return super.runSelectStatement(query, handler, params);
+        }
+
+        @Override
+        public boolean runUpdateStatement(String query, Object... params){
+            return super.runUpdateStatement(query, params);
         }
     }
 
@@ -116,6 +161,16 @@ public class CommonTestUtilities {
     public static void clearState() {
         final TestingPostgres postgres = getTestingPostgres();
         postgres.clearDatabase();
+    }
+
+    /**
+     * Clears database state and known queues for confidential testing.
+     * @throws IOException
+         */
+    public static void clearStateMakePrivate() throws IOException {
+        final TestingPostgres postgres = getTestingPostgres();
+        postgres.clearDatabaseMakePrivate();
+
     }
 
     public static TestingPostgres getTestingPostgres() {

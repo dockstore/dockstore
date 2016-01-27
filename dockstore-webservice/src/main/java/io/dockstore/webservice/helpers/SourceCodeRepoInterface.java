@@ -28,6 +28,8 @@ public abstract class SourceCodeRepoInterface {
      */
     public abstract Container findCWL(Container c);
 
+    public abstract String getOrganizationEmail();
+
     /**
      * Parses the cwl content to get the author and description. Updates the container with the author, description, and hasCollab fields.
      *

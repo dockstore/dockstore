@@ -48,6 +48,11 @@ public class ContainerDAO extends AbstractDAO<Container> {
         session.flush();
     }
 
+    public void evict(Container container) {
+        Session session = currentSession();
+        session.evict(container);
+    }
+
     public Container findRegisteredById(long id) {
         return uniqueResult(namedQuery("io.dockstore.webservice.core.Container.findRegisteredById").setParameter("id", id));
     }

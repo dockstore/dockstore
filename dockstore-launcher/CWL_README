@@ -1,0 +1,44 @@
+Install:
+  $ pip install cwl-runner
+
+Run test:
+  $ cwltest --test collab-cwl-test.yml --tool cwltool
+
+Execute an arbitrary job with input from a job file:
+  $ ./collab.cwl collab-cwl-job.json
+
+Execute an arbitrary job with input from command line arguments:
+  $ ./collab.cwl --hello_input hello-input.txt
+
+
+
+Notes:
+
+CWL doesn't have a concept of "services"
+
+This example uses a javascript expression to build the shell command string.
+For CWL draft-3, we're planning "ShellRequirement" which modifies the command
+line building behavior to build a shell command line, but this hasn't been
+finalized in the spec yet.
+
+CWL has a "designated temporary directory" and "designated output directory",
+but these are choosen by the runtime and not by the user.  In CWL, the
+output directory is the initial CWD of the process.
+
+A system for reasoning about file formats is planned for CWL draft-3, but hasn't
+been finalized in the spec yet.
+
+CWL doesn't currently specify a way of referencing remote resources by URL, so
+there is no equivalent to the "url" portion of the inputs.  This could be
+added, but requires writing up a design proposal.
+
+Tests of CWL wrappers are currently stored in a separate file, but it would be
+reasonable to have an option to incorporate them into the main file.
+
+The test doesn't actually work because the input files are mounted to a
+different location each time, which causes the "ls" part of the command to
+change and result in a different checksum each time.
+
+CWL hasn't yet specified the preferred vocabularies to use for metadata such as
+creator and software version.  Currently I am using Dublin Core (dct) and
+Friend-of-a-Friend (foaf).

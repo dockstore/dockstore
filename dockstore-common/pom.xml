@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
-        <version>0.2.3</version>
+        <version>0.2.4-alpha.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>dockstore-common</artifactId>
@@ -29,18 +29,6 @@
             <artifactId>postgresql</artifactId>
             <version>9.4-1201-jdbc41</version>
             <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>net.sourceforge.cobertura</groupId>
-            <artifactId>cobertura</artifactId>
-            <version>${cobertura.version}</version>
-            <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>junit</groupId>
-                    <artifactId>junit</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
@@ -99,6 +87,11 @@
             <version>3.4</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>io.dropwizard</groupId>
+            <artifactId>dropwizard-testing</artifactId>
+            <version>${dropwizard.version}</version>
+        </dependency>
     </dependencies>
     
     <build>
@@ -125,7 +118,7 @@
                         <configuration>
                             <failsOnError>false</failsOnError>
                             <consoleOutput>true</consoleOutput>
-                            <excludes>**/io/dockstore/common/cwl/**</excludes>
+                            <excludes>**/cwl/**</excludes>
                         </configuration>
                     </execution>
                 </executions>

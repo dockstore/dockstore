@@ -21,33 +21,53 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.ws.rs.ProcessingException;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.csv.QuoteMode;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 
 import com.esotericsoftware.yamlbeans.YamlReader;
 import com.google.common.base.Joiner;
+import com.google.common.io.Files;
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import io.dockstore.common.CWL;
+import io.github.collaboratory.LauncherCWL;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;
 import io.swagger.client.api.ContainersApi;
+import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.UsersApi;
+import io.swagger.client.model.Body;
 import io.swagger.client.model.Container;
 import io.swagger.client.model.Container.ModeEnum;
 import io.swagger.client.model.Container.RegistryEnum;
+import io.swagger.client.model.Label;
 import io.swagger.client.model.RegisterRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
@@ -61,10 +81,13 @@ import javassist.NotFoundException;
  */
 public class Client {
 
+    private static final String CONVERT = "convert";
+    private static final String LAUNCH = "launch";
     private static ContainersApi containersApi;
+    private static ContainertagsApi containerTagsApi;
     private static UsersApi usersApi;
     private static User user;
-    private static CWL cwl;
+    private static CWL cwl = new CWL();
 
     private static final String NAME_HEADER = "NAME";
     private static final String DESCRIPTION_HEADER = "DESCRIPTION";
@@ -75,6 +98,22 @@ public class Client {
 
     public static final int GENERIC_ERROR = 1;
     public static final int CONNECTION_ERROR = 150;
+    public static final int INPUT_ERROR = 3;
+
+    // This should be linked to common, but we won't do this now because we don't want dependencies changing during testing
+    public enum Registry {
+        QUAY_IO("quay.io"), DOCKER_HUB("registry.hub.docker.com");
+        private String value;
+
+        Registry(String value) {
+            this.value = value;
+        }
+
+        @Override
+        public String toString() {
+            return value;
+        }
+    }
 
     private static void out(String format, Object... args) {
         System.out.println(String.format(format, args));
@@ -130,10 +169,21 @@ public class Client {
         return found;
     }
 
+    /**
+     *
+     * @param bool
+     * @return
+         */
     private static String boolWord(boolean bool) {
         return bool ? "Yes" : "No";
     }
 
+    /**
+     *
+     * @param args
+     * @param key
+     * @return
+     */
     private static List<String> optVals(List<String> args, String key) {
         List<String> vals = new ArrayList<>();
 
@@ -325,6 +375,26 @@ public class Client {
             String first = args.get(0);
             if (isHelpRequest(first)) {
                 publishHelp();
+            } else if (isUnpublishRequest(first)) {
+                if (args.size() == 1) {
+                    publishHelp();
+                } else {
+                    String second = args.get(1);
+                    try {
+                        Container container = containersApi.getContainerByToolPath(second);
+                        RegisterRequest req = new RegisterRequest();
+                        req.setRegister(false);
+                        container = containersApi.register(container.getId(), req);
+
+                        if (container != null) {
+                            out("Successfully unpublished " + second);
+                        } else {
+                            kill("Unable to unpublish invalid container " + second);
+                        }
+                    } catch (ApiException e) {
+                        kill("Unable to unpublish unknown container " + first);
+                    }
+                }
             } else {
                 if (args.size() == 1) {
                     try {
@@ -375,7 +445,7 @@ public class Client {
         }
     }
 
-    private static void manualPublish(List<String> args) {
+    private static void manualPublish(final List<String> args) {
         if (isHelp(args, true)) {
             out("");
             out("Usage: dockstore manual_publish --help");
@@ -394,6 +464,7 @@ public class Client {
             out("  --cwl-path <file>            Path for the CWL document, defaults to /Dockstore.cwl");
             out("  --toolname <toolname>        Name of the tool, can be omitted");
             out("  --registry <registry>        Docker registry, can be omitted, defaults to registry.hub.docker.com");
+            out("  --version-name <version>     Version tag name for Dockerhub containers only, defaults to latest");
             out("");
         } else {
             final String name = reqVal(args, "--name");
@@ -417,15 +488,22 @@ public class Client {
             container.setIsRegistered(true);
             container.setGitUrl(gitURL);
             container.setToolname(toolname);
-            Tag tag = new Tag();
-            tag.setReference(gitReference);
-            tag.setDockerfilePath(dockerfilePath);
-            tag.setCwlPath(cwlPath);
-            container.getTags().add(tag);
-            String fullName = Joiner.on("/").skipNulls().join(registry, namespace, name, toolname);
+
+            if (!Registry.QUAY_IO.toString().equals(registry)) {
+                final String versionName = optVal(args, "--version-name", "latest");
+                final Tag tag = new Tag();
+                tag.setReference(gitReference);
+                tag.setDockerfilePath(dockerfilePath);
+                tag.setCwlPath(cwlPath);
+                tag.setName(versionName);
+                container.getTags().add(tag);
+            }
+
+            final String fullName = Joiner.on("/").skipNulls().join(registry, namespace, name, toolname);
             try {
                 container = containersApi.registerManual(container);
                 if (container != null) {
+                    containersApi.refresh(container.getId());
                     out("Successfully published " + fullName);
                 } else {
                     kill("Unable to publish " + fullName);
@@ -436,18 +514,20 @@ public class Client {
         }
     }
 
-    private static void dev(final List<String> args) throws ApiException {
+    private static void convert(final List<String> args) throws ApiException, IOException {
         if (isHelp(args, true)) {
             out("");
-            out("Usage: dockstore dev --help");
-            out("       dockstore dev cwl2json");
-            out("       dockstore dev tool2json <container>");
+            out("Usage: dockstore " + CONVERT + " --help");
+            out("       dockstore " + CONVERT + " cwl2json");
+            out("       dockstore " + CONVERT + " tool2json");
+            out("       dockstore " + CONVERT + " tool2tsv");
             out("");
             out("Description:");
-            out("  Experimental features not quite ready for prime-time.");
+            out("  These are preview features that will be finalized for the next major release.");
+            out("  They allow you to convert between file representations.");
             out("");
         } else {
-            String cmd = args.remove(0);
+            final String cmd = args.remove(0);
             if (null != cmd) {
                 switch (cmd) {
                 case "cwl2json":
@@ -455,6 +535,9 @@ public class Client {
                     break;
                 case "tool2json":
                     tool2json(args);
+                    break;
+                case "tool2tsv":
+                    tool2tsv(args);
                     break;
                 default:
                     invalid(cmd);
@@ -464,30 +547,180 @@ public class Client {
         }
     }
 
-    private static void tool2json(final List<String> args) throws ApiException {
+    private static void launch(final List<String> args) throws ApiException, IOException {
         if (isHelp(args, true)) {
             out("");
-            out("Usage: dockstore dev --help");
-            out("       dockstore dev tool2json");
+            out("Usage: dockstore " + LAUNCH + " --help");
+            out("       dockstore " + LAUNCH);
+            out("");
+            out("Description:");
+            out("  Launch an entry locally.");
+            out("Required parameters:");
+            out("  --entry <entry>                Complete tool path in the Dockstore");
+            out("Optional parameters:");
+            out("  --json <json file>            Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs");
+            out("  --tsv <tsv file>             One row corresponds to parameters for one run in the dockstore");
+            out("");
+        } else {
+            final String entry = reqVal(args, "--entry");
+            final String jsonRun = optVal(args, "--json", null);
+            final String csvRuns = optVal(args, "--tsv", null);
+
+            final SourceFile cwlFromServer = getCWLFromServer(entry);
+            final File tempCWL = File.createTempFile("temp", ".cwl", Files.createTempDir());
+            Files.write(cwlFromServer.getContent(), tempCWL, StandardCharsets.UTF_8);
+
+            // stub out invocation and fake out a config file
+            final File tempConfig = File.createTempFile("temp", ".cwl", Files.createTempDir());
+            Files.write("working-directory=./datastore/", tempConfig, StandardCharsets.UTF_8);
+
+            final Gson gson = CWL.getTypeSafeCWLToolDocument();
+            if (jsonRun != null) {
+                // if the root document is an array, this indicates multiple runs
+                JsonParser parser = new JsonParser();
+                final JsonElement parsed = parser.parse(new InputStreamReader(new FileInputStream(jsonRun), StandardCharsets.UTF_8));
+                if (parsed.isJsonArray()){
+                    final JsonArray asJsonArray = parsed.getAsJsonArray();
+                    for(JsonElement element : asJsonArray){
+                        final String finalString = gson.toJson(element);
+                        final File tempJson = File.createTempFile("temp", ".json", Files.createTempDir());
+                        FileUtils.write(tempJson, finalString);
+                        final LauncherCWL cwlLauncher = new LauncherCWL(tempConfig.getAbsolutePath(), tempCWL.getAbsolutePath(), tempJson.getAbsolutePath(), System.out, System.err);
+                        cwlLauncher.run();
+                    }
+                } else {
+                    final LauncherCWL cwlLauncher = new LauncherCWL(tempConfig.getAbsolutePath(), tempCWL.getAbsolutePath(), jsonRun, System.out, System.err);
+                    cwlLauncher.run();
+                }
+            } else if (csvRuns != null) {
+                final File csvData = new File(csvRuns);
+                try (CSVParser parser = CSVParser.parse(csvData, StandardCharsets.UTF_8, CSVFormat.DEFAULT.withDelimiter('\t').withEscape('\\').withQuoteMode(
+                    QuoteMode.NONE))) {
+                    // grab header
+                    final Iterator<CSVRecord> iterator = parser.iterator();
+                    final CSVRecord headers = iterator.next();
+                    // ignore row with type information
+                    iterator.next();
+                    // process rows
+                    while (iterator.hasNext()) {
+                        final CSVRecord csvRecord = iterator.next();
+
+                        final File tempJson = File.createTempFile("temp", ".json", Files.createTempDir());
+                        StringBuilder buffer = new StringBuilder();
+                        buffer.append("{");
+                        for (int i = 0; i < csvRecord.size(); i++) {
+                            buffer.append("\"").append(headers.get(i)).append("\"");
+                            buffer.append(":");
+                            // if the type is an array, just pass it through
+                            buffer.append(csvRecord.get(i));
+
+                            if (i < csvRecord.size() - 1) {
+                                buffer.append(",");
+                            }
+                        }
+                        buffer.append("}");
+                        // prettify it
+                        JsonParser prettyParser = new JsonParser();
+                        JsonObject json = prettyParser.parse(buffer.toString()).getAsJsonObject();
+                        final String finalString = gson.toJson(json);
+
+                        // write it out
+                        FileUtils.write(tempJson, finalString);
+
+                        //final String stringMapAsString = gson.toJson(stringMap);
+                        //Files.write(stringMapAsString, tempJson, StandardCharsets.UTF_8);
+                        final LauncherCWL cwlLauncher = new LauncherCWL(tempConfig.getAbsolutePath(), tempCWL.getAbsolutePath(),
+                                                                           tempJson.getAbsolutePath(), System.out, System.err);
+                        cwlLauncher.run();
+
+                    }
+                }
+            } else {
+                kill("Missing required parameters, one of  --json or --tsv is required");
+            }
+        }
+    }
+
+    private static void tool2json(final List<String> args) throws ApiException, IOException {
+        if (isHelp(args, true)) {
+            out("");
+            out("Usage: dockstore " + CONVERT + " tool2json --help");
+            out("       dockstore " + CONVERT + " tool2json");
             out("");
             out("Description:");
             out("  Spit out a json run file for a given cwl document.");
             out("Required parameters:");
-            out("  --cwl <file>                Path to cwl file");
+            out("  --entry <entry>                Complete tool path in the Dockstore");
             out("");
         } else {
-            final SourceFile cwlFromServer = getCWLFromServer(args);
-            final Map<String, Object> runJson = cwl.extractRunJson(cwlFromServer.getContent());
-            final Gson gson = cwl.getTypeSafeCWLToolDocument();
-            out(gson.toJson(runJson));
+            final String runString = runString(args, true);
+            out(runString);
+        }
+    }
+
+    private static String runString(final List<String> args, final boolean json) throws ApiException, IOException {
+        final String entry = reqVal(args, "--entry");
+        final SourceFile cwlFromServer = getCWLFromServer(entry);
+        final File tempCWL = File.createTempFile("temp", ".cwl", Files.createTempDir());
+        Files.write(cwlFromServer.getContent(), tempCWL, StandardCharsets.UTF_8);
+        // need to suppress output
+        final ImmutablePair<String, String> output = cwl.parseCWL(tempCWL.getAbsolutePath(), true);
+        final Map<String, Object> stringObjectMap = cwl.extractRunJson(output.getLeft());
+        if (json){
+            final Gson gson = CWL.getTypeSafeCWLToolDocument();
+            return gson.toJson(stringObjectMap);
+        } else{
+            // re-arrange as rows and columns
+            final Map<String, String> typeMap = cwl.extractCWLTypes(output.getLeft());
+            final List<String> headers = new ArrayList<>();
+            final List<String> types = new ArrayList<>();
+            final List<String> entries = new ArrayList<>();
+            for(final Entry<String, Object> objectEntry : stringObjectMap.entrySet()){
+                headers.add(objectEntry.getKey());
+                types.add(typeMap.get(objectEntry.getKey()));
+                Object value = objectEntry.getValue();
+                if (value instanceof Map){
+                    Map map = (Map)value;
+                    if (map.containsKey("class") && "File".equals(map.get("class"))){
+                        value = map.get("path");
+                    }
+                }
+                entries.add(value.toString());
+            }
+            final StringBuffer buffer = new StringBuffer();
+            try (CSVPrinter printer = new CSVPrinter(buffer, CSVFormat.DEFAULT)) {
+                printer.printRecord(headers);
+                printer.printComment("do not edit the following row, describes CWL types");
+                printer.printRecord(types);
+                printer.printComment("duplicate the following row and fill in the values for each run you wish to set parameters for");
+                printer.printRecord(entries);
+            }
+            return buffer.toString();
+        }
+    }
+
+    private static void tool2tsv(final List<String> args) throws ApiException, IOException {
+        if (isHelp(args, true)) {
+            out("");
+            out("Usage: dockstore " + CONVERT + " tool2tsv --help");
+            out("       dockstore " + CONVERT + " tool2tsv");
+            out("");
+            out("Description:");
+            out("  Spit out a tsv run file for a given cwl document.");
+            out("Required parameters:");
+            out("  --entry <entry>                Complete tool path in the Dockstore");
+            out("");
+        } else {
+            final String runString = runString(args, false);
+            out(runString);
         }
     }
 
     private static void cwl2json(final List<String> args) {
         if (isHelp(args, true)) {
             out("");
-            out("Usage: dockstore dev --help");
-            out("       dockstore dev cwl2json");
+            out("Usage: dockstore " + CONVERT + " --help");
+            out("       dockstore " + CONVERT + " cwl2json");
             out("");
             out("Description:");
             out("  Spit out a json run file for a given cwl document.");
@@ -512,6 +745,10 @@ public class Client {
         return "-h".equals(first) || "--help".equals(first);
     }
 
+    private static boolean isUnpublishRequest(String first) {
+        return "--unpub".equals(first);
+    }
+
     private static void publishHelp() {
         out("");
         out("HELP FOR DOCKSTORE");
@@ -523,6 +760,23 @@ public class Client {
         out("dockstore publish <container>              :  registers that container for use by others in the dockstore");
         out("");
         out("dockstore publish <container> <toolname>   :  registers that container for use by others in the dockstore under a specific toolname");
+        out("");
+        out("dockstore publish --unpub <toolname_path>   :  unregisters that container from use by others in the dockstore under a specific toolname");
+        out("------------------");
+        out("");
+    }
+
+    private static void refreshHelp() {
+        out("");
+        out("HELP FOR DOCKSTORE");
+        out("------------------");
+        out("See https://www.dockstore.org for more information");
+        out("");
+        out("dockstore refresh                         :  updates your list of containers on Dockstore");
+        out("");
+        out("dockstore refresh --toolpath <toolpath>   :  updates a given container on Dockstore");
+        out("------------------");
+        out("");
     }
 
     private static void info(List<String> args) {
@@ -600,7 +854,7 @@ public class Client {
         }
 
         try {
-            SourceFile file = getCWLFromServer(args);
+            SourceFile file = getCWLFromServer(args.get(0));
 
             if (file.getContent() != null && !file.getContent().isEmpty()) {
                 out(file.getContent());
@@ -614,8 +868,8 @@ public class Client {
         }
     }
 
-    private static SourceFile getCWLFromServer(List<String> args) throws ApiException {
-        String[] parts = args.get(0).split(":");
+    public static SourceFile getCWLFromServer(String entry) throws ApiException {
+        String[] parts = entry.split(":");
 
         String path = parts[0];
 
@@ -640,15 +894,247 @@ public class Client {
     }
 
     private static void refresh(List<String> args) {
-        try {
-            List<Container> containers = usersApi.refresh(user.getId());
+        if (args.size() > 0) {
+            if (isHelpRequest(args.get(0))) {
+                refreshHelp();
+            } else {
+                try {
+                    final String toolpath = reqVal(args, "--toolpath");
+                    Container container = containersApi.getContainerByToolPath(toolpath);
+                    final Long containerId = container.getId();
+                    Container updatedContainer = containersApi.refresh(containerId);
+                    List<Container> containerList = new ArrayList<>();
+                    containerList.add(updatedContainer);
+                    out("YOUR UPDATED CONTAINER");
+                    out("-------------------");
+                    printContainerList(containerList);
+                } catch (ApiException ex) {
+                    kill("Exception: " + ex);
+                }
+            }
+        } else {
+            try {
+                List<Container> containers = usersApi.refresh(user.getId());
 
-            out("YOUR UPDATED CONTAINERS");
-            out("-------------------");
-            printContainerList(containers);
-        } catch (ApiException ex) {
-            kill("Exception: " + ex);
+                out("YOUR UPDATED CONTAINERS");
+                out("-------------------");
+                printContainerList(containers);
+            } catch (ApiException ex) {
+                kill("Exception: " + ex);
+            }
         }
+    }
+    private static void labelHelp() {
+        out("");
+        out("HELP FOR DOCKSTORE");
+        out("------------------");
+        out("See https://www.dockstore.org for more information");
+        out("");
+        out("dockstore label --add <label> (--add <label>) --remove (--remove <label>) --entry <path to tool>         :  Add or remove label(s) for a given dockstore container");
+        out("");
+        out("------------------");
+        out("");
+    }
+
+    public static void label(List<String> args) {
+        if (args.size() > 0 && !isHelpRequest(args.get(0))) {
+            final String toolpath = reqVal(args, "--entry");
+            final List<String> adds = optVals(args, "--add");
+            final Set<String> addsSet =  adds.isEmpty() ? new HashSet<>() : new HashSet<>(adds);
+            final List<String> removes = optVals(args, "--remove");
+            final Set<String> removesSet =  removes.isEmpty() ? new HashSet<>() : new HashSet<>(removes);
+
+            // Do a check on the input
+            final String labelStringPattern = "^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$";
+
+            for (String add : addsSet) {
+                if (!add.matches(labelStringPattern)) {
+                    err("The following label does not match the proper label format : " + add);
+                    System.exit(INPUT_ERROR);
+                } else if (removesSet.contains(add)) {
+                    err("The following label is present in both add and remove : " + add);
+                    System.exit(INPUT_ERROR);
+                }
+            }
+
+            for (String remove : removesSet) {
+                if (!remove.matches(labelStringPattern)) {
+                    err("The following label does not match the proper label format : " + remove);
+                    System.exit(INPUT_ERROR);
+                }
+            }
+
+            // Try and update the labels for the given container
+            try {
+                Container container = containersApi.getContainerByToolPath(toolpath);
+                long containerId = container.getId();
+                List<Label> existingLabels = container.getLabels();
+                Set<String> newLabelSet = new HashSet<>();
+
+
+                // Get existing labels and store in a List
+                for (int i = 0; i < existingLabels.size(); i++) {
+                    newLabelSet.add(existingLabels.get(i).getValue());
+                }
+
+                // Add new labels to the List of labels
+                for (String add : addsSet) {
+                    final String label = add.toLowerCase();
+                    newLabelSet.add(label);
+                }
+                // Remove labels from the list of labels
+                for (String remove : removesSet) {
+                    final String label = remove.toLowerCase();
+                    newLabelSet.remove(label);
+                }
+
+                String combinedLabelString = Joiner.on(",").join(newLabelSet);
+
+                Container updatedContainer = containersApi.updateLabels(containerId, combinedLabelString, new Body());
+
+                List<Label> newLabels = updatedContainer.getLabels();
+                out("The container now has the following tags:");
+                for (int i = 0; i < newLabels.size(); i++) {
+                    out(newLabels.get(i).getValue());
+                }
+
+
+            } catch (ApiException e) {
+                e.printStackTrace();
+            }
+
+        } else {
+            labelHelp();
+        }
+    }
+
+    public static void versionTag(List<String> args) {
+        if (args.size() > 0 && !isHelpRequest(args.get(0))) {
+            final String toolpath = reqVal(args, "--entry");
+            try {
+                Container container = containersApi.getContainerByToolPath(toolpath);
+                long containerId = container.getId();
+                if (args.contains("--add")) {
+                    if (container.getMode() != ModeEnum.MANUAL_IMAGE_PATH){
+                        err("Only manually added images can add version tags.");
+                        System.exit(INPUT_ERROR);
+                    }
+
+                    final String tagName = reqVal(args, "--add");
+                    final String gitReference = reqVal(args, "--git-reference");
+                    final Boolean hidden = Boolean.valueOf(optVal(args, "--hidden", "f"));
+                    final String cwlPath = optVal(args, "--cwl-path", "/Dockstore.cwl");
+                    final String dockerfilePath = optVal(args, "--dockerfile-path", "/Dockerfile");
+                    final String imageId = reqVal(args, "--image-id");
+
+                    final Tag tag = new Tag();
+                    tag.setName(tagName);
+                    tag.setHidden(hidden);
+                    tag.setCwlPath(cwlPath);
+                    tag.setDockerfilePath(dockerfilePath);
+                    tag.setImageId(imageId);
+                    tag.setReference(gitReference);
+
+                    List<Tag> tags = new ArrayList<>();
+                    tags.add(tag);
+
+                    List<Tag> updatedTags =  containerTagsApi.addTags(containerId, tags);
+                    containersApi.refresh(container.getId());
+
+                    out("The container now has the following tags:");
+                    for (Tag newTag: updatedTags) {
+                        out(newTag.getName());
+                    }
+
+                } else if (args.contains("--update")) {
+                    final String tagName = reqVal(args, "--update");
+                    List<Tag> tags = container.getTags();
+                    Boolean updated = false;
+
+                    for (Tag tag: tags) {
+                        if (tag.getName().equals(tagName)) {
+                            final Boolean hidden = Boolean.valueOf(optVal(args, "--hidden", tag.getHidden().toString()));
+                            final String cwlPath = optVal(args, "--cwl-path", tag.getCwlPath());
+                            final String dockerfilePath = optVal(args, "--dockerfile-path", tag.getDockerfilePath());
+                            final String imageId = optVal(args, "--image-id", tag.getImageId());
+
+                            tag.setName(tagName);
+                            tag.setHidden(hidden);
+                            tag.setCwlPath(cwlPath);
+                            tag.setDockerfilePath(dockerfilePath);
+                            tag.setImageId(imageId);
+                            List<Tag> newTags = new ArrayList<>();
+                            newTags.add(tag);
+
+                            containerTagsApi.updateTags(containerId, newTags);
+                            containersApi.refresh(container.getId());
+                            out("Tag " + tagName + " has been updated.");
+                            updated = true;
+                            break;
+                        }
+                    }
+                    if (!updated) {
+                        err("Tag " + tagName + " does not exist.");
+                        System.exit(INPUT_ERROR);
+                    }
+                } else if (args.contains("--remove")) {
+                    if (container.getMode() != ModeEnum.MANUAL_IMAGE_PATH){
+                        err("Only manually added images can add version tags.");
+                        System.exit(INPUT_ERROR);
+                    }
+
+                    final String tagName = reqVal(args, "--remove");
+                    List<Tag> tags = containerTagsApi.getTagsByPath(containerId);
+                    long tagId;
+                    Boolean removed = false;
+
+                    for (Tag tag: tags) {
+                        if (tag.getName().equals(tagName)) {
+                            tagId = tag.getId();
+                            containerTagsApi.deleteTags(containerId, tagId);
+                            removed = true;
+
+                            tags = containerTagsApi.getTagsByPath(containerId);
+                            out("The container now has the following tags:");
+                            for (Tag newTag: tags) {
+                                out(newTag.getName());
+                            }
+                            break;
+                        }
+                    }
+                    if (!removed) {
+                        err("Tag " + tagName + " does not exist.");
+                        System.exit(INPUT_ERROR);
+                    }
+
+                } else {
+                    versionTagHelp();
+                }
+            } catch (ApiException e) {
+                e.printStackTrace();
+                kill("Could not find container");
+
+            }
+
+        } else {
+            versionTagHelp();
+        }
+    }
+
+    private static void versionTagHelp() {
+        out("");
+        out("HELP FOR DOCKSTORE");
+        out("------------------");
+        out("See https://www.dockstore.org for more information");
+        out("");
+        out("dockstore versionTag --add <name> --entry <path to tool> --git-reference <git reference> --hidden <true/false> --cwl-path <cwl path> --dockerfile-path <dockerfile path> --image-id <image id>         :  Add version tag for a manually registered dockstore container");
+        out("");
+        out("dockstore versionTag --update <name> --entry <path to tool>  --hidden <true/false> --cwl-path <cwl path> --dockerfile-path <dockerfile path> --image-id <image id>                                     :  Update version tag for a dockstore container");
+        out("");
+        out("dockstore versionTag --remove <name> --entry <path to tool>                                                                                                                                            :  Remove version tag from a manually registered dockstore container");
+        out("");
+        out("------------------");
+        out("");
     }
 
     public static void main(String[] argv) {
@@ -685,7 +1171,9 @@ public class Client {
             defaultApiClient = Configuration.getDefaultApiClient();
             defaultApiClient.addDefaultHeader("Authorization", "Bearer " + token);
             defaultApiClient.setBasePath(serverUrl);
+
             containersApi = new ContainersApi(defaultApiClient);
+            containerTagsApi = new ContainertagsApi(defaultApiClient);
             usersApi = new UsersApi(defaultApiClient);
 
             defaultApiClient.setDebugging(DEBUG.get());
@@ -702,7 +1190,7 @@ public class Client {
                 out("");
                 out("  search <pattern> :  allows a user to search for all containers that match the criteria");
                 out("");
-                out("  publish          :  register a container in the dockstore");
+                out("  publish          :  register/unregister a container in the dockstore");
                 out("");
                 out("  manual_publish   :  register a Docker Hub container in the dockstore");
                 out("");
@@ -711,7 +1199,16 @@ public class Client {
                 out("  cwl <container>  :  returns the Common Workflow Language tool definition for this Docker image ");
                 out("                      which enables integration with Global Alliance compliant systems");
                 out("");
-                out("  refresh          :  updates your list of containers stored on Dockstore");
+                out("  refresh          :  updates your list of containers stored on Dockstore or an individual container");
+                out("");
+                out("  label            :  updates labels for an individual container");
+                out("");
+                out("  versionTag       :  updates version tags for an individual container");
+                out("");
+                out("  " + CONVERT + "          :  utilities that allow you to convert file types");
+                out("");
+                out("  " + LAUNCH + "           :  launch containers (locally)");
+                out("");
                 out("------------------");
                 out("");
                 out("Flags:");
@@ -754,8 +1251,17 @@ public class Client {
                         case "refresh":
                             refresh(args);
                             break;
-                        case "dev":
-                            dev(args);
+                        case CONVERT:
+                            convert(args);
+                            break;
+                        case LAUNCH:
+                            launch(args);
+                            break;
+                        case "label":
+                            label(args);
+                            break;
+                        case "versionTag":
+                            versionTag(args);
                             break;
                         default:
                             invalid(cmd);
@@ -768,10 +1274,15 @@ public class Client {
             }
         } catch (IOException | NotFoundException | ApiException ex) {
             out("Exception: " + ex);
+            ex.printStackTrace();
             System.exit(GENERIC_ERROR);
         } catch (ProcessingException ex) {
             out("Could not connect to Dockstore web service: " + ex);
             System.exit(CONNECTION_ERROR);
+        } catch (Exception ex) {
+            out("Exception: " + ex);
+            ex.printStackTrace();
+            System.exit(GENERIC_ERROR);
         }
     }
 }

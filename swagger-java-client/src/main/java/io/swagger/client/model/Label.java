@@ -8,8 +8,11 @@ import io.swagger.annotations.*;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 
-@ApiModel(description = "")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-07T10:37:32.809-05:00")
+/**
+ * This describes a descriptive label that can be placed on an entry in the dockstore
+ **/
+@ApiModel(description = "This describes a descriptive label that can be placed on an entry in the dockstore")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-01-26T15:51:26.437-05:00")
 public class Label   {
   
   private Long id = null;
@@ -17,8 +20,9 @@ public class Label   {
 
   
   /**
+   * Implementation specific ID for the container in this web service
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(value = "Implementation specific ID for the container in this web service")
   @JsonProperty("id")
   public Long getId() {
     return id;
@@ -29,8 +33,9 @@ public class Label   {
 
   
   /**
+   * String representation of the tag
    **/
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(required = true, value = "String representation of the tag")
   @JsonProperty("value")
   public String getValue() {
     return value;

@@ -8,12 +8,13 @@ import io.swagger.client.TypeRef;
 
 import io.swagger.client.model.Container;
 import io.swagger.client.model.SourceFile;
+import io.swagger.client.model.Body;
 import io.swagger.client.model.RegisterRequest;
 import io.swagger.client.model.User;
 
 import java.util.*;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-07T10:37:32.809-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-01-26T15:51:26.437-05:00")
 public class ContainersApi {
   private ApiClient apiClient;
 
@@ -122,6 +123,53 @@ public class ContainersApi {
   }
   
   /**
+   * Get a container by tool path
+   * Lists info of container. Enter full path (include quay.io in path).
+   * @param repository repository path
+   * @return Container
+   */
+  public Container getRegisteredContainerByToolPath (String repository) throws ApiException {
+    Object postBody = null;
+    
+    // verify the required parameter 'repository' is set
+    if (repository == null) {
+      throw new ApiException(400, "Missing the required parameter 'repository' when calling getRegisteredContainerByToolPath");
+    }
+    
+    // create path and map variables
+    String path = "/containers/path/tool/{repository}/registered".replaceAll("\\{format\\}","json")
+      .replaceAll("\\{" + "repository" + "\\}", apiClient.escapeString(repository.toString()));
+
+    // query params
+    List<Pair> queryParams = new ArrayList<Pair>();
+    Map<String, String> headerParams = new HashMap<String, String>();
+    Map<String, Object> formParams = new HashMap<String, Object>();
+
+    
+
+    
+
+    
+
+    final String[] accepts = {
+      "application/json"
+    };
+    final String accept = apiClient.selectHeaderAccept(accepts);
+
+    final String[] contentTypes = {
+      "application/json"
+    };
+    final String contentType = apiClient.selectHeaderContentType(contentTypes);
+
+    String[] authNames = new String[] {  };
+
+    
+    TypeRef returnType = new TypeRef<Container>() {};
+    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    
+  }
+  
+  /**
    * Get a list of containers by path
    * Lists info of container. Enter full path (include quay.io in path).
    * @param repository repository path
@@ -172,9 +220,9 @@ public class ContainersApi {
    * Get a registered container by path
    * NO authentication
    * @param repository repository path
-   * @return Container
+   * @return List<Container>
    */
-  public Container getRegisteredContainerByPath (String repository) throws ApiException {
+  public List<Container> getRegisteredContainerByPath (String repository) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'repository' is set
@@ -210,7 +258,7 @@ public class ContainersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<Container>() {};
+    TypeRef returnType = new TypeRef<List<Container>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -302,7 +350,7 @@ public class ContainersApi {
   }
   
   /**
-   * List all registered containers. This would be a minimal resource that would need to be implemented by a GA4GH reference server
+   * List all registered containers.
    * NO authentication
    * @return List<Container>
    */
@@ -389,7 +437,7 @@ public class ContainersApi {
   }
   
   /**
-   * Search for matching registered containers. This would be a minimal resource that would need to be implemented by a GA4GH reference server
+   * Search for matching registered containers.
    * Search on the name (full path name) and description. NO authentication
    * @param pattern 
    * @return List<Container>
@@ -479,7 +527,53 @@ public class ContainersApi {
   }
   
   /**
-   * Get the corresponding Dockstore.cwl file on Github. This would be a minimal resource that would need to be implemented by a GA4GH reference server
+   * Delete manually registered image
+   * 
+   * @param containerId Container id to delete
+   * @return void
+   */
+  public void deleteContainer (Long containerId) throws ApiException {
+    Object postBody = null;
+    
+    // verify the required parameter 'containerId' is set
+    if (containerId == null) {
+      throw new ApiException(400, "Missing the required parameter 'containerId' when calling deleteContainer");
+    }
+    
+    // create path and map variables
+    String path = "/containers/{containerId}".replaceAll("\\{format\\}","json")
+      .replaceAll("\\{" + "containerId" + "\\}", apiClient.escapeString(containerId.toString()));
+
+    // query params
+    List<Pair> queryParams = new ArrayList<Pair>();
+    Map<String, String> headerParams = new HashMap<String, String>();
+    Map<String, Object> formParams = new HashMap<String, Object>();
+
+    
+
+    
+
+    
+
+    final String[] accepts = {
+      "application/json"
+    };
+    final String accept = apiClient.selectHeaderAccept(accepts);
+
+    final String[] contentTypes = {
+      "application/json"
+    };
+    final String contentType = apiClient.selectHeaderContentType(contentTypes);
+
+    String[] authNames = new String[] {  };
+
+    
+    apiClient.invokeAPI(path, "DELETE", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, null);
+    
+  }
+  
+  /**
+   * Get the corresponding Dockstore.cwl file on Github.
    * Does not need authentication
    * @param containerId Container id
    * @param tag 
@@ -529,7 +623,7 @@ public class ContainersApi {
   }
   
   /**
-   * Get the corresponding Dockerfile on Github. This would be a minimal resource that would need to be implemented by a GA4GH reference server
+   * Get the corresponding Dockerfile on Github.
    * Does not need authentication
    * @param containerId Container id
    * @param tag 
@@ -583,10 +677,11 @@ public class ContainersApi {
    * Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.
    * @param containerId Container to modify.
    * @param labels Comma-delimited list of labels.
+   * @param body This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.
    * @return Container
    */
-  public Container updateLabels (Long containerId, String labels) throws ApiException {
-    Object postBody = null;
+  public Container updateLabels (Long containerId, String labels, Body body) throws ApiException {
+    Object postBody = body;
     
     // verify the required parameter 'containerId' is set
     if (containerId == null) {
@@ -630,6 +725,53 @@ public class ContainersApi {
     
     TypeRef returnType = new TypeRef<Container>() {};
     return apiClient.invokeAPI(path, "PUT", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    
+  }
+  
+  /**
+   * Refresh one particular repo
+   * 
+   * @param containerId Container ID
+   * @return Container
+   */
+  public Container refresh (Long containerId) throws ApiException {
+    Object postBody = null;
+    
+    // verify the required parameter 'containerId' is set
+    if (containerId == null) {
+      throw new ApiException(400, "Missing the required parameter 'containerId' when calling refresh");
+    }
+    
+    // create path and map variables
+    String path = "/containers/{containerId}/refresh".replaceAll("\\{format\\}","json")
+      .replaceAll("\\{" + "containerId" + "\\}", apiClient.escapeString(containerId.toString()));
+
+    // query params
+    List<Pair> queryParams = new ArrayList<Pair>();
+    Map<String, String> headerParams = new HashMap<String, String>();
+    Map<String, Object> formParams = new HashMap<String, Object>();
+
+    
+
+    
+
+    
+
+    final String[] accepts = {
+      "application/json"
+    };
+    final String accept = apiClient.selectHeaderAccept(accepts);
+
+    final String[] contentTypes = {
+      "application/json"
+    };
+    final String contentType = apiClient.selectHeaderContentType(contentTypes);
+
+    String[] authNames = new String[] {  };
+
+    
+    TypeRef returnType = new TypeRef<Container>() {};
+    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
   

@@ -21,9 +21,11 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -73,10 +75,18 @@ public class ResourceUtilities {
         return httpPost;
     }
 
+    // Todo: Implement a backoff algorithm for below HTTP calls
+
     public static Optional<String> getResponseAsString(HttpGet httpGet, HttpClient client) {
         Optional<String> result = Optional.absent();
+        final int waitTime = 30000;
         try {
             ResponseHandler<String> responseHandler = new BasicResponseHandler();
+            // Give Bitbucket calls longer timeouts
+            if (httpGet.getURI().toString().contains("bitbucket.org")) {
+                RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(waitTime).setConnectTimeout(waitTime).setConnectionRequestTimeout(waitTime).build();
+                httpGet.setConfig(requestConfig);
+            }
             result = Optional.of(client.execute(httpGet, responseHandler));
         } catch (HttpResponseException httpResponseException) {
             LOG.error("getResponseAsString(): caught 'HttpResponseException' while processing request <{}> :=> <{}>", httpGet,
@@ -91,8 +101,11 @@ public class ResourceUtilities {
 
     public static Optional<String> getResponseAsString(HttpPost httpPost, HttpClient client) {
         Optional<String> result = Optional.absent();
+        final int waitTime = 30000;
         try {
             ResponseHandler<String> responseHandler = new BasicResponseHandler();
+            RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(waitTime).setConnectTimeout(waitTime).setConnectionRequestTimeout(waitTime).build();
+            httpPost.setConfig(requestConfig);
             result = Optional.of(client.execute(httpPost, responseHandler));
         } catch (HttpResponseException httpResponseException) {
             LOG.error("getResponseAsString(): caught 'HttpResponseException' while processing request <{}> :=> <{}>", httpPost,

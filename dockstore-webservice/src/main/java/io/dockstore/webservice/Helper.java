@@ -86,7 +86,7 @@ public final class Helper {
         Set<Tag> tags = container.getTags();
 
         for (Tag tag : tags) {
-            LOG.info("Updateing files for tag {}", tag.getName());
+            LOG.info("Updating files for tag {}", tag.getName());
 
             List<SourceFile> newFiles = loadFiles(client, bitbucketToken, githubToken, container, tag);
             tag.getSourceFiles().clear();
@@ -224,11 +224,15 @@ public final class Helper {
 
             final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(container.getGitUrl(), client,
                     bitbucketToken == null ? null : bitbucketToken.getContent(), githubToken.getContent());
+            String email = "";
             if (sourceCodeRepo != null) {
                 LOG.info("Parsing CWL...");
                 // find if there is a Dockstore.cwl file from the git repository
                 sourceCodeRepo.findCWL(container);
+
+                email = sourceCodeRepo.getOrganizationEmail();
             }
+            container.setEmail(email);
 
             containerDAO.create(container);
         }
@@ -823,7 +827,7 @@ public final class Helper {
         Pattern p = Pattern.compile("^(https?:)?\\/\\/(www\\.)?(github\\.com|bitbucket\\.org)\\/([\\w-]+)\\/([\\w-]+)$");
         Matcher m = p.matcher(url);
         if (!m.find()) {
-            LOG.info("Cannot parse url: " + url);
+            LOG.info("Cannot parse HTTPS url: " + url);
             return null;
         }
 
@@ -839,5 +843,17 @@ public final class Helper {
         String ssh = "git@" + source + ":" + gitUsername + "/" + gitRepository + ".git";
 
         return ssh;
+    }
+
+    /**
+     * Determines if the given URL is a git URL
+     *
+     * @param url
+         * @return is url of the format git@source:gitUsername/gitRepository
+         */
+    public static boolean isGit(String url) {
+        Pattern p = Pattern.compile("git\\@(\\S+):(\\S+)/(\\S+)\\.git");
+        Matcher m = p.matcher(url);
+        return m.matches();
     }
 }

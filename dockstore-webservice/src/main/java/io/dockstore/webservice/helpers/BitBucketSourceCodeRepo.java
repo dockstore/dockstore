@@ -164,4 +164,10 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         return container;
     }
 
+    @Override
+    public String getOrganizationEmail() {
+        // TODO: Need to get email of the container's organization/user
+        return "";
+    }
+
 }

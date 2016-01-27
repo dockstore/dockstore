@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -35,6 +36,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -70,6 +72,8 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 
 /**
  *
@@ -160,6 +164,13 @@ public class DockerRepoResource {
         User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
 
+        List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
+
+        if (!tokens.isEmpty()) {
+            Token bitbucketToken = tokens.get(0);
+            Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
+        }
+
         Container container = Helper.refreshContainer(containerId, authToken.getUserId(), client, objectMapper, userDAO, containerDAO,
                 tokenDAO, tagDAO, fileDAO);
 
@@ -200,7 +211,8 @@ public class DockerRepoResource {
     @ApiOperation(value = "Update the labels linked to a container.", notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Container.class)
     public Container updateLabels(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "Container to modify.", required = true) @PathParam("containerId") Long containerId,
-            @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings) {
+            @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings,
+            @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", defaultValue = "") String emptyBody) {
         Container c = containerDAO.findById(containerId);
         Helper.checkContainer(c);
 
@@ -260,6 +272,18 @@ public class DockerRepoResource {
         Container c = containerDAO.findRegisteredById(containerId);
         Helper.checkContainer(c);
 
+        // need to have this evict so that hibernate does not actually delete the tags
+        containerDAO.evict(c);
+
+        List<Tag> tags = new ArrayList<>();
+        tags.addAll(c.getTags());
+
+        for (Tag t : tags) {
+            if (t.isHidden()) {
+                c.removeTag(t);
+            }
+        }
+
         return c;
     }
 
@@ -290,7 +314,9 @@ public class DockerRepoResource {
         container.getLabels().clear();
         container.getLabels().addAll(createdLabels);
 
-        container.setGitUrl(Helper.convertHttpsToSsh(container.getGitUrl()));
+        if (!Helper.isGit(container.getGitUrl())) {
+            container.setGitUrl(Helper.convertHttpsToSsh(container.getGitUrl()));
+        }
 
         Container duplicate = containerDAO.findByToolPath(container.getPath(), container.getToolname());
 
@@ -304,6 +330,34 @@ public class DockerRepoResource {
 
         // Helper.refreshContainer(id, authToken.getUserId(), client, objectMapper, userDAO, containerDAO, tokenDAO, tagDAO, fileDAO);
         return created;
+    }
+
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}")
+    @ApiOperation(value = "Delete manually registered image")
+    @ApiResponses(@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid "))
+    public Response deleteContainer(@ApiParam(hidden = true) @Auth Token authToken,
+            @ApiParam(value = "Container id to delete", required = true) @PathParam("containerId") Long containerId) {
+        User user = userDAO.findById(authToken.getUserId());
+        Container container = containerDAO.findById(containerId);
+        Helper.checkUser(user, container);
+
+        // only allow users to delete manually added images
+        if (container.getMode() == ContainerMode.MANUAL_IMAGE_PATH) {
+            container.getTags().clear();
+            containerDAO.delete(container);
+
+            container = containerDAO.findById(containerId);
+            if (container == null) {
+                return Response.ok().build();
+            } else {
+                return Response.serverError().build();
+            }
+        } else {
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
     }
 
     @POST
@@ -356,10 +410,24 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("registered")
-    @ApiOperation(value = "List all registered containers. This would be a minimal resource that would need to be implemented "
-            + "by a GA4GH reference server", tags = { "GA4GH", "containers" }, notes = "NO authentication", response = Container.class, responseContainer = "List")
+    @ApiOperation(value = "List all registered containers.", tags = { "containers" }, notes = "NO authentication", response = Container.class, responseContainer = "List")
     public List<Container> allRegisteredContainers() {
-        return containerDAO.findAllRegistered();
+        List<Container> containers = containerDAO.findAllRegistered();
+
+        for (Container c : containers) {
+            containerDAO.evict(c);
+
+            List<Tag> tags = new ArrayList<>();
+            tags.addAll(c.getTags());
+
+            for (Tag t : tags) {
+                if (t.isHidden()) {
+                    c.removeTag(t);
+                }
+            }
+        }
+
+        return containers;
     }
 
     @GET
@@ -509,8 +577,8 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/search")
     @ApiOperation(value = "Search for matching registered containers."
-            + " This would be a minimal resource that would need to be implemented by a GA4GH reference server", notes = "Search on the name (full path name) and description. NO authentication", response = Container.class, responseContainer = "List", tags = {
-            "GA4GH", "containers" })
+            , notes = "Search on the name (full path name) and description. NO authentication", response = Container.class, responseContainer = "List", tags = {
+            "containers" })
     public List<Container> search(@QueryParam("pattern") String word) {
         return containerDAO.searchPattern(word);
     }
@@ -537,8 +605,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/dockerfile")
-    @ApiOperation(value = "Get the corresponding Dockerfile on Github. This would be a minimal resource that would need to be implemented "
-            + "by a GA4GH reference server", tags = { "GA4GH", "containers" }, notes = "Does not need authentication", response = SourceFile.class)
+    @ApiOperation(value = "Get the corresponding Dockerfile on Github.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile dockerfile(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag) {
 
@@ -577,8 +644,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/cwl")
-    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github. This would be a minimal resource that would need to be implemented "
-            + "by a GA4GH reference server", tags = { "GA4GH", "containers" }, notes = "Does not need authentication", response = SourceFile.class)
+    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile cwl(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag) {
 

@@ -16,8 +16,10 @@ hs_err_pid*
 /target/
 dependency-reduced-pom.xml
 hello-world.yml
-/dockstore-webservice/target/
-/dockstore-client/target/
+dockstore-webservice/target/
+dockstore-client/target/
+dockstore-launcher/target/
+dockstore-launcher/foo.json
 swagger-java-client/build.gradle
 swagger-java-client/gradle.properties
 swagger-java-client/settings.gradle
@@ -26,3 +28,19 @@ swagger-java-client/settings.gradle
 dockstore-webservice/nbactions.xml
 /dockstore-common/target/
 /dockstore-integration-testing/target/
+
+# confidential testing files
+# The dockstore CLI config file for testing confidential data
+dockstore-integration-testing/src/test/resources/config_file.txt
+
+# Contains SQL statements to initialize testing DB with a confidential user and tokens
+dockstore-integration-testing/src/test/resources/db_confidential_dump.sql
+
+# Contains SQL statements to initialize testing DB with a confidential user, assuming they followed the dockstore setup tutorial
+dockstore-integration-testing/src/test/resources/db_confidential_dump_full.sql
+
+# The dockstore.yml file for running the confidential tests
+dockstore-integration-testing/src/test/resources/dockstoreTest.yml
+
+# The tarball of the above three confidential files
+dockstore-integration-testing/src/test/resources/secrets.tar

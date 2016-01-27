@@ -7,8 +7,10 @@ import java.util.List;
 
 import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.RepositoryContents;
+import org.eclipse.egit.github.core.User;
 import org.eclipse.egit.github.core.client.GitHubClient;
 import org.eclipse.egit.github.core.service.ContentsService;
+import org.eclipse.egit.github.core.service.OrganizationService;
 import org.eclipse.egit.github.core.service.RepositoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +26,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     private final String gitUsername;
     private final ContentsService cService;
     private final RepositoryService service;
+    private final OrganizationService oService;
     private final String gitRepository;
 
     public GitHubSourceCodeRepo(String gitUsername, String githubTokenContent, String gitRepository) {
@@ -33,9 +36,11 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         RepositoryService service = new RepositoryService(githubClient);
         ContentsService cService = new ContentsService(githubClient);
+        OrganizationService oService = new OrganizationService(githubClient);
 
         this.service = service;
         this.cService = cService;
+        this.oService = oService;
         this.gitUsername = gitUsername;
         this.gitRepository = gitRepository;
     }
@@ -99,6 +104,23 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             }
         }
         return c;
+    }
+
+    @Override
+    public String getOrganizationEmail() {
+        User organization = null;
+
+        try {
+            // TODO: only works if the gitUsername is an actual organization on github
+            // ie, it does not work if it is just a user
+            organization = oService.getOrganization(gitUsername);
+        } catch (IOException ex) {
+            LOG.info("Cannot find Organization {}", gitUsername);
+            return "";
+        }
+
+        return organization.getEmail();
+
     }
 
 }

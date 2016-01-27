@@ -2,6 +2,8 @@
 
 # Dockstore
 
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/common-workflow-language/common-workflow-language?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 The Dockstore concept is simple, provide a place where users can share tools encapsulated in Docker and described with the Common Workflow Language (CWL) which is being recommended by the GA4GH Containers and Workflow group. This enables scientists, for example, to share analytical tools in a way that makes them machine readable and runnable in a variety of environments (SevenBridges, Toil, etc). While the Dockstore is focused on serving researchers in the biosciences the combination of Docker + CWL can be used by anyone to describe the tools and services in their Docker images in a standardized, machine-readable way.  We hope to use this project as motivation to create a GA4GH API standard for container registries and intend on making Dockstore fully compliant.
 
 For a live demo see https://dockstore.org
@@ -17,6 +19,12 @@ For the related web UI see the [dockstore-ui](https://github.com/ga4gh/dockstore
 If you maven build in the root directory this will build not only the web service but the client tool:
 
     mvn clean install
+    
+If you have access to our confidential data package for extended testing, you can activate that profile via
+
+    mvn clean install -Pconfidential-tests
+
+As a pre-requisite, you will need to have postgres installed and setup with the database user specified in .travis.yml. 
 
 ### Build Docker Version
 
@@ -61,12 +69,11 @@ You can also run it on your local computer but will need to setup postgres separ
 
 ### Webservice Demo
 
-1. ~~First add all your organizations/namespaces you are associated to on Quay.io to the constructor of `dockstore/dockstore-webservice/src/main/java/io/dockstore/webservice/resources/DockerRepoResource.java`. See next section for details.~~ The webservice will now only use user's Quay username as namespace. This means that you will see only your own Quay repositories.
-2. Build the project and run the webservice. NOTE: The webservice will grab and use the IP of the server running the API. For example, if running on a docker container with IP 172.17.0.24, the API will use this for the curl commands and request URLs.
-3. Add your Github token. Follow the the steps above to get your Github token. This will create a user with the same username.
-4. Add your Quay token. It will automatically be assigned to the user created with Github if the username is the same. If not, you need to user /token/assignEndUser to associate it with the user.
-5. To load all your containers from Quay, use /container/refresh to load them in the database for viewing. This needs to be done automatically once the Quay token is set.
-6. Now you can see and list your containers. Note that listing Github repos do not return anything because it does not return a valid json.
+1. Build the project and run the webservice. NOTE: The webservice will grab and use the IP of the server running the API. For example, if running on a docker container with IP 172.17.0.24, the API will use this for the curl commands and request URLs.
+2. Add your Github token. Follow the the steps above to get your Github token. This will create a user with the same username.
+3. Add your Quay token. It will automatically be assigned to the user created with Github if the username is the same. If not, you need to user /token/assignEndUser to associate it with the user.
+4. To load all your containers from Quay, use /container/refresh to load them in the database for viewing. This needs to be done automatically once the Quay token is set.
+5. Now you can see and list your containers. Note that listing Github repos do not return anything because it does not return a valid json.
 
 ## Coding Standards
 
@@ -105,10 +112,12 @@ Background:
 To regenerate the swagger client:
 
 1. Have the dockstore webservice running
-2. Pull the code from their repo and cd to the directory. Build using `mvn package`
+2. Pull the code from their repo and cd to the directory. We are using v2.1.4. Build using `mvn clean install`
 3. Run `java -jar modules/swagger-codegen-cli/target/swagger-codegen-cli.jar generate -i http://localhost:8080/swagger.json -l java -o <output directory> --library jersey2`. The output directory is where you have dockstore/swagger-java-client/.
 4. NOTE: Rengenerating the swagger client will probably generate an incorrect pom file. Use git checkout on the pom file to undo the changes to it.
 
+ * v2.1.5 is a major update for swagger, and should be explored in the future
+ 
 ## Swagger Java Client for quay.io
 
 Background:
@@ -124,6 +133,22 @@ Background:
 2. Run `java -jar modules/swagger-codegen-cli/target/swagger-codegen-cli.jar generate -i https://quay.io/api/v1/discovery -l java -o <output directory> --library jersey2`. The output directory is where you have dockstore/swagger-java-client/.
 3. NOTE: Rengenerating the swagger client will probably generate an incorrect pom file. Use git checkout on the pom file to undo the changes to it.
 
+## Swagger Web Service Components for GA4GH Tool Registry Schema
+
+Background:
+
+ * The [tool-registry-schema](https://github.com/ga4gh/tool-registry-schemas) are intended on allowing different tool registries to exchange and compare data
+ * Defined in swagger yaml
+ * We use the online swagger editor to generate a JAX-RS skeleton for implementation
+ * Unlike the above components, this is a server component rather than client component, thus we cannot use swagger-codegen (client-only for now?)
+ 
+ To regenerate the swagger client:
+ 
+1. Open up the yaml document for the specification in the editor.swagger.io
+2. Hit Generate Server and select JAX-RS
+3. Replace the appropriate classes in dockstore-webservice
+4. Unlike the client classes, we cannot separate quite as cleanly. Classes to watch out for are io.swagger.api.ToolsApi (includes DropWizard specific UnitOfWork annotations) and io.swagger.api.impl.ToolsApiServiceImpl (includes our implementation).
+
 
 ## CWL Avro documents
 
@@ -135,9 +160,12 @@ Background:
 then gson to convert from json due to some incompatibilities between CWL avro and normal avro.  
 
 To regenerate:
+
 1. Get schema salad from the common-workflow-language organization and run `python -mschema_salad --print-avro ~/common-workflow-language/draft-3/cwl-avro.yml`
 2. Get the avro tools jar and CWL avsc and call `java -jar avro-tools-1.7.7.jar compile schema cwl.avsc cwl`
 3. Copy them to the appropriate directory in dockstore-client (you will need to refactor and insert package names)
+
+Eventually, this will be moved out as a proper Maven dependency on https://github.com/common-workflow-language/cwlavro
 
 ## How to perform a Maven release 
 
@@ -151,6 +179,12 @@ Where 0.2.2 should be modified to the version number of your next release
 7. Remember to iterate the version numbers on the develop branch to the snapshot version of your next release `mvn versions:set -DnewVersion=0.2.3-SNAPSHOT ; git add pom.xml \*/pom.xml ; git push`
 8. Fiddle with github releases and update docs
 
+## Encrypted Documents for Travis-CI
+
+Encrypted documents necessary for confidential testing are handled as indicated in the documents at Travis-CI for  
+[files](https://docs.travis-ci.com/user/encrypting-files/#Encrypting-multiple-files) and [environment variables](https://docs.travis-ci.com/user/encryption-keys).
+
+A convenience script is provided as encrypt.sh which will compress confidential files, encrypt them, and then update an encrypted archive on GitHub. Confidential files should also be added to .gitignore to prevent accidental check-in. The unencrypted secrets.tar should be privately distributed among members of the team that need to work with confidential data. 
 
 
 ## TODO
