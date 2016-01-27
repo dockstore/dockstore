@@ -31,26 +31,32 @@ import io.dockstore.common.Constants;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.Registry;
 import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit.DropwizardAppRule;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
+import io.swagger.client.api.GAGHApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.Container;
 import io.swagger.client.model.Container.ModeEnum;
 import io.swagger.client.model.Container.RegistryEnum;
 import io.swagger.client.model.Group;
 import io.swagger.client.model.RegisterRequest;
+import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Token;
+import io.swagger.client.model.Tool;
+import io.swagger.client.model.ToolDescriptor;
+import io.swagger.client.model.ToolDockerfile;
 import io.swagger.client.model.User;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- *
+ * Tests the actual ApiClient generated via Swagger
  * @author xliu
  */
 public class SystemClientIT {
@@ -167,11 +173,24 @@ public class SystemClientIT {
         c.setIsRegistered(true);
         c.setIsPublic(true);
         c.setValidTrigger(true);
+        c.setNamespace("seqware");
+        c.setToolname("test5");
+        c.setPath("registry.hub.docker.com/seqware/seqware");
+        //c.setToolPath("registry.hub.docker.com/seqware/seqware/test5");
         Tag tag = new Tag();
+        tag.setName("master");
         tag.setReference("refs/heads/master");
         tag.setValid(true);
+        // construct source files
+        SourceFile fileCWL = new SourceFile();
+        fileCWL.setContent("cwlstuff");
+        fileCWL.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+        tag.getSourceFiles().add(fileCWL);
+        SourceFile fileDockerFile = new SourceFile();
+        fileDockerFile.setContent("dockerstuff");
+        fileDockerFile.setType(SourceFile.TypeEnum.DOCKERFILE);
+        tag.getSourceFiles().add(fileDockerFile);
         c.getTags().add(tag);
-        c.setToolname("test5");
         return c;
     }
 
@@ -184,6 +203,58 @@ public class SystemClientIT {
 
         final Container container = containersApi.registerManual(c);
         containersApi.registerManual(container);
+    }
+
+    @Test
+    public void testGA4GHListContainers() throws IOException, TimeoutException, ApiException {
+        ApiClient client = getAdminWebClient();
+        GAGHApi toolApi = new GAGHApi(client);
+        ContainersApi containersApi = new ContainersApi(client);
+        // register one more to give us something to look at
+        Container c = getContainer();
+        containersApi.registerManual(c);
+
+        List<Tool> tools = toolApi.toolsGet(null, null, null, null, null, null, null);
+        assertTrue(tools.size() == 2);
+
+        // test a few constraints
+        tools = toolApi.toolsGet("quay.io/test_org/test6", null, null, null, null, null, null);
+        assertTrue(tools.size() == 1);
+        tools = toolApi.toolsGet("quay.io/test_org/test6", Registry.QUAY_IO.toString(), null, null, null, null, null);
+        assertTrue(tools.size() == 1);
+        tools = toolApi.toolsGet("quay.io/test_org/test6", Registry.DOCKER_HUB.toString(), null, null, null, null, null);
+        assertTrue(tools.size() == 0);
+    }
+
+    @Test
+    public void testGetSpecificTool() throws IOException, TimeoutException, ApiException {
+        ApiClient client = getAdminWebClient();
+        GAGHApi toolApi = new GAGHApi(client);
+        ContainersApi containersApi = new ContainersApi(client);
+        // register one more to give us something to look at
+        Container c = getContainer();
+        containersApi.registerManual(c);
+
+        final Tool tool = toolApi.toolsRegistryIdGet("quay.io/test_org/test6");
+        assertTrue(tool != null);
+        assertTrue(tool.getRegistryId().equals("quay.io/test_org/test6"));
+    }
+
+    @Test
+    public void testGetFiles() throws IOException, TimeoutException, ApiException {
+        ApiClient client = getAdminWebClient();
+        GAGHApi toolApi = new GAGHApi(client);
+        ContainersApi containersApi = new ContainersApi(client);
+        // register one more to give us something to look at
+        Container c = getContainer();
+        containersApi.registerManual(c);
+
+        final ToolDockerfile toolDockerfile = toolApi.toolsRegistryIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5");
+        assertTrue(toolDockerfile.getDockerfile().contains("dockerstuff"));
+        final ToolDockerfile toolDockerfileSpecific = toolApi.toolsRegistryIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5:master");
+        assertTrue(toolDockerfileSpecific.getDockerfile().contains("dockerstuff"));
+        final ToolDescriptor cwl = toolApi.toolsRegistryIdDescriptorGet("registry.hub.docker.com/seqware/seqware/test5:master", "CWL");
+        assertTrue(cwl.getDescriptor().contains("cwlstuff"));
     }
 
     @Test

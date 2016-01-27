@@ -410,8 +410,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("registered")
-    @ApiOperation(value = "List all registered containers. This would be a minimal resource that would need to be implemented "
-            + "by a GA4GH reference server", tags = { "GA4GH", "containers" }, notes = "NO authentication", response = Container.class, responseContainer = "List")
+    @ApiOperation(value = "List all registered containers.", tags = { "containers" }, notes = "NO authentication", response = Container.class, responseContainer = "List")
     public List<Container> allRegisteredContainers() {
         List<Container> containers = containerDAO.findAllRegistered();
 
@@ -578,8 +577,8 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/search")
     @ApiOperation(value = "Search for matching registered containers."
-            + " This would be a minimal resource that would need to be implemented by a GA4GH reference server", notes = "Search on the name (full path name) and description. NO authentication", response = Container.class, responseContainer = "List", tags = {
-            "GA4GH", "containers" })
+            , notes = "Search on the name (full path name) and description. NO authentication", response = Container.class, responseContainer = "List", tags = {
+            "containers" })
     public List<Container> search(@QueryParam("pattern") String word) {
         return containerDAO.searchPattern(word);
     }
@@ -606,8 +605,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/dockerfile")
-    @ApiOperation(value = "Get the corresponding Dockerfile on Github. This would be a minimal resource that would need to be implemented "
-            + "by a GA4GH reference server", tags = { "GA4GH", "containers" }, notes = "Does not need authentication", response = SourceFile.class)
+    @ApiOperation(value = "Get the corresponding Dockerfile on Github.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile dockerfile(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag) {
 
@@ -646,8 +644,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/cwl")
-    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github. This would be a minimal resource that would need to be implemented "
-            + "by a GA4GH reference server", tags = { "GA4GH", "containers" }, notes = "Does not need authentication", response = SourceFile.class)
+    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile cwl(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag) {
 
