@@ -260,7 +260,7 @@ public final class Helper {
             final Container oldContainer = iterator.next();
             boolean exists = false;
             for (final Container newContainer : apiContainerList) {
-                if (newContainer.getToolPath().equals(oldContainer.getToolPath())) {
+                if (newContainer.getToolPath().equals(oldContainer.getPath())) {
                     exists = true;
                     break;
                 }
@@ -280,7 +280,7 @@ public final class Helper {
 
             // Find if user already has the container
             for (Container oldContainer : dbContainerList) {
-                if (newContainer.getToolPath().equals(oldContainer.getToolPath())) {
+                if (newContainer.getToolPath().equals(oldContainer.getPath())) {
                     exists = true;
                     oldContainer.update(newContainer);
                     break;
@@ -572,6 +572,15 @@ public final class Helper {
         final ImageRegistryInterface anInterface = factory.createImageRegistry(container.getRegistry());
 
         List<Container> apiContainers = new ArrayList<>();
+
+        // Find a container with the given container's Path as it's tool path
+        Container duplicatePath = containerDAO.findByToolPath(container.getPath(), "");
+
+        // If exists, check conditions to see if it should be changed to auto (in sync with quay tags and git repo)
+        if (container.getMode() == ContainerMode.MANUAL_IMAGE_PATH && duplicatePath != null  && container.getRegistry().toString().equals(
+                Registry.QUAY_IO.toString()) && duplicatePath.getGitUrl().equals(container.getGitUrl())) {
+            container.setMode(ContainerMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
+        }
 
         if (container.getMode() == ContainerMode.MANUAL_IMAGE_PATH) {
             apiContainers.add(container);

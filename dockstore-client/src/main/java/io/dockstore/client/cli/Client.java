@@ -487,6 +487,7 @@ public class Client {
             container.setIsRegistered(true);
             container.setGitUrl(gitURL);
             container.setToolname(toolname);
+            container.setPath(Joiner.on("/").skipNulls().join(registry, namespace, name));
 
             if (!Registry.QUAY_IO.toString().equals(registry)) {
                 final String versionName = optVal(args, "--version-name", "latest");
