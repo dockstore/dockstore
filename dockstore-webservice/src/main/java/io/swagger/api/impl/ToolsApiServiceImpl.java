@@ -8,7 +8,6 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import javax.ws.rs.core.Response;
@@ -26,6 +25,7 @@ import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.jdbi.ContainerDAO;
 import io.swagger.api.NotFoundException;
 import io.swagger.api.ToolsApiService;
+import io.swagger.model.Metadata;
 import io.swagger.model.Tool;
 import io.swagger.model.ToolDescriptor;
 import io.swagger.model.ToolDockerfile;
@@ -51,21 +51,63 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     public Response toolsRegistryIdGet(String id, SecurityContext securityContext) throws NotFoundException {
         ParsedRegistryID parsedID = new ParsedRegistryID(id);
         Container container = containerDAO.findRegisteredByToolPath(parsedID.getPath(),parsedID.getToolName());
-        // check whether this is registered
+        return buildToolResponse(container, null);
+    }
+
+    private Response buildToolResponse(Container container, String version) {
+        Response response;
         if (container == null) {
+            response = Response.status(Response.Status.NOT_FOUND).build();
+        }
+        else if (!container.getIsRegistered()){
+            // check whether this is registered
+            response = Response.status(Response.Status.UNAUTHORIZED).build();
+        } else {
+            Tool tool = convertContainer2Tool(container);
+            assert (tool != null);
+            // filter out other versions if we're narrowing to a specific version
+            if (version != null) {
+                tool.getVersions().removeIf(v -> !v.getImage().equals(version));
+                if (tool.getVersions().size() != 1){
+                    response = Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+                } else{
+                    response = Response.ok(tool.getVersions().get(0)).build();
+                }
+            }else {
+                response = Response.ok(tool).build();
+            }
+        }
+        return response;
+    }
+
+    @Override
+    public Response toolsRegistryIdVersionVersionIdGet(String registryId, String versionId, SecurityContext securityContext)
+        throws NotFoundException {
+        ParsedRegistryID parsedID = new ParsedRegistryID(registryId);
+        try {
+            versionId = URLDecoder.decode(versionId, StandardCharsets.UTF_8.displayName());
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+        Container container = containerDAO.findRegisteredByToolPath(parsedID.getPath(),parsedID.getToolName());
+        return buildToolResponse(container, versionId);
+    }
+
+    @Override
+    public Response toolsRegistryIdVersionVersionIdDescriptorGet(String registryId, String versionId, String format,
+                                                                              SecurityContext securityContext) throws NotFoundException {
+        if (format.equalsIgnoreCase("CWL")) {
+            return getFileByToolVersionID(registryId, versionId, SourceFile.FileType.DOCKSTORE_CWL);
+        } else {
+            // TODO: no other descriptor formats implemented for now
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-        if (!container.getIsRegistered()){
-            return Response.status(Response.Status.UNAUTHORIZED).build();
-        }
-        Tool tool = convertContainer2Tool(container);
-        assert(tool != null);
-        // filter out other versions if we're narrowing to a specific version
-        if (parsedID.getVersion() != null){
-            tool.getVersions().removeIf( v -> !v.getImage().equals(parsedID.getVersion()));
-        }
+    }
 
-        return Response.ok(tool).build();
+    @Override
+    public Response toolsRegistryIdVersionVersionIdDockerfileGet(String registryId, String versionId,
+                                                                              SecurityContext securityContext) throws NotFoundException {
+        return getFileByToolVersionID(registryId, versionId, SourceFile.FileType.DOCKERFILE);
     }
 
     @Override
@@ -118,6 +160,15 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         return Response.ok(results).build();
     }
 
+    @Override
+    public Response toolsMetadataGet(SecurityContext securityContext) throws NotFoundException {
+        Metadata metadata = new Metadata();
+        metadata.setCountry("CAN");
+        metadata.setFriendlyName("Your friendly neighbourhood docker store");
+        metadata.setVersion(ToolsApiServiceImpl.class.getPackage().getImplementationVersion());
+        return Response.ok(metadata).build();
+    }
+
     /**
      * Convert our Container object to a standard Tool format
      * 
@@ -158,18 +209,18 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         // TODO: contains has no counterpart in our DB
         // setup versions as well
         for (Tag tag : container.getTags()) {
+
+            if (tag.getName() == null || tag.getImageId() == null){
+                // tags with no names make no sense here
+                continue;
+            }
+
             ToolVersion version = new ToolVersion();
             // version id
             String globalVersionId;
-            // TODO: properly pass this information
             try {
-                // construct escaped ID
-                String nestedNewID = container.getToolPath() + ":" + tag.getName();
-                version.setRegistryId(nestedNewID);
-                String escapedID = URLEncoder.encode(nestedNewID, StandardCharsets.UTF_8.displayName());
-                URI uri = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()), "/tools/" + escapedID, null, null);
-                globalVersionId = uri.toURL().toString();
-            } catch (URISyntaxException | MalformedURLException | UnsupportedEncodingException e) {
+                globalVersionId = globalId + "/version/" +  URLEncoder.encode(tag.getName(), StandardCharsets.UTF_8.displayName());
+            } catch (UnsupportedEncodingException e) {
                 LOG.error("Could not construct URL for our container with id: " + container.getId());
                 return null;
             }
@@ -190,69 +241,41 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             }
             version.setImage(tag.getName());
             tool.getVersions().add(version);
+            version.setMetaVersion(String.valueOf(tag.getLastModified()));
         }
         return tool;
     }
 
-    @Override
-    public Response toolsRegistryIdDescriptorGet(String registryId, String format, SecurityContext securityContext)
-            throws NotFoundException {
-        if (format.equalsIgnoreCase("CWL")) {
-            return getFileByToolVersionID(registryId, SourceFile.FileType.DOCKSTORE_CWL);
-        } else {
-            // TODO: no other descriptor formats implemented for now
-            return Response.status(Response.Status.NOT_FOUND).build();
-        }
-    }
-
-    @Override
-    public Response toolsRegistryIdDockerfileGet(String registryId, SecurityContext securityContext) throws NotFoundException {
-        return getFileByToolVersionID(registryId, SourceFile.FileType.DOCKERFILE);
-    }
-
-    private Response getFileByToolVersionID(String registryId, SourceFile.FileType type) {
+    private Response getFileByToolVersionID(String registryId, String versionId, SourceFile.FileType type) {
         // if a version is provided, get that version, otherwise return the newest
         ParsedRegistryID parsedID = new ParsedRegistryID(registryId);
-        boolean latest = parsedID.getVersion() == null;
+        try {
+            versionId = URLDecoder.decode(versionId, StandardCharsets.UTF_8.displayName());
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
         Container container = containerDAO.findRegisteredByToolPath(parsedID.getPath(),parsedID.getToolName());
         // check whether this is registered
         if (!container.getIsRegistered()){
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
         // convert our toolName model to that expected
-        SourceFile latestFile = null;
-        Date latestDate = null;
         for (Tag tag : container.getTags()) {
-            if (latest) {
-                for (SourceFile file : tag.getSourceFiles()) {
-                    if (file.getType() == type) {
-                        if (latestFile == null || tag.getLastModified().after(latestDate)) {
-                            latestDate = tag.getLastModified();
-                            latestFile = file;
-                        }
-                    }
-                }
-            } else {
-                if (tag.getName().equals(parsedID.getVersion())) {
+                if (tag.getName().equals(versionId)) {
                     for (SourceFile file : tag.getSourceFiles()) {
                         if (file.getType() == type) {
-                            latestDate = tag.getLastModified();
-                            latestFile = file;
+                                if(type == SourceFile.FileType.DOCKERFILE) {
+                                    ToolDockerfile dockerfile = new ToolDockerfile();
+                                    dockerfile.setDockerfile(file.getContent());
+                                    return Response.ok(dockerfile).build();
+                                } else if (type == SourceFile.FileType.DOCKSTORE_CWL){
+                                    ToolDescriptor descriptor = new ToolDescriptor();
+                                    descriptor.setDescriptor(file.getContent());
+                                    return Response.ok(descriptor).build();
+                                }
                         }
                     }
                 }
-            }
-            if (latestFile != null){
-              if(type == SourceFile.FileType.DOCKERFILE) {
-                  ToolDockerfile dockerfile = new ToolDockerfile();
-                  dockerfile.setDockerfile(latestFile.getContent());
-                  return Response.ok(dockerfile).build();
-              } else if (type == SourceFile.FileType.DOCKSTORE_CWL){
-                  ToolDescriptor descriptor = new ToolDescriptor();
-                  descriptor.setDescriptor(latestFile.getContent());
-                  return Response.ok(descriptor).build();
-              }
-            }
         }
         return Response.status(Response.Status.NOT_FOUND).build();
     }
@@ -265,7 +288,6 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         private String organization;
         private String name;
         private String toolName;
-        private String version;
 
         public String getRegistry() {
             return registry;
@@ -283,23 +305,13 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             return toolName;
         }
 
-        public String getVersion() {
-            return version;
-        }
-
         public ParsedRegistryID(String id) {
             try {
                 id = URLDecoder.decode(id, StandardCharsets.UTF_8.displayName());
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException(e);
             }
-            final List<String> segments = Splitter.on(':').omitEmptyStrings().splitToList(id);
-            if (segments.size() > 1){
-                version = segments.get(1);
-            } else{
-                version = null;
-            }
-            final List<String> textSegments = Splitter.on('/').omitEmptyStrings().splitToList(segments.get(0));
+            final List<String> textSegments = Splitter.on('/').omitEmptyStrings().splitToList(id);
             registry = textSegments.get(0);
             organization = textSegments.get(1);
             name = textSegments.get(2);
