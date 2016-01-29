@@ -102,7 +102,7 @@ public class ClientIT {
         Assert.assertTrue("should see three entries", count == 1);
     }
 
-    @Test
+    @Ignore
     public void quickRegisterDuplicateEntry() throws IOException {
         Client.main(new String[] { "--config", getConfigFileLocation(true), "publish", "quay.io/test_org/test6" });
         Client.main(new String[] { "--config", getConfigFileLocation(true), "publish", "quay.io/test_org/test6", "view1" });

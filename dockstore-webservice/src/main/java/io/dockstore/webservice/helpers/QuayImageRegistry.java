@@ -163,6 +163,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
             // if (container.getMode() != ContainerMode.MANUAL_IMAGE_PATH) {
             // checkTriggers(container);
             // if (container.hasValidTrigger()) {
+
             updateContainersWithBuildInfo(formatter, mapOfBuilds, gson, container, repo, path);
             // }
             // }
@@ -197,35 +198,36 @@ public class QuayImageRegistry implements ImageRegistryInterface {
             Map<String, ArrayList> map = new HashMap<>();
             map = (Map<String, ArrayList>) gson.fromJson(json, map.getClass());
             ArrayList builds = map.get("builds");
+            if (builds.size() > 0) {
 
-            mapOfBuilds.put(path, builds);
+                mapOfBuilds.put(path, builds);
 
-            if (!builds.isEmpty()) {
-                Map<String, Map<String, String>> map2 = (Map<String, Map<String, String>>) builds.get(0);
+                if (!builds.isEmpty()) {
+                    Map<String, Map<String, String>> map2 = (Map<String, Map<String, String>>) builds.get(0);
 
-                Map<String, String> triggerMetadata = (Map<String, String>) map2.get("trigger_metadata");
+                    Map<String, String> triggerMetadata = (Map<String, String>) map2.get("trigger_metadata");
 
-                if (triggerMetadata != null) {
-                    gitURL = triggerMetadata.get("git_url");
+                    if (triggerMetadata != null) {
+                        gitURL = triggerMetadata.get("git_url");
+                    }
+
+                    Map<String, String> map3 = (Map<String, String>) builds.get(0);
+                    String lastBuild = map3.get("started");
+                    LOG.info("LAST BUILD: {}", lastBuild);
+
+                    Date date;
+                    try {
+                        date = formatter.parse(lastBuild);
+                        container.setLastBuild(date);
+                    } catch (ParseException ex) {
+                        LOG.info("Build date did not match format 'EEE, d MMM yyyy HH:mm:ss Z'");
+                    }
                 }
-
-                Map<String, String> map3 = (Map<String, String>) builds.get(0);
-                String lastBuild = map3.get("started");
-                LOG.info("LAST BUILD: {}", lastBuild);
-
-                Date date;
-                try {
-                    date = formatter.parse(lastBuild);
-                    container.setLastBuild(date);
-                } catch (ParseException ex) {
-                    LOG.info("Build date did not match format 'EEE, d MMM yyyy HH:mm:ss Z'");
+                if (container.getMode() != ContainerMode.MANUAL_IMAGE_PATH) {
+                    container.setRegistry(Registry.QUAY_IO);
+                    container.setGitUrl(gitURL);
                 }
             }
-        }
-
-        if (container.getMode() != ContainerMode.MANUAL_IMAGE_PATH) {
-            container.setRegistry(Registry.QUAY_IO);
-            container.setGitUrl(gitURL);
         }
     }
 
