@@ -14,7 +14,7 @@ dct:creator:
 
 requirements:
   - class: DockerRequirement
-    dockerPull: "quay.io/collaboratory/workflow-helloworld:master"
+    dockerPull: "ubuntu:trusty"
   - class: InlineJavascriptRequirement
 
 hints:
