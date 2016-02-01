@@ -64,7 +64,7 @@ public class MockedIT {
     @Test
     public void runLaunchOneJson() throws IOException, ApiException {
         replayAll();
-        Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "dev", "launch", "--entry",
+        Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "launch", "--entry",
             "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testOneRun.json") });
         verifyAll();
     }
@@ -72,7 +72,7 @@ public class MockedIT {
     @Test
     public void runLaunchNJson() throws IOException {
         replayAll();
-        Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "dev", "launch", "--entry",
+        Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "launch", "--entry",
                 "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testMultipleRun.json") });
         verifyAll();
     }
@@ -80,7 +80,7 @@ public class MockedIT {
     @Test
     public void runLaunchTSV() throws IOException {
         replayAll();
-        Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "dev", "launch", "--entry",
+        Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "launch", "--entry",
                 "quay.io/collaboratory/dockstore-tool-linux-sort", "--tsv", ResourceHelpers.resourceFilePath("testMultipleRun.tsv") });
         verifyAll();
     }
