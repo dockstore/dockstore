@@ -251,7 +251,7 @@ public final class Helper {
      * @param containerDAO
      * @return list of newly updated containers
      */
-    private static List<Container> updateContainers(final Iterable<Container> apiContainerList, List<Container> dbContainerList,
+    private static List<Container> updateContainers(final Iterable<Container> apiContainerList, final List<Container> dbContainerList,
             final User user, final ContainerDAO containerDAO) {
 
         final List<Container> toDelete = new ArrayList<>();
