@@ -251,7 +251,7 @@ public class BasicET {
         }
 
         /**
-         * Will test the case where a manually registered quay container matching an automated build should be treated as a separate auto build (see issue 106)
+         * Tests the case where a manually registered quay container matching an automated build should be treated as a separate auto build (see issue 106)
          */
         @Test
         public void testManualQuaySameAsAutoQuay() {
@@ -265,7 +265,7 @@ public class BasicET {
         }
 
         /**
-         * Will test the case where a manually registered quay container has the same path as an auto build but different git repo
+         * Tests the case where a manually registered quay container has the same path as an auto build but different git repo
          */
         @Test
         public void testManualQuayToAutoSamePathDifferentGitRepo() {
@@ -279,7 +279,7 @@ public class BasicET {
         }
 
         /**
-         * Will test the case where a manually registered quay container does not have any automated builds set up, though a manual build was run (see issue 107)
+         * Tests the case where a manually registered quay container does not have any automated builds set up, though a manual build was run (see issue 107)
          */
         @Test
         public void testManualQuayManualBuild() {
@@ -293,7 +293,7 @@ public class BasicET {
         }
 
         /**
-         * Will test the case where a manually registered quay container does not have any tags
+         * Tests the case where a manually registered quay container does not have any tags
          */
         @Test
         public void testManualQuayNoTags() {
