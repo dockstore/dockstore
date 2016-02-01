@@ -226,19 +226,19 @@ public class SystemClientIT {
         assertTrue(tools.size() == 0);
     }
 
-    @Test
-    public void testGetSpecificTool() throws IOException, TimeoutException, ApiException {
-        ApiClient client = getAdminWebClient();
-        GAGHApi toolApi = new GAGHApi(client);
-        ContainersApi containersApi = new ContainersApi(client);
-        // register one more to give us something to look at
-        Container c = getContainer();
-        containersApi.registerManual(c);
-
-        final Tool tool = toolApi.toolsRegistryIdGet("quay.io/test_org/test6");
-        assertTrue(tool != null);
-        assertTrue(tool.getRegistryId().equals("quay.io/test_org/test6"));
-    }
+//    @Test
+//    public void testGetSpecificTool() throws IOException, TimeoutException, ApiException {
+//        ApiClient client = getAdminWebClient();
+//        GAGHApi toolApi = new GAGHApi(client);
+//        ContainersApi containersApi = new ContainersApi(client);
+//        // register one more to give us something to look at
+//        Container c = getContainer();
+//        containersApi.registerManual(c);
+//
+//        final Tool tool = toolApi.toolsRegistryIdGet("quay.io/test_org/test6");
+//        assertTrue(tool != null);
+//        assertTrue(tool.getRegistryId().equals("quay.io/test_org/test6"));
+//    }
 
     @Test
     public void testGetFiles() throws IOException, TimeoutException, ApiException {
