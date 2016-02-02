@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * A tool descriptor is a metadata document that describes one or more tools.
  **/
 @ApiModel(description = "A tool descriptor is a metadata document that describes one or more tools.")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-01-29T14:30:09.520-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-02-02T16:12:35.652-05:00")
 public class ToolDescriptor   {
   
   private String descriptor = null;

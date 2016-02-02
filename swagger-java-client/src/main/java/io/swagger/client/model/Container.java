@@ -17,7 +17,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be\n * associated with CWL and Dockerfile documents
  **/
 @ApiModel(description = "This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be\n * associated with CWL and Dockerfile documents")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-01-29T14:30:09.520-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-02-02T16:12:35.652-05:00")
 public class Container   {
   
   private Long id = null;
@@ -71,6 +71,7 @@ public enum RegistryEnum {
   private Boolean validTrigger = null;
   private List<Tag> tags = new ArrayList<Tag>();
   private List<Label> labels = new ArrayList<Label>();
+  private String toolPath = null;
   private String defaultDockerfilePath = null;
   private String defaultCwlPath = null;
   private String path = null;
@@ -78,7 +79,6 @@ public enum RegistryEnum {
   private Boolean isPublic = null;
   private Integer lastModified = null;
   private Boolean isRegistered = null;
-  private String toolPath = null;
 
   
   /**
@@ -290,6 +290,18 @@ public enum RegistryEnum {
 
   
   /**
+   **/
+  @ApiModelProperty(value = "")
+  @JsonProperty("toolPath")
+  public String getToolPath() {
+    return toolPath;
+  }
+  public void setToolPath(String toolPath) {
+    this.toolPath = toolPath;
+  }
+
+  
+  /**
    * This indicates for the associated git repository, the default path to the Dockerfile, required: GA4GH
    **/
   @ApiModelProperty(required = true, value = "This indicates for the associated git repository, the default path to the Dockerfile, required: GA4GH")
@@ -380,18 +392,6 @@ public enum RegistryEnum {
   }
 
   
-  /**
-   **/
-  @ApiModelProperty(value = "")
-  @JsonProperty("tool_path")
-  public String getToolPath() {
-    return toolPath;
-  }
-  public void setToolPath(String toolPath) {
-    this.toolPath = toolPath;
-  }
-
-  
 
   @Override
   public String toString()  {
@@ -414,6 +414,7 @@ public enum RegistryEnum {
     sb.append("    validTrigger: ").append(StringUtil.toIndentedString(validTrigger)).append("\n");
     sb.append("    tags: ").append(StringUtil.toIndentedString(tags)).append("\n");
     sb.append("    labels: ").append(StringUtil.toIndentedString(labels)).append("\n");
+    sb.append("    toolPath: ").append(StringUtil.toIndentedString(toolPath)).append("\n");
     sb.append("    defaultDockerfilePath: ").append(StringUtil.toIndentedString(defaultDockerfilePath)).append("\n");
     sb.append("    defaultCwlPath: ").append(StringUtil.toIndentedString(defaultCwlPath)).append("\n");
     sb.append("    path: ").append(StringUtil.toIndentedString(path)).append("\n");
@@ -421,7 +422,6 @@ public enum RegistryEnum {
     sb.append("    isPublic: ").append(StringUtil.toIndentedString(isPublic)).append("\n");
     sb.append("    lastModified: ").append(StringUtil.toIndentedString(lastModified)).append("\n");
     sb.append("    isRegistered: ").append(StringUtil.toIndentedString(isRegistered)).append("\n");
-    sb.append("    toolPath: ").append(StringUtil.toIndentedString(toolPath)).append("\n");
     sb.append("}");
     return sb.toString();
   }

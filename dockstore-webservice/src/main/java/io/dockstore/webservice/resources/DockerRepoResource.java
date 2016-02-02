@@ -248,6 +248,29 @@ public class DockerRepoResource {
         return c;
     }
 
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}")
+    @ApiOperation(value = "Update the container with the given container.", response = Container.class)
+    public Container updateContainer(@ApiParam(hidden = true) @Auth Token authToken,
+            @ApiParam(value = "Container to modify.", required = true) @PathParam("containerId") Long containerId,
+            @ApiParam(value = "Container with updated information", required = true) Container container) {
+        Container c = containerDAO.findById(containerId);
+        Helper.checkContainer(c);
+
+        User user = userDAO.findById(authToken.getUserId());
+        Helper.checkUser(user, c);
+
+        c.updateInfo(container);
+
+        Container result = containerDAO.findById(containerId);
+        Helper.checkContainer(result);
+
+        return result;
+
+    }
+
     @GET
     @Timed
     @UnitOfWork
