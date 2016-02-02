@@ -166,10 +166,10 @@ public class BasicET {
         @Test
         public void testAddVersionTagManualContainer() {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.QUAY_IO.toString(),
-                        "--namespace", "dockstoretestuser", "--name", "quayandgithub", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
-                        "master", "--toolname", "normal" });
+                        "--namespace", "dockstoretestuser", "--name", "quayandgithub", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git", "--git-reference",
+                        "master", "--toolname", "alternate" });
 
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "versionTag", "--entry", "quay.io/dockstoretestuser/quayandgithub/normal",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "versionTag", "--entry", "quay.io/dockstoretestuser/quayandgithub/alternate",
                         "--add", "masterTest", "--image-id", "4728f8f5ce1709ec8b8a5282e274e63de3c67b95f03a519191e6ea675c5d34e8", "--git-reference", "master" });
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
@@ -203,13 +203,13 @@ public class BasicET {
         @Test
         public void testVersionTagDelete() {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.QUAY_IO.toString(),
-                        "--namespace", "dockstoretestuser", "--name", "quayandgithub", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
-                        "master", "--toolname", "normal" });
+                        "--namespace", "dockstoretestuser", "--name", "quayandgithub", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git", "--git-reference",
+                        "master", "--toolname", "alternate" });
 
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "versionTag", "--entry", "quay.io/dockstoretestuser/quayandgithub/normal",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "versionTag", "--entry", "quay.io/dockstoretestuser/quayandgithub/alternate",
                         "--add", "masterTest", "--image-id", "4728f8f5ce1709ec8b8a5282e274e63de3c67b95f03a519191e6ea675c5d34e8", "--git-reference", "master" });
 
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "versionTag", "--entry", "quay.io/dockstoretestuser/quayandgithub/normal",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "versionTag", "--entry", "quay.io/dockstoretestuser/quayandgithub/alternate",
                         "--remove", "masterTest" });
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
@@ -251,19 +251,56 @@ public class BasicET {
         }
 
         /**
-         * Will test the case where a manually registered quay container matching an automated build should be treated as a separate auto build (see issue 106)
+         * Tests the case where a manually registered quay container matching an automated build should be treated as a separate auto build (see issue 106)
          */
-        @Ignore
+        @Test
         public void testManualQuaySameAsAutoQuay() {
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.QUAY_IO.toString(),
+                        "--namespace", "dockstoretestuser", "--name", "quayandgithub", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
+                        "master", "--toolname", "regular" });
 
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+                final long count = testingPostgres.runSelectStatement("select count(*) from container where mode != 'MANUAL_IMAGE_PATH' and path = 'quay.io/dockstoretestuser/quayandgithub' and toolname = 'regular'", new ScalarHandler<>());
+                Assert.assertTrue("the container should be Auto", count == 1);
         }
 
         /**
-         * Will test the case where a manually registered quay container does not have any automated builds set up (see issue 107)
+         * Tests the case where a manually registered quay container has the same path as an auto build but different git repo
          */
-        @Ignore
-        public void testManualQuayNoAutobuild() {
+        @Test
+        public void testManualQuayToAutoSamePathDifferentGitRepo() {
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.QUAY_IO.toString(),
+                        "--namespace", "dockstoretestuser", "--name", "quayandgithub", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git", "--git-reference",
+                        "master", "--toolname", "alternate", "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile" });
 
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+                final long count = testingPostgres.runSelectStatement("select count(*) from container where mode = 'MANUAL_IMAGE_PATH' and path = 'quay.io/dockstoretestuser/quayandgithub' and toolname = 'alternate'", new ScalarHandler<>());
+                Assert.assertTrue("the container should be Manual still", count == 1);
+        }
+
+        /**
+         * Tests the case where a manually registered quay container does not have any automated builds set up, though a manual build was run (see issue 107)
+         */
+        @Test
+        public void testManualQuayManualBuild() {
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.QUAY_IO.toString(),
+                        "--namespace", "dockstoretestuser", "--name", "noautobuild", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
+                        "master", "--toolname", "alternate" });
+
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+                final long count = testingPostgres.runSelectStatement("select count(*) from container where  path = 'quay.io/dockstoretestuser/noautobuild' and toolname = 'alternate' and lastbuild is not null", new ScalarHandler<>());
+                Assert.assertTrue("the container should have build information", count == 1);
+        }
+
+        /**
+         * Tests the case where a manually registered quay container does not have any tags
+         */
+        @Test
+        public void testManualQuayNoTags() {
+                systemExit.expectSystemExitWithStatus(GENERIC_ERROR);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.QUAY_IO.toString(),
+                        "--namespace", "dockstoretestuser", "--name", "nobuildsatall", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
+                        "master", "--toolname", "alternate" });
         }
 
         /**

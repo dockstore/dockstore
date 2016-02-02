@@ -260,7 +260,7 @@ public final class Helper {
             final Container oldContainer = iterator.next();
             boolean exists = false;
             for (final Container newContainer : apiContainerList) {
-                if (newContainer.getToolPath().equals(oldContainer.getToolPath())) {
+                if ((newContainer.getToolPath().equals(oldContainer.getToolPath())) || (newContainer.getPath().equals(oldContainer.getPath()) && newContainer.getGitUrl().equals(oldContainer.getGitUrl()))) {
                     exists = true;
                     break;
                 }
@@ -275,12 +275,12 @@ public final class Helper {
 
         // when a container from the registry (ex: quay.io) has newer content, update it from
         for (Container newContainer : apiContainerList) {
-            String path = newContainer.getToolPath();
+            String path = newContainer.getPath();
             boolean exists = false;
 
             // Find if user already has the container
             for (Container oldContainer : dbContainerList) {
-                if (newContainer.getToolPath().equals(oldContainer.getToolPath())) {
+                if ((newContainer.getToolPath().equals(oldContainer.getToolPath())) || (newContainer.getPath().equals(oldContainer.getPath()) && newContainer.getGitUrl().equals(oldContainer.getGitUrl()))) {
                     exists = true;
                     oldContainer.update(newContainer);
                     break;
@@ -412,6 +412,27 @@ public final class Helper {
         }
 
         return tagMap;
+    }
+
+    /**
+     * Check if the given quay container has tags
+     * @param container
+     * @param client
+     * @param objectMapper
+     * @param tokenDAO
+         * @param userId
+         * @return true if container has tags, false otherwise
+         */
+    public static Boolean checkQuayContainerForTags(final Container container,final HttpClient client,
+            final ObjectMapper objectMapper, final TokenDAO tokenDAO, final long userId) {
+        List<Token> tokens = tokenDAO.findByUserId(userId);
+        Token quayToken = extractToken(tokens, TokenType.QUAY_IO.toString());
+        ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
+
+        final ImageRegistryInterface imageRegistry = factory.createImageRegistry(container.getRegistry());
+        final List<Tag> tags = imageRegistry.getTags(container);
+
+        return !tags.isEmpty();
     }
 
     /**
@@ -573,6 +594,15 @@ public final class Helper {
 
         List<Container> apiContainers = new ArrayList<>();
 
+        // Find a container with the given container's Path as it's tool path
+        Container duplicatePath = containerDAO.findByToolPath(container.getPath(), "");
+
+        // If exists, check conditions to see if it should be changed to auto (in sync with quay tags and git repo)
+        if (container.getMode() == ContainerMode.MANUAL_IMAGE_PATH && duplicatePath != null  && container.getRegistry().toString().equals(
+                Registry.QUAY_IO.toString()) && duplicatePath.getGitUrl().equals(container.getGitUrl())) {
+            container.setMode(duplicatePath.getMode());
+        }
+
         if (container.getMode() == ContainerMode.MANUAL_IMAGE_PATH) {
             apiContainers.add(container);
         } else {
@@ -582,6 +612,7 @@ public final class Helper {
                 apiContainers.addAll(anInterface.getContainers(namespaces));
             }
         }
+        apiContainers.removeIf(container1 -> !container1.getPath().equals(container.getPath()));
 
         Map<String, ArrayList<?>> mapOfBuilds = new HashMap<>();
         if (anInterface != null) {
@@ -592,8 +623,6 @@ public final class Helper {
         dbContainers.add(container);
 
         removeContainersThatCannotBeUpdated(dbContainers);
-
-        apiContainers.removeIf(container1 -> !container1.getPath().equals(container.getPath()));
 
         final User dockstoreUser = userDAO.findById(userId);
         // update information on a container by container level

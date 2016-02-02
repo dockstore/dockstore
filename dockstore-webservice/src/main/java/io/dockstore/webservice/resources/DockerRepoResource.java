@@ -38,6 +38,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import io.dockstore.webservice.core.Registry;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
@@ -323,6 +324,12 @@ public class DockerRepoResource {
         if (duplicate != null) {
             LOG.info("duplicate container found: {}" + container.getToolPath());
             throw new CustomWebApplicationException("Container " + container.getToolPath() + " already exists.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // Check if container has tags
+        if (container.getRegistry() == Registry.QUAY_IO && !Helper.checkQuayContainerForTags(container, client, objectMapper, tokenDAO, user.getId())) {
+            LOG.info("container has no tags.");
+            throw new CustomWebApplicationException("Container " + container.getToolPath() + " has no tags. Quay containers must have at least one tag.", HttpStatus.SC_BAD_REQUEST);
         }
 
         long id = containerDAO.create(container);
