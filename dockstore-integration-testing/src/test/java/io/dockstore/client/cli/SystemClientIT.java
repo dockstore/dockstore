@@ -226,6 +226,7 @@ public class SystemClientIT {
         assertTrue(tools.size() == 0);
     }
 
+    // This test is commented out for now because it expects a newer version of the GAGH API.  It will be uncommented once the API is updated
 //    @Test
 //    public void testGetSpecificTool() throws IOException, TimeoutException, ApiException {
 //        ApiClient client = getAdminWebClient();
