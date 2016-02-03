@@ -13,7 +13,7 @@ import io.swagger.client.model.Token;
 
 import java.util.*;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-02-02T16:12:35.652-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-02-03T11:24:25.067-05:00")
 public class UsersApi {
   private ApiClient apiClient;
 

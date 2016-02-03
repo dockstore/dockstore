@@ -1147,9 +1147,11 @@ public class Client {
 
                 final String cwlPath = optVal(args, "--cwl-path", container.getDefaultCwlPath());
                 final String dockerfilePath = optVal(args, "--dockerfile-path", container.getDefaultDockerfilePath());
+                final String toolname = optVal(args, "--toolname", container.getToolname());
 
                 container.setDefaultCwlPath(cwlPath);
                 container.setDefaultDockerfilePath(dockerfilePath);
+                container.setToolname(toolname);
 
                 Container result = containersApi.updateContainer(containerId, container);
                 out("The container has been updated.");
@@ -1157,9 +1159,20 @@ public class Client {
                 e.printStackTrace();
             }
         } else {
-            // updateContainerHelp();
-            out("Print the help!");
+            updateContainerHelp();
         }
+    }
+
+    public static void updateContainerHelp() {
+        out("");
+        out("HELP FOR DOCKSTORE");
+        out("------------------");
+        out("See https://www.dockstore.org for more information");
+        out("");
+        out("dockstore updateContainer --entry <path to tool> --cwl-path <cwl path> --dockerfile-path <dockerfile path> --toolname <toolname>         :  Updates some fields for a container");
+        out("");
+        out("------------------");
+        out("");
     }
 
     public static void printGeneralHelp() {
@@ -1188,6 +1201,8 @@ public class Client {
         out("  label            :  updates labels for an individual container");
         out("");
         out("  versionTag       :  updates version tags for an individual container");
+        out("");
+        out("  updateContainer  :  updates certain fields of a container");
         out("");
         out("  " + CONVERT + "          :  utilities that allow you to convert file types");
         out("");

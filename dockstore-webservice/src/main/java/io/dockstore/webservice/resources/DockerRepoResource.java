@@ -262,6 +262,13 @@ public class DockerRepoResource {
         User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
 
+        Container duplicate = containerDAO.findByToolPath(container.getPath(), container.getToolname());
+
+        if (duplicate != null && duplicate.getId() != containerId) {
+            LOG.info("duplicate container found: {}" + container.getToolPath());
+            throw new CustomWebApplicationException("Container " + container.getToolPath() + " already exists.", HttpStatus.SC_BAD_REQUEST);
+        }
+
         c.updateInfo(container);
 
         Container result = containerDAO.findById(containerId);
@@ -341,7 +348,7 @@ public class DockerRepoResource {
         if (!Helper.isGit(container.getGitUrl())) {
             container.setGitUrl(Helper.convertHttpsToSsh(container.getGitUrl()));
         }
-
+        container.setPath(container.getPath());
         Container duplicate = containerDAO.findByToolPath(container.getPath(), container.getToolname());
 
         if (duplicate != null) {
