@@ -459,7 +459,7 @@ public class Container {
         this.toolname = toolname;
     }
 
-    @JsonProperty
+    @JsonProperty("tool_path")
     public String getToolPath() {
         return getPath() + (toolname == null || toolname.isEmpty() ? "" : '/' + toolname);
     }
