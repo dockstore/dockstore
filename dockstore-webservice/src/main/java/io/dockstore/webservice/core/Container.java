@@ -183,7 +183,7 @@ public class Container {
     }
 
     /**
-     *
+     * Used during refresh to update containers
      * @param container
      */
     public void update(Container container) {
@@ -464,6 +464,7 @@ public class Container {
         return getPath() + (toolname == null || toolname.isEmpty() ? "" : '/' + toolname);
     }
 
+
     @JsonProperty
     public String getEmail() {
         return email;
@@ -471,5 +472,15 @@ public class Container {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    /**
+     * Updates information from given container based on the new container
+     * @param container
+         */
+    public void updateInfo(Container container) {
+        defaultCwlPath = container.getDefaultCwlPath();
+        defaultDockerfilePath = container.getDefaultDockerfilePath();
+        toolname = container.getToolname();
     }
 }

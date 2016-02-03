@@ -341,6 +341,82 @@ public class BasicET {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/test_org/test1" });
         }
 
+        /**
+         * Check that a containers CWL and Dockerfile paths are updated to make a container valid, and then changing again will make them invalid (quick register)
+         */
+        @Test
+        public void testUpdateAlternateStructureQuickReg(){
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "updateContainer", "--entry", "quay.io/dockstoretestuser/quayandgithubalternate",
+                "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser/quayandgithubalternate" });
+
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+                final long count = testingPostgres.runSelectStatement("select count(*) from container where path = 'quay.io/dockstoretestuser/quayandgithubalternate' and validtrigger = 't'", new ScalarHandler<>());
+                Assert.assertTrue("the container should now have a valid trigger", count == 1);
+
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "updateContainer", "--entry", "quay.io/dockstoretestuser/quayandgithubalternate",
+                        "--cwl-path", "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser/quayandgithubalternate" });
+
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from container where path = 'quay.io/dockstoretestuser/quayandgithubalternate' and validtrigger = 't'", new ScalarHandler<>());
+                Assert.assertTrue("the container should now have an invalid trigger again", count2 == 0);
+        }
+
+        /**
+         * Check that a containers cwl and Dockerfile paths are updated to make a container invalid, then valid again (manual)
+         */
+        @Test
+        public void testUpdateAlternateStructureManual(){
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.QUAY_IO.toString(),
+                        "--namespace", "dockstoretestuser", "--name", "quayandgithubalternate", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git", "--git-reference",
+                        "master", "--toolname", "alternate", "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile" });
+
+                // check valid trigger
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+                final long count = testingPostgres.runSelectStatement("select count(*) from container where path = 'quay.io/dockstoretestuser/quayandgithubalternate' and toolname = 'alternate' and validtrigger = 't'", new ScalarHandler<>());
+                Assert.assertTrue("the container should now have a valid trigger", count == 1);
+
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "updateContainer", "--entry", "quay.io/dockstoretestuser/quayandgithubalternate/alternate",
+                        "--cwl-path", "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser/quayandgithubalternate/alternate" });
+
+                // check invalid trigger
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from container where path = 'quay.io/dockstoretestuser/quayandgithubalternate' and toolname = 'alternate' and validtrigger = 'f'", new ScalarHandler<>());
+                Assert.assertTrue("the container should now have an invalid trigger", count2 == 1);
+
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "updateContainer", "--entry", "quay.io/dockstoretestuser/quayandgithubalternate/alternate",
+                        "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser/quayandgithubalternate/alternate" });
+
+                // check valid trigger
+                final long count3 = testingPostgres.runSelectStatement("select count(*) from container where path = 'quay.io/dockstoretestuser/quayandgithubalternate' and toolname = 'alternate' and validtrigger = 't'", new ScalarHandler<>());
+                Assert.assertTrue("the container should now have a valid trigger again", count3 == 1);
+        }
+
+        /**
+         * Change toolname of a container
+         */
+        @Test
+        public void testChangeToolname() {
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.QUAY_IO.toString(),
+                        "--namespace", "dockstoretestuser", "--name", "quayandgithubalternate", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git", "--git-reference",
+                        "master", "--toolname", "alternate", "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile" });
+
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "updateContainer", "--entry", "quay.io/dockstoretestuser/quayandgithubalternate",
+                        "--toolname", "alternate" });
+
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+                final long count = testingPostgres.runSelectStatement("select count(*) from container where path = 'quay.io/dockstoretestuser/quayandgithubalternate' and toolname = 'alternate'", new ScalarHandler<>());
+                Assert.assertTrue("there should only be one instance of the container with the toolname set to alternate", count == 1);
+
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "updateContainer", "--entry", "quay.io/dockstoretestuser/quayandgithubalternate",
+                        "--toolname", "toolnameTest" });
+
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from container where path = 'quay.io/dockstoretestuser/quayandgithubalternate' and toolname = 'toolnameTest'", new ScalarHandler<>());
+                Assert.assertTrue("there should only be one instance of the container with the toolname set to toolnameTest", count2 == 1);
+
+        }
+
         /*
          Test Quay and Github -
          These tests are focused on testing containers created from Quay and Github repositories

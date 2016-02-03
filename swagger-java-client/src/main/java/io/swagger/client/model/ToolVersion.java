@@ -13,7 +13,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * A tool version describes a particular iteration of a tool as described by a reference to a specific image and dockerfile.
  **/
 @ApiModel(description = "A tool version describes a particular iteration of a tool as described by a reference to a specific image and dockerfile.")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-01-29T14:30:09.520-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-02-03T12:23:31.546-05:00")
 public class ToolVersion   {
   
   private String name = null;
