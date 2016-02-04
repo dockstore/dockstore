@@ -270,4 +270,36 @@ public class QuayImageRegistry implements ImageRegistryInterface {
             container.setValidTrigger(validTrigger);
         }
     }
+
+    public Map<String, Object> getQuayInfo(final Container container){
+        final String repo = container.getNamespace() + '/' + container.getName();
+        final String repoUrl = QUAY_URL + "repository/" + repo;
+        final Optional<String> asStringBuilds = ResourceUtilities.asString(repoUrl, quayToken.getContent(), client);
+
+        if (asStringBuilds.isPresent()) {
+            final String json = asStringBuilds.get();
+
+            Gson gson = new Gson();
+            Map<String, Object> map = new HashMap<>();
+            map = (Map<String,Object>) gson.fromJson(json, map.getClass());
+            return map;
+
+        }
+        return null;
+    }
+
+    public Map<String, ArrayList> getUserOrgs() {
+        final String url = QUAY_URL + "users/" + quayToken.getUsername();
+        final Optional<String> asStringBuilds = ResourceUtilities.asString(url, quayToken.getContent(), client);
+
+        if (asStringBuilds.isPresent()) {
+            final String json = asStringBuilds.get();
+
+            Gson gson = new Gson();
+            Map<String, ArrayList> map = new HashMap<>();
+            map = (Map<String,ArrayList>) gson.fromJson(json, map.getClass());
+            return map;
+        }
+        return null;
+    }
 }

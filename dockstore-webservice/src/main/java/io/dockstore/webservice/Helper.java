@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.dockstore.webservice.helpers.QuayImageRegistry;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
@@ -66,6 +67,8 @@ public final class Helper {
     private static final Logger LOG = LoggerFactory.getLogger(Helper.class);
 
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
+
+    public static final String QUAY_URL = "https://quay.io/api/v1/";
 
     // public static final String DOCKSTORE_CWL = "Dockstore.cwl";
     public static class RepoList {
@@ -884,5 +887,50 @@ public final class Helper {
         Pattern p = Pattern.compile("git\\@(\\S+):(\\S+)/(\\S+)\\.git");
         Matcher m = p.matcher(url);
         return m.matches();
+    }
+
+    public static Boolean checkIfUserOwns(final Container container,final HttpClient client, final ObjectMapper objectMapper, final TokenDAO tokenDAO, final long userId) {
+        List<Token> tokens = tokenDAO.findByUserId(userId);
+        // get quay token
+        // should check if quay token exists
+        Token quayToken = extractToken(tokens, TokenType.QUAY_IO.toString());
+
+        // set up
+        QuayImageRegistry factory = new QuayImageRegistry(client, objectMapper, quayToken);
+
+        // get quay username
+        String quayUsername = quayToken.getUsername();
+
+        // call quay api, check if user owns or is part of owning organization
+        Map<String,Object> map = factory.getQuayInfo(container);
+
+        if (map != null){
+            String namespace = map.get("namespace").toString();
+            boolean isOrg = (Boolean)map.get("is_organization");
+
+            if (isOrg) {
+                // check if user is part of the org
+                Map<String, ArrayList> userMap =  factory.getUserOrgs();
+                ArrayList orgs = userMap.get("organizations");
+
+                if (orgs != null) {
+                    for(int i = 0; i < orgs.size(); i++) {
+                        Map<String, String> orgMap = (Map<String, String>) orgs.get(i);
+
+                        String orgName = orgMap.get("name");
+                        if (orgName.equals(namespace)) {
+                            LOG.info("User " + quayUsername + " is part of org " + orgName);
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+            } else {
+                return (namespace.equals(quayUsername) && !isOrg);
+            }
+            return (namespace.equals(quayUsername) && !isOrg);
+        } else {
+            return false;
+        }
     }
 }
