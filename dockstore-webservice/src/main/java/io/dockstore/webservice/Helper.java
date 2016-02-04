@@ -905,7 +905,7 @@ public final class Helper {
 
         if (container.getRegistry() == Registry.QUAY_IO && quayToken == null) {
             LOG.info("WARNING: QUAY.IO token not found!");
-            throw new CustomWebApplicationException("A valid Quay.io token is required to refresh this container.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("A valid Quay.io token is required to add this container.", HttpStatus.SC_BAD_REQUEST);
         }
 
         // set up
@@ -940,9 +940,7 @@ public final class Helper {
             } else {
                 return (namespace.equals(quayUsername) && !isOrg);
             }
-            return (namespace.equals(quayUsername) && !isOrg);
-        } else {
-            return false;
         }
+        return false;
     }
 }
