@@ -720,7 +720,7 @@ public final class Helper {
      */
     public static String parseReference(String reference) {
         if (reference != null) {
-            Pattern p = Pattern.compile("(\\S+)/(\\S+)/(\\S+)");
+            Pattern p = Pattern.compile("([\\S][^/\\s]+)?/([\\S][^/\\s]+)?/(\\S+)");
             Matcher m = p.matcher(reference);
             if (!m.find()) {
                 LOG.info("Cannot parse reference: {}", reference);
@@ -914,26 +914,20 @@ public final class Helper {
         // get quay username
         String quayUsername = quayToken.getUsername();
 
+
         // call quay api, check if user owns or is part of owning organization
         Map<String,Object> map = factory.getQuayInfo(container);
+
 
         if (map != null){
             String namespace = map.get("namespace").toString();
             boolean isOrg = (Boolean)map.get("is_organization");
 
             if (isOrg) {
-                // check if user is part of the org
-                Map<String, ArrayList> userMap =  factory.getUserOrgs();
-                ArrayList orgs = userMap.get("organizations");
-
-                if (orgs != null) {
-                    for(int i = 0; i < orgs.size(); i++) {
-                        Map<String, String> orgMap = (Map<String, String>) orgs.get(i);
-
-                        String orgName = orgMap.get("name");
-                        if (orgName.equals(namespace)) {
-                            return true;
-                        }
+                List<String> namespaces = factory.getNamespaces();
+                for(String nm : namespaces) {
+                    if (nm.equals(namespace)) {
+                        return true;
                     }
                     return false;
                 }

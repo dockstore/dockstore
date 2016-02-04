@@ -443,16 +443,30 @@ public class BasicET {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.QUAY_IO.toString(),
                         "--namespace", "dockstoretestuser2", "--name", "testrepo", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
                         "master", "--toolname", "testTool", "--cwl-path", "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile" });
-                final long count3 = testingPostgres.runSelectStatement("select count(*) from container where path = 'quay.io/dockstoretestuser2/testrepo' and toolname = 'testTool'", new ScalarHandler<>());
-                Assert.assertTrue("the container shouldn't exist", count3 == 0);
+        }
 
+        /**
+         * Tests a user trying to add a quay container that they do not own and are not in the owning organization
+         */
+        @Test
+        public void testAddQuayRepoOfNonOwnedOrg(){
                 // Repo user isn't part of org
                 systemExit.expectSystemExitWithStatus(GENERIC_ERROR);
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.QUAY_IO.toString(),
                         "--namespace", "dockstore2", "--name", "testrepo2", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
                         "master", "--toolname", "testOrg", "--cwl-path", "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile" });
-                final long count4 = testingPostgres.runSelectStatement("select count(*) from container where path = 'quay.io/dockstore2/testrepo2' and toolname = 'testOrg'", new ScalarHandler<>());
-                Assert.assertTrue("the container shouldn't exist", count4 == 0);
+
+        }
+
+        /**
+         * Tests that a git reference for a container can include branches named like feature/...
+         */
+        @Test
+        public void testGitReferenceFeatureBranch(){
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh" });
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+                final long count = testingPostgres.runSelectStatement("select count(*) from tag where reference = 'feature/test'", new ScalarHandler<>());
+                Assert.assertTrue("there should be 2 tags with the reference feature/test", count == 2);
         }
 
         /*
