@@ -271,6 +271,11 @@ public class QuayImageRegistry implements ImageRegistryInterface {
         }
     }
 
+    /**
+     * Get the map of the given Quay container
+     * @param container
+     * @return
+         */
     public Map<String, Object> getQuayInfo(final Container container){
         final String repo = container.getNamespace() + '/' + container.getName();
         final String repoUrl = QUAY_URL + "repository/" + repo;
@@ -288,6 +293,10 @@ public class QuayImageRegistry implements ImageRegistryInterface {
         return null;
     }
 
+    /**
+     * Get the map of organizations of the current user
+     * @return
+         */
     public Map<String, ArrayList> getUserOrgs() {
         final String url = QUAY_URL + "users/" + quayToken.getUsername();
         final Optional<String> asStringBuilds = ResourceUtilities.asString(url, quayToken.getContent(), client);

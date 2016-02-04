@@ -417,18 +417,42 @@ public class BasicET {
 
         }
 
+        /**
+         * Tests that a user can only add Quay containers that they own directly or through an organization
+         */
         @Test
         public void testUserPrivilege() {
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
                 // Repo user has access to
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.QUAY_IO.toString(),
                         "--namespace", "dockstoretestuser", "--name", "quayandgithub", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
                         "master", "--toolname", "testTool", "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile" });
+                final long count = testingPostgres.runSelectStatement("select count(*) from container where path = 'quay.io/dockstoretestuser/quayandgithub' and toolname = 'testTool'", new ScalarHandler<>());
+                Assert.assertTrue("the container should exist", count == 1);
+
                 // Repo user is part of org
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.QUAY_IO.toString(),
                         "--namespace", "dockstore", "--name", "test_org_repo", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
-                        "master", "--toolname", "alternate", "--cwl-path", "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile" });
+                        "master", "--toolname", "testOrg", "--cwl-path", "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile" });
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from container where path = 'quay.io/dockstore/test_org_repo' and toolname = 'testOrg'", new ScalarHandler<>());
+                Assert.assertTrue("the container should exist", count2 == 1);
+
                 // Repo user doesn't own
-                // Repo user isnt part of org
+                systemExit.expectSystemExitWithStatus(GENERIC_ERROR);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.QUAY_IO.toString(),
+                        "--namespace", "dockstoretestuser2", "--name", "testrepo", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
+                        "master", "--toolname", "testTool", "--cwl-path", "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile" });
+                final long count3 = testingPostgres.runSelectStatement("select count(*) from container where path = 'quay.io/dockstoretestuser2/testrepo' and toolname = 'testTool'", new ScalarHandler<>());
+                Assert.assertTrue("the container shouldn't exist", count3 == 0);
+
+                // Repo user isn't part of org
+                systemExit.expectSystemExitWithStatus(GENERIC_ERROR);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.QUAY_IO.toString(),
+                        "--namespace", "dockstore2", "--name", "testrepo2", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
+                        "master", "--toolname", "testOrg", "--cwl-path", "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile" });
+                final long count4 = testingPostgres.runSelectStatement("select count(*) from container where path = 'quay.io/dockstore2/testrepo2' and toolname = 'testOrg'", new ScalarHandler<>());
+                Assert.assertTrue("the container shouldn't exist", count4 == 0);
         }
 
         /*
@@ -557,7 +581,6 @@ public class BasicET {
          */
         @Test
         public void testQuayBitbucketManualPublishAndUnpublishAlternateStructure(){
-                // TODO Need to get working with other locations of cwl path and dockerfile path
                 // Manual Publish
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.QUAY_IO.toString(),
                         "--namespace", "dockstoretestuser", "--name", "quayandbitbucketalternate", "--git-url", "git@bitbucket.org:DockstoreTestUser/quayandbitbucketalternate.git", "--git-reference",

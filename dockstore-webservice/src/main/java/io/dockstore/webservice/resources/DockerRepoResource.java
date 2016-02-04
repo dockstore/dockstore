@@ -364,6 +364,7 @@ public class DockerRepoResource {
 
         // Check if user owns repo, or if user is in the organization which owns the container
         if (container.getRegistry() == Registry.QUAY_IO  && !Helper.checkIfUserOwns(container, client, objectMapper, tokenDAO, user.getId())) {
+            LOG.info("User does not own the given Quay Repo.");
             throw new CustomWebApplicationException("User does not own the container " + container.getPath() + ". You can only add Quay repositories that you own or are part of the organization", HttpStatus.SC_BAD_REQUEST);
         }
 

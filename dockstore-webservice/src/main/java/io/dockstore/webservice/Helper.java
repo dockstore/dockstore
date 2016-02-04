@@ -889,11 +889,24 @@ public final class Helper {
         return m.matches();
     }
 
+    /**
+     * Checks if a user owns a given quay repo or is part of an organization that owns the quay repo
+     * @param container
+     * @param client
+     * @param objectMapper
+     * @param tokenDAO
+         * @param userId
+         * @return
+         */
     public static Boolean checkIfUserOwns(final Container container,final HttpClient client, final ObjectMapper objectMapper, final TokenDAO tokenDAO, final long userId) {
         List<Token> tokens = tokenDAO.findByUserId(userId);
         // get quay token
-        // should check if quay token exists
         Token quayToken = extractToken(tokens, TokenType.QUAY_IO.toString());
+
+        if (container.getRegistry() == Registry.QUAY_IO && quayToken == null) {
+            LOG.info("WARNING: QUAY.IO token not found!");
+            throw new CustomWebApplicationException("A valid Quay.io token is required to refresh this container.", HttpStatus.SC_BAD_REQUEST);
+        }
 
         // set up
         QuayImageRegistry factory = new QuayImageRegistry(client, objectMapper, quayToken);
@@ -919,7 +932,6 @@ public final class Helper {
 
                         String orgName = orgMap.get("name");
                         if (orgName.equals(namespace)) {
-                            LOG.info("User " + quayUsername + " is part of org " + orgName);
                             return true;
                         }
                     }
