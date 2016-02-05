@@ -597,7 +597,7 @@ public final class Helper {
 
         List<Container> apiContainers = new ArrayList<>();
 
-        // Find a container with the given container's Path as it's tool path
+        // Find a container with the given container's Path and is not manual
         Container duplicatePath = null;
         List<Container> containersList = containerDAO.findByPath(container.getPath());
         for(Container c : containersList) {
