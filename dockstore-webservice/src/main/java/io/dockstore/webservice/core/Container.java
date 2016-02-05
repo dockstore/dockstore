@@ -195,7 +195,9 @@ public class Container {
         validTrigger = container.getValidTrigger();
         author = container.getAuthor();
 
-        gitUrl = container.getGitUrl();
+        if (!container.getGitUrl().isEmpty()) {
+            gitUrl = container.getGitUrl();
+        }
     }
 
     @JsonProperty
@@ -482,5 +484,6 @@ public class Container {
         defaultCwlPath = container.getDefaultCwlPath();
         defaultDockerfilePath = container.getDefaultDockerfilePath();
         toolname = container.getToolname();
+        gitUrl = container.getGitUrl();
     }
 }

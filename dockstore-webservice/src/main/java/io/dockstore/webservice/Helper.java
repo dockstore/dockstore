@@ -598,7 +598,14 @@ public final class Helper {
         List<Container> apiContainers = new ArrayList<>();
 
         // Find a container with the given container's Path as it's tool path
-        Container duplicatePath = containerDAO.findByToolPath(container.getPath(), "");
+        Container duplicatePath = null;
+        List<Container> containersList = containerDAO.findByPath(container.getPath());
+        for(Container c : containersList) {
+            if (c.getMode() != ContainerMode.MANUAL_IMAGE_PATH) {
+                duplicatePath = c;
+                break;
+            }
+        }
 
         // If exists, check conditions to see if it should be changed to auto (in sync with quay tags and git repo)
         if (container.getMode() == ContainerMode.MANUAL_IMAGE_PATH && duplicatePath != null  && container.getRegistry().toString().equals(
