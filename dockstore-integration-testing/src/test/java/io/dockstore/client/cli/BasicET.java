@@ -279,6 +279,23 @@ public class BasicET {
         }
 
         /**
+         * Tests that a manually published container still becomes manual even after the existing similar auto containers all have toolnames (see issue 120)
+         */
+        @Test
+        public void testManualQuayToAutoNoAutoWithoutToolname() {
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "updateContainer", "--entry", "quay.io/dockstoretestuser/quayandgithub",
+                        "--toolname", "testToolname" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser/quayandgithub/testToolname" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.QUAY_IO.toString(),
+                        "--namespace", "dockstoretestuser", "--name", "quayandgithub", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
+                        "master", "--toolname", "testtool" });
+
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+                final long count = testingPostgres.runSelectStatement("select count(*) from container where mode != 'MANUAL_IMAGE_PATH' and path = 'quay.io/dockstoretestuser/quayandgithub' and toolname = 'testtool'", new ScalarHandler<>());
+                Assert.assertTrue("the container should be Auto", count == 1);
+        }
+
+        /**
          * Tests the case where a manually registered quay container does not have any automated builds set up, though a manual build was run (see issue 107)
          */
         @Test
@@ -467,6 +484,30 @@ public class BasicET {
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
                 final long count = testingPostgres.runSelectStatement("select count(*) from tag where reference = 'feature/test'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 2 tags with the reference feature/test", count == 2);
+        }
+
+        /**
+         * Tests that a quick registered quay container with no autobuild can be updated to have a manually set CWL file from git (see issue 19)
+         */
+        @Test
+        public void testQuayNoAutobuild() {
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "updateContainer", "--entry", "quay.io/dockstoretestuser/noautobuild",
+                        "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser/noautobuild" });
+
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+                final long count = testingPostgres.runSelectStatement("select count(*) from container where path = 'quay.io/dockstoretestuser/noautobuild' and giturl = 'git@github.com:DockstoreTestUser/dockstore-whalesay.git'", new ScalarHandler<>());
+                Assert.assertTrue("the container should now have an associated git repo", count == 1);
+
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "updateContainer", "--entry", "quay.io/dockstoretestuser/nobuildsatall",
+                        "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser/nobuildsatall" });
+
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from container where path = 'quay.io/dockstoretestuser/nobuildsatall' and giturl = 'git@github.com:DockstoreTestUser/dockstore-whalesay.git'", new ScalarHandler<>());
+                Assert.assertTrue("the container should now have an associated git repo", count2 == 1);
+
+
         }
 
         /*
