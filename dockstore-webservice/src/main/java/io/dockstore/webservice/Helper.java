@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.dockstore.webservice.helpers.QuayImageRegistry;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
@@ -66,6 +67,8 @@ public final class Helper {
     private static final Logger LOG = LoggerFactory.getLogger(Helper.class);
 
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
+
+    public static final String QUAY_URL = "https://quay.io/api/v1/";
 
     // public static final String DOCKSTORE_CWL = "Dockstore.cwl";
     public static class RepoList {
@@ -717,7 +720,7 @@ public final class Helper {
      */
     public static String parseReference(String reference) {
         if (reference != null) {
-            Pattern p = Pattern.compile("(\\S+)/(\\S+)/(\\S+)");
+            Pattern p = Pattern.compile("([\\S][^/\\s]+)?/([\\S][^/\\s]+)?/(\\S+)");
             Matcher m = p.matcher(reference);
             if (!m.find()) {
                 LOG.info("Cannot parse reference: {}", reference);
@@ -884,5 +887,54 @@ public final class Helper {
         Pattern p = Pattern.compile("git\\@(\\S+):(\\S+)/(\\S+)\\.git");
         Matcher m = p.matcher(url);
         return m.matches();
+    }
+
+    /**
+     * Checks if a user owns a given quay repo or is part of an organization that owns the quay repo
+     * @param container
+     * @param client
+     * @param objectMapper
+     * @param tokenDAO
+         * @param userId
+         * @return
+         */
+    public static Boolean checkIfUserOwns(final Container container,final HttpClient client, final ObjectMapper objectMapper, final TokenDAO tokenDAO, final long userId) {
+        List<Token> tokens = tokenDAO.findByUserId(userId);
+        // get quay token
+        Token quayToken = extractToken(tokens, TokenType.QUAY_IO.toString());
+
+        if (container.getRegistry() == Registry.QUAY_IO && quayToken == null) {
+            LOG.info("WARNING: QUAY.IO token not found!");
+            throw new CustomWebApplicationException("A valid Quay.io token is required to add this container.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // set up
+        QuayImageRegistry factory = new QuayImageRegistry(client, objectMapper, quayToken);
+
+        // get quay username
+        String quayUsername = quayToken.getUsername();
+
+
+        // call quay api, check if user owns or is part of owning organization
+        Map<String,Object> map = factory.getQuayInfo(container);
+
+
+        if (map != null){
+            String namespace = map.get("namespace").toString();
+            boolean isOrg = (Boolean)map.get("is_organization");
+
+            if (isOrg) {
+                List<String> namespaces = factory.getNamespaces();
+                for(String nm : namespaces) {
+                    if (nm.equals(namespace)) {
+                        return true;
+                    }
+                    return false;
+                }
+            } else {
+                return (namespace.equals(quayUsername) && !isOrg);
+            }
+        }
+        return false;
     }
 }

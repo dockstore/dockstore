@@ -270,4 +270,27 @@ public class QuayImageRegistry implements ImageRegistryInterface {
             container.setValidTrigger(validTrigger);
         }
     }
+
+    /**
+     * Get the map of the given Quay container
+     * Todo: this should be implemented with the Quay API, but they currently don't have a return model for this call
+     * @param container
+     * @return
+         */
+    public Map<String, Object> getQuayInfo(final Container container){
+        final String repo = container.getNamespace() + '/' + container.getName();
+        final String repoUrl = QUAY_URL + "repository/" + repo;
+        final Optional<String> asStringBuilds = ResourceUtilities.asString(repoUrl, quayToken.getContent(), client);
+
+        if (asStringBuilds.isPresent()) {
+            final String json = asStringBuilds.get();
+
+            Gson gson = new Gson();
+            Map<String, Object> map = new HashMap<>();
+            map = (Map<String,Object>) gson.fromJson(json, map.getClass());
+            return map;
+
+        }
+        return null;
+    }
 }
