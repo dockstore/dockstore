@@ -1171,7 +1171,7 @@ public class Client {
         out("------------------");
         out("See https://www.dockstore.org for more information");
         out("");
-        out("dockstore updateContainer --entry <path to tool> --cwl-path <cwl path> --dockerfile-path <dockerfile path> --toolname <toolname>         :  Updates some fields for a container");
+        out("dockstore updateContainer --entry <path to tool> --cwl-path <cwl path> --dockerfile-path <dockerfile path> --toolname <toolname> --git-url <git-url>         :  Updates some fields for a container");
         out("");
         out("------------------");
         out("");
