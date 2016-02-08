@@ -16,10 +16,17 @@
  */
 package io.dockstore.client.cli;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -34,9 +41,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.ws.rs.ProcessingException;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
@@ -1175,6 +1185,95 @@ public class Client {
         out("");
     }
 
+    /**
+     * Checks for update for Dockstore and sets it up
+     */
+    public static void update(){
+        // Try to get version installed
+        String installLocation = null;
+        String currentVersion = null;
+
+        String executable = "dockstore";
+        String path = System.getenv("PATH");
+        String[] dirs = path.split(File.pathSeparator);
+
+        // Search for location of dockstore executable on path
+        for(String dir : dirs) {
+            File file = new File(dir, executable);
+            if (file.isFile()) {
+                installLocation = dir + File.separator + executable;
+                break;
+            }
+        }
+
+        if (installLocation == null) {
+            kill("Cannot find install location of Dockstore.");
+        } else {
+            out("Install location : " + installLocation);
+        }
+
+        // Iterate over found file for line with dockstore version
+        File file = new File(installLocation);
+        String line = null;
+        try {
+            BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file.toString()), "utf-8"));
+            while ((line = br.readLine()) != null) {
+                if (line.startsWith("DEFAULT_DOCKSTORE_VERSION")) {
+                    break;
+                }
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            kill("Cannot find Dockstore executable.");
+        } catch (IOException e) {
+            e.printStackTrace();
+            kill("Cannot find Dockstore executable.");
+        }
+
+        // Pull Dockstore version from matched line
+        Pattern p = Pattern.compile("\"([^\"]*)\"");
+        Matcher m = p.matcher(line);
+        if (!m.find()) {
+            kill("Cannot parse version information: " + line);
+        }
+        currentVersion = m.group(1);
+        out(m.group(1));
+
+        // Get latest version info and files from Github
+        URL url = null;
+        try {
+            url = new URL("https://api.github.com/repos/GA4GH/dockstore/releases/latest");
+            ObjectMapper mapper = new ObjectMapper();
+            try {
+                Map<String, Object> map = mapper.readValue(url, Map.class);
+                String latestVersion = map.get("name").toString();
+                String publishedAt = map.get("published_at").toString();
+                ArrayList<Map<String, String>> map2 =  (ArrayList<Map<String, String>>) map.get("assets");
+                String browserDownloadUrl = map2.get(0).get("browser_download_url").toString();
+
+                if(latestVersion.equals(currentVersion)) {
+                    out("You have the latest version of Dockstore installed.");
+                } else {
+                    out("There is a newer version of Dockstore available.");
+
+                    // Download update
+                    URL dockstoreExecutable = new URL(browserDownloadUrl);
+                    ReadableByteChannel rbc = Channels.newChannel(dockstoreExecutable.openStream());
+                    String outputFile = "dockstoreExample";
+                    String absPath = "/home/aduncan/";
+                    FileOutputStream fos = new FileOutputStream(absPath + outputFile);
+                    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                out("Could not reach Github.");
+            }
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+
+    }
+
     public static void printGeneralHelp() {
         out("");
         out("HELP FOR DOCKSTORE");
@@ -1309,6 +1408,9 @@ public class Client {
                             break;
                         case "updateContainer":
                             updateContainer(args);
+                            break;
+                        case "--update":
+                            update();
                             break;
                         default:
                             invalid(cmd);
