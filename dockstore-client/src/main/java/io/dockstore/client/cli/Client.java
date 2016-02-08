@@ -1148,10 +1148,12 @@ public class Client {
                 final String cwlPath = optVal(args, "--cwl-path", container.getDefaultCwlPath());
                 final String dockerfilePath = optVal(args, "--dockerfile-path", container.getDefaultDockerfilePath());
                 final String toolname = optVal(args, "--toolname", container.getToolname());
+                final String gitUrl = optVal(args, "--git-url", container.getGitUrl());
 
                 container.setDefaultCwlPath(cwlPath);
                 container.setDefaultDockerfilePath(dockerfilePath);
                 container.setToolname(toolname);
+                container.setGitUrl(gitUrl);
 
                 Container result = containersApi.updateContainer(containerId, container);
                 out("The container has been updated.");
@@ -1169,7 +1171,7 @@ public class Client {
         out("------------------");
         out("See https://www.dockstore.org for more information");
         out("");
-        out("dockstore updateContainer --entry <path to tool> --cwl-path <cwl path> --dockerfile-path <dockerfile path> --toolname <toolname>         :  Updates some fields for a container");
+        out("dockstore updateContainer --entry <path to tool> --cwl-path <cwl path> --dockerfile-path <dockerfile path> --toolname <toolname> --git-url <git-url>         :  Updates some fields for a container");
         out("");
         out("------------------");
         out("");
