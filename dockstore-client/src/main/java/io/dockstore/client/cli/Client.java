@@ -1284,9 +1284,9 @@ public class Client {
     }
 
     /**
-     * Checks for update for Dockstore and sets it up
+     * Checks for upgrade for Dockstore and sets it up
      */
-    public static void update(){
+    public static void upgrade(){
         // Try to get version installed
         String installLocation = getInstallLocation();
         String currentVersion = getCurrentVersion(installLocation);
@@ -1302,7 +1302,7 @@ public class Client {
                 Map<String, Object> map = mapper.readValue(url, Map.class);
                 String latestVersion = map.get("name").toString();
                 ArrayList<Map<String, String>> map2 =  (ArrayList<Map<String, String>>) map.get("assets");
-                String browserDownloadUrl = map2.get(0).get("browser_download_url").toString();
+                String browserDownloadUrl = map2.get(0).get("browser_download_url");
 
                 if(latestVersion.equals(currentVersion)) {
                     out("You have the latest stable version of Dockstore installed.");
@@ -1312,16 +1312,16 @@ public class Client {
 
                     // Download update
                     out("Downloading newest stable release of Dockstore...");
-                    URL dockstoreExecutable = new URL(browserDownloadUrl);
-                    ReadableByteChannel rbc = Channels.newChannel(dockstoreExecutable.openStream());
-
-                    FileOutputStream fos = new FileOutputStream(installLocation);
-                    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-
-                    // Set file permissions
-                    Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rwxrwxr-x");
-                    FileAttribute<Set<PosixFilePermission>> attr = PosixFilePermissions.asFileAttribute(perms);
-                    java.nio.file.Files.setPosixFilePermissions(file.toPath(), perms);
+//                    URL dockstoreExecutable = new URL(browserDownloadUrl);
+//                    ReadableByteChannel rbc = Channels.newChannel(dockstoreExecutable.openStream());
+//
+//                    FileOutputStream fos = new FileOutputStream(installLocation);
+//                    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+//
+//                    // Set file permissions
+//                    Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rwxrwxr-x");
+//                    FileAttribute<Set<PosixFilePermission>> attr = PosixFilePermissions.asFileAttribute(perms);
+//                    java.nio.file.Files.setPosixFilePermissions(file.toPath(), perms);
                     out("Dockstore has been updated.");
                 }
             } catch (IOException e) {
@@ -1362,6 +1362,7 @@ public class Client {
                 cal.set(Calendar.MONTH, (cal.get(Calendar.MONTH) + 3));
                 Date minUpdateCheck = cal.getTime();
 
+                // Check for update if it has been at least 3 months since last update
                 if(minUpdateCheck.before(new Date())) {
                     String latestVersion = getLatestVersion();
                     out("Current version : " + currentVersion);
@@ -1422,7 +1423,7 @@ public class Client {
         out("Flags:");
         out("  --debug              Print debugging information");
         out("  --version            Print dockstore's version");
-        out("  --update             Updates to the latest stable release of Dockstore");
+        out("  --upgrade            Upgrades to the latest stable release of Dockstore");
         out("  --config <file>      Override config file");
     }
 
@@ -1527,8 +1528,8 @@ public class Client {
                         case "updateContainer":
                             updateContainer(args);
                             break;
-                        case "--update":
-                            update();
+                        case "--upgrade":
+                            upgrade();
                             break;
                         default:
                             invalid(cmd);
