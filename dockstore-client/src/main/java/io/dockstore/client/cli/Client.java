@@ -52,8 +52,6 @@ import java.util.regex.Pattern;
 
 import javax.ws.rs.ProcessingException;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -1283,6 +1281,29 @@ public class Client {
         return null;
     }
 
+    private static Boolean checkIfTagExists(String tag){
+        try {
+            URL url = new URL("https://api.github.com/repos/ga4gh/dockstore/releases");
+            ObjectMapper mapper = new ObjectMapper();
+            try {
+                ArrayList<Map<String,String>> arr = mapper.readValue(url, ArrayList.class);
+                for(Map<String,String> obj: arr){
+                    String version = obj.get("name");
+                    if(version.equals(tag)) {
+                        return true;
+                    }
+                }
+                return false;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     /**
      * Checks for upgrade for Dockstore and sets it up
      */
@@ -1312,16 +1333,17 @@ public class Client {
 
                     // Download update
                     out("Downloading newest stable release of Dockstore...");
-//                    URL dockstoreExecutable = new URL(browserDownloadUrl);
-//                    ReadableByteChannel rbc = Channels.newChannel(dockstoreExecutable.openStream());
-//
-//                    FileOutputStream fos = new FileOutputStream(installLocation);
-//                    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-//
-//                    // Set file permissions
-//                    Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rwxrwxr-x");
-//                    FileAttribute<Set<PosixFilePermission>> attr = PosixFilePermissions.asFileAttribute(perms);
-//                    java.nio.file.Files.setPosixFilePermissions(file.toPath(), perms);
+                    URL dockstoreExecutable = new URL(browserDownloadUrl);
+                    ReadableByteChannel rbc = Channels.newChannel(dockstoreExecutable.openStream());
+
+                    FileOutputStream fos = new FileOutputStream(installLocation);
+                    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+
+                    // Set file permissions
+                    File file = new File(installLocation);
+                    Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rwxrwxr-x");
+                    FileAttribute<Set<PosixFilePermission>> attr = PosixFilePermissions.asFileAttribute(perms);
+                    java.nio.file.Files.setPosixFilePermissions(file.toPath(), perms);
                     out("Dockstore has been updated.");
                 }
             } catch (IOException e) {
@@ -1339,49 +1361,55 @@ public class Client {
      * Will check for updates if three months have gone by since the last update
      */
     public static void checkForUpdates(){
+        final int timeBetweenChecks = 3;
         String installLocation = getInstallLocation();
         String currentVersion = getCurrentVersion(installLocation);
 
-        URL url = null;
-        try {
-            url = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/tags/" + currentVersion);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            kill("Malformed URL: Current version may not be correctly found");
-        }
-
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            Map<String, Object> map = mapper.readValue(url, Map.class);
-            String publishedAt = map.get("published_at").toString();
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+        if (checkIfTagExists(currentVersion)) {
+            URL url = null;
             try {
-                Date date = sdf.parse(publishedAt);
-                Calendar cal = Calendar.getInstance();
-                cal.setTime(date);
-                cal.set(Calendar.MONTH, (cal.get(Calendar.MONTH) + 3));
-                Date minUpdateCheck = cal.getTime();
-
-                // Check for update if it has been at least 3 months since last update
-                if(minUpdateCheck.before(new Date())) {
-                    String latestVersion = getLatestVersion();
-                    out("Current version : " + currentVersion);
-                    if(currentVersion.equals(latestVersion)) {
-                        out("You have the most recent stable release.");
-                    } else {
-                        out("Latest version : " + latestVersion);
-                        out("You do not have the most recent stable release of Dockstore.");
-                        out("Run \"dockstore --update\" to update.");
-                    }
-                }
-            } catch (ParseException e) {
+                url = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/tags/" + currentVersion);
+            } catch (MalformedURLException e) {
                 e.printStackTrace();
-                kill("Error parsing date.");
+                kill("Malformed URL: Current version may not be correctly found");
             }
 
-        } catch (IOException e) {
-            e.printStackTrace();
-            out("Could not reach Github to check for updates.");
+            ObjectMapper mapper = new ObjectMapper();
+            try {
+                Map<String, Object> map = mapper.readValue(url, Map.class);
+                String publishedAt = map.get("published_at").toString();
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+                try {
+                    Date date = sdf.parse(publishedAt);
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTime(date);
+
+                    cal.set(Calendar.MONTH, (cal.get(Calendar.MONTH) + timeBetweenChecks));
+                    Date minUpdateCheck = cal.getTime();
+
+                    // Check for update if it has been at least 3 months since last update
+                    if (minUpdateCheck.before(new Date())) {
+                        String latestVersion = getLatestVersion();
+                        out("Current version : " + currentVersion);
+                        if (currentVersion.equals(latestVersion)) {
+                            out("You have the most recent stable release.");
+                        } else {
+                            out("Latest version : " + latestVersion);
+                            out("You do not have the most recent stable release of Dockstore.");
+                            out("Run \"dockstore --upgrade\" to upgrade.");
+                        }
+                    }
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                    kill("Error parsing date.");
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+                out("Could not reach Github to check for updates.");
+                out("You may be using a release not found on Github.");
+                out("If you would like to update to the latest stable version of Dockstore run \"dockstore --upgrade\"");
+            }
         }
     }
 
@@ -1460,6 +1488,11 @@ public class Client {
                 System.exit(GENERIC_ERROR);
             }
 
+            if (!SCRIPT.get()) {
+                // Check for updates if no script
+                checkForUpdates();
+            }
+
             ApiClient defaultApiClient;
             defaultApiClient = Configuration.getDefaultApiClient();
             defaultApiClient.addDefaultHeader("Authorization", "Bearer " + token);
@@ -1475,10 +1508,6 @@ public class Client {
                 printGeneralHelp();
             } else {
                 try {
-                    if (!SCRIPT.get()) {
-                         // Check for updates if no script
-                         checkForUpdates();
-                    }
                     // check user info after usage so that users can get usage without live webservice
                     user = usersApi.getUser();
                     if (user == null) {
