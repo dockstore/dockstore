@@ -18,6 +18,7 @@ before_script:
 - psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
 - psql -c "ALTER USER dockstore WITH superuser;" -U postgres
 - psql -c 'create database webservice_test with owner = dockstore;' -U postgres
+- export PATH=$PATH:$PWD/dockstore-client/target
 script: mvn -B clean install -DskipITs=false -Pconfidential-tests
 after_success:
 - mvn -B clean -DskipITs=false cobertura:cobertura cobertura:cobertura-integration-test
