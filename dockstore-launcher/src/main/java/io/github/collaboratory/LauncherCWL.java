@@ -49,11 +49,12 @@ import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
 
-import io.dockstore.common.CWL;
+import io.cwl.avro.CWL;
+import io.cwl.avro.CommandInputParameter;
+import io.cwl.avro.CommandLineTool;
+import io.cwl.avro.CommandOutputParameter;
 import io.dockstore.common.Utilities;
-import cwl.CommandInputParameter;
-import cwl.CommandLineTool;
-import cwl.CommandOutputParameter;
+
 
 /**
  * @author boconnor 9/24/15
