@@ -1236,17 +1236,17 @@ public class Client {
             }
         } catch (FileNotFoundException e) {
 //            e.printStackTrace();
-            out("Cannot find Dockstore executable.");
+            err("Cannot find Dockstore executable.");
         } catch (IOException e) {
 //            e.printStackTrace();
-            out("Cannot find Dockstore executable.");
+            err("Cannot find Dockstore executable.");
         }
 
         // Pull Dockstore version from matched line
         Pattern p = Pattern.compile("\"([^\"]*)\"");
         Matcher m = p.matcher(line);
         if (!m.find()) {
-            out("Cannot parse version information: " + line);
+            err("Cannot parse version information: " + line);
         } else {
             currentVersion = m.group(1);
         }
@@ -1269,11 +1269,11 @@ public class Client {
 
             } catch (IOException e) {
 //                e.printStackTrace();
-                out("Could not reach Github.");
+                err("Could not reach Github.");
             }
         } catch (MalformedURLException e) {
 //            e.printStackTrace();
-            out("Malformed URL");
+            err("Malformed URL");
         }
         return null;
     }
@@ -1292,12 +1292,12 @@ public class Client {
                 }
                 return false;
             } catch (IOException e) {
-                out("Couldn't reach github");
+                err("Couldn't reach github");
 //                e.printStackTrace();
             }
 
         } catch (MalformedURLException e) {
-            out("Malformed URL.");
+            err("Malformed URL.");
 //            e.printStackTrace();
         }
         return false;
@@ -1306,14 +1306,25 @@ public class Client {
     /**
      * Checks for upgrade for Dockstore and sets it up
      */
-    public static void upgrade(){
+    public static void upgrade(String installLocation){
         // Try to get version installed
-        String installLocation = getInstallLocation();
+        Boolean manual;
+        String currentVersion = null;
+        if(installLocation == null) {
+            installLocation = getInstallLocation();
+            manual = false;
+        } else {
+            manual = true;
+        }
         if (installLocation != null) {
-            String currentVersion = getCurrentVersion(installLocation);
-            if (currentVersion != null) {
-                out("Install location : " + installLocation);
-                out("Current version : " + currentVersion);
+            out("Install location : " + installLocation);
+            if (!manual) {
+                currentVersion = getCurrentVersion(installLocation);
+            }
+            if (currentVersion != null || manual) {
+                if (currentVersion != null) {
+                    out("Current version : " + currentVersion);
+                }
 
                 // Get latest version info and files from Github
                 URL url = null;
@@ -1327,14 +1338,14 @@ public class Client {
                         String browserDownloadUrl = map2.get(0).get("browser_download_url");
                         if (latestVersion == null) {
                             out("Could not find the latest release of Dockstore on Github.");
-                        } else if (latestVersion.equals(currentVersion)) {
-                            out("You have the latest stable version of Dockstore installed.");
+                        } else if (latestVersion.equals(currentVersion) && !manual) {
+                            out("You have the latest stable release of Dockstore installed.");
                         } else {
                             out("Latest Version : " + latestVersion);
                             out("You do not have the most recent stable release of Dockstore.");
 
                             // Download update
-                            out("Downloading newest stable release of Dockstore...");
+                            out("Downloading the newest stable release of Dockstore...");
                             URL dockstoreExecutable = new URL(browserDownloadUrl);
                             ReadableByteChannel rbc = Channels.newChannel(dockstoreExecutable.openStream());
 
@@ -1350,10 +1361,11 @@ public class Client {
                         }
                     } catch (IOException e) {
 //                        e.printStackTrace();
-                        out("Could not reach Github.");
+                        err("Could not reach Github.");
                     }
                 } catch (MalformedURLException e) {
 //                    e.printStackTrace();
+                    err("Malformed URL.");
                 }
             } else {
                 out("Could not find current version of Dockstore.)");
@@ -1379,6 +1391,7 @@ public class Client {
                     try {
                         url = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/tags/" + currentVersion);
                     } catch (MalformedURLException e) {
+                        err("Malformed URL - Issue may be due to default dockstore version in dockstore executable.");
 //                        e.printStackTrace();
                     }
 
@@ -1409,9 +1422,11 @@ public class Client {
                             }
                         } catch (ParseException e) {
 //                            e.printStackTrace();
+                            err("Parse exception with date.");
                         }
 
                     } catch (IOException e) {
+                        err("Problem with getting information from Github.");
 //                        e.printStackTrace();
                     }
                 }
@@ -1564,7 +1579,7 @@ public class Client {
                             updateContainer(args);
                             break;
                         case "--upgrade":
-                            upgrade();
+                            upgrade(args.get(0));
                             break;
                         default:
                             invalid(cmd);
