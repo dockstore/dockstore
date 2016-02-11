@@ -88,6 +88,11 @@
             <groupId>io.cwl</groupId>
             <artifactId>cwlavro-tools</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.broadinstitute</groupId>
+            <artifactId>cromwell_2.11</artifactId>
+            <version>0.17</version>
+        </dependency>
     </dependencies>
 
 
