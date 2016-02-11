@@ -1220,6 +1220,8 @@ public class Client {
 
     /**
      * Finds the version of the dockstore CLI for the given install location
+     * NOTE: Do not try and get the version information from the JAR (implementationVersion) as it cannot be tested.
+     * When running the tests the JAR file cannot be found, so no information about it can be retrieved
      * @param installLocation
      * @return
          */
@@ -1252,6 +1254,7 @@ public class Client {
 
     /**
      * Get the latest stable version name of dockstore available
+     * NOTE: The Github library does not include the ability to get release information.
      * @return
          */
     public static String getLatestVersion() {
