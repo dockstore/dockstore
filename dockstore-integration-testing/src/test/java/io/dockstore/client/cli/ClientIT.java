@@ -102,7 +102,7 @@ public class ClientIT {
         Assert.assertTrue("should see three entries", count == 1);
     }
 
-    @Test
+    @Ignore
     public void quickRegisterDuplicateEntry() throws IOException {
         Client.main(new String[] { "--config", getConfigFileLocation(true), "publish", "quay.io/test_org/test6" });
         Client.main(new String[] { "--config", getConfigFileLocation(true), "publish", "quay.io/test_org/test6", "view1" });
@@ -130,7 +130,7 @@ public class ClientIT {
      Since the below containers use dummy data and don't connect with Github/Bitbucket/Quay, the refresh will throw an error.
      Todo: Set up these tests with real data (not confidential)
      */
-    @Ignore
+    @Ignore("Since dockstore now checks for associated tags for Quay container, manual publishing of nonexistant images won't work")
     public void manualRegisterABunchOfValidEntries() throws IOException {
         Client.main(new String[] { "--config", getConfigFileLocation(true), "manual_publish", "--registry", Registry.QUAY_IO.toString(),
                 "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url", "git@github.com:funky-user/test2.git", "--git-reference",

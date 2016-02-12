@@ -38,6 +38,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import io.dockstore.webservice.core.Registry;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
@@ -247,6 +248,36 @@ public class DockerRepoResource {
         return c;
     }
 
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}")
+    @ApiOperation(value = "Update the container with the given container.", response = Container.class)
+    public Container updateContainer(@ApiParam(hidden = true) @Auth Token authToken,
+            @ApiParam(value = "Container to modify.", required = true) @PathParam("containerId") Long containerId,
+            @ApiParam(value = "Container with updated information", required = true) Container container) {
+        Container c = containerDAO.findById(containerId);
+        Helper.checkContainer(c);
+
+        User user = userDAO.findById(authToken.getUserId());
+        Helper.checkUser(user, c);
+
+        Container duplicate = containerDAO.findByToolPath(container.getPath(), container.getToolname());
+
+        if (duplicate != null && duplicate.getId() != containerId) {
+            LOG.info("duplicate container found: {}" + container.getToolPath());
+            throw new CustomWebApplicationException("Container " + container.getToolPath() + " already exists.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        c.updateInfo(container);
+
+        Container result = containerDAO.findById(containerId);
+        Helper.checkContainer(result);
+
+        return result;
+
+    }
+
     @GET
     @Timed
     @UnitOfWork
@@ -317,12 +348,24 @@ public class DockerRepoResource {
         if (!Helper.isGit(container.getGitUrl())) {
             container.setGitUrl(Helper.convertHttpsToSsh(container.getGitUrl()));
         }
-
+        container.setPath(container.getPath());
         Container duplicate = containerDAO.findByToolPath(container.getPath(), container.getToolname());
 
         if (duplicate != null) {
             LOG.info("duplicate container found: {}" + container.getToolPath());
             throw new CustomWebApplicationException("Container " + container.getToolPath() + " already exists.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // Check if container has tags
+        if (container.getRegistry() == Registry.QUAY_IO && !Helper.checkQuayContainerForTags(container, client, objectMapper, tokenDAO, user.getId())) {
+            LOG.info("container has no tags.");
+            throw new CustomWebApplicationException("Container " + container.getToolPath() + " has no tags. Quay containers must have at least one tag.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // Check if user owns repo, or if user is in the organization which owns the container
+        if (container.getRegistry() == Registry.QUAY_IO  && !Helper.checkIfUserOwns(container, client, objectMapper, tokenDAO, user.getId())) {
+            LOG.info("User does not own the given Quay Repo.");
+            throw new CustomWebApplicationException("User does not own the container " + container.getPath() + ". You can only add Quay repositories that you own or are part of the organization", HttpStatus.SC_BAD_REQUEST);
         }
 
         long id = containerDAO.create(container);

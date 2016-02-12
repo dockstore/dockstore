@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * Access tokens for this web service and integrated services like quay.io and github
  **/
 @ApiModel(description = "Access tokens for this web service and integrated services like quay.io and github")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-01-29T18:02:47.869-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-02-04T13:38:33.669-05:00")
 public class Token   {
   
   private Long id = null;

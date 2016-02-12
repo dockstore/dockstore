@@ -488,6 +488,7 @@ public class Client {
             container.setIsRegistered(true);
             container.setGitUrl(gitURL);
             container.setToolname(toolname);
+            container.setPath(Joiner.on("/").skipNulls().join(registry, namespace, name));
 
             if (!Registry.QUAY_IO.toString().equals(registry)) {
                 final String versionName = optVal(args, "--version-name", "latest");
@@ -1137,6 +1138,86 @@ public class Client {
         out("");
     }
 
+    public static void updateContainer(List<String> args) {
+        if (args.size() > 0 && !isHelpRequest(args.get(0))) {
+            final String toolpath = reqVal(args, "--entry");
+            try {
+                Container container = containersApi.getContainerByToolPath(toolpath);
+                long containerId = container.getId();
+
+                final String cwlPath = optVal(args, "--cwl-path", container.getDefaultCwlPath());
+                final String dockerfilePath = optVal(args, "--dockerfile-path", container.getDefaultDockerfilePath());
+                final String toolname = optVal(args, "--toolname", container.getToolname());
+                final String gitUrl = optVal(args, "--git-url", container.getGitUrl());
+
+                container.setDefaultCwlPath(cwlPath);
+                container.setDefaultDockerfilePath(dockerfilePath);
+                container.setToolname(toolname);
+                container.setGitUrl(gitUrl);
+
+                Container result = containersApi.updateContainer(containerId, container);
+                out("The container has been updated.");
+            } catch (ApiException e) {
+                e.printStackTrace();
+            }
+        } else {
+            updateContainerHelp();
+        }
+    }
+
+    public static void updateContainerHelp() {
+        out("");
+        out("HELP FOR DOCKSTORE");
+        out("------------------");
+        out("See https://www.dockstore.org for more information");
+        out("");
+        out("dockstore updateContainer --entry <path to tool> --cwl-path <cwl path> --dockerfile-path <dockerfile path> --toolname <toolname> --git-url <git-url>         :  Updates some fields for a container");
+        out("");
+        out("------------------");
+        out("");
+    }
+
+    public static void printGeneralHelp() {
+        out("");
+        out("HELP FOR DOCKSTORE");
+        out("------------------");
+        out("See https://www.dockstore.org for more information");
+        out("");
+        out("Possible sub-commands include:");
+        out("");
+        out("  list             :  lists all the containers registered by the user ");
+        out("");
+        out("  search <pattern> :  allows a user to search for all containers that match the criteria");
+        out("");
+        out("  publish          :  register/unregister a container in the dockstore");
+        out("");
+        out("  manual_publish   :  register a Docker Hub container in the dockstore");
+        out("");
+        out("  info <container> :  print detailed information about a particular container");
+        out("");
+        out("  cwl <container>  :  returns the Common Workflow Language tool definition for this Docker image ");
+        out("                      which enables integration with Global Alliance compliant systems");
+        out("");
+        out("  refresh          :  updates your list of containers stored on Dockstore or an individual container");
+        out("");
+        out("  label            :  updates labels for an individual container");
+        out("");
+        out("  versionTag       :  updates version tags for an individual container");
+        out("");
+        out("  updateContainer  :  updates certain fields of a container");
+        out("");
+        out("  " + CONVERT + "          :  utilities that allow you to convert file types");
+        out("");
+        out("  " + LAUNCH + "           :  launch containers (locally)");
+        out("");
+        out("------------------");
+        out("");
+        out("Flags:");
+        out("  --debug              Print debugging information");
+        out("  --version            Print dockstore's version");
+        out("  --config <file>      Override config file");
+    }
+
     public static void main(String[] argv) {
         List<String> args = new ArrayList<>(Arrays.asList(argv));
 
@@ -1179,42 +1260,7 @@ public class Client {
             defaultApiClient.setDebugging(DEBUG.get());
 
             if (isHelp(args, true)) {
-                out("");
-                out("HELP FOR DOCKSTORE");
-                out("------------------");
-                out("See https://www.dockstore.org for more information");
-                out("");
-                out("Possible sub-commands include:");
-                out("");
-                out("  list             :  lists all the containers registered by the user ");
-                out("");
-                out("  search <pattern> :  allows a user to search for all containers that match the criteria");
-                out("");
-                out("  publish          :  register/unregister a container in the dockstore");
-                out("");
-                out("  manual_publish   :  register a Docker Hub container in the dockstore");
-                out("");
-                out("  info <container> :  print detailed information about a particular container");
-                out("");
-                out("  cwl <container>  :  returns the Common Workflow Language tool definition for this Docker image ");
-                out("                      which enables integration with Global Alliance compliant systems");
-                out("");
-                out("  refresh          :  updates your list of containers stored on Dockstore or an individual container");
-                out("");
-                out("  label            :  updates labels for an individual container");
-                out("");
-                out("  versionTag       :  updates version tags for an individual container");
-                out("");
-                out("  " + CONVERT + "          :  utilities that allow you to convert file types");
-                out("");
-                out("  " + LAUNCH + "           :  launch containers (locally)");
-                out("");
-                out("------------------");
-                out("");
-                out("Flags:");
-                out("  --debug              Print debugging information");
-                out("  --version            Print dockstore's version");
-                out("  --config <file>      Override config file");
+                printGeneralHelp();
             } else {
                 try {
                     // check user info after usage so that users can get usage without live webservice
@@ -1262,6 +1308,9 @@ public class Client {
                             break;
                         case "versionTag":
                             versionTag(args);
+                            break;
+                        case "updateContainer":
+                            updateContainer(args);
                             break;
                         default:
                             invalid(cmd);

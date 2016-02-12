@@ -62,7 +62,6 @@ public class SourceCodeRepoFactory {
             LOG.info("Cannot parse url: " + url);
             return null;
         }
-
         // These correspond to the positions of the pattern matcher
         final int sourceIndex = 1;
         final int usernameIndex = 2;
@@ -71,9 +70,9 @@ public class SourceCodeRepoFactory {
         String source = m.group(sourceIndex);
         String gitUsername = m.group(usernameIndex);
         String gitRepository = m.group(reponameIndex);
-        // LOG.info("Source: " + source);
-        // LOG.info("Username: " + gitUsername);
-        // LOG.info("Repository: " + gitRepository);
+         LOG.info("Source: " + source);
+         LOG.info("Username: " + gitUsername);
+         LOG.info("Repository: " + gitRepository);
 
         Map<String, String> map = new HashMap<>();
         map.put("Source", source);

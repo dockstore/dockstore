@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.dockstore.webservice.helpers.QuayImageRegistry;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
@@ -66,6 +67,8 @@ public final class Helper {
     private static final Logger LOG = LoggerFactory.getLogger(Helper.class);
 
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
+
+    public static final String QUAY_URL = "https://quay.io/api/v1/";
 
     // public static final String DOCKSTORE_CWL = "Dockstore.cwl";
     public static class RepoList {
@@ -260,7 +263,7 @@ public final class Helper {
             final Container oldContainer = iterator.next();
             boolean exists = false;
             for (final Container newContainer : apiContainerList) {
-                if (newContainer.getToolPath().equals(oldContainer.getToolPath())) {
+                if ((newContainer.getToolPath().equals(oldContainer.getToolPath())) || (newContainer.getPath().equals(oldContainer.getPath()) && newContainer.getGitUrl().equals(oldContainer.getGitUrl()))) {
                     exists = true;
                     break;
                 }
@@ -275,12 +278,12 @@ public final class Helper {
 
         // when a container from the registry (ex: quay.io) has newer content, update it from
         for (Container newContainer : apiContainerList) {
-            String path = newContainer.getToolPath();
+            String path = newContainer.getPath();
             boolean exists = false;
 
             // Find if user already has the container
             for (Container oldContainer : dbContainerList) {
-                if (newContainer.getToolPath().equals(oldContainer.getToolPath())) {
+                if ((newContainer.getToolPath().equals(oldContainer.getToolPath())) || (newContainer.getPath().equals(oldContainer.getPath()) && newContainer.getGitUrl().equals(oldContainer.getGitUrl()))) {
                     exists = true;
                     oldContainer.update(newContainer);
                     break;
@@ -412,6 +415,27 @@ public final class Helper {
         }
 
         return tagMap;
+    }
+
+    /**
+     * Check if the given quay container has tags
+     * @param container
+     * @param client
+     * @param objectMapper
+     * @param tokenDAO
+         * @param userId
+         * @return true if container has tags, false otherwise
+         */
+    public static Boolean checkQuayContainerForTags(final Container container,final HttpClient client,
+            final ObjectMapper objectMapper, final TokenDAO tokenDAO, final long userId) {
+        List<Token> tokens = tokenDAO.findByUserId(userId);
+        Token quayToken = extractToken(tokens, TokenType.QUAY_IO.toString());
+        ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
+
+        final ImageRegistryInterface imageRegistry = factory.createImageRegistry(container.getRegistry());
+        final List<Tag> tags = imageRegistry.getTags(container);
+
+        return !tags.isEmpty();
     }
 
     /**
@@ -573,6 +597,22 @@ public final class Helper {
 
         List<Container> apiContainers = new ArrayList<>();
 
+        // Find a container with the given container's Path and is not manual
+        Container duplicatePath = null;
+        List<Container> containersList = containerDAO.findByPath(container.getPath());
+        for(Container c : containersList) {
+            if (c.getMode() != ContainerMode.MANUAL_IMAGE_PATH) {
+                duplicatePath = c;
+                break;
+            }
+        }
+
+        // If exists, check conditions to see if it should be changed to auto (in sync with quay tags and git repo)
+        if (container.getMode() == ContainerMode.MANUAL_IMAGE_PATH && duplicatePath != null  && container.getRegistry().toString().equals(
+                Registry.QUAY_IO.toString()) && duplicatePath.getGitUrl().equals(container.getGitUrl())) {
+            container.setMode(duplicatePath.getMode());
+        }
+
         if (container.getMode() == ContainerMode.MANUAL_IMAGE_PATH) {
             apiContainers.add(container);
         } else {
@@ -582,6 +622,7 @@ public final class Helper {
                 apiContainers.addAll(anInterface.getContainers(namespaces));
             }
         }
+        apiContainers.removeIf(container1 -> !container1.getPath().equals(container.getPath()));
 
         Map<String, ArrayList<?>> mapOfBuilds = new HashMap<>();
         if (anInterface != null) {
@@ -592,8 +633,6 @@ public final class Helper {
         dbContainers.add(container);
 
         removeContainersThatCannotBeUpdated(dbContainers);
-
-        apiContainers.removeIf(container1 -> !container1.getPath().equals(container.getPath()));
 
         final User dockstoreUser = userDAO.findById(userId);
         // update information on a container by container level
@@ -688,7 +727,7 @@ public final class Helper {
      */
     public static String parseReference(String reference) {
         if (reference != null) {
-            Pattern p = Pattern.compile("(\\S+)/(\\S+)/(\\S+)");
+            Pattern p = Pattern.compile("([\\S][^/\\s]+)?/([\\S][^/\\s]+)?/(\\S+)");
             Matcher m = p.matcher(reference);
             if (!m.find()) {
                 LOG.info("Cannot parse reference: {}", reference);
@@ -855,5 +894,54 @@ public final class Helper {
         Pattern p = Pattern.compile("git\\@(\\S+):(\\S+)/(\\S+)\\.git");
         Matcher m = p.matcher(url);
         return m.matches();
+    }
+
+    /**
+     * Checks if a user owns a given quay repo or is part of an organization that owns the quay repo
+     * @param container
+     * @param client
+     * @param objectMapper
+     * @param tokenDAO
+         * @param userId
+         * @return
+         */
+    public static Boolean checkIfUserOwns(final Container container,final HttpClient client, final ObjectMapper objectMapper, final TokenDAO tokenDAO, final long userId) {
+        List<Token> tokens = tokenDAO.findByUserId(userId);
+        // get quay token
+        Token quayToken = extractToken(tokens, TokenType.QUAY_IO.toString());
+
+        if (container.getRegistry() == Registry.QUAY_IO && quayToken == null) {
+            LOG.info("WARNING: QUAY.IO token not found!");
+            throw new CustomWebApplicationException("A valid Quay.io token is required to add this container.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // set up
+        QuayImageRegistry factory = new QuayImageRegistry(client, objectMapper, quayToken);
+
+        // get quay username
+        String quayUsername = quayToken.getUsername();
+
+
+        // call quay api, check if user owns or is part of owning organization
+        Map<String,Object> map = factory.getQuayInfo(container);
+
+
+        if (map != null){
+            String namespace = map.get("namespace").toString();
+            boolean isOrg = (Boolean)map.get("is_organization");
+
+            if (isOrg) {
+                List<String> namespaces = factory.getNamespaces();
+                for(String nm : namespaces) {
+                    if (nm.equals(namespace)) {
+                        return true;
+                    }
+                    return false;
+                }
+            } else {
+                return (namespace.equals(quayUsername) && !isOrg);
+            }
+        }
+        return false;
     }
 }
