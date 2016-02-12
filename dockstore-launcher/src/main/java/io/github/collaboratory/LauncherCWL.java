@@ -7,13 +7,14 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.util.Map.Entry;
-import java.util.Map;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.UUID;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -390,6 +391,7 @@ public class LauncherCWL {
             for (Entry<String, Object> stringObjectEntry : inputsOutputs.entrySet()) {
 
                 LOG.info("INSTANCE OF: " + stringObjectEntry.getClass());
+                LOG.info("ENTRY OF: " + stringObjectEntry.toString());
 
                 if (stringObjectEntry.getValue() instanceof ArrayList) {
 
@@ -398,15 +400,36 @@ public class LauncherCWL {
                     for (int i = 0; i<((ArrayList)stringObjectEntry.getValue()).size(); i++) {
                         // java.util.LinkedHashMap$Entry
 
-                        Entry<String, Object> stringObjectEntry2 = (Entry<String, Object>)((ArrayList)stringObjectEntry.getValue()).get(i);
+                        LinkedHashMap lhm = ((LinkedHashMap) ((ArrayList) stringObjectEntry.getValue()).get(i));
+                        LOG.info("ARRAY ENTRY: " + lhm.toString());
+                        String path = (String) lhm.get("path");
 
-                        LOG.info("entity: "+stringObjectEntry2);
-                        doProcessFile(stringObjectEntry2, cwlInputFileID, fileMap);
+                        doProcessFile(stringObjectEntry.getKey(), path, cwlInputFileID, fileMap);
+
+                        //Entry<String, Object> stringObjectEntry2 = (Entry<String, Object>) ((LinkedHashMap)((ArrayList)stringObjectEntry.getValue()).get(i));
+                        //Entry<String, Object> stringObjectEntry2 = (Entry<String, Object>) ((LinkedHashMap)((ArrayList)stringObjectEntry.getValue()).get(i)).entrySet();
+                        //Map<String, Object> stringObjectEntry2 = (Map)((ArrayList)stringObjectEntry.getValue()).get(i);
+
+                        /* LOG.info("entity: " + stringObjectEntry2.entrySet().getClass());
+                        LOG.info("entity2: " + stringObjectEntry2.toString());
+
+                        for (Entry<String, Object> stringObjectEntry3 : stringObjectEntry2.entrySet()) {
+
+                            LOG.info("entity3: " + stringObjectEntry3.getClass());
+                            LOG.info("entity4: " + stringObjectEntry3.toString());
+
+                            //doProcessFile(stringObjectEntry3, cwlInputFileID, fileMap);
+
+                        }*/
+
+                        //doProcessFile(stringObjectEntry2, cwlInputFileID, fileMap);
                     }
 
                 } else if (stringObjectEntry.getValue() instanceof HashMap) {
 
-                    doProcessFile(stringObjectEntry, cwlInputFileID, fileMap);
+                    HashMap param = (HashMap) stringObjectEntry.getValue();
+                    String path = (String) param.get("path");
+                    doProcessFile(stringObjectEntry.getKey(), path, cwlInputFileID, fileMap);
 
                 }
             }
@@ -414,13 +437,13 @@ public class LauncherCWL {
         return fileMap;
     }
 
-    private void doProcessFile(Entry<String, Object> stringObjectEntry, String cwlInputFileID, Map<String, FileInfo> fileMap) {
-        HashMap param = (HashMap) stringObjectEntry.getValue();
-        String path = (String) param.get("path");
+    private void doProcessFile(String key, String path, String cwlInputFileID, Map<String, FileInfo> fileMap) {
+        //HashMap param = (HashMap) stringObjectEntry.getValue();
+        //String path = (String) param.get("path");
 
-        if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
+        if (key.equals(cwlInputFileID)) {
             // if it's the current one
-            LOG.info("PATH TO DOWNLOAD FROM: {} FOR {} FOR {}", path, cwlInputFileID, stringObjectEntry.getKey());
+            LOG.info("PATH TO DOWNLOAD FROM: {} FOR {} FOR {}", path, cwlInputFileID, key);
 
             // set up output paths
             String downloadDirectory = globalWorkingDir + "/inputs/" + UUID.randomUUID();
