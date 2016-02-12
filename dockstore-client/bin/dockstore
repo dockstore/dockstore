@@ -214,9 +214,6 @@ elif [ "$1" = "init" ]; then
     else
         echo "Please setup an account at http://www.dockstore.org/"
     fi
-
-elif [ "$1" = "version" -o "$1" = "-v" -o "$1" = "--version" ]; then
-    echo "Dockstore version $DOCKSTORE_VERSION"
 else
     $JAVA_CMD $DOCKSTORE_JVM_OPTS io.dockstore.client.cli.Client "$@"
     

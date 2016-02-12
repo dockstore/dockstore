@@ -14,7 +14,7 @@ import io.swagger.client.model.User;
 
 import java.util.*;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-02-12T16:39:54.318-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-02-09T11:09:00.290-05:00")
 public class ContainersApi {
   private ApiClient apiClient;
 
@@ -523,6 +523,59 @@ public class ContainersApi {
     
     TypeRef returnType = new TypeRef<Container>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    
+  }
+  
+  /**
+   * Update the container with the given container.
+   * 
+   * @param containerId Container to modify.
+   * @param body Container with updated information
+   * @return Container
+   */
+  public Container updateContainer (Long containerId, Container body) throws ApiException {
+    Object postBody = body;
+    
+    // verify the required parameter 'containerId' is set
+    if (containerId == null) {
+      throw new ApiException(400, "Missing the required parameter 'containerId' when calling updateContainer");
+    }
+    
+    // verify the required parameter 'body' is set
+    if (body == null) {
+      throw new ApiException(400, "Missing the required parameter 'body' when calling updateContainer");
+    }
+    
+    // create path and map variables
+    String path = "/containers/{containerId}".replaceAll("\\{format\\}","json")
+      .replaceAll("\\{" + "containerId" + "\\}", apiClient.escapeString(containerId.toString()));
+
+    // query params
+    List<Pair> queryParams = new ArrayList<Pair>();
+    Map<String, String> headerParams = new HashMap<String, String>();
+    Map<String, Object> formParams = new HashMap<String, Object>();
+
+    
+
+    
+
+    
+
+    final String[] accepts = {
+      "application/json"
+    };
+    final String accept = apiClient.selectHeaderAccept(accepts);
+
+    final String[] contentTypes = {
+      "application/json"
+    };
+    final String contentType = apiClient.selectHeaderContentType(contentTypes);
+
+    String[] authNames = new String[] {  };
+
+    
+    TypeRef returnType = new TypeRef<Container>() {};
+    return apiClient.invokeAPI(path, "PUT", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
   

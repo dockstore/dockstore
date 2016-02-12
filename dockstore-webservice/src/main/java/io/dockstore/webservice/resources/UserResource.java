@@ -197,7 +197,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/tokens/github.com")
-    @ApiOperation(value = "Get Github tokens with user id", response = Token.class)
+    @ApiOperation(value = "Get Github tokens with user id", response = Token.class, responseContainer = "List")
     public List<Token> getGithubUserTokens(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam("User to return") @PathParam("userId") long userId) {
         User user = userDAO.findById(authToken.getUserId());
@@ -210,7 +210,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/tokens/quay.io")
-    @ApiOperation(value = "Get Quay tokens with user id", response = Token.class)
+    @ApiOperation(value = "Get Quay tokens with user id", response = Token.class, responseContainer = "List")
     public List<Token> getQuayUserTokens(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam("User to return") @PathParam("userId") long userId) {
         User user = userDAO.findById(authToken.getUserId());
@@ -223,7 +223,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/tokens/dockstore")
-    @ApiOperation(value = "Get Dockstore tokens with user id", response = Token.class)
+    @ApiOperation(value = "Get Dockstore tokens with user id", response = Token.class, responseContainer = "List")
     public List<Token> getDockstoreUserTokens(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam("User to return") @PathParam("userId") long userId) {
         User user = userDAO.findById(authToken.getUserId());

@@ -315,7 +315,7 @@
         <dependency>
             <groupId>org.eclipse.mylyn.github</groupId>
             <artifactId>org.eclipse.egit.github.core</artifactId>
-            <version>2.1.5</version>
+            <version>4.2.0.201601211800-r</version>
         </dependency>
         
         <dependency>
