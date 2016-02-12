@@ -16,14 +16,26 @@
  */
 package io.dockstore.client.cli;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -34,9 +46,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.ws.rs.ProcessingException;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
@@ -128,6 +143,8 @@ public class Client {
     }
 
     public static final AtomicBoolean DEBUG = new AtomicBoolean(false);
+    public static final AtomicBoolean SCRIPT = new AtomicBoolean(false);
+
 
     private static boolean isHelp(List<String> args, boolean valOnEmpty) {
         if (args.isEmpty()) {
@@ -1177,6 +1194,259 @@ public class Client {
         out("");
     }
 
+    /**
+     * Finds the install location of the dockstore CLI
+     * @return
+         */
+    public static String getInstallLocation(){
+        String installLocation = null;
+
+        String executable = "dockstore";
+        String path = System.getenv("PATH");
+        String[] dirs = path.split(File.pathSeparator);
+
+        // Search for location of dockstore executable on path
+        for(String dir : dirs) {
+            // Check if a folder on the PATH includes dockstore
+            File file = new File(dir, executable);
+            if (file.isFile()) {
+                installLocation = dir + File.separator + executable;
+                break;
+            }
+        }
+
+        return installLocation;
+    }
+
+    /**
+     * Finds the version of the dockstore CLI for the given install location
+     * NOTE: Do not try and get the version information from the JAR (implementationVersion) as it cannot be tested.
+     * When running the tests the JAR file cannot be found, so no information about it can be retrieved
+     * @param installLocation
+     * @return
+         */
+    public static String getCurrentVersion(String installLocation){
+        String currentVersion = null;
+        File file = new File(installLocation);
+        String line = null;
+        try {
+            BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file.toString()), "utf-8"));
+            while ((line = br.readLine()) != null) {
+                if (line.startsWith("DEFAULT_DOCKSTORE_VERSION")) {
+                    break;
+                }
+            }
+        } catch (FileNotFoundException e) {
+//            e.printStackTrace();
+        } catch (IOException e) {
+//            e.printStackTrace();
+        }
+
+        // Pull Dockstore version from matched line
+        Pattern p = Pattern.compile("\"([^\"]*)\"");
+        Matcher m = p.matcher(line);
+        if (m.find()) {
+            currentVersion = m.group(1);
+        }
+
+        return currentVersion;
+    }
+
+    /**
+     * Get the latest stable version name of dockstore available
+     * NOTE: The Github library does not include the ability to get release information.
+     * @return
+         */
+    public static String getLatestVersion() {
+        URL url = null;
+        try {
+            url = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/latest");
+            ObjectMapper mapper = new ObjectMapper();
+            Map<String, Object> map = null;
+            try {
+                map = mapper.readValue(url, Map.class);
+                return map.get("name").toString();
+
+            } catch (IOException e) {
+//                e.printStackTrace();
+            }
+        } catch (MalformedURLException e) {
+//            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * Checks if the given tag exists as a release for Dockstore
+     * @param tag
+     * @return
+         */
+    public static Boolean checkIfTagExists(String tag){
+        try {
+            URL url = new URL("https://api.github.com/repos/ga4gh/dockstore/releases");
+            ObjectMapper mapper = new ObjectMapper();
+            try {
+                ArrayList<Map<String,String>> arrayMap = mapper.readValue(url, ArrayList.class);
+                for(Map<String,String> map: arrayMap){
+                    String version = map.get("name");
+                    if(version.equals(tag)) {
+                        return true;
+                    }
+                }
+                return false;
+            } catch (IOException e) {
+//                e.printStackTrace();
+            }
+
+        } catch (MalformedURLException e) {
+//            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * Checks for upgrade for Dockstore and install
+     */
+    public static void upgrade(){
+        // Try to get version installed
+        String installLocation = getInstallLocation();
+        if (installLocation == null) {
+            kill("Can't find location of Dockstore executable.  Is it on the PATH?");
+        }
+
+        String currentVersion = getCurrentVersion(installLocation);
+        if (currentVersion == null) {
+            kill("Can't find the current version.");
+        }
+
+        // Update if necessary
+        URL url = null;
+        String latestPath = "https://api.github.com/repos/ga4gh/dockstore/releases/latest";
+        String latestVersion = null;
+        try {
+            url = new URL(latestPath);
+            ObjectMapper mapper = new ObjectMapper();
+            Map<String, Object> map = null;
+            try {
+                // Read JSON from Github
+                map = mapper.readValue(url, Map.class);
+                latestVersion = map.get("name").toString();
+                ArrayList<Map<String, String>> map2 = (ArrayList<Map<String, String>>) map.get("assets");
+                String browserDownloadUrl = map2.get(0).get("browser_download_url");
+
+                // Check if installed version is up to date
+                if (latestVersion.equals(currentVersion)) {
+                    out("You are running the latest stable version...");
+                } else {
+                    out("Upgrading to most recent stable release (" + currentVersion + " -> " + latestVersion + ")");
+                    out("Downloading version " + latestVersion + " of Dockstore.");
+
+                    // Download update
+                    URL dockstoreExecutable = new URL(browserDownloadUrl);
+                    ReadableByteChannel rbc = Channels.newChannel(dockstoreExecutable.openStream());
+
+                    FileOutputStream fos = new FileOutputStream(installLocation);
+                    fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+
+                    // Set file permissions
+                    File file = new File(installLocation);
+                    Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rwxrwxr-x");
+                    java.nio.file.Files.setPosixFilePermissions(file.toPath(), perms);
+                    out("Download complete. You are now on version " + latestVersion + " of Dockstore.");
+                }
+            } catch (IOException e) {
+                out("Could not connect to Github. You may have reached your rate limit.");
+                out("Please try again in an hour.");
+            }
+         } catch (MalformedURLException e) {
+            out("Issue with URL : " + latestPath);
+        }
+    }
+
+    /**
+     * Will check for updates if three months have gone by since the last update
+     */
+    public static void checkForUpdates(){
+        final int monthsBeforeCheck = 3;
+        String installLocation = getInstallLocation();
+        if (installLocation != null) {
+            String currentVersion = getCurrentVersion(installLocation);
+            if (currentVersion != null) {
+                if (checkIfTagExists(currentVersion)) {
+                    URL url = null;
+                    try {
+                        url = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/tags/" + currentVersion);
+                    } catch (MalformedURLException e) {
+//                        e.printStackTrace();
+                    }
+
+                    ObjectMapper mapper = new ObjectMapper();
+                    try {
+                        // Determine when current version was published
+                        Map<String, Object> map = mapper.readValue(url, Map.class);
+                        String publishedAt = map.get("published_at").toString();
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+                        try {
+                            // Find out when you should check for updates again (publish date + 3 months)
+                            Date date = sdf.parse(publishedAt);
+                            Calendar cal = Calendar.getInstance();
+                            cal.setTime(date);
+
+                            cal.set(Calendar.MONTH, (cal.get(Calendar.MONTH) + monthsBeforeCheck));
+                            Date minUpdateCheck = cal.getTime();
+
+                            // Check for update if it has been at least 3 months since last update
+                            if (minUpdateCheck.before(new Date())) {
+                                String latestVersion = getLatestVersion();
+                                out("Current version : " + currentVersion);
+                                if (currentVersion.equals(latestVersion)) {
+                                    out("You have the most recent stable release.");
+                                } else {
+                                    out("Latest version : " + latestVersion);
+                                    out("You do not have the most recent stable release of Dockstore.");
+                                    out("Run \"dockstore --upgrade \" to upgrade.");
+                                }
+                            }
+                        } catch (ParseException e) {
+//                            e.printStackTrace();
+                        }
+
+                    } catch (IOException e) {
+//                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Prints out version information for the Dockstore CLI
+     */
+    public static void version(){
+        String installLocation = getInstallLocation();
+        if (installLocation == null) {
+            kill("Can't find location of Dockstore executable. Is it on the PATH?");
+        }
+
+        String currentVersion = getCurrentVersion(installLocation);
+        if (currentVersion == null) {
+            kill("Can't find the current version.");
+        }
+
+        String latestVersion = getLatestVersion();
+        if (latestVersion == null) {
+            kill("Can't find the latest version. Something might be wrong with the connection to Github.");
+        }
+
+        out("Dockstore version " + currentVersion);
+        if (currentVersion.equals(latestVersion)) {
+            out("You are running the latest stable version...");
+        } else {
+            out("The latest stable version is " + latestVersion + ", please upgrade with the following command:");
+            out("   dockstore --upgrade");
+        }
+    }
+
     public static void printGeneralHelp() {
         out("");
         out("HELP FOR DOCKSTORE");
@@ -1215,7 +1485,9 @@ public class Client {
         out("Flags:");
         out("  --debug              Print debugging information");
         out("  --version            Print dockstore's version");
+        out("  --upgrade            Upgrades to the latest stable release of Dockstore");
         out("  --config <file>      Override config file");
+        out("  --script             Will not check Github for newer versions of Dockstore");
     }
 
     public static void main(String[] argv) {
@@ -1223,6 +1495,9 @@ public class Client {
 
         if (flag(args, "--debug") || flag(args, "--d")) {
             DEBUG.set(true);
+        }
+        if (flag(args, "--script") || flag(args, "--s")) {
+            SCRIPT.set(true);
         }
 
         // user home dir
@@ -1259,6 +1534,11 @@ public class Client {
 
             defaultApiClient.setDebugging(DEBUG.get());
 
+            // Check if updates are available
+            if (!SCRIPT.get()) {
+                checkForUpdates();
+            }
+
             if (isHelp(args, true)) {
                 printGeneralHelp();
             } else {
@@ -1274,7 +1554,7 @@ public class Client {
                         switch (cmd) {
                         case "-v":
                         case "--version":
-                            kill("dockstore: version information is provided by the wrapper script.");
+                            version();
                             break;
                         case "list":
                             list(args);
@@ -1311,6 +1591,9 @@ public class Client {
                             break;
                         case "updateContainer":
                             updateContainer(args);
+                            break;
+                        case "--upgrade":
+                            upgrade();
                             break;
                         default:
                             invalid(cmd);
