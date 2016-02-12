@@ -10,7 +10,7 @@ import io.swagger.client.model.GithubComView;
 
 import java.util.*;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-02-04T13:38:33.669-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-02-12T16:39:54.318-05:00")
 public class IntegrationgithubcomApi {
   private ApiClient apiClient;
 
