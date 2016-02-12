@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * Describes this registry to better allow for mirroring and indexing.
  **/
 @ApiModel(description = "Describes this registry to better allow for mirroring and indexing.")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-02-12T16:39:54.318-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-02-12T16:47:38.706-05:00")
 public class Metadata   {
   
   private String version = null;

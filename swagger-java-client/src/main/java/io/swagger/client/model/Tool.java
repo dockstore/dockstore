@@ -15,7 +15,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * A tool (or described tool) describes one pairing of a tool as described in a descriptor file (which potentially describes multiple tools) and a Docker image.
  **/
 @ApiModel(description = "A tool (or described tool) describes one pairing of a tool as described in a descriptor file (which potentially describes multiple tools) and a Docker image.")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-02-09T11:09:00.290-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-02-12T16:47:38.706-05:00")
 public class Tool   {
   
   private String globalId = null;
@@ -137,9 +137,9 @@ public class Tool   {
 
   
   /**
-   * The author of the tool.
+   * Contact information for the author of this tool entry in the registry. (More complex authorship information is handled by the descriptor)
    **/
-  @ApiModelProperty(required = true, value = "The author of the tool.")
+  @ApiModelProperty(required = true, value = "Contact information for the author of this tool entry in the registry. (More complex authorship information is handled by the descriptor)")
   @JsonProperty("author")
   public String getAuthor() {
     return author;
@@ -150,9 +150,9 @@ public class Tool   {
 
   
   /**
-   * The version of this entry of the registry. Iterates when fields like the description, author, etc. are updated.
+   * The version of this tool in the registry. Iterates when fields like the description, author, etc. are updated.
    **/
-  @ApiModelProperty(required = true, value = "The version of this entry of the registry. Iterates when fields like the description, author, etc. are updated.")
+  @ApiModelProperty(required = true, value = "The version of this tool in the registry. Iterates when fields like the description, author, etc. are updated.")
   @JsonProperty("meta-version")
   public String getMetaVersion() {
     return metaVersion;
