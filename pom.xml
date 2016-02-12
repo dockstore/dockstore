@@ -57,6 +57,11 @@
             </snapshots>
         </repository>
         <repository>
+            <id>seqwaremaven.oicr.on.ca</id>
+            <name>seqwaremaven.oicr.on.ca-releases</name>
+            <url>https://seqwaremaven.oicr.on.ca/artifactory/seqware-dependencies</url>
+        </repository>
+        <repository>
             <id>apache-releases</id>
             <name>Apache Releases repository</name>
             <url>https://repository.apache.org/content/repositories/releases/</url>
@@ -73,7 +78,7 @@
         <repository>
             <id>artifactory.broadinstitute.org</id>
             <name>artifactory.broadinstitute.org</name>
-            <url>https://artifactory.broadinstitute.org/artifactory/libs-release-local</url>
+            <url>https://artifactory.broadinstitute.org/artifactory/libs-release</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
@@ -525,6 +530,11 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <version>2.10.3</version>
+                </plugin>
+                <plugin>
+                    <groupId>net.alchim31.maven</groupId>
+                    <artifactId>scala-maven-plugin</artifactId>
+                    <version>3.2.1</version>
                 </plugin>
             </plugins>
         </pluginManagement>
