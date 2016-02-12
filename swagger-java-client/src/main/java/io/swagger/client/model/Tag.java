@@ -15,7 +15,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * This describes one tag associated with a container.
  **/
 @ApiModel(description = "This describes one tag associated with a container.")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-02-04T13:38:33.669-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-02-12T11:45:51.060-05:00")
 public class Tag   {
   
   private Long id = null;
@@ -30,6 +30,7 @@ public class Tag   {
   private Date lastModified = null;
   private String dockerfilePath = null;
   private String cwlPath = null;
+  private String wdlPath = null;
 
   
   /**
@@ -85,9 +86,9 @@ public class Tag   {
 
   
   /**
-   * Cached files for each tag. Includes Dockerfile and Dockstore.cwl
+   * Cached files for each tag. Includes Dockerfile and Descriptor files
    **/
-  @ApiModelProperty(value = "Cached files for each tag. Includes Dockerfile and Dockstore.cwl")
+  @ApiModelProperty(value = "Cached files for each tag. Includes Dockerfile and Descriptor files")
   @JsonProperty("sourceFiles")
   public List<SourceFile> getSourceFiles() {
     return sourceFiles;
@@ -188,6 +189,19 @@ public class Tag   {
   }
 
   
+  /**
+   * Path for the WDL document
+   **/
+  @ApiModelProperty(value = "Path for the WDL document")
+  @JsonProperty("wdl_path")
+  public String getWdlPath() {
+    return wdlPath;
+  }
+  public void setWdlPath(String wdlPath) {
+    this.wdlPath = wdlPath;
+  }
+
+  
 
   @Override
   public String toString()  {
@@ -206,6 +220,7 @@ public class Tag   {
     sb.append("    lastModified: ").append(StringUtil.toIndentedString(lastModified)).append("\n");
     sb.append("    dockerfilePath: ").append(StringUtil.toIndentedString(dockerfilePath)).append("\n");
     sb.append("    cwlPath: ").append(StringUtil.toIndentedString(cwlPath)).append("\n");
+    sb.append("    wdlPath: ").append(StringUtil.toIndentedString(wdlPath)).append("\n");
     sb.append("}");
     return sb.toString();
   }

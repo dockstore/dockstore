@@ -96,10 +96,18 @@ public class Container {
     @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the Dockerfile, required: GA4GH", required = true)
     private String defaultDockerfilePath = "/Dockerfile";
 
+    // Add columns for Descriptor types here --------------------------------------------------------------------------------------------------------------------
     @Column(columnDefinition = "text")
     @JsonProperty("default_cwl_path")
     @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL document, required: GA4GH", required = true)
     private String defaultCwlPath = "/Dockstore.cwl";
+
+    @Column(columnDefinition = "text")
+    @JsonProperty("default_wdl_path")
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the WDL document", required = true)
+    private String defaultWdlPath = "/Dockstore.wdl";
+
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------
 
     @Column(nullable = false)
     @ApiModelProperty(value = "This is the tool name of the container, when not-present this will function just like 0.1 dockstore"
@@ -152,7 +160,7 @@ public class Container {
     @ApiModelProperty("Implementation specific indication as to whether this is properly registered with this web service")
     private boolean isRegistered;
     @Column
-    @ApiModelProperty("Implementation specific, this image has a Dockstore.cwl associated with it")
+    @ApiModelProperty("Implementation specific, this image has descriptor file(s) associated with it")
     private boolean validTrigger;
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
@@ -446,6 +454,7 @@ public class Container {
         this.defaultDockerfilePath = defaultDockerfilePath;
     }
 
+    // Add methods for descriptor types here ------------------------------------------------------------------------------------
     @JsonProperty
     public String getDefaultCwlPath() {
         return defaultCwlPath;
@@ -454,6 +463,17 @@ public class Container {
     public void setDefaultCwlPath(String defaultCwlPath) {
         this.defaultCwlPath = defaultCwlPath;
     }
+
+    @JsonProperty
+    public String getDefaultWdlPath() {
+        return defaultWdlPath;
+    }
+
+    public void setDefaultWdlPath() {
+        this.defaultWdlPath = defaultWdlPath;
+    }
+
+    // --------------------------------------------------------------------------------------------------------------------------
 
     @JsonProperty
     public String getToolname() {
@@ -484,8 +504,10 @@ public class Container {
      * @param container
          */
     public void updateInfo(Container container) {
+        // Add descriptor type default paths here
         defaultCwlPath = container.getDefaultCwlPath();
         defaultDockerfilePath = container.getDefaultDockerfilePath();
+
         toolname = container.getToolname();
         gitUrl = container.getGitUrl();
     }
