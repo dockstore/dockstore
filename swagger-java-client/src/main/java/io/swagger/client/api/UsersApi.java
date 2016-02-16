@@ -870,9 +870,9 @@ public class UsersApi {
    * Get Dockstore tokens with user id
    * 
    * @param userId User to return
-   * @return Token
+   * @return List<Token>
    */
-  public Token getDockstoreUserTokens (Long userId) throws ApiException {
+  public List<Token> getDockstoreUserTokens (Long userId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'userId' is set
@@ -908,7 +908,7 @@ public class UsersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<Token>() {};
+    TypeRef returnType = new TypeRef<List<Token>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -917,9 +917,9 @@ public class UsersApi {
    * Get Github tokens with user id
    * 
    * @param userId User to return
-   * @return Token
+   * @return List<Token>
    */
-  public Token getGithubUserTokens (Long userId) throws ApiException {
+  public List<Token> getGithubUserTokens (Long userId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'userId' is set
@@ -955,7 +955,7 @@ public class UsersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<Token>() {};
+    TypeRef returnType = new TypeRef<List<Token>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -964,9 +964,9 @@ public class UsersApi {
    * Get Quay tokens with user id
    * 
    * @param userId User to return
-   * @return Token
+   * @return List<Token>
    */
-  public Token getQuayUserTokens (Long userId) throws ApiException {
+  public List<Token> getQuayUserTokens (Long userId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'userId' is set
@@ -1002,7 +1002,7 @@ public class UsersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<Token>() {};
+    TypeRef returnType = new TypeRef<List<Token>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
