@@ -250,11 +250,9 @@ public class SystemClientIT {
         Container c = getContainer();
         containersApi.registerManual(c);
 
-        final ToolDockerfile toolDockerfile = toolApi.toolsRegistryIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5");
+        final ToolDockerfile toolDockerfile = toolApi.toolsRegistryIdVersionVersionIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5","master");
         assertTrue(toolDockerfile.getDockerfile().contains("dockerstuff"));
-        final ToolDockerfile toolDockerfileSpecific = toolApi.toolsRegistryIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5:master");
-        assertTrue(toolDockerfileSpecific.getDockerfile().contains("dockerstuff"));
-        final ToolDescriptor cwl = toolApi.toolsRegistryIdDescriptorGet("registry.hub.docker.com/seqware/seqware/test5:master", "CWL");
+        final ToolDescriptor cwl = toolApi.toolsRegistryIdVersionVersionIdDescriptorGet("registry.hub.docker.com/seqware/seqware/test5", "master", "CWL");
         assertTrue(cwl.getDescriptor().contains("cwlstuff"));
     }
 
