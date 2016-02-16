@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,8 +93,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public Container findCWL(Container container) {
-        String fileName = container.getDefaultCwlPath();
+    public Container findDescriptor(Container container, String fileName) {
         if (fileName.startsWith("/")) {
             fileName = fileName.substring(1);
         }
@@ -151,7 +151,15 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                     LOG.info("Branch: {} has no {}", branch, fileName);
                 }
 
-                container = parseCWLContent(container, content);
+                // Parse descripters here ---------------------------------------------------------------------------------------------------->>
+                // expects file to have .cwl extension
+                if (FilenameUtils.getExtension(fileName).equals("cwl")) {
+                    container = parseCWLContent(container, content);
+                }
+                //if (fileName.equals(container.getDefaultWdlPath())) {
+                    // container = parseWDLContent(container, content);
+                //}
+                // --------------------------------------------------------------------------------------------------------------------------<<
 
                 // if (container.getHasCollab()) {
                 // break;

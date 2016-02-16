@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
 
+import org.apache.commons.io.FilenameUtils;
 import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.RepositoryContents;
 import org.eclipse.egit.github.core.User;
@@ -76,9 +77,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public Container findCWL(Container c) {
-        String fileName = c.getDefaultCwlPath();
-
+    public Container findDescriptor(Container c, String fileName) {
         Repository repository = null;
         try {
             repository = service.getRepository(gitUsername, gitRepository);
@@ -97,10 +96,22 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     byte[] decode = Base64.getDecoder().decode(encoded);
                     String content = new String(decode, StandardCharsets.UTF_8);
 
-                    c = parseCWLContent(c, content);
+                    // Parse descriptors here -------------------------------------------------------------------------------------------------------------->>
+                    // Grab important metadata from CWL file (expects file to have .cwl extension)
+                    if (FilenameUtils.getExtension(fileName).equals("cwl")) {
+                        c = parseCWLContent(c, content);
+                    }
+                    //if (fileName.equals(c.getDefaultWdlPath())) {
+                    //    c = parseWDLContent(c, content);
+                    //}
+
+                    // ------------------------------------------------------------------------------------------------------------------------------------<<
+
+                    // Currently only can pull name of task? or workflow from WDL
+                    // Add this later, should call parseWDLContent and use the existing Broad WDL parser
                 }
             } catch (IOException ex) {
-                LOG.info("Repo: {} has no Dockstore.cwl", repository.getName());
+                LOG.info("Repo: {} has no descriptor file ", repository.getName());
             }
         }
         return c;
