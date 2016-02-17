@@ -1,3 +1,4 @@
+//@Checkstyle:off
 package io.dockstore.webservice.helpers;
 
 import java.util.*;

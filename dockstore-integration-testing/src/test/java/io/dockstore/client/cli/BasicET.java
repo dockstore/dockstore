@@ -615,8 +615,8 @@ public class BasicET {
                 final long count = testingPostgres.runSelectStatement("select count(*) from container where path = 'quay.io/dockstoretestuser/quayandgithub' and validtrigger = 't'", new ScalarHandler<>());
                 Assert.assertTrue("the given container should be valid", count == 1);
 
-                final long count2 = testingPostgres.runSelectStatement("select count(*) from container, tag, containertag where container.path = 'quay.io/dockstoretestuser/quayandgithubwdl' and container.id = containertag.containerid and containertag.tagid = tag.id", new ScalarHandler<>());
-                Assert.assertTrue("the given container should have two valid tags", count2 == 2);
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from container, tag, containertag where container.path = 'quay.io/dockstoretestuser/quayandgithub' and container.id = containertag.containerid and containertag.tagid = tag.id", new ScalarHandler<>());
+                Assert.assertTrue("the given container should have three valid tags", count2 == 3);
         }
 
         /**
