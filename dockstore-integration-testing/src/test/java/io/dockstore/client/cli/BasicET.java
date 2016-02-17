@@ -604,6 +604,30 @@ public class BasicET {
                         "master", "--script" });
         }
 
+        /**
+         * Tests that a WDL file is supported
+         */
+        @Test
+        public void testQuayGithubQuickRegisterWithWDL() {
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser/quayandgithub"});
+
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+                final long count = testingPostgres.runSelectStatement("select count(*) from container where path = 'quay.io/dockstoretestuser/quayandgithub' and toolname = '' and validtrigger = 't'", new ScalarHandler<>());
+                Assert.assertTrue("the given container should be valid", count == 1);
+        }
+
+        /**
+         * Test adding a container with an invalid WDL descriptor
+         */
+        @Test
+        public void testQuayGithubInvalidWDL() {
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh" });
+
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+                final long count = testingPostgres.runSelectStatement("select count(*) from container where path = 'quay.io/dockstoretestuser/quayandgithubwdl' and toolname = '' and validtrigger = 'f'", new ScalarHandler<>());
+                Assert.assertTrue("the given container should be invalid", count == 1);
+        }
+
         /*
          Test Quay and Bitbucket -
          These tests are focused on testing containers created from Quay and Bitbucket repositories
