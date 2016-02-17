@@ -612,8 +612,11 @@ public class BasicET {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser/quayandgithub"});
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from container where path = 'quay.io/dockstoretestuser/quayandgithub' and toolname = '' and validtrigger = 't'", new ScalarHandler<>());
+                final long count = testingPostgres.runSelectStatement("select count(*) from container where path = 'quay.io/dockstoretestuser/quayandgithub' and validtrigger = 't'", new ScalarHandler<>());
                 Assert.assertTrue("the given container should be valid", count == 1);
+
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from container, tag, containertag where container.path = 'quay.io/dockstoretestuser/quayandgithubwdl' and container.id = containertag.containerid and containertag.tagid = tag.id", new ScalarHandler<>());
+                Assert.assertTrue("the given container should have two valid tags", count2 == 2);
         }
 
         /**
@@ -624,8 +627,11 @@ public class BasicET {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh" });
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from container where path = 'quay.io/dockstoretestuser/quayandgithubwdl' and toolname = '' and validtrigger = 'f'", new ScalarHandler<>());
+                final long count = testingPostgres.runSelectStatement("select count(*) from container where path = 'quay.io/dockstoretestuser/quayandgithubwdl'  and validtrigger = 'f'", new ScalarHandler<>());
                 Assert.assertTrue("the given container should be invalid", count == 1);
+
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from container, tag, containertag where container.path = 'quay.io/dockstoretestuser/quayandgithubwdl' and container.id = containertag.containerid and containertag.tagid = tag.id", new ScalarHandler<>());
+                Assert.assertTrue("the given container should have two valid tags", count2 == 2);
         }
 
         /*
