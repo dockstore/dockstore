@@ -30,6 +30,7 @@ import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.FileSystemManager;
 import org.apache.commons.vfs2.Selectors;
 import org.apache.commons.vfs2.VFS;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -255,9 +256,35 @@ public class LauncherCWL {
                 newJSON.put(paramName, newRecord);
 
                 // TODO: fill in for all possible types
-            } else if (currentParam instanceof Integer || currentParam instanceof Float || currentParam instanceof Boolean || currentParam instanceof String
-                                                                    || currentParam instanceof List) {
+            } else if (currentParam instanceof Integer || currentParam instanceof Float || currentParam instanceof Boolean || currentParam instanceof String) {
                 newJSON.put(paramName, currentParam);
+            } else if (currentParam instanceof List) {
+
+                for (int i = 0; i<((List)currentParam).size(); i++) {
+
+                    Map<String, Object> param = ((LinkedHashMap) ((List)currentParam).get(i));
+                    String path = (String) param.get("path");
+                    LOG.info("PATH: {} PARAM_NAME: {}", path, paramName);
+                    // will be null for output, only dealing with inputs currently
+                    // TODO: can outputs be file arrays too???  Maybe need to do something for globs??? Need to investigate
+                    if (fileMap.get(paramName+":"+path) != null) {
+                        final String localPath = fileMap.get(paramName+":"+path).getLocalPath();
+                        param.put("path", localPath);
+                        LOG.info("NEW FULL PATH: {}", localPath);
+                    }
+                    // now add to the new JSON structure
+                    JSONArray exitingArray = (JSONArray)newJSON.get(paramName);
+                    if (exitingArray == null) {
+                        exitingArray = new JSONArray();
+                    }
+                    JSONObject newRecord = new JSONObject();
+                    newRecord.put("class", param.get("class"));
+                    newRecord.put("path", param.get("path"));
+                    exitingArray.add(newRecord);
+                    newJSON.put(paramName, exitingArray);
+
+                }
+
             } else {
                 throw new RuntimeException("we found an unexpected datatype as follows: " + currentParam.getClass() + "\n with content " + currentParam);
             }
@@ -390,46 +417,28 @@ public class LauncherCWL {
             LOG.info("JSON: {}", inputsOutputs);
             for (Entry<String, Object> stringObjectEntry : inputsOutputs.entrySet()) {
 
-                LOG.info("INSTANCE OF: " + stringObjectEntry.getClass());
-                LOG.info("ENTRY OF: " + stringObjectEntry.toString());
-
+                // in this case, the input is an array and not a single instance
                 if (stringObjectEntry.getValue() instanceof ArrayList) {
 
-                    //for (Entry<String, Object> stringObjectEntry2 : ((ArrayList<Entry<String, Object>>)stringObjectEntry.getValue())) {
-                    //for (Object stringObjectEntry2 : ((ArrayList) stringObjectEntry.getValue()).toArray()) {
                     for (int i = 0; i<((ArrayList)stringObjectEntry.getValue()).size(); i++) {
-                        // java.util.LinkedHashMap$Entry
 
                         LinkedHashMap lhm = ((LinkedHashMap) ((ArrayList) stringObjectEntry.getValue()).get(i));
-                        LOG.info("ARRAY ENTRY: " + lhm.toString());
                         String path = (String) lhm.get("path");
 
-                        doProcessFile(stringObjectEntry.getKey(), path, cwlInputFileID, fileMap);
+                        // notice I'm putting key:path together so they are unique in the hash
+                        if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
+                            doProcessFile(stringObjectEntry.getKey() + ":" + path, path, cwlInputFileID, fileMap);
+                        }
 
-                        //Entry<String, Object> stringObjectEntry2 = (Entry<String, Object>) ((LinkedHashMap)((ArrayList)stringObjectEntry.getValue()).get(i));
-                        //Entry<String, Object> stringObjectEntry2 = (Entry<String, Object>) ((LinkedHashMap)((ArrayList)stringObjectEntry.getValue()).get(i)).entrySet();
-                        //Map<String, Object> stringObjectEntry2 = (Map)((ArrayList)stringObjectEntry.getValue()).get(i);
-
-                        /* LOG.info("entity: " + stringObjectEntry2.entrySet().getClass());
-                        LOG.info("entity2: " + stringObjectEntry2.toString());
-
-                        for (Entry<String, Object> stringObjectEntry3 : stringObjectEntry2.entrySet()) {
-
-                            LOG.info("entity3: " + stringObjectEntry3.getClass());
-                            LOG.info("entity4: " + stringObjectEntry3.toString());
-
-                            //doProcessFile(stringObjectEntry3, cwlInputFileID, fileMap);
-
-                        }*/
-
-                        //doProcessFile(stringObjectEntry2, cwlInputFileID, fileMap);
                     }
-
+                // in this case the input is a single instance and not an array
                 } else if (stringObjectEntry.getValue() instanceof HashMap) {
 
                     HashMap param = (HashMap) stringObjectEntry.getValue();
                     String path = (String) param.get("path");
-                    doProcessFile(stringObjectEntry.getKey(), path, cwlInputFileID, fileMap);
+                    if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
+                        doProcessFile(stringObjectEntry.getKey(), path, cwlInputFileID, fileMap);
+                    }
 
                 }
             }
@@ -438,82 +447,80 @@ public class LauncherCWL {
     }
 
     private void doProcessFile(String key, String path, String cwlInputFileID, Map<String, FileInfo> fileMap) {
-        //HashMap param = (HashMap) stringObjectEntry.getValue();
-        //String path = (String) param.get("path");
 
-        if (key.equals(cwlInputFileID)) {
-            // if it's the current one
-            LOG.info("PATH TO DOWNLOAD FROM: {} FOR {} FOR {}", path, cwlInputFileID, key);
+        // key is unique for that key:download URL, cwlInputFileID is just the key
 
-            // set up output paths
-            String downloadDirectory = globalWorkingDir + "/inputs/" + UUID.randomUUID();
-            Utilities.executeCommand("mkdir -p " + downloadDirectory, stdoutStream, stderrStream);
-            File downloadDirFileObj = new File(downloadDirectory);
+        LOG.info("PATH TO DOWNLOAD FROM: {} FOR {} FOR {}", path, cwlInputFileID, key);
 
-            String targetFilePath = downloadDirFileObj.getAbsolutePath() + "/" + cwlInputFileID;
+        // set up output paths
+        String downloadDirectory = globalWorkingDir + "/inputs/" + UUID.randomUUID();
+        Utilities.executeCommand("mkdir -p " + downloadDirectory, stdoutStream, stderrStream);
+        File downloadDirFileObj = new File(downloadDirectory);
 
-            // expects URI in "path": "icgc:eef47481-670d-4139-ab5b-1dad808a92d9"
-            PathInfo pathInfo = new PathInfo(path);
-            if (pathInfo.isObjectIdType()) {
-                String objectId = pathInfo.getObjectId();
-                downloadFromDccStorage(objectId, downloadDirectory);
+        String targetFilePath = downloadDirFileObj.getAbsolutePath() + "/" + cwlInputFileID;
 
-                // downloaded file
-                String downloadPath = downloadDirFileObj.getAbsolutePath() + "/" + objectId;
-                System.out.println("download path: " + downloadPath);
-                File downloadedFileFileObj = new File(downloadPath);
-                File targetPathFileObj = new File(targetFilePath);
-                try {
-                    Files.move(downloadedFileFileObj, targetPathFileObj);
-                } catch (IOException ioe) {
-                    LOG.error(ioe.getMessage());
-                    throw new RuntimeException("Could not move input file: ", ioe);
-                }
-            } else if (path.startsWith("s3://")) {
-                AmazonS3 s3Client = new AmazonS3Client(new ClientConfiguration().withSignerOverride("S3Signer"));
-                if (config.containsKey(S3_ENDPOINT)) {
-                    final String endpoint = config.getString(S3_ENDPOINT);
-                    LOG.info("found custom S3 endpoint, setting to {}", endpoint);
-                    s3Client.setEndpoint(endpoint);
-                    s3Client.setS3ClientOptions(new S3ClientOptions().withPathStyleAccess(true));
-                }
-                String trimmedPath = path.replace("s3://", "");
-                List<String> splitPathList = Lists.newArrayList(trimmedPath.split("/"));
-                String bucketName = splitPathList.remove(0);
+        // expects URI in "path": "icgc:eef47481-670d-4139-ab5b-1dad808a92d9"
+        PathInfo pathInfo = new PathInfo(path);
+        if (pathInfo.isObjectIdType()) {
+            String objectId = pathInfo.getObjectId();
+            downloadFromDccStorage(objectId, downloadDirectory);
 
-                S3Object object = s3Client.getObject(
-                        new GetObjectRequest(bucketName, Joiner.on("/").join(splitPathList)));
-                try {
-                    FileUtils.copyInputStreamToFile(object.getObjectContent(), new File(targetFilePath));
-                } catch (IOException e) {
-                    LOG.error(e.getMessage());
-                    throw new RuntimeException("Could not provision input files from S3", e);
-                }
-            } else {
-                // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
-                // https://commons.apache.org/proper/commons-vfs/filesystems.html
-                FileSystemManager fsManager;
-                try {
-                    // trigger a copy from the URL to a local file path that's a UUID to avoid collision
-                    fsManager = VFS.getManager();
-                    FileObject src = fsManager.resolveFile(path);
-                    FileObject dest = fsManager.resolveFile(new File(targetFilePath).getAbsolutePath());
-                    dest.copyFrom(src, Selectors.SELECT_SELF);
-                } catch (FileSystemException e) {
-                    LOG.error(e.getMessage());
-                    throw new RuntimeException("Could not provision input files", e);
-                }
+            // downloaded file
+            String downloadPath = downloadDirFileObj.getAbsolutePath() + "/" + objectId;
+            System.out.println("download path: " + downloadPath);
+            File downloadedFileFileObj = new File(downloadPath);
+            File targetPathFileObj = new File(targetFilePath);
+            try {
+                Files.move(downloadedFileFileObj, targetPathFileObj);
+            } catch (IOException ioe) {
+                LOG.error(ioe.getMessage());
+                throw new RuntimeException("Could not move input file: ", ioe);
             }
-            // now add this info to a hash so I can later reconstruct a docker -v command
-            FileInfo info = new FileInfo();
-            info.setLocalPath(targetFilePath);
-            info.setLocalPath(targetFilePath);
-            info.setDockerPath(cwlInputFileID);
-            info.setUrl(path);
+        } else if (path.startsWith("s3://")) {
+            AmazonS3 s3Client = new AmazonS3Client(new ClientConfiguration().withSignerOverride("S3Signer"));
+            if (config.containsKey(S3_ENDPOINT)) {
+                final String endpoint = config.getString(S3_ENDPOINT);
+                LOG.info("found custom S3 endpoint, setting to {}", endpoint);
+                s3Client.setEndpoint(endpoint);
+                s3Client.setS3ClientOptions(new S3ClientOptions().withPathStyleAccess(true));
+            }
+            String trimmedPath = path.replace("s3://", "");
+            List<String> splitPathList = Lists.newArrayList(trimmedPath.split("/"));
+            String bucketName = splitPathList.remove(0);
 
-            fileMap.put(cwlInputFileID, info);
-            LOG.info("DOWNLOADED FILE: LOCAL: {} URL: {}", cwlInputFileID, path);
+            S3Object object = s3Client.getObject(
+                    new GetObjectRequest(bucketName, Joiner.on("/").join(splitPathList)));
+            try {
+                FileUtils.copyInputStreamToFile(object.getObjectContent(), new File(targetFilePath));
+            } catch (IOException e) {
+                LOG.error(e.getMessage());
+                throw new RuntimeException("Could not provision input files from S3", e);
+            }
+        } else {
+            // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
+            // https://commons.apache.org/proper/commons-vfs/filesystems.html
+            FileSystemManager fsManager;
+            try {
+                // trigger a copy from the URL to a local file path that's a UUID to avoid collision
+                fsManager = VFS.getManager();
+                FileObject src = fsManager.resolveFile(path);
+                FileObject dest = fsManager.resolveFile(new File(targetFilePath).getAbsolutePath());
+                dest.copyFrom(src, Selectors.SELECT_SELF);
+            } catch (FileSystemException e) {
+                LOG.error(e.getMessage());
+                throw new RuntimeException("Could not provision input files", e);
+            }
         }
+        // now add this info to a hash so I can later reconstruct a docker -v command
+        FileInfo info = new FileInfo();
+        info.setLocalPath(targetFilePath);
+        info.setLocalPath(targetFilePath);
+        info.setDockerPath(cwlInputFileID);
+        info.setUrl(path);
+        // key may contain either key:download_URL for array inputs or just cwlInputFileID for scalar input
+        fileMap.put(key, info);
+        LOG.info("DOWNLOADED FILE: LOCAL: {} URL: {}", cwlInputFileID, path);
+
     }
 
     private CommandLine parseCommandLine(CommandLineParser parser, String[] args) {
