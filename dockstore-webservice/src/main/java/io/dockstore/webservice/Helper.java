@@ -471,34 +471,17 @@ public final class Helper {
         List<SourceFile> files = new ArrayList<>();
 
         // Add for new descriptor types ------------------------------------------------------------------------------------------>>
-        FileResponse cwlResponse = readGitRepositoryFile(c, FileType.DOCKSTORE_CWL, client, tag, bitbucketToken, githubToken);
-        if (cwlResponse != null) {
-            SourceFile dockstoreCwl = new SourceFile();
-            dockstoreCwl.setType(FileType.DOCKSTORE_CWL);
-            dockstoreCwl.setContent(cwlResponse.getContent());
+        for (FileType f : FileType.values()) {
+            FileResponse fileResponse = readGitRepositoryFile(c, f, client, tag, bitbucketToken, githubToken);
+            if (fileResponse != null) {
+                SourceFile dockstoreFile = new SourceFile();
+                dockstoreFile.setType(f);
+                dockstoreFile.setContent(fileResponse.getContent());
 
-            files.add(dockstoreCwl);
+                files.add(dockstoreFile);
+            }
         }
-
-        FileResponse wdlResponse = readGitRepositoryFile(c, FileType.DOCKSTORE_WDL, client, tag, bitbucketToken, githubToken);
-        if (wdlResponse != null) {
-            SourceFile dockstoreWdl = new SourceFile();
-            dockstoreWdl.setType(FileType.DOCKSTORE_WDL);
-            dockstoreWdl.setContent(wdlResponse.getContent());
-
-            files.add(dockstoreWdl);
-        }
-
         // ------------------------------------------------------------------------------------------------------------------------<<
-
-        FileResponse dockerfileResponse = readGitRepositoryFile(c, FileType.DOCKERFILE, client, tag, bitbucketToken, githubToken);
-        if (dockerfileResponse != null) {
-            SourceFile dockerfile = new SourceFile();
-            dockerfile.setType(FileType.DOCKERFILE);
-            dockerfile.setContent(dockerfileResponse.getContent());
-
-            files.add(dockerfile);
-        }
 
         return files;
     }
