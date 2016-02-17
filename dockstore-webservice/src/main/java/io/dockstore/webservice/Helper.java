@@ -245,8 +245,8 @@ public final class Helper {
                 LOG.info("Parsing CWL...");
                 sourceCodeRepo.findDescriptor(container, container.getDefaultCwlPath());
 
-                //LOG.info("Parsing WDL...");
-                //sourceCodeRepo.findDescriptor(container, container.getDefaultWdlPath());
+                LOG.info("Parsing WDL...");
+                sourceCodeRepo.findDescriptor(container, container.getDefaultWdlPath());
                 // --------------------------------------------------------------------------------------------------------------------------------------------<<
 
             }

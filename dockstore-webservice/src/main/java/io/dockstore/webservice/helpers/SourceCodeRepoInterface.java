@@ -3,12 +3,14 @@ package io.dockstore.webservice.helpers;
 import java.io.IOException;
 import java.util.Map;
 
+import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.yamlbeans.YamlReader;
 
 import io.dockstore.webservice.core.Container;
+import io.dockstore.webservice.helpers.WdlParser;
 
 /**
  * @author dyuen
@@ -75,7 +77,23 @@ public abstract class SourceCodeRepoInterface {
 
     protected Container parseWDLContent(Container container, String content) {
         // Use Broad WDL parser to grab data
-        // Currently no data
+        // Todo: Currently just checks validity of file.  In the future pull data such as author from the WDL file
+        try {
+            String wdlSource = content;
+            WdlParser parser = new WdlParser();
+            WdlParser.TokenStream tokens = new WdlParser.TokenStream(parser.lex(wdlSource, FilenameUtils.getName(container.getDefaultWdlPath())));
+            WdlParser.Ast ast = (WdlParser.Ast) parser.parse(tokens).toAst();
+
+            if (ast == null) {
+                LOG.info("Error with WDL file.");
+            } else {
+                container.setValidTrigger(true);
+                LOG.info("Repository has Dockstore.wdl");
+            }
+        } catch (WdlParser.SyntaxError syntaxError) {
+            LOG.info("Invalid WDL file.");
+        }
+
         return container;
     }
 

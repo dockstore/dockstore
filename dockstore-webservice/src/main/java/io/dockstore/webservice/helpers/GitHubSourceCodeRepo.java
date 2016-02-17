@@ -78,6 +78,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public Container findDescriptor(Container c, String fileName) {
+        String descriptorType = FilenameUtils.getExtension(fileName);
         Repository repository = null;
         try {
             repository = service.getRepository(gitUsername, gitRepository);
@@ -98,12 +99,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
                     // Parse descriptors here -------------------------------------------------------------------------------------------------------------->>
                     // Grab important metadata from CWL file (expects file to have .cwl extension)
-                    if (FilenameUtils.getExtension(fileName).equals("cwl")) {
+                    if (descriptorType.equals("cwl")) {
                         c = parseCWLContent(c, content);
                     }
-                    //if (fileName.equals(c.getDefaultWdlPath())) {
-                    //    c = parseWDLContent(c, content);
-                    //}
+                    if (descriptorType.equals("wdl")) {
+                        c = parseWDLContent(c, content);
+                    }
 
                     // ------------------------------------------------------------------------------------------------------------------------------------<<
 
