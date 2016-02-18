@@ -80,7 +80,7 @@ public class Tag implements Comparable<Tag> {
     @ApiModelProperty("Path for the Dockerfile")
     private String dockerfilePath = "/Dockerfile";
 
-    // Add columns for Descriptor types here ------------------------------------------------------------------------------------------------------------------------>>
+    // Add for new descriptor types
     @Column(columnDefinition = "text")
     @JsonProperty("cwl_path")
     @ApiModelProperty("Path for the CWL document")
@@ -91,7 +91,6 @@ public class Tag implements Comparable<Tag> {
     @ApiModelProperty("Path for the WDL document")
     private String wdlPath = "/Dockstore.wdl";
 
-    // -------------------------------------------------------------------------------------------------------------------------------------------------------------<<
 
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "tagsourcefile", joinColumns = @JoinColumn(name = "tagid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "sourcefileid", referencedColumnName = "id"))
@@ -120,10 +119,9 @@ public class Tag implements Comparable<Tag> {
         imageId = tag.imageId;
         hidden = tag.hidden;
 
-        // Add here for new descriptor types ------------------------------------------------------------------------------------------------------>>
+        // Add for new descriptor types
         cwlPath = tag.cwlPath;
         wdlPath = tag.wdlPath;
-        // ----------------------------------------------------------------------------------------------------------------------------------------<<
 
         dockerfilePath = tag.dockerfilePath;
     }
@@ -227,7 +225,7 @@ public class Tag implements Comparable<Tag> {
         sourceFiles.add(file);
     }
 
-    // Add methods here for descriptor types ----------------------------------------------------------------------------------------------------------->>
+    // Add for new descriptor types
     @JsonProperty
     public String getCwlPath() {
         return cwlPath;
@@ -246,7 +244,6 @@ public class Tag implements Comparable<Tag> {
         this.wdlPath = wdlPath;
     }
 
-    // ------------------------------------------------------------------------------------------------------------------------------------------------<<
 
     @JsonProperty
     public boolean isHidden() {

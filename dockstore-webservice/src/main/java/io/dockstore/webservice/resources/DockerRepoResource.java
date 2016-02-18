@@ -683,7 +683,7 @@ public class DockerRepoResource {
         throw new CustomWebApplicationException("File not found.", HttpStatus.SC_NOT_FOUND);
     }
 
-    // Add for each descriptor type ---------------------------------------------------------------------------------------------------------------------------------------------
+    // Add for new descriptor types
     @GET
     @Timed
     @UnitOfWork
@@ -706,5 +706,4 @@ public class DockerRepoResource {
         return getSourceFile(containerId, tag, FileType.DOCKSTORE_WDL);
     }
 
-    // --------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 }

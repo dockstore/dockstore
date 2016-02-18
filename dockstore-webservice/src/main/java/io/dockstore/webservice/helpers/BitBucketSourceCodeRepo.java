@@ -152,7 +152,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                     LOG.info("Branch: {} has no {}", branch, fileName);
                 }
 
-                // Parse descriptors here ---------------------------------------------------------------------------------------------------->>
+                // Add for new descriptor types
                 // expects file to have .cwl extension
                 if (descriptorType.equals("cwl")) {
                     container = parseCWLContent(container, content);
@@ -160,7 +160,6 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 if (descriptorType.equals("wdl")) {
                      container = parseWDLContent(container, content);
                 }
-                // --------------------------------------------------------------------------------------------------------------------------<<
 
                 // if (container.getHasCollab()) {
                 // break;

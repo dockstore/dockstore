@@ -97,7 +97,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     byte[] decode = Base64.getDecoder().decode(encoded);
                     String content = new String(decode, StandardCharsets.UTF_8);
 
-                    // Parse descriptors here -------------------------------------------------------------------------------------------------------------->>
+                    // Add for new descriptor types
                     // Grab important metadata from CWL file (expects file to have .cwl extension)
                     if (descriptorType.equals("cwl")) {
                         c = parseCWLContent(c, content);
@@ -105,9 +105,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     if (descriptorType.equals("wdl")) {
                         c = parseWDLContent(c, content);
                     }
-
-                    // ------------------------------------------------------------------------------------------------------------------------------------<<
-
+                    
                     // Currently only can pull name of task? or workflow from WDL
                     // Add this later, should call parseWDLContent and use the existing Broad WDL parser
                 }

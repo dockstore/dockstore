@@ -96,7 +96,7 @@ public class Container {
     @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the Dockerfile, required: GA4GH", required = true)
     private String defaultDockerfilePath = "/Dockerfile";
 
-    // Add columns for Descriptor types here ------------------------------------------------------------------------------------------------------------------>>
+    // Add for new descriptor types
     @Column(columnDefinition = "text")
     @JsonProperty("default_cwl_path")
     @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL document, required: GA4GH", required = true)
@@ -107,7 +107,6 @@ public class Container {
     @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the WDL document", required = true)
     private String defaultWdlPath = "/Dockstore.wdl";
 
-    // --------------------------------------------------------------------------------------------------------------------------------------------------------<<
 
     @Column(nullable = false)
     @ApiModelProperty(value = "This is the tool name of the container, when not-present this will function just like 0.1 dockstore"
@@ -454,7 +453,7 @@ public class Container {
         this.defaultDockerfilePath = defaultDockerfilePath;
     }
 
-    // Add methods for descriptor types here ---------------------------------------------------------------------------------->>
+    // Add for new descriptor types
     @JsonProperty
     public String getDefaultCwlPath() {
         return defaultCwlPath;
@@ -473,7 +472,6 @@ public class Container {
         this.defaultWdlPath = defaultWdlPath;
     }
 
-    // ------------------------------------------------------------------------------------------------------------------------<<
 
     @JsonProperty
     public String getToolname() {
