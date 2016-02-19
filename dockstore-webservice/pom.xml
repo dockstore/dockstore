@@ -377,11 +377,14 @@
             <artifactId>commons-io</artifactId>
             <version>2.4</version>
         </dependency>
+
+        <!-- broad -->
         <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>3.4</version>
+            <groupId>org.broadinstitute</groupId>
+            <artifactId>wdl4s_2.11</artifactId>
+            <version>0.2</version>
         </dependency>
+
 
     </dependencies>
 

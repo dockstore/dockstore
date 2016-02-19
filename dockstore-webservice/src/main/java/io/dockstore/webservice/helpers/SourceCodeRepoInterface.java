@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import com.esotericsoftware.yamlbeans.YamlReader;
 
 import io.dockstore.webservice.core.Container;
+import wdl4s.parser.WdlParser;
 
 /**
  * @author dyuen

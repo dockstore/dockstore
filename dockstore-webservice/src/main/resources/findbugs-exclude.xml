@@ -1,5 +1,5 @@
 <FindBugsFilter>
     <Match>
-        <Class name="~io.dockstore.webservice.helpers.WdlParser.*"/>
+        <Class name="~wdl4s.parser.WdlParser.*"/>
     </Match>
 </FindBugsFilter>
