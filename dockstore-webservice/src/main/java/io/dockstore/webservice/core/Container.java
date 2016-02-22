@@ -195,7 +195,12 @@ public class Container {
         validTrigger = container.getValidTrigger();
         author = container.getAuthor();
 
-        gitUrl = container.getGitUrl();
+        // Only overwrite the giturl if the new git url is not empty (no value)
+        // This will stop the case where there are no autobuilds for a quay repo, but a manual git repo has been set.
+        //  Giturl will only be changed if the git repo from quay has an autobuild
+        if (!container.getGitUrl().isEmpty()) {
+            gitUrl = container.getGitUrl();
+        }
     }
 
     @JsonProperty
@@ -482,5 +487,6 @@ public class Container {
         defaultCwlPath = container.getDefaultCwlPath();
         defaultDockerfilePath = container.getDefaultDockerfilePath();
         toolname = container.getToolname();
+        gitUrl = container.getGitUrl();
     }
 }

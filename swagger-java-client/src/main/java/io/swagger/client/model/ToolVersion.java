@@ -13,7 +13,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * A tool version describes a particular iteration of a tool as described by a reference to a specific image and dockerfile.
  **/
 @ApiModel(description = "A tool version describes a particular iteration of a tool as described by a reference to a specific image and dockerfile.")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-02-04T13:38:33.669-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-02-12T16:47:38.706-05:00")
 public class ToolVersion   {
   
   private String name = null;
@@ -22,6 +22,7 @@ public class ToolVersion   {
   private ToolDescriptor descriptor = null;
   private String image = null;
   private String dockerfile = null;
+  private String metaVersion = null;
 
   
   /**
@@ -51,9 +52,9 @@ public class ToolVersion   {
 
   
   /**
-   * A unique identifier of the tool for this particular tool registry, for example `123456` or `123456_v1`
+   * An identifier of the version of this tool for this particular tool registry, for example `v1`
    **/
-  @ApiModelProperty(value = "A unique identifier of the tool for this particular tool registry, for example `123456` or `123456_v1`")
+  @ApiModelProperty(value = "An identifier of the version of this tool for this particular tool registry, for example `v1`")
   @JsonProperty("registry-id")
   public String getRegistryId() {
     return registryId;
@@ -101,6 +102,19 @@ public class ToolVersion   {
   }
 
   
+  /**
+   * The version of this tool version in the registry. Iterates when fields like the description, author, etc. are updated.
+   **/
+  @ApiModelProperty(value = "The version of this tool version in the registry. Iterates when fields like the description, author, etc. are updated.")
+  @JsonProperty("meta-version")
+  public String getMetaVersion() {
+    return metaVersion;
+  }
+  public void setMetaVersion(String metaVersion) {
+    this.metaVersion = metaVersion;
+  }
+
+  
 
   @Override
   public String toString()  {
@@ -113,6 +127,7 @@ public class ToolVersion   {
     sb.append("    descriptor: ").append(StringUtil.toIndentedString(descriptor)).append("\n");
     sb.append("    image: ").append(StringUtil.toIndentedString(image)).append("\n");
     sb.append("    dockerfile: ").append(StringUtil.toIndentedString(dockerfile)).append("\n");
+    sb.append("    metaVersion: ").append(StringUtil.toIndentedString(metaVersion)).append("\n");
     sb.append("}");
     return sb.toString();
   }
