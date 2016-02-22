@@ -77,12 +77,14 @@ import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
+import io.swagger.client.api.GAGHApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.Body;
 import io.swagger.client.model.Container;
 import io.swagger.client.model.Container.ModeEnum;
 import io.swagger.client.model.Container.RegistryEnum;
 import io.swagger.client.model.Label;
+import io.swagger.client.model.Metadata;
 import io.swagger.client.model.RegisterRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
@@ -99,6 +101,7 @@ public class Client {
     private static final String CONVERT = "convert";
     private static final String LAUNCH = "launch";
     private static final String CWL = "cwl";
+    private static GAGHApi ga4ghApi;
     private static ContainersApi containersApi;
     private static ContainertagsApi containerTagsApi;
     private static UsersApi usersApi;
@@ -357,6 +360,19 @@ public class Client {
             // List<Container> containers = containersApi.allRegisteredContainers();
             List<Container> containers = usersApi.userRegisteredContainers(user.getId());
             printRegisteredList(containers);
+        } catch (ApiException ex) {
+            kill("Exception: " + ex);
+        }
+    }
+
+    /**
+     * Display metadata describing the server including server version information
+     */
+    private static void serverMetadata() {
+        try {
+            final Metadata metadata = ga4ghApi.toolsMetadataGet();
+            final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
+            out(gson.toJson(metadata));
         } catch (ApiException ex) {
             kill("Exception: " + ex);
         }
@@ -1495,6 +1511,7 @@ public class Client {
         out("Flags:");
         out("  --debug              Print debugging information");
         out("  --version            Print dockstore's version");
+        out("  --server-metadata    Print metdata describing the dockstore webservice");
         out("  --upgrade            Upgrades to the latest stable release of Dockstore");
         out("  --config <file>      Override config file");
         out("  --script             Will not check Github for newer versions of Dockstore");
@@ -1541,6 +1558,7 @@ public class Client {
             containersApi = new ContainersApi(defaultApiClient);
             containerTagsApi = new ContainertagsApi(defaultApiClient);
             usersApi = new UsersApi(defaultApiClient);
+            ga4ghApi = new GAGHApi(defaultApiClient);
 
             defaultApiClient.setDebugging(DEBUG.get());
 
@@ -1565,6 +1583,9 @@ public class Client {
                         case "-v":
                         case "--version":
                             version();
+                            break;
+                        case "--server-metadata":
+                            serverMetadata();
                             break;
                         case "list":
                             list(args);
