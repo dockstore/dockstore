@@ -58,7 +58,7 @@ public class MockedIT {
         final String sourceFileContents = FileUtils.readFileToString(sourceFile);
         SourceFile file = mock(SourceFile.class);
         when(file.getContent()).thenReturn(sourceFileContents);
-        doReturn(file).when(Client.class, "getCWLFromServer", "quay.io/collaboratory/dockstore-tool-linux-sort");
+        doReturn(file).when(Client.class, "getDescriptorFromServer", "quay.io/collaboratory/dockstore-tool-linux-sort", "cwl");
     }
 
     @Test

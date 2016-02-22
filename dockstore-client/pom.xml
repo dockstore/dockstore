@@ -177,7 +177,7 @@
                             <usedDependencies>
                                 <usedDependency>org.apache.httpcomponents:httpcore</usedDependency>
                                 <usedDependency>libjavalib_v1:libjavalib_v1</usedDependency>
-                                <usedDependency>org.broadinstitute:cromwell_2.11</usedDependency>
+                                <!--<usedDependency>org.broadinstitute:cromwell_2.11</usedDependency>-->
                             </usedDependencies>
 
                         </configuration>
@@ -214,6 +214,14 @@
                 <artifactId>scala-maven-plugin</artifactId>
                 <executions>
                     <execution>
+                        <id>compile</id>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                        <phase>compile</phase>
+                    </execution>
+                    <execution>
+                        <phase>process-resources</phase>
                         <goals>
                             <goal>compile</goal>
                         </goals>

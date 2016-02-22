@@ -16,6 +16,48 @@
  */
 package io.dockstore.client.cli;
 
+import com.esotericsoftware.yamlbeans.YamlReader;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
+import com.google.common.io.Files;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import cromwell.Main;
+import io.cwl.avro.CWL;
+import io.dockstore.client.Bridge;
+import io.github.collaboratory.LauncherCWL;
+import io.swagger.client.ApiClient;
+import io.swagger.client.ApiException;
+import io.swagger.client.Configuration;
+import io.swagger.client.api.ContainersApi;
+import io.swagger.client.api.ContainertagsApi;
+import io.swagger.client.api.UsersApi;
+import io.swagger.client.model.Body;
+import io.swagger.client.model.Container;
+import io.swagger.client.model.Container.ModeEnum;
+import io.swagger.client.model.Container.RegistryEnum;
+import io.swagger.client.model.Label;
+import io.swagger.client.model.RegisterRequest;
+import io.swagger.client.model.SourceFile;
+import io.swagger.client.model.Tag;
+import io.swagger.client.model.User;
+import javassist.NotFoundException;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.csv.QuoteMode;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.http.HttpStatus;
+import scala.collection.JavaConversions;
+import scala.collection.immutable.List;
+
+import javax.ws.rs.ProcessingException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -41,7 +83,6 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -49,48 +90,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.ws.rs.ProcessingException;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVPrinter;
-import org.apache.commons.csv.CSVRecord;
-import org.apache.commons.csv.QuoteMode;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.http.HttpStatus;
-
-import com.esotericsoftware.yamlbeans.YamlReader;
-import com.google.common.base.Joiner;
-import com.google.common.io.Files;
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
-import io.cwl.avro.CWL;
-import io.github.collaboratory.LauncherCWL;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.Configuration;
-import io.swagger.client.api.ContainersApi;
-import io.swagger.client.api.ContainertagsApi;
-import io.swagger.client.api.UsersApi;
-import io.swagger.client.model.Body;
-import io.swagger.client.model.Container;
-import io.swagger.client.model.Container.ModeEnum;
-import io.swagger.client.model.Container.RegistryEnum;
-import io.swagger.client.model.Label;
-import io.swagger.client.model.RegisterRequest;
-import io.swagger.client.model.SourceFile;
-import io.swagger.client.model.Tag;
-import io.swagger.client.model.User;
-import javassist.NotFoundException;
-
 /*
- * Main entrypoint for the dockstore CLI. 
+ * Main entrypoint for the dockstore CLI.
  * @author xliu
  *
  */
@@ -124,8 +125,7 @@ public class Client {
             this.value = value;
         }
 
-        @Override
-        public String toString() {
+        @Override public String toString() {
             return value;
         }
     }
@@ -145,8 +145,7 @@ public class Client {
     public static final AtomicBoolean DEBUG = new AtomicBoolean(false);
     public static final AtomicBoolean SCRIPT = new AtomicBoolean(false);
 
-
-    private static boolean isHelp(List<String> args, boolean valOnEmpty) {
+    private static boolean isHelp(java.util.List<String> args, boolean valOnEmpty) {
         if (args.isEmpty()) {
             return valOnEmpty;
         }
@@ -171,7 +170,7 @@ public class Client {
         kill("dockstore: '%s %s' is not a dockstore command. See 'dockstore %s --help'.", cmd, sub, cmd);
     }
 
-    private static boolean flag(List<String> args, String flag) {
+    private static boolean flag(java.util.List<String> args, String flag) {
         boolean found = false;
         for (int i = 0; i < args.size(); i++) {
             if (flag.equals(args.get(i))) {
@@ -187,25 +186,23 @@ public class Client {
     }
 
     /**
-     *
      * @param bool
      * @return
-         */
+     */
     private static String boolWord(boolean bool) {
         return bool ? "Yes" : "No";
     }
 
     /**
-     *
      * @param args
      * @param key
      * @return
      */
-    private static List<String> optVals(List<String> args, String key) {
-        List<String> vals = new ArrayList<>();
+    private static java.util.List<String> optVals(java.util.List<String> args, String key) {
+        java.util.List<String> vals = new ArrayList<>();
 
         for (int i = 0; i < args.size(); /** do nothing */
-        i = i) {
+             i = i) {
             String s = args.get(i);
             if (key.equals(s)) {
                 args.remove(i);
@@ -228,10 +225,10 @@ public class Client {
         return vals;
     }
 
-    private static String optVal(List<String> args, String key, String defaultVal) {
+    private static String optVal(java.util.List<String> args, String key, String defaultVal) {
         String val = defaultVal;
 
-        List<String> vals = optVals(args, key);
+        java.util.List<String> vals = optVals(args, key);
         if (vals.size() == 1) {
             val = vals.get(0);
         } else if (vals.size() > 1) {
@@ -241,7 +238,7 @@ public class Client {
         return val;
     }
 
-    private static String reqVal(List<String> args, String key) {
+    private static String reqVal(java.util.List<String> args, String key) {
         String val = optVal(args, key, null);
 
         if (val == null) {
@@ -251,7 +248,7 @@ public class Client {
         return val;
     }
 
-    private static int[] columnWidths(List<Container> containers) {
+    private static int[] columnWidths(java.util.List<Container> containers) {
         int[] maxWidths = { NAME_HEADER.length(), DESCRIPTION_HEADER.length(), GIT_HEADER.length() };
 
         for (Container container : containers) {
@@ -275,8 +272,7 @@ public class Client {
     }
 
     private static class ContainerComparator implements Comparator<Container> {
-        @Override
-        public int compare(Container c1, Container c2) {
+        @Override public int compare(Container c1, Container c2) {
             String path1 = c1.getPath();
             String path2 = c2.getPath();
 
@@ -284,7 +280,7 @@ public class Client {
         }
     }
 
-    private static void printContainerList(List<Container> containers) {
+    private static void printContainerList(java.util.List<Container> containers) {
         Collections.sort(containers, new ContainerComparator());
 
         int[] maxWidths = columnWidths(containers);
@@ -293,16 +289,16 @@ public class Client {
         int descWidth = maxWidths[1] + PADDING;
         int gitWidth = maxWidths[2] + PADDING;
         String format = "%-" + nameWidth + "s%-" + descWidth + "s%-" + gitWidth + "s%-16s%-16s%-10s";
-        out(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "On Dockstore?", "Dockstore.cwl", "Automated");
+        out(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "On Dockstore?", "Descriptor", "Automated");
 
         for (Container container : containers) {
-            String cwl = "No";
+            String descriptor = "No";
             String automated = "No";
             String description = "";
             String gitUrl = "";
 
             if (container.getValidTrigger()) {
-                cwl = "Yes";
+                descriptor = "Yes";
             }
 
             if (container.getGitUrl() != null && !container.getGitUrl().isEmpty()) {
@@ -317,11 +313,11 @@ public class Client {
                 }
             }
 
-            out(format, container.getToolPath(), description, gitUrl, boolWord(container.getIsRegistered()), cwl, automated);
+            out(format, container.getToolPath(), description, gitUrl, boolWord(container.getIsRegistered()), descriptor, automated);
         }
     }
 
-    private static void printRegisteredList(List<Container> containers) {
+    private static void printRegisteredList(java.util.List<Container> containers) {
         Collections.sort(containers, new ContainerComparator());
 
         int[] maxWidths = columnWidths(containers);
@@ -351,23 +347,23 @@ public class Client {
         }
     }
 
-    private static void list(List<String> args) {
+    private static void list(java.util.List<String> args) {
         try {
             // List<Container> containers = containersApi.allRegisteredContainers();
-            List<Container> containers = usersApi.userRegisteredContainers(user.getId());
+            java.util.List<Container> containers = usersApi.userRegisteredContainers(user.getId());
             printRegisteredList(containers);
         } catch (ApiException ex) {
             kill("Exception: " + ex);
         }
     }
 
-    private static void search(List<String> args) {
+    private static void search(java.util.List<String> args) {
         if (args.isEmpty()) {
             kill("Please provide a search term.");
         }
         String pattern = args.get(0);
         try {
-            List<Container> containers = containersApi.search(pattern);
+            java.util.List<Container> containers = containersApi.search(pattern);
 
             out("MATCHING CONTAINERS");
             out("-------------------");
@@ -377,10 +373,10 @@ public class Client {
         }
     }
 
-    private static void publish(List<String> args) {
+    private static void publish(java.util.List<String> args) {
         if (args.isEmpty()) {
             try {
-                List<Container> containers = usersApi.userContainers(user.getId());
+                java.util.List<Container> containers = usersApi.userContainers(user.getId());
 
                 out("YOUR AVAILABLE CONTAINERS");
                 out("-------------------");
@@ -441,6 +437,7 @@ public class Client {
                         newContainer.setRegistry(container.getRegistry());
                         newContainer.setDefaultDockerfilePath(container.getDefaultDockerfilePath());
                         newContainer.setDefaultCwlPath(container.getDefaultCwlPath());
+                        newContainer.setDefaultWdlPath(container.getDefaultWdlPath());
                         newContainer.setIsPublic(container.getIsPublic());
                         newContainer.setIsRegistered(container.getIsRegistered());
                         newContainer.setGitUrl(container.getGitUrl());
@@ -462,7 +459,7 @@ public class Client {
         }
     }
 
-    private static void manualPublish(final List<String> args) {
+    private static void manualPublish(final java.util.List<String> args) {
         if (isHelp(args, true)) {
             out("");
             out("Usage: dockstore manual_publish --help");
@@ -474,11 +471,12 @@ public class Client {
             out("Required parameters:");
             out("  --name <name>                Name for the docker container");
             out("  --namespace <namespace>      Organization for the docker container");
-            out("  --git-url <url>              Reference to the git repo holding CWL and Dockerfile ex: \"git@github.com:user/test1.git\"");
+            out("  --git-url <url>              Reference to the git repo holding descriptor(s) and Dockerfile ex: \"git@github.com:user/test1.git\"");
             out("  --git-reference <reference>  Reference to git branch or tag where the CWL and Dockerfile is checked-in");
             out("Optional parameters:");
-            out("  --dockerfile-path <file>     Path for the dockerfile, defaults to /Dockerfile/");
+            out("  --dockerfile-path <file>     Path for the dockerfile, defaults to /Dockerfile");
             out("  --cwl-path <file>            Path for the CWL document, defaults to /Dockstore.cwl");
+            out("  --wdl-path <file>            Path for the WDL document, defaults to /Dockstore.wdl");
             out("  --toolname <toolname>        Name of the tool, can be omitted");
             out("  --registry <registry>        Docker registry, can be omitted, defaults to registry.hub.docker.com");
             out("  --version-name <version>     Version tag name for Dockerhub containers only, defaults to latest");
@@ -490,6 +488,7 @@ public class Client {
 
             final String dockerfilePath = optVal(args, "--dockerfile-path", "/Dockerfile");
             final String cwlPath = optVal(args, "--cwl-path", "/Dockstore.cwl");
+            final String wdlPath = optVal(args, "--wdl-path", "/Dockstore.wdl");
             final String gitReference = reqVal(args, "--git-reference");
             final String toolname = optVal(args, "--toolname", null);
             final String registry = optVal(args, "--registry", "registry.hub.docker.com");
@@ -501,6 +500,7 @@ public class Client {
             container.setRegistry("quay.io".equals(registry) ? RegistryEnum.QUAY_IO : RegistryEnum.DOCKER_HUB);
             container.setDefaultDockerfilePath(dockerfilePath);
             container.setDefaultCwlPath(cwlPath);
+            container.setDefaultWdlPath(wdlPath);
             container.setIsPublic(true);
             container.setIsRegistered(true);
             container.setGitUrl(gitURL);
@@ -513,6 +513,7 @@ public class Client {
                 tag.setReference(gitReference);
                 tag.setDockerfilePath(dockerfilePath);
                 tag.setCwlPath(cwlPath);
+                tag.setWdlPath(wdlPath);
                 tag.setName(versionName);
                 container.getTags().add(tag);
             }
@@ -532,7 +533,7 @@ public class Client {
         }
     }
 
-    private static void convert(final List<String> args) throws ApiException, IOException {
+    private static void convert(final java.util.List<String> args) throws ApiException, IOException {
         if (isHelp(args, true)) {
             out("");
             out("Usage: dockstore " + CONVERT + " --help");
@@ -551,6 +552,9 @@ public class Client {
                 case "cwl2json":
                     cwl2json(args);
                     break;
+                case "wdl2json":
+                    wdl2json(args);
+                    break;
                 case "tool2json":
                     tool2json(args);
                     break;
@@ -565,7 +569,7 @@ public class Client {
         }
     }
 
-    private static void launch(final List<String> args) throws ApiException, IOException {
+    private static void launch(final java.util.List<String> args) throws ApiException, IOException {
         if (isHelp(args, true)) {
             out("");
             out("Usage: dockstore " + LAUNCH + " --help");
@@ -584,7 +588,7 @@ public class Client {
             final String jsonRun = optVal(args, "--json", null);
             final String csvRuns = optVal(args, "--tsv", null);
 
-            final SourceFile cwlFromServer = getCWLFromServer(entry);
+            final SourceFile cwlFromServer = getDescriptorFromServer(entry, "cwl");
             final File tempCWL = File.createTempFile("temp", ".cwl", Files.createTempDir());
             Files.write(cwlFromServer.getContent(), tempCWL, StandardCharsets.UTF_8);
 
@@ -597,9 +601,9 @@ public class Client {
                 // if the root document is an array, this indicates multiple runs
                 JsonParser parser = new JsonParser();
                 final JsonElement parsed = parser.parse(new InputStreamReader(new FileInputStream(jsonRun), StandardCharsets.UTF_8));
-                if (parsed.isJsonArray()){
+                if (parsed.isJsonArray()) {
                     final JsonArray asJsonArray = parsed.getAsJsonArray();
-                    for(JsonElement element : asJsonArray){
+                    for (JsonElement element : asJsonArray) {
                         final String finalString = gson.toJson(element);
                         final File tempJson = File.createTempFile("temp", ".json", Files.createTempDir());
                         FileUtils.write(tempJson, finalString);
@@ -612,8 +616,8 @@ public class Client {
                 }
             } else if (csvRuns != null) {
                 final File csvData = new File(csvRuns);
-                try (CSVParser parser = CSVParser.parse(csvData, StandardCharsets.UTF_8, CSVFormat.DEFAULT.withDelimiter('\t').withEscape('\\').withQuoteMode(
-                    QuoteMode.NONE))) {
+                try (CSVParser parser = CSVParser.parse(csvData, StandardCharsets.UTF_8,
+                        CSVFormat.DEFAULT.withDelimiter('\t').withEscape('\\').withQuoteMode(QuoteMode.NONE))) {
                     // grab header
                     final Iterator<CSVRecord> iterator = parser.iterator();
                     final CSVRecord headers = iterator.next();
@@ -648,7 +652,7 @@ public class Client {
                         //final String stringMapAsString = gson.toJson(stringMap);
                         //Files.write(stringMapAsString, tempJson, StandardCharsets.UTF_8);
                         final LauncherCWL cwlLauncher = new LauncherCWL(tempConfig.getAbsolutePath(), tempCWL.getAbsolutePath(),
-                                                                           tempJson.getAbsolutePath(), System.out, System.err);
+                                tempJson.getAbsolutePath(), System.out, System.err);
                         cwlLauncher.run();
 
                     }
@@ -659,7 +663,52 @@ public class Client {
         }
     }
 
-    private static void tool2json(final List<String> args) throws ApiException, IOException {
+    private static void launchWdl(final java.util.List<String> args) {
+        if (isHelp(args, true)) {
+            out("");
+            out("Usage: dockstore " + LAUNCH + " --help");
+            out("       dockstore " + LAUNCH);
+            out("");
+            out("Description:");
+            out("  Launch an entry locally.");
+            out("Required parameters:");
+            out("  --entry <entry>                Complete tool path in the Dockstore");
+            out("Optional parameters:");
+            out("  --json <json file>            Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs");
+            out("");
+        } else {
+            final String entry = reqVal(args, "--entry");
+            final String json = reqVal(args, "--json");
+
+            Main main = new Main();
+            File parameterFile = new File(json);
+
+            final SourceFile cwlFromServer;
+            try {
+                // Grab WDL from server and store to file (should I grab tag name too?)
+                cwlFromServer = getDescriptorFromServer(entry, "wdl");
+                final File tempWdl = File.createTempFile("temp", ".wdl", Files.createTempDir());
+                Files.write(cwlFromServer.getContent(), tempWdl, StandardCharsets.UTF_8);
+
+                final java.util.List<String> wdlRun = Lists.newArrayList(tempWdl.getAbsolutePath(), parameterFile.getAbsolutePath());
+                final List<String> wdlRunList = JavaConversions.asScalaBuffer(wdlRun).toList();
+                // run a workflow
+                final int run = main.run(wdlRunList);
+                if (run == 0) {
+                    out("Passed!");
+                } else {
+                    out("Failed!");
+                }
+            } catch (ApiException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+    }
+
+    private static void tool2json(final java.util.List<String> args) throws ApiException, IOException {
         if (isHelp(args, true)) {
             out("");
             out("Usage: dockstore " + CONVERT + " tool2json --help");
@@ -676,30 +725,30 @@ public class Client {
         }
     }
 
-    private static String runString(final List<String> args, final boolean json) throws ApiException, IOException {
+    private static String runString(final java.util.List<String> args, final boolean json) throws ApiException, IOException {
         final String entry = reqVal(args, "--entry");
-        final SourceFile cwlFromServer = getCWLFromServer(entry);
+        final SourceFile cwlFromServer = getDescriptorFromServer(entry, "cwl");
         final File tempCWL = File.createTempFile("temp", ".cwl", Files.createTempDir());
         Files.write(cwlFromServer.getContent(), tempCWL, StandardCharsets.UTF_8);
         // need to suppress output
         final ImmutablePair<String, String> output = cwl.parseCWL(tempCWL.getAbsolutePath(), true);
         final Map<String, Object> stringObjectMap = cwl.extractRunJson(output.getLeft());
-        if (json){
+        if (json) {
             final Gson gson = CWL.getTypeSafeCWLToolDocument();
             return gson.toJson(stringObjectMap);
-        } else{
+        } else {
             // re-arrange as rows and columns
             final Map<String, String> typeMap = cwl.extractCWLTypes(output.getLeft());
-            final List<String> headers = new ArrayList<>();
-            final List<String> types = new ArrayList<>();
-            final List<String> entries = new ArrayList<>();
-            for(final Entry<String, Object> objectEntry : stringObjectMap.entrySet()){
+            final java.util.List<String> headers = new ArrayList<>();
+            final java.util.List<String> types = new ArrayList<>();
+            final java.util.List<String> entries = new ArrayList<>();
+            for (final Entry<String, Object> objectEntry : stringObjectMap.entrySet()) {
                 headers.add(objectEntry.getKey());
                 types.add(typeMap.get(objectEntry.getKey()));
                 Object value = objectEntry.getValue();
-                if (value instanceof Map){
-                    Map map = (Map)value;
-                    if (map.containsKey("class") && "File".equals(map.get("class"))){
+                if (value instanceof Map) {
+                    Map map = (Map) value;
+                    if (map.containsKey("class") && "File".equals(map.get("class"))) {
                         value = map.get("path");
                     }
                 }
@@ -717,7 +766,7 @@ public class Client {
         }
     }
 
-    private static void tool2tsv(final List<String> args) throws ApiException, IOException {
+    private static void tool2tsv(final java.util.List<String> args) throws ApiException, IOException {
         if (isHelp(args, true)) {
             out("");
             out("Usage: dockstore " + CONVERT + " tool2tsv --help");
@@ -734,7 +783,7 @@ public class Client {
         }
     }
 
-    private static void cwl2json(final List<String> args) {
+    private static void cwl2json(final java.util.List<String> args) {
         if (isHelp(args, true)) {
             out("");
             out("Usage: dockstore " + CONVERT + " --help");
@@ -756,8 +805,32 @@ public class Client {
         }
     }
 
+    private static void wdl2json(final java.util.List<String> args) {
+        if (isHelp(args, true)) {
+            out("");
+            out("Usage: dockstore " + CONVERT + " --help");
+            out("       dockstore " + CONVERT + " wdl2json");
+            out("");
+            out("Description:");
+            out("  Spit out a json run file for a given wdl document.");
+            out("Required parameters:");
+            out("  --wdl <file>                Path to wdl file");
+            out("");
+        } else {
+            // Will eventually need to update this to use wdltool
+            final String wdlPath = reqVal(args, "--wdl");
+            File wdlFile = new File(wdlPath);
+            final java.util.List<String> wdlDocuments = Lists.newArrayList(wdlFile.getAbsolutePath());
+            final List<String> wdlList = JavaConversions.asScalaBuffer(wdlDocuments).toList();
+            Bridge bridge = new Bridge();
+            String inputs = bridge.inputs(wdlList);
+            out(inputs);
+        }
+    }
 
-    /** this ends the section from dockstore-descriptor launcher **/
+    /**
+     * this ends the section from dockstore-descriptor launcher
+     **/
 
     private static boolean isHelpRequest(String first) {
         return "-h".equals(first) || "--help".equals(first);
@@ -797,7 +870,7 @@ public class Client {
         out("");
     }
 
-    private static void info(List<String> args) {
+    private static void info(java.util.List<String> args) {
         if (args.isEmpty()) {
             kill("Please provide a container.");
         }
@@ -838,7 +911,7 @@ public class Client {
                 out(date);
                 out("TAGS");
 
-                List<Tag> tags = container.getTags();
+                java.util.List<Tag> tags = container.getTags();
                 int tagSize = tags.size();
                 StringBuilder builder = new StringBuilder();
                 if (tagSize > 0) {
@@ -866,18 +939,18 @@ public class Client {
         }
     }
 
-    private static void cwl(List<String> args) {
+    private static void descriptor(java.util.List<String> args, String descriptorType) {
         if (args.isEmpty()) {
             kill("Please provide a container.");
         }
 
         try {
-            SourceFile file = getCWLFromServer(args.get(0));
+            SourceFile file = getDescriptorFromServer(args.get(0), descriptorType);
 
             if (file.getContent() != null && !file.getContent().isEmpty()) {
                 out(file.getContent());
             } else {
-                kill("No cwl file found.");
+                kill("No " + descriptorType + " file found.");
             }
 
         } catch (ApiException ex) {
@@ -886,7 +959,7 @@ public class Client {
         }
     }
 
-    public static SourceFile getCWLFromServer(String entry) throws ApiException {
+    public static SourceFile getDescriptorFromServer(String entry, String descriptorType) throws ApiException {
         String[] parts = entry.split(":");
 
         String path = parts[0];
@@ -896,22 +969,25 @@ public class Client {
         Container container = containersApi.getContainerByToolPath(path);
         if (container.getValidTrigger()) {
             try {
-                file = containersApi.cwl(container.getId(), tag);
-
+                if (descriptorType.equals("cwl")) {
+                    file = containersApi.cwl(container.getId(), tag);
+                } else if (descriptorType.equals("wdl")) {
+                    file = containersApi.wdl(container.getId(), tag);
+                }
             } catch (ApiException ex) {
                 if (ex.getCode() == HttpStatus.SC_BAD_REQUEST) {
                     kill("Invalid tag");
                 } else {
-                    kill("No cwl file found.");
+                    kill("No " + descriptorType + " file found.");
                 }
             }
         } else {
-            kill("No cwl file found.");
+            kill("No " + descriptorType + " file found.");
         }
         return file;
     }
 
-    private static void refresh(List<String> args) {
+    private static void refresh(java.util.List<String> args) {
         if (args.size() > 0) {
             if (isHelpRequest(args.get(0))) {
                 refreshHelp();
@@ -921,7 +997,7 @@ public class Client {
                     Container container = containersApi.getContainerByToolPath(toolpath);
                     final Long containerId = container.getId();
                     Container updatedContainer = containersApi.refresh(containerId);
-                    List<Container> containerList = new ArrayList<>();
+                    java.util.List<Container> containerList = new ArrayList<>();
                     containerList.add(updatedContainer);
                     out("YOUR UPDATED CONTAINER");
                     out("-------------------");
@@ -932,7 +1008,7 @@ public class Client {
             }
         } else {
             try {
-                List<Container> containers = usersApi.refresh(user.getId());
+                java.util.List<Container> containers = usersApi.refresh(user.getId());
 
                 out("YOUR UPDATED CONTAINERS");
                 out("-------------------");
@@ -942,6 +1018,7 @@ public class Client {
             }
         }
     }
+
     private static void labelHelp() {
         out("");
         out("HELP FOR DOCKSTORE");
@@ -954,13 +1031,13 @@ public class Client {
         out("");
     }
 
-    public static void label(List<String> args) {
+    public static void label(java.util.List<String> args) {
         if (args.size() > 0 && !isHelpRequest(args.get(0))) {
             final String toolpath = reqVal(args, "--entry");
-            final List<String> adds = optVals(args, "--add");
-            final Set<String> addsSet =  adds.isEmpty() ? new HashSet<>() : new HashSet<>(adds);
-            final List<String> removes = optVals(args, "--remove");
-            final Set<String> removesSet =  removes.isEmpty() ? new HashSet<>() : new HashSet<>(removes);
+            final java.util.List<String> adds = optVals(args, "--add");
+            final Set<String> addsSet = adds.isEmpty() ? new HashSet<>() : new HashSet<>(adds);
+            final java.util.List<String> removes = optVals(args, "--remove");
+            final Set<String> removesSet = removes.isEmpty() ? new HashSet<>() : new HashSet<>(removes);
 
             // Do a check on the input
             final String labelStringPattern = "^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$";
@@ -986,9 +1063,8 @@ public class Client {
             try {
                 Container container = containersApi.getContainerByToolPath(toolpath);
                 long containerId = container.getId();
-                List<Label> existingLabels = container.getLabels();
+                java.util.List<Label> existingLabels = container.getLabels();
                 Set<String> newLabelSet = new HashSet<>();
-
 
                 // Get existing labels and store in a List
                 for (int i = 0; i < existingLabels.size(); i++) {
@@ -1010,12 +1086,11 @@ public class Client {
 
                 Container updatedContainer = containersApi.updateLabels(containerId, combinedLabelString, new Body());
 
-                List<Label> newLabels = updatedContainer.getLabels();
+                java.util.List<Label> newLabels = updatedContainer.getLabels();
                 out("The container now has the following tags:");
                 for (int i = 0; i < newLabels.size(); i++) {
                     out(newLabels.get(i).getValue());
                 }
-
 
             } catch (ApiException e) {
                 e.printStackTrace();
@@ -1026,14 +1101,14 @@ public class Client {
         }
     }
 
-    public static void versionTag(List<String> args) {
+    public static void versionTag(java.util.List<String> args) {
         if (args.size() > 0 && !isHelpRequest(args.get(0))) {
             final String toolpath = reqVal(args, "--entry");
             try {
                 Container container = containersApi.getContainerByToolPath(toolpath);
                 long containerId = container.getId();
                 if (args.contains("--add")) {
-                    if (container.getMode() != ModeEnum.MANUAL_IMAGE_PATH){
+                    if (container.getMode() != ModeEnum.MANUAL_IMAGE_PATH) {
                         err("Only manually added images can add version tags.");
                         System.exit(INPUT_ERROR);
                     }
@@ -1042,6 +1117,7 @@ public class Client {
                     final String gitReference = reqVal(args, "--git-reference");
                     final Boolean hidden = Boolean.valueOf(optVal(args, "--hidden", "f"));
                     final String cwlPath = optVal(args, "--cwl-path", "/Dockstore.cwl");
+                    final String wdlPath = optVal(args, "--wdl-path", "/Dockstore.wdl");
                     final String dockerfilePath = optVal(args, "--dockerfile-path", "/Dockerfile");
                     final String imageId = reqVal(args, "--image-id");
 
@@ -1049,39 +1125,42 @@ public class Client {
                     tag.setName(tagName);
                     tag.setHidden(hidden);
                     tag.setCwlPath(cwlPath);
+                    tag.setWdlPath(wdlPath);
                     tag.setDockerfilePath(dockerfilePath);
                     tag.setImageId(imageId);
                     tag.setReference(gitReference);
 
-                    List<Tag> tags = new ArrayList<>();
+                    java.util.List<Tag> tags = new ArrayList<>();
                     tags.add(tag);
 
-                    List<Tag> updatedTags =  containerTagsApi.addTags(containerId, tags);
+                    java.util.List<Tag> updatedTags = containerTagsApi.addTags(containerId, tags);
                     containersApi.refresh(container.getId());
 
                     out("The container now has the following tags:");
-                    for (Tag newTag: updatedTags) {
+                    for (Tag newTag : updatedTags) {
                         out(newTag.getName());
                     }
 
                 } else if (args.contains("--update")) {
                     final String tagName = reqVal(args, "--update");
-                    List<Tag> tags = container.getTags();
+                    java.util.List<Tag> tags = container.getTags();
                     Boolean updated = false;
 
-                    for (Tag tag: tags) {
+                    for (Tag tag : tags) {
                         if (tag.getName().equals(tagName)) {
                             final Boolean hidden = Boolean.valueOf(optVal(args, "--hidden", tag.getHidden().toString()));
                             final String cwlPath = optVal(args, "--cwl-path", tag.getCwlPath());
+                            final String wdlPath = optVal(args, "--wdl-path", tag.getWdlPath());
                             final String dockerfilePath = optVal(args, "--dockerfile-path", tag.getDockerfilePath());
                             final String imageId = optVal(args, "--image-id", tag.getImageId());
 
                             tag.setName(tagName);
                             tag.setHidden(hidden);
                             tag.setCwlPath(cwlPath);
+                            tag.setWdlPath(wdlPath);
                             tag.setDockerfilePath(dockerfilePath);
                             tag.setImageId(imageId);
-                            List<Tag> newTags = new ArrayList<>();
+                            java.util.List<Tag> newTags = new ArrayList<>();
                             newTags.add(tag);
 
                             containerTagsApi.updateTags(containerId, newTags);
@@ -1096,17 +1175,17 @@ public class Client {
                         System.exit(INPUT_ERROR);
                     }
                 } else if (args.contains("--remove")) {
-                    if (container.getMode() != ModeEnum.MANUAL_IMAGE_PATH){
+                    if (container.getMode() != ModeEnum.MANUAL_IMAGE_PATH) {
                         err("Only manually added images can add version tags.");
                         System.exit(INPUT_ERROR);
                     }
 
                     final String tagName = reqVal(args, "--remove");
-                    List<Tag> tags = containerTagsApi.getTagsByPath(containerId);
+                    java.util.List<Tag> tags = containerTagsApi.getTagsByPath(containerId);
                     long tagId;
                     Boolean removed = false;
 
-                    for (Tag tag: tags) {
+                    for (Tag tag : tags) {
                         if (tag.getName().equals(tagName)) {
                             tagId = tag.getId();
                             containerTagsApi.deleteTags(containerId, tagId);
@@ -1114,7 +1193,7 @@ public class Client {
 
                             tags = containerTagsApi.getTagsByPath(containerId);
                             out("The container now has the following tags:");
-                            for (Tag newTag: tags) {
+                            for (Tag newTag : tags) {
                                 out(newTag.getName());
                             }
                             break;
@@ -1155,7 +1234,7 @@ public class Client {
         out("");
     }
 
-    public static void updateContainer(List<String> args) {
+    public static void updateContainer(java.util.List<String> args) {
         if (args.size() > 0 && !isHelpRequest(args.get(0))) {
             final String toolpath = reqVal(args, "--entry");
             try {
@@ -1163,11 +1242,13 @@ public class Client {
                 long containerId = container.getId();
 
                 final String cwlPath = optVal(args, "--cwl-path", container.getDefaultCwlPath());
+                final String wdlPath = optVal(args, "--wdl-path", container.getDefaultWdlPath());
                 final String dockerfilePath = optVal(args, "--dockerfile-path", container.getDefaultDockerfilePath());
                 final String toolname = optVal(args, "--toolname", container.getToolname());
                 final String gitUrl = optVal(args, "--git-url", container.getGitUrl());
 
                 container.setDefaultCwlPath(cwlPath);
+                container.setDefaultWdlPath(wdlPath);
                 container.setDefaultDockerfilePath(dockerfilePath);
                 container.setToolname(toolname);
                 container.setGitUrl(gitUrl);
@@ -1196,9 +1277,10 @@ public class Client {
 
     /**
      * Finds the install location of the dockstore CLI
+     *
      * @return
-         */
-    public static String getInstallLocation(){
+     */
+    public static String getInstallLocation() {
         String installLocation = null;
 
         String executable = "dockstore";
@@ -1206,7 +1288,7 @@ public class Client {
         String[] dirs = path.split(File.pathSeparator);
 
         // Search for location of dockstore executable on path
-        for(String dir : dirs) {
+        for (String dir : dirs) {
             // Check if a folder on the PATH includes dockstore
             File file = new File(dir, executable);
             if (file.isFile()) {
@@ -1222,10 +1304,11 @@ public class Client {
      * Finds the version of the dockstore CLI for the given install location
      * NOTE: Do not try and get the version information from the JAR (implementationVersion) as it cannot be tested.
      * When running the tests the JAR file cannot be found, so no information about it can be retrieved
+     *
      * @param installLocation
      * @return
-         */
-    public static String getCurrentVersion(String installLocation){
+     */
+    public static String getCurrentVersion(String installLocation) {
         String currentVersion = null;
         File file = new File(installLocation);
         String line = null;
@@ -1237,9 +1320,9 @@ public class Client {
                 }
             }
         } catch (FileNotFoundException e) {
-//            e.printStackTrace();
+            //            e.printStackTrace();
         } catch (IOException e) {
-//            e.printStackTrace();
+            //            e.printStackTrace();
         }
 
         // Pull Dockstore version from matched line
@@ -1255,8 +1338,9 @@ public class Client {
     /**
      * Get the latest stable version name of dockstore available
      * NOTE: The Github library does not include the ability to get release information.
+     *
      * @return
-         */
+     */
     public static String getLatestVersion() {
         URL url = null;
         try {
@@ -1268,38 +1352,39 @@ public class Client {
                 return map.get("name").toString();
 
             } catch (IOException e) {
-//                e.printStackTrace();
+                //                e.printStackTrace();
             }
         } catch (MalformedURLException e) {
-//            e.printStackTrace();
+            //            e.printStackTrace();
         }
         return null;
     }
 
     /**
      * Checks if the given tag exists as a release for Dockstore
+     *
      * @param tag
      * @return
-         */
-    public static Boolean checkIfTagExists(String tag){
+     */
+    public static Boolean checkIfTagExists(String tag) {
         try {
             URL url = new URL("https://api.github.com/repos/ga4gh/dockstore/releases");
             ObjectMapper mapper = new ObjectMapper();
             try {
-                ArrayList<Map<String,String>> arrayMap = mapper.readValue(url, ArrayList.class);
-                for(Map<String,String> map: arrayMap){
+                ArrayList<Map<String, String>> arrayMap = mapper.readValue(url, ArrayList.class);
+                for (Map<String, String> map : arrayMap) {
                     String version = map.get("name");
-                    if(version.equals(tag)) {
+                    if (version.equals(tag)) {
                         return true;
                     }
                 }
                 return false;
             } catch (IOException e) {
-//                e.printStackTrace();
+                //                e.printStackTrace();
             }
 
         } catch (MalformedURLException e) {
-//            e.printStackTrace();
+            //            e.printStackTrace();
         }
         return false;
     }
@@ -1307,7 +1392,7 @@ public class Client {
     /**
      * Checks for upgrade for Dockstore and install
      */
-    public static void upgrade(){
+    public static void upgrade() {
         // Try to get version installed
         String installLocation = getInstallLocation();
         if (installLocation == null) {
@@ -1358,7 +1443,7 @@ public class Client {
                 out("Could not connect to Github. You may have reached your rate limit.");
                 out("Please try again in an hour.");
             }
-         } catch (MalformedURLException e) {
+        } catch (MalformedURLException e) {
             out("Issue with URL : " + latestPath);
         }
     }
@@ -1366,7 +1451,7 @@ public class Client {
     /**
      * Will check for updates if three months have gone by since the last update
      */
-    public static void checkForUpdates(){
+    public static void checkForUpdates() {
         final int monthsBeforeCheck = 3;
         String installLocation = getInstallLocation();
         if (installLocation != null) {
@@ -1377,7 +1462,7 @@ public class Client {
                     try {
                         url = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/tags/" + currentVersion);
                     } catch (MalformedURLException e) {
-//                        e.printStackTrace();
+                        //                        e.printStackTrace();
                     }
 
                     ObjectMapper mapper = new ObjectMapper();
@@ -1408,11 +1493,11 @@ public class Client {
                                 }
                             }
                         } catch (ParseException e) {
-//                            e.printStackTrace();
+                            //                            e.printStackTrace();
                         }
 
                     } catch (IOException e) {
-//                        e.printStackTrace();
+                        //                        e.printStackTrace();
                     }
                 }
             }
@@ -1422,7 +1507,7 @@ public class Client {
     /**
      * Prints out version information for the Dockstore CLI
      */
-    public static void version(){
+    public static void version() {
         String installLocation = getInstallLocation();
         if (installLocation == null) {
             kill("Can't find location of Dockstore executable. Is it on the PATH?");
@@ -1468,6 +1553,8 @@ public class Client {
         out("  cwl <container>  :  returns the Common Workflow Language tool definition for this Docker image ");
         out("                      which enables integration with Global Alliance compliant systems");
         out("");
+        out("  wdl <container>  :  returns the Workflow Descriptor Langauge definition for this Docker image.");
+        out("");
         out("  refresh          :  updates your list of containers stored on Dockstore or an individual container");
         out("");
         out("  label            :  updates labels for an individual container");
@@ -1491,7 +1578,7 @@ public class Client {
     }
 
     public static void main(String[] argv) {
-        List<String> args = new ArrayList<>(Arrays.asList(argv));
+        java.util.List<String> args = new ArrayList<>(Arrays.asList(argv));
 
         if (flag(args, "--debug") || flag(args, "--d")) {
             DEBUG.set(true);
@@ -1572,7 +1659,10 @@ public class Client {
                             info(args);
                             break;
                         case "cwl":
-                            cwl(args);
+                            descriptor(args, "cwl");
+                            break;
+                        case "wdl":
+                            descriptor(args, "wdl");
                             break;
                         case "refresh":
                             refresh(args);
@@ -1582,6 +1672,9 @@ public class Client {
                             break;
                         case LAUNCH:
                             launch(args);
+                            break;
+                        case "launch_wdl":
+                            launchWdl(args);
                             break;
                         case "label":
                             label(args);
@@ -1618,3 +1711,7 @@ public class Client {
         }
     }
 }
+
+
+
+
