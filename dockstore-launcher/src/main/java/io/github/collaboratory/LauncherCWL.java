@@ -259,27 +259,33 @@ public class LauncherCWL {
             } else if (currentParam instanceof Integer || currentParam instanceof Float || currentParam instanceof Boolean || currentParam instanceof String) {
                 newJSON.put(paramName, currentParam);
             } else if (currentParam instanceof List) {
-                List<Map<String, String>> currentParamList = (List<Map<String, String>>)currentParam;
-                for (Map<String, String> param : currentParamList) {
-                    String path = param.get("path");
-                    LOG.info("PATH: {} PARAM_NAME: {}", path, paramName);
-                    // will be null for output, only dealing with inputs currently
-                    // TODO: can outputs be file arrays too???  Maybe need to do something for globs??? Need to investigate
-                    if (fileMap.get(paramName + ":" + path) != null) {
-                        final String localPath = fileMap.get(paramName + ":" + path).getLocalPath();
-                        param.put("path", localPath);
-                        LOG.info("NEW FULL PATH: {}", localPath);
+                // this code kinda assumes that if a list exists, its a list of files which is not correct
+                List currentParamList = (List)currentParam;
+                for (Object entry : currentParamList) {
+                    if (entry instanceof Map){
+                        Map<String, String> param = (Map<String, String>)entry;
+                        String path = param.get("path");
+                        LOG.info("PATH: {} PARAM_NAME: {}", path, paramName);
+                        // will be null for output, only dealing with inputs currently
+                        // TODO: can outputs be file arrays too???  Maybe need to do something for globs??? Need to investigate
+                        if (fileMap.get(paramName + ":" + path) != null) {
+                            final String localPath = fileMap.get(paramName + ":" + path).getLocalPath();
+                            param.put("path", localPath);
+                            LOG.info("NEW FULL PATH: {}", localPath);
+                        }
+                        // now add to the new JSON structure
+                        JSONArray exitingArray = (JSONArray) newJSON.get(paramName);
+                        if (exitingArray == null) {
+                            exitingArray = new JSONArray();
+                        }
+                        JSONObject newRecord = new JSONObject();
+                        newRecord.put("class", param.get("class"));
+                        newRecord.put("path", param.get("path"));
+                        exitingArray.add(newRecord);
+                        newJSON.put(paramName, exitingArray);
+                    } else{
+                        newJSON.put(paramName, currentParam);
                     }
-                    // now add to the new JSON structure
-                    JSONArray exitingArray = (JSONArray) newJSON.get(paramName);
-                    if (exitingArray == null) {
-                        exitingArray = new JSONArray();
-                    }
-                    JSONObject newRecord = new JSONObject();
-                    newRecord.put("class", param.get("class"));
-                    newRecord.put("path", param.get("path"));
-                    exitingArray.add(newRecord);
-                    newJSON.put(paramName, exitingArray);
                 }
 
             } else {
@@ -413,12 +419,18 @@ public class LauncherCWL {
 
                 // in this case, the input is an array and not a single instance
                 if (stringObjectEntry.getValue() instanceof ArrayList) {
-                    List<Map<String, String>> stringObjectEntryList = (List<Map<String, String>>)stringObjectEntry.getValue();
-                    for (Map<String, String> lhm : stringObjectEntryList) {
-                        String path = lhm.get("path");
-                        // notice I'm putting key:path together so they are unique in the hash
-                        if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
-                            doProcessFile(stringObjectEntry.getKey() + ":" + path, path, cwlInputFileID, fileMap);
+                    // need to handle case where it is an array, but not an array of files
+                    List stringObjectEntryList = (List)stringObjectEntry.getValue();
+                    for(Object entry: stringObjectEntryList) {
+                        if (entry instanceof Map) {
+                            Map lhm = (Map) entry;
+                            if (lhm.containsKey("path") && lhm.get("path") instanceof String) {
+                                String path = (String) lhm.get("path");
+                                // notice I'm putting key:path together so they are unique in the hash
+                                if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
+                                    doProcessFile(stringObjectEntry.getKey() + ":" + path, path, cwlInputFileID, fileMap);
+                                }
+                            }
                         }
                     }
                 // in this case the input is a single instance and not an array
@@ -493,7 +505,7 @@ public class LauncherCWL {
                 LOG.error(e.getMessage());
                 throw new RuntimeException("Could not provision input files from S3", e);
             }
-        } else {
+        } else if (!pathInfo.isLocalFileType()) {
             // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
             // https://commons.apache.org/proper/commons-vfs/filesystems.html
             FileSystemManager fsManager;
@@ -508,15 +520,17 @@ public class LauncherCWL {
                 throw new RuntimeException("Could not provision input files", e);
             }
         }
-        // now add this info to a hash so I can later reconstruct a docker -v command
-        FileInfo info = new FileInfo();
-        info.setLocalPath(targetFilePath);
-        info.setLocalPath(targetFilePath);
-        info.setDockerPath(cwlInputFileID);
-        info.setUrl(path);
-        // key may contain either key:download_URL for array inputs or just cwlInputFileID for scalar input
-        fileMap.put(key, info);
-        LOG.info("DOWNLOADED FILE: LOCAL: {} URL: {}", cwlInputFileID, path);
+        if (!pathInfo.isLocalFileType()) {
+            // now add this info to a hash so I can later reconstruct a docker -v command
+            FileInfo info = new FileInfo();
+            info.setLocalPath(targetFilePath);
+            info.setLocalPath(targetFilePath);
+            info.setDockerPath(cwlInputFileID);
+            info.setUrl(path);
+            // key may contain either key:download_URL for array inputs or just cwlInputFileID for scalar input
+            fileMap.put(key, info);
+            LOG.info("DOWNLOADED FILE: LOCAL: {} URL: {}", cwlInputFileID, path);
+        }
     }
 
     private CommandLine parseCommandLine(CommandLineParser parser, String[] args) {
@@ -538,6 +552,7 @@ public class LauncherCWL {
         public static final String DCC_STORAGE_SCHEME = "icgc";
     	private boolean objectIdType;
     	private String objectId = "";
+        private boolean localFileType = false;
     	
 		public boolean isObjectIdType() {
 			return objectIdType;
@@ -550,16 +565,24 @@ public class LauncherCWL {
 		public PathInfo(String path) {
             try {
 		    	URI objectIdentifier = URI.create(path);	// throws IllegalArgumentException if it isn't a valid URI
+                if (objectIdentifier.getScheme() == null){
+                    localFileType = true;
+                }
 		    	if (objectIdentifier.getScheme().equalsIgnoreCase(DCC_STORAGE_SCHEME)) {
 		    		objectIdType = true;
 		    		objectId = objectIdentifier.getSchemeSpecificPart().toLowerCase();
 		    	}				
-			} catch (IllegalArgumentException iae) {
+			} catch (IllegalArgumentException | NullPointerException iae) {
+                // if there is no scheme, then it must be a local file
 				StringBuilder bob = new StringBuilder("Invalid path specified for CWL pre-processor values: ").append(path);
 				LOG.warn(bob.toString());
 				objectIdType = false;
 			}
 		}
+
+        public boolean isLocalFileType() {
+            return localFileType;
+        }
     }
     
     public static class FileInfo {
