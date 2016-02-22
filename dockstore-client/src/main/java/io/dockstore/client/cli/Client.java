@@ -19,7 +19,6 @@ package io.dockstore.client.cli;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -51,7 +50,6 @@ import java.util.regex.Pattern;
 
 import javax.ws.rs.ProcessingException;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
@@ -62,6 +60,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 
 import com.esotericsoftware.yamlbeans.YamlReader;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
@@ -87,7 +86,6 @@ import io.swagger.client.model.RegisterRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.User;
-import javassist.NotFoundException;
 
 /*
  * Main entrypoint for the dockstore CLI. 
@@ -101,7 +99,6 @@ public class Client {
     private static ContainersApi containersApi;
     private static ContainertagsApi containerTagsApi;
     private static UsersApi usersApi;
-    private static User user;
     private static CWL cwl = new CWL();
 
     private static final String NAME_HEADER = "NAME";
@@ -353,6 +350,11 @@ public class Client {
 
     private static void list(List<String> args) {
         try {
+            // check user info after usage so that users can get usage without live webservice
+            User user = usersApi.getUser();
+            if (user == null) {
+                throw new RuntimeException("User not found");
+            }
             // List<Container> containers = containersApi.allRegisteredContainers();
             List<Container> containers = usersApi.userRegisteredContainers(user.getId());
             printRegisteredList(containers);
@@ -380,6 +382,11 @@ public class Client {
     private static void publish(List<String> args) {
         if (args.isEmpty()) {
             try {
+                // check user info after usage so that users can get usage without live webservice
+                User user = usersApi.getUser();
+                if (user == null) {
+                    throw new RuntimeException("User not found");
+                }
                 List<Container> containers = usersApi.userContainers(user.getId());
 
                 out("YOUR AVAILABLE CONTAINERS");
@@ -804,7 +811,7 @@ public class Client {
 
         String path = args.get(0);
         try {
-            Container container = containersApi.getContainerByToolPath(path);
+            Container container = containersApi.getRegisteredContainerByToolPath(path);
             if (container == null || !container.getIsRegistered()) {
                 kill("This container is not registered.");
             } else {
@@ -893,7 +900,7 @@ public class Client {
 
         String tag = (parts.length > 1) ? parts[1] : null;
         SourceFile file = new SourceFile();
-        Container container = containersApi.getContainerByToolPath(path);
+        Container container = containersApi.getRegisteredContainerByToolPath(path);
         if (container.getValidTrigger()) {
             try {
                 file = containersApi.cwl(container.getId(), tag);
@@ -932,6 +939,11 @@ public class Client {
             }
         } else {
             try {
+                // check user info after usage so that users can get usage without live webservice
+                User user = usersApi.getUser();
+                if (user == null) {
+                    throw new RuntimeException("User not found");
+                }
                 List<Container> containers = usersApi.refresh(user.getId());
 
                 out("YOUR UPDATED CONTAINERS");
@@ -991,8 +1003,8 @@ public class Client {
 
 
                 // Get existing labels and store in a List
-                for (int i = 0; i < existingLabels.size(); i++) {
-                    newLabelSet.add(existingLabels.get(i).getValue());
+                for (Label existingLabel : existingLabels) {
+                    newLabelSet.add(existingLabel.getValue());
                 }
 
                 // Add new labels to the List of labels
@@ -1012,8 +1024,8 @@ public class Client {
 
                 List<Label> newLabels = updatedContainer.getLabels();
                 out("The container now has the following tags:");
-                for (int i = 0; i < newLabels.size(); i++) {
-                    out(newLabels.get(i).getValue());
+                for (Label newLabel : newLabels) {
+                    out(newLabel.getValue());
                 }
 
 
@@ -1172,7 +1184,7 @@ public class Client {
                 container.setToolname(toolname);
                 container.setGitUrl(gitUrl);
 
-                Container result = containersApi.updateContainer(containerId, container);
+                containersApi.updateContainer(containerId, container);
                 out("The container has been updated.");
             } catch (ApiException e) {
                 e.printStackTrace();
@@ -1236,8 +1248,6 @@ public class Client {
                     break;
                 }
             }
-        } catch (FileNotFoundException e) {
-//            e.printStackTrace();
         } catch (IOException e) {
 //            e.printStackTrace();
         }
@@ -1258,11 +1268,11 @@ public class Client {
      * @return
          */
     public static String getLatestVersion() {
-        URL url = null;
+        URL url;
         try {
             url = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/latest");
             ObjectMapper mapper = new ObjectMapper();
-            Map<String, Object> map = null;
+            Map<String, Object> map;
             try {
                 map = mapper.readValue(url, Map.class);
                 return map.get("name").toString();
@@ -1463,7 +1473,7 @@ public class Client {
         out("");
         out("  manual_publish   :  register a Docker Hub container in the dockstore");
         out("");
-        out("  info <container> :  print detailed information about a particular container");
+        out("  info <container> :  print detailed information about a particular public container");
         out("");
         out("  cwl <container>  :  returns the Common Workflow Language tool definition for this Docker image ");
         out("                      which enables integration with Global Alliance compliant systems");
@@ -1543,12 +1553,6 @@ public class Client {
                 printGeneralHelp();
             } else {
                 try {
-                    // check user info after usage so that users can get usage without live webservice
-                    user = usersApi.getUser();
-                    if (user == null) {
-                        throw new NotFoundException("User not found");
-                    }
-
                     String cmd = args.remove(0);
                     if (null != cmd) {
                         switch (cmd) {
@@ -1604,7 +1608,7 @@ public class Client {
                     System.exit(GENERIC_ERROR);
                 }
             }
-        } catch (IOException | NotFoundException | ApiException ex) {
+        } catch (IOException | ApiException ex) {
             out("Exception: " + ex);
             ex.printStackTrace();
             System.exit(GENERIC_ERROR);
