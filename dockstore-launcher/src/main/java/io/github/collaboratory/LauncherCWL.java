@@ -386,10 +386,8 @@ public class LauncherCWL {
     	// default layout saves to original_file_name/object_id
     	// file name is the directory and object id is actual file name
     	String client = getStorageClient();
-        String bob = client + " --quiet" + " download" +
-                         " --object-id " + objectId +
-                         " --output-dir " + downloadDir +
-                         " --output-layout id";
+        String bob = new StringBuilder().append(client).append(" --quiet").append(" download").append(" --object-id ").append(objectId)
+                         .append(" --output-dir ").append(downloadDir).append(" --output-layout id").toString();
         Utilities.executeCommand(bob, stdoutStream, stderrStream);
     }
     
