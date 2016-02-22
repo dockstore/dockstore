@@ -51,7 +51,6 @@ import java.util.regex.Pattern;
 
 import javax.ws.rs.ProcessingException;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
@@ -62,6 +61,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 
 import com.esotericsoftware.yamlbeans.YamlReader;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
@@ -98,6 +98,7 @@ public class Client {
 
     private static final String CONVERT = "convert";
     private static final String LAUNCH = "launch";
+    private static final String CWL = "cwl";
     private static ContainersApi containersApi;
     private static ContainertagsApi containerTagsApi;
     private static UsersApi usersApi;
@@ -592,7 +593,7 @@ public class Client {
             final File tempConfig = File.createTempFile("temp", ".cwl", Files.createTempDir());
             Files.write("working-directory=./datastore/", tempConfig, StandardCharsets.UTF_8);
 
-            final Gson gson = CWL.getTypeSafeCWLToolDocument();
+            final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
             if (jsonRun != null) {
                 // if the root document is an array, this indicates multiple runs
                 JsonParser parser = new JsonParser();
@@ -685,7 +686,7 @@ public class Client {
         final ImmutablePair<String, String> output = cwl.parseCWL(tempCWL.getAbsolutePath(), true);
         final Map<String, Object> stringObjectMap = cwl.extractRunJson(output.getLeft());
         if (json){
-            final Gson gson = CWL.getTypeSafeCWLToolDocument();
+            final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
             return gson.toJson(stringObjectMap);
         } else{
             // re-arrange as rows and columns
@@ -750,7 +751,7 @@ public class Client {
             final String cwlPath = reqVal(args, "--cwl");
             final ImmutablePair<String, String> output = cwl.parseCWL(cwlPath, true);
 
-            final Gson gson = CWL.getTypeSafeCWLToolDocument();
+            final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
             final Map<String, Object> runJson = cwl.extractRunJson(output.getLeft());
             out(gson.toJson(runJson));
         }
@@ -867,22 +868,31 @@ public class Client {
     }
 
     private static void cwl(List<String> args) {
-        if (args.isEmpty()) {
-            kill("Please provide a container.");
-        }
+        if (isHelp(args, true)) {
+            out("");
+            out("Usage: dockstore " + CWL + " --help");
+            out("       dockstore " + CWL);
+            out("");
+            out("Description:");
+            out("  Grab a CWL document for a particular entry");
+            out("Required parameters:");
+            out("  --entry <entry>              Complete tool path in the Dockstore ex: quay.io/collaboratory/seqware-bwa-workflow:develop ");
 
-        try {
-            SourceFile file = getCWLFromServer(args.get(0));
+            out("");
+        } else {
+            try {
+                final String entry = reqVal(args, "--entry");
+                SourceFile file = getCWLFromServer(entry);
+                if (file.getContent() != null && !file.getContent().isEmpty()) {
+                    out(file.getContent());
+                } else {
+                    kill("No cwl file found.");
+                }
 
-            if (file.getContent() != null && !file.getContent().isEmpty()) {
-                out(file.getContent());
-            } else {
-                kill("No cwl file found.");
+            } catch (ApiException ex) {
+                // out("Exception: " + ex);
+                kill("Could not find container");
             }
-
-        } catch (ApiException ex) {
-            // out("Exception: " + ex);
-            kill("Could not find container");
         }
     }
 
@@ -1465,7 +1475,7 @@ public class Client {
         out("");
         out("  info <container> :  print detailed information about a particular container");
         out("");
-        out("  cwl <container>  :  returns the Common Workflow Language tool definition for this Docker image ");
+        out("  "+CWL+" <container>  :  returns the Common Workflow Language tool definition for this Docker image ");
         out("                      which enables integration with Global Alliance compliant systems");
         out("");
         out("  refresh          :  updates your list of containers stored on Dockstore or an individual container");
@@ -1571,7 +1581,7 @@ public class Client {
                         case "info":
                             info(args);
                             break;
-                        case "cwl":
+                        case CWL:
                             cwl(args);
                             break;
                         case "refresh":
