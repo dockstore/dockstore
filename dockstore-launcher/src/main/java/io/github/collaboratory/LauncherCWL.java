@@ -10,7 +10,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -260,21 +259,19 @@ public class LauncherCWL {
             } else if (currentParam instanceof Integer || currentParam instanceof Float || currentParam instanceof Boolean || currentParam instanceof String) {
                 newJSON.put(paramName, currentParam);
             } else if (currentParam instanceof List) {
-
-                for (int i = 0; i<((List)currentParam).size(); i++) {
-
-                    Map<String, Object> param = ((LinkedHashMap) ((List)currentParam).get(i));
-                    String path = (String) param.get("path");
+                List<Map<String, String>> currentParamList = (List<Map<String, String>>)currentParam;
+                for (Map<String, String> param : currentParamList) {
+                    String path = param.get("path");
                     LOG.info("PATH: {} PARAM_NAME: {}", path, paramName);
                     // will be null for output, only dealing with inputs currently
                     // TODO: can outputs be file arrays too???  Maybe need to do something for globs??? Need to investigate
-                    if (fileMap.get(paramName+":"+path) != null) {
-                        final String localPath = fileMap.get(paramName+":"+path).getLocalPath();
+                    if (fileMap.get(paramName + ":" + path) != null) {
+                        final String localPath = fileMap.get(paramName + ":" + path).getLocalPath();
                         param.put("path", localPath);
                         LOG.info("NEW FULL PATH: {}", localPath);
                     }
                     // now add to the new JSON structure
-                    JSONArray exitingArray = (JSONArray)newJSON.get(paramName);
+                    JSONArray exitingArray = (JSONArray) newJSON.get(paramName);
                     if (exitingArray == null) {
                         exitingArray = new JSONArray();
                     }
@@ -283,7 +280,6 @@ public class LauncherCWL {
                     newRecord.put("path", param.get("path"));
                     exitingArray.add(newRecord);
                     newJSON.put(paramName, exitingArray);
-
                 }
 
             } else {
@@ -390,12 +386,11 @@ public class LauncherCWL {
     	// default layout saves to original_file_name/object_id
     	// file name is the directory and object id is actual file name
     	String client = getStorageClient();
-    	StringBuilder bob = new StringBuilder(client).append(" --quiet");
-        bob.append(" download");
-    	bob.append(" --object-id ").append(objectId);
-    	bob.append(" --output-dir ").append(downloadDir);
-    	bob.append(" --output-layout id");
-    	Utilities.executeCommand(bob.toString(), stdoutStream, stderrStream);
+        String bob = client + " --quiet" + " download" +
+                         " --object-id " + objectId +
+                         " --output-dir " + downloadDir +
+                         " --output-layout id";
+        Utilities.executeCommand(bob, stdoutStream, stderrStream);
     }
     
     private Map<String, FileInfo> pullFiles(CommandLineTool cwl, Map<String, Object> inputsOutputs) {
@@ -420,17 +415,13 @@ public class LauncherCWL {
 
                 // in this case, the input is an array and not a single instance
                 if (stringObjectEntry.getValue() instanceof ArrayList) {
-
-                    for (int i = 0; i<((ArrayList)stringObjectEntry.getValue()).size(); i++) {
-
-                        LinkedHashMap lhm = ((LinkedHashMap) ((ArrayList) stringObjectEntry.getValue()).get(i));
-                        String path = (String) lhm.get("path");
-
+                    List<Map<String, String>> stringObjectEntryList = (List<Map<String, String>>)stringObjectEntry.getValue();
+                    for (Map<String, String> lhm : stringObjectEntryList) {
+                        String path = lhm.get("path");
                         // notice I'm putting key:path together so they are unique in the hash
                         if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
                             doProcessFile(stringObjectEntry.getKey() + ":" + path, path, cwlInputFileID, fileMap);
                         }
-
                     }
                 // in this case the input is a single instance and not an array
                 } else if (stringObjectEntry.getValue() instanceof HashMap) {
@@ -447,7 +438,14 @@ public class LauncherCWL {
         return fileMap;
     }
 
-    private void doProcessFile(String key, String path, String cwlInputFileID, Map<String, FileInfo> fileMap) {
+    /**
+     * Looks like this is intended to copy one file from source to a local destination
+     * @param key what is this?
+     * @param path the path for the source of the file, whether s3 or http
+     * @param cwlInputFileID looks like the descriptor for a particular path+class pair in the parameter json file, starts with a hash in the CWL file
+     * @param fileMap store information on each added file as a return type
+     */
+    private void doProcessFile(final String key, final String path, final String cwlInputFileID, Map<String, FileInfo> fileMap) {
 
         // key is unique for that key:download URL, cwlInputFileID is just the key
 
@@ -521,7 +519,6 @@ public class LauncherCWL {
         // key may contain either key:download_URL for array inputs or just cwlInputFileID for scalar input
         fileMap.put(key, info);
         LOG.info("DOWNLOADED FILE: LOCAL: {} URL: {}", cwlInputFileID, path);
-
     }
 
     private CommandLine parseCommandLine(CommandLineParser parser, String[] args) {
