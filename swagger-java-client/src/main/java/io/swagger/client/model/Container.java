@@ -73,6 +73,7 @@ public enum RegistryEnum {
   private List<Label> labels = new ArrayList<Label>();
   private String defaultDockerfilePath = null;
   private String defaultCwlPath = null;
+  private String defaultWdlPath = null;
   private String path = null;
   private Boolean isStarred = null;
   private Boolean isPublic = null;
@@ -251,9 +252,9 @@ public enum RegistryEnum {
 
   
   /**
-   * Implementation specific, this image has a Dockstore.cwl associated with it
+   * Implementation specific, this image has descriptor file(s) associated with it
    **/
-  @ApiModelProperty(value = "Implementation specific, this image has a Dockstore.cwl associated with it")
+  @ApiModelProperty(value = "Implementation specific, this image has descriptor file(s) associated with it")
   @JsonProperty("validTrigger")
   public Boolean getValidTrigger() {
     return validTrigger;
@@ -312,6 +313,19 @@ public enum RegistryEnum {
   }
   public void setDefaultCwlPath(String defaultCwlPath) {
     this.defaultCwlPath = defaultCwlPath;
+  }
+
+  
+  /**
+   * This indicates for the associated git repository, the default path to the WDL document
+   **/
+  @ApiModelProperty(required = true, value = "This indicates for the associated git repository, the default path to the WDL document")
+  @JsonProperty("default_wdl_path")
+  public String getDefaultWdlPath() {
+    return defaultWdlPath;
+  }
+  public void setDefaultWdlPath(String defaultWdlPath) {
+    this.defaultWdlPath = defaultWdlPath;
   }
 
   
@@ -416,6 +430,7 @@ public enum RegistryEnum {
     sb.append("    labels: ").append(StringUtil.toIndentedString(labels)).append("\n");
     sb.append("    defaultDockerfilePath: ").append(StringUtil.toIndentedString(defaultDockerfilePath)).append("\n");
     sb.append("    defaultCwlPath: ").append(StringUtil.toIndentedString(defaultCwlPath)).append("\n");
+    sb.append("    defaultWdlPath: ").append(StringUtil.toIndentedString(defaultWdlPath)).append("\n");
     sb.append("    path: ").append(StringUtil.toIndentedString(path)).append("\n");
     sb.append("    isStarred: ").append(StringUtil.toIndentedString(isStarred)).append("\n");
     sb.append("    isPublic: ").append(StringUtil.toIndentedString(isPublic)).append("\n");

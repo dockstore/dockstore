@@ -1,0 +1,5 @@
+<FindBugsFilter>
+    <Match>
+        <Class name="~wdl4s.parser.WdlParser.*"/>
+    </Match>
+</FindBugsFilter>

@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,8 +93,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public Container findCWL(Container container) {
-        String fileName = container.getDefaultCwlPath();
+    public Container findDescriptor(Container container, String fileName) {
+        String descriptorType = FilenameUtils.getExtension(fileName);
         if (fileName.startsWith("/")) {
             fileName = fileName.substring(1);
         }
@@ -137,7 +138,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 // Set<String> branches = branchMap.keySet();
                 //
                 // for (String branch : branches) {
-                LOG.info("Checking {} branch for cwl file", branch);
+                LOG.info("Checking {} branch for {} file", branch, descriptorType);
 
                 String content = "";
 
@@ -145,13 +146,20 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
                 LOG.info("RESOURCE CALL: {}", url);
                 if (asString.isPresent()) {
-                    LOG.info("CWL FOUND");
+                    LOG.info("{} FOUND", descriptorType);
                     content = asString.get();
                 } else {
                     LOG.info("Branch: {} has no {}", branch, fileName);
                 }
 
-                container = parseCWLContent(container, content);
+                // Add for new descriptor types
+                // expects file to have .cwl extension
+                if (descriptorType.equals("cwl")) {
+                    container = parseCWLContent(container, content);
+                }
+                if (descriptorType.equals("wdl")) {
+                     container = parseWDLContent(container, content);
+                }
 
                 // if (container.getHasCollab()) {
                 // break;

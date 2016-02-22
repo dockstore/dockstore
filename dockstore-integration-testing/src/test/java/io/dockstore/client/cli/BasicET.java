@@ -604,6 +604,36 @@ public class BasicET {
                         "master", "--script" });
         }
 
+        /**
+         * Tests that a WDL file is supported
+         */
+        @Test
+        public void testQuayGithubQuickRegisterWithWDL() {
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser/quayandgithub"});
+
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+                final long count = testingPostgres.runSelectStatement("select count(*) from container where path = 'quay.io/dockstoretestuser/quayandgithub' and validtrigger = 't'", new ScalarHandler<>());
+                Assert.assertTrue("the given container should be valid", count == 1);
+
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from container, tag, containertag where container.path = 'quay.io/dockstoretestuser/quayandgithub' and container.id = containertag.containerid and containertag.tagid = tag.id", new ScalarHandler<>());
+                Assert.assertTrue("the given container should have three valid tags", count2 == 3);
+        }
+
+        /**
+         * Test adding a container with an invalid WDL descriptor
+         */
+        @Test
+        public void testQuayGithubInvalidWDL() {
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh" });
+
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+                final long count = testingPostgres.runSelectStatement("select count(*) from container where path = 'quay.io/dockstoretestuser/quayandgithubwdl'  and validtrigger = 'f'", new ScalarHandler<>());
+                Assert.assertTrue("the given container should be invalid", count == 1);
+
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from container, tag, containertag where container.path = 'quay.io/dockstoretestuser/quayandgithubwdl' and container.id = containertag.containerid and containertag.tagid = tag.id", new ScalarHandler<>());
+                Assert.assertTrue("the given container should have two valid tags", count2 == 2);
+        }
+
         /*
          Test Quay and Bitbucket -
          These tests are focused on testing containers created from Quay and Bitbucket repositories
