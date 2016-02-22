@@ -14,6 +14,16 @@ For the related web UI see the [dockstore-ui](https://github.com/ga4gh/dockstore
 
 ## Usage
 
+### Dependencies
+
+* Java (1.8.0_66 or similar)
+* Maven (3.3.9)
+* cwltool
+
+To install CWL tool:
+
+    pip install cwl-runner  cwltool==1.0.20160108200940 schema-salad==1.4.20160108200836 avro==1.7.7
+
 ### Building
 
 If you maven build in the root directory this will build not only the web service but the client tool:
