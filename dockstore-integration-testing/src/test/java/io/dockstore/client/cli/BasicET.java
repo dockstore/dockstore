@@ -26,6 +26,7 @@ import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.junit.*;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
@@ -347,6 +348,26 @@ public class BasicET {
         public void testRefreshIncorrectContainer(){
                 systemExit.expectSystemExitWithStatus(GENERIC_ERROR);
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser/unknowncontainer", "--script" });
+        }
+
+        /**
+         * Tests that tool2JSON works for entries on Dockstore
+         */
+        @Test
+        public void testTool2JSONWDL() {
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser/quayandgithub", "--script" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "convert", "tool2json", "--entry", "quay.io/dockstoretestuser/quayandgithub", "--descriptor", "wdl", "--script" });
+                // TODO: Test that output is the expected WDL file
+        }
+
+        /**
+         * Tests that WDL2JSON works for local file
+         */
+        @Test
+        public void testWDL2JSON() {
+                File sourceFile = new File(ResourceHelpers.resourceFilePath("wdl.wdl"));
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "convert", "wdl2json", "--wdl", sourceFile.getAbsolutePath(), "--script" });
+                // TODO: Test that output is the expected WDL file
         }
 
         /**

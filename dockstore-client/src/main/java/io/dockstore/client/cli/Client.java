@@ -718,6 +718,7 @@ public class Client {
             out("  Spit out a json run file for a given cwl document.");
             out("Required parameters:");
             out("  --entry <entry>                Complete tool path in the Dockstore");
+            out("  --descriptor <descriptor>      Type of descriptor language used. Defaults to cwl");
             out("");
         } else {
             final String runString = runString(args, true);
@@ -727,43 +728,58 @@ public class Client {
 
     private static String runString(final java.util.List<String> args, final boolean json) throws ApiException, IOException {
         final String entry = reqVal(args, "--entry");
-        final SourceFile cwlFromServer = getDescriptorFromServer(entry, "cwl");
-        final File tempCWL = File.createTempFile("temp", ".cwl", Files.createTempDir());
-        Files.write(cwlFromServer.getContent(), tempCWL, StandardCharsets.UTF_8);
-        // need to suppress output
-        final ImmutablePair<String, String> output = cwl.parseCWL(tempCWL.getAbsolutePath(), true);
-        final Map<String, Object> stringObjectMap = cwl.extractRunJson(output.getLeft());
-        if (json) {
-            final Gson gson = CWL.getTypeSafeCWLToolDocument();
-            return gson.toJson(stringObjectMap);
-        } else {
-            // re-arrange as rows and columns
-            final Map<String, String> typeMap = cwl.extractCWLTypes(output.getLeft());
-            final java.util.List<String> headers = new ArrayList<>();
-            final java.util.List<String> types = new ArrayList<>();
-            final java.util.List<String> entries = new ArrayList<>();
-            for (final Entry<String, Object> objectEntry : stringObjectMap.entrySet()) {
-                headers.add(objectEntry.getKey());
-                types.add(typeMap.get(objectEntry.getKey()));
-                Object value = objectEntry.getValue();
-                if (value instanceof Map) {
-                    Map map = (Map) value;
-                    if (map.containsKey("class") && "File".equals(map.get("class"))) {
-                        value = map.get("path");
+        final String descriptor = optVal(args, "--descriptor", "cwl");
+
+        final SourceFile descriptorFromServer = getDescriptorFromServer(entry, descriptor);
+        final File tempDescriptor = File.createTempFile("temp", ".cwl", Files.createTempDir());
+        Files.write(descriptorFromServer.getContent(), tempDescriptor, StandardCharsets.UTF_8);
+
+        if (descriptor.equals("cwl")) {
+            // need to suppress output
+            final ImmutablePair<String, String> output = cwl.parseCWL(tempDescriptor.getAbsolutePath(), true);
+            final Map<String, Object> stringObjectMap = cwl.extractRunJson(output.getLeft());
+            if (json) {
+                final Gson gson = CWL.getTypeSafeCWLToolDocument();
+                return gson.toJson(stringObjectMap);
+            } else {
+                // re-arrange as rows and columns
+                final Map<String, String> typeMap = cwl.extractCWLTypes(output.getLeft());
+                final java.util.List<String> headers = new ArrayList<>();
+                final java.util.List<String> types = new ArrayList<>();
+                final java.util.List<String> entries = new ArrayList<>();
+                for (final Entry<String, Object> objectEntry : stringObjectMap.entrySet()) {
+                    headers.add(objectEntry.getKey());
+                    types.add(typeMap.get(objectEntry.getKey()));
+                    Object value = objectEntry.getValue();
+                    if (value instanceof Map) {
+                        Map map = (Map) value;
+                        if (map.containsKey("class") && "File".equals(map.get("class"))) {
+                            value = map.get("path");
+                        }
                     }
+                    entries.add(value.toString());
                 }
-                entries.add(value.toString());
+                final StringBuffer buffer = new StringBuffer();
+                try (CSVPrinter printer = new CSVPrinter(buffer, CSVFormat.DEFAULT)) {
+                    printer.printRecord(headers);
+                    printer.printComment("do not edit the following row, describes CWL types");
+                    printer.printRecord(types);
+                    printer.printComment("duplicate the following row and fill in the values for each run you wish to set parameters for");
+                    printer.printRecord(entries);
+                }
+                return buffer.toString();
             }
-            final StringBuffer buffer = new StringBuffer();
-            try (CSVPrinter printer = new CSVPrinter(buffer, CSVFormat.DEFAULT)) {
-                printer.printRecord(headers);
-                printer.printComment("do not edit the following row, describes CWL types");
-                printer.printRecord(types);
-                printer.printComment("duplicate the following row and fill in the values for each run you wish to set parameters for");
-                printer.printRecord(entries);
+        } else if (descriptor.equals("wdl")) {
+            if (json) {
+                final java.util.List<String> wdlDocuments = Lists.newArrayList(tempDescriptor.getAbsolutePath());
+                final List<String> wdlList = JavaConversions.asScalaBuffer(wdlDocuments).toList();
+                Bridge bridge = new Bridge();
+                String inputs = bridge.inputs(wdlList);
+
+                return inputs;
             }
-            return buffer.toString();
         }
+        return null;
     }
 
     private static void tool2tsv(final java.util.List<String> args) throws ApiException, IOException {
