@@ -16,6 +16,7 @@ public class SourceFile   {
 
 public enum TypeEnum {
   DOCKSTORE_CWL("DOCKSTORE_CWL"),
+  DOCKSTORE_WDL("DOCKSTORE_WDL"),
   DOCKERFILE("DOCKERFILE");
 
   private String value;

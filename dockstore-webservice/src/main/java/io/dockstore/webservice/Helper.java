@@ -94,7 +94,9 @@ public final class Helper {
             List<SourceFile> newFiles = loadFiles(client, bitbucketToken, githubToken, container, tag);
             tag.getSourceFiles().clear();
 
+            // Add for new descriptor types
             boolean hasCwl = false;
+            boolean hasWdl = false;
             boolean hasDockerfile = false;
 
             for (SourceFile newFile : newFiles) {
@@ -108,13 +110,19 @@ public final class Helper {
                     hasDockerfile = true;
                     LOG.info("HAS Dockerfile");
                 }
+                // Add for new descriptor types
                 if (file.getType() == FileType.DOCKSTORE_CWL) {
                     hasCwl = true;
                     LOG.info("HAS Dockstore.cwl");
                 }
+                if (file.getType() == FileType.DOCKSTORE_WDL) {
+                    hasWdl = true;
+                    LOG.info("HAS Dockstore.wdl");
+                }
             }
 
-            tag.setValid(hasCwl && hasDockerfile);
+            // Add for new descriptor types
+            tag.setValid((hasCwl || hasWdl) && hasDockerfile);
         }
     }
 
@@ -229,11 +237,14 @@ public final class Helper {
                     bitbucketToken == null ? null : bitbucketToken.getContent(), githubToken.getContent());
             String email = "";
             if (sourceCodeRepo != null) {
+                // Grab and parse files to get container information
+                // Add for new descriptor types
                 LOG.info("Parsing CWL...");
-                // find if there is a Dockstore.cwl file from the git repository
-                sourceCodeRepo.findCWL(container);
+                sourceCodeRepo.findDescriptor(container, container.getDefaultCwlPath());
 
-                email = sourceCodeRepo.getOrganizationEmail();
+                LOG.info("Parsing WDL...");
+                sourceCodeRepo.findDescriptor(container, container.getDefaultWdlPath());
+
             }
             container.setEmail(email);
 
@@ -405,7 +416,10 @@ public final class Helper {
                             }
                         }
 
+                        // Add for new descriptor types
                         tag.setCwlPath(c.getDefaultCwlPath());
+                        tag.setWdlPath(c.getDefaultWdlPath());
+
                         tag.setDockerfilePath(c.getDefaultDockerfilePath());
                     }
                 }
@@ -451,22 +465,16 @@ public final class Helper {
     private static List<SourceFile> loadFiles(HttpClient client, Token bitbucketToken, Token githubToken, Container c, Tag tag) {
         List<SourceFile> files = new ArrayList<>();
 
-        FileResponse cwlResponse = readGitRepositoryFile(c, FileType.DOCKSTORE_CWL, client, tag, bitbucketToken, githubToken);
-        if (cwlResponse != null) {
-            SourceFile dockstoreCwl = new SourceFile();
-            dockstoreCwl.setType(FileType.DOCKSTORE_CWL);
-            dockstoreCwl.setContent(cwlResponse.getContent());
+        // Add for new descriptor types
+        for (FileType f : FileType.values()) {
+            FileResponse fileResponse = readGitRepositoryFile(c, f, client, tag, bitbucketToken, githubToken);
+            if (fileResponse != null) {
+                SourceFile dockstoreFile = new SourceFile();
+                dockstoreFile.setType(f);
+                dockstoreFile.setContent(fileResponse.getContent());
 
-            files.add(dockstoreCwl);
-        }
-
-        FileResponse dockerfileResponse = readGitRepositoryFile(c, FileType.DOCKERFILE, client, tag, bitbucketToken, githubToken);
-        if (dockerfileResponse != null) {
-            SourceFile dockerfile = new SourceFile();
-            dockerfile.setType(FileType.DOCKERFILE);
-            dockerfile.setContent(dockerfileResponse.getContent());
-
-            files.add(dockerfile);
+                files.add(dockstoreFile);
+            }
         }
 
         return files;
@@ -711,10 +719,13 @@ public final class Helper {
 
         String fileName = "";
 
+        // Add for new descriptor types
         if (fileType == FileType.DOCKERFILE) {
             fileName = tag.getDockerfilePath();
         } else if (fileType == FileType.DOCKSTORE_CWL) {
             fileName = tag.getCwlPath();
+        } else if (fileType == FileType.DOCKSTORE_WDL) {
+            fileName = tag.getWdlPath();
         }
 
         return sourceCodeRepo.readFile(fileName, reference);

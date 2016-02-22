@@ -656,7 +656,7 @@ public class DockerRepoResource {
     }
 
     private SourceFile getSourceFile(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
-            @QueryParam("tag") String tag, FileType dockerfile) {
+            @QueryParam("tag") String tag, FileType fileType) {
         Container container = containerDAO.findById(containerId);
         Helper.checkContainer(container);
         Tag tagInstance = null;
@@ -675,7 +675,7 @@ public class DockerRepoResource {
             throw new CustomWebApplicationException("Invalid tag.", HttpStatus.SC_BAD_REQUEST);
         } else {
             for (SourceFile file : tagInstance.getSourceFiles()) {
-                if (file.getType() == dockerfile) {
+                if (file.getType() == fileType) {
                     return file;
                 }
             }
@@ -683,6 +683,7 @@ public class DockerRepoResource {
         throw new CustomWebApplicationException("File not found.", HttpStatus.SC_NOT_FOUND);
     }
 
+    // Add for new descriptor types
     @GET
     @Timed
     @UnitOfWork
@@ -693,4 +694,16 @@ public class DockerRepoResource {
 
         return getSourceFile(containerId, tag, FileType.DOCKSTORE_CWL);
     }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}/wdl")
+    @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class)
+    public SourceFile wdl(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
+            @QueryParam("tag") String tag) {
+
+        return getSourceFile(containerId, tag, FileType.DOCKSTORE_WDL);
+    }
+
 }

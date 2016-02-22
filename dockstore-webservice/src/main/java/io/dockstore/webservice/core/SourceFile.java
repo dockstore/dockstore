@@ -38,7 +38,8 @@ import io.swagger.annotations.ApiModelProperty;
 @Table(name = "sourcefile")
 public class SourceFile {
     public enum FileType {
-        DOCKSTORE_CWL, DOCKERFILE
+        // Add supported descriptor types here
+        DOCKSTORE_CWL, DOCKSTORE_WDL, DOCKERFILE
     }
 
     @Id

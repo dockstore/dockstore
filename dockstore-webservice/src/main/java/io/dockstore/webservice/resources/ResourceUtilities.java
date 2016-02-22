@@ -83,10 +83,10 @@ public class ResourceUtilities {
         try {
             ResponseHandler<String> responseHandler = new BasicResponseHandler();
             // Give Bitbucket calls longer timeouts
-            if (httpGet.getURI().toString().contains("bitbucket.org")) {
+//            if (httpGet.getURI().toString().contains("bitbucket.org")) {
                 RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(waitTime).setConnectTimeout(waitTime).setConnectionRequestTimeout(waitTime).build();
                 httpGet.setConfig(requestConfig);
-            }
+//            }
             result = Optional.of(client.execute(httpGet, responseHandler));
         } catch (HttpResponseException httpResponseException) {
             LOG.error("getResponseAsString(): caught 'HttpResponseException' while processing request <{}> :=> <{}>", httpGet,
