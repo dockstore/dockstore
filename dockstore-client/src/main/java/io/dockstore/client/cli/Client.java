@@ -76,12 +76,14 @@ import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
+import io.swagger.client.api.GAGHApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.Body;
 import io.swagger.client.model.Container;
 import io.swagger.client.model.Container.ModeEnum;
 import io.swagger.client.model.Container.RegistryEnum;
 import io.swagger.client.model.Label;
+import io.swagger.client.model.Metadata;
 import io.swagger.client.model.RegisterRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
@@ -96,6 +98,8 @@ public class Client {
 
     private static final String CONVERT = "convert";
     private static final String LAUNCH = "launch";
+    private static final String CWL = "cwl";
+    private static GAGHApi ga4ghApi;
     private static ContainersApi containersApi;
     private static ContainertagsApi containerTagsApi;
     private static UsersApi usersApi;
@@ -363,6 +367,19 @@ public class Client {
         }
     }
 
+    /**
+     * Display metadata describing the server including server version information
+     */
+    private static void serverMetadata() {
+        try {
+            final Metadata metadata = ga4ghApi.toolsMetadataGet();
+            final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
+            out(gson.toJson(metadata));
+        } catch (ApiException ex) {
+            kill("Exception: " + ex);
+        }
+    }
+
     private static void search(List<String> args) {
         if (args.isEmpty()) {
             kill("Please provide a search term.");
@@ -599,7 +616,7 @@ public class Client {
             final File tempConfig = File.createTempFile("temp", ".cwl", Files.createTempDir());
             Files.write("working-directory=./datastore/", tempConfig, StandardCharsets.UTF_8);
 
-            final Gson gson = CWL.getTypeSafeCWLToolDocument();
+            final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
             if (jsonRun != null) {
                 // if the root document is an array, this indicates multiple runs
                 JsonParser parser = new JsonParser();
@@ -692,7 +709,7 @@ public class Client {
         final ImmutablePair<String, String> output = cwl.parseCWL(tempCWL.getAbsolutePath(), true);
         final Map<String, Object> stringObjectMap = cwl.extractRunJson(output.getLeft());
         if (json){
-            final Gson gson = CWL.getTypeSafeCWLToolDocument();
+            final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
             return gson.toJson(stringObjectMap);
         } else{
             // re-arrange as rows and columns
@@ -757,7 +774,7 @@ public class Client {
             final String cwlPath = reqVal(args, "--cwl");
             final ImmutablePair<String, String> output = cwl.parseCWL(cwlPath, true);
 
-            final Gson gson = CWL.getTypeSafeCWLToolDocument();
+            final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
             final Map<String, Object> runJson = cwl.extractRunJson(output.getLeft());
             out(gson.toJson(runJson));
         }
@@ -874,22 +891,31 @@ public class Client {
     }
 
     private static void cwl(List<String> args) {
-        if (args.isEmpty()) {
-            kill("Please provide a container.");
-        }
+        if (isHelp(args, true)) {
+            out("");
+            out("Usage: dockstore " + CWL + " --help");
+            out("       dockstore " + CWL);
+            out("");
+            out("Description:");
+            out("  Grab a CWL document for a particular entry");
+            out("Required parameters:");
+            out("  --entry <entry>              Complete tool path in the Dockstore ex: quay.io/collaboratory/seqware-bwa-workflow:develop ");
 
-        try {
-            SourceFile file = getCWLFromServer(args.get(0));
+            out("");
+        } else {
+            try {
+                final String entry = reqVal(args, "--entry");
+                SourceFile file = getCWLFromServer(entry);
+                if (file.getContent() != null && !file.getContent().isEmpty()) {
+                    out(file.getContent());
+                } else {
+                    kill("No cwl file found.");
+                }
 
-            if (file.getContent() != null && !file.getContent().isEmpty()) {
-                out(file.getContent());
-            } else {
-                kill("No cwl file found.");
+            } catch (ApiException ex) {
+                // out("Exception: " + ex);
+                kill("Could not find container");
             }
-
-        } catch (ApiException ex) {
-            // out("Exception: " + ex);
-            kill("Could not find container");
         }
     }
 
@@ -1475,7 +1501,7 @@ public class Client {
         out("");
         out("  info <container> :  print detailed information about a particular public container");
         out("");
-        out("  cwl <container>  :  returns the Common Workflow Language tool definition for this Docker image ");
+        out("  "+CWL+" <container>  :  returns the Common Workflow Language tool definition for this Docker image ");
         out("                      which enables integration with Global Alliance compliant systems");
         out("");
         out("  refresh          :  updates your list of containers stored on Dockstore or an individual container");
@@ -1495,6 +1521,7 @@ public class Client {
         out("Flags:");
         out("  --debug              Print debugging information");
         out("  --version            Print dockstore's version");
+        out("  --server-metadata    Print metdata describing the dockstore webservice");
         out("  --upgrade            Upgrades to the latest stable release of Dockstore");
         out("  --config <file>      Override config file");
         out("  --script             Will not check Github for newer versions of Dockstore");
@@ -1541,6 +1568,7 @@ public class Client {
             containersApi = new ContainersApi(defaultApiClient);
             containerTagsApi = new ContainertagsApi(defaultApiClient);
             usersApi = new UsersApi(defaultApiClient);
+            ga4ghApi = new GAGHApi(defaultApiClient);
 
             defaultApiClient.setDebugging(DEBUG.get());
 
@@ -1560,6 +1588,9 @@ public class Client {
                         case "--version":
                             version();
                             break;
+                        case "--server-metadata":
+                            serverMetadata();
+                            break;
                         case "list":
                             list(args);
                             break;
@@ -1575,7 +1606,7 @@ public class Client {
                         case "info":
                             info(args);
                             break;
-                        case "cwl":
+                        case CWL:
                             cwl(args);
                             break;
                         case "refresh":
