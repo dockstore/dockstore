@@ -569,7 +569,7 @@ public class Client {
         }
     }
 
-    private static void launch(final java.util.List<String> args) throws ApiException, IOException {
+    private static void launchCwl(final java.util.List<String> args) throws ApiException, IOException {
         if (isHelp(args, true)) {
             out("");
             out("Usage: dockstore " + LAUNCH + " --help");
@@ -666,8 +666,8 @@ public class Client {
     private static void launchWdl(final java.util.List<String> args) {
         if (isHelp(args, true)) {
             out("");
-            out("Usage: dockstore " + LAUNCH + " --help");
-            out("       dockstore " + LAUNCH);
+            out("Usage: dockstore launch_wdl --help");
+            out("       dockstore launch_wdl");
             out("");
             out("Description:");
             out("  Launch an entry locally.");
@@ -1687,7 +1687,7 @@ public class Client {
                             convert(args);
                             break;
                         case LAUNCH:
-                            launch(args);
+                            launchCwl(args);
                             break;
                         case "launch_wdl":
                             launchWdl(args);

@@ -207,14 +207,15 @@ public class BasicET {
                         "--update", "master", "--wdl-path", "/randomDir/Dockstore.wdl", "--script" });
                 // should now be invalid
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from tag where valid = 'f'", new ScalarHandler<>());
-                Assert.assertTrue("there should now be 6 invalid tags", count == 6);
+                final long count = testingPostgres.runSelectStatement("select count(*) from tag,containertag,container where container.path = 'quay.io/dockstoretestuser/quayandgithubwdl' and container.toolname = '' and container.id=containertag.containerid and tag.id=containertag.tagid and valid = 'f'", new ScalarHandler<>());
+
+                Assert.assertTrue("there should now be 1 invalid tag", count == 1);
 
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "versionTag", "--entry", "quay.io/dockstoretestuser/quayandgithubwdl",
                         "--update", "master", "--wdl-path", "/Dockstore.wdl", "--script" });
                 // should now be valid
-                final long count2 = testingPostgres.runSelectStatement("select count(*) from tag where valid = 'f'", new ScalarHandler<>());
-                Assert.assertTrue("there should now be 5 invalid tags", count2 == 5);
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from tag,containertag,container where container.path = 'quay.io/dockstoretestuser/quayandgithubwdl' and container.toolname = '' and container.id=containertag.containerid and tag.id=containertag.tagid and valid = 'f'", new ScalarHandler<>());
+                Assert.assertTrue("the tag should now be valid", count2 == 0);
 
         }
 
