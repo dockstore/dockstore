@@ -595,55 +595,72 @@ public class Client {
         }
     }
 
+     private static void launch(final java.util.List<String> args) {
+         if (isHelp(args, true)) {
+             out("");
+             out("Usage: dockstore " + LAUNCH + " --help");
+             out("       dockstore " + LAUNCH);
+             out("");
+             out("Description:");
+             out("  Launch an entry locally.");
+             out("Required parameters:");
+             out("  --entry <entry>                Complete tool path in the Dockstore");
+             out("Optional parameters:");
+             out("  --json <json file>            Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs");
+             out("  --tsv <tsv file>             One row corresponds to parameters for one run in the dockstore");
+             out("  --descriptor <descriptor type>             Descriptor type used to launch workflow. Defaults to " + CWL);
+             out("");
+         } else {
+             final String descriptor = optVal(args, "--descriptor", CWL);
+             if (descriptor.equals(CWL)) {
+                 try {
+                     launchCwl(args);
+                 } catch (ApiException e) {
+//                     e.printStackTrace();
+                 } catch (IOException e) {
+//                     e.printStackTrace();
+                 }
+             } else if (descriptor.equals(WDL)){
+                 launchWdl(args);
+             }
+         }
+     }
+
     private static void launchCwl(final java.util.List<String> args) throws ApiException, IOException {
-        if (isHelp(args, true)) {
-            out("");
-            out("Usage: dockstore " + LAUNCH + " --help");
-            out("       dockstore " + LAUNCH);
-            out("");
-            out("Description:");
-            out("  Launch an entry locally.");
-            out("Required parameters:");
-            out("  --entry <entry>                Complete tool path in the Dockstore");
-            out("Optional parameters:");
-            out("  --json <json file>            Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs");
-            out("  --tsv <tsv file>             One row corresponds to parameters for one run in the dockstore");
-            out("");
-        } else {
-            final String entry = reqVal(args, "--entry");
-            final String jsonRun = optVal(args, "--json", null);
-            final String csvRuns = optVal(args, "--tsv", null);
+        final String entry = reqVal(args, "--entry");
+        final String jsonRun = optVal(args, "--json", null);
+        final String csvRuns = optVal(args, "--tsv", null);
 
-            final SourceFile cwlFromServer = getDescriptorFromServer(entry, "cwl");
-            final File tempCWL = File.createTempFile("temp", ".cwl", Files.createTempDir());
-            Files.write(cwlFromServer.getContent(), tempCWL, StandardCharsets.UTF_8);
+        final SourceFile cwlFromServer = getDescriptorFromServer(entry, "cwl");
+        final File tempCWL = File.createTempFile("temp", ".cwl", Files.createTempDir());
+        Files.write(cwlFromServer.getContent(), tempCWL, StandardCharsets.UTF_8);
 
-            // stub out invocation and fake out a config file
-            final File tempConfig = File.createTempFile("temp", ".cwl", Files.createTempDir());
-            Files.write("working-directory=./datastore/", tempConfig, StandardCharsets.UTF_8);
+        // stub out invocation and fake out a config file
+        final File tempConfig = File.createTempFile("temp", ".cwl", Files.createTempDir());
+        Files.write("working-directory=./datastore/", tempConfig, StandardCharsets.UTF_8);
 
-            final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
-            if (jsonRun != null) {
-                // if the root document is an array, this indicates multiple runs
-                JsonParser parser = new JsonParser();
-                final JsonElement parsed = parser.parse(new InputStreamReader(new FileInputStream(jsonRun), StandardCharsets.UTF_8));
-                if (parsed.isJsonArray()) {
-                    final JsonArray asJsonArray = parsed.getAsJsonArray();
-                    for (JsonElement element : asJsonArray) {
-                        final String finalString = gson.toJson(element);
-                        final File tempJson = File.createTempFile("temp", ".json", Files.createTempDir());
-                        FileUtils.write(tempJson, finalString);
-                        final LauncherCWL cwlLauncher = new LauncherCWL(tempConfig.getAbsolutePath(), tempCWL.getAbsolutePath(), tempJson.getAbsolutePath(), System.out, System.err);
-                        cwlLauncher.run();
-                    }
-                } else {
-                    final LauncherCWL cwlLauncher = new LauncherCWL(tempConfig.getAbsolutePath(), tempCWL.getAbsolutePath(), jsonRun, System.out, System.err);
+        final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
+        if (jsonRun != null) {
+            // if the root document is an array, this indicates multiple runs
+            JsonParser parser = new JsonParser();
+            final JsonElement parsed = parser.parse(new InputStreamReader(new FileInputStream(jsonRun), StandardCharsets.UTF_8));
+            if (parsed.isJsonArray()) {
+                final JsonArray asJsonArray = parsed.getAsJsonArray();
+                for (JsonElement element : asJsonArray) {
+                    final String finalString = gson.toJson(element);
+                    final File tempJson = File.createTempFile("temp", ".json", Files.createTempDir());
+                    FileUtils.write(tempJson, finalString);
+                    final LauncherCWL cwlLauncher = new LauncherCWL(tempConfig.getAbsolutePath(), tempCWL.getAbsolutePath(), tempJson.getAbsolutePath(), System.out, System.err);
                     cwlLauncher.run();
                 }
-            } else if (csvRuns != null) {
-                final File csvData = new File(csvRuns);
-                try (CSVParser parser = CSVParser.parse(csvData, StandardCharsets.UTF_8,
-                        CSVFormat.DEFAULT.withDelimiter('\t').withEscape('\\').withQuoteMode(QuoteMode.NONE))) {
+            } else {
+                final LauncherCWL cwlLauncher = new LauncherCWL(tempConfig.getAbsolutePath(), tempCWL.getAbsolutePath(), jsonRun, System.out, System.err);
+                cwlLauncher.run();
+            }
+        } else if (csvRuns != null) {
+            final File csvData = new File(csvRuns);
+            try (CSVParser parser = CSVParser.parse(csvData, StandardCharsets.UTF_8,
+                    CSVFormat.DEFAULT.withDelimiter('\t').withEscape('\\').withQuoteMode(QuoteMode.NONE))) {
                     // grab header
                     final Iterator<CSVRecord> iterator = parser.iterator();
                     final CSVRecord headers = iterator.next();
@@ -652,7 +669,6 @@ public class Client {
                     // process rows
                     while (iterator.hasNext()) {
                         final CSVRecord csvRecord = iterator.next();
-
                         final File tempJson = File.createTempFile("temp", ".json", Files.createTempDir());
                         StringBuilder buffer = new StringBuilder();
                         buffer.append("{");
@@ -678,15 +694,14 @@ public class Client {
                         //final String stringMapAsString = gson.toJson(stringMap);
                         //Files.write(stringMapAsString, tempJson, StandardCharsets.UTF_8);
                         final LauncherCWL cwlLauncher = new LauncherCWL(tempConfig.getAbsolutePath(), tempCWL.getAbsolutePath(),
-                                tempJson.getAbsolutePath(), System.out, System.err);
+                            tempJson.getAbsolutePath(), System.out, System.err);
                         cwlLauncher.run();
-
                     }
                 }
             } else {
                 kill("Missing required parameters, one of  --json or --tsv is required");
             }
-        }
+
     }
 
     private static void launchWdl(final java.util.List<String> args) {
@@ -720,11 +735,7 @@ public class Client {
                 final List<String> wdlRunList = JavaConversions.asScalaBuffer(wdlRun).toList();
                 // run a workflow
                 final int run = main.run(wdlRunList);
-                if (run == 0) {
-                    out("Passed!");
-                } else {
-                    out("Failed!");
-                }
+
             } catch (ApiException e) {
                 e.printStackTrace();
             } catch (IOException e) {
@@ -1607,7 +1618,7 @@ public class Client {
         out("  "+CWL+" <container>  :  returns the Common Workflow Language tool definition for this Docker image ");
         out("                      which enables integration with Global Alliance compliant systems");
         out("");
-        out("  wdl <container>  :  returns the Workflow Descriptor Langauge definition for this Docker image.");
+        out("  "+WDL+" <container>  :  returns the Workflow Descriptor Langauge definition for this Docker image.");
         out("");
         out("  refresh          :  updates your list of containers stored on Dockstore or an individual container");
         out("");
@@ -1713,6 +1724,7 @@ public class Client {
                             break;
                         case WDL:
                             descriptor(args, WDL);
+                            break;
                         case CWL:
                             descriptor(args, CWL);
                             break;
@@ -1723,10 +1735,7 @@ public class Client {
                             convert(args);
                             break;
                         case LAUNCH:
-                            launchCwl(args);
-                            break;
-                        case "launch_wdl":
-                            launchWdl(args);
+                            launch(args);
                             break;
                         case "label":
                             label(args);
