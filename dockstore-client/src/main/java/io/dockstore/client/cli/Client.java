@@ -15,45 +15,6 @@
  */
 package io.dockstore.client.cli;
 
-import com.esotericsoftware.yamlbeans.YamlReader;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Joiner;
-import com.google.common.collect.Lists;
-import com.google.common.io.Files;
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import cromwell.Main;
-import io.cwl.avro.CWL;
-import io.dockstore.client.Bridge;
-import io.github.collaboratory.LauncherCWL;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.Configuration;
-import io.swagger.client.api.ContainersApi;
-import io.swagger.client.api.ContainertagsApi;
-import io.swagger.client.api.UsersApi;
-import io.swagger.client.model.Body;
-import io.swagger.client.model.Container;
-import io.swagger.client.model.Container.ModeEnum;
-import io.swagger.client.model.Container.RegistryEnum;
-import io.swagger.client.model.Label;
-import io.swagger.client.model.RegisterRequest;
-import io.swagger.client.model.SourceFile;
-import io.swagger.client.model.Tag;
-import io.swagger.client.model.User;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVPrinter;
-import org.apache.commons.csv.CSVRecord;
-import org.apache.commons.csv.QuoteMode;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.http.HttpStatus;
-
-import javax.ws.rs.ProcessingException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -86,9 +47,49 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.swagger.client.api.GAGHApi;
+import javax.ws.rs.ProcessingException;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.csv.QuoteMode;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.http.HttpStatus;
+
+import com.esotericsoftware.yamlbeans.YamlReader;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
+import com.google.common.io.Files;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
+import cromwell.Main;
+import io.cwl.avro.CWL;
+import io.dockstore.client.Bridge;
+import io.github.collaboratory.LauncherCWL;
+import io.swagger.client.ApiClient;
+import io.swagger.client.ApiException;
+import io.swagger.client.Configuration;
+import io.swagger.client.api.ContainersApi;
+import io.swagger.client.api.ContainertagsApi;
+import io.swagger.client.api.GAGHApi;
+import io.swagger.client.api.UsersApi;
+import io.swagger.client.model.Body;
+import io.swagger.client.model.Container;
+import io.swagger.client.model.Container.ModeEnum;
+import io.swagger.client.model.Container.RegistryEnum;
+import io.swagger.client.model.Label;
 import io.swagger.client.model.Metadata;
+import io.swagger.client.model.RegisterRequest;
+import io.swagger.client.model.SourceFile;
+import io.swagger.client.model.Tag;
+import io.swagger.client.model.User;
 
  /** Main entrypoint for the dockstore CLI.
  * @author xliu
@@ -1754,6 +1755,7 @@ public class Client {
                         }
                     }
                 } catch (Kill k) {
+                    k.printStackTrace();
                     System.exit(GENERIC_ERROR);
                 }
             }

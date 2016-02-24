@@ -16,7 +16,7 @@ For the related web UI see the [dockstore-ui](https://github.com/ga4gh/dockstore
 
 ### Dependencies
 
-* Java (1.8.0_66 or similar)
+* Java (1.8.0\_66 or similar)
 * Maven (3.3.9)
 * cwltool
 
@@ -195,6 +195,10 @@ Encrypted documents necessary for confidential testing are handled as indicated 
 [files](https://docs.travis-ci.com/user/encrypting-files/#Encrypting-multiple-files) and [environment variables](https://docs.travis-ci.com/user/encryption-keys).
 
 A convenience script is provided as encrypt.sh which will compress confidential files, encrypt them, and then update an encrypted archive on GitHub. Confidential files should also be added to .gitignore to prevent accidental check-in. The unencrypted secrets.tar should be privately distributed among members of the team that need to work with confidential data. 
+
+To dump a new copy of the encrypted database from one that you have setup, use the following (or similar):
+
+    pg_dump --data-only --column-inserts   webservice_test &> dockstore-integration-testing/src/test/resources/db_confidential_dump_full.sql
 
 
 ## TODO

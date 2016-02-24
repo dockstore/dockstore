@@ -15,18 +15,20 @@
  */
 package io.dockstore.common;
 
-import io.dropwizard.testing.ResourceHelpers;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.dbutils.ResultSetHandler;
 import org.apache.commons.dbutils.handlers.KeyedHandler;
+import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.commons.io.FileUtils;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.File;
+import io.dropwizard.testing.ResourceHelpers;
 
 
 /**
@@ -65,44 +67,41 @@ public class CommonTestUtilities {
             runInsertStatement("insert into token(id, content, tokensource, userid, username) VALUES (2, '" + DUMMY_TOKEN_2
                     + "', 'dockstore', 2, 'user1@user.com');", new KeyedHandler<>("id"));
 
+            //TODO: this stuff should probably use JPA statements
             runInsertStatement(
-                    "insert into container(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered, toolname) VALUES (1, 'test1', 'test_org', 'QUAY_IO', 'quay.io/test_org/test1', false, false, false, false,'');",
+                    "insert into tool(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered, toolname) VALUES (1, 'test1', 'test_org', 'QUAY_IO', 'quay.io/test_org/test1', false, false, false, false,'');",
                     new KeyedHandler<>("id"));
-            runInsertStatement("insert into usercontainer(userid, containerid) VALUES (1, 1);", new KeyedHandler<>("containerid"));
+            runInsertStatement("insert into userentry(userid, entryid) VALUES (1, 1);", new KeyedHandler<>("entryid"));
+            runInsertStatement(
+                    "insert into tool(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered,toolname) VALUES (2, 'test2', 'test_org', 'QUAY_IO', 'quay.io/test_org/test2', false, false, false, false,'');",
+                    new KeyedHandler<>("id"));
+            runInsertStatement("insert into userentry(userid, entryid) VALUES (2, 2);", new KeyedHandler<>("entryid"));
+            runInsertStatement(
+                    "insert into tool(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered,toolname) VALUES (3, 'test3', 'test_org', 'QUAY_IO', 'quay.io/test_org/test3', true, false, false, false,'');",
+                    new KeyedHandler<>("id"));
+            runInsertStatement("insert into userentry(userid, entryid) VALUES (2, 3);", new KeyedHandler<>("entryid"));
+            runInsertStatement(
+                    "insert into tool(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered, giturl,toolname) VALUES (4, 'test4', 'test_org', 'QUAY_IO', 'quay.io/test_org/test4', false, false, false, false, 'git@github.com:test/test4.git','');",
+                    new KeyedHandler<>("id"));
+            runInsertStatement("insert into userentry(userid, entryid) VALUES (2, 4);", new KeyedHandler<>("entryid"));
+            runInsertStatement(
+                    "insert into tool(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered, giturl,toolname) VALUES (5, 'test5', 'test_org', 'QUAY_IO', 'quay.io/test_org/test5', true, false, false, false, 'git@github.com:test/test5.git','');",
+                    new KeyedHandler<>("id"));
+            runInsertStatement("insert into userentry(userid, entryid) VALUES (2, 5);", new KeyedHandler<>("entryid"));
+            runInsertStatement(
+                    "insert into tool(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered, giturl,toolname) VALUES (6, 'test6', 'test_org', 'QUAY_IO', 'quay.io/test_org/test6', true, false, false, true, 'git@github.com:test/test6.git','');",
+                    new KeyedHandler<>("id"));
 
-            runInsertStatement(
-                    "insert into container(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered,toolname) VALUES (2, 'test2', 'test_org', 'QUAY_IO', 'quay.io/test_org/test2', false, false, false, false,'');",
-                    new KeyedHandler<>("id"));
-            runInsertStatement("insert into usercontainer(userid, containerid) VALUES (2, 2);", new KeyedHandler<>("containerid"));
-
-            runInsertStatement(
-                    "insert into container(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered,toolname) VALUES (3, 'test3', 'test_org', 'QUAY_IO', 'quay.io/test_org/test3', true, false, false, false,'');",
-                    new KeyedHandler<>("id"));
-            runInsertStatement("insert into usercontainer(userid, containerid) VALUES (2, 3);", new KeyedHandler<>("containerid"));
-
-            runInsertStatement(
-                    "insert into container(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered, giturl,toolname) VALUES (4, 'test4', 'test_org', 'QUAY_IO', 'quay.io/test_org/test4', false, false, false, false, 'git@github.com:test/test4.git','');",
-                    new KeyedHandler<>("id"));
-            runInsertStatement("insert into usercontainer(userid, containerid) VALUES (2, 4);", new KeyedHandler<>("containerid"));
-
-            runInsertStatement(
-                    "insert into container(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered, giturl,toolname) VALUES (5, 'test5', 'test_org', 'QUAY_IO', 'quay.io/test_org/test5', true, false, false, false, 'git@github.com:test/test5.git','');",
-                    new KeyedHandler<>("id"));
-            runInsertStatement("insert into usercontainer(userid, containerid) VALUES (2, 5);", new KeyedHandler<>("containerid"));
-
-            runInsertStatement(
-                    "insert into container(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered, giturl,toolname) VALUES (6, 'test6', 'test_org', 'QUAY_IO', 'quay.io/test_org/test6', true, false, false, true, 'git@github.com:test/test6.git','');",
-                    new KeyedHandler<>("id"));
-            runInsertStatement("insert into usercontainer(userid, containerid) VALUES (1, 6);", new KeyedHandler<>("containerid"));
-            runInsertStatement("insert into usercontainer(userid, containerid) VALUES (2, 6);", new KeyedHandler<>("containerid"));
+            runInsertStatement("insert into userentry(userid, entryid) VALUES (1, 6);", new KeyedHandler<>("entryid"));
+            runInsertStatement("insert into userentry(userid, entryid) VALUES (2, 6);", new KeyedHandler<>("entryid"));
 
             runInsertStatement("insert into tag(id, valid, automated, hidden, size) VALUES (1, true, true, false, 0);", new KeyedHandler<>(
                     "id"));
-            runInsertStatement("insert into containertag(containerid, tagid) VALUES (6, 1);", new KeyedHandler<>("tagid"));
+            runInsertStatement("insert into tool_tag(toolid, tagid) VALUES (6, 1);", new KeyedHandler<>("tagid"));
 
             runInsertStatement("insert into tag(id, valid, automated, hidden, size) VALUES (2, true, true, false, 0);", new KeyedHandler<>(
                     "id"));
-            runInsertStatement("insert into containertag(containerid, tagid) VALUES (5, 2);", new KeyedHandler<>("tagid"));
+            runInsertStatement("insert into tool_tag(toolid, tagid) VALUES (5, 2);", new KeyedHandler<>("tagid"));
 
             // need to increment past manually entered ids above
             runUpdateStatement("alter sequence container_id_seq restart with 1000;");
@@ -116,7 +115,11 @@ public class CommonTestUtilities {
             String line = null;
 
             while ((line = br.readLine()) != null) {
-                runUpdateStatementConfidential(line);
+                if (line.startsWith("INSERT")) {
+                    runUpdateStatementConfidential(line);
+                } else if (line.startsWith("SELECT")){
+                    this.runSelectStatement(line, new ScalarHandler<>(), null);
+                }
             }
             br.close();
 
@@ -124,15 +127,15 @@ public class CommonTestUtilities {
              Todo: When features that require multiple users for testing, which depend on other sources such as Github,
              the below inserts will need to be replaced with an actual user in the db dump file
             */
-            // Add extra user with container for testing user access
+            // Add extra user with tool for testing user access
             runInsertStatement("insert into enduser(id, isAdmin, username) VALUES (2,true,'admin@admin.com');", new KeyedHandler<>("id"));
             runInsertStatement("insert into token(id, content, tokensource, userid, username) VALUES (5, '" + DUMMY_TOKEN_1
                     + "', 'dockstore', 2, 'admin@admin.com');", new KeyedHandler<>("id"));
 
             runInsertStatement(
-                    "insert into container(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered, toolname) VALUES (5, 'test1', 'test_org', 'QUAY_IO', 'quay.io/test_org/test1', false, false, false, false,'');",
+                    "insert into tool(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered, toolname) VALUES (5, 'test1', 'test_org', 'QUAY_IO', 'quay.io/test_org/test1', false, false, false, false,'');",
                     new KeyedHandler<>("id"));
-            runInsertStatement("insert into usercontainer(userid, containerid) VALUES (2, 5);", new KeyedHandler<>("containerid"));
+            runInsertStatement("insert into userentry(userid, entryid) VALUES (2, 5);", new KeyedHandler<>("entryid"));
 
 
             // need to increment past manually entered ids above

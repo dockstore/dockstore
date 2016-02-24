@@ -98,18 +98,20 @@ public class BasicPostgreSQL {
      * This clears the data base for testing and creates an admin user
      */
     public void clearDatabase() {
-        runUpdateStatement("delete from usercontainer;");
+        runUpdateStatement("delete from userentry;");
         runUpdateStatement("delete from endusergroup;");
 
         runUpdateStatement("delete from enduser;");
         runUpdateStatement("delete from token;");
-        runUpdateStatement("delete from tagsourcefile;");
+        runUpdateStatement("delete from version_sourcefile;");
         runUpdateStatement("delete from sourcefile;");
-        runUpdateStatement("delete from containertag;");
+        runUpdateStatement("delete from tool_tag;");
         runUpdateStatement("delete from tag;");
-        runUpdateStatement("delete from containerlabel;");
+        runUpdateStatement("delete from workflowversion;");
+        runUpdateStatement("delete from entry_label;");
         runUpdateStatement("delete from label;");
-        runUpdateStatement("delete from container;");
+        runUpdateStatement("delete from workflow;");
+        runUpdateStatement("delete from tool;");
         runUpdateStatement("delete from usergroup;");
     }
 

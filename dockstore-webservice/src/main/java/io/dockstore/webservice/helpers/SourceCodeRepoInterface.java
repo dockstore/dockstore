@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.yamlbeans.YamlReader;
 
-import io.dockstore.webservice.core.Container;
+import io.dockstore.webservice.core.Tool;
 import wdl4s.parser.WdlParser;
 
 /**
@@ -44,20 +44,20 @@ public abstract class SourceCodeRepoInterface {
      *            a container to be updated
      * @return an updated container with fields from the descriptor filled in
      */
-    public abstract Container findDescriptor(Container c, String fileName);
+    public abstract Tool findDescriptor(Tool c, String fileName);
 
     public abstract String getOrganizationEmail();
 
     /**
-     * Parses the cwl content to get the author and description. Updates the container with the author, description, and hasCollab fields.
+     * Parses the cwl content to get the author and description. Updates the tool with the author, description, and hasCollab fields.
      *
-     * @param container
-     *            a container to be updated
+     * @param tool
+     *            a tool to be updated
      * @param content
      *            a cwl document
-     * @return the updated container
+     * @return the updated tool
      */
-    protected Container parseCWLContent(Container container, String content) {
+    protected Tool parseCWLContent(Tool tool, String content) {
         // parse the collab.cwl file to get description and author
         if (content != null && !content.isEmpty()) {
             try {
@@ -67,7 +67,7 @@ public abstract class SourceCodeRepoInterface {
 
                 String description = (String) map.get("description");
                 if (description != null) {
-                    container.setDescription(description);
+                    tool.setDescription(description);
                 } else {
                     LOG.info("Description not found!");
                 }
@@ -75,42 +75,42 @@ public abstract class SourceCodeRepoInterface {
                 map = (Map) map.get("dct:creator");
                 if (map != null) {
                     String author = (String) map.get("foaf:name");
-                    container.setAuthor(author);
+                    tool.setAuthor(author);
                 } else {
                     LOG.info("Creator not found!");
                 }
 
-                // container.setHasCollab(true);
-                container.setValidTrigger(true);
+                // tool.setHasCollab(true);
+                tool.setValidTrigger(true);
                 LOG.info("Repository has Dockstore.cwl");
             } catch (IOException ex) {
                 LOG.info("CWL file is malformed");
                 ex.printStackTrace();
             }
         }
-        return container;
+        return tool;
     }
 
-    protected Container parseWDLContent(Container container, String content) {
+    protected Tool parseWDLContent(Tool tool, String content) {
         // Use Broad WDL parser to grab data
         // Todo: Currently just checks validity of file.  In the future pull data such as author from the WDL file
         try {
             String wdlSource = content;
             WdlParser parser = new WdlParser();
-            WdlParser.TokenStream tokens = new WdlParser.TokenStream(parser.lex(wdlSource, FilenameUtils.getName(container.getDefaultWdlPath())));
+            WdlParser.TokenStream tokens = new WdlParser.TokenStream(parser.lex(wdlSource, FilenameUtils.getName(tool.getDefaultWdlPath())));
             WdlParser.Ast ast = (WdlParser.Ast) parser.parse(tokens).toAst();
 
             if (ast == null) {
                 LOG.info("Error with WDL file.");
             } else {
-                container.setValidTrigger(true);
+                tool.setValidTrigger(true);
                 LOG.info("Repository has Dockstore.wdl");
             }
         } catch (WdlParser.SyntaxError syntaxError) {
             LOG.info("Invalid WDL file.");
         }
 
-        return container;
+        return tool;
     }
 
     public static class FileResponse {

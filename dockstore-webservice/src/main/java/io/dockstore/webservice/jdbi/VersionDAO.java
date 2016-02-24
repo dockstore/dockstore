@@ -13,19 +13,29 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+
 package io.dockstore.webservice.jdbi;
 
 import org.hibernate.SessionFactory;
 
-import io.dockstore.webservice.core.Tag;
+import io.dockstore.webservice.core.Version;
+import io.dropwizard.hibernate.AbstractDAO;
 
 /**
  *
  * @author xliu
  */
-public class TagDAO extends VersionDAO<Tag> {
+public class VersionDAO <T extends Version> extends AbstractDAO<T> {
 
-    public TagDAO(SessionFactory sessionFactory) {
+    public VersionDAO(SessionFactory sessionFactory) {
         super(sessionFactory);
+    }
+
+    public T findById(Long id) {
+        return get(id);
+    }
+
+    public long create(T tag) {
+        return persist(tag).getId();
     }
 }
