@@ -53,8 +53,6 @@ import org.apache.commons.csv.QuoteMode;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
-import scala.collection.JavaConversions;
-import scala.collection.immutable.List;
 
 import javax.ws.rs.ProcessingException;
 import java.io.BufferedReader;
@@ -81,6 +79,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -148,7 +147,7 @@ public class Client {
     public static final AtomicBoolean DEBUG = new AtomicBoolean(false);
     public static final AtomicBoolean SCRIPT = new AtomicBoolean(false);
 
-    private static boolean isHelp(java.util.List<String> args, boolean valOnEmpty) {
+    private static boolean isHelp(List<String> args, boolean valOnEmpty) {
         if (args.isEmpty()) {
             return valOnEmpty;
         }
@@ -173,7 +172,8 @@ public class Client {
         kill("dockstore: '%s %s' is not a dockstore command. See 'dockstore %s --help'.", cmd, sub, cmd);
     }
 
-    private static boolean flag(java.util.List<String> args, String flag) {
+    private static boolean flag(List<String> args, String flag) {
+
         boolean found = false;
         for (int i = 0; i < args.size(); i++) {
             if (flag.equals(args.get(i))) {
@@ -201,8 +201,8 @@ public class Client {
      * @param key
      * @return
      */
-    private static java.util.List<String> optVals(java.util.List<String> args, String key) {
-        java.util.List<String> vals = new ArrayList<>();
+    private static List<String> optVals(List<String> args, String key) {
+        List<String> vals = new ArrayList<>();
 
         for (int i = 0; i < args.size(); /** do nothing */
              i = i) {
@@ -228,10 +228,10 @@ public class Client {
         return vals;
     }
 
-    private static String optVal(java.util.List<String> args, String key, String defaultVal) {
+    private static String optVal(List<String> args, String key, String defaultVal) {
         String val = defaultVal;
 
-        java.util.List<String> vals = optVals(args, key);
+        List<String> vals = optVals(args, key);
         if (vals.size() == 1) {
             val = vals.get(0);
         } else if (vals.size() > 1) {
@@ -241,7 +241,7 @@ public class Client {
         return val;
     }
 
-    private static String reqVal(java.util.List<String> args, String key) {
+    private static String reqVal(List<String> args, String key) {
         String val = optVal(args, key, null);
 
         if (val == null) {
@@ -251,7 +251,7 @@ public class Client {
         return val;
     }
 
-    private static int[] columnWidths(java.util.List<Container> containers) {
+    private static int[] columnWidths(List<Container> containers) {
         int[] maxWidths = { NAME_HEADER.length(), DESCRIPTION_HEADER.length(), GIT_HEADER.length() };
 
         for (Container container : containers) {
@@ -283,7 +283,7 @@ public class Client {
         }
     }
 
-    private static void printContainerList(java.util.List<Container> containers) {
+    private static void printContainerList(List<Container> containers) {
         Collections.sort(containers, new ContainerComparator());
 
         int[] maxWidths = columnWidths(containers);
@@ -320,7 +320,7 @@ public class Client {
         }
     }
 
-    private static void printRegisteredList(java.util.List<Container> containers) {
+    private static void printRegisteredList(List<Container> containers) {
         Collections.sort(containers, new ContainerComparator());
 
         int[] maxWidths = columnWidths(containers);
@@ -350,7 +350,7 @@ public class Client {
         }
     }
 
-    private static void list(java.util.List<String> args) {
+    private static void list(List<String> args) {
         try {
             // check user info after usage so that users can get usage without live webservice
             User user = usersApi.getUser();
@@ -358,7 +358,7 @@ public class Client {
                 throw new RuntimeException("User not found");
             }
             // List<Container> containers = containersApi.allRegisteredContainers();
-            java.util.List<Container> containers = usersApi.userRegisteredContainers(user.getId());
+            List<Container> containers = usersApi.userRegisteredContainers(user.getId());
             printRegisteredList(containers);
         } catch (ApiException ex) {
             kill("Exception: " + ex);
@@ -378,13 +378,13 @@ public class Client {
         }
     }
 
-    private static void search(java.util.List<String> args) {
+    private static void search(List<String> args) {
         if (args.isEmpty()) {
             kill("Please provide a search term.");
         }
         String pattern = args.get(0);
         try {
-            java.util.List<Container> containers = containersApi.search(pattern);
+            List<Container> containers = containersApi.search(pattern);
 
             out("MATCHING CONTAINERS");
             out("-------------------");
@@ -394,7 +394,7 @@ public class Client {
         }
     }
 
-    private static void publish(java.util.List<String> args) {
+    private static void publish(List<String> args) {
         if (args.isEmpty()) {
             try {
                 // check user info after usage so that users can get usage without live webservice
@@ -402,7 +402,7 @@ public class Client {
                 if (user == null) {
                     throw new RuntimeException("User not found");
                 }
-                java.util.List<Container> containers = usersApi.userContainers(user.getId());
+                List<Container> containers = usersApi.userContainers(user.getId());
 
                 out("YOUR AVAILABLE CONTAINERS");
                 out("-------------------");
@@ -485,7 +485,7 @@ public class Client {
         }
     }
 
-    private static void manualPublish(final java.util.List<String> args) {
+    private static void manualPublish(final List<String> args) {
         if (isHelp(args, true)) {
             out("");
             out("Usage: dockstore manual_publish --help");
@@ -559,7 +559,7 @@ public class Client {
         }
     }
 
-    private static void convert(final java.util.List<String> args) throws ApiException, IOException {
+    private static void convert(final List<String> args) throws ApiException, IOException {
         if (isHelp(args, true)) {
             out("");
             out("Usage: dockstore " + CONVERT + " --help");
@@ -595,7 +595,7 @@ public class Client {
         }
     }
 
-     private static void launch(final java.util.List<String> args) {
+     private static void launch(final List<String> args) {
          if (isHelp(args, true)) {
              out("");
              out("Usage: dockstore " + LAUNCH + " --help");
@@ -626,7 +626,7 @@ public class Client {
          }
      }
 
-    private static void launchCwl(final java.util.List<String> args) throws ApiException, IOException {
+    private static void launchCwl(final List<String> args) throws ApiException, IOException {
         final String entry = reqVal(args, "--entry");
         final String jsonRun = optVal(args, "--json", null);
         final String csvRuns = optVal(args, "--tsv", null);
@@ -704,7 +704,7 @@ public class Client {
 
     }
 
-    private static void launchWdl(final java.util.List<String> args) {
+    private static void launchWdl(final List<String> args) {
         if (isHelp(args, true)) {
             out("");
             out("Usage: dockstore launch_wdl --help");
@@ -726,13 +726,13 @@ public class Client {
 
             final SourceFile cwlFromServer;
             try {
-                // Grab WDL from server and store to file (should I grab tag name too?)
+                // Grab WDL from server and store to file
                 cwlFromServer = getDescriptorFromServer(entry, "wdl");
                 final File tempWdl = File.createTempFile("temp", ".wdl", Files.createTempDir());
                 Files.write(cwlFromServer.getContent(), tempWdl, StandardCharsets.UTF_8);
 
-                final java.util.List<String> wdlRun = Lists.newArrayList(tempWdl.getAbsolutePath(), parameterFile.getAbsolutePath());
-                final List<String> wdlRunList = JavaConversions.asScalaBuffer(wdlRun).toList();
+                final List<String> wdlRun = Lists.newArrayList(tempWdl.getAbsolutePath(), parameterFile.getAbsolutePath());
+                final scala.collection.immutable.List<String> wdlRunList = scala.collection.JavaConversions.asScalaBuffer(wdlRun).toList();
                 // run a workflow
                 final int run = main.run(wdlRunList);
 
@@ -745,7 +745,7 @@ public class Client {
         }
     }
 
-    private static void tool2json(final java.util.List<String> args) throws ApiException, IOException {
+    private static void tool2json(final List<String> args) throws ApiException, IOException {
         if (isHelp(args, true)) {
             out("");
             out("Usage: dockstore " + CONVERT + " tool2json --help");
@@ -763,7 +763,7 @@ public class Client {
         }
     }
 
-    private static String runString(final java.util.List<String> args, final boolean json) throws ApiException, IOException {
+    private static String runString(final List<String> args, final boolean json) throws ApiException, IOException {
         final String entry = reqVal(args, "--entry");
         final String descriptor = optVal(args, "--descriptor", CWL);
 
@@ -781,9 +781,9 @@ public class Client {
             } else {
                 // re-arrange as rows and columns
                 final Map<String, String> typeMap = cwl.extractCWLTypes(output.getLeft());
-                final java.util.List<String> headers = new ArrayList<>();
-                final java.util.List<String> types = new ArrayList<>();
-                final java.util.List<String> entries = new ArrayList<>();
+                final List<String> headers = new ArrayList<>();
+                final List<String> types = new ArrayList<>();
+                final List<String> entries = new ArrayList<>();
                 for (final Entry<String, Object> objectEntry : stringObjectMap.entrySet()) {
                     headers.add(objectEntry.getKey());
                     types.add(typeMap.get(objectEntry.getKey()));
@@ -809,8 +809,8 @@ public class Client {
             }
         } else if (descriptor.equals(WDL)) {
             if (json) {
-                final java.util.List<String> wdlDocuments = Lists.newArrayList(tempDescriptor.getAbsolutePath());
-                final List<String> wdlList = JavaConversions.asScalaBuffer(wdlDocuments).toList();
+                final List<String> wdlDocuments = Lists.newArrayList(tempDescriptor.getAbsolutePath());
+                final scala.collection.immutable.List<String> wdlList = scala.collection.JavaConversions.asScalaBuffer(wdlDocuments).toList();
                 Bridge bridge = new Bridge();
                 String inputs = bridge.inputs(wdlList);
 
@@ -820,7 +820,7 @@ public class Client {
         return null;
     }
 
-    private static void tool2tsv(final java.util.List<String> args) throws ApiException, IOException {
+    private static void tool2tsv(final List<String> args) throws ApiException, IOException {
         if (isHelp(args, true)) {
             out("");
             out("Usage: dockstore " + CONVERT + " tool2tsv --help");
@@ -837,7 +837,7 @@ public class Client {
         }
     }
 
-    private static void cwl2json(final java.util.List<String> args) {
+    private static void cwl2json(final List<String> args) {
         if (isHelp(args, true)) {
             out("");
             out("Usage: dockstore " + CONVERT + " --help");
@@ -859,7 +859,7 @@ public class Client {
         }
     }
 
-    private static void wdl2json(final java.util.List<String> args) {
+    private static void wdl2json(final List<String> args) {
         if (isHelp(args, true)) {
             out("");
             out("Usage: dockstore " + CONVERT + " --help");
@@ -874,8 +874,8 @@ public class Client {
             // Will eventually need to update this to use wdltool
             final String wdlPath = reqVal(args, "--wdl");
             File wdlFile = new File(wdlPath);
-            final java.util.List<String> wdlDocuments = Lists.newArrayList(wdlFile.getAbsolutePath());
-            final List<String> wdlList = JavaConversions.asScalaBuffer(wdlDocuments).toList();
+            final List<String> wdlDocuments = Lists.newArrayList(wdlFile.getAbsolutePath());
+            final scala.collection.immutable.List<String> wdlList = scala.collection.JavaConversions.asScalaBuffer(wdlDocuments).toList();
             Bridge bridge = new Bridge();
             String inputs = bridge.inputs(wdlList);
             out(inputs);
@@ -924,7 +924,7 @@ public class Client {
         out("");
     }
 
-    private static void info(java.util.List<String> args) {
+    private static void info(List<String> args) {
         if (args.isEmpty()) {
             kill("Please provide a container.");
         }
@@ -965,7 +965,7 @@ public class Client {
                 out(date);
                 out("TAGS");
 
-                java.util.List<Tag> tags = container.getTags();
+                List<Tag> tags = container.getTags();
                 int tagSize = tags.size();
                 StringBuilder builder = new StringBuilder();
                 if (tagSize > 0) {
@@ -993,7 +993,7 @@ public class Client {
         }
     }
 
-    private static void descriptor(java.util.List<String> args, String descriptorType) {
+    private static void descriptor(List<String> args, String descriptorType) {
         if (args.isEmpty()) {
             kill("Please provide a container.");
         } else if (isHelp(args, true)) {
@@ -1049,7 +1049,7 @@ public class Client {
         return file;
     }
 
-    private static void refresh(java.util.List<String> args) {
+    private static void refresh(List<String> args) {
         if (args.size() > 0) {
             if (isHelpRequest(args.get(0))) {
                 refreshHelp();
@@ -1059,7 +1059,7 @@ public class Client {
                     Container container = containersApi.getContainerByToolPath(toolpath);
                     final Long containerId = container.getId();
                     Container updatedContainer = containersApi.refresh(containerId);
-                    java.util.List<Container> containerList = new ArrayList<>();
+                    List<Container> containerList = new ArrayList<>();
                     containerList.add(updatedContainer);
                     out("YOUR UPDATED CONTAINER");
                     out("-------------------");
@@ -1075,7 +1075,7 @@ public class Client {
                 if (user == null) {
                     throw new RuntimeException("User not found");
                 }
-                java.util.List<Container> containers = usersApi.refresh(user.getId());
+                List<Container> containers = usersApi.refresh(user.getId());
 
                 out("YOUR UPDATED CONTAINERS");
                 out("-------------------");
@@ -1098,12 +1098,12 @@ public class Client {
         out("");
     }
 
-    public static void label(java.util.List<String> args) {
+    public static void label(List<String> args) {
         if (args.size() > 0 && !isHelpRequest(args.get(0))) {
             final String toolpath = reqVal(args, "--entry");
-            final java.util.List<String> adds = optVals(args, "--add");
+            final List<String> adds = optVals(args, "--add");
             final Set<String> addsSet = adds.isEmpty() ? new HashSet<>() : new HashSet<>(adds);
-            final java.util.List<String> removes = optVals(args, "--remove");
+            final List<String> removes = optVals(args, "--remove");
             final Set<String> removesSet = removes.isEmpty() ? new HashSet<>() : new HashSet<>(removes);
 
             // Do a check on the input
@@ -1130,7 +1130,7 @@ public class Client {
             try {
                 Container container = containersApi.getContainerByToolPath(toolpath);
                 long containerId = container.getId();
-                java.util.List<Label> existingLabels = container.getLabels();
+                List<Label> existingLabels = container.getLabels();
                 Set<String> newLabelSet = new HashSet<>();
 
                 // Get existing labels and store in a List
@@ -1153,7 +1153,7 @@ public class Client {
 
                 Container updatedContainer = containersApi.updateLabels(containerId, combinedLabelString, new Body());
 
-                java.util.List<Label> newLabels = updatedContainer.getLabels();
+                List<Label> newLabels = updatedContainer.getLabels();
                 out("The container now has the following tags:");
                 for (Label newLabel : newLabels) {
                     out(newLabel.getValue());
@@ -1168,7 +1168,7 @@ public class Client {
         }
     }
 
-    public static void versionTag(java.util.List<String> args) {
+    public static void versionTag(List<String> args) {
         if (args.size() > 0 && !isHelpRequest(args.get(0))) {
             final String toolpath = reqVal(args, "--entry");
             try {
@@ -1197,10 +1197,10 @@ public class Client {
                     tag.setImageId(imageId);
                     tag.setReference(gitReference);
 
-                    java.util.List<Tag> tags = new ArrayList<>();
+                    List<Tag> tags = new ArrayList<>();
                     tags.add(tag);
 
-                    java.util.List<Tag> updatedTags = containerTagsApi.addTags(containerId, tags);
+                    List<Tag> updatedTags = containerTagsApi.addTags(containerId, tags);
                     containersApi.refresh(container.getId());
 
                     out("The container now has the following tags:");
@@ -1210,7 +1210,7 @@ public class Client {
 
                 } else if (args.contains("--update")) {
                     final String tagName = reqVal(args, "--update");
-                    java.util.List<Tag> tags = container.getTags();
+                    List<Tag> tags = container.getTags();
                     Boolean updated = false;
 
                     for (Tag tag : tags) {
@@ -1227,7 +1227,7 @@ public class Client {
                             tag.setWdlPath(wdlPath);
                             tag.setDockerfilePath(dockerfilePath);
                             tag.setImageId(imageId);
-                            java.util.List<Tag> newTags = new ArrayList<>();
+                            List<Tag> newTags = new ArrayList<>();
                             newTags.add(tag);
 
                             containerTagsApi.updateTags(containerId, newTags);
@@ -1248,7 +1248,7 @@ public class Client {
                     }
 
                     final String tagName = reqVal(args, "--remove");
-                    java.util.List<Tag> tags = containerTagsApi.getTagsByPath(containerId);
+                    List<Tag> tags = containerTagsApi.getTagsByPath(containerId);
                     long tagId;
                     Boolean removed = false;
 
@@ -1301,7 +1301,7 @@ public class Client {
         out("");
     }
 
-    public static void updateContainer(java.util.List<String> args) {
+    public static void updateContainer(List<String> args) {
         if (args.size() > 0 && !isHelpRequest(args.get(0))) {
             final String toolpath = reqVal(args, "--entry");
             try {
@@ -1644,7 +1644,7 @@ public class Client {
     }
 
     public static void main(String[] argv) {
-        java.util.List<String> args = new ArrayList<>(Arrays.asList(argv));
+        List<String> args = new ArrayList<>(Arrays.asList(argv));
 
         if (flag(args, "--debug") || flag(args, "--d")) {
             DEBUG.set(true);
