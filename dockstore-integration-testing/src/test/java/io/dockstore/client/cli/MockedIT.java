@@ -77,14 +77,14 @@ public class MockedIT {
         final String sourceFileContents = FileUtils.readFileToString(sourceFile);
         SourceFile file = mock(SourceFile.class);
         when(file.getContent()).thenReturn(sourceFileContents);
-        doReturn(file).when(Client.class, "getCWLFromServer", "quay.io/collaboratory/dockstore-tool-linux-sort");
+        doReturn(file).when(Client.class, "getDescriptorFromServer", "quay.io/collaboratory/dockstore-tool-linux-sort", "cwl");
 
         // mock return of a more complicated CWL file
         File sourceFileArrays = new File(ResourceHelpers.resourceFilePath("arrays.cwl"));
         final String sourceFileArraysContents = FileUtils.readFileToString(sourceFileArrays);
         SourceFile file2 = mock(SourceFile.class);
         when(file2.getContent()).thenReturn(sourceFileArraysContents);
-        doReturn(file2).when(Client.class, "getCWLFromServer", "quay.io/collaboratory/arrays");
+        doReturn(file2).when(Client.class, "getDescriptorFromServer", "quay.io/collaboratory/arrays", "cwl");
 
         FileUtils.deleteQuietly(new File("/tmp/wc1.out"));
         FileUtils.deleteQuietly(new File("/tmp/wc2.out"));

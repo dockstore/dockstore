@@ -238,6 +238,8 @@ public final class Helper {
             if (sourceCodeRepo != null) {
                 // Grab and parse files to get container information
                 // Add for new descriptor types
+                container.setValidTrigger(false);  // Default is false since we must first check to see if descriptors are valid
+
                 LOG.info("Parsing CWL...");
                 sourceCodeRepo.findDescriptor(container, container.getDefaultCwlPath());
 

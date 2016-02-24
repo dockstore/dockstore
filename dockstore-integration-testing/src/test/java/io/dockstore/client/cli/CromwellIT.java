@@ -56,4 +56,5 @@ public class CromwellIT {
         final int run = main.run(wdlRunList);
         Assert.assertTrue(run == 0);
     }
+
 }

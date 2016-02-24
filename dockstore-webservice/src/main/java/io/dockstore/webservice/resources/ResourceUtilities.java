@@ -78,7 +78,7 @@ public class ResourceUtilities {
 
     public static Optional<String> getResponseAsString(HttpGet httpGet, HttpClient client) {
         Optional<String> result = Optional.absent();
-        final int waitTime = 30000;
+        final int waitTime = 60000;
         try {
             ResponseHandler<String> responseHandler = new BasicResponseHandler();
             // Give Bitbucket calls longer timeouts
@@ -100,7 +100,7 @@ public class ResourceUtilities {
 
     public static Optional<String> getResponseAsString(HttpPost httpPost, HttpClient client) {
         Optional<String> result = Optional.absent();
-        final int waitTime = 30000;
+        final int waitTime = 60000;
         try {
             ResponseHandler<String> responseHandler = new BasicResponseHandler();
             RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(waitTime).setConnectTimeout(waitTime).setConnectionRequestTimeout(waitTime).build();

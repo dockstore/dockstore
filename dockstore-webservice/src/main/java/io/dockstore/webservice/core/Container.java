@@ -503,6 +503,7 @@ public class Container {
     public void updateInfo(Container container) {
         // Add descriptor type default paths here
         defaultCwlPath = container.getDefaultCwlPath();
+        defaultWdlPath = container.getDefaultWdlPath();
         defaultDockerfilePath = container.getDefaultDockerfilePath();
 
         toolname = container.getToolname();
