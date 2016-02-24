@@ -79,7 +79,7 @@ public class ResourceUtilities {
 
     public static Optional<String> getResponseAsString(HttpGet httpGet, HttpClient client) {
         Optional<String> result = Optional.absent();
-        final int waitTime = 30000;
+        final int waitTime = 60000;
         try {
             ResponseHandler<String> responseHandler = new BasicResponseHandler();
             // Give Bitbucket calls longer timeouts
