@@ -45,7 +45,6 @@ import io.swagger.client.model.RegisterRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.User;
-import javassist.NotFoundException;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
@@ -61,7 +60,6 @@ import javax.ws.rs.ProcessingException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -90,8 +88,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/*
- * Main entrypoint for the dockstore CLI.
+import io.swagger.client.api.GAGHApi;
+
+import io.swagger.client.model.Metadata;
+
+ /** Main entrypoint for the dockstore CLI.
  * @author xliu
  *
  */
@@ -99,10 +100,12 @@ public class Client {
 
     private static final String CONVERT = "convert";
     private static final String LAUNCH = "launch";
+    private static final String CWL = "cwl";
+    private static final String WDL = "wdl";
+    private static GAGHApi ga4ghApi;
     private static ContainersApi containersApi;
     private static ContainertagsApi containerTagsApi;
     private static UsersApi usersApi;
-    private static User user;
     private static CWL cwl = new CWL();
 
     private static final String NAME_HEADER = "NAME";
@@ -349,9 +352,27 @@ public class Client {
 
     private static void list(java.util.List<String> args) {
         try {
+            // check user info after usage so that users can get usage without live webservice
+            User user = usersApi.getUser();
+            if (user == null) {
+                throw new RuntimeException("User not found");
+            }
             // List<Container> containers = containersApi.allRegisteredContainers();
             java.util.List<Container> containers = usersApi.userRegisteredContainers(user.getId());
             printRegisteredList(containers);
+        } catch (ApiException ex) {
+            kill("Exception: " + ex);
+        }
+    }
+
+    /**
+     * Display metadata describing the server including server version information
+     */
+    private static void serverMetadata() {
+        try {
+            final Metadata metadata = ga4ghApi.toolsMetadataGet();
+            final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
+            out(gson.toJson(metadata));
         } catch (ApiException ex) {
             kill("Exception: " + ex);
         }
@@ -376,6 +397,11 @@ public class Client {
     private static void publish(java.util.List<String> args) {
         if (args.isEmpty()) {
             try {
+                // check user info after usage so that users can get usage without live webservice
+                User user = usersApi.getUser();
+                if (user == null) {
+                    throw new RuntimeException("User not found");
+                }
                 java.util.List<Container> containers = usersApi.userContainers(user.getId());
 
                 out("YOUR AVAILABLE CONTAINERS");
@@ -596,7 +622,7 @@ public class Client {
             final File tempConfig = File.createTempFile("temp", ".cwl", Files.createTempDir());
             Files.write("working-directory=./datastore/", tempConfig, StandardCharsets.UTF_8);
 
-            final Gson gson = CWL.getTypeSafeCWLToolDocument();
+            final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
             if (jsonRun != null) {
                 // if the root document is an array, this indicates multiple runs
                 JsonParser parser = new JsonParser();
@@ -728,18 +754,18 @@ public class Client {
 
     private static String runString(final java.util.List<String> args, final boolean json) throws ApiException, IOException {
         final String entry = reqVal(args, "--entry");
-        final String descriptor = optVal(args, "--descriptor", "cwl");
+        final String descriptor = optVal(args, "--descriptor", CWL);
 
         final SourceFile descriptorFromServer = getDescriptorFromServer(entry, descriptor);
         final File tempDescriptor = File.createTempFile("temp", ".cwl", Files.createTempDir());
         Files.write(descriptorFromServer.getContent(), tempDescriptor, StandardCharsets.UTF_8);
 
-        if (descriptor.equals("cwl")) {
+        if (descriptor.equals(CWL)) {
             // need to suppress output
             final ImmutablePair<String, String> output = cwl.parseCWL(tempDescriptor.getAbsolutePath(), true);
             final Map<String, Object> stringObjectMap = cwl.extractRunJson(output.getLeft());
             if (json) {
-                final Gson gson = CWL.getTypeSafeCWLToolDocument();
+                final Gson gson = cwl.getTypeSafeCWLToolDocument();
                 return gson.toJson(stringObjectMap);
             } else {
                 // re-arrange as rows and columns
@@ -756,6 +782,7 @@ public class Client {
                         if (map.containsKey("class") && "File".equals(map.get("class"))) {
                             value = map.get("path");
                         }
+
                     }
                     entries.add(value.toString());
                 }
@@ -769,7 +796,7 @@ public class Client {
                 }
                 return buffer.toString();
             }
-        } else if (descriptor.equals("wdl")) {
+        } else if (descriptor.equals(WDL)) {
             if (json) {
                 final java.util.List<String> wdlDocuments = Lists.newArrayList(tempDescriptor.getAbsolutePath());
                 final List<String> wdlList = JavaConversions.asScalaBuffer(wdlDocuments).toList();
@@ -815,7 +842,7 @@ public class Client {
             final String cwlPath = reqVal(args, "--cwl");
             final ImmutablePair<String, String> output = cwl.parseCWL(cwlPath, true);
 
-            final Gson gson = CWL.getTypeSafeCWLToolDocument();
+            final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
             final Map<String, Object> runJson = cwl.extractRunJson(output.getLeft());
             out(gson.toJson(runJson));
         }
@@ -893,7 +920,7 @@ public class Client {
 
         String path = args.get(0);
         try {
-            Container container = containersApi.getContainerByToolPath(path);
+            Container container = containersApi.getRegisteredContainerByToolPath(path);
             if (container == null || !container.getIsRegistered()) {
                 kill("This container is not registered.");
             } else {
@@ -958,20 +985,28 @@ public class Client {
     private static void descriptor(java.util.List<String> args, String descriptorType) {
         if (args.isEmpty()) {
             kill("Please provide a container.");
-        }
+        } else if (isHelp(args, true)) {
+            out("");
+            out("Usage: dockstore " + descriptorType + " --help");
+            out("       dockstore " + descriptorType);
+            out("");
+            out("Description:");
+            out("  Grab a " + descriptorType + " document for a particular entry");
+            out("Required parameters:");
+            out("  --entry <entry>              Complete tool path in the Dockstore ex: quay.io/collaboratory/seqware-bwa-workflow:develop ");
+            out("");
+        } else {
+            try {
+                SourceFile file = getDescriptorFromServer(args.get(0), descriptorType);
 
-        try {
-            SourceFile file = getDescriptorFromServer(args.get(0), descriptorType);
-
-            if (file.getContent() != null && !file.getContent().isEmpty()) {
-                out(file.getContent());
-            } else {
-                kill("No " + descriptorType + " file found.");
+                if (file.getContent() != null && !file.getContent().isEmpty()) {
+                    out(file.getContent());
+                } else {
+                    kill("No " + descriptorType + " file found.");
+                }
+            } catch (ApiException e) {
+                e.printStackTrace();
             }
-
-        } catch (ApiException ex) {
-            // out("Exception: " + ex);
-            kill("Could not find container");
         }
     }
 
@@ -985,9 +1020,9 @@ public class Client {
         Container container = containersApi.getContainerByToolPath(path);
         if (container.getValidTrigger()) {
             try {
-                if (descriptorType.equals("cwl")) {
+                if (descriptorType.equals(CWL)) {
                     file = containersApi.cwl(container.getId(), tag);
-                } else if (descriptorType.equals("wdl")) {
+                } else if (descriptorType.equals(WDL)) {
                     file = containersApi.wdl(container.getId(), tag);
                 }
             } catch (ApiException ex) {
@@ -1024,6 +1059,11 @@ public class Client {
             }
         } else {
             try {
+                // check user info after usage so that users can get usage without live webservice
+                User user = usersApi.getUser();
+                if (user == null) {
+                    throw new RuntimeException("User not found");
+                }
                 java.util.List<Container> containers = usersApi.refresh(user.getId());
 
                 out("YOUR UPDATED CONTAINERS");
@@ -1083,8 +1123,8 @@ public class Client {
                 Set<String> newLabelSet = new HashSet<>();
 
                 // Get existing labels and store in a List
-                for (int i = 0; i < existingLabels.size(); i++) {
-                    newLabelSet.add(existingLabels.get(i).getValue());
+                for (Label existingLabel : existingLabels) {
+                    newLabelSet.add(existingLabel.getValue());
                 }
 
                 // Add new labels to the List of labels
@@ -1104,8 +1144,8 @@ public class Client {
 
                 java.util.List<Label> newLabels = updatedContainer.getLabels();
                 out("The container now has the following tags:");
-                for (int i = 0; i < newLabels.size(); i++) {
-                    out(newLabels.get(i).getValue());
+                for (Label newLabel : newLabels) {
+                    out(newLabel.getValue());
                 }
 
             } catch (ApiException e) {
@@ -1269,7 +1309,7 @@ public class Client {
                 container.setToolname(toolname);
                 container.setGitUrl(gitUrl);
 
-                Container result = containersApi.updateContainer(containerId, container);
+                containersApi.updateContainer(containerId, container);
                 out("The container has been updated.");
             } catch (ApiException e) {
                 e.printStackTrace();
@@ -1335,8 +1375,6 @@ public class Client {
                     break;
                 }
             }
-        } catch (FileNotFoundException e) {
-            //            e.printStackTrace();
         } catch (IOException e) {
             //            e.printStackTrace();
         }
@@ -1358,11 +1396,11 @@ public class Client {
      * @return
      */
     public static String getLatestVersion() {
-        URL url = null;
+        URL url;
         try {
             url = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/latest");
             ObjectMapper mapper = new ObjectMapper();
-            Map<String, Object> map = null;
+            Map<String, Object> map;
             try {
                 map = mapper.readValue(url, Map.class);
                 return map.get("name").toString();
@@ -1564,9 +1602,9 @@ public class Client {
         out("");
         out("  manual_publish   :  register a Docker Hub container in the dockstore");
         out("");
-        out("  info <container> :  print detailed information about a particular container");
+        out("  info <container> :  print detailed information about a particular public container");
         out("");
-        out("  cwl <container>  :  returns the Common Workflow Language tool definition for this Docker image ");
+        out("  "+CWL+" <container>  :  returns the Common Workflow Language tool definition for this Docker image ");
         out("                      which enables integration with Global Alliance compliant systems");
         out("");
         out("  wdl <container>  :  returns the Workflow Descriptor Langauge definition for this Docker image.");
@@ -1588,6 +1626,7 @@ public class Client {
         out("Flags:");
         out("  --debug              Print debugging information");
         out("  --version            Print dockstore's version");
+        out("  --server-metadata    Print metdata describing the dockstore webservice");
         out("  --upgrade            Upgrades to the latest stable release of Dockstore");
         out("  --config <file>      Override config file");
         out("  --script             Will not check Github for newer versions of Dockstore");
@@ -1634,6 +1673,7 @@ public class Client {
             containersApi = new ContainersApi(defaultApiClient);
             containerTagsApi = new ContainertagsApi(defaultApiClient);
             usersApi = new UsersApi(defaultApiClient);
+            ga4ghApi = new GAGHApi(defaultApiClient);
 
             defaultApiClient.setDebugging(DEBUG.get());
 
@@ -1646,18 +1686,15 @@ public class Client {
                 printGeneralHelp();
             } else {
                 try {
-                    // check user info after usage so that users can get usage without live webservice
-                    user = usersApi.getUser();
-                    if (user == null) {
-                        throw new NotFoundException("User not found");
-                    }
-
                     String cmd = args.remove(0);
                     if (null != cmd) {
                         switch (cmd) {
                         case "-v":
                         case "--version":
                             version();
+                            break;
+                        case "--server-metadata":
+                            serverMetadata();
                             break;
                         case "list":
                             list(args);
@@ -1674,11 +1711,10 @@ public class Client {
                         case "info":
                             info(args);
                             break;
-                        case "cwl":
-                            descriptor(args, "cwl");
-                            break;
-                        case "wdl":
-                            descriptor(args, "wdl");
+                        case WDL:
+                            descriptor(args, WDL);
+                        case CWL:
+                            descriptor(args, CWL);
                             break;
                         case "refresh":
                             refresh(args);
@@ -1713,7 +1749,7 @@ public class Client {
                     System.exit(GENERIC_ERROR);
                 }
             }
-        } catch (IOException | NotFoundException | ApiException ex) {
+        } catch (IOException | ApiException ex) {
             out("Exception: " + ex);
             ex.printStackTrace();
             System.exit(GENERIC_ERROR);
