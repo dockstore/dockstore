@@ -67,13 +67,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     @Override
     public FileResponse readFile(String fileName, String reference) {
         FileResponse cwl = new FileResponse();
+        checkNotNull(fileName, "The fileName given is null.");
         try {
             Repository repo = service.getRepository(gitUsername, gitRepository);
             List<RepositoryContents> contents;
             try {
-                contents = checkNotNull(cService.getContents(repo, fileName, reference));
+                contents = cService.getContents(repo, fileName, reference);
             } catch (Exception e) {
-                contents = checkNotNull(cService.getContents(repo, fileName.toLowerCase(), reference));
+                contents = cService.getContents(repo, fileName.toLowerCase(), reference);
             }
 
             if (!(contents == null || contents.isEmpty())) {
