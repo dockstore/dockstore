@@ -98,7 +98,7 @@ public class BasicPostgreSQL {
      * This clears the data base for testing and creates an admin user
      */
     public void clearDatabase() {
-        runUpdateStatement("delete from userentry;");
+        runUpdateStatement("delete from user_entry;");
         runUpdateStatement("delete from endusergroup;");
 
         runUpdateStatement("delete from enduser;");

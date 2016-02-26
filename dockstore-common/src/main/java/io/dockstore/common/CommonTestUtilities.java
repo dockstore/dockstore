@@ -71,29 +71,29 @@ public class CommonTestUtilities {
             runInsertStatement(
                     "insert into tool(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered, toolname) VALUES (1, 'test1', 'test_org', 'QUAY_IO', 'quay.io/test_org/test1', false, false, false, false,'');",
                     new KeyedHandler<>("id"));
-            runInsertStatement("insert into userentry(userid, entryid) VALUES (1, 1);", new KeyedHandler<>("entryid"));
+            runInsertStatement("insert into user_entry(userid, entryid) VALUES (1, 1);", new KeyedHandler<>("entryid"));
             runInsertStatement(
                     "insert into tool(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered,toolname) VALUES (2, 'test2', 'test_org', 'QUAY_IO', 'quay.io/test_org/test2', false, false, false, false,'');",
                     new KeyedHandler<>("id"));
-            runInsertStatement("insert into userentry(userid, entryid) VALUES (2, 2);", new KeyedHandler<>("entryid"));
+            runInsertStatement("insert into user_entry(userid, entryid) VALUES (2, 2);", new KeyedHandler<>("entryid"));
             runInsertStatement(
                     "insert into tool(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered,toolname) VALUES (3, 'test3', 'test_org', 'QUAY_IO', 'quay.io/test_org/test3', true, false, false, false,'');",
                     new KeyedHandler<>("id"));
-            runInsertStatement("insert into userentry(userid, entryid) VALUES (2, 3);", new KeyedHandler<>("entryid"));
+            runInsertStatement("insert into user_entry(userid, entryid) VALUES (2, 3);", new KeyedHandler<>("entryid"));
             runInsertStatement(
                     "insert into tool(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered, giturl,toolname) VALUES (4, 'test4', 'test_org', 'QUAY_IO', 'quay.io/test_org/test4', false, false, false, false, 'git@github.com:test/test4.git','');",
                     new KeyedHandler<>("id"));
-            runInsertStatement("insert into userentry(userid, entryid) VALUES (2, 4);", new KeyedHandler<>("entryid"));
+            runInsertStatement("insert into user_entry(userid, entryid) VALUES (2, 4);", new KeyedHandler<>("entryid"));
             runInsertStatement(
                     "insert into tool(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered, giturl,toolname) VALUES (5, 'test5', 'test_org', 'QUAY_IO', 'quay.io/test_org/test5', true, false, false, false, 'git@github.com:test/test5.git','');",
                     new KeyedHandler<>("id"));
-            runInsertStatement("insert into userentry(userid, entryid) VALUES (2, 5);", new KeyedHandler<>("entryid"));
+            runInsertStatement("insert into user_entry(userid, entryid) VALUES (2, 5);", new KeyedHandler<>("entryid"));
             runInsertStatement(
                     "insert into tool(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered, giturl,toolname) VALUES (6, 'test6', 'test_org', 'QUAY_IO', 'quay.io/test_org/test6', true, false, false, true, 'git@github.com:test/test6.git','');",
                     new KeyedHandler<>("id"));
 
-            runInsertStatement("insert into userentry(userid, entryid) VALUES (1, 6);", new KeyedHandler<>("entryid"));
-            runInsertStatement("insert into userentry(userid, entryid) VALUES (2, 6);", new KeyedHandler<>("entryid"));
+            runInsertStatement("insert into user_entry(userid, entryid) VALUES (1, 6);", new KeyedHandler<>("entryid"));
+            runInsertStatement("insert into user_entry(userid, entryid) VALUES (2, 6);", new KeyedHandler<>("entryid"));
 
             runInsertStatement("insert into tag(id, valid, automated, hidden, size, cwlpath, wdlpath, dockerfilepath) VALUES (1, true, true, false, 0,'/Dockstore.cwl', '/Dockstore.wdl', '/Dockerfile');", new KeyedHandler<>(
                     "id"));
@@ -135,7 +135,7 @@ public class CommonTestUtilities {
             runInsertStatement(
                     "insert into tool(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered, toolname) VALUES (5, 'test1', 'test_org', 'QUAY_IO', 'quay.io/test_org/test1', false, false, false, false,'');",
                     new KeyedHandler<>("id"));
-            runInsertStatement("insert into userentry(userid, entryid) VALUES (2, 5);", new KeyedHandler<>("entryid"));
+            runInsertStatement("insert into user_entry(userid, entryid) VALUES (2, 5);", new KeyedHandler<>("entryid"));
 
 
             // need to increment past manually entered ids above

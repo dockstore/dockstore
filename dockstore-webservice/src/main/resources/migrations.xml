@@ -14,4 +14,115 @@
         <addNotNullConstraint tableName="tag" columnName="cwlpath" defaultNullValue="/Dockstore.cwl"></addNotNullConstraint>
         <addNotNullConstraint tableName="tag" columnName="dockerfilepath" defaultNullValue="/Dockerfile"></addNotNullConstraint>
     </changeSet>
+
+    <changeSet author="dyuen" id="renameTable-container">
+        <renameTable newTableName="tool"
+                     oldTableName="container"/>
+        <renameTable newTableName="entry_label"
+                     oldTableName="containerlabel"/>
+        <renameTable newTableName="version_sourcefile"
+                     oldTableName="tagsourcefile"/>
+        <renameTable newTableName="tool_tag"
+                     oldTableName="containertag"/>
+        <renameTable newTableName="user_entry"
+                     oldTableName="usercontainer"/>
+    </changeSet>
+
+    <changeSet author="dyuen" id="renameColumns">
+        <renameColumn newColumnName="toolid"
+                      oldColumnName="containerid"
+                      tableName="tool_tag"/>
+        <renameColumn newColumnName="entryid"
+                      oldColumnName="containerid"
+                      tableName="entry_label"/>
+        <renameColumn newColumnName="versionid"
+                      oldColumnName="tagid"
+                      tableName="version_sourcefile"/>
+        <renameColumn newColumnName="entryid"
+                      oldColumnName="containerid"
+                      tableName="user_entry"/>
+    </changeSet>
+
+    <changeSet author="dyuen (generated)" id="1456852002496-13">
+        <createTable tableName="workflow">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="author" type="VARCHAR(255)"/>
+            <column name="description" type="TEXT"/>
+            <column name="email" type="VARCHAR(255)"/>
+            <column name="giturl" type="VARCHAR(255)"/>
+            <column name="ispublic" type="BOOL"/>
+            <column name="isregistered" type="BOOL"/>
+            <column name="isstarred" type="BOOL"/>
+            <column name="lastmodified" type="INT4"/>
+            <column name="lastupdated" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="defaultworkflowpath" type="TEXT"/>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1456852002496-14">
+        <createTable tableName="workflow_workflowversion">
+            <column name="workflowid" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="workflowversionid" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1456852002496-15">
+        <createTable tableName="workflowversion">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="hidden" type="BOOL"/>
+            <column name="lastmodified" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="reference" type="VARCHAR(255)"/>
+            <column name="valid" type="BOOL"/>
+            <column name="workflowpath" type="TEXT"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="dyuen (generated)" id="1456852002496-21">
+        <addPrimaryKey columnNames="id" constraintName="workflow_pkey" tableName="workflow"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1456852002496-22">
+        <addPrimaryKey columnNames="workflowid, workflowversionid" constraintName="workflow_workflowversion_pkey"
+                       tableName="workflow_workflowversion"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1456852002496-23">
+        <addPrimaryKey columnNames="id" constraintName="workflowversion_pkey" tableName="workflowversion"/>
+    </changeSet>
+
+    <changeSet author="dyuen (generated)" id="1456852002496-30">
+        <addUniqueConstraint columnNames="workflowversionid" constraintName="uk_encl8hnebnkcaxj9tlugr9cxh"
+                             deferrable="false" disabled="false" initiallyDeferred="false"
+                             tableName="workflow_workflowversion"/>
+    </changeSet>
+
+
+    <changeSet author="dyuen (generated)" id="1456852285299-36">
+        <addForeignKeyConstraint baseColumnNames="workflowversionid"
+                                 baseTableName="workflow_workflowversion"
+                                 constraintName="fk_encl8hnebnkcaxj9tlugr9cxh" deferrable="false" initiallyDeferred="false"
+                                 onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id"
+                                 referencedTableName="workflowversion"
+                                 />
+    </changeSet>
+
+    <changeSet author="dyuen (generated)" id="1456852285299-37">
+        <addForeignKeyConstraint baseColumnNames="workflowid"
+                                 baseTableName="workflow_workflowversion"
+                                 constraintName="fk_esgelvnqxrv53m71tdvwkxut3" deferrable="false" initiallyDeferred="false"
+                                 onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id"
+                                 referencedTableName="workflow"
+                                 />
+    </changeSet>
+
+
+
+
 </databaseChangeLog>

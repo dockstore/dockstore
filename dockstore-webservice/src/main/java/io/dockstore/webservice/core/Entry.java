@@ -70,7 +70,7 @@ public abstract class Entry {
     private SortedSet<Label> labels = new TreeSet<>();
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
-    @JoinTable(name = "userentry", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"))
+    @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty(value = "This indicates the users that have control over this entry, dockstore specific", required = false)
     private final Set<User> users;
 
