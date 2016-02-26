@@ -109,7 +109,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // enable views
         bootstrap.addBundle(new ViewBundle<>());
 
-        // for database migrations
+        // for database migrations.xml
         bootstrap.addBundle(new MigrationsBundle<DockstoreWebserviceConfiguration>() {
             @Override
             public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
