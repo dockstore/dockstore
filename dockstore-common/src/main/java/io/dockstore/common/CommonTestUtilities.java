@@ -66,41 +66,41 @@ public class CommonTestUtilities {
                     + "', 'dockstore', 2, 'user1@user.com');", new KeyedHandler<>("id"));
 
             runInsertStatement(
-                    "insert into container(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered, toolname) VALUES (1, 'test1', 'test_org', 'QUAY_IO', 'quay.io/test_org/test1', false, false, false, false,'');",
+                    "insert into container(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered, toolname, defaultcwlpath, defaultwdlpath, defaultdockerfilepath) VALUES (1, 'test1', 'test_org', 'QUAY_IO', 'quay.io/test_org/test1', false, false, false, false,'','/Dockstore.cwl', '/Dockstore.wdl', '/Dockerfile');",
                     new KeyedHandler<>("id"));
             runInsertStatement("insert into usercontainer(userid, containerid) VALUES (1, 1);", new KeyedHandler<>("containerid"));
 
             runInsertStatement(
-                    "insert into container(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered,toolname) VALUES (2, 'test2', 'test_org', 'QUAY_IO', 'quay.io/test_org/test2', false, false, false, false,'');",
+                    "insert into container(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered,toolname, defaultcwlpath, defaultwdlpath, defaultdockerfilepath) VALUES (2, 'test2', 'test_org', 'QUAY_IO', 'quay.io/test_org/test2', false, false, false, false,'','/Dockstore.cwl', '/Dockstore.wdl', '/Dockerfile');",
                     new KeyedHandler<>("id"));
             runInsertStatement("insert into usercontainer(userid, containerid) VALUES (2, 2);", new KeyedHandler<>("containerid"));
 
             runInsertStatement(
-                    "insert into container(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered,toolname) VALUES (3, 'test3', 'test_org', 'QUAY_IO', 'quay.io/test_org/test3', true, false, false, false,'');",
+                    "insert into container(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered,toolname, defaultcwlpath, defaultwdlpath, defaultdockerfilepath) VALUES (3, 'test3', 'test_org', 'QUAY_IO', 'quay.io/test_org/test3', true, false, false, false,'','/Dockstore.cwl', '/Dockstore.wdl', '/Dockerfile');",
                     new KeyedHandler<>("id"));
             runInsertStatement("insert into usercontainer(userid, containerid) VALUES (2, 3);", new KeyedHandler<>("containerid"));
 
             runInsertStatement(
-                    "insert into container(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered, giturl,toolname) VALUES (4, 'test4', 'test_org', 'QUAY_IO', 'quay.io/test_org/test4', false, false, false, false, 'git@github.com:test/test4.git','');",
+                    "insert into container(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered, giturl,toolname, defaultcwlpath, defaultwdlpath, defaultdockerfilepath) VALUES (4, 'test4', 'test_org', 'QUAY_IO', 'quay.io/test_org/test4', false, false, false, false, 'git@github.com:test/test4.git','','/Dockstore.cwl', '/Dockstore.wdl', '/Dockerfile');",
                     new KeyedHandler<>("id"));
             runInsertStatement("insert into usercontainer(userid, containerid) VALUES (2, 4);", new KeyedHandler<>("containerid"));
 
             runInsertStatement(
-                    "insert into container(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered, giturl,toolname) VALUES (5, 'test5', 'test_org', 'QUAY_IO', 'quay.io/test_org/test5', true, false, false, false, 'git@github.com:test/test5.git','');",
+                    "insert into container(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered, giturl,toolname, defaultcwlpath, defaultwdlpath, defaultdockerfilepath) VALUES (5, 'test5', 'test_org', 'QUAY_IO', 'quay.io/test_org/test5', true, false, false, false, 'git@github.com:test/test5.git','','/Dockstore.cwl', '/Dockstore.wdl', '/Dockerfile');",
                     new KeyedHandler<>("id"));
             runInsertStatement("insert into usercontainer(userid, containerid) VALUES (2, 5);", new KeyedHandler<>("containerid"));
 
             runInsertStatement(
-                    "insert into container(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered, giturl,toolname) VALUES (6, 'test6', 'test_org', 'QUAY_IO', 'quay.io/test_org/test6', true, false, false, true, 'git@github.com:test/test6.git','');",
+                    "insert into container(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered, giturl,toolname, defaultcwlpath, defaultwdlpath, defaultdockerfilepath) VALUES (6, 'test6', 'test_org', 'QUAY_IO', 'quay.io/test_org/test6', true, false, false, true, 'git@github.com:test/test6.git','','/Dockstore.cwl', '/Dockstore.wdl', '/Dockerfile');",
                     new KeyedHandler<>("id"));
             runInsertStatement("insert into usercontainer(userid, containerid) VALUES (1, 6);", new KeyedHandler<>("containerid"));
             runInsertStatement("insert into usercontainer(userid, containerid) VALUES (2, 6);", new KeyedHandler<>("containerid"));
 
-            runInsertStatement("insert into tag(id, valid, automated, hidden, size) VALUES (1, true, true, false, 0);", new KeyedHandler<>(
+            runInsertStatement("insert into tag(id, valid, automated, hidden, size, cwlpath, wdlpath, dockerfilepath) VALUES (1, true, true, false, 0,'/Dockstore.cwl', '/Dockstore.wdl', '/Dockerfile');", new KeyedHandler<>(
                     "id"));
             runInsertStatement("insert into containertag(containerid, tagid) VALUES (6, 1);", new KeyedHandler<>("tagid"));
 
-            runInsertStatement("insert into tag(id, valid, automated, hidden, size) VALUES (2, true, true, false, 0);", new KeyedHandler<>(
+            runInsertStatement("insert into tag(id, valid, automated, hidden, size, cwlpath, wdlpath, dockerfilepath) VALUES (2, true, true, false, 0,'/Dockstore.cwl', '/Dockstore.wdl', '/Dockerfile');", new KeyedHandler<>(
                     "id"));
             runInsertStatement("insert into containertag(containerid, tagid) VALUES (5, 2);", new KeyedHandler<>("tagid"));
 

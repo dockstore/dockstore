@@ -57,6 +57,7 @@ import io.dropwizard.auth.oauth.OAuthFactory;
 import io.dropwizard.client.HttpClientBuilder;
 import io.dropwizard.db.DataSourceFactory;
 import io.dropwizard.hibernate.HibernateBundle;
+import io.dropwizard.migrations.MigrationsBundle;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.views.ViewBundle;
@@ -107,6 +108,14 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         bootstrap.addBundle(new AssetsBundle("/assets/", "/static/"));
         // enable views
         bootstrap.addBundle(new ViewBundle<>());
+
+        // for database migrations.xml
+        bootstrap.addBundle(new MigrationsBundle<DockstoreWebserviceConfiguration>() {
+            @Override
+            public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
+                return configuration.getDataSourceFactory();
+            }
+        });
     }
 
     @Override
