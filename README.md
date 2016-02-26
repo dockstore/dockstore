@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/ga4gh/dockstore.svg?branch=develop)](https://travis-ci.org/CancerCollaboratory/dockstore)
+[![Build Status](https://travis-ci.org/ga4gh/dockstore.svg?branch=develop)](https://travis-ci.org/ga4gh/dockstore)
 
 # Dockstore
 

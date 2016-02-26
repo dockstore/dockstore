@@ -95,11 +95,11 @@ public class CommonTestUtilities {
             runInsertStatement("insert into userentry(userid, entryid) VALUES (1, 6);", new KeyedHandler<>("entryid"));
             runInsertStatement("insert into userentry(userid, entryid) VALUES (2, 6);", new KeyedHandler<>("entryid"));
 
-            runInsertStatement("insert into tag(id, valid, automated, hidden, size) VALUES (1, true, true, false, 0);", new KeyedHandler<>(
+            runInsertStatement("insert into tag(id, valid, automated, hidden, size, cwlpath, wdlpath, dockerfilepath) VALUES (1, true, true, false, 0,'/Dockstore.cwl', '/Dockstore.wdl', '/Dockerfile');", new KeyedHandler<>(
                     "id"));
             runInsertStatement("insert into tool_tag(toolid, tagid) VALUES (6, 1);", new KeyedHandler<>("tagid"));
 
-            runInsertStatement("insert into tag(id, valid, automated, hidden, size) VALUES (2, true, true, false, 0);", new KeyedHandler<>(
+            runInsertStatement("insert into tag(id, valid, automated, hidden, size, cwlpath, wdlpath, dockerfilepath) VALUES (2, true, true, false, 0,'/Dockstore.cwl', '/Dockstore.wdl', '/Dockerfile');", new KeyedHandler<>(
                     "id"));
             runInsertStatement("insert into tool_tag(toolid, tagid) VALUES (5, 2);", new KeyedHandler<>("tagid"));
 

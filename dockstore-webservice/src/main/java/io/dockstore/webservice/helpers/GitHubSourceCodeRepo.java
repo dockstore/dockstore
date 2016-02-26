@@ -34,6 +34,8 @@ import org.slf4j.LoggerFactory;
 
 import io.dockstore.webservice.core.Tool;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * @author dyuen
  */
@@ -65,6 +67,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     @Override
     public FileResponse readFile(String fileName, String reference) {
         FileResponse cwl = new FileResponse();
+        checkNotNull(fileName, "The fileName given is null.");
         try {
             Repository repo = service.getRepository(gitUsername, gitRepository);
             List<RepositoryContents> contents;
