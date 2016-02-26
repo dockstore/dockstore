@@ -34,6 +34,8 @@ import org.slf4j.LoggerFactory;
 
 import io.dockstore.webservice.core.Container;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 /**
  * @author dyuen
  */
@@ -69,9 +71,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             Repository repo = service.getRepository(gitUsername, gitRepository);
             List<RepositoryContents> contents;
             try {
-                contents = cService.getContents(repo, fileName, reference);
+                contents = checkNotNull(cService.getContents(repo, fileName, reference));
             } catch (Exception e) {
-                contents = cService.getContents(repo, fileName.toLowerCase(), reference);
+                contents = checkNotNull(cService.getContents(repo, fileName.toLowerCase(), reference));
             }
 
             if (!(contents == null || contents.isEmpty())) {
