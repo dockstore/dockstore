@@ -17,6 +17,8 @@ package io.dockstore.client.cli;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
@@ -24,6 +26,8 @@ import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.junit.ClassRule;
 import org.junit.Test;
+
+import com.google.common.io.Resources;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.Constants;
@@ -202,6 +206,16 @@ public class SystemClientIT {
 
         final Container container = containersApi.registerManual(c);
         containersApi.registerManual(container);
+    }
+
+    @Test
+    public void testGA4GHV1Path() throws IOException, TimeoutException {
+        // we need to explictly test the path rather than use the swagger generated client classes to enforce the path
+        ApiClient client = getAdminWebClient();
+        final String basePath = client.getBasePath();
+        URL url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools");
+        final List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
+        assertTrue(strings.size() == 1 && strings.get(0).contains("CommandLineTool"));
     }
 
     @Test
