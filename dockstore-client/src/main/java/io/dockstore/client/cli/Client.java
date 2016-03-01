@@ -1153,9 +1153,13 @@ public class Client {
                 Container updatedContainer = containersApi.updateLabels(containerId, combinedLabelString, new Body());
 
                 List<Label> newLabels = updatedContainer.getLabels();
-                out("The container now has the following labels:");
-                for (Label newLabel : newLabels) {
-                    out(newLabel.getValue());
+                if (newLabels.size() > 0) {
+                    out("The container now has the following labels:");
+                    for (Label newLabel : newLabels) {
+                        out(newLabel.getValue());
+                    }
+                } else {
+                    out("The container has no labels.");
                 }
 
             } catch (ApiException e) {
