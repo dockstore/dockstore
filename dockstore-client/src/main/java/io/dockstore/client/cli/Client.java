@@ -1153,7 +1153,7 @@ public class Client {
                 Container updatedContainer = containersApi.updateLabels(containerId, combinedLabelString, new Body());
 
                 List<Label> newLabels = updatedContainer.getLabels();
-                out("The container now has the following tags:");
+                out("The container now has the following labels:");
                 for (Label newLabel : newLabels) {
                     out(newLabel.getValue());
                 }
