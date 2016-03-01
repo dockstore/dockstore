@@ -15,19 +15,26 @@
  */
 package io.dockstore.client.cli;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.TimeoutException;
+
+import org.apache.commons.dbutils.handlers.ScalarHandler;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Ignore;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.contrib.java.lang.system.ExpectedSystemExit;
+
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Registry;
 import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit.DropwizardAppRule;
-import org.apache.commons.dbutils.handlers.ScalarHandler;
-import org.junit.*;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
 
 import static io.dockstore.common.CommonTestUtilities.clearStateMakePrivate;
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
@@ -356,6 +363,8 @@ public class BasicET {
         @Test
         public void testTool2JSONWDL() {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser/quayandgithub", "--script" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "publish", "quay.io/dockstoretestuser/quayandgithub" });
+                // need to publish before converting
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "convert", "tool2json", "--entry", "quay.io/dockstoretestuser/quayandgithub", "--descriptor", "wdl", "--script" });
                 // TODO: Test that output is the expected WDL file
         }
@@ -605,8 +614,8 @@ public class BasicET {
         @Test
         public void testGetWdlAndCwl(){
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath","quay.io/dockstoretestuser/quayandgithub", "--script" });
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "wdl", "quay.io/dockstoretestuser/quayandgithub", "--script" });
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "cwl", "quay.io/dockstoretestuser/quayandgithub", "--script" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "wdl","--entry", "quay.io/dockstoretestuser/quayandgithub", "--script" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "cwl","--entry", "quay.io/dockstoretestuser/quayandgithub", "--script" });
         }
 
         /**

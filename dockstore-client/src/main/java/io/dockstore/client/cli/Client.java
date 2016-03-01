@@ -15,45 +15,6 @@
  */
 package io.dockstore.client.cli;
 
-import com.esotericsoftware.yamlbeans.YamlReader;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Joiner;
-import com.google.common.collect.Lists;
-import com.google.common.io.Files;
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import cromwell.Main;
-import io.cwl.avro.CWL;
-import io.dockstore.client.Bridge;
-import io.github.collaboratory.LauncherCWL;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.Configuration;
-import io.swagger.client.api.ContainersApi;
-import io.swagger.client.api.ContainertagsApi;
-import io.swagger.client.api.UsersApi;
-import io.swagger.client.model.Body;
-import io.swagger.client.model.Container;
-import io.swagger.client.model.Container.ModeEnum;
-import io.swagger.client.model.Container.RegistryEnum;
-import io.swagger.client.model.Label;
-import io.swagger.client.model.RegisterRequest;
-import io.swagger.client.model.SourceFile;
-import io.swagger.client.model.Tag;
-import io.swagger.client.model.User;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVPrinter;
-import org.apache.commons.csv.CSVRecord;
-import org.apache.commons.csv.QuoteMode;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.http.HttpStatus;
-
-import javax.ws.rs.ProcessingException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -86,9 +47,49 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.swagger.client.api.GAGHApi;
+import javax.ws.rs.ProcessingException;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.csv.QuoteMode;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.http.HttpStatus;
+
+import com.esotericsoftware.yamlbeans.YamlReader;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
+import com.google.common.io.Files;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
+import cromwell.Main;
+import io.cwl.avro.CWL;
+import io.dockstore.client.Bridge;
+import io.github.collaboratory.LauncherCWL;
+import io.swagger.client.ApiClient;
+import io.swagger.client.ApiException;
+import io.swagger.client.Configuration;
+import io.swagger.client.api.ContainersApi;
+import io.swagger.client.api.ContainertagsApi;
+import io.swagger.client.api.GAGHApi;
+import io.swagger.client.api.UsersApi;
+import io.swagger.client.model.Body;
+import io.swagger.client.model.Container;
+import io.swagger.client.model.Container.ModeEnum;
+import io.swagger.client.model.Container.RegistryEnum;
+import io.swagger.client.model.Label;
 import io.swagger.client.model.Metadata;
+import io.swagger.client.model.RegisterRequest;
+import io.swagger.client.model.SourceFile;
+import io.swagger.client.model.Tag;
+import io.swagger.client.model.User;
 
  /** Main entrypoint for the dockstore CLI.
  * @author xliu
@@ -615,9 +616,9 @@ public class Client {
                  try {
                      launchCwl(args);
                  } catch (ApiException e) {
-//                     e.printStackTrace();
+                     throw new RuntimeException("api error launching workflow", e);
                  } catch (IOException e) {
-//                     e.printStackTrace();
+                     throw new RuntimeException("io error launching workflow", e);
                  }
              } else if (descriptor.equals(WDL)){
                  launchWdl(args);
@@ -1007,7 +1008,8 @@ public class Client {
             out("");
         } else {
             try {
-                SourceFile file = getDescriptorFromServer(args.get(0), descriptorType);
+                final String entry = reqVal(args, "--entry");
+                SourceFile file = getDescriptorFromServer(entry, descriptorType);
 
                 if (file.getContent() != null && !file.getContent().isEmpty()) {
                     out(file.getContent());
@@ -1027,7 +1029,8 @@ public class Client {
 
         String tag = (parts.length > 1) ? parts[1] : null;
         SourceFile file = new SourceFile();
-        Container container = containersApi.getContainerByToolPath(path);
+        // simply getting published descriptors does not require permissions
+        Container container = containersApi.getRegisteredContainerByToolPath(path);
         if (container.getValidTrigger()) {
             try {
                 if (descriptorType.equals(CWL)) {
@@ -1153,9 +1156,13 @@ public class Client {
                 Container updatedContainer = containersApi.updateLabels(containerId, combinedLabelString, new Body());
 
                 List<Label> newLabels = updatedContainer.getLabels();
-                out("The container now has the following tags:");
-                for (Label newLabel : newLabels) {
-                    out(newLabel.getValue());
+                if (newLabels.size() > 0) {
+                    out("The container now has the following labels:");
+                    for (Label newLabel : newLabels) {
+                        out(newLabel.getValue());
+                    }
+                } else {
+                    out("The container has no labels.");
                 }
 
             } catch (ApiException e) {
@@ -1290,9 +1297,9 @@ public class Client {
         out("------------------");
         out("See https://www.dockstore.org for more information");
         out("");
-        out("dockstore versionTag --add <name> --entry <path to tool> --git-reference <git reference> --hidden <true/false> --cwl-path <cwl path> --dockerfile-path <dockerfile path> --image-id <image id>         :  Add version tag for a manually registered dockstore container");
+        out("dockstore versionTag --add <name> --entry <path to tool> --git-reference <git reference> --hidden <true/false> --cwl-path <cwl path> --wdl-path <wdl path> --dockerfile-path <dockerfile path> --image-id <image id>         :  Add version tag for a manually registered dockstore container");
         out("");
-        out("dockstore versionTag --update <name> --entry <path to tool>  --hidden <true/false> --cwl-path <cwl path> --dockerfile-path <dockerfile path> --image-id <image id>                                     :  Update version tag for a dockstore container");
+        out("dockstore versionTag --update <name> --entry <path to tool>  --hidden <true/false> --cwl-path <cwl path> --wdl-path <wdl path> --dockerfile-path <dockerfile path> --image-id <image id>                                     :  Update version tag for a dockstore container");
         out("");
         out("dockstore versionTag --remove <name> --entry <path to tool>                                                                                                                                            :  Remove version tag from a manually registered dockstore container");
         out("");
