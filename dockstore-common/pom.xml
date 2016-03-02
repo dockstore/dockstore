@@ -20,7 +20,7 @@
     <parent>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
-        <version>0.3-beta.0-SNAPSHOT</version>
+        <version>0.3-beta.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>dockstore-common</artifactId>
