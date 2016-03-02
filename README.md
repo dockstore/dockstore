@@ -16,9 +16,9 @@ For the related web UI see the [dockstore-ui](https://github.com/ga4gh/dockstore
 
 ### Dependencies
 
-* Java (1.8.0_66 or similar)
+* Java (1.8.0\_66 or similar)
 * Maven (3.3.9)
-* cwltool
+* cwltool (to run CWL workflows locally)
 
 To install CWL tool:
 
