@@ -226,8 +226,9 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         // setup versions as well
         for (Tag tag : container.getTags()) {
 
-            if (tag.getName() == null || tag.getImageId() == null){
+            if (tag.getName() == null || tag.getImageId() == null || tag.isHidden()){
                 // tags with no names make no sense here
+                // also hide hidden tags
                 continue;
             }
 

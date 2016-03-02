@@ -935,9 +935,6 @@ public class Client {
             if (container == null || !container.getIsRegistered()) {
                 kill("This container is not registered.");
             } else {
-                // out(container.toString());
-                // out(containersApi.getRegisteredContainer(path).getTags().toString());
-                // Container container = containersApi.getRegisteredContainer(path);
 
                 Date dateUploaded = container.getLastBuild();
 

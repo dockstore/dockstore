@@ -46,6 +46,7 @@ import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -301,20 +302,7 @@ public class DockerRepoResource {
     public Container getRegisteredContainer(@ApiParam(value = "Container ID", required = true) @PathParam("containerId") Long containerId) {
         Container c = containerDAO.findRegisteredById(containerId);
         Helper.checkContainer(c);
-
-        // need to have this evict so that hibernate does not actually delete the tags
-        containerDAO.evict(c);
-
-        List<Tag> tags = new ArrayList<>();
-        tags.addAll(c.getTags());
-
-        for (Tag t : tags) {
-            if (t.isHidden()) {
-                c.removeTag(t);
-            }
-        }
-
-        return c;
+        return this.filterContainersForHiddenTags(c);
     }
 
     @POST
@@ -455,20 +443,20 @@ public class DockerRepoResource {
     @ApiOperation(value = "List all registered containers.", tags = { "containers" }, notes = "NO authentication", response = Container.class, responseContainer = "List")
     public List<Container> allRegisteredContainers() {
         List<Container> containers = containerDAO.findAllRegistered();
+        filterContainersForHiddenTags(containers);
+        return containers;
+    }
 
+    private Container filterContainersForHiddenTags(Container container){
+        return filterContainersForHiddenTags(Lists.newArrayList(container)).get(0);
+    }
+
+    private List<Container> filterContainersForHiddenTags(List<Container> containers) {
         for (Container c : containers) {
+            // need to have this evict so that hibernate does not actually delete the tags
             containerDAO.evict(c);
-
-            List<Tag> tags = new ArrayList<>();
-            tags.addAll(c.getTags());
-
-            for (Tag t : tags) {
-                if (t.isHidden()) {
-                    c.removeTag(t);
-                }
-            }
+            c.getTags().removeIf(Tag::isHidden);
         }
-
         return containers;
     }
 
@@ -479,9 +467,10 @@ public class DockerRepoResource {
     @ApiOperation(value = "Get a registered container by path", notes = "NO authentication", response = Container.class, responseContainer = "List")
     public List<Container> getRegisteredContainerByPath(
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
-        List<Container> container = containerDAO.findRegisteredByPath(path);
-        Helper.checkContainer(container);
-        return container;
+        List<Container> containers = containerDAO.findRegisteredByPath(path);
+        filterContainersForHiddenTags(containers);
+        Helper.checkContainer(containers);
+        return containers;
     }
 
     @GET
@@ -639,7 +628,7 @@ public class DockerRepoResource {
 
         List<Tag> tags = new ArrayList<>();
         tags.addAll(repository.getTags());
-        return (List) tags;
+        return tags;
     }
 
     // TODO: this method is very repetative with the method below, need to refactor
@@ -658,6 +647,7 @@ public class DockerRepoResource {
             @QueryParam("tag") String tag, FileType fileType) {
         Container container = containerDAO.findById(containerId);
         Helper.checkContainer(container);
+        this.filterContainersForHiddenTags(container);
         Tag tagInstance = null;
 
         if (tag == null) {

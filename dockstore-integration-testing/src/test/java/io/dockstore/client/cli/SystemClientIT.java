@@ -24,6 +24,7 @@ import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 
@@ -81,7 +82,6 @@ public class SystemClientIT {
     }
 
     public static ApiClient getWebClient(boolean correctUser, boolean admin) throws IOException, TimeoutException {
-        CommonTestUtilities.clearState();
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
         HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         ApiClient client = new ApiClient();
@@ -92,6 +92,11 @@ public class SystemClientIT {
                         + (correctUser ? parseConfig.getString(admin ? Constants.WEBSERVICE_TOKEN_USER_1
                                 : Constants.WEBSERVICE_TOKEN_USER_2) : "foobar"));
         return client;
+    }
+
+    @Before
+    public void cleanState(){
+        CommonTestUtilities.clearState();
     }
 
     @Test(expected = ApiException.class)
@@ -314,6 +319,24 @@ public class SystemClientIT {
 
         containers = containersApi.search("test5");
         assertTrue(containers.isEmpty());
+    }
+
+    @Test
+    public void testHidingTags() throws IOException, TimeoutException, ApiException {
+        ApiClient client = getAdminWebClient();
+
+        ContainersApi containersApi = new ContainersApi(client);
+        // register one more to give us something to look at
+        Container c = getContainer();
+        c.getTags().get(0).setHidden(true);
+        c = containersApi.registerManual(c);
+
+        assertTrue("should see one tag as an admin, saw " + c.getTags().size(), c.getTags().size() == 1);
+
+        ApiClient muggleClient = getWebClient();
+        ContainersApi muggleContainersApi = new ContainersApi(muggleClient);
+        final Container registeredContainer = muggleContainersApi.getRegisteredContainer(c.getId());
+        assertTrue("should see no tags as a regular user, saw " + registeredContainer.getTags().size(), registeredContainer.getTags().size() == 0);
     }
 
     @Test
