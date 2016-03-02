@@ -1,11 +1,27 @@
+/*
+ *    Copyright 2016 OICR
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
 package io.swagger.model;
 
 import java.util.Objects;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonValue;
+
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import io.swagger.model.ToolDescriptor;
 
 
 
@@ -14,7 +30,7 @@ import io.swagger.model.ToolDescriptor;
  **/
 
 @ApiModel(description = "A tool version describes a particular iteration of a tool as described by a reference to a specific image and dockerfile.")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JaxRSServerCodegen", date = "2016-01-26T18:50:10.120Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JaxRSServerCodegen", date = "2016-01-29T22:00:17.650Z")
 public class ToolVersion   {
   
   private String name = null;
@@ -23,6 +39,7 @@ public class ToolVersion   {
   private ToolDescriptor descriptor = null;
   private String image = null;
   private String dockerfile = null;
+  private String metaVersion = null;
 
   
   /**
@@ -54,10 +71,10 @@ public class ToolVersion   {
 
   
   /**
-   * A unique identifier of the tool for this particular tool registry, for example `123456` or `123456_v1`
+   * An identifier of the version of this tool for this particular tool registry, for example `v1`
    **/
   
-  @ApiModelProperty(value = "A unique identifier of the tool for this particular tool registry, for example `123456` or `123456_v1`")
+  @ApiModelProperty(value = "An identifier of the version of this tool for this particular tool registry, for example `v1`")
   @JsonProperty("registry-id")
   public String getRegistryId() {
     return registryId;
@@ -108,6 +125,20 @@ public class ToolVersion   {
   }
 
   
+  /**
+   * The version of this tool version in the registry. Iterates when fields like the description, author, etc. are updated.
+   **/
+  
+  @ApiModelProperty(value = "The version of this tool version in the registry. Iterates when fields like the description, author, etc. are updated.")
+  @JsonProperty("meta-version")
+  public String getMetaVersion() {
+    return metaVersion;
+  }
+  public void setMetaVersion(String metaVersion) {
+    this.metaVersion = metaVersion;
+  }
+
+  
 
   @Override
   public boolean equals(Object o) {
@@ -123,12 +154,13 @@ public class ToolVersion   {
         Objects.equals(registryId, toolVersion.registryId) &&
         Objects.equals(descriptor, toolVersion.descriptor) &&
         Objects.equals(image, toolVersion.image) &&
-        Objects.equals(dockerfile, toolVersion.dockerfile);
+        Objects.equals(dockerfile, toolVersion.dockerfile) &&
+        Objects.equals(metaVersion, toolVersion.metaVersion);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(name, globalId, registryId, descriptor, image, dockerfile);
+    return Objects.hash(name, globalId, registryId, descriptor, image, dockerfile, metaVersion);
   }
 
   @Override
@@ -142,6 +174,7 @@ public class ToolVersion   {
     sb.append("    descriptor: ").append(toIndentedString(descriptor)).append("\n");
     sb.append("    image: ").append(toIndentedString(image)).append("\n");
     sb.append("    dockerfile: ").append(toIndentedString(dockerfile)).append("\n");
+    sb.append("    metaVersion: ").append(toIndentedString(metaVersion)).append("\n");
     sb.append("}");
     return sb.toString();
   }

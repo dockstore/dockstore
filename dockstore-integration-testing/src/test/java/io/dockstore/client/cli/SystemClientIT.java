@@ -1,18 +1,17 @@
 /*
- * Copyright (C) 2015 Collaboratory
+ *    Copyright 2016 OICR
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
  */
 package io.dockstore.client.cli;
 
@@ -226,19 +225,20 @@ public class SystemClientIT {
         assertTrue(tools.size() == 0);
     }
 
-    @Test
-    public void testGetSpecificTool() throws IOException, TimeoutException, ApiException {
-        ApiClient client = getAdminWebClient();
-        GAGHApi toolApi = new GAGHApi(client);
-        ContainersApi containersApi = new ContainersApi(client);
-        // register one more to give us something to look at
-        Container c = getContainer();
-        containersApi.registerManual(c);
-
-        final Tool tool = toolApi.toolsRegistryIdGet("quay.io/test_org/test6");
-        assertTrue(tool != null);
-        assertTrue(tool.getRegistryId().equals("quay.io/test_org/test6"));
-    }
+    // This test is commented out for now because it expects a newer version of the GAGH API.  It will be uncommented once the API is updated
+//    @Test
+//    public void testGetSpecificTool() throws IOException, TimeoutException, ApiException {
+//        ApiClient client = getAdminWebClient();
+//        GAGHApi toolApi = new GAGHApi(client);
+//        ContainersApi containersApi = new ContainersApi(client);
+//        // register one more to give us something to look at
+//        Container c = getContainer();
+//        containersApi.registerManual(c);
+//
+//        final Tool tool = toolApi.toolsRegistryIdGet("quay.io/test_org/test6");
+//        assertTrue(tool != null);
+//        assertTrue(tool.getRegistryId().equals("quay.io/test_org/test6"));
+//    }
 
     @Test
     public void testGetFiles() throws IOException, TimeoutException, ApiException {
@@ -249,11 +249,9 @@ public class SystemClientIT {
         Container c = getContainer();
         containersApi.registerManual(c);
 
-        final ToolDockerfile toolDockerfile = toolApi.toolsRegistryIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5");
+        final ToolDockerfile toolDockerfile = toolApi.toolsRegistryIdVersionVersionIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5","master");
         assertTrue(toolDockerfile.getDockerfile().contains("dockerstuff"));
-        final ToolDockerfile toolDockerfileSpecific = toolApi.toolsRegistryIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5:master");
-        assertTrue(toolDockerfileSpecific.getDockerfile().contains("dockerstuff"));
-        final ToolDescriptor cwl = toolApi.toolsRegistryIdDescriptorGet("registry.hub.docker.com/seqware/seqware/test5:master", "CWL");
+        final ToolDescriptor cwl = toolApi.toolsRegistryIdVersionVersionIdDescriptorGet("registry.hub.docker.com/seqware/seqware/test5", "master", "CWL");
         assertTrue(cwl.getDescriptor().contains("cwlstuff"));
     }
 

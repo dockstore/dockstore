@@ -1,14 +1,32 @@
+/*
+ *    Copyright 2016 OICR
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
 package io.dockstore.webservice.helpers;
 
 import java.io.IOException;
 import java.util.Map;
 
+import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.yamlbeans.YamlReader;
 
 import io.dockstore.webservice.core.Container;
+import wdl4s.parser.WdlParser;
 
 /**
  * @author dyuen
@@ -20,13 +38,13 @@ public abstract class SourceCodeRepoInterface {
     public abstract FileResponse readFile(String fileName, String reference);
 
     /**
-     * Update a container with the contents of the CWL file from a source code repo
+     * Update a container with the contents of the descriptor file from a source code repo
      * 
      * @param c
      *            a container to be updated
-     * @return an updated container with fields from the CWL filled in
+     * @return an updated container with fields from the descriptor filled in
      */
-    public abstract Container findCWL(Container c);
+    public abstract Container findDescriptor(Container c, String fileName);
 
     public abstract String getOrganizationEmail();
 
@@ -70,6 +88,28 @@ public abstract class SourceCodeRepoInterface {
                 ex.printStackTrace();
             }
         }
+        return container;
+    }
+
+    protected Container parseWDLContent(Container container, String content) {
+        // Use Broad WDL parser to grab data
+        // Todo: Currently just checks validity of file.  In the future pull data such as author from the WDL file
+        try {
+            String wdlSource = content;
+            WdlParser parser = new WdlParser();
+            WdlParser.TokenStream tokens = new WdlParser.TokenStream(parser.lex(wdlSource, FilenameUtils.getName(container.getDefaultWdlPath())));
+            WdlParser.Ast ast = (WdlParser.Ast) parser.parse(tokens).toAst();
+
+            if (ast == null) {
+                LOG.info("Error with WDL file.");
+            } else {
+                container.setValidTrigger(true);
+                LOG.info("Repository has Dockstore.wdl");
+            }
+        } catch (WdlParser.SyntaxError syntaxError) {
+            LOG.info("Invalid WDL file.");
+        }
+
         return container;
     }
 

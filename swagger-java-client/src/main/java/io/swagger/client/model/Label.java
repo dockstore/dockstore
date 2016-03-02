@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * This describes a descriptive label that can be placed on an entry in the dockstore
  **/
 @ApiModel(description = "This describes a descriptive label that can be placed on an entry in the dockstore")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-01-26T15:51:26.437-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-02-12T16:47:38.706-05:00")
 public class Label   {
   
   private Long id = null;

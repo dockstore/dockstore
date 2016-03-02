@@ -1,3 +1,19 @@
+/*
+ *    Copyright 2016 OICR
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
 package io.dockstore.webservice.helpers;
 
 import java.util.HashMap;
@@ -62,7 +78,6 @@ public class SourceCodeRepoFactory {
             LOG.info("Cannot parse url: " + url);
             return null;
         }
-
         // These correspond to the positions of the pattern matcher
         final int sourceIndex = 1;
         final int usernameIndex = 2;
@@ -71,9 +86,9 @@ public class SourceCodeRepoFactory {
         String source = m.group(sourceIndex);
         String gitUsername = m.group(usernameIndex);
         String gitRepository = m.group(reponameIndex);
-        // LOG.info("Source: " + source);
-        // LOG.info("Username: " + gitUsername);
-        // LOG.info("Repository: " + gitRepository);
+         LOG.info("Source: " + source);
+         LOG.info("Username: " + gitUsername);
+         LOG.info("Repository: " + gitRepository);
 
         Map<String, String> map = new HashMap<>();
         map.put("Source", source);

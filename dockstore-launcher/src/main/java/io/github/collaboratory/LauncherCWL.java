@@ -1,3 +1,19 @@
+/*
+ *    Copyright 2016 OICR
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
 package io.github.collaboratory;
 
 import java.io.File;
@@ -7,8 +23,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -28,6 +46,7 @@ import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.FileSystemManager;
 import org.apache.commons.vfs2.Selectors;
 import org.apache.commons.vfs2.VFS;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,11 +68,12 @@ import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
 
-import io.dockstore.common.CWL;
+import io.cwl.avro.CWL;
+import io.cwl.avro.CommandInputParameter;
+import io.cwl.avro.CommandLineTool;
+import io.cwl.avro.CommandOutputParameter;
 import io.dockstore.common.Utilities;
-import cwl.CommandInputParameter;
-import cwl.CommandLineTool;
-import cwl.CommandOutputParameter;
+
 
 /**
  * @author boconnor 9/24/15
@@ -97,8 +117,7 @@ public class LauncherCWL {
         stdoutStream = Optional.absent();
         stderrStream = Optional.absent();
 
-        CWL cwl = new CWL();
-        gson = cwl.getTypeSafeCWLToolDocument();
+        gson = CWL.getTypeSafeCWLToolDocument();
     }
 
     /**
@@ -115,8 +134,7 @@ public class LauncherCWL {
         this.stdoutStream = Optional.of(stdoutStream);
         this.stderrStream = Optional.of(stderrStream);
 
-        CWL cwl = new CWL();
-        gson = cwl.getTypeSafeCWLToolDocument();
+        gson = CWL.getTypeSafeCWLToolDocument();
     }
 
     public void run(){
@@ -153,7 +171,7 @@ public class LauncherCWL {
         final  Map<String, FileInfo> inputsId2dockerMountMap = pullFiles(cwl, inputsAndOutputsJson);
 
         // prep outputs, just creates output dir and records what the local output path will be
-        Map<String, FileInfo> outputMap = prepUploads(cwl, inputsAndOutputsJson);
+        Map<String, List<FileInfo>> outputMap = prepUploads(cwl, inputsAndOutputsJson);
 
         // create updated JSON inputs document
         String newJsonPath = createUpdatedInputsAndOutputsJson(inputsId2dockerMountMap, outputMap, inputsAndOutputsJson);
@@ -165,10 +183,16 @@ public class LauncherCWL {
         // push output files
         pushOutputFiles(outputMap, outputObj);
     }
-    
-    private Map<String, FileInfo> prepUploads(CommandLineTool cwl, Map<String, Object> inputsOutputs) {
 
-        Map<String, FileInfo> fileMap = new HashMap<>();
+    /**
+     * Scours a CWL document paired with a JSON document to create our data structure for describing desired output files (for provisoning)
+     * @param cwl deserialized CWL document
+     * @param inputsOutputs inputs and output from json document
+     * @return a map containing all output files either singly or in arrays
+     */
+    private Map<String, List<FileInfo>> prepUploads(CommandLineTool cwl, Map<String, Object> inputsOutputs) {
+
+        Map<String, List<FileInfo>> fileMap = new HashMap<>();
 
         LOG.info("PREPPING UPLOADS...");
 
@@ -185,39 +209,21 @@ public class LauncherCWL {
             // now that I have an input name from the CWL I can find it in the JSON parameterization for this run
             LOG.info("JSON: {}", inputsOutputs);
             for (Entry<String, Object> stringObjectEntry : inputsOutputs.entrySet()) {
-
-                if (stringObjectEntry.getValue() instanceof HashMap) {
-
-                    Map param = (Map<String, Object>) stringObjectEntry.getValue();
-                    String path = (String) param.get("path");
-
-                    if (stringObjectEntry.getKey().equals(cwlID)) {
-
-                        // if it's the current one
-                        LOG.info("PATH TO UPLOAD TO: {} FOR {} FOR {}", path, cwlID, stringObjectEntry.getKey());
-
-                        // output
-                        // TODO: poor naming here, need to cleanup the variables
-                        // just file name
-                        // the file URL
-                        File filePathObj = new File(cwlID);
-                        //String newDirectory = globalWorkingDir + "/outputs/" + UUID.randomUUID().toString();
-                        String newDirectory = globalWorkingDir + "/outputs";
-                        Utilities.executeCommand("mkdir -p " + newDirectory, stdoutStream, stderrStream);
-                        File newDirectoryFile = new File(newDirectory);
-                        String uuidPath = newDirectoryFile.getAbsolutePath() + "/" + filePathObj.getName();
-
-                        // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
-                        // https://commons.apache.org/proper/commons-vfs/filesystems.html
-
-                        // now add this info to a hash so I can later reconstruct a docker -v command
-                        FileInfo new1 = new FileInfo();
-                        new1.setUrl(path);
-                        new1.setDockerPath(cwlID);
-                        new1.setLocalPath(uuidPath);
-                        fileMap.put(cwlID, new1);
-
-                        LOG.info("UPLOAD FILE: LOCAL: {} URL: {}", cwlID, path);
+                final Object value = stringObjectEntry.getValue();
+                if (value instanceof Map || value instanceof List) {
+                    final String key = stringObjectEntry.getKey();
+                    if (key.equals(cwlID)) {
+                        if (value instanceof Map) {
+                            Map param = (Map<String, Object>) stringObjectEntry.getValue();
+                            handleOutputFile(fileMap, cwlID, param, key);
+                        } else {
+                            assert(value instanceof List);
+                            for(Object entry: (List)value){
+                                if (entry instanceof Map) {
+                                    handleOutputFile(fileMap, cwlID, (Map<String, Object>)entry , key);
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -225,7 +231,50 @@ public class LauncherCWL {
         return fileMap;
     }
 
-    private String createUpdatedInputsAndOutputsJson(Map<String, FileInfo> fileMap, Map<String, FileInfo> outputMap, Map<String, Object> inputsAndOutputsJson) {
+    /**
+     * Handles one output for upload
+     * @param fileMap
+     * @param cwlID
+     * @param key
+     */
+    private void handleOutputFile(Map<String, List<FileInfo>> fileMap, final String cwlID, Map<String, Object> param, final String key) {
+        String path = (String) param.get("path");
+        // if it's the current one
+        LOG.info("PATH TO UPLOAD TO: {} FOR {} FOR {}", path, cwlID, key);
+
+        // output
+        // TODO: poor naming here, need to cleanup the variables
+        // just file name
+        // the file URL
+        File filePathObj = new File(cwlID);
+        //String newDirectory = globalWorkingDir + "/outputs/" + UUID.randomUUID().toString();
+        String newDirectory = globalWorkingDir + "/outputs";
+        Utilities.executeCommand("mkdir -p " + newDirectory, stdoutStream, stderrStream);
+        File newDirectoryFile = new File(newDirectory);
+        String uuidPath = newDirectoryFile.getAbsolutePath() + "/" + filePathObj.getName();
+
+        // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
+        // https://commons.apache.org/proper/commons-vfs/filesystems.html
+
+        // now add this info to a hash so I can later reconstruct a docker -v command
+        FileInfo new1 = new FileInfo();
+        new1.setUrl(path);
+        new1.setDockerPath(cwlID);
+        new1.setLocalPath(uuidPath);
+        fileMap.putIfAbsent(cwlID, new ArrayList<>());
+        fileMap.get(cwlID).add(new1);
+
+        LOG.info("UPLOAD FILE: LOCAL: {} URL: {}", cwlID, path);
+    }
+
+    /**
+     * fudge
+     * @param fileMap
+     * @param outputMap
+     * @param inputsAndOutputsJson
+     * @return
+     */
+    private String createUpdatedInputsAndOutputsJson(Map<String, FileInfo> fileMap, Map<String, List<FileInfo>> outputMap, Map<String, Object> inputsAndOutputsJson) {
 
         JSONObject newJSON = new JSONObject();
 
@@ -242,7 +291,8 @@ public class LauncherCWL {
                     param.put("path", localPath);
                     LOG.info("NEW FULL PATH: {}", localPath);
                 } else if (outputMap.get(paramName) != null) {
-                    final String localPath = outputMap.get(paramName).getLocalPath();
+                    //TODO: just the get the first one for a default? probably not correct
+                    final String localPath = outputMap.get(paramName).get(0).getLocalPath();
                     param.put("path", localPath);
                     LOG.info("NEW FULL PATH: {}", localPath);
                 }
@@ -253,9 +303,38 @@ public class LauncherCWL {
                 newJSON.put(paramName, newRecord);
 
                 // TODO: fill in for all possible types
-            } else if (currentParam instanceof Integer || currentParam instanceof Float || currentParam instanceof Boolean || currentParam instanceof String
-                                                                    || currentParam instanceof List) {
+            } else if (currentParam instanceof Integer || currentParam instanceof Float || currentParam instanceof Boolean || currentParam instanceof String) {
                 newJSON.put(paramName, currentParam);
+            } else if (currentParam instanceof List) {
+                // this code kinda assumes that if a list exists, its a list of files which is not correct
+                List currentParamList = (List)currentParam;
+                for (Object entry : currentParamList) {
+                    if (entry instanceof Map){
+                        Map<String, String> param = (Map<String, String>)entry;
+                        String path = param.get("path");
+                        LOG.info("PATH: {} PARAM_NAME: {}", path, paramName);
+                        // will be null for output, only dealing with inputs currently
+                        // TODO: can outputs be file arrays too???  Maybe need to do something for globs??? Need to investigate
+                        if (fileMap.get(paramName + ":" + path) != null) {
+                            final String localPath = fileMap.get(paramName + ":" + path).getLocalPath();
+                            param.put("path", localPath);
+                            LOG.info("NEW FULL PATH: {}", localPath);
+                        }
+                        // now add to the new JSON structure
+                        JSONArray exitingArray = (JSONArray) newJSON.get(paramName);
+                        if (exitingArray == null) {
+                            exitingArray = new JSONArray();
+                        }
+                        JSONObject newRecord = new JSONObject();
+                        newRecord.put("class", param.get("class"));
+                        newRecord.put("path", param.get("path"));
+                        exitingArray.add(newRecord);
+                        newJSON.put(paramName, exitingArray);
+                    } else{
+                        newJSON.put(paramName, currentParam);
+                    }
+                }
+
             } else {
                 throw new RuntimeException("we found an unexpected datatype as follows: " + currentParam.getClass() + "\n with content " + currentParam);
             }
@@ -310,48 +389,77 @@ public class LauncherCWL {
         return obj;
     }
 
-    private void pushOutputFiles(Map<String, FileInfo> fileMap, Map<String, Object> outputObject) {
+    private void pushOutputFiles(Map<String, List<FileInfo>> fileMap, Map<String, Object> outputObject) {
 
         LOG.info("UPLOADING FILES...");
 
-        for (String fileName : fileMap.keySet()) {
-            FileInfo file = fileMap.get(fileName);
+        for (String key : fileMap.keySet()) {
+            List<FileInfo> files = fileMap.get(key);
 
-            String cwlOutputPath = (String)((Map)((Map)outputObject).get(fileName)).get("path");
-
-            LOG.info("NAME: {} URL: {} FILENAME: {} CWL OUTPUT PATH: {}", file.getLocalPath(), file.getUrl(), fileName, cwlOutputPath);
-
-            if (file.getUrl().startsWith("s3://")) {
-                AmazonS3 s3Client = new AmazonS3Client(new ClientConfiguration().withSignerOverride("S3Signer"));
-                if (config.containsKey(S3_ENDPOINT)){
-                    final String endpoint = config.getString(S3_ENDPOINT);
-                    LOG.info("found custom S3 endpoint, setting to {}", endpoint);
-                    s3Client.setEndpoint(endpoint);
-                    s3Client.setS3ClientOptions(new S3ClientOptions().withPathStyleAccess(true));
+            if ((outputObject.get(key) instanceof List)){
+                List<Map<String, String>> cwltoolOutput = (List)outputObject.get(key);
+                // lengths should be the same
+                assert(cwltoolOutput.size() == files.size());
+                // for through each one and handle it, we have to assume that the order matches?
+                final Iterator<Map<String, String>> iterator = cwltoolOutput.iterator();
+                for(FileInfo info : files){
+                    final Map<String, String> cwlToolOutputEntry = iterator.next();
+                    provisionOutputFile(key, info, cwlToolOutputEntry);
                 }
-                String trimmedPath = file.getUrl().replace("s3://","");
-                List<String> splitPathList  = Lists.newArrayList(trimmedPath.split("/"));
-                String bucketName = splitPathList.remove(0);
-
-                s3Client.putObject(new PutObjectRequest(bucketName, Joiner.on("/").join(splitPathList), new File(cwlOutputPath)));
-            } else {
-
-                try {
-                    FileSystemManager fsManager;
-                    // trigger a copy from the URL to a local file path that's a UUID to avoid collision
-                    fsManager = VFS.getManager();
-                    FileObject dest = fsManager.resolveFile(file.getUrl());
-                    FileObject src = fsManager.resolveFile(new File(cwlOutputPath).getAbsolutePath());
-                    dest.copyFrom(src, Selectors.SELECT_SELF);
-                } catch (FileSystemException e) {
-                    throw new RuntimeException("Could not provision output files", e);
-                }
+            }else {
+                assert(files.size() == 1);
+                FileInfo file = files.get(0);
+                final Map<String, String> fileMapDataStructure = (Map) (outputObject).get(key);
+                provisionOutputFile(key, file, fileMapDataStructure);
             }
         }
     }
 
+    /**
+     * Copy one output file to its final location
+     * @param key informational, identifies this file in the output
+     * @param file information on the final resting place for the output file
+     * @param fileMapDataStructure the CWLtool output which contains the path to the file after cwltool is done with it
+     */
+    private void provisionOutputFile(final String key, FileInfo file, final Map<String, String> fileMapDataStructure) {
+        String cwlOutputPath = fileMapDataStructure.get("path");
+        if (!fileMapDataStructure.get("class").equalsIgnoreCase("File")){
+            System.err.println(cwlOutputPath + " is not a file, ignoring");
+            return;
+        }
+        LOG.info("NAME: {} URL: {} FILENAME: {} CWL OUTPUT PATH: {}", file.getLocalPath(), file.getUrl(), key, cwlOutputPath);
 
-    
+        if (file.getUrl().startsWith("s3://")) {
+            AmazonS3 s3Client = new AmazonS3Client(new ClientConfiguration().withSignerOverride("S3Signer"));
+            if (config.containsKey(S3_ENDPOINT)) {
+                final String endpoint = config.getString(S3_ENDPOINT);
+                LOG.info("found custom S3 endpoint, setting to {}", endpoint);
+                s3Client.setEndpoint(endpoint);
+                s3Client.setS3ClientOptions(new S3ClientOptions().withPathStyleAccess(true));
+            }
+            String trimmedPath = file.getUrl().replace("s3://", "");
+            List<String> splitPathList = Lists.newArrayList(trimmedPath.split("/"));
+            String bucketName = splitPathList.remove(0);
+
+            s3Client.putObject(new PutObjectRequest(bucketName, Joiner.on("/").join(splitPathList), new File(cwlOutputPath)));
+        } else {
+
+            try {
+                FileSystemManager fsManager;
+                // trigger a copy from the URL to a local file path that's a UUID to avoid collision
+                fsManager = VFS.getManager();
+
+                // check for a local file path
+
+                FileObject dest = fsManager.resolveFile(file.getUrl());
+                FileObject src = fsManager.resolveFile(new File(cwlOutputPath).getAbsolutePath());
+                dest.copyFrom(src, Selectors.SELECT_SELF);
+            } catch (FileSystemException e) {
+                throw new RuntimeException("Could not provision output files", e);
+            }
+        }
+    }
+
     private String getStorageClient() {
     	return config.getString(DCC_CLIENT_KEY, "/icgc/dcc-storage/bin/dcc-storage-client");
     }
@@ -360,12 +468,9 @@ public class LauncherCWL {
     	// default layout saves to original_file_name/object_id
     	// file name is the directory and object id is actual file name
     	String client = getStorageClient();
-    	StringBuilder bob = new StringBuilder(client).append(" --quiet");
-        bob.append(" download");
-    	bob.append(" --object-id ").append(objectId);
-    	bob.append(" --output-dir ").append(downloadDir);
-    	bob.append(" --output-layout id");
-    	Utilities.executeCommand(bob.toString(), stdoutStream, stderrStream);
+        String bob = new StringBuilder().append(client).append(" --quiet").append(" download").append(" --object-id ").append(objectId)
+                         .append(" --output-dir ").append(downloadDir).append(" --output-layout id").toString();
+        Utilities.executeCommand(bob, stdoutStream, stderrStream);
     }
     
     private Map<String, FileInfo> pullFiles(CommandLineTool cwl, Map<String, Object> inputsOutputs) {
@@ -388,88 +493,120 @@ public class LauncherCWL {
             LOG.info("JSON: {}", inputsOutputs);
             for (Entry<String, Object> stringObjectEntry : inputsOutputs.entrySet()) {
 
-                if (stringObjectEntry.getValue() instanceof HashMap) {
+                // in this case, the input is an array and not a single instance
+                if (stringObjectEntry.getValue() instanceof ArrayList) {
+                    // need to handle case where it is an array, but not an array of files
+                    List stringObjectEntryList = (List)stringObjectEntry.getValue();
+                    for(Object entry: stringObjectEntryList) {
+                        if (entry instanceof Map) {
+                            Map lhm = (Map) entry;
+                            if (lhm.containsKey("path") && lhm.get("path") instanceof String) {
+                                String path = (String) lhm.get("path");
+                                // notice I'm putting key:path together so they are unique in the hash
+                                if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
+                                    doProcessFile(stringObjectEntry.getKey() + ":" + path, path, cwlInputFileID, fileMap);
+                                }
+                            }
+                        }
+                    }
+                // in this case the input is a single instance and not an array
+                } else if (stringObjectEntry.getValue() instanceof HashMap) {
 
                     HashMap param = (HashMap) stringObjectEntry.getValue();
                     String path = (String) param.get("path");
-
                     if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
-                        // if it's the current one
-                        LOG.info("PATH TO DOWNLOAD FROM: {} FOR {} FOR {}", path, cwlInputFileID, stringObjectEntry.getKey());
-
-                        // set up output paths
-                        String downloadDirectory = globalWorkingDir + "/inputs/" + UUID.randomUUID();
-                        Utilities.executeCommand("mkdir -p " + downloadDirectory, stdoutStream, stderrStream);
-                        File downloadDirFileObj = new File(downloadDirectory);
-
-                        String targetFilePath = downloadDirFileObj.getAbsolutePath() + "/" + cwlInputFileID;
-
-                        // expects URI in "path": "icgc:eef47481-670d-4139-ab5b-1dad808a92d9"
-                        PathInfo pathInfo = new PathInfo(path);
-                        if (pathInfo.isObjectIdType()) {
-                            String objectId = pathInfo.getObjectId();
-                            downloadFromDccStorage(objectId, downloadDirectory);
-
-                            // downloaded file
-                            String downloadPath = downloadDirFileObj.getAbsolutePath() + "/" + objectId;
-                            System.out.println("download path: " + downloadPath);
-                            File downloadedFileFileObj = new File(downloadPath);
-                            File targetPathFileObj = new File(targetFilePath);
-                            try {
-                                Files.move(downloadedFileFileObj, targetPathFileObj);
-                            } catch (IOException ioe) {
-                                LOG.error(ioe.getMessage());
-                                throw new RuntimeException("Could not move input file: ", ioe);
-                            }
-                        } else if (path.startsWith("s3://")) {
-                            AmazonS3 s3Client = new AmazonS3Client(new ClientConfiguration().withSignerOverride("S3Signer"));
-                            if (config.containsKey(S3_ENDPOINT)) {
-                                final String endpoint = config.getString(S3_ENDPOINT);
-                                LOG.info("found custom S3 endpoint, setting to {}", endpoint);
-                                s3Client.setEndpoint(endpoint);
-                                s3Client.setS3ClientOptions(new S3ClientOptions().withPathStyleAccess(true));
-                            }
-                            String trimmedPath = path.replace("s3://", "");
-                            List<String> splitPathList = Lists.newArrayList(trimmedPath.split("/"));
-                            String bucketName = splitPathList.remove(0);
-
-                            S3Object object = s3Client.getObject(
-                                    new GetObjectRequest(bucketName, Joiner.on("/").join(splitPathList)));
-                            try {
-                                FileUtils.copyInputStreamToFile(object.getObjectContent(), new File(targetFilePath));
-                            } catch (IOException e) {
-                                LOG.error(e.getMessage());
-                                throw new RuntimeException("Could not provision input files from S3", e);
-                            }
-                        } else {
-                            // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
-                            // https://commons.apache.org/proper/commons-vfs/filesystems.html
-                            FileSystemManager fsManager;
-                            try {
-                                // trigger a copy from the URL to a local file path that's a UUID to avoid collision
-                                fsManager = VFS.getManager();
-                                FileObject src = fsManager.resolveFile(path);
-                                FileObject dest = fsManager.resolveFile(new File(targetFilePath).getAbsolutePath());
-                                dest.copyFrom(src, Selectors.SELECT_SELF);
-                            } catch (FileSystemException e) {
-                                LOG.error(e.getMessage());
-                                throw new RuntimeException("Could not provision input files", e);
-                            }
-                        }
-                        // now add this info to a hash so I can later reconstruct a docker -v command
-                        FileInfo info = new FileInfo();
-                        info.setLocalPath(targetFilePath);
-                        info.setLocalPath(targetFilePath);
-                        info.setDockerPath(cwlInputFileID);
-                        info.setUrl(path);
-
-                        fileMap.put(cwlInputFileID, info);
-                        LOG.info("DOWNLOADED FILE: LOCAL: {} URL: {}", cwlInputFileID, path);
+                        doProcessFile(stringObjectEntry.getKey(), path, cwlInputFileID, fileMap);
                     }
+
                 }
             }
         }
         return fileMap;
+    }
+
+    /**
+     * Looks like this is intended to copy one file from source to a local destination
+     * @param key what is this?
+     * @param path the path for the source of the file, whether s3 or http
+     * @param cwlInputFileID looks like the descriptor for a particular path+class pair in the parameter json file, starts with a hash in the CWL file
+     * @param fileMap store information on each added file as a return type
+     */
+    private void doProcessFile(final String key, final String path, final String cwlInputFileID, Map<String, FileInfo> fileMap) {
+
+        // key is unique for that key:download URL, cwlInputFileID is just the key
+
+        LOG.info("PATH TO DOWNLOAD FROM: {} FOR {} FOR {}", path, cwlInputFileID, key);
+
+        // set up output paths
+        String downloadDirectory = globalWorkingDir + "/inputs/" + UUID.randomUUID();
+        Utilities.executeCommand("mkdir -p " + downloadDirectory, stdoutStream, stderrStream);
+        File downloadDirFileObj = new File(downloadDirectory);
+
+        String targetFilePath = downloadDirFileObj.getAbsolutePath() + "/" + cwlInputFileID;
+
+        // expects URI in "path": "icgc:eef47481-670d-4139-ab5b-1dad808a92d9"
+        PathInfo pathInfo = new PathInfo(path);
+        if (pathInfo.isObjectIdType()) {
+            String objectId = pathInfo.getObjectId();
+            downloadFromDccStorage(objectId, downloadDirectory);
+
+            // downloaded file
+            String downloadPath = downloadDirFileObj.getAbsolutePath() + "/" + objectId;
+            System.out.println("download path: " + downloadPath);
+            File downloadedFileFileObj = new File(downloadPath);
+            File targetPathFileObj = new File(targetFilePath);
+            try {
+                Files.move(downloadedFileFileObj, targetPathFileObj);
+            } catch (IOException ioe) {
+                LOG.error(ioe.getMessage());
+                throw new RuntimeException("Could not move input file: ", ioe);
+            }
+        } else if (path.startsWith("s3://")) {
+            AmazonS3 s3Client = new AmazonS3Client(new ClientConfiguration().withSignerOverride("S3Signer"));
+            if (config.containsKey(S3_ENDPOINT)) {
+                final String endpoint = config.getString(S3_ENDPOINT);
+                LOG.info("found custom S3 endpoint, setting to {}", endpoint);
+                s3Client.setEndpoint(endpoint);
+                s3Client.setS3ClientOptions(new S3ClientOptions().withPathStyleAccess(true));
+            }
+            String trimmedPath = path.replace("s3://", "");
+            List<String> splitPathList = Lists.newArrayList(trimmedPath.split("/"));
+            String bucketName = splitPathList.remove(0);
+
+            S3Object object = s3Client.getObject(
+                    new GetObjectRequest(bucketName, Joiner.on("/").join(splitPathList)));
+            try {
+                FileUtils.copyInputStreamToFile(object.getObjectContent(), new File(targetFilePath));
+            } catch (IOException e) {
+                LOG.error(e.getMessage());
+                throw new RuntimeException("Could not provision input files from S3", e);
+            }
+        } else if (!pathInfo.isLocalFileType()) {
+            // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
+            // https://commons.apache.org/proper/commons-vfs/filesystems.html
+            FileSystemManager fsManager;
+            try {
+                // trigger a copy from the URL to a local file path that's a UUID to avoid collision
+                fsManager = VFS.getManager();
+                FileObject src = fsManager.resolveFile(path);
+                FileObject dest = fsManager.resolveFile(new File(targetFilePath).getAbsolutePath());
+                dest.copyFrom(src, Selectors.SELECT_SELF);
+            } catch (FileSystemException e) {
+                LOG.error(e.getMessage());
+                throw new RuntimeException("Could not provision input files", e);
+            }
+        }
+        if (!pathInfo.isLocalFileType()) {
+            // now add this info to a hash so I can later reconstruct a docker -v command
+            FileInfo info = new FileInfo();
+            info.setLocalPath(targetFilePath);
+            info.setLocalPath(targetFilePath);
+            info.setDockerPath(cwlInputFileID);
+            info.setUrl(path);
+            // key may contain either key:download_URL for array inputs or just cwlInputFileID for scalar input
+            fileMap.put(key, info);
+            LOG.info("DOWNLOADED FILE: LOCAL: {} URL: {}", cwlInputFileID, path);
+        }
     }
 
     private CommandLine parseCommandLine(CommandLineParser parser, String[] args) {
@@ -491,6 +628,7 @@ public class LauncherCWL {
         public static final String DCC_STORAGE_SCHEME = "icgc";
     	private boolean objectIdType;
     	private String objectId = "";
+        private boolean localFileType = false;
     	
 		public boolean isObjectIdType() {
 			return objectIdType;
@@ -503,18 +641,28 @@ public class LauncherCWL {
 		public PathInfo(String path) {
             try {
 		    	URI objectIdentifier = URI.create(path);	// throws IllegalArgumentException if it isn't a valid URI
+                if (objectIdentifier.getScheme() == null){
+                    localFileType = true;
+                }
 		    	if (objectIdentifier.getScheme().equalsIgnoreCase(DCC_STORAGE_SCHEME)) {
 		    		objectIdType = true;
 		    		objectId = objectIdentifier.getSchemeSpecificPart().toLowerCase();
 		    	}				
-			} catch (IllegalArgumentException iae) {
-				StringBuilder bob = new StringBuilder("Invalid path specified for CWL pre-processor values: ").append(path);
-				LOG.warn(bob.toString());
+			} catch (IllegalArgumentException | NullPointerException iae) {
+                // if there is no scheme, then it must be a local file
+                LOG.warn("Invalid path specified for CWL pre-processor values: " + path);
 				objectIdType = false;
 			}
 		}
+
+        public boolean isLocalFileType() {
+            return localFileType;
+        }
     }
-    
+
+    /**
+     * Describes a single File
+     */
     public static class FileInfo {
         private String localPath;
         private String dockerPath;

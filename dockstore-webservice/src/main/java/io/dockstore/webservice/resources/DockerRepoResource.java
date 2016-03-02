@@ -1,18 +1,17 @@
 /*
- * Copyright (C) 2015 Consonance
+ *    Copyright 2016 OICR
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
  */
 package io.dockstore.webservice.resources;
 
@@ -55,6 +54,7 @@ import io.dockstore.webservice.api.RegisterRequest;
 import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.ContainerMode;
 import io.dockstore.webservice.core.Label;
+import io.dockstore.webservice.core.Registry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
 import io.dockstore.webservice.core.Tag;
@@ -247,6 +247,36 @@ public class DockerRepoResource {
         return c;
     }
 
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}")
+    @ApiOperation(value = "Update the container with the given container.", response = Container.class)
+    public Container updateContainer(@ApiParam(hidden = true) @Auth Token authToken,
+            @ApiParam(value = "Container to modify.", required = true) @PathParam("containerId") Long containerId,
+            @ApiParam(value = "Container with updated information", required = true) Container container) {
+        Container c = containerDAO.findById(containerId);
+        Helper.checkContainer(c);
+
+        User user = userDAO.findById(authToken.getUserId());
+        Helper.checkUser(user, c);
+
+        Container duplicate = containerDAO.findByToolPath(container.getPath(), container.getToolname());
+
+        if (duplicate != null && duplicate.getId() != containerId) {
+            LOG.info("duplicate container found: {}" + container.getToolPath());
+            throw new CustomWebApplicationException("Container " + container.getToolPath() + " already exists.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        c.updateInfo(container);
+
+        Container result = containerDAO.findById(containerId);
+        Helper.checkContainer(result);
+
+        return result;
+
+    }
+
     @GET
     @Timed
     @UnitOfWork
@@ -317,12 +347,24 @@ public class DockerRepoResource {
         if (!Helper.isGit(container.getGitUrl())) {
             container.setGitUrl(Helper.convertHttpsToSsh(container.getGitUrl()));
         }
-
+        container.setPath(container.getPath());
         Container duplicate = containerDAO.findByToolPath(container.getPath(), container.getToolname());
 
         if (duplicate != null) {
             LOG.info("duplicate container found: {}" + container.getToolPath());
             throw new CustomWebApplicationException("Container " + container.getToolPath() + " already exists.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // Check if container has tags
+        if (container.getRegistry() == Registry.QUAY_IO && !Helper.checkQuayContainerForTags(container, client, objectMapper, tokenDAO, user.getId())) {
+            LOG.info("container has no tags.");
+            throw new CustomWebApplicationException("Container " + container.getToolPath() + " has no tags. Quay containers must have at least one tag.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // Check if user owns repo, or if user is in the organization which owns the container
+        if (container.getRegistry() == Registry.QUAY_IO  && !Helper.checkIfUserOwns(container, client, objectMapper, tokenDAO, user.getId())) {
+            LOG.info("User does not own the given Quay Repo.");
+            throw new CustomWebApplicationException("User does not own the container " + container.getPath() + ". You can only add Quay repositories that you own or are part of the organization", HttpStatus.SC_BAD_REQUEST);
         }
 
         long id = containerDAO.create(container);
@@ -613,7 +655,7 @@ public class DockerRepoResource {
     }
 
     private SourceFile getSourceFile(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
-            @QueryParam("tag") String tag, FileType dockerfile) {
+            @QueryParam("tag") String tag, FileType fileType) {
         Container container = containerDAO.findById(containerId);
         Helper.checkContainer(container);
         Tag tagInstance = null;
@@ -632,7 +674,7 @@ public class DockerRepoResource {
             throw new CustomWebApplicationException("Invalid tag.", HttpStatus.SC_BAD_REQUEST);
         } else {
             for (SourceFile file : tagInstance.getSourceFiles()) {
-                if (file.getType() == dockerfile) {
+                if (file.getType() == fileType) {
                     return file;
                 }
             }
@@ -640,6 +682,7 @@ public class DockerRepoResource {
         throw new CustomWebApplicationException("File not found.", HttpStatus.SC_NOT_FOUND);
     }
 
+    // Add for new descriptor types
     @GET
     @Timed
     @UnitOfWork
@@ -650,4 +693,16 @@ public class DockerRepoResource {
 
         return getSourceFile(containerId, tag, FileType.DOCKSTORE_CWL);
     }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}/wdl")
+    @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class)
+    public SourceFile wdl(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
+            @QueryParam("tag") String tag) {
+
+        return getSourceFile(containerId, tag, FileType.DOCKSTORE_WDL);
+    }
+
 }

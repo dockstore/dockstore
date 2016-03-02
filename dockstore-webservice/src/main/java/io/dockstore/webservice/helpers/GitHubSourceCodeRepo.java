@@ -1,3 +1,19 @@
+/*
+ *    Copyright 2016 OICR
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
 package io.dockstore.webservice.helpers;
 
 import java.io.IOException;
@@ -5,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
 
+import org.apache.commons.io.FilenameUtils;
 import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.RepositoryContents;
 import org.eclipse.egit.github.core.User;
@@ -16,6 +33,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.dockstore.webservice.core.Container;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * @author dyuen
@@ -48,6 +67,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     @Override
     public FileResponse readFile(String fileName, String reference) {
         FileResponse cwl = new FileResponse();
+        checkNotNull(fileName, "The fileName given is null.");
         try {
             Repository repo = service.getRepository(gitUsername, gitRepository);
             List<RepositoryContents> contents;
@@ -76,9 +96,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public Container findCWL(Container c) {
-        String fileName = c.getDefaultCwlPath();
-
+    public Container findDescriptor(Container c, String fileName) {
+        String descriptorType = FilenameUtils.getExtension(fileName);
         Repository repository = null;
         try {
             repository = service.getRepository(gitUsername, gitRepository);
@@ -97,10 +116,20 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     byte[] decode = Base64.getDecoder().decode(encoded);
                     String content = new String(decode, StandardCharsets.UTF_8);
 
-                    c = parseCWLContent(c, content);
+                    // Add for new descriptor types
+                    // Grab important metadata from CWL file (expects file to have .cwl extension)
+                    if (descriptorType.equals("cwl")) {
+                        c = parseCWLContent(c, content);
+                    }
+                    if (descriptorType.equals("wdl")) {
+                        c = parseWDLContent(c, content);
+                    }
+                    
+                    // Currently only can pull name of task? or workflow from WDL
+                    // Add this later, should call parseWDLContent and use the existing Broad WDL parser
                 }
             } catch (IOException ex) {
-                LOG.info("Repo: {} has no Dockstore.cwl", repository.getName());
+                LOG.info("Repo: {} has no descriptor file ", repository.getName());
             }
         }
         return c;

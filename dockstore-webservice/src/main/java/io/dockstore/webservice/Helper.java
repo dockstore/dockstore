@@ -1,18 +1,17 @@
 /*
- * Copyright (C) 2015 Collaboratory
+ *    Copyright 2016 OICR
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
  */
 package io.dockstore.webservice;
 
@@ -27,6 +26,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.dockstore.webservice.helpers.QuayImageRegistry;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
@@ -67,6 +67,8 @@ public final class Helper {
 
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
 
+    public static final String QUAY_URL = "https://quay.io/api/v1/";
+
     // public static final String DOCKSTORE_CWL = "Dockstore.cwl";
     public static class RepoList {
 
@@ -91,7 +93,9 @@ public final class Helper {
             List<SourceFile> newFiles = loadFiles(client, bitbucketToken, githubToken, container, tag);
             tag.getSourceFiles().clear();
 
+            // Add for new descriptor types
             boolean hasCwl = false;
+            boolean hasWdl = false;
             boolean hasDockerfile = false;
 
             for (SourceFile newFile : newFiles) {
@@ -105,13 +109,19 @@ public final class Helper {
                     hasDockerfile = true;
                     LOG.info("HAS Dockerfile");
                 }
+                // Add for new descriptor types
                 if (file.getType() == FileType.DOCKSTORE_CWL) {
                     hasCwl = true;
                     LOG.info("HAS Dockstore.cwl");
                 }
+                if (file.getType() == FileType.DOCKSTORE_WDL) {
+                    hasWdl = true;
+                    LOG.info("HAS Dockstore.wdl");
+                }
             }
 
-            tag.setValid(hasCwl && hasDockerfile);
+            // Add for new descriptor types
+            tag.setValid((hasCwl || hasWdl) && hasDockerfile);
         }
     }
 
@@ -226,11 +236,16 @@ public final class Helper {
                     bitbucketToken == null ? null : bitbucketToken.getContent(), githubToken.getContent());
             String email = "";
             if (sourceCodeRepo != null) {
-                LOG.info("Parsing CWL...");
-                // find if there is a Dockstore.cwl file from the git repository
-                sourceCodeRepo.findCWL(container);
+                // Grab and parse files to get container information
+                // Add for new descriptor types
+                container.setValidTrigger(false);  // Default is false since we must first check to see if descriptors are valid
 
-                email = sourceCodeRepo.getOrganizationEmail();
+                LOG.info("Parsing CWL...");
+                sourceCodeRepo.findDescriptor(container, container.getDefaultCwlPath());
+
+                LOG.info("Parsing WDL...");
+                sourceCodeRepo.findDescriptor(container, container.getDefaultWdlPath());
+
             }
             container.setEmail(email);
 
@@ -260,7 +275,7 @@ public final class Helper {
             final Container oldContainer = iterator.next();
             boolean exists = false;
             for (final Container newContainer : apiContainerList) {
-                if (newContainer.getToolPath().equals(oldContainer.getToolPath())) {
+                if ((newContainer.getToolPath().equals(oldContainer.getToolPath())) || (newContainer.getPath().equals(oldContainer.getPath()) && newContainer.getGitUrl().equals(oldContainer.getGitUrl()))) {
                     exists = true;
                     break;
                 }
@@ -275,12 +290,12 @@ public final class Helper {
 
         // when a container from the registry (ex: quay.io) has newer content, update it from
         for (Container newContainer : apiContainerList) {
-            String path = newContainer.getToolPath();
+            String path = newContainer.getPath();
             boolean exists = false;
 
             // Find if user already has the container
             for (Container oldContainer : dbContainerList) {
-                if (newContainer.getToolPath().equals(oldContainer.getToolPath())) {
+                if ((newContainer.getToolPath().equals(oldContainer.getToolPath())) || (newContainer.getPath().equals(oldContainer.getPath()) && newContainer.getGitUrl().equals(oldContainer.getGitUrl()))) {
                     exists = true;
                     oldContainer.update(newContainer);
                     break;
@@ -402,7 +417,10 @@ public final class Helper {
                             }
                         }
 
+                        // Add for new descriptor types
                         tag.setCwlPath(c.getDefaultCwlPath());
+                        tag.setWdlPath(c.getDefaultWdlPath());
+
                         tag.setDockerfilePath(c.getDefaultDockerfilePath());
                     }
                 }
@@ -412,6 +430,27 @@ public final class Helper {
         }
 
         return tagMap;
+    }
+
+    /**
+     * Check if the given quay container has tags
+     * @param container
+     * @param client
+     * @param objectMapper
+     * @param tokenDAO
+         * @param userId
+         * @return true if container has tags, false otherwise
+         */
+    public static Boolean checkQuayContainerForTags(final Container container,final HttpClient client,
+            final ObjectMapper objectMapper, final TokenDAO tokenDAO, final long userId) {
+        List<Token> tokens = tokenDAO.findByUserId(userId);
+        Token quayToken = extractToken(tokens, TokenType.QUAY_IO.toString());
+        ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
+
+        final ImageRegistryInterface imageRegistry = factory.createImageRegistry(container.getRegistry());
+        final List<Tag> tags = imageRegistry.getTags(container);
+
+        return !tags.isEmpty();
     }
 
     /**
@@ -427,22 +466,16 @@ public final class Helper {
     private static List<SourceFile> loadFiles(HttpClient client, Token bitbucketToken, Token githubToken, Container c, Tag tag) {
         List<SourceFile> files = new ArrayList<>();
 
-        FileResponse cwlResponse = readGitRepositoryFile(c, FileType.DOCKSTORE_CWL, client, tag, bitbucketToken, githubToken);
-        if (cwlResponse != null) {
-            SourceFile dockstoreCwl = new SourceFile();
-            dockstoreCwl.setType(FileType.DOCKSTORE_CWL);
-            dockstoreCwl.setContent(cwlResponse.getContent());
+        // Add for new descriptor types
+        for (FileType f : FileType.values()) {
+            FileResponse fileResponse = readGitRepositoryFile(c, f, client, tag, bitbucketToken, githubToken);
+            if (fileResponse != null) {
+                SourceFile dockstoreFile = new SourceFile();
+                dockstoreFile.setType(f);
+                dockstoreFile.setContent(fileResponse.getContent());
 
-            files.add(dockstoreCwl);
-        }
-
-        FileResponse dockerfileResponse = readGitRepositoryFile(c, FileType.DOCKERFILE, client, tag, bitbucketToken, githubToken);
-        if (dockerfileResponse != null) {
-            SourceFile dockerfile = new SourceFile();
-            dockerfile.setType(FileType.DOCKERFILE);
-            dockerfile.setContent(dockerfileResponse.getContent());
-
-            files.add(dockerfile);
+                files.add(dockstoreFile);
+            }
         }
 
         return files;
@@ -573,6 +606,22 @@ public final class Helper {
 
         List<Container> apiContainers = new ArrayList<>();
 
+        // Find a container with the given container's Path and is not manual
+        Container duplicatePath = null;
+        List<Container> containersList = containerDAO.findByPath(container.getPath());
+        for(Container c : containersList) {
+            if (c.getMode() != ContainerMode.MANUAL_IMAGE_PATH) {
+                duplicatePath = c;
+                break;
+            }
+        }
+
+        // If exists, check conditions to see if it should be changed to auto (in sync with quay tags and git repo)
+        if (container.getMode() == ContainerMode.MANUAL_IMAGE_PATH && duplicatePath != null  && container.getRegistry().toString().equals(
+                Registry.QUAY_IO.toString()) && duplicatePath.getGitUrl().equals(container.getGitUrl())) {
+            container.setMode(duplicatePath.getMode());
+        }
+
         if (container.getMode() == ContainerMode.MANUAL_IMAGE_PATH) {
             apiContainers.add(container);
         } else {
@@ -582,6 +631,7 @@ public final class Helper {
                 apiContainers.addAll(anInterface.getContainers(namespaces));
             }
         }
+        apiContainers.removeIf(container1 -> !container1.getPath().equals(container.getPath()));
 
         Map<String, ArrayList<?>> mapOfBuilds = new HashMap<>();
         if (anInterface != null) {
@@ -592,8 +642,6 @@ public final class Helper {
         dbContainers.add(container);
 
         removeContainersThatCannotBeUpdated(dbContainers);
-
-        apiContainers.removeIf(container1 -> !container1.getPath().equals(container.getPath()));
 
         final User dockstoreUser = userDAO.findById(userId);
         // update information on a container by container level
@@ -672,10 +720,13 @@ public final class Helper {
 
         String fileName = "";
 
+        // Add for new descriptor types
         if (fileType == FileType.DOCKERFILE) {
             fileName = tag.getDockerfilePath();
         } else if (fileType == FileType.DOCKSTORE_CWL) {
             fileName = tag.getCwlPath();
+        } else if (fileType == FileType.DOCKSTORE_WDL) {
+            fileName = tag.getWdlPath();
         }
 
         return sourceCodeRepo.readFile(fileName, reference);
@@ -688,7 +739,7 @@ public final class Helper {
      */
     public static String parseReference(String reference) {
         if (reference != null) {
-            Pattern p = Pattern.compile("(\\S+)/(\\S+)/(\\S+)");
+            Pattern p = Pattern.compile("([\\S][^/\\s]+)?/([\\S][^/\\s]+)?/(\\S+)");
             Matcher m = p.matcher(reference);
             if (!m.find()) {
                 LOG.info("Cannot parse reference: {}", reference);
@@ -855,5 +906,54 @@ public final class Helper {
         Pattern p = Pattern.compile("git\\@(\\S+):(\\S+)/(\\S+)\\.git");
         Matcher m = p.matcher(url);
         return m.matches();
+    }
+
+    /**
+     * Checks if a user owns a given quay repo or is part of an organization that owns the quay repo
+     * @param container
+     * @param client
+     * @param objectMapper
+     * @param tokenDAO
+         * @param userId
+         * @return
+         */
+    public static Boolean checkIfUserOwns(final Container container,final HttpClient client, final ObjectMapper objectMapper, final TokenDAO tokenDAO, final long userId) {
+        List<Token> tokens = tokenDAO.findByUserId(userId);
+        // get quay token
+        Token quayToken = extractToken(tokens, TokenType.QUAY_IO.toString());
+
+        if (container.getRegistry() == Registry.QUAY_IO && quayToken == null) {
+            LOG.info("WARNING: QUAY.IO token not found!");
+            throw new CustomWebApplicationException("A valid Quay.io token is required to add this container.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // set up
+        QuayImageRegistry factory = new QuayImageRegistry(client, objectMapper, quayToken);
+
+        // get quay username
+        String quayUsername = quayToken.getUsername();
+
+
+        // call quay api, check if user owns or is part of owning organization
+        Map<String,Object> map = factory.getQuayInfo(container);
+
+
+        if (map != null){
+            String namespace = map.get("namespace").toString();
+            boolean isOrg = (Boolean)map.get("is_organization");
+
+            if (isOrg) {
+                List<String> namespaces = factory.getNamespaces();
+                for(String nm : namespaces) {
+                    if (nm.equals(namespace)) {
+                        return true;
+                    }
+                    return false;
+                }
+            } else {
+                return (namespace.equals(quayUsername) && !isOrg);
+            }
+        }
+        return false;
     }
 }

@@ -1,11 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~    Copyright 2016 OICR
+  ~
+  ~    Licensed under the Apache License, Version 2.0 (the "License");
+  ~    you may not use this file except in compliance with the License.
+  ~    You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~    Unless required by applicable law or agreed to in writing, software
+  ~    distributed under the License is distributed on an "AS IS" BASIS,
+  ~    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~    See the License for the specific language governing permissions and
+  ~    limitations under the License.
+  -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
-        <version>0.2.4-alpha.0</version>
+        <version>0.3-beta.0</version>
     </parent>
 
     <artifactId>dockstore-launcher</artifactId>
@@ -17,7 +33,7 @@
 	 <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>0.2.4-alpha.0</version>
+            <version>0.3-beta.0</version>
         </dependency>
 		<dependency>
 			<groupId>commons-cli</groupId>
@@ -90,6 +106,14 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.cwl</groupId>
+            <artifactId>cwlavro-tools</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.cwl</groupId>
+            <artifactId>cwlavro-generated</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -113,6 +137,10 @@
                         </goals>
                         <configuration>
                             <transformers>
+                                <!-- Akka used by Cromwell expects a consistant reference.conf file.  Also order matters, so keep it first in the list of transformers -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>reference.conf</resource>
+                                </transformer>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>io.github.collaboratory.LauncherCWL</mainClass>
                                 </transformer>

@@ -1,23 +1,23 @@
 /*
- * Copyright (C) 2015 Consonance
+ *    Copyright 2016 OICR
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
  */
 package io.dockstore.webservice;
 
 import java.util.EnumSet;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import org.apache.http.client.HttpClient;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
@@ -57,6 +57,7 @@ import io.dropwizard.auth.oauth.OAuthFactory;
 import io.dropwizard.client.HttpClientBuilder;
 import io.dropwizard.db.DataSourceFactory;
 import io.dropwizard.hibernate.HibernateBundle;
+import io.dropwizard.migrations.MigrationsBundle;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.views.ViewBundle;
@@ -107,6 +108,14 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         bootstrap.addBundle(new AssetsBundle("/assets/", "/static/"));
         // enable views
         bootstrap.addBundle(new ViewBundle<>());
+
+        // for database migrations.xml
+        bootstrap.addBundle(new MigrationsBundle<DockstoreWebserviceConfiguration>() {
+            @Override
+            public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
+                return configuration.getDataSourceFactory();
+            }
+        });
     }
 
     @Override
@@ -141,6 +150,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(AuthFactory.binder(new OAuthFactory<>(cachingAuthenticator, "SUPER SECRET STUFF", Token.class)));
 
         final ObjectMapper mapper = environment.getObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
         environment.jersey().register(

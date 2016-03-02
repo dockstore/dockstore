@@ -1,18 +1,17 @@
 /*
- * Copyright (C) 2015 Collaboratory
+ *    Copyright 2016 OICR
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
  */
 package io.dockstore.webservice.core;
 
@@ -96,10 +95,17 @@ public class Container {
     @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the Dockerfile, required: GA4GH", required = true)
     private String defaultDockerfilePath = "/Dockerfile";
 
+    // Add for new descriptor types
     @Column(columnDefinition = "text")
     @JsonProperty("default_cwl_path")
     @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL document, required: GA4GH", required = true)
     private String defaultCwlPath = "/Dockstore.cwl";
+
+    @Column(columnDefinition = "text")
+    @JsonProperty("default_wdl_path")
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the WDL document", required = true)
+    private String defaultWdlPath = "/Dockstore.wdl";
+
 
     @Column(nullable = false)
     @ApiModelProperty(value = "This is the tool name of the container, when not-present this will function just like 0.1 dockstore"
@@ -152,7 +158,7 @@ public class Container {
     @ApiModelProperty("Implementation specific indication as to whether this is properly registered with this web service")
     private boolean isRegistered;
     @Column
-    @ApiModelProperty("Implementation specific, this image has a Dockstore.cwl associated with it")
+    @ApiModelProperty("Implementation specific, this image has descriptor file(s) associated with it")
     private boolean validTrigger;
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
@@ -183,7 +189,7 @@ public class Container {
     }
 
     /**
-     *
+     * Used during refresh to update containers
      * @param container
      */
     public void update(Container container) {
@@ -195,7 +201,12 @@ public class Container {
         validTrigger = container.getValidTrigger();
         author = container.getAuthor();
 
-        gitUrl = container.getGitUrl();
+        // Only overwrite the giturl if the new git url is not empty (no value)
+        // This will stop the case where there are no autobuilds for a quay repo, but a manual git repo has been set.
+        //  Giturl will only be changed if the git repo from quay has an autobuild
+        if (!container.getGitUrl().isEmpty()) {
+            gitUrl = container.getGitUrl();
+        }
     }
 
     @JsonProperty
@@ -441,6 +452,7 @@ public class Container {
         this.defaultDockerfilePath = defaultDockerfilePath;
     }
 
+    // Add for new descriptor types
     @JsonProperty
     public String getDefaultCwlPath() {
         return defaultCwlPath;
@@ -449,6 +461,16 @@ public class Container {
     public void setDefaultCwlPath(String defaultCwlPath) {
         this.defaultCwlPath = defaultCwlPath;
     }
+
+    @JsonProperty
+    public String getDefaultWdlPath() {
+        return defaultWdlPath;
+    }
+
+    public void setDefaultWdlPath() {
+        this.defaultWdlPath = defaultWdlPath;
+    }
+
 
     @JsonProperty
     public String getToolname() {
@@ -464,6 +486,7 @@ public class Container {
         return getPath() + (toolname == null || toolname.isEmpty() ? "" : '/' + toolname);
     }
 
+
     @JsonProperty
     public String getEmail() {
         return email;
@@ -471,5 +494,19 @@ public class Container {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    /**
+     * Updates information from given container based on the new container
+     * @param container
+         */
+    public void updateInfo(Container container) {
+        // Add descriptor type default paths here
+        defaultCwlPath = container.getDefaultCwlPath();
+        defaultWdlPath = container.getDefaultWdlPath();
+        defaultDockerfilePath = container.getDefaultDockerfilePath();
+
+        toolname = container.getToolname();
+        gitUrl = container.getGitUrl();
     }
 }

@@ -1,3 +1,19 @@
+/*
+ *    Copyright 2016 OICR
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
 package io.dockstore.webservice.helpers;
 
 import java.util.HashMap;
@@ -5,6 +21,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,8 +109,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public Container findCWL(Container container) {
-        String fileName = container.getDefaultCwlPath();
+    public Container findDescriptor(Container container, String fileName) {
+        String descriptorType = FilenameUtils.getExtension(fileName);
         if (fileName.startsWith("/")) {
             fileName = fileName.substring(1);
         }
@@ -137,7 +154,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 // Set<String> branches = branchMap.keySet();
                 //
                 // for (String branch : branches) {
-                LOG.info("Checking {} branch for cwl file", branch);
+                LOG.info("Checking {} branch for {} file", branch, descriptorType);
 
                 String content = "";
 
@@ -145,13 +162,20 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
                 LOG.info("RESOURCE CALL: {}", url);
                 if (asString.isPresent()) {
-                    LOG.info("CWL FOUND");
+                    LOG.info("{} FOUND", descriptorType);
                     content = asString.get();
                 } else {
                     LOG.info("Branch: {} has no {}", branch, fileName);
                 }
 
-                container = parseCWLContent(container, content);
+                // Add for new descriptor types
+                // expects file to have .cwl extension
+                if (descriptorType.equals("cwl")) {
+                    container = parseCWLContent(container, content);
+                }
+                if (descriptorType.equals("wdl")) {
+                     container = parseWDLContent(container, content);
+                }
 
                 // if (container.getHasCollab()) {
                 // break;

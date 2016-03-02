@@ -1,20 +1,20 @@
 package io.swagger.client.api;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
+import io.swagger.client.ApiClient;
 import io.swagger.client.Configuration;
 import io.swagger.client.Pair;
 import io.swagger.client.TypeRef;
+
 import io.swagger.client.model.Tool;
+import io.swagger.client.model.Metadata;
+import io.swagger.client.model.ToolVersion;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.ToolDockerfile;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-01-26T15:51:26.437-05:00")
+import java.util.*;
+
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-02-12T16:47:38.706-05:00")
 public class GAGHApi {
   private ApiClient apiClient;
 
@@ -38,7 +38,7 @@ public class GAGHApi {
   /**
    * List all tools
    * This endpoint returns all tools available or a filtered subset using metadata query parameters.
-   * @param registryId A unique identifier of the tool for this particular tool registry, for example `123456` or `123456_v1`
+   * @param registryId A unique identifier of the tool for this particular tool registry, for example `123456`
    * @param registry The image registry that contains the image.
    * @param organization The organization in the registry that published the image.
    * @param name The name of the image.
@@ -97,12 +97,52 @@ public class GAGHApi {
   }
   
   /**
-   * List one specific tool (or tool version), acts as an anchor for self references
-   * This endpoint returns one specific tool
-   * @param registryId A unique identifier of the tool for this particular tool registry, for example `123456` or `123456_v1`
-   * @return List<Tool>
+   * Return some metadata that is useful for describing this registry
+   * Return some metadata that is useful for describing this registry
+   * @return Metadata
    */
-  public Tool toolsRegistryIdGet (String registryId) throws ApiException {
+  public Metadata toolsMetadataGet () throws ApiException {
+    Object postBody = null;
+    
+    // create path and map variables
+    String path = "/tools/metadata".replaceAll("\\{format\\}","json");
+
+    // query params
+    List<Pair> queryParams = new ArrayList<Pair>();
+    Map<String, String> headerParams = new HashMap<String, String>();
+    Map<String, Object> formParams = new HashMap<String, Object>();
+
+    
+
+    
+
+    
+
+    final String[] accepts = {
+      "application/json", "text/plain"
+    };
+    final String accept = apiClient.selectHeaderAccept(accepts);
+
+    final String[] contentTypes = {
+      "application/json"
+    };
+    final String contentType = apiClient.selectHeaderContentType(contentTypes);
+
+    String[] authNames = new String[] {  };
+
+    
+    TypeRef returnType = new TypeRef<Metadata>() {};
+    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    
+  }
+  
+  /**
+   * List one specific tool, acts as an anchor for self references
+   * This endpoint returns one specific tool (which has ToolVersions nested inside it)
+   * @param registryId A unique identifier of the tool for this particular tool registry, for example `123456`
+   * @return void
+   */
+  public void toolsRegistryIdGet (String registryId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'registryId' is set
@@ -138,7 +178,60 @@ public class GAGHApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<Tool>() {};
+    apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, null);
+    
+  }
+  
+  /**
+   * List one specific tool version, acts as an anchor for self references
+   * This endpoint returns one specific tool version
+   * @param registryId A unique identifier of the tool for this particular tool registry, for example `123456`
+   * @param versionId An identifier of the tool version for this particular tool registry, for example `v1`
+   * @return ToolVersion
+   */
+  public ToolVersion toolsRegistryIdVersionVersionIdGet (String registryId, String versionId) throws ApiException {
+    Object postBody = null;
+    
+    // verify the required parameter 'registryId' is set
+    if (registryId == null) {
+      throw new ApiException(400, "Missing the required parameter 'registryId' when calling toolsRegistryIdVersionVersionIdGet");
+    }
+    
+    // verify the required parameter 'versionId' is set
+    if (versionId == null) {
+      throw new ApiException(400, "Missing the required parameter 'versionId' when calling toolsRegistryIdVersionVersionIdGet");
+    }
+    
+    // create path and map variables
+    String path = "/tools/{registry-id}/version/{version-id}".replaceAll("\\{format\\}","json")
+      .replaceAll("\\{" + "registry-id" + "\\}", apiClient.escapeString(registryId.toString()))
+      .replaceAll("\\{" + "version-id" + "\\}", apiClient.escapeString(versionId.toString()));
+
+    // query params
+    List<Pair> queryParams = new ArrayList<Pair>();
+    Map<String, String> headerParams = new HashMap<String, String>();
+    Map<String, Object> formParams = new HashMap<String, Object>();
+
+    
+
+    
+
+    
+
+    final String[] accepts = {
+      "application/json", "text/plain"
+    };
+    final String accept = apiClient.selectHeaderAccept(accepts);
+
+    final String[] contentTypes = {
+      "application/json"
+    };
+    final String contentType = apiClient.selectHeaderContentType(contentTypes);
+
+    String[] authNames = new String[] {  };
+
+    
+    TypeRef returnType = new TypeRef<ToolVersion>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -146,21 +239,28 @@ public class GAGHApi {
   /**
    * Get the tool descriptor (CWL/WDL) for the specified tool.
    * Returns the CWL or WDL descriptor for the specified tool.
-   * @param registryId A unique identifier of the tool for this particular tool registry, for example `123456` or `123456_v1`
+   * @param registryId A unique identifier of the tool for this particular tool registry, for example `123456`
+   * @param versionId An identifier of the tool version for this particular tool registry, for example `v1`
    * @param format The output type of the descriptor. If not specified it is up to the underlying implementation to determine which output format to return.
    * @return ToolDescriptor
    */
-  public ToolDescriptor toolsRegistryIdDescriptorGet (String registryId, String format) throws ApiException {
+  public ToolDescriptor toolsRegistryIdVersionVersionIdDescriptorGet (String registryId, String versionId, String format) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'registryId' is set
     if (registryId == null) {
-      throw new ApiException(400, "Missing the required parameter 'registryId' when calling toolsRegistryIdDescriptorGet");
+      throw new ApiException(400, "Missing the required parameter 'registryId' when calling toolsRegistryIdVersionVersionIdDescriptorGet");
+    }
+    
+    // verify the required parameter 'versionId' is set
+    if (versionId == null) {
+      throw new ApiException(400, "Missing the required parameter 'versionId' when calling toolsRegistryIdVersionVersionIdDescriptorGet");
     }
     
     // create path and map variables
-    String path = "/tools/{registry-id}/descriptor".replaceAll("\\{format\\}","json")
-      .replaceAll("\\{" + "registry-id" + "\\}", apiClient.escapeString(registryId.toString()));
+    String path = "/tools/{registry-id}/version/{version-id}/descriptor".replaceAll("\\{format\\}","json")
+      .replaceAll("\\{" + "registry-id" + "\\}", apiClient.escapeString(registryId.toString()))
+      .replaceAll("\\{" + "version-id" + "\\}", apiClient.escapeString(versionId.toString()));
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -196,20 +296,27 @@ public class GAGHApi {
   /**
    * Get the dockerfile for the specified image.
    * Returns the dockerfile for the specified image.
-   * @param registryId A unique identifier of the tool for this particular tool registry, for example `123456` or `123456_v1`
+   * @param registryId A unique identifier of the tool for this particular tool registry, for example `123456`
+   * @param versionId An identifier of the tool version for this particular tool registry, for example `v1`
    * @return ToolDockerfile
    */
-  public ToolDockerfile toolsRegistryIdDockerfileGet (String registryId) throws ApiException {
+  public ToolDockerfile toolsRegistryIdVersionVersionIdDockerfileGet (String registryId, String versionId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'registryId' is set
     if (registryId == null) {
-      throw new ApiException(400, "Missing the required parameter 'registryId' when calling toolsRegistryIdDockerfileGet");
+      throw new ApiException(400, "Missing the required parameter 'registryId' when calling toolsRegistryIdVersionVersionIdDockerfileGet");
+    }
+    
+    // verify the required parameter 'versionId' is set
+    if (versionId == null) {
+      throw new ApiException(400, "Missing the required parameter 'versionId' when calling toolsRegistryIdVersionVersionIdDockerfileGet");
     }
     
     // create path and map variables
-    String path = "/tools/{registry-id}/dockerfile".replaceAll("\\{format\\}","json")
-      .replaceAll("\\{" + "registry-id" + "\\}", apiClient.escapeString(registryId.toString()));
+    String path = "/tools/{registry-id}/version/{version-id}/dockerfile".replaceAll("\\{format\\}","json")
+      .replaceAll("\\{" + "registry-id" + "\\}", apiClient.escapeString(registryId.toString()))
+      .replaceAll("\\{" + "version-id" + "\\}", apiClient.escapeString(versionId.toString()));
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();

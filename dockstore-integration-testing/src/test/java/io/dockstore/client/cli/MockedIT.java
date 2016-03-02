@@ -1,9 +1,27 @@
+/*
+ *    Copyright 2016 OICR
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
 package io.dockstore.client.cli;
 
 import java.io.File;
 import java.io.IOException;
 
 import org.apache.commons.io.FileUtils;
+import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -54,11 +72,30 @@ public class MockedIT {
         when(userApiMock.getUser()).thenReturn(new User());
         whenNew(UsersApi.class).withAnyArguments().thenReturn(userApiMock);
 
+        // mock return of a simple CWL file
         File sourceFile = new File(ResourceHelpers.resourceFilePath("dockstore-tool-linux-sort.cwl"));
         final String sourceFileContents = FileUtils.readFileToString(sourceFile);
         SourceFile file = mock(SourceFile.class);
         when(file.getContent()).thenReturn(sourceFileContents);
-        doReturn(file).when(Client.class, "getCWLFromServer", "quay.io/collaboratory/dockstore-tool-linux-sort");
+        doReturn(file).when(Client.class, "getDescriptorFromServer", "quay.io/collaboratory/dockstore-tool-linux-sort", "cwl");
+
+        // mock return of a more complicated CWL file
+        File sourceFileArrays = new File(ResourceHelpers.resourceFilePath("arrays.cwl"));
+        final String sourceFileArraysContents = FileUtils.readFileToString(sourceFileArrays);
+        SourceFile file2 = mock(SourceFile.class);
+        when(file2.getContent()).thenReturn(sourceFileArraysContents);
+        doReturn(file2).when(Client.class, "getDescriptorFromServer", "quay.io/collaboratory/arrays", "cwl");
+
+        FileUtils.deleteQuietly(new File("/tmp/wc1.out"));
+        FileUtils.deleteQuietly(new File("/tmp/wc2.out"));
+        FileUtils.deleteQuietly(new File("/tmp/example.bedGraph"));
+    }
+
+    @After
+    public void clearFiles(){
+        FileUtils.deleteQuietly(new File("/tmp/wc1.out"));
+        FileUtils.deleteQuietly(new File("/tmp/wc2.out"));
+        FileUtils.deleteQuietly(new File("/tmp/example.bedGraph"));
     }
 
     @Test
@@ -83,5 +120,39 @@ public class MockedIT {
         Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "launch", "--entry",
                 "quay.io/collaboratory/dockstore-tool-linux-sort", "--tsv", ResourceHelpers.resourceFilePath("testMultipleRun.tsv") });
         verifyAll();
+    }
+
+    /**
+     * Tests local file input in arrays or as single files, output to local file
+     * @throws IOException
+     * @throws ApiException
+     */
+    @Test
+    public void runLaunchOneLocalArrayedJson() throws IOException, ApiException {
+        replayAll();
+        Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "launch", "--entry",
+            "quay.io/collaboratory/arrays", "--json", ResourceHelpers.resourceFilePath("testArrayLocalInputLocalOutput.json") });
+        verifyAll();
+
+        Assert.assertTrue(new File("/tmp/example.bedGraph").exists());
+    }
+
+    /**
+     * Tests http file input in arrays or as single files, output to local file and local array
+     * @throws IOException
+     * @throws ApiException
+     */
+    @Test
+    public void runLaunchOneHTTPArrayedJson() throws IOException, ApiException {
+
+
+        replayAll();
+        Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "launch", "--entry",
+            "quay.io/collaboratory/arrays", "--json", ResourceHelpers.resourceFilePath("testArrayHttpInputLocalOutput.json") });
+        verifyAll();
+
+        Assert.assertTrue(new File("/tmp/wc1.out").exists());
+        Assert.assertTrue(new File("/tmp/wc2.out").exists());
+        Assert.assertTrue(new File("/tmp/example.bedGraph").exists());
     }
 }
