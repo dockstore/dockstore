@@ -616,9 +616,9 @@ public class Client {
                  try {
                      launchCwl(args);
                  } catch (ApiException e) {
-//                     e.printStackTrace();
+                     throw new RuntimeException("api error launching workflow", e);
                  } catch (IOException e) {
-//                     e.printStackTrace();
+                     throw new RuntimeException("io error launching workflow", e);
                  }
              } else if (descriptor.equals(WDL)){
                  launchWdl(args);
@@ -1008,7 +1008,8 @@ public class Client {
             out("");
         } else {
             try {
-                SourceFile file = getDescriptorFromServer(args.get(0), descriptorType);
+                final String entry = reqVal(args, "--entry");
+                SourceFile file = getDescriptorFromServer(entry, descriptorType);
 
                 if (file.getContent() != null && !file.getContent().isEmpty()) {
                     out(file.getContent());
@@ -1028,7 +1029,8 @@ public class Client {
 
         String tag = (parts.length > 1) ? parts[1] : null;
         SourceFile file = new SourceFile();
-        Container container = containersApi.getContainerByToolPath(path);
+        // simply getting published descriptors does not require permissions
+        Container container = containersApi.getRegisteredContainerByToolPath(path);
         if (container.getValidTrigger()) {
             try {
                 if (descriptorType.equals(CWL)) {
@@ -1154,9 +1156,13 @@ public class Client {
                 Container updatedContainer = containersApi.updateLabels(containerId, combinedLabelString, new Body());
 
                 List<Label> newLabels = updatedContainer.getLabels();
-                out("The container now has the following tags:");
-                for (Label newLabel : newLabels) {
-                    out(newLabel.getValue());
+                if (newLabels.size() > 0) {
+                    out("The container now has the following labels:");
+                    for (Label newLabel : newLabels) {
+                        out(newLabel.getValue());
+                    }
+                } else {
+                    out("The container has no labels.");
                 }
 
             } catch (ApiException e) {
@@ -1291,9 +1297,9 @@ public class Client {
         out("------------------");
         out("See https://www.dockstore.org for more information");
         out("");
-        out("dockstore versionTag --add <name> --entry <path to tool> --git-reference <git reference> --hidden <true/false> --cwl-path <cwl path> --dockerfile-path <dockerfile path> --image-id <image id>         :  Add version tag for a manually registered dockstore container");
+        out("dockstore versionTag --add <name> --entry <path to tool> --git-reference <git reference> --hidden <true/false> --cwl-path <cwl path> --wdl-path <wdl path> --dockerfile-path <dockerfile path> --image-id <image id>         :  Add version tag for a manually registered dockstore container");
         out("");
-        out("dockstore versionTag --update <name> --entry <path to tool>  --hidden <true/false> --cwl-path <cwl path> --dockerfile-path <dockerfile path> --image-id <image id>                                     :  Update version tag for a dockstore container");
+        out("dockstore versionTag --update <name> --entry <path to tool>  --hidden <true/false> --cwl-path <cwl path> --wdl-path <wdl path> --dockerfile-path <dockerfile path> --image-id <image id>                                     :  Update version tag for a dockstore container");
         out("");
         out("dockstore versionTag --remove <name> --entry <path to tool>                                                                                                                                            :  Remove version tag from a manually registered dockstore container");
         out("");

@@ -363,6 +363,8 @@ public class BasicET {
         @Test
         public void testTool2JSONWDL() {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser/quayandgithub", "--script" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "publish", "quay.io/dockstoretestuser/quayandgithub" });
+                // need to publish before converting
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "convert", "tool2json", "--entry", "quay.io/dockstoretestuser/quayandgithub", "--descriptor", "wdl", "--script" });
                 // TODO: Test that output is the expected WDL file
         }
@@ -612,8 +614,8 @@ public class BasicET {
         @Test
         public void testGetWdlAndCwl(){
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath","quay.io/dockstoretestuser/quayandgithub", "--script" });
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "wdl", "--entry", "quay.io/dockstoretestuser/quayandgithub", "--script" });
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "cwl", "--entry", "quay.io/dockstoretestuser/quayandgithub", "--script" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "wdl","--entry", "quay.io/dockstoretestuser/quayandgithub", "--script" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "cwl","--entry", "quay.io/dockstoretestuser/quayandgithub", "--script" });
         }
 
         /**

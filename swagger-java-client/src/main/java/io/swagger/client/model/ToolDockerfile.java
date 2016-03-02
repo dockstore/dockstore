@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * A tool dockerfile is a document that describes how to build a particular Docker image.
  **/
 @ApiModel(description = "A tool dockerfile is a document that describes how to build a particular Docker image.")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-02-24T16:55:56.211-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-01T15:18:10.919-05:00")
 public class ToolDockerfile   {
   
   private String dockerfile = null;

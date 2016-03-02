@@ -25,6 +25,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 
+import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.ApiParam;
 import io.swagger.api.factories.ToolsApiServiceFactory;
@@ -34,7 +35,7 @@ import io.swagger.model.ToolDescriptor;
 import io.swagger.model.ToolDockerfile;
 import io.swagger.model.ToolVersion;
 
-@Path("/tools")
+@Path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools")
 
 @Produces({ "application/json", "text/plain" })
 @io.swagger.annotations.Api(description = "the tools API")

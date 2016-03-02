@@ -157,7 +157,7 @@ Background:
 1. Open up the yaml document for the specification in the editor.swagger.io
 2. Hit Generate Server and select JAX-RS
 3. Replace the appropriate classes in dockstore-webservice
-4. Unlike the client classes, we cannot separate quite as cleanly. Classes to watch out for are io.swagger.api.ToolsApi (includes DropWizard specific UnitOfWork annotations) and io.swagger.api.impl.ToolsApiServiceImpl (includes our implementation).
+4. Unlike the client classes, we cannot separate quite as cleanly. Classes to watch out for are io.swagger.api.ToolsApi (includes DropWizard specific UnitOfWork annotations and a custom path) and io.swagger.api.impl.ToolsApiServiceImpl (includes our implementation).
 
 
 ## CWL Avro documents
@@ -181,13 +181,9 @@ Eventually, this will be moved out as a proper Maven dependency on https://githu
 
 Where 0.2.2 should be modified to the version number of your next release
 
-1. Start a release branch `git hf release start 0.2.2`
-2. Iterate the verion numbers for your Maven pom files `mvn versions:set -DnewVersion=0.2.2`
-3. Check that everything still builds and tests properly `mvn clean install -DskipITs=false`
-4. Finish the release (which creates a tag) `git hf release finish 0.2.2`. Accept proposed merges to develop and master if they look reasonable. 
-5. Use the maven release plugin to perform the release (due to a bug, use maven-release-plugin 2.3.2) or failing that upload manually to artifactory `mvn release:perform -DconnectionUrl=scm:git:git@github.com:ga4gh/dockstore.git -Dtag=0.2.2 `
-7. Remember to iterate the version numbers on the develop branch to the snapshot version of your next release `mvn versions:set -DnewVersion=0.2.3-SNAPSHOT ; git add pom.xml \*/pom.xml ; git push`
-8. Fiddle with github releases and update docs
+1. Create a release tag and iterate pom file versions `mvn release:prepare`
+2. Release from the tag into artifactory (you may need permissions) `mvn release:perform`
+3. Merge to master if this is a stable release `git checkout master; git merge <your tag here>`
 
 ## Encrypted Documents for Travis-CI
 
