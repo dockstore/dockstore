@@ -1,20 +1,22 @@
 package io.swagger.client.api;
 
-import io.swagger.client.ApiException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import io.swagger.client.ApiClient;
+import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;
 import io.swagger.client.Pair;
 import io.swagger.client.TypeRef;
-
-import io.swagger.client.model.Tool;
 import io.swagger.client.model.Metadata;
-import io.swagger.client.model.ToolVersion;
+import io.swagger.client.model.Tool;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.ToolDockerfile;
+import io.swagger.client.model.ToolVersion;
 
-import java.util.*;
-
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-02-12T16:47:38.706-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-01T15:18:10.919-05:00")
 public class GAGHApi {
   private ApiClient apiClient;
 
@@ -51,7 +53,7 @@ public class GAGHApi {
     Object postBody = null;
     
     // create path and map variables
-    String path = "/tools".replaceAll("\\{format\\}","json");
+    String path = "/api/v1/tools".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -105,7 +107,7 @@ public class GAGHApi {
     Object postBody = null;
     
     // create path and map variables
-    String path = "/tools/metadata".replaceAll("\\{format\\}","json");
+    String path = "/api/v1/tools/metadata".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -151,7 +153,7 @@ public class GAGHApi {
     }
     
     // create path and map variables
-    String path = "/tools/{registry-id}".replaceAll("\\{format\\}","json")
+    String path = "/api/v1/tools/{registry-id}".replaceAll("\\{format\\}","json")
       .replaceAll("\\{" + "registry-id" + "\\}", apiClient.escapeString(registryId.toString()));
 
     // query params
@@ -203,7 +205,7 @@ public class GAGHApi {
     }
     
     // create path and map variables
-    String path = "/tools/{registry-id}/version/{version-id}".replaceAll("\\{format\\}","json")
+    String path = "/api/v1/tools/{registry-id}/version/{version-id}".replaceAll("\\{format\\}","json")
       .replaceAll("\\{" + "registry-id" + "\\}", apiClient.escapeString(registryId.toString()))
       .replaceAll("\\{" + "version-id" + "\\}", apiClient.escapeString(versionId.toString()));
 
@@ -258,7 +260,7 @@ public class GAGHApi {
     }
     
     // create path and map variables
-    String path = "/tools/{registry-id}/version/{version-id}/descriptor".replaceAll("\\{format\\}","json")
+    String path = "/api/v1/tools/{registry-id}/version/{version-id}/descriptor".replaceAll("\\{format\\}","json")
       .replaceAll("\\{" + "registry-id" + "\\}", apiClient.escapeString(registryId.toString()))
       .replaceAll("\\{" + "version-id" + "\\}", apiClient.escapeString(versionId.toString()));
 
@@ -314,7 +316,7 @@ public class GAGHApi {
     }
     
     // create path and map variables
-    String path = "/tools/{registry-id}/version/{version-id}/dockerfile".replaceAll("\\{format\\}","json")
+    String path = "/api/v1/tools/{registry-id}/version/{version-id}/dockerfile".replaceAll("\\{format\\}","json")
       .replaceAll("\\{" + "registry-id" + "\\}", apiClient.escapeString(registryId.toString()))
       .replaceAll("\\{" + "version-id" + "\\}", apiClient.escapeString(versionId.toString()));
 

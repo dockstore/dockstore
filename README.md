@@ -157,7 +157,7 @@ Background:
 1. Open up the yaml document for the specification in the editor.swagger.io
 2. Hit Generate Server and select JAX-RS
 3. Replace the appropriate classes in dockstore-webservice
-4. Unlike the client classes, we cannot separate quite as cleanly. Classes to watch out for are io.swagger.api.ToolsApi (includes DropWizard specific UnitOfWork annotations) and io.swagger.api.impl.ToolsApiServiceImpl (includes our implementation).
+4. Unlike the client classes, we cannot separate quite as cleanly. Classes to watch out for are io.swagger.api.ToolsApi (includes DropWizard specific UnitOfWork annotations and a custom path) and io.swagger.api.impl.ToolsApiServiceImpl (includes our implementation).
 
 
 ## CWL Avro documents
