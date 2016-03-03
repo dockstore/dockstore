@@ -46,6 +46,7 @@ import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -301,20 +302,7 @@ public class DockerRepoResource {
     public Tool getRegisteredContainer(@ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
         Tool c = toolDAO.findRegisteredById(containerId);
         Helper.checkContainer(c);
-
-        // need to have this evict so that hibernate does not actually delete the tags
-        toolDAO.evict(c);
-
-        List<Tag> tags = new ArrayList<>();
-        tags.addAll(c.getTags());
-
-        for (Tag t : tags) {
-            if (t.isHidden()) {
-                c.removeTag(t);
-            }
-        }
-
-        return c;
+        return this.filterContainersForHiddenTags(c);
     }
 
     @POST
@@ -455,20 +443,20 @@ public class DockerRepoResource {
     @ApiOperation(value = "List all registered containers.", tags = { "containers" }, notes = "NO authentication", response = Tool.class, responseContainer = "List")
     public List<Tool> allRegisteredContainers() {
         List<Tool> tools = toolDAO.findAllRegistered();
+        filterContainersForHiddenTags(tools);
+        return tools;
+    }
 
-        for (Tool c : tools) {
-            toolDAO.evict(c);
+    private Tool filterContainersForHiddenTags(Tool tool){
+        return filterContainersForHiddenTags(Lists.newArrayList(tool)).get(0);
+    }
 
-            List<Tag> tags = new ArrayList<>();
-            tags.addAll(c.getTags());
-
-            for (Tag t : tags) {
-                if (t.isHidden()) {
-                    c.removeTag(t);
-                }
-            }
+    private List<Tool> filterContainersForHiddenTags(List<Tool> tools) {
+        for(Tool tool : tools){
+            toolDAO.evict(tool);
+            // need to have this evict so that hibernate does not actually delete the tags
+            tool.getTags().removeIf(Tag::isHidden);
         }
-
         return tools;
     }
 
@@ -479,9 +467,10 @@ public class DockerRepoResource {
     @ApiOperation(value = "Get a registered container by path", notes = "NO authentication", response = Tool.class, responseContainer = "List")
     public List<Tool> getRegisteredContainerByPath(
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
-        List<Tool> tool = toolDAO.findRegisteredByPath(path);
-        Helper.checkContainer(tool);
-        return tool;
+        List<Tool> containers = toolDAO.findRegisteredByPath(path);
+        filterContainersForHiddenTags(containers);
+        Helper.checkContainer(containers);
+        return containers;
     }
 
     @GET
@@ -639,7 +628,7 @@ public class DockerRepoResource {
 
         List<Tag> tags = new ArrayList<>();
         tags.addAll(repository.getTags());
-        return (List) tags;
+        return tags;
     }
 
     // TODO: this method is very repetative with the method below, need to refactor
@@ -658,6 +647,7 @@ public class DockerRepoResource {
             @QueryParam("tag") String tag, FileType fileType) {
         Tool tool = toolDAO.findById(containerId);
         Helper.checkContainer(tool);
+        this.filterContainersForHiddenTags(tool);
         Tag tagInstance = null;
 
         if (tag == null) {
