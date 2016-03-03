@@ -192,6 +192,10 @@ Encrypted documents necessary for confidential testing are handled as indicated 
 
 A convenience script is provided as encrypt.sh which will compress confidential files, encrypt them, and then update an encrypted archive on GitHub. Confidential files should also be added to .gitignore to prevent accidental check-in. The unencrypted secrets.tar should be privately distributed among members of the team that need to work with confidential data. 
 
+To dump a new copy of the encrypted database from one that you have setup, use the following (or similar):
+
+    pg_dump --data-only --column-inserts   webservice_test &> dockstore-integration-testing/src/test/resources/db_confidential_dump_full.sql
+
 
 ## TODO
 

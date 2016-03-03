@@ -69,13 +69,13 @@ public class User {
     private final Set<Group> groups;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
-    @JoinTable(name = "usercontainer", inverseJoinColumns = @JoinColumn(name = "containerid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
+    @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty("Entries in the dockstore that this user manages")
-    private final Set<Container> containers;
+    private final Set<Entry> entries;
 
     public User() {
         groups = new HashSet<>(0);
-        containers = new HashSet<>(0);
+        entries = new HashSet<>(0);
     }
 
     @JsonProperty
@@ -113,16 +113,16 @@ public class User {
         return groups.remove(group);
     }
 
-    public Set<Container> getContainers() {
-        return containers;
+    public Set<Entry> getEntries() {
+        return entries;
     }
 
-    public void addContainer(Container container) {
-        containers.add(container);
+    public void addEntry(Entry entry) {
+        entries.add(entry);
     }
 
-    public boolean removeContainer(Container container) {
-        return containers.remove(container);
+    public boolean removeEntry(Entry entry) {
+        return entries.remove(entry);
     }
 
     @Override

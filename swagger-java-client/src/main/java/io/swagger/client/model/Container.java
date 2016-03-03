@@ -21,6 +21,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class Container   {
   
   private Long id = null;
+  private String author = null;
+  private String description = null;
+  private List<Label> labels = new ArrayList<Label>();
 
 public enum ModeEnum {
   AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS("AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS"),
@@ -62,15 +65,12 @@ public enum RegistryEnum {
 }
 
   private RegistryEnum registry = null;
-  private String author = null;
-  private String description = null;
   private String email = null;
   private Date lastUpdated = null;
   private Date lastBuild = null;
   private String gitUrl = null;
   private Boolean validTrigger = null;
   private List<Tag> tags = new ArrayList<Tag>();
-  private List<Label> labels = new ArrayList<Label>();
   private String defaultDockerfilePath = null;
   private String defaultCwlPath = null;
   private String defaultWdlPath = null;
@@ -92,6 +92,45 @@ public enum RegistryEnum {
   }
   public void setId(Long id) {
     this.id = id;
+  }
+
+  
+  /**
+   * This is the name of the author stated in the Dockstore.cwl
+   **/
+  @ApiModelProperty(value = "This is the name of the author stated in the Dockstore.cwl")
+  @JsonProperty("author")
+  public String getAuthor() {
+    return author;
+  }
+  public void setAuthor(String author) {
+    this.author = author;
+  }
+
+  
+  /**
+   * This is a human-readable description of this container and what it is trying to accomplish, required GA4GH
+   **/
+  @ApiModelProperty(value = "This is a human-readable description of this container and what it is trying to accomplish, required GA4GH")
+  @JsonProperty("description")
+  public String getDescription() {
+    return description;
+  }
+  public void setDescription(String description) {
+    this.description = description;
+  }
+
+  
+  /**
+   * Labels (i.e. meta tags) for describing the purpose and contents of containers
+   **/
+  @ApiModelProperty(value = "Labels (i.e. meta tags) for describing the purpose and contents of containers")
+  @JsonProperty("labels")
+  public List<Label> getLabels() {
+    return labels;
+  }
+  public void setLabels(List<Label> labels) {
+    this.labels = labels;
   }
 
   
@@ -174,32 +213,6 @@ public enum RegistryEnum {
 
   
   /**
-   * This is the name of the author stated in the Dockstore.cwl
-   **/
-  @ApiModelProperty(value = "This is the name of the author stated in the Dockstore.cwl")
-  @JsonProperty("author")
-  public String getAuthor() {
-    return author;
-  }
-  public void setAuthor(String author) {
-    this.author = author;
-  }
-
-  
-  /**
-   * This is a human-readable description of this container and what it is trying to accomplish, required GA4GH
-   **/
-  @ApiModelProperty(value = "This is a human-readable description of this container and what it is trying to accomplish, required GA4GH")
-  @JsonProperty("description")
-  public String getDescription() {
-    return description;
-  }
-  public void setDescription(String description) {
-    this.description = description;
-  }
-
-  
-  /**
    * This is the email of the git organization
    **/
   @ApiModelProperty(value = "This is the email of the git organization")
@@ -274,19 +287,6 @@ public enum RegistryEnum {
   }
   public void setTags(List<Tag> tags) {
     this.tags = tags;
-  }
-
-  
-  /**
-   * Labels (i.e. meta tags) for describing the purpose and contents of containers
-   **/
-  @ApiModelProperty(value = "Labels (i.e. meta tags) for describing the purpose and contents of containers")
-  @JsonProperty("labels")
-  public List<Label> getLabels() {
-    return labels;
-  }
-  public void setLabels(List<Label> labels) {
-    this.labels = labels;
   }
 
   
@@ -413,21 +413,21 @@ public enum RegistryEnum {
     sb.append("class Container {\n");
     
     sb.append("    id: ").append(StringUtil.toIndentedString(id)).append("\n");
+    sb.append("    author: ").append(StringUtil.toIndentedString(author)).append("\n");
+    sb.append("    description: ").append(StringUtil.toIndentedString(description)).append("\n");
+    sb.append("    labels: ").append(StringUtil.toIndentedString(labels)).append("\n");
     sb.append("    mode: ").append(StringUtil.toIndentedString(mode)).append("\n");
     sb.append("    users: ").append(StringUtil.toIndentedString(users)).append("\n");
     sb.append("    name: ").append(StringUtil.toIndentedString(name)).append("\n");
     sb.append("    toolname: ").append(StringUtil.toIndentedString(toolname)).append("\n");
     sb.append("    namespace: ").append(StringUtil.toIndentedString(namespace)).append("\n");
     sb.append("    registry: ").append(StringUtil.toIndentedString(registry)).append("\n");
-    sb.append("    author: ").append(StringUtil.toIndentedString(author)).append("\n");
-    sb.append("    description: ").append(StringUtil.toIndentedString(description)).append("\n");
     sb.append("    email: ").append(StringUtil.toIndentedString(email)).append("\n");
     sb.append("    lastUpdated: ").append(StringUtil.toIndentedString(lastUpdated)).append("\n");
     sb.append("    lastBuild: ").append(StringUtil.toIndentedString(lastBuild)).append("\n");
     sb.append("    gitUrl: ").append(StringUtil.toIndentedString(gitUrl)).append("\n");
     sb.append("    validTrigger: ").append(StringUtil.toIndentedString(validTrigger)).append("\n");
     sb.append("    tags: ").append(StringUtil.toIndentedString(tags)).append("\n");
-    sb.append("    labels: ").append(StringUtil.toIndentedString(labels)).append("\n");
     sb.append("    defaultDockerfilePath: ").append(StringUtil.toIndentedString(defaultDockerfilePath)).append("\n");
     sb.append("    defaultCwlPath: ").append(StringUtil.toIndentedString(defaultCwlPath)).append("\n");
     sb.append("    defaultWdlPath: ").append(StringUtil.toIndentedString(defaultWdlPath)).append("\n");

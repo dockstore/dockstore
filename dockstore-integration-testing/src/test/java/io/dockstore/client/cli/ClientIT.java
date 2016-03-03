@@ -97,7 +97,7 @@ public class ClientIT {
 
         // verify DB
         final TestingPostgres testingPostgres = getTestingPostgres();
-        final long count = testingPostgres.runSelectStatement("select count(*) from container where name = 'test6'", new ScalarHandler<>());
+        final long count = testingPostgres.runSelectStatement("select count(*) from tool where name = 'test6'", new ScalarHandler<>());
         Assert.assertTrue("should see three entries", count == 1);
     }
 

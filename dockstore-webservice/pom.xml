@@ -406,6 +406,19 @@
             <version>0.2</version>
         </dependency>
 
+        <!-- testing -->
+        <dependency>
+            <groupId>io.dockstore</groupId>
+            <artifactId>dockstore-common</artifactId>
+            <version>0.3-beta.1-SNAPSHOT</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.stefanbirkner</groupId>
+            <artifactId>system-rules</artifactId>
+            <version>1.14.0</version>
+            <scope>test</scope>
+        </dependency>
 
     </dependencies>
 

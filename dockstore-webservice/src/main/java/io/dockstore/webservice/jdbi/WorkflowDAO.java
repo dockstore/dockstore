@@ -13,19 +13,19 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+
 package io.dockstore.webservice.jdbi;
 
 import org.hibernate.SessionFactory;
 
-import io.dockstore.webservice.core.Tag;
+import io.dockstore.webservice.core.Workflow;
 
 /**
  *
- * @author xliu
+ * @author dyuen
  */
-public class TagDAO extends VersionDAO<Tag> {
-
-    public TagDAO(SessionFactory sessionFactory) {
-        super(sessionFactory);
+public class WorkflowDAO extends EntryDAO<Workflow> {
+    public WorkflowDAO(SessionFactory factory) {
+        super(factory);
     }
 }

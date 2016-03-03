@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import io.dockstore.webservice.core.Container;
+import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Tag;
 
 /**
@@ -33,11 +33,11 @@ import io.dockstore.webservice.core.Tag;
 public interface ImageRegistryInterface {
 
     /**
-     * Get all tags for a given container
+     * Get all tags for a given tool
      * 
      * @return a list of tags for image that this points to
      */
-    List<Tag> getTags(Container container);
+    List<Tag> getTags(Tool tool);
 
     /**
      * Get the list of namespaces and organizations that the user is associated to on Quay.io.
@@ -52,7 +52,7 @@ public interface ImageRegistryInterface {
      * @param namespaces
      * @return
      */
-    List<Container> getContainers(List<String> namespaces);
+    List<Tool> getContainers(List<String> namespaces);
 
     /**
      * A bit of a misnomer, this not only gets a map of builds but populates the container with CWL-parsed info
@@ -63,5 +63,5 @@ public interface ImageRegistryInterface {
      *            a list of images that gets modified with data from builds like data modified, size, etc.
      * @return map of path -> list of quay.io build data structure
      */
-    Map<String, ArrayList<?>> getBuildMap(List<Container> allRepos);
+    Map<String, ArrayList<?>> getBuildMap(List<Tool> allRepos);
 }
