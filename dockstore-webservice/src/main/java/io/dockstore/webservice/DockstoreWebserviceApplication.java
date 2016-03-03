@@ -26,20 +26,24 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.dockstore.webservice.core.Container;
 import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.jdbi.ContainerDAO;
+import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.GroupDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
+import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
+import io.dockstore.webservice.jdbi.WorkflowDAO;
+import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.resources.BitbucketOrgAuthenticationResource;
 import io.dockstore.webservice.resources.DockerRepoResource;
 import io.dockstore.webservice.resources.DockerRepoTagResource;
@@ -87,7 +91,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     }
 
     private final HibernateBundle<DockstoreWebserviceConfiguration> hibernate = new HibernateBundle<DockstoreWebserviceConfiguration>(
-            Token.class, Container.class, User.class, Group.class, Tag.class, Label.class, SourceFile.class) {
+            Token.class, Tool.class, User.class, Group.class, Tag.class, Label.class, SourceFile.class, Workflow.class, WorkflowVersion.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
@@ -137,7 +141,13 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         final UserDAO userDAO = new UserDAO(hibernate.getSessionFactory());
         final TokenDAO tokenDAO = new TokenDAO(hibernate.getSessionFactory());
-        final ContainerDAO containerDAO = new ContainerDAO(hibernate.getSessionFactory());
+        final ToolDAO toolDAO = new ToolDAO(hibernate.getSessionFactory());
+        final WorkflowDAO workflowDAO = new WorkflowDAO(hibernate.getSessionFactory());
+        final WorkflowVersionDAO workflowVersionDAO = new WorkflowVersionDAO(hibernate.getSessionFactory());
+        /** dummy usage to satify compiler **/
+        workflowDAO.hashCode();
+        workflowVersionDAO.hashCode();
+
         final GroupDAO groupDAO = new GroupDAO(hibernate.getSessionFactory());
         final TagDAO tagDAO = new TagDAO(hibernate.getSessionFactory());
         final LabelDAO labelDAO = new LabelDAO(hibernate.getSessionFactory());
@@ -155,10 +165,10 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
         environment.jersey().register(
-                new DockerRepoResource(mapper, httpClient, userDAO, tokenDAO, containerDAO, tagDAO, labelDAO, fileDAO, configuration
+                new DockerRepoResource(mapper, httpClient, userDAO, tokenDAO, toolDAO, tagDAO, labelDAO, fileDAO, configuration
                         .getBitbucketClientID(), configuration.getBitbucketClientSecret()));
         environment.jersey().register(new GitHubRepoResource(tokenDAO, userDAO));
-        environment.jersey().register(new DockerRepoTagResource(userDAO, containerDAO, tagDAO));
+        environment.jersey().register(new DockerRepoTagResource(userDAO, toolDAO, tagDAO));
 
         final GitHubComAuthenticationResource resource3 = new GitHubComAuthenticationResource(configuration.getGithubClientID(),
                 configuration.getGithubRedirectURI());
@@ -172,11 +182,11 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                         configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), httpClient, cachingAuthenticator));
 
         environment.jersey().register(
-                new UserResource(mapper, httpClient, tokenDAO, userDAO, groupDAO, containerDAO, tagDAO, fileDAO, configuration
+                new UserResource(mapper, httpClient, tokenDAO, userDAO, groupDAO, toolDAO, tagDAO, fileDAO, configuration
                         .getBitbucketClientID(), configuration.getBitbucketClientSecret()));
 
         // attach the container dao statically to avoid too much modification of generated code
-        ToolsApiServiceImpl.setContainerDAO(containerDAO);
+        ToolsApiServiceImpl.setToolDAO(toolDAO);
         ToolsApiServiceImpl.setConfig(configuration);
         environment.jersey().register(new ToolsApi());
 
@@ -207,5 +217,9 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // cors.addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), true, "/*");
         // cors.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false, environment.getApplicationContext().getContextPath() +
         // "*");
+    }
+
+    public HibernateBundle<DockstoreWebserviceConfiguration> getHibernate() {
+        return hibernate;
     }
 }

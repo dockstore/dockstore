@@ -251,7 +251,7 @@ public class SystemClientIT {
 //        GAGHApi toolApi = new GAGHApi(client);
 //        ContainersApi containersApi = new ContainersApi(client);
 //        // register one more to give us something to look at
-//        Container c = getContainer();
+//        Tool c = getContainer();
 //        containersApi.registerManual(c);
 //
 //        final Tool tool = toolApi.toolsRegistryIdGet("quay.io/test_org/test6");

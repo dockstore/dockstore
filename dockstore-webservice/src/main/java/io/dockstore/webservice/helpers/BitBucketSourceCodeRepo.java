@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
 
-import io.dockstore.webservice.core.Container;
+import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.resources.ResourceUtilities;
 
 /**
@@ -109,21 +109,21 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public Container findDescriptor(Container container, String fileName) {
+    public Tool findDescriptor(Tool tool, String fileName) {
         String descriptorType = FilenameUtils.getExtension(fileName);
         if (fileName.startsWith("/")) {
             fileName = fileName.substring(1);
         }
 
-        String giturl = container.getGitUrl();
+        String giturl = tool.getGitUrl();
         if (giturl != null && !giturl.isEmpty()) {
 
             Pattern p = Pattern.compile("git\\@bitbucket.org:(\\S+)/(\\S+)\\.git");
             Matcher m = p.matcher(giturl);
             LOG.info(giturl);
             if (!m.find()) {
-                LOG.info("Namespace and/or repository name could not be found from container's giturl");
-                return container;
+                LOG.info("Namespace and/or repository name could not be found from tool's giturl");
+                return tool;
             }
 
             String url = BITBUCKET_API_URL + "repositories/" + m.group(1) + '/' + m.group(2) + "/main-branch";
@@ -171,13 +171,13 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 // Add for new descriptor types
                 // expects file to have .cwl extension
                 if (descriptorType.equals("cwl")) {
-                    container = parseCWLContent(container, content);
+                    tool = parseCWLContent(tool, content);
                 }
                 if (descriptorType.equals("wdl")) {
-                     container = parseWDLContent(container, content);
+                     tool = parseWDLContent(tool, content);
                 }
 
-                // if (container.getHasCollab()) {
+                // if (tool.getHasCollab()) {
                 // break;
                 // }
                 // }
@@ -185,7 +185,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             }
         }
 
-        return container;
+        return tool;
     }
 
     @Override

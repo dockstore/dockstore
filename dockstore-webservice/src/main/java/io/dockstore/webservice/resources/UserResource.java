@@ -48,12 +48,12 @@ import com.google.gson.Gson;
 
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.Helper;
-import io.dockstore.webservice.core.Container;
+import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.jdbi.ContainerDAO;
+import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.GroupDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
@@ -79,7 +79,7 @@ public class UserResource {
     private final UserDAO userDAO;
     private final GroupDAO groupDAO;
     private final TokenDAO tokenDAO;
-    private final ContainerDAO containerDAO;
+    private final ToolDAO toolDAO;
     private final TagDAO tagDAO;
     private final FileDAO fileDAO;
     private final String bitbucketClientID;
@@ -91,13 +91,13 @@ public class UserResource {
 
     @SuppressWarnings("checkstyle:parameternumber")
     public UserResource(ObjectMapper mapper, HttpClient client, TokenDAO tokenDAO, UserDAO userDAO, GroupDAO groupDAO,
-            ContainerDAO containerDAO, TagDAO tagDAO, FileDAO fileDAO, String bitbucketClientID, String bitbucketClientSecret) {
+            ToolDAO toolDAO, TagDAO tagDAO, FileDAO fileDAO, String bitbucketClientID, String bitbucketClientSecret) {
         objectMapper = mapper;
         this.client = client;
         this.userDAO = userDAO;
         this.groupDAO = groupDAO;
         this.tokenDAO = tokenDAO;
-        this.containerDAO = containerDAO;
+        this.toolDAO = toolDAO;
         this.tagDAO = tagDAO;
         this.fileDAO = fileDAO;
         this.bitbucketClientID = bitbucketClientID;
@@ -363,16 +363,16 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/containers/registered")
-    @ApiOperation(value = "List all registered containers from a user", notes = "Get user's registered containers only", response = Container.class, responseContainer = "List")
-    public List<Container> userRegisteredContainers(@ApiParam(hidden = true) @Auth Token authToken,
+    @ApiOperation(value = "List all registered containers from a user", notes = "Get user's registered containers only", response = Tool.class, responseContainer = "List")
+    public List<Tool> userRegisteredContainers(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, userId);
 
-        List<Container> repositories = new ArrayList(user.getContainers());
+        List<Tool> repositories = new ArrayList(user.getEntries());
 
-        for (Iterator<Container> iterator = repositories.iterator(); iterator.hasNext();) {
-            Container c = iterator.next();
+        for (Iterator<Tool> iterator = repositories.iterator(); iterator.hasNext();) {
+            Tool c = iterator.next();
 
             if (!c.getIsRegistered()) {
                 iterator.remove();
@@ -386,9 +386,9 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/containers/refresh")
-    @ApiOperation(value = "Refresh repos owned by the logged-in user", notes = "Updates some metadata", response = Container.class, responseContainer = "List")
+    @ApiOperation(value = "Refresh repos owned by the logged-in user", notes = "Updates some metadata", response = Tool.class, responseContainer = "List")
     @SuppressWarnings("checkstyle:methodlength")
-    public List<Container> refresh(@ApiParam(hidden = true) @Auth Token authToken,
+    public List<Tool> refresh(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
 
         User authUser = userDAO.findById(authToken.getUserId());
@@ -401,22 +401,22 @@ public class UserResource {
             Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
         }
 
-        List<Container> containers = Helper.refresh(userId, client, objectMapper, userDAO, containerDAO, tokenDAO, tagDAO, fileDAO);
-        return containers;
+        List<Tool> tools = Helper.refresh(userId, client, objectMapper, userDAO, toolDAO, tokenDAO, tagDAO, fileDAO);
+        return tools;
     }
 
     @GET
     @Path("/{userId}/containers")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "List repos owned by the logged-in user", notes = "Lists all registered and unregistered containers owned by the user", response = Container.class, responseContainer = "List")
-    public List<Container> userContainers(@ApiParam(hidden = true) @Auth Token token,
+    @ApiOperation(value = "List repos owned by the logged-in user", notes = "Lists all registered and unregistered containers owned by the user", response = Tool.class, responseContainer = "List")
+    public List<Tool> userContainers(@ApiParam(hidden = true) @Auth Token token,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         User user = userDAO.findById(token.getUserId());
         Helper.checkUser(user, userId);
 
-        List<Container> ownedContainers = new ArrayList(user.getContainers());
-        return ownedContainers;
+        List<Tool> ownedTools = new ArrayList(user.getEntries());
+        return ownedTools;
     }
 
     @GET

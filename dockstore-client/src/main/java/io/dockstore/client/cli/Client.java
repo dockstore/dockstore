@@ -1758,6 +1758,7 @@ public class Client {
                         }
                     }
                 } catch (Kill k) {
+                    k.printStackTrace();
                     System.exit(GENERIC_ERROR);
                 }
             }

@@ -215,6 +215,22 @@ elif [ "$1" = "init" ]; then
         echo "Please setup an account at http://www.dockstore.org/"
     fi
 else
+    # from https://stackoverflow.com/questions/7334754/correct-way-to-check-java-version-from-bash-script
+    if type -p java > /dev/null; then
+      _java=java
+    else
+      echo "Java was not installed or is not on your PATH."
+      exit -100;
+    fi
+
+    if [[ "$_java" ]]; then
+      version=$("$_java" -version 2>&1 | awk -F '"' '/version/ {print $2}')
+      if [[ "$version" < "1.8" ]]; then
+        echo "Dockstore requires Java version 1.8 and above."
+        exit -100;
+      fi
+    fi
+
     $JAVA_CMD $DOCKSTORE_JVM_OPTS io.dockstore.client.cli.Client "$@"
     
     EXIT_CODE=$?

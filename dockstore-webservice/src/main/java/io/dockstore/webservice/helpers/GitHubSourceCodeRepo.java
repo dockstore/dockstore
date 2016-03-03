@@ -32,7 +32,7 @@ import org.eclipse.egit.github.core.service.RepositoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.dockstore.webservice.core.Container;
+import io.dockstore.webservice.core.Tool;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -96,7 +96,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public Container findDescriptor(Container c, String fileName) {
+    public Tool findDescriptor(Tool c, String fileName) {
         String descriptorType = FilenameUtils.getExtension(fileName);
         Repository repository = null;
         try {
