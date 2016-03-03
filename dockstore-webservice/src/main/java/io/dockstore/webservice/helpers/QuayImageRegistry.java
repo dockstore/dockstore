@@ -201,7 +201,8 @@ public class QuayImageRegistry implements ImageRegistryInterface {
             Container container, String repo, String path) {
         // Get the list of builds from the container.
         // Builds contain information such as the Git URL and tags
-        String urlBuilds = QUAY_URL + "repository/" + repo + "/build/";
+        // TODO: work with quay.io to get a better approach such as only the last build for each tag or at the very least paging
+        String urlBuilds = QUAY_URL + "repository/" + repo + "/build/?limit=2147483647";
         Optional<String> asStringBuilds = ResourceUtilities.asString(urlBuilds, quayToken.getContent(), client);
         LOG.info("RESOURCE CALL: {}", urlBuilds);
 
@@ -221,7 +222,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
                 if (!builds.isEmpty()) {
                     Map<String, Map<String, String>> map2 = (Map<String, Map<String, String>>) builds.get(0);
 
-                    Map<String, String> triggerMetadata = (Map<String, String>) map2.get("trigger_metadata");
+                    Map<String, String> triggerMetadata = map2.get("trigger_metadata");
 
                     if (triggerMetadata != null) {
                         gitURL = triggerMetadata.get("git_url");
