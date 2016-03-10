@@ -724,12 +724,12 @@ public class Client {
             Main main = new Main();
             File parameterFile = new File(json);
 
-            final SourceFile cwlFromServer;
+            final SourceFile wdlFromServer;
             try {
                 // Grab WDL from server and store to file
-                cwlFromServer = getDescriptorFromServer(entry, "wdl");
+                wdlFromServer = getDescriptorFromServer(entry, "wdl");
                 final File tempWdl = File.createTempFile("temp", ".wdl", Files.createTempDir());
-                Files.write(cwlFromServer.getContent(), tempWdl, StandardCharsets.UTF_8);
+                Files.write(wdlFromServer.getContent(), tempWdl, StandardCharsets.UTF_8);
 
                 final List<String> wdlRun = Lists.newArrayList(tempWdl.getAbsolutePath(), parameterFile.getAbsolutePath());
                 final scala.collection.immutable.List<String> wdlRunList = scala.collection.JavaConversions.asScalaBuffer(wdlRun).toList();
