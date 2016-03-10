@@ -47,7 +47,7 @@ import io.swagger.annotations.ApiModelProperty;
  */
 @Entity
 @Inheritance(strategy= InheritanceType.TABLE_PER_CLASS)
-public abstract class Entry {
+public abstract class Entry<T extends Version> {
 
     /** re-use existing generator for backwards compatibility */
     @Id
@@ -276,4 +276,6 @@ public abstract class Entry {
             gitUrl = entry.getGitUrl();
         }
     }
+
+    public abstract Set<T> getVersions();
 }

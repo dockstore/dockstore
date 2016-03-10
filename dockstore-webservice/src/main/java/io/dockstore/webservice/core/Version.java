@@ -16,9 +16,8 @@
 
 package io.dockstore.webservice.core;
 
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.annotations.ApiModelProperty;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -33,10 +32,9 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import io.swagger.annotations.ApiModelProperty;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * This describes one version of either a workflow or a tool.
@@ -45,7 +43,7 @@ import io.swagger.annotations.ApiModelProperty;
  */
 @Entity
 @Inheritance(strategy= InheritanceType.TABLE_PER_CLASS)
-public abstract class Version<T> implements Comparable<T>{
+public abstract class Version<T extends Version> implements Comparable<T>{
     /** re-use existing generator for backwards compatibility */
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator="tag_id_seq")
@@ -80,17 +78,23 @@ public abstract class Version<T> implements Comparable<T>{
     @ApiModelProperty("Implementation specific, whether this tag has valid files from source code repo")
     private boolean valid;
 
+    @Column
+    @ApiModelProperty(value = "Implementation specific, can be a quay.io or docker hub tag name", required = true)
+    private String name;
+
     public void updateByUser(final Version version) {
         reference = version.reference;
         hidden = version.hidden;
     }
 
-    public void update(Version version) {
-        lastModified = version.lastModified;
+    public void update(T version) {
+        lastModified = version.getLastModified();
+        name = version.getName();
     }
 
-    public void clone(Version version) {
-        lastModified = version.lastModified;
+    public void clone(T version) {
+        name = version.getName();
+        lastModified = version.getLastModified();
     }
 
     @JsonProperty
@@ -145,6 +149,15 @@ public abstract class Version<T> implements Comparable<T>{
 
     @Override
     public int compareTo(T o) {
-        return Long.compare(id, ((Version)o).id);
+        return Long.compare(id, (o).getId());
+    }
+
+    @JsonProperty
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }

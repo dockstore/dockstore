@@ -15,26 +15,9 @@
  */
 package io.dockstore.webservice;
 
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
-
 import io.dockstore.webservice.core.ContainerMode;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Registry;
@@ -57,6 +40,21 @@ import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.resources.ResourceUtilities;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -840,10 +838,10 @@ public final class Helper {
      * Check if admin or if tool belongs to user
      *
      * @param user
-     * @param tool
+     * @param entry
      */
-    public static void checkUser(User user, Tool tool) {
-        if (!user.getIsAdmin() && !tool.getUsers().contains(user)) {
+    public static void checkUser(User user, Entry entry) {
+        if (!user.getIsAdmin() && !entry.getUsers().contains(user)) {
             throw new CustomWebApplicationException("Forbidden: please check your credentials.", HttpStatus.SC_FORBIDDEN);
         }
     }
@@ -854,9 +852,9 @@ public final class Helper {
      * @param user
      * @param list
      */
-    public static void checkUser(User user, List<Tool> list) {
-        for (Tool tool : list) {
-            if (!user.getIsAdmin() && !tool.getUsers().contains(user)) {
+    public static void checkUser(User user, List<? extends Entry> list) {
+        for (Entry entry : list) {
+            if (!user.getIsAdmin() && !entry.getUsers().contains(user)) {
                 throw new CustomWebApplicationException("Forbidden: please check your credentials.", HttpStatus.SC_FORBIDDEN);
             }
         }
@@ -865,10 +863,10 @@ public final class Helper {
     /**
      * Check if tool is null
      *
-     * @param tool
+     * @param entry
      */
-    public static void checkContainer(Tool tool) {
-        if (tool == null) {
+    public static void checkEntry(Entry entry) {
+        if (entry == null) {
             throw new CustomWebApplicationException("Tool not found", HttpStatus.SC_BAD_REQUEST);
         }
     }
@@ -876,13 +874,13 @@ public final class Helper {
     /**
      * Check if tool is null
      *
-     * @param tool
+     * @param entry
      */
-    public static void checkContainer(List<Tool> tool) {
-        if (tool == null) {
+    public static void checkEntry(List<? extends Entry> entry) {
+        if (entry == null) {
             throw new CustomWebApplicationException("No containers provided", HttpStatus.SC_BAD_REQUEST);
         }
-        tool.forEach(Helper::checkContainer);
+        entry.forEach(Helper::checkEntry);
     }
 
     public static String convertHttpsToSsh(String url) {

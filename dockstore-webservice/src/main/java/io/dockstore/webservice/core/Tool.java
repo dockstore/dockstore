@@ -63,7 +63,7 @@ import io.swagger.annotations.ApiModelProperty;
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByMode", query = "SELECT c FROM Tool c WHERE c.mode = :mode"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findRegisteredByPath", query = "SELECT c FROM Tool c WHERE c.path = :path AND c.isRegistered = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.searchPattern", query = "SELECT c FROM Tool c WHERE ((c.path LIKE :pattern) OR (c.registry LIKE :pattern) OR (c.description LIKE :pattern)) AND c.isRegistered = true") })
-public class Tool extends Entry {
+public class Tool extends Entry<Tag> {
 
     @Column(nullable = false, columnDefinition = "Text default 'AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS'")
     @Enumerated(EnumType.STRING)
@@ -126,6 +126,11 @@ public class Tool extends Entry {
 
     public Tool() {
         tags = new TreeSet<>();
+    }
+
+    @Override
+    public Set<Tag> getVersions() {
+        return tags;
     }
 
     public Tool(long id, String name) {

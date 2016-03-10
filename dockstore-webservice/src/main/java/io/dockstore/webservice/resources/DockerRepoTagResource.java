@@ -81,7 +81,7 @@ public class DockerRepoTagResource {
     public Set<Tag> getTagsByPath(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId) {
         Tool c = toolDAO.findById(containerId);
-        Helper.checkContainer(c);
+        Helper.checkEntry(c);
 
         User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
@@ -99,7 +99,7 @@ public class DockerRepoTagResource {
             @ApiParam(value = "List of modified tags", required = true) List<Tag> tags) {
 
         Tool c = toolDAO.findById(containerId);
-        Helper.checkContainer(c);
+        Helper.checkEntry(c);
 
         User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
@@ -118,7 +118,7 @@ public class DockerRepoTagResource {
             }
         }
         Tool result = toolDAO.findById(containerId);
-        Helper.checkContainer(result);
+        Helper.checkEntry(result);
         return result.getTags();
     }
 
@@ -132,7 +132,7 @@ public class DockerRepoTagResource {
             @ApiParam(value = "List of new tags", required = true) List<Tag> tags) {
 
         Tool c = toolDAO.findById(containerId);
-        Helper.checkContainer(c);
+        Helper.checkEntry(c);
 
         User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
@@ -144,7 +144,7 @@ public class DockerRepoTagResource {
         }
 
         Tool result = toolDAO.findById(containerId);
-        Helper.checkContainer(result);
+        Helper.checkEntry(result);
         return result.getTags();
     }
 
@@ -158,7 +158,7 @@ public class DockerRepoTagResource {
             @ApiParam(value = "Tag to delete", required = true) @PathParam("tagId") Long tagId) {
 
         Tool c = toolDAO.findById(containerId);
-        Helper.checkContainer(c);
+        Helper.checkEntry(c);
 
         User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);

@@ -51,7 +51,7 @@ import io.swagger.annotations.ApiModelProperty;
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findAll", query = "SELECT c FROM Workflow c"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.searchPattern", query = "SELECT c FROM Workflow c WHERE ((c.defaultWorkflowPath LIKE :pattern) OR (c.description LIKE :pattern)) AND c.isRegistered = true") })
 @DiscriminatorValue("workflow")
-public class Workflow extends Entry {
+public class Workflow extends Entry<WorkflowVersion> {
 
     @Column(nullable = false)
     @ApiModelProperty(value = "This is the name of the workflow", required = true)
@@ -71,6 +71,11 @@ public class Workflow extends Entry {
 
     public Workflow() {
         workflowVersions = new TreeSet<>();
+    }
+
+    @Override
+    public Set<WorkflowVersion> getVersions() {
+        return workflowVersions;
     }
 
     public Workflow(long id, String name) {

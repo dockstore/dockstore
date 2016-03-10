@@ -17,6 +17,7 @@ package io.dockstore.webservice;
 
 import java.util.EnumSet;
 
+import io.dockstore.webservice.resources.WorkflowResource;
 import org.apache.http.client.HttpClient;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
@@ -144,9 +145,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final ToolDAO toolDAO = new ToolDAO(hibernate.getSessionFactory());
         final WorkflowDAO workflowDAO = new WorkflowDAO(hibernate.getSessionFactory());
         final WorkflowVersionDAO workflowVersionDAO = new WorkflowVersionDAO(hibernate.getSessionFactory());
-        /** dummy usage to satify compiler **/
-        workflowDAO.hashCode();
-        workflowVersionDAO.hashCode();
 
         final GroupDAO groupDAO = new GroupDAO(hibernate.getSessionFactory());
         final TagDAO tagDAO = new TagDAO(hibernate.getSessionFactory());
@@ -183,6 +181,9 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         environment.jersey().register(
                 new UserResource(mapper, httpClient, tokenDAO, userDAO, groupDAO, toolDAO, tagDAO, fileDAO, configuration
+                        .getBitbucketClientID(), configuration.getBitbucketClientSecret()));
+        environment.jersey().register(
+                new WorkflowResource(httpClient, userDAO, tokenDAO, workflowDAO, workflowVersionDAO, labelDAO, fileDAO, configuration
                         .getBitbucketClientID(), configuration.getBitbucketClientSecret()));
 
         // attach the container dao statically to avoid too much modification of generated code
