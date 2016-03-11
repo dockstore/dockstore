@@ -71,6 +71,7 @@ import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.CommandOutputParameter;
 import io.dockstore.common.Utilities;
 import io.dockstore.common.FileProvisioning;
+import io.dockstore.common.FileProvisioning.PathInfo;
 
 
 /**
@@ -565,43 +566,6 @@ public class LauncherCWL {
         } catch (ParseException exp) {
             LOG.error("Unexpected exception:{}", exp.getMessage());
             throw new RuntimeException("Could not parse command-line", exp);
-        }
-    }
-
-    public static class PathInfo {
-        private static final Logger LOG = LoggerFactory.getLogger(PathInfo.class);
-        public static final String DCC_STORAGE_SCHEME = "icgc";
-    	private boolean objectIdType;
-    	private String objectId = "";
-        private boolean localFileType = false;
-    	
-		public boolean isObjectIdType() {
-			return objectIdType;
-		}
-
-		public String getObjectId() {
-			return objectId;
-		}
-		
-		public PathInfo(String path) {
-            try {
-		    	URI objectIdentifier = URI.create(path);	// throws IllegalArgumentException if it isn't a valid URI
-                if (objectIdentifier.getScheme() == null){
-                    localFileType = true;
-                }
-		    	if (objectIdentifier.getScheme().equalsIgnoreCase(DCC_STORAGE_SCHEME)) {
-		    		objectIdType = true;
-		    		objectId = objectIdentifier.getSchemeSpecificPart().toLowerCase();
-		    	}				
-			} catch (IllegalArgumentException | NullPointerException iae) {
-                // if there is no scheme, then it must be a local file
-                LOG.warn("Invalid path specified for CWL pre-processor values: " + path);
-				objectIdType = false;
-			}
-		}
-
-        public boolean isLocalFileType() {
-            return localFileType;
         }
     }
 

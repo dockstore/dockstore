@@ -37,6 +37,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -72,6 +73,7 @@ import com.google.gson.JsonParser;
 import cromwell.Main;
 import io.cwl.avro.CWL;
 import io.dockstore.client.Bridge;
+import io.dockstore.common.WDLFileProvisioning;
 import io.github.collaboratory.LauncherCWL;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -731,11 +733,29 @@ public class Client {
                 final File tempWdl = File.createTempFile("temp", ".wdl", Files.createTempDir());
                 Files.write(wdlFromServer.getContent(), tempWdl, StandardCharsets.UTF_8);
 
-                final List<String> wdlRun = Lists.newArrayList(tempWdl.getAbsolutePath(), parameterFile.getAbsolutePath());
+                // Get list of input files
+                Bridge bridge = new Bridge();
+                Map<String, String> wdlInputs = bridge.getInputFiles(tempWdl);
+
+                // Download files and change to local location
+                WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning();
+                Gson gson = new Gson();
+                String jsonString = FileUtils.readFileToString(parameterFile);
+                Map<String, Object> map = new HashMap<>();
+                Map<String, Object> inputJson = gson.fromJson(jsonString, map.getClass());
+
+                // Make a new map of the inputs with updated locations
+                Map<String,Object> fileMap = wdlFileProvisioning.pullFiles(inputJson, wdlInputs);
+
+                // Make new json file
+                String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
+
+                final List<String> wdlRun = Lists.newArrayList(newJsonPath, parameterFile.getAbsolutePath());
                 final scala.collection.immutable.List<String> wdlRunList = scala.collection.JavaConversions.asScalaBuffer(wdlRun).toList();
+
                 // run a workflow
                 final int run = main.run(wdlRunList);
-
+                
             } catch (ApiException e) {
                 e.printStackTrace();
             } catch (IOException e) {
