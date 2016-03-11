@@ -15,19 +15,19 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * This describes one tag associated with a container.
  **/
 @ApiModel(description = "This describes one tag associated with a container.")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-01T15:18:10.919-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-11T15:28:43.725-05:00")
 public class Tag   {
   
   private Long id = null;
-  private String name = null;
-  private Long size = null;
   private String reference = null;
   private List<SourceFile> sourceFiles = new ArrayList<SourceFile>();
   private Boolean hidden = null;
   private Boolean valid = null;
+  private String name = null;
+  private Long size = null;
   private Boolean automated = null;
-  private String imageId = null;
   private Date lastModified = null;
+  private String imageId = null;
   private String dockerfilePath = null;
   private String cwlPath = null;
   private String wdlPath = null;
@@ -47,32 +47,6 @@ public class Tag   {
 
   
   /**
-   * a quay.io or docker hub tag name
-   **/
-  @ApiModelProperty(required = true, value = "a quay.io or docker hub tag name")
-  @JsonProperty("name")
-  public String getName() {
-    return name;
-  }
-  public void setName(String name) {
-    this.name = name;
-  }
-
-  
-  /**
-   * Size of the image
-   **/
-  @ApiModelProperty(value = "Size of the image")
-  @JsonProperty("size")
-  public Long getSize() {
-    return size;
-  }
-  public void setSize(Long size) {
-    this.size = size;
-  }
-
-  
-  /**
    * git commit/tag/branch
    **/
   @ApiModelProperty(required = true, value = "git commit/tag/branch")
@@ -86,9 +60,9 @@ public class Tag   {
 
   
   /**
-   * Cached files for each tag. Includes Dockerfile and Descriptor files
+   * Cached files for each version. Includes Dockerfile and Descriptor files
    **/
-  @ApiModelProperty(value = "Cached files for each tag. Includes Dockerfile and Descriptor files")
+  @ApiModelProperty(value = "Cached files for each version. Includes Dockerfile and Descriptor files")
   @JsonProperty("sourceFiles")
   public List<SourceFile> getSourceFiles() {
     return sourceFiles;
@@ -125,6 +99,32 @@ public class Tag   {
 
   
   /**
+   * a quay.io or docker hub tag name
+   **/
+  @ApiModelProperty(required = true, value = "a quay.io or docker hub tag name")
+  @JsonProperty("name")
+  public String getName() {
+    return name;
+  }
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  
+  /**
+   * Size of the image
+   **/
+  @ApiModelProperty(value = "Size of the image")
+  @JsonProperty("size")
+  public Long getSize() {
+    return size;
+  }
+  public void setSize(Long size) {
+    this.size = size;
+  }
+
+  
+  /**
    * Implementation specific, indicates whether this is an automated build on quay.io
    **/
   @ApiModelProperty(value = "Implementation specific, indicates whether this is an automated build on quay.io")
@@ -138,19 +138,6 @@ public class Tag   {
 
   
   /**
-   * Tag for this image in quay.ui/docker hub
-   **/
-  @ApiModelProperty(required = true, value = "Tag for this image in quay.ui/docker hub")
-  @JsonProperty("image_id")
-  public String getImageId() {
-    return imageId;
-  }
-  public void setImageId(String imageId) {
-    this.imageId = imageId;
-  }
-
-  
-  /**
    * The last time this image was modified in the image registry
    **/
   @ApiModelProperty(value = "The last time this image was modified in the image registry")
@@ -160,6 +147,19 @@ public class Tag   {
   }
   public void setLastModified(Date lastModified) {
     this.lastModified = lastModified;
+  }
+
+  
+  /**
+   * Tag for this image in quay.ui/docker hub
+   **/
+  @ApiModelProperty(required = true, value = "Tag for this image in quay.ui/docker hub")
+  @JsonProperty("image_id")
+  public String getImageId() {
+    return imageId;
+  }
+  public void setImageId(String imageId) {
+    this.imageId = imageId;
   }
 
   
@@ -209,15 +209,15 @@ public class Tag   {
     sb.append("class Tag {\n");
     
     sb.append("    id: ").append(StringUtil.toIndentedString(id)).append("\n");
-    sb.append("    name: ").append(StringUtil.toIndentedString(name)).append("\n");
-    sb.append("    size: ").append(StringUtil.toIndentedString(size)).append("\n");
     sb.append("    reference: ").append(StringUtil.toIndentedString(reference)).append("\n");
     sb.append("    sourceFiles: ").append(StringUtil.toIndentedString(sourceFiles)).append("\n");
     sb.append("    hidden: ").append(StringUtil.toIndentedString(hidden)).append("\n");
     sb.append("    valid: ").append(StringUtil.toIndentedString(valid)).append("\n");
+    sb.append("    name: ").append(StringUtil.toIndentedString(name)).append("\n");
+    sb.append("    size: ").append(StringUtil.toIndentedString(size)).append("\n");
     sb.append("    automated: ").append(StringUtil.toIndentedString(automated)).append("\n");
-    sb.append("    imageId: ").append(StringUtil.toIndentedString(imageId)).append("\n");
     sb.append("    lastModified: ").append(StringUtil.toIndentedString(lastModified)).append("\n");
+    sb.append("    imageId: ").append(StringUtil.toIndentedString(imageId)).append("\n");
     sb.append("    dockerfilePath: ").append(StringUtil.toIndentedString(dockerfilePath)).append("\n");
     sb.append("    cwlPath: ").append(StringUtil.toIndentedString(cwlPath)).append("\n");
     sb.append("    wdlPath: ").append(StringUtil.toIndentedString(wdlPath)).append("\n");

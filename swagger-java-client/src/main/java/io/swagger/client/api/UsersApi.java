@@ -1,19 +1,21 @@
 package io.swagger.client.api;
 
-import io.swagger.client.ApiException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import io.swagger.client.ApiClient;
+import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;
 import io.swagger.client.Pair;
 import io.swagger.client.TypeRef;
-
-import io.swagger.client.model.User;
 import io.swagger.client.model.Group;
-import io.swagger.client.model.Container;
 import io.swagger.client.model.Token;
+import io.swagger.client.model.Tool;
+import io.swagger.client.model.User;
 
-import java.util.*;
-
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-01T15:18:10.919-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-11T15:28:43.725-05:00")
 public class UsersApi {
   private ApiClient apiClient;
 
@@ -528,9 +530,9 @@ public class UsersApi {
    * List repos owned by the logged-in user
    * Lists all registered and unregistered containers owned by the user
    * @param userId User ID
-   * @return List<Container>
+   * @return List<Tool>
    */
-  public List<Container> userContainers (Long userId) throws ApiException {
+  public List<Tool> userContainers (Long userId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'userId' is set
@@ -566,7 +568,7 @@ public class UsersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<List<Container>>() {};
+    TypeRef returnType = new TypeRef<List<Tool>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -575,9 +577,9 @@ public class UsersApi {
    * Refresh repos owned by the logged-in user
    * Updates some metadata
    * @param userId User ID
-   * @return List<Container>
+   * @return List<Tool>
    */
-  public List<Container> refresh (Long userId) throws ApiException {
+  public List<Tool> refresh (Long userId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'userId' is set
@@ -613,7 +615,7 @@ public class UsersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<List<Container>>() {};
+    TypeRef returnType = new TypeRef<List<Tool>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -622,9 +624,9 @@ public class UsersApi {
    * List all registered containers from a user
    * Get user&#39;s registered containers only
    * @param userId User ID
-   * @return List<Container>
+   * @return List<Tool>
    */
-  public List<Container> userRegisteredContainers (Long userId) throws ApiException {
+  public List<Tool> userRegisteredContainers (Long userId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'userId' is set
@@ -660,7 +662,7 @@ public class UsersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<List<Container>>() {};
+    TypeRef returnType = new TypeRef<List<Tool>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }

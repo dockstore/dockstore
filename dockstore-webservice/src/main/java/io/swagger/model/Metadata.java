@@ -1,24 +1,7 @@
-/*
- *    Copyright 2016 OICR
- *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
- *
- *        http://www.apache.org/licenses/LICENSE-2.0
- *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
- */
-
 package io.swagger.model;
 
 import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonValue;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
@@ -29,7 +12,7 @@ import io.swagger.annotations.ApiModelProperty;
  **/
 
 @ApiModel(description = "Describes this registry to better allow for mirroring and indexing.")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JaxRSServerCodegen", date = "2016-01-29T22:00:17.650Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-03-11T20:14:17.098Z")
 public class Metadata   {
   
   private String version = null;
@@ -40,6 +23,11 @@ public class Metadata   {
   /**
    * The version of this registry
    **/
+  public Metadata version(String version) {
+    this.version = version;
+    return this;
+  }
+
   
   @ApiModelProperty(required = true, value = "The version of this registry")
   @JsonProperty("version")
@@ -54,6 +42,11 @@ public class Metadata   {
   /**
    * A country code for the registry (ISO 3166-1 alpha-3)
    **/
+  public Metadata country(String country) {
+    this.country = country;
+    return this;
+  }
+
   
   @ApiModelProperty(value = "A country code for the registry (ISO 3166-1 alpha-3)")
   @JsonProperty("country")
@@ -68,6 +61,11 @@ public class Metadata   {
   /**
    * A friendly name that can be used in addition to the hostname to describe a registry
    **/
+  public Metadata friendlyName(String friendlyName) {
+    this.friendlyName = friendlyName;
+    return this;
+  }
+
   
   @ApiModelProperty(value = "A friendly name that can be used in addition to the hostname to describe a registry")
   @JsonProperty("friendly-name")

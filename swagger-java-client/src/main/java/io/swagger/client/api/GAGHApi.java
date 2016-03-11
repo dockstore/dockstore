@@ -1,22 +1,20 @@
 package io.swagger.client.api;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
+import io.swagger.client.ApiClient;
 import io.swagger.client.Configuration;
 import io.swagger.client.Pair;
 import io.swagger.client.TypeRef;
-import io.swagger.client.model.Metadata;
+
 import io.swagger.client.model.Tool;
+import io.swagger.client.model.Metadata;
+import io.swagger.client.model.ToolVersion;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.ToolDockerfile;
-import io.swagger.client.model.ToolVersion;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-01T15:18:10.919-05:00")
+import java.util.*;
+
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-11T15:28:43.725-05:00")
 public class GAGHApi {
   private ApiClient apiClient;
 
