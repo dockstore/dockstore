@@ -59,11 +59,9 @@ class Bridge {
 
   def getInputFiles(file: JFile): util.Map[String, String] = {
     val lines = scala.io.Source.fromFile(file).mkString
-    var wdlString = WdlString(lines)
     val ns = NamespaceWithWorkflow.load(lines)
-    val workflowName = ns.workflow.unqualifiedName
 
-    var inputList = new util.HashMap[String, String]()
+    val inputList = new util.HashMap[String, String]()
 
     import scala.collection.JavaConversions._
     ns.workflow.inputs foreach {case(key,value) =>

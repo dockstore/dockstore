@@ -89,7 +89,7 @@ public class WDLFileProvisioning {
          */
         public Map<String, Object> doProcessFile(String key, String path) {
                 FileProvisioning.PathInfo pathInfo = new FileProvisioning.PathInfo(path);
-                Map<String, Object> entry = new HashMap<>();
+                Map<String, Object> jsonEntry = new HashMap<>();
 
                 if (!pathInfo.isLocalFileType()) {
 
@@ -110,12 +110,12 @@ public class WDLFileProvisioning {
                                 fileProvisioning.downloadFromHttp(path, targetFilePath);
                         }
                         // key may contain either key:download_URL for array inputs or just cwlInputFileID for scalar input
-                        entry.put(key, targetFilePath);
+                        jsonEntry.put(key, targetFilePath);
                         LOG.info("DOWNLOADED FILE: LOCAL: {} URL: {} => {}", key, path, targetFilePath);
                 } else {
-                        entry.put(key, path);
+                        jsonEntry.put(key, path);
                 }
-                return entry;
+                return jsonEntry;
 
         }
 
@@ -128,10 +128,12 @@ public class WDLFileProvisioning {
         public String createUpdatedInputsJson(Map<String, Object> originalInputJson, Map<String, Object> newInputJson) {
                 JSONObject newJSON = new JSONObject();
                 for (String paramName : originalInputJson.keySet()) {
-                        boolean isNew = false;
+                        boolean isNew = false; // is the entry from the newInputJson mapping?
 
+                        // Get value of mapping
                         final Object currentParam = originalInputJson.get(paramName);
 
+                        // Iterate through new input mapping until you find a matching FQN
                         for (Map.Entry<String, Object> entry : newInputJson.entrySet()) {
                                 if (paramName.equals(entry.getKey())) {
                                         isNew = true;
@@ -143,6 +145,8 @@ public class WDLFileProvisioning {
                                         break;
                                 }
                         }
+
+                        // If not a file, will just add as is
                         if (!isNew) {
                                 try {
                                         newJSON.put(paramName, currentParam);
