@@ -109,7 +109,7 @@ public class WDLFileProvisioning {
                         } else if (!pathInfo.isLocalFileType()) {
                                 fileProvisioning.downloadFromHttp(path, targetFilePath);
                         }
-                        // key may contain either key:download_URL for array inputs or just cwlInputFileID for scalar input
+
                         jsonEntry.put(key, targetFilePath);
                         LOG.info("DOWNLOADED FILE: LOCAL: {} URL: {} => {}", key, path, targetFilePath);
                 } else {

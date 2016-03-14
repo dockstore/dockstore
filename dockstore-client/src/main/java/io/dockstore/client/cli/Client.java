@@ -737,13 +737,14 @@ public class Client {
                 Bridge bridge = new Bridge();
                 Map<String, String> wdlInputs = bridge.getInputFiles(tempWdl);
 
-                // Download files and change to local location
+                // Convert parameter JSON to a map
                 WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning();
                 Gson gson = new Gson();
                 String jsonString = FileUtils.readFileToString(parameterFile);
                 Map<String, Object> map = new HashMap<>();
                 Map<String, Object> inputJson = gson.fromJson(jsonString, map.getClass());
 
+                // Download files and change to local location
                 // Make a new map of the inputs with updated locations
                 Map<String,Object> fileMap = wdlFileProvisioning.pullFiles(inputJson, wdlInputs);
 
