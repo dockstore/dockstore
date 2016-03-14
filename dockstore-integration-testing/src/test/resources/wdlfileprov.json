@@ -1,5 +1,4 @@
 {
-  "three_steps.catS3.in_file": "https://s3-us-west-2.amazonaws.com/dockstore.temp/wdlFileProv.rtf",
-  "three_steps.catDCC.in_file": "icgc:00880e28-cff2-59a6-b1f1-3aeaa174f677",
-  "three_steps.catHTTP.in_file": "https://raw.githubusercontent.com/ga4gh/dockstore/develop/README.md"
+  "two_steps.catS3.in_file": "https://s3-us-west-2.amazonaws.com/dockstore.temp/wdlFileProv.rtf",
+  "two_steps.catHTTP.in_file": "https://raw.githubusercontent.com/ga4gh/dockstore/develop/README.md"
 }

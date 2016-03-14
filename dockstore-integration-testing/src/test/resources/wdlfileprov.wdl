@@ -7,15 +7,6 @@ task catS3 {
     File procs = stdout()
   }
 }
-task catDCC {
-  File in_file
-  command {
-    stat ${in_file}
-  }
-  output {
-    File procs = stdout()
-  }
-}
 
 task catHTTP {
   File in_file
@@ -28,8 +19,7 @@ task catHTTP {
 }
 
 
-workflow three_steps {
+workflow two_steps {
   call catS3
-  call catDCC
   call catHTTP
 }
