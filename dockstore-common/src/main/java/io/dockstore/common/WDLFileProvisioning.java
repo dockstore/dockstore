@@ -27,12 +27,15 @@ public class WDLFileProvisioning {
 
         private final Optional<OutputStream> stdoutStream;
         private final Optional<OutputStream> stderrStream;
-        private final FileProvisioning fileProvisioning = new FileProvisioning();
+        private final FileProvisioning fileProvisioning;
+        private String configFile;
 
-        public WDLFileProvisioning() {
+        public WDLFileProvisioning(String configFile) {
                 // do not forward stdout and stderr
                 stdoutStream = Optional.absent();
                 stderrStream = Optional.absent();
+                this.configFile = configFile;
+                fileProvisioning = new FileProvisioning(configFile);
         }
 
         /**

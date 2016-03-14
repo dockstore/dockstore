@@ -6,7 +6,7 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.util.List;
 
-
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.vfs2.FileSystemManager;
@@ -50,10 +50,16 @@ public class FileProvisioning {
         /**
          * Constructor
          */
-        public FileProvisioning() {
+        public FileProvisioning(String configFile) {
                 // do not forward stdout and stderr
                 stdoutStream = Optional.absent();
                 stderrStream = Optional.absent();
+
+                try {
+                        this.config = new HierarchicalINIConfiguration(configFile);
+                } catch (ConfigurationException e) {
+                        e.printStackTrace();
+                }
         }
 
         // Which functions to move here? DCC and apache commons ones?

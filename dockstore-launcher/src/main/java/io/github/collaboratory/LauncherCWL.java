@@ -98,7 +98,7 @@ public class LauncherCWL {
     private final Optional<OutputStream> stdoutStream;
     private final Optional<OutputStream> stderrStream;
     private final Gson gson;
-    private final FileProvisioning fileProvisioning = new FileProvisioning();
+    private final FileProvisioning fileProvisioning;
 
 
     /**
@@ -118,6 +118,7 @@ public class LauncherCWL {
         stderrStream = Optional.absent();
 
         gson = CWL.getTypeSafeCWLToolDocument();
+        fileProvisioning = new FileProvisioning(configFilePath);
     }
 
     /**
@@ -133,6 +134,8 @@ public class LauncherCWL {
         // programmatically forward stdout and stderr
         this.stdoutStream = Optional.of(stdoutStream);
         this.stderrStream = Optional.of(stderrStream);
+        fileProvisioning = new FileProvisioning(configFilePath);
+
 
         gson = CWL.getTypeSafeCWLToolDocument();
     }

@@ -119,6 +119,7 @@ public class Client {
     public static final int GENERIC_ERROR = 1;
     public static final int CONNECTION_ERROR = 150;
     public static final int INPUT_ERROR = 3;
+    private static String configFile = null;
 
     // This should be linked to common, but we won't do this now because we don't want dependencies changing during testing
     public enum Registry {
@@ -637,10 +638,6 @@ public class Client {
         final File tempCWL = File.createTempFile("temp", ".cwl", Files.createTempDir());
         Files.write(cwlFromServer.getContent(), tempCWL, StandardCharsets.UTF_8);
 
-        // stub out invocation and fake out a config file
-        final File tempConfig = File.createTempFile("temp", ".cwl", Files.createTempDir());
-        Files.write("working-directory=./datastore/", tempConfig, StandardCharsets.UTF_8);
-
         final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
         if (jsonRun != null) {
             // if the root document is an array, this indicates multiple runs
@@ -652,11 +649,11 @@ public class Client {
                     final String finalString = gson.toJson(element);
                     final File tempJson = File.createTempFile("temp", ".json", Files.createTempDir());
                     FileUtils.write(tempJson, finalString);
-                    final LauncherCWL cwlLauncher = new LauncherCWL(tempConfig.getAbsolutePath(), tempCWL.getAbsolutePath(), tempJson.getAbsolutePath(), System.out, System.err);
+                    final LauncherCWL cwlLauncher = new LauncherCWL(configFile, tempCWL.getAbsolutePath(), tempJson.getAbsolutePath(), System.out, System.err);
                     cwlLauncher.run();
                 }
             } else {
-                final LauncherCWL cwlLauncher = new LauncherCWL(tempConfig.getAbsolutePath(), tempCWL.getAbsolutePath(), jsonRun, System.out, System.err);
+                final LauncherCWL cwlLauncher = new LauncherCWL(configFile, tempCWL.getAbsolutePath(), jsonRun, System.out, System.err);
                 cwlLauncher.run();
             }
         } else if (csvRuns != null) {
@@ -695,7 +692,7 @@ public class Client {
 
                         //final String stringMapAsString = gson.toJson(stringMap);
                         //Files.write(stringMapAsString, tempJson, StandardCharsets.UTF_8);
-                        final LauncherCWL cwlLauncher = new LauncherCWL(tempConfig.getAbsolutePath(), tempCWL.getAbsolutePath(),
+                        final LauncherCWL cwlLauncher = new LauncherCWL(configFile, tempCWL.getAbsolutePath(),
                             tempJson.getAbsolutePath(), System.out, System.err);
                         cwlLauncher.run();
                     }
@@ -738,7 +735,7 @@ public class Client {
                 Map<String, String> wdlInputs = bridge.getInputFiles(tempWdl);
 
                 // Convert parameter JSON to a map
-                WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning();
+                WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning(configFile);
                 Gson gson = new Gson();
                 String jsonString = FileUtils.readFileToString(parameterFile);
                 Map<String, Object> map = new HashMap<>();
@@ -1681,7 +1678,7 @@ public class Client {
         String userHome = System.getProperty("user.home");
 
         try {
-            String configFile = optVal(args, "--config", userHome + File.separator + ".dockstore" + File.separator + "config");
+            configFile = optVal(args, "--config", userHome + File.separator + ".dockstore" + File.separator + "config");
             InputStreamReader f = new InputStreamReader(new FileInputStream(configFile), Charset.defaultCharset());
             YamlReader reader = new YamlReader(f);
             Object object = reader.read();

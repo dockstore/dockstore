@@ -72,7 +72,7 @@ public class CromwellIT {
         Bridge bridge = new Bridge();
         Map<String,String> wdlInputs = bridge.getInputFiles(workflowFile);
 
-        WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning();
+        WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning(ResourceHelpers.resourceFilePath("config_file.txt"));
         Gson gson = new Gson();
         String jsonString = null;
         try {

@@ -67,6 +67,5 @@ public class LauncherTest {
         launcherCWL.run();
 
         assertTrue(!stdout.toString().isEmpty());
-        assertTrue(!stderr.toString().isEmpty());
     }
 }
