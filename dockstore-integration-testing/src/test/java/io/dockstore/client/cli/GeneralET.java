@@ -244,14 +244,6 @@ public class GeneralET {
         }
 
         /**
-         * Tests that refresh all works
-         */
-        @Test
-        public void testRefresh() {
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "refresh", "--script" });
-        }
-
-        /**
          * Tests that tool2JSON works for entries on Dockstore
          */
         @Test
@@ -270,20 +262,6 @@ public class GeneralET {
                 File sourceFile = new File(ResourceHelpers.resourceFilePath("wdl.wdl"));
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "convert", "wdl2json", "--wdl", sourceFile.getAbsolutePath(), "--script" });
                 // TODO: Test that output is the expected WDL file
-        }
-
-        /**
-         * Check that refreshing an existing container will not throw an error
-         * Todo: Update test to check the outcome of a refresh
-         */
-        @Test
-        public void testRefreshCorrectContainer(){
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser2/quayandgithub", "--script" });
-
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "manual_publish", "--registry", Registry.DOCKER_HUB.toString(),
-                        "--namespace", "dockstoretestuser2", "--name", "dockerhubandgithub", "--git-url", "git@github.com:dockstoretestuser2/quayandgithub.git", "--git-reference",
-                        "master", "--toolname", "regular", "--script" });
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "refresh", "--toolpath", "registry.hub.docker.com/dockstoretestuser2/dockerhubandgithub/regular", "--script" });
         }
 
         /**

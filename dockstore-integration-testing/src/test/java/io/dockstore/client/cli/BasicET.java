@@ -64,6 +64,13 @@ public class BasicET {
         /*
          General-ish tests
          */
+        /**
+         * Tests that refresh all works
+         */
+        @Test
+        public void testRefresh() {
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--script" });
+        }
 
         /**
          * Tests manually adding, updating, and removing a dockerhub container
@@ -214,6 +221,12 @@ public class BasicET {
                         "--namespace", "dockstoretestuser", "--name", "dockerhubandbitbucket", "--git-url", "git@bitbucket.org:dockstoretestuser/dockstore-whalesay.git", "--git-reference",
                         "master", "--toolname", "regular", "--script" });
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "registry.hub.docker.com/dockstoretestuser/dockerhubandbitbucket/regular", "--script" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser/quayandgithub", "--script" });
+
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.DOCKER_HUB.toString(),
+                        "--namespace", "dockstoretestuser", "--name", "dockerhubandgithub", "--git-url", "git@github.com:dockstoretestuser/dockstore-whalesay.git", "--git-reference",
+                        "master", "--toolname", "regular", "--script" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub/regular", "--script" });
         }
 
         /**
