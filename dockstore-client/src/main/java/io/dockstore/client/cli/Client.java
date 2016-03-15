@@ -25,7 +25,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
@@ -37,6 +36,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -49,6 +49,7 @@ import java.util.regex.Pattern;
 
 import javax.ws.rs.ProcessingException;
 
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
@@ -58,7 +59,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 
-import com.esotericsoftware.yamlbeans.YamlReader;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
@@ -72,6 +72,7 @@ import com.google.gson.JsonParser;
 import cromwell.Main;
 import io.cwl.avro.CWL;
 import io.dockstore.client.Bridge;
+import io.dockstore.common.WDLFileProvisioning;
 import io.github.collaboratory.LauncherCWL;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -117,6 +118,7 @@ public class Client {
     public static final int GENERIC_ERROR = 1;
     public static final int CONNECTION_ERROR = 150;
     public static final int INPUT_ERROR = 3;
+    private static String configFile = null;
 
     // This should be linked to common, but we won't do this now because we don't want dependencies changing during testing
     public enum Registry {
@@ -635,10 +637,6 @@ public class Client {
         final File tempCWL = File.createTempFile("temp", ".cwl", Files.createTempDir());
         Files.write(cwlFromServer.getContent(), tempCWL, StandardCharsets.UTF_8);
 
-        // stub out invocation and fake out a config file
-        final File tempConfig = File.createTempFile("temp", ".cwl", Files.createTempDir());
-        Files.write("working-directory=./datastore/", tempConfig, StandardCharsets.UTF_8);
-
         final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
         if (jsonRun != null) {
             // if the root document is an array, this indicates multiple runs
@@ -650,11 +648,11 @@ public class Client {
                     final String finalString = gson.toJson(element);
                     final File tempJson = File.createTempFile("temp", ".json", Files.createTempDir());
                     FileUtils.write(tempJson, finalString);
-                    final LauncherCWL cwlLauncher = new LauncherCWL(tempConfig.getAbsolutePath(), tempCWL.getAbsolutePath(), tempJson.getAbsolutePath(), System.out, System.err);
+                    final LauncherCWL cwlLauncher = new LauncherCWL(configFile, tempCWL.getAbsolutePath(), tempJson.getAbsolutePath(), System.out, System.err);
                     cwlLauncher.run();
                 }
             } else {
-                final LauncherCWL cwlLauncher = new LauncherCWL(tempConfig.getAbsolutePath(), tempCWL.getAbsolutePath(), jsonRun, System.out, System.err);
+                final LauncherCWL cwlLauncher = new LauncherCWL(configFile, tempCWL.getAbsolutePath(), jsonRun, System.out, System.err);
                 cwlLauncher.run();
             }
         } else if (csvRuns != null) {
@@ -693,7 +691,7 @@ public class Client {
 
                         //final String stringMapAsString = gson.toJson(stringMap);
                         //Files.write(stringMapAsString, tempJson, StandardCharsets.UTF_8);
-                        final LauncherCWL cwlLauncher = new LauncherCWL(tempConfig.getAbsolutePath(), tempCWL.getAbsolutePath(),
+                        final LauncherCWL cwlLauncher = new LauncherCWL(configFile, tempCWL.getAbsolutePath(),
                             tempJson.getAbsolutePath(), System.out, System.err);
                         cwlLauncher.run();
                     }
@@ -724,18 +722,37 @@ public class Client {
             Main main = new Main();
             File parameterFile = new File(json);
 
-            final SourceFile cwlFromServer;
+            final SourceFile wdlFromServer;
             try {
                 // Grab WDL from server and store to file
-                cwlFromServer = getDescriptorFromServer(entry, "wdl");
+                wdlFromServer = getDescriptorFromServer(entry, "wdl");
                 final File tempWdl = File.createTempFile("temp", ".wdl", Files.createTempDir());
-                Files.write(cwlFromServer.getContent(), tempWdl, StandardCharsets.UTF_8);
+                Files.write(wdlFromServer.getContent(), tempWdl, StandardCharsets.UTF_8);
 
-                final List<String> wdlRun = Lists.newArrayList(tempWdl.getAbsolutePath(), parameterFile.getAbsolutePath());
+                // Get list of input files
+                Bridge bridge = new Bridge();
+                Map<String, String> wdlInputs = bridge.getInputFiles(tempWdl);
+
+                // Convert parameter JSON to a map
+                WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning(configFile);
+                Gson gson = new Gson();
+                String jsonString = FileUtils.readFileToString(parameterFile);
+                Map<String, Object> map = new HashMap<>();
+                Map<String, Object> inputJson = gson.fromJson(jsonString, map.getClass());
+
+                // Download files and change to local location
+                // Make a new map of the inputs with updated locations
+                Map<String,Object> fileMap = wdlFileProvisioning.pullFiles(inputJson, wdlInputs);
+
+                // Make new json file
+                String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
+
+                final List<String> wdlRun = Lists.newArrayList(newJsonPath, parameterFile.getAbsolutePath());
                 final scala.collection.immutable.List<String> wdlRunList = scala.collection.JavaConversions.asScalaBuffer(wdlRun).toList();
+
                 // run a workflow
                 final int run = main.run(wdlRunList);
-
+                
             } catch (ApiException e) {
                 e.printStackTrace();
             } catch (IOException e) {
@@ -1660,15 +1677,12 @@ public class Client {
         String userHome = System.getProperty("user.home");
 
         try {
-            String configFile = optVal(args, "--config", userHome + File.separator + ".dockstore" + File.separator + "config");
-            InputStreamReader f = new InputStreamReader(new FileInputStream(configFile), Charset.defaultCharset());
-            YamlReader reader = new YamlReader(f);
-            Object object = reader.read();
-            Map map = (Map) object;
+            configFile = optVal(args, "--config", userHome + File.separator + ".dockstore" + File.separator + "config");
+            HierarchicalINIConfiguration config = new HierarchicalINIConfiguration(configFile);
 
             // pull out the variables from the config
-            String token = (String) map.get("token");
-            String serverUrl = (String) map.get("server-url");
+            String token = config.getString("token");
+            String serverUrl = config.getString("server-url");
 
             if (token == null) {
                 err("The token is missing from your config file.");
