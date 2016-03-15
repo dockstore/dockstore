@@ -1341,6 +1341,7 @@ public class Client {
                 container.setGitUrl(gitUrl);
 
                 containersApi.updateContainer(containerId, container);
+                containersApi.refresh(containerId);
                 out("The container has been updated.");
             } catch (ApiException e) {
                 e.printStackTrace();

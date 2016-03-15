@@ -369,7 +369,6 @@ public class BasicET {
          */
         @Test
         public void testTool2JSONWDL() {
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser/quayandgithub", "--script" });
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "publish", "quay.io/dockstoretestuser/quayandgithub" });
                 // need to publish before converting
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "convert", "tool2json", "--entry", "quay.io/dockstoretestuser/quayandgithub", "--descriptor", "wdl", "--script" });
@@ -422,7 +421,6 @@ public class BasicET {
         public void testUpdateAlternateStructureQuickReg(){
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "updateContainer", "--entry", "quay.io/dockstoretestuser/quayandgithubalternate",
                         "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser/quayandgithubalternate", "--script" });
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
                 final long count = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser/quayandgithubalternate' and validtrigger = 't'", new ScalarHandler<>());
@@ -430,7 +428,6 @@ public class BasicET {
 
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "updateContainer", "--entry", "quay.io/dockstoretestuser/quayandgithubalternate",
                         "--cwl-path", "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile", "--script" });
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser/quayandgithubalternate" , "--script"});
 
                 final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser/quayandgithubalternate' and validtrigger = 't'", new ScalarHandler<>());
                 Assert.assertTrue("the container should now have an invalid trigger again", count2 == 0);
@@ -452,7 +449,6 @@ public class BasicET {
 
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "updateContainer", "--entry", "quay.io/dockstoretestuser/quayandgithubalternate/alternate",
                         "--cwl-path", "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile", "--script" });
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser/quayandgithubalternate/alternate", "--script" });
 
                 // check invalid trigger
                 final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser/quayandgithubalternate' and toolname = 'alternate' and validtrigger = 'f'", new ScalarHandler<>());
@@ -460,7 +456,6 @@ public class BasicET {
 
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "updateContainer", "--entry", "quay.io/dockstoretestuser/quayandgithubalternate/alternate",
                         "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser/quayandgithubalternate/alternate", "--script" });
 
                 // check valid trigger
                 final long count3 = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser/quayandgithubalternate' and toolname = 'alternate' and validtrigger = 't'", new ScalarHandler<>());
@@ -483,7 +478,6 @@ public class BasicET {
 
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "updateContainer", "--entry", "quay.io/dockstoretestuser/quayandgithubwdl/validWdl",
                         "--wdl-path", "/testDir/Dockstore.wdl", "--script" });
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser/quayandgithubwdl/validWdl", "--script" });
 
                 // check invalid trigger
                 final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser/quayandgithubwdl' and toolname = 'validWdl' and validtrigger = 'f'", new ScalarHandler<>());
@@ -491,7 +485,6 @@ public class BasicET {
 
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "updateContainer", "--entry", "quay.io/dockstoretestuser/quayandgithubwdl/validWdl",
                         "--wdl-path", "/Dockstore.wdl", "--script" });
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser/quayandgithubwdl/validWdl", "--script" });
 
                 // check valid trigger
                 final long count3 = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser/quayandgithubwdl' and toolname = 'validWdl' and validtrigger = 't'", new ScalarHandler<>());
@@ -580,7 +573,6 @@ public class BasicET {
         public void testQuayNoAutobuild() {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "updateContainer", "--entry", "quay.io/dockstoretestuser/noautobuild",
                         "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--script" });
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser/noautobuild", "--script" });
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
                 final long count = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser/noautobuild' and giturl = 'git@github.com:DockstoreTestUser/dockstore-whalesay.git'", new ScalarHandler<>());
@@ -588,7 +580,6 @@ public class BasicET {
 
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "updateContainer", "--entry", "quay.io/dockstoretestuser/nobuildsatall",
                         "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--script" });
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser/nobuildsatall", "--script" });
 
                 final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser/nobuildsatall' and giturl = 'git@github.com:DockstoreTestUser/dockstore-whalesay.git'", new ScalarHandler<>());
                 Assert.assertTrue("the container should now have an associated git repo", count2 == 1);
@@ -618,7 +609,6 @@ public class BasicET {
          */
         @Test
         public void testGetWdlAndCwl(){
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath","quay.io/dockstoretestuser/quayandgithub", "--script" });
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "wdl","--entry", "quay.io/dockstoretestuser/quayandgithub", "--script" });
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "cwl","--entry", "quay.io/dockstoretestuser/quayandgithub", "--script" });
         }
