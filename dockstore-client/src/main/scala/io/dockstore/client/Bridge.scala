@@ -17,8 +17,11 @@
 package io.dockstore.client
 
 import java.io.{File => JFile}
+import java.util
 
 import wdl4s.formatter.{AnsiSyntaxHighlighter, HtmlSyntaxHighlighter, SyntaxFormatter}
+import wdl4s.types.{WdlArrayType, WdlFileType}
+import wdl4s.values.WdlString
 import wdl4s.{AstTools, _}
 import spray.json._
 
@@ -53,4 +56,20 @@ class Bridge {
         null
     }
   }
+
+  def getInputFiles(file: JFile): util.Map[String, String] = {
+    val lines = scala.io.Source.fromFile(file).mkString
+    val ns = NamespaceWithWorkflow.load(lines)
+
+    val inputList = new util.HashMap[String, String]()
+
+    import scala.collection.JavaConversions._
+    ns.workflow.inputs foreach {case(key,value) =>
+      if (value.wdlType == WdlFileType || value.wdlType == WdlArrayType(WdlFileType)) {
+        inputList.put(value.fqn, value.wdlType.toWdlString)
+      }
+    }
+    return inputList
+  }
+
 }

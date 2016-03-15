@@ -21,7 +21,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -59,13 +58,10 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.S3ClientOptions;
 import com.amazonaws.services.s3.internal.S3Signer;
-import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.S3Object;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
-import com.google.common.io.Files;
 import com.google.gson.Gson;
 
 import io.cwl.avro.CWL;
@@ -73,6 +69,8 @@ import io.cwl.avro.CommandInputParameter;
 import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.CommandOutputParameter;
 import io.dockstore.common.Utilities;
+import io.dockstore.common.FileProvisioning;
+import io.dockstore.common.FileProvisioning.PathInfo;
 
 
 /**
@@ -100,6 +98,8 @@ public class LauncherCWL {
     private final Optional<OutputStream> stdoutStream;
     private final Optional<OutputStream> stderrStream;
     private final Gson gson;
+    private final FileProvisioning fileProvisioning;
+
 
     /**
      * Constructor for shell-based launch
@@ -118,6 +118,7 @@ public class LauncherCWL {
         stderrStream = Optional.absent();
 
         gson = CWL.getTypeSafeCWLToolDocument();
+        fileProvisioning = new FileProvisioning(configFilePath);
     }
 
     /**
@@ -133,6 +134,8 @@ public class LauncherCWL {
         // programmatically forward stdout and stderr
         this.stdoutStream = Optional.of(stdoutStream);
         this.stderrStream = Optional.of(stderrStream);
+        fileProvisioning = new FileProvisioning(configFilePath);
+
 
         gson = CWL.getTypeSafeCWLToolDocument();
     }
@@ -459,19 +462,6 @@ public class LauncherCWL {
             }
         }
     }
-
-    private String getStorageClient() {
-    	return config.getString(DCC_CLIENT_KEY, "/icgc/dcc-storage/bin/dcc-storage-client");
-    }
-    
-    private void downloadFromDccStorage(String objectId, String downloadDir) {  	
-    	// default layout saves to original_file_name/object_id
-    	// file name is the directory and object id is actual file name
-    	String client = getStorageClient();
-        String bob = new StringBuilder().append(client).append(" --quiet").append(" download").append(" --object-id ").append(objectId)
-                         .append(" --output-dir ").append(downloadDir).append(" --output-layout id").toString();
-        Utilities.executeCommand(bob, stdoutStream, stderrStream);
-    }
     
     private Map<String, FileInfo> pullFiles(CommandLineTool cwl, Map<String, Object> inputsOutputs) {
         Map<String, FileInfo> fileMap = new HashMap<>();
@@ -548,53 +538,11 @@ public class LauncherCWL {
         PathInfo pathInfo = new PathInfo(path);
         if (pathInfo.isObjectIdType()) {
             String objectId = pathInfo.getObjectId();
-            downloadFromDccStorage(objectId, downloadDirectory);
-
-            // downloaded file
-            String downloadPath = downloadDirFileObj.getAbsolutePath() + "/" + objectId;
-            System.out.println("download path: " + downloadPath);
-            File downloadedFileFileObj = new File(downloadPath);
-            File targetPathFileObj = new File(targetFilePath);
-            try {
-                Files.move(downloadedFileFileObj, targetPathFileObj);
-            } catch (IOException ioe) {
-                LOG.error(ioe.getMessage());
-                throw new RuntimeException("Could not move input file: ", ioe);
-            }
+            fileProvisioning.downloadFromDccStorage(objectId, downloadDirectory, downloadDirFileObj, targetFilePath);
         } else if (path.startsWith("s3://")) {
-            AmazonS3 s3Client = new AmazonS3Client(new ClientConfiguration().withSignerOverride("S3Signer"));
-            if (config.containsKey(S3_ENDPOINT)) {
-                final String endpoint = config.getString(S3_ENDPOINT);
-                LOG.info("found custom S3 endpoint, setting to {}", endpoint);
-                s3Client.setEndpoint(endpoint);
-                s3Client.setS3ClientOptions(new S3ClientOptions().withPathStyleAccess(true));
-            }
-            String trimmedPath = path.replace("s3://", "");
-            List<String> splitPathList = Lists.newArrayList(trimmedPath.split("/"));
-            String bucketName = splitPathList.remove(0);
-
-            S3Object object = s3Client.getObject(
-                    new GetObjectRequest(bucketName, Joiner.on("/").join(splitPathList)));
-            try {
-                FileUtils.copyInputStreamToFile(object.getObjectContent(), new File(targetFilePath));
-            } catch (IOException e) {
-                LOG.error(e.getMessage());
-                throw new RuntimeException("Could not provision input files from S3", e);
-            }
+            fileProvisioning.downloadFromS3(path, targetFilePath);
         } else if (!pathInfo.isLocalFileType()) {
-            // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
-            // https://commons.apache.org/proper/commons-vfs/filesystems.html
-            FileSystemManager fsManager;
-            try {
-                // trigger a copy from the URL to a local file path that's a UUID to avoid collision
-                fsManager = VFS.getManager();
-                FileObject src = fsManager.resolveFile(path);
-                FileObject dest = fsManager.resolveFile(new File(targetFilePath).getAbsolutePath());
-                dest.copyFrom(src, Selectors.SELECT_SELF);
-            } catch (FileSystemException e) {
-                LOG.error(e.getMessage());
-                throw new RuntimeException("Could not provision input files", e);
-            }
+            fileProvisioning.downloadFromHttp(path, targetFilePath);
         }
         if (!pathInfo.isLocalFileType()) {
             // now add this info to a hash so I can later reconstruct a docker -v command
@@ -620,43 +568,6 @@ public class LauncherCWL {
         } catch (ParseException exp) {
             LOG.error("Unexpected exception:{}", exp.getMessage());
             throw new RuntimeException("Could not parse command-line", exp);
-        }
-    }
-
-    public static class PathInfo {
-        private static final Logger LOG = LoggerFactory.getLogger(PathInfo.class);
-        public static final String DCC_STORAGE_SCHEME = "icgc";
-    	private boolean objectIdType;
-    	private String objectId = "";
-        private boolean localFileType = false;
-    	
-		public boolean isObjectIdType() {
-			return objectIdType;
-		}
-
-		public String getObjectId() {
-			return objectId;
-		}
-		
-		public PathInfo(String path) {
-            try {
-		    	URI objectIdentifier = URI.create(path);	// throws IllegalArgumentException if it isn't a valid URI
-                if (objectIdentifier.getScheme() == null){
-                    localFileType = true;
-                }
-		    	if (objectIdentifier.getScheme().equalsIgnoreCase(DCC_STORAGE_SCHEME)) {
-		    		objectIdType = true;
-		    		objectId = objectIdentifier.getSchemeSpecificPart().toLowerCase();
-		    	}				
-			} catch (IllegalArgumentException | NullPointerException iae) {
-                // if there is no scheme, then it must be a local file
-                LOG.warn("Invalid path specified for CWL pre-processor values: " + path);
-				objectIdType = false;
-			}
-		}
-
-        public boolean isLocalFileType() {
-            return localFileType;
         }
     }
 
