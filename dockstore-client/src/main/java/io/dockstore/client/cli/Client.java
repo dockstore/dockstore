@@ -25,7 +25,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
@@ -50,6 +49,7 @@ import java.util.regex.Pattern;
 
 import javax.ws.rs.ProcessingException;
 
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
@@ -59,7 +59,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 
-import com.esotericsoftware.yamlbeans.YamlReader;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
@@ -1679,14 +1678,11 @@ public class Client {
 
         try {
             configFile = optVal(args, "--config", userHome + File.separator + ".dockstore" + File.separator + "config");
-            InputStreamReader f = new InputStreamReader(new FileInputStream(configFile), Charset.defaultCharset());
-            YamlReader reader = new YamlReader(f);
-            Object object = reader.read();
-            Map map = (Map) object;
+            HierarchicalINIConfiguration config = new HierarchicalINIConfiguration(configFile);
 
             // pull out the variables from the config
-            String token = (String) map.get("token");
-            String serverUrl = (String) map.get("server-url");
+            String token = config.getString("token");
+            String serverUrl = config.getString("server-url");
 
             if (token == null) {
                 err("The token is missing from your config file.");
