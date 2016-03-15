@@ -30,21 +30,26 @@ import io.swagger.annotations.ApiModelProperty;
  **/
 
 @ApiModel(description = "A tool version describes a particular iteration of a tool as described by a reference to a specific image and dockerfile.")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JaxRSServerCodegen", date = "2016-01-29T22:00:17.650Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-03-11T20:14:17.098Z")
 public class ToolVersion   {
   
   private String name = null;
   private String globalId = null;
   private String registryId = null;
-  private ToolDescriptor descriptor = null;
   private String image = null;
-  private String dockerfile = null;
+  private ToolDescriptor descriptor = null;
+  private ToolDockerfile dockerfile = null;
   private String metaVersion = null;
 
   
   /**
    * The name of the version.
    **/
+  public ToolVersion name(String name) {
+    this.name = name;
+    return this;
+  }
+
   
   @ApiModelProperty(value = "The name of the version.")
   @JsonProperty("name")
@@ -59,6 +64,11 @@ public class ToolVersion   {
   /**
    * The unique identifier for this version of a tool. (Proposed - This id should be globally unique across systems and should also identify the system that it comes from for example This id should be globally unique across systems, should also identify the system that it comes from, and be a URL that resolves for example `http://agora.broadinstitute.org/tools/123456/v1` This can be the same as the registry-id depending on the structure of your registry)
    **/
+  public ToolVersion globalId(String globalId) {
+    this.globalId = globalId;
+    return this;
+  }
+
   
   @ApiModelProperty(required = true, value = "The unique identifier for this version of a tool. (Proposed - This id should be globally unique across systems and should also identify the system that it comes from for example This id should be globally unique across systems, should also identify the system that it comes from, and be a URL that resolves for example `http://agora.broadinstitute.org/tools/123456/v1` This can be the same as the registry-id depending on the structure of your registry)")
   @JsonProperty("global-id")
@@ -73,8 +83,13 @@ public class ToolVersion   {
   /**
    * An identifier of the version of this tool for this particular tool registry, for example `v1`
    **/
+  public ToolVersion registryId(String registryId) {
+    this.registryId = registryId;
+    return this;
+  }
+
   
-  @ApiModelProperty(value = "An identifier of the version of this tool for this particular tool registry, for example `v1`")
+  @ApiModelProperty(required = true, value = "An identifier of the version of this tool for this particular tool registry, for example `v1`")
   @JsonProperty("registry-id")
   public String getRegistryId() {
     return registryId;
@@ -85,21 +100,13 @@ public class ToolVersion   {
 
   
   /**
-   **/
-  
-  @ApiModelProperty(required = true, value = "")
-  @JsonProperty("descriptor")
-  public ToolDescriptor getDescriptor() {
-    return descriptor;
-  }
-  public void setDescriptor(ToolDescriptor descriptor) {
-    this.descriptor = descriptor;
-  }
-
-  
-  /**
    * The docker path to the image (and version) for this tool. (e.g. quay.io/seqware/seqware_full/1.1)
    **/
+  public ToolVersion image(String image) {
+    this.image = image;
+    return this;
+  }
+
   
   @ApiModelProperty(required = true, value = "The docker path to the image (and version) for this tool. (e.g. quay.io/seqware/seqware_full/1.1)")
   @JsonProperty("image")
@@ -112,15 +119,37 @@ public class ToolVersion   {
 
   
   /**
-   * The url to the dockerfile used to build this image, should include version information (e.g. https://github.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/blob/master/delly_docker/Dockerfile )
    **/
+  public ToolVersion descriptor(ToolDescriptor descriptor) {
+    this.descriptor = descriptor;
+    return this;
+  }
+
   
-  @ApiModelProperty(value = "The url to the dockerfile used to build this image, should include version information (e.g. https://github.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/blob/master/delly_docker/Dockerfile )")
+  @ApiModelProperty(required = true, value = "")
+  @JsonProperty("descriptor")
+  public ToolDescriptor getDescriptor() {
+    return descriptor;
+  }
+  public void setDescriptor(ToolDescriptor descriptor) {
+    this.descriptor = descriptor;
+  }
+
+  
+  /**
+   **/
+  public ToolVersion dockerfile(ToolDockerfile dockerfile) {
+    this.dockerfile = dockerfile;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
   @JsonProperty("dockerfile")
-  public String getDockerfile() {
+  public ToolDockerfile getDockerfile() {
     return dockerfile;
   }
-  public void setDockerfile(String dockerfile) {
+  public void setDockerfile(ToolDockerfile dockerfile) {
     this.dockerfile = dockerfile;
   }
 
@@ -128,8 +157,13 @@ public class ToolVersion   {
   /**
    * The version of this tool version in the registry. Iterates when fields like the description, author, etc. are updated.
    **/
+  public ToolVersion metaVersion(String metaVersion) {
+    this.metaVersion = metaVersion;
+    return this;
+  }
+
   
-  @ApiModelProperty(value = "The version of this tool version in the registry. Iterates when fields like the description, author, etc. are updated.")
+  @ApiModelProperty(required = true, value = "The version of this tool version in the registry. Iterates when fields like the description, author, etc. are updated.")
   @JsonProperty("meta-version")
   public String getMetaVersion() {
     return metaVersion;
@@ -152,15 +186,15 @@ public class ToolVersion   {
     return Objects.equals(name, toolVersion.name) &&
         Objects.equals(globalId, toolVersion.globalId) &&
         Objects.equals(registryId, toolVersion.registryId) &&
-        Objects.equals(descriptor, toolVersion.descriptor) &&
         Objects.equals(image, toolVersion.image) &&
+        Objects.equals(descriptor, toolVersion.descriptor) &&
         Objects.equals(dockerfile, toolVersion.dockerfile) &&
         Objects.equals(metaVersion, toolVersion.metaVersion);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(name, globalId, registryId, descriptor, image, dockerfile, metaVersion);
+    return Objects.hash(name, globalId, registryId, image, descriptor, dockerfile, metaVersion);
   }
 
   @Override
@@ -171,8 +205,8 @@ public class ToolVersion   {
     sb.append("    name: ").append(toIndentedString(name)).append("\n");
     sb.append("    globalId: ").append(toIndentedString(globalId)).append("\n");
     sb.append("    registryId: ").append(toIndentedString(registryId)).append("\n");
-    sb.append("    descriptor: ").append(toIndentedString(descriptor)).append("\n");
     sb.append("    image: ").append(toIndentedString(image)).append("\n");
+    sb.append("    descriptor: ").append(toIndentedString(descriptor)).append("\n");
     sb.append("    dockerfile: ").append(toIndentedString(dockerfile)).append("\n");
     sb.append("    metaVersion: ").append(toIndentedString(metaVersion)).append("\n");
     sb.append("}");

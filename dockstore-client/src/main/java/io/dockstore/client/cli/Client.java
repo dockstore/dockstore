@@ -13,6 +13,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+
 package io.dockstore.client.cli;
 
 import java.io.BufferedReader;
@@ -82,14 +83,12 @@ import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.GAGHApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.Body;
-import io.swagger.client.model.Container;
-import io.swagger.client.model.Container.ModeEnum;
-import io.swagger.client.model.Container.RegistryEnum;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.Metadata;
 import io.swagger.client.model.RegisterRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
+import io.swagger.client.model.Tool;
 import io.swagger.client.model.User;
 
  /** Main entrypoint for the dockstore CLI.
@@ -253,10 +252,10 @@ public class Client {
         return val;
     }
 
-    private static int[] columnWidths(List<Container> containers) {
+    private static int[] columnWidths(List<Tool> containers) {
         int[] maxWidths = { NAME_HEADER.length(), DESCRIPTION_HEADER.length(), GIT_HEADER.length() };
 
-        for (Container container : containers) {
+        for (Tool container : containers) {
             final String toolPath = container.getToolPath();
             if (toolPath != null && toolPath.length() > maxWidths[0]) {
                 maxWidths[0] = toolPath.length();
@@ -276,8 +275,8 @@ public class Client {
         return maxWidths;
     }
 
-    private static class ContainerComparator implements Comparator<Container> {
-        @Override public int compare(Container c1, Container c2) {
+    private static class ContainerComparator implements Comparator<Tool> {
+        @Override public int compare(Tool c1, Tool c2) {
             String path1 = c1.getPath();
             String path2 = c2.getPath();
 
@@ -285,7 +284,7 @@ public class Client {
         }
     }
 
-    private static void printContainerList(List<Container> containers) {
+    private static void printContainerList(List<Tool> containers) {
         Collections.sort(containers, new ContainerComparator());
 
         int[] maxWidths = columnWidths(containers);
@@ -296,7 +295,7 @@ public class Client {
         String format = "%-" + nameWidth + "s%-" + descWidth + "s%-" + gitWidth + "s%-16s%-16s%-10s";
         out(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "On Dockstore?", "Descriptor", "Automated");
 
-        for (Container container : containers) {
+        for (Tool container : containers) {
             String descriptor = "No";
             String automated = "No";
             String description = "";
@@ -322,7 +321,7 @@ public class Client {
         }
     }
 
-    private static void printRegisteredList(List<Container> containers) {
+    private static void printRegisteredList(List<Tool> containers) {
         Collections.sort(containers, new ContainerComparator());
 
         int[] maxWidths = columnWidths(containers);
@@ -333,7 +332,7 @@ public class Client {
         String format = "%-" + nameWidth + "s%-" + descWidth + "s%-" + gitWidth + "s";
         out(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER);
 
-        for (Container container : containers) {
+        for (Tool container : containers) {
             String description = "";
             String gitUrl = "";
 
@@ -360,7 +359,7 @@ public class Client {
                 throw new RuntimeException("User not found");
             }
             // List<Container> containers = containersApi.allRegisteredContainers();
-            List<Container> containers = usersApi.userRegisteredContainers(user.getId());
+            List<Tool> containers = usersApi.userRegisteredContainers(user.getId());
             printRegisteredList(containers);
         } catch (ApiException ex) {
             kill("Exception: " + ex);
@@ -386,7 +385,7 @@ public class Client {
         }
         String pattern = args.get(0);
         try {
-            List<Container> containers = containersApi.search(pattern);
+            List<Tool> containers = containersApi.search(pattern);
 
             out("MATCHING CONTAINERS");
             out("-------------------");
@@ -404,7 +403,7 @@ public class Client {
                 if (user == null) {
                     throw new RuntimeException("User not found");
                 }
-                List<Container> containers = usersApi.userContainers(user.getId());
+                List<Tool> containers = usersApi.userContainers(user.getId());
 
                 out("YOUR AVAILABLE CONTAINERS");
                 out("-------------------");
@@ -422,7 +421,7 @@ public class Client {
                 } else {
                     String second = args.get(1);
                     try {
-                        Container container = containersApi.getContainerByToolPath(second);
+                        Tool container = containersApi.getContainerByToolPath(second);
                         RegisterRequest req = new RegisterRequest();
                         req.setRegister(false);
                         container = containersApi.register(container.getId(), req);
@@ -439,7 +438,7 @@ public class Client {
             } else {
                 if (args.size() == 1) {
                     try {
-                        Container container = containersApi.getContainerByToolPath(first);
+                        Tool container = containersApi.getContainerByToolPath(first);
                         RegisterRequest req = new RegisterRequest();
                         req.setRegister(true);
                         container = containersApi.register(container.getId(), req);
@@ -455,8 +454,8 @@ public class Client {
                 } else {
                     String toolname = args.get(1);
                     try {
-                        Container container = containersApi.getContainerByToolPath(first);
-                        Container newContainer = new Container();
+                        Tool container = containersApi.getContainerByToolPath(first);
+                        Tool newContainer = new Tool();
                         // copy only the fields that we want to replicate, not sure why simply blanking
                         // the returned container does not work
                         newContainer.setMode(container.getMode());
@@ -521,11 +520,11 @@ public class Client {
             final String toolname = optVal(args, "--toolname", null);
             final String registry = optVal(args, "--registry", "registry.hub.docker.com");
 
-            Container container = new Container();
-            container.setMode(ModeEnum.MANUAL_IMAGE_PATH);
+            Tool container = new Tool();
+            container.setMode(Tool.ModeEnum.MANUAL_IMAGE_PATH);
             container.setName(name);
             container.setNamespace(namespace);
-            container.setRegistry("quay.io".equals(registry) ? RegistryEnum.QUAY_IO : RegistryEnum.DOCKER_HUB);
+            container.setRegistry("quay.io".equals(registry) ? Tool.RegistryEnum.QUAY_IO : Tool.RegistryEnum.DOCKER_HUB);
             container.setDefaultDockerfilePath(dockerfilePath);
             container.setDefaultCwlPath(cwlPath);
             container.setDefaultWdlPath(wdlPath);
@@ -948,7 +947,7 @@ public class Client {
 
         String path = args.get(0);
         try {
-            Container container = containersApi.getRegisteredContainerByToolPath(path);
+            Tool container = containersApi.getRegisteredContainerByToolPath(path);
             if (container == null || !container.getIsRegistered()) {
                 kill("This container is not registered.");
             } else {
@@ -1044,7 +1043,7 @@ public class Client {
         String tag = (parts.length > 1) ? parts[1] : null;
         SourceFile file = new SourceFile();
         // simply getting published descriptors does not require permissions
-        Container container = containersApi.getRegisteredContainerByToolPath(path);
+        Tool container = containersApi.getRegisteredContainerByToolPath(path);
         if (container.getValidTrigger()) {
             try {
                 if (descriptorType.equals(CWL)) {
@@ -1072,10 +1071,10 @@ public class Client {
             } else {
                 try {
                     final String toolpath = reqVal(args, "--toolpath");
-                    Container container = containersApi.getContainerByToolPath(toolpath);
+                    Tool container = containersApi.getContainerByToolPath(toolpath);
                     final Long containerId = container.getId();
-                    Container updatedContainer = containersApi.refresh(containerId);
-                    List<Container> containerList = new ArrayList<>();
+                    Tool updatedContainer = containersApi.refresh(containerId);
+                    List<Tool> containerList = new ArrayList<>();
                     containerList.add(updatedContainer);
                     out("YOUR UPDATED CONTAINER");
                     out("-------------------");
@@ -1091,7 +1090,7 @@ public class Client {
                 if (user == null) {
                     throw new RuntimeException("User not found");
                 }
-                List<Container> containers = usersApi.refresh(user.getId());
+                List<Tool> containers = usersApi.refresh(user.getId());
 
                 out("YOUR UPDATED CONTAINERS");
                 out("-------------------");
@@ -1144,7 +1143,7 @@ public class Client {
 
             // Try and update the labels for the given container
             try {
-                Container container = containersApi.getContainerByToolPath(toolpath);
+                Tool container = containersApi.getContainerByToolPath(toolpath);
                 long containerId = container.getId();
                 List<Label> existingLabels = container.getLabels();
                 Set<String> newLabelSet = new HashSet<>();
@@ -1167,7 +1166,7 @@ public class Client {
 
                 String combinedLabelString = Joiner.on(",").join(newLabelSet);
 
-                Container updatedContainer = containersApi.updateLabels(containerId, combinedLabelString, new Body());
+                Tool updatedContainer = containersApi.updateLabels(containerId, combinedLabelString, new Body());
 
                 List<Label> newLabels = updatedContainer.getLabels();
                 if (newLabels.size() > 0) {
@@ -1192,10 +1191,10 @@ public class Client {
         if (args.size() > 0 && !isHelpRequest(args.get(0))) {
             final String toolpath = reqVal(args, "--entry");
             try {
-                Container container = containersApi.getContainerByToolPath(toolpath);
+                Tool container = containersApi.getContainerByToolPath(toolpath);
                 long containerId = container.getId();
                 if (args.contains("--add")) {
-                    if (container.getMode() != ModeEnum.MANUAL_IMAGE_PATH) {
+                    if (container.getMode() != Tool.ModeEnum.MANUAL_IMAGE_PATH) {
                         err("Only manually added images can add version tags.");
                         System.exit(INPUT_ERROR);
                     }
@@ -1262,7 +1261,7 @@ public class Client {
                         System.exit(INPUT_ERROR);
                     }
                 } else if (args.contains("--remove")) {
-                    if (container.getMode() != ModeEnum.MANUAL_IMAGE_PATH) {
+                    if (container.getMode() != Tool.ModeEnum.MANUAL_IMAGE_PATH) {
                         err("Only manually added images can add version tags.");
                         System.exit(INPUT_ERROR);
                     }
@@ -1325,7 +1324,7 @@ public class Client {
         if (args.size() > 0 && !isHelpRequest(args.get(0))) {
             final String toolpath = reqVal(args, "--entry");
             try {
-                Container container = containersApi.getContainerByToolPath(toolpath);
+                Tool container = containersApi.getContainerByToolPath(toolpath);
                 long containerId = container.getId();
 
                 final String cwlPath = optVal(args, "--cwl-path", container.getDefaultCwlPath());

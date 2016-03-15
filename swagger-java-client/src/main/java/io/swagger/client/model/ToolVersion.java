@@ -1,6 +1,23 @@
+/*
+ *    Copyright 2016 OICR
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
 package io.swagger.client.model;
 
 import io.swagger.client.StringUtil;
+import io.swagger.client.model.ToolDockerfile;
 import io.swagger.client.model.ToolDescriptor;
 
 
@@ -13,15 +30,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * A tool version describes a particular iteration of a tool as described by a reference to a specific image and dockerfile.
  **/
 @ApiModel(description = "A tool version describes a particular iteration of a tool as described by a reference to a specific image and dockerfile.")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-01T15:18:10.919-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-11T15:28:43.725-05:00")
 public class ToolVersion   {
   
   private String name = null;
   private String globalId = null;
   private String registryId = null;
-  private ToolDescriptor descriptor = null;
   private String image = null;
-  private String dockerfile = null;
+  private ToolDescriptor descriptor = null;
+  private ToolDockerfile dockerfile = null;
   private String metaVersion = null;
 
   
@@ -54,25 +71,13 @@ public class ToolVersion   {
   /**
    * An identifier of the version of this tool for this particular tool registry, for example `v1`
    **/
-  @ApiModelProperty(value = "An identifier of the version of this tool for this particular tool registry, for example `v1`")
+  @ApiModelProperty(required = true, value = "An identifier of the version of this tool for this particular tool registry, for example `v1`")
   @JsonProperty("registry-id")
   public String getRegistryId() {
     return registryId;
   }
   public void setRegistryId(String registryId) {
     this.registryId = registryId;
-  }
-
-  
-  /**
-   **/
-  @ApiModelProperty(required = true, value = "")
-  @JsonProperty("descriptor")
-  public ToolDescriptor getDescriptor() {
-    return descriptor;
-  }
-  public void setDescriptor(ToolDescriptor descriptor) {
-    this.descriptor = descriptor;
   }
 
   
@@ -90,14 +95,25 @@ public class ToolVersion   {
 
   
   /**
-   * The url to the dockerfile used to build this image, should include version information (e.g. https://github.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/blob/master/delly_docker/Dockerfile )
    **/
-  @ApiModelProperty(value = "The url to the dockerfile used to build this image, should include version information (e.g. https://github.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/blob/master/delly_docker/Dockerfile )")
+  @ApiModelProperty(required = true, value = "")
+  @JsonProperty("descriptor")
+  public ToolDescriptor getDescriptor() {
+    return descriptor;
+  }
+  public void setDescriptor(ToolDescriptor descriptor) {
+    this.descriptor = descriptor;
+  }
+
+  
+  /**
+   **/
+  @ApiModelProperty(value = "")
   @JsonProperty("dockerfile")
-  public String getDockerfile() {
+  public ToolDockerfile getDockerfile() {
     return dockerfile;
   }
-  public void setDockerfile(String dockerfile) {
+  public void setDockerfile(ToolDockerfile dockerfile) {
     this.dockerfile = dockerfile;
   }
 
@@ -105,7 +121,7 @@ public class ToolVersion   {
   /**
    * The version of this tool version in the registry. Iterates when fields like the description, author, etc. are updated.
    **/
-  @ApiModelProperty(value = "The version of this tool version in the registry. Iterates when fields like the description, author, etc. are updated.")
+  @ApiModelProperty(required = true, value = "The version of this tool version in the registry. Iterates when fields like the description, author, etc. are updated.")
   @JsonProperty("meta-version")
   public String getMetaVersion() {
     return metaVersion;
@@ -124,8 +140,8 @@ public class ToolVersion   {
     sb.append("    name: ").append(StringUtil.toIndentedString(name)).append("\n");
     sb.append("    globalId: ").append(StringUtil.toIndentedString(globalId)).append("\n");
     sb.append("    registryId: ").append(StringUtil.toIndentedString(registryId)).append("\n");
-    sb.append("    descriptor: ").append(StringUtil.toIndentedString(descriptor)).append("\n");
     sb.append("    image: ").append(StringUtil.toIndentedString(image)).append("\n");
+    sb.append("    descriptor: ").append(StringUtil.toIndentedString(descriptor)).append("\n");
     sb.append("    dockerfile: ").append(StringUtil.toIndentedString(dockerfile)).append("\n");
     sb.append("    metaVersion: ").append(StringUtil.toIndentedString(metaVersion)).append("\n");
     sb.append("}");

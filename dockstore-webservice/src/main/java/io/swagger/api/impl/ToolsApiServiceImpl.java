@@ -214,10 +214,10 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         tool.setToolname(container.getToolname());
         tool.setAuthor(container.getAuthor());
         tool.setDescription(container.getDescription());
-        tool.setMetaVersion(String.valueOf(container.getLastUpdated()));
+        tool.setMetaVersion(container.getLastUpdated() != null ? container.getLastUpdated().toString() : "");
         tool.setOrganization(container.getNamespace());
         tool.setName(container.getName());
-        tool.setRegistry(container.getRegistry().toString());
+        tool.setRegistry(container.getRegistry().name());
         tool.setTooltype(type);
         tool.setRegistryId(newID);
         tool.setGlobalId(globalId);
@@ -246,7 +246,9 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             for (SourceFile file : tag.getSourceFiles()) {
                 switch (file.getType()) {
                 case DOCKERFILE:
-                    version.setDockerfile(file.getContent());
+                    ToolDockerfile dockerfile = new ToolDockerfile();
+                    dockerfile.setDockerfile(file.getContent());
+                    version.setDockerfile(dockerfile);
                     break;
                 case DOCKSTORE_CWL:
                     ToolDescriptor descriptor = new ToolDescriptor();
@@ -255,7 +257,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                     break;
                 }
             }
-            version.setImage(tag.getName());
+            version.setImage(container.getPath() + ":" + tag.getName());
             tool.getVersions().add(version);
             version.setMetaVersion(String.valueOf(tag.getLastModified()));
         }

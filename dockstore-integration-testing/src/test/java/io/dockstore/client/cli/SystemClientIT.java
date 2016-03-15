@@ -13,6 +13,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+
 package io.dockstore.client.cli;
 
 import java.io.File;
@@ -43,9 +44,6 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.GAGHApi;
 import io.swagger.client.api.UsersApi;
-import io.swagger.client.model.Container;
-import io.swagger.client.model.Container.ModeEnum;
-import io.swagger.client.model.Container.RegistryEnum;
 import io.swagger.client.model.Group;
 import io.swagger.client.model.RegisterRequest;
 import io.swagger.client.model.SourceFile;
@@ -120,17 +118,17 @@ public class SystemClientIT {
     }
 
     @Test
-    public void testListUsersContainers() throws ApiException, IOException, TimeoutException {
+    public void testListUsersTools() throws ApiException, IOException, TimeoutException {
         ApiClient client = getAdminWebClient();
 
         UsersApi usersApi = new UsersApi(client);
         User user = usersApi.getUser();
 
-        List<Container> containers = usersApi.userContainers(user.getId());
-        assertTrue(containers.size() == 2);
+        List<Tool> tools = usersApi.userContainers(user.getId());
+        assertTrue(tools.size() == 2);
 
         ContainersApi containersApi = new ContainersApi(client);
-        List<Container> containerList = containersApi.allContainers();
+        List<Tool> containerList = containersApi.allContainers();
         assertTrue(containerList.size() > 1);
     }
 
@@ -138,7 +136,7 @@ public class SystemClientIT {
     public void testFailedContainerRegistration() throws ApiException, IOException, TimeoutException {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
-        List<Container> containers = containersApi.allRegisteredContainers();
+        List<Tool> containers = containersApi.allRegisteredContainers();
 
         assertTrue(containers.size() == 1);
 
@@ -148,7 +146,7 @@ public class SystemClientIT {
 
         assertTrue(containers.size() == 5);
 
-        Container container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
+        Tool container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
         assertFalse(container.getIsRegistered());
 
         long containerId = container.getId();
@@ -164,20 +162,20 @@ public class SystemClientIT {
         ApiClient client = getAdminWebClient();
         ContainersApi containersApi = new ContainersApi(client);
 
-        Container c = getContainer();
+        Tool c = getContainer();
 
         containersApi.registerManual(c);
     }
 
-    private Container getContainer() {
-        Container c = new Container();
-        c.setMode(ModeEnum.MANUAL_IMAGE_PATH);
+    private Tool getContainer() {
+        Tool c = new Tool();
+        c.setMode(Tool.ModeEnum.MANUAL_IMAGE_PATH);
         c.setName("seqware_full");
         c.setName("seqware");
         c.setGitUrl("https://github.com/denis-yuen/test1");
         c.setDefaultDockerfilePath("/Dockerfile");
         c.setDefaultCwlPath("/Dockstore.cwl");
-        c.setRegistry(RegistryEnum.DOCKER_HUB);
+        c.setRegistry(Tool.RegistryEnum.DOCKER_HUB);
         c.setIsRegistered(true);
         c.setIsPublic(true);
         c.setValidTrigger(true);
@@ -207,9 +205,9 @@ public class SystemClientIT {
         ApiClient client = getAdminWebClient();
         ContainersApi containersApi = new ContainersApi(client);
 
-        Container c = getContainer();
+        Tool c = getContainer();
 
-        final Container container = containersApi.registerManual(c);
+        final Tool container = containersApi.registerManual(c);
         containersApi.registerManual(container);
     }
 
@@ -229,7 +227,7 @@ public class SystemClientIT {
         GAGHApi toolApi = new GAGHApi(client);
         ContainersApi containersApi = new ContainersApi(client);
         // register one more to give us something to look at
-        Container c = getContainer();
+        Tool c = getContainer();
         containersApi.registerManual(c);
 
         List<Tool> tools = toolApi.toolsGet(null, null, null, null, null, null, null);
@@ -265,7 +263,7 @@ public class SystemClientIT {
         GAGHApi toolApi = new GAGHApi(client);
         ContainersApi containersApi = new ContainersApi(client);
         // register one more to give us something to look at
-        Container c = getContainer();
+        Tool c = getContainer();
         containersApi.registerManual(c);
 
         final ToolDockerfile toolDockerfile = toolApi.toolsRegistryIdVersionVersionIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5","master");
@@ -278,7 +276,7 @@ public class SystemClientIT {
     public void testContainerRegistration() throws ApiException, IOException, TimeoutException {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
-        List<Container> containers = containersApi.allRegisteredContainers();
+        List<Tool> containers = containersApi.allRegisteredContainers();
 
         assertTrue(containers.size() == 1);
 
@@ -288,7 +286,7 @@ public class SystemClientIT {
 
         assertTrue(containers.size() == 5);
 
-        Container container = containersApi.getContainerByToolPath("quay.io/test_org/test5");
+        Tool container = containersApi.getContainerByToolPath("quay.io/test_org/test5");
         assertFalse(container.getIsRegistered());
 
         long containerId = container.getId();
@@ -313,7 +311,7 @@ public class SystemClientIT {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
 
-        List<Container> containers = containersApi.search("test6");
+        List<Tool> containers = containersApi.search("test6");
         assertTrue(containers.size() == 1);
         assertTrue(containers.get(0).getPath().equals("quay.io/test_org/test6"));
 
@@ -327,7 +325,7 @@ public class SystemClientIT {
 
         ContainersApi containersApi = new ContainersApi(client);
         // register one more to give us something to look at
-        Container c = getContainer();
+        Tool c = getContainer();
         c.getTags().get(0).setHidden(true);
         c = containersApi.registerManual(c);
 
@@ -335,7 +333,7 @@ public class SystemClientIT {
 
         ApiClient muggleClient = getWebClient();
         ContainersApi muggleContainersApi = new ContainersApi(muggleClient);
-        final Container registeredContainer = muggleContainersApi.getRegisteredContainer(c.getId());
+        final Tool registeredContainer = muggleContainersApi.getRegisteredContainer(c.getId());
         assertTrue("should see no tags as a regular user, saw " + registeredContainer.getTags().size(), registeredContainer.getTags().size() == 0);
     }
 
