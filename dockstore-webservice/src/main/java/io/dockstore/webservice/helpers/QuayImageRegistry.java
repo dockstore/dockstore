@@ -34,8 +34,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
 
-import io.dockstore.webservice.Helper;
-import io.dockstore.webservice.Helper.RepoList;
+import io.dockstore.webservice.helpers.Helper.RepoList;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ContainerMode;
 import io.dockstore.webservice.core.Registry;

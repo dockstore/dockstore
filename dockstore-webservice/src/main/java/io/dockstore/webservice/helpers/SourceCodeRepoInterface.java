@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import com.esotericsoftware.yamlbeans.YamlReader;
 
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Workflow;
 import wdl4s.parser.WdlParser;
 
 /**
@@ -112,6 +113,12 @@ public abstract class SourceCodeRepoInterface {
 
         return tool;
     }
+
+    public abstract Map<String, String> getWorkflowGitUrl2RepositoryId();
+
+    public abstract void updateWorkflow(Workflow workflow);
+
+    public abstract Workflow getNewWorkflow(String repositoryId);
 
     public static class FileResponse {
         private String content;

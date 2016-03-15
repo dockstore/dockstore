@@ -13,37 +13,8 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.dockstore.webservice;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Optional;
-import com.google.gson.Gson;
-import io.dockstore.webservice.core.ContainerMode;
-import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.Registry;
-import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.core.SourceFile.FileType;
-import io.dockstore.webservice.core.Tag;
-import io.dockstore.webservice.core.Token;
-import io.dockstore.webservice.core.TokenType;
-import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.helpers.ImageRegistryFactory;
-import io.dockstore.webservice.helpers.ImageRegistryInterface;
-import io.dockstore.webservice.helpers.QuayImageRegistry;
-import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
-import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
-import io.dockstore.webservice.helpers.SourceCodeRepoInterface.FileResponse;
-import io.dockstore.webservice.jdbi.FileDAO;
-import io.dockstore.webservice.jdbi.TagDAO;
-import io.dockstore.webservice.jdbi.TokenDAO;
-import io.dockstore.webservice.jdbi.ToolDAO;
-import io.dockstore.webservice.jdbi.UserDAO;
-import io.dockstore.webservice.resources.ResourceUtilities;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+package io.dockstore.webservice.helpers;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -56,6 +27,34 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Optional;
+import com.google.gson.Gson;
+
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.ContainerMode;
+import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Registry;
+import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.SourceFile.FileType;
+import io.dockstore.webservice.core.Tag;
+import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenType;
+import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.helpers.SourceCodeRepoInterface.FileResponse;
+import io.dockstore.webservice.jdbi.FileDAO;
+import io.dockstore.webservice.jdbi.TagDAO;
+import io.dockstore.webservice.jdbi.TokenDAO;
+import io.dockstore.webservice.jdbi.ToolDAO;
+import io.dockstore.webservice.jdbi.UserDAO;
+import io.dockstore.webservice.resources.ResourceUtilities;
+
 /**
  *
  * @author xliu
@@ -65,8 +64,6 @@ public final class Helper {
     private static final Logger LOG = LoggerFactory.getLogger(Helper.class);
 
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
-
-    public static final String QUAY_URL = "https://quay.io/api/v1/";
 
     // public static final String DOCKSTORE_CWL = "Dockstore.cwl";
     public static class RepoList {
@@ -82,8 +79,7 @@ public final class Helper {
         }
     }
 
-    private static void updateFiles(Tool tool, final HttpClient client, final TagDAO tagDAO, final FileDAO fileDAO,
-            final Token githubToken, final Token bitbucketToken) {
+    private static void updateFiles(Tool tool, final HttpClient client, final FileDAO fileDAO, final Token githubToken, final Token bitbucketToken) {
         Set<Tag> tags = tool.getTags();
 
         for (Tag tag : tags) {
@@ -151,7 +147,6 @@ public final class Helper {
                     || (tool.getRegistry() == Registry.QUAY_IO && existingTags.isEmpty())) {
 
                 List<Tag> newTags = tagMap.get(tool.getPath());
-                Map<String, Set<SourceFile>> fileMap = new HashMap<>();
 
                 if (newTags == null) {
                     LOG.info("Tags for tool {} did not get updated because new tags were not found", tool.getPath());
@@ -196,7 +191,6 @@ public final class Helper {
                         existingTags.add(clonedTag);
                     }
 
-                    fileMap.put(newTag.getName(), newTag.getSourceFiles());
                 }
 
                 boolean allAutomated = true;
@@ -229,7 +223,7 @@ public final class Helper {
                 }
             }
 
-            updateFiles(tool, client, tagDAO, fileDAO, githubToken, bitbucketToken);
+            updateFiles(tool, client, fileDAO, githubToken, bitbucketToken);
 
             final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(tool.getGitUrl(), client,
                     bitbucketToken == null ? null : bitbucketToken.getContent(), githubToken.getContent());
@@ -403,7 +397,7 @@ public final class Helper {
 
                                 Map<String, Map<String, String>> triggerMetadataMap = (Map<String, Map<String, String>>) build;
 
-                                Map<String, String> triggerMetadata = (Map<String, String>) triggerMetadataMap.get("trigger_metadata");
+                                Map<String, String> triggerMetadata = triggerMetadataMap.get("trigger_metadata");
 
                                 if (triggerMetadata != null) {
                                     String ref = triggerMetadata.get("ref");
@@ -672,7 +666,7 @@ public final class Helper {
         dbTools.removeIf(container1 -> container1.getMode() == ContainerMode.MANUAL_IMAGE_PATH);
     }
 
-    private static Token extractToken(List<Token> tokens, String source) {
+    public static Token extractToken(List<Token> tokens, String source) {
         for (Token token : tokens) {
             if (token.getTokenSource().equals(source)) {
                 return token;

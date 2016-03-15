@@ -15,19 +15,44 @@
  */
 package io.dockstore.webservice.resources;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
+
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.codahale.metrics.annotation.Timed;
+
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.EntryLabelHelper;
-import io.dockstore.webservice.EntryVersionHelper;
-import io.dockstore.webservice.Helper;
 import io.dockstore.webservice.api.RegisterRequest;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
 import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.helpers.EntryLabelHelper;
+import io.dockstore.webservice.helpers.EntryVersionHelper;
+import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
+import io.dockstore.webservice.helpers.Helper;
+import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
+import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -39,22 +64,6 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
 
 /**
  *
@@ -107,27 +116,55 @@ public class WorkflowResource {
         User authUser = userDAO.findById(authToken.getUserId());
         Helper.checkUser(authUser);
 
-        List<Workflow> workflows = new ArrayList<>();
-//        List<User> users = userDAO.findAll();
-//        for (User user : users) {
-//            try {
-//                List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
-//
-//                if (!tokens.isEmpty()) {
-//                    Token bitbucketToken = tokens.get(0);
-//                    Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
-//                }
-//
-//                Helper.refresh(user.getId(), client, objectMapper, userDAO, toolDAO, tokenDAO, tagDAO, fileDAO);
-//                // tools.addAll(userDAO.findById(user.getId()).getEntries());
-//            } catch (WebApplicationException ex) {
-//                LOG.info("Failed to refresh user {}", user.getId());
-//            }
-//        }
-//
-//        tools = toolDAO.findAll();
+        List<User> users = userDAO.findAll();
 
-        return workflows;
+        for (User user : users) {
+            try {
+                List<Token> tokens = checkOnBitbucketToken(user);
+                Token bitbucketToken = Helper.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
+                Token githubToken = Helper.extractToken(tokens, TokenType.GITHUB_COM.toString());
+
+
+                // get workflows from github for a user, experiment with github first
+                //final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(null, client,
+                //    bitbucketToken == null ? null : bitbucketToken.getContent(), githubToken.getContent());
+                if (githubToken == null || githubToken.getContent() == null){
+                    continue;
+                }
+                final SourceCodeRepoInterface sourceCodeRepo = new GitHubSourceCodeRepo(user.getUsername(),githubToken.getContent(), null );
+
+                final Map<String, String> workflowGitUrl2Name = sourceCodeRepo.getWorkflowGitUrl2RepositoryId();
+                for(Map.Entry<String, String> entry : workflowGitUrl2Name.entrySet()) {
+                    final List<Workflow> byGitUrl = workflowDAO.findByGitUrl(entry.getKey());
+                    if (byGitUrl.size() > 0) {
+                        for (Workflow workflow : byGitUrl) {
+                            // when 1) workflows are already known, update the copy in the db
+                            // update the one workflow from github
+                            sourceCodeRepo.updateWorkflow(workflow);
+                        }
+                    } else{
+                        // when 2) workflows are not known, create them
+                        workflowDAO.create(sourceCodeRepo.getNewWorkflow(entry.getValue()));
+                    }
+                }
+                // when 3) no data is found for a workflow in the db, we may want to create a warning, note, or label
+            } catch (WebApplicationException ex) {
+                LOG.info("Failed to refresh user {}", user.getId());
+            }
+        }
+
+        return workflowDAO.findAll();
+    }
+
+    private List<Token> checkOnBitbucketToken(User user) {
+        List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
+
+        if (!tokens.isEmpty()) {
+            Token bitbucketToken = tokens.get(0);
+            Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
+        }
+
+        return tokenDAO.findByUserId(user.getId());
     }
 
     @GET
@@ -137,25 +174,23 @@ public class WorkflowResource {
     @ApiOperation(value = "Refresh one particular workflow", response = Workflow.class)
     public Workflow refresh(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
-//        Tool c = toolDAO.findById(workflowId);
-//        Helper.checkEntry(c);
-//
-//        User user = userDAO.findById(authToken.getUserId());
-//        Helper.checkUser(user, c);
-//
-//        List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
-//
-//        if (!tokens.isEmpty()) {
-//            Token bitbucketToken = tokens.get(0);
-//            Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
-//        }
-//
-//        Tool tool = Helper.refreshContainer(workflowId, authToken.getUserId(), client, objectMapper, userDAO, toolDAO,
-//                tokenDAO, tagDAO, fileDAO);
-//
-//        return tool;
-        return null;
+        Workflow workflow = workflowDAO.findById(workflowId);
+        Helper.checkEntry(workflow);
+        User user = userDAO.findById(authToken.getUserId());
+        Helper.checkUser(user, workflow);
+        List<Token> tokens = checkOnBitbucketToken(user);
+
+        Token bitbucketToken = Helper.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
+        Token githubToken = Helper.extractToken(tokens, TokenType.GITHUB_COM.toString());
+
+        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(null, client,
+            bitbucketToken == null ? null : bitbucketToken.getContent(), githubToken.getContent());
+
+        sourceCodeRepo.updateWorkflow(workflow);
+
+        return workflowDAO.findById(workflowId);
     }
+
 
     @GET
     @Timed

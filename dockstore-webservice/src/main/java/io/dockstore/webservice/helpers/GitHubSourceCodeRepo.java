@@ -19,11 +19,14 @@ package io.dockstore.webservice.helpers;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.io.FilenameUtils;
 import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.RepositoryContents;
+import org.eclipse.egit.github.core.RepositoryId;
 import org.eclipse.egit.github.core.User;
 import org.eclipse.egit.github.core.client.GitHubClient;
 import org.eclipse.egit.github.core.service.ContentsService;
@@ -33,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Workflow;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -150,6 +154,40 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         return organization.getEmail();
 
+    }
+
+    @Override public Map<String, String> getWorkflowGitUrl2RepositoryId() {
+        Map<String, String> reposByGitURl = new HashMap<>();
+        try {
+            final List<Repository> repositories = service.getRepositories();
+            for(Repository repo : repositories){
+                reposByGitURl.put(repo.getGitUrl(), repo.generateId());
+            }
+            return reposByGitURl;
+        } catch (IOException e) {
+            LOG.info("Cannot getWorkflowGitUrl2RepositoryId workflows {}", gitUsername);
+            return null;
+        }
+    }
+
+    @Override
+    public void updateWorkflow(Workflow workflow) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override public Workflow getNewWorkflow(String repositoryId) {
+        RepositoryId id = RepositoryId.createFromId(repositoryId);
+        try {
+            final Repository repository = service.getRepository(id);
+            Workflow workflow = new Workflow();
+            workflow.setOrganization(repository.getOwner().getLogin());
+            workflow.setRepository(repository.getName());
+            workflow.setGitUrl(repository.getGitUrl());
+            return workflow;
+        } catch (IOException e) {
+            LOG.info("Cannot getNewWorkflow {}", gitUsername);
+            return null;
+        }
     }
 
 }

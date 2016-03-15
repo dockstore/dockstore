@@ -30,6 +30,7 @@ import com.google.common.base.Optional;
 import com.google.gson.Gson;
 
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.resources.ResourceUtilities;
 
 /**
@@ -192,6 +193,20 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     public String getOrganizationEmail() {
         // TODO: Need to get email of the container's organization/user
         return "";
+    }
+
+    @Override
+    public Map<String, String> getWorkflowGitUrl2RepositoryId() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void updateWorkflow(Workflow workflow) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override public Workflow getNewWorkflow(String repositoryId) {
+        return null;
     }
 
 }

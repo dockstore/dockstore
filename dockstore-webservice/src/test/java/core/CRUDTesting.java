@@ -85,7 +85,7 @@ public class CRUDTesting {
     public void testWorkflowCreateAndPersist(){
         final WorkflowDAO workflowDAO = new WorkflowDAO(application.getHibernate().getSessionFactory());
         final Workflow workflow = new Workflow();
-        workflow.setName("foobar");
+        workflow.setWorkflowName("foobar");
         final WorkflowVersionDAO workflowVersionDAO = new WorkflowVersionDAO(application.getHibernate().getSessionFactory());
         final WorkflowVersion workflowVersion = new WorkflowVersion();
 

@@ -15,15 +15,40 @@
  */
 package io.dockstore.webservice.resources;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
+
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.EntryLabelHelper;
-import io.dockstore.webservice.EntryVersionHelper;
-import io.dockstore.webservice.Helper;
+import io.dockstore.webservice.helpers.EntryLabelHelper;
+import io.dockstore.webservice.helpers.EntryVersionHelper;
+import io.dockstore.webservice.helpers.Helper;
 import io.dockstore.webservice.api.RegisterRequest;
 import io.dockstore.webservice.core.ContainerMode;
 import io.dockstore.webservice.core.Label;
@@ -48,28 +73,6 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  *
@@ -140,7 +143,6 @@ public class DockerRepoResource {
                 }
 
                 Helper.refresh(user.getId(), client, objectMapper, userDAO, toolDAO, tokenDAO, tagDAO, fileDAO);
-                // tools.addAll(userDAO.findById(user.getId()).getEntries());
             } catch (WebApplicationException ex) {
                 LOG.info("Failed to refresh user {}", user.getId());
             }
@@ -173,6 +175,7 @@ public class DockerRepoResource {
 
         Tool tool = Helper.refreshContainer(containerId, authToken.getUserId(), client, objectMapper, userDAO, toolDAO,
                 tokenDAO, tagDAO, fileDAO);
+
 
         return tool;
     }

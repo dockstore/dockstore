@@ -47,7 +47,7 @@ import io.swagger.annotations.ApiModelProperty;
  */
 @Entity
 @Inheritance(strategy= InheritanceType.TABLE_PER_CLASS)
-public abstract class Entry<T extends Version> {
+public abstract class Entry<S extends Entry, T extends Version> {
 
     /** re-use existing generator for backwards compatibility */
     @Id
@@ -262,7 +262,7 @@ public abstract class Entry<T extends Version> {
      * Used during refresh to update containers
      * @param entry
      */
-    public void update(Entry entry) {
+    public void update(S entry) {
         this.setDescription(entry.getDescription());
         isPublic = entry.getIsPublic();
         isStarred = entry.getIsStarred();

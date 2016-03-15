@@ -47,7 +47,7 @@ import com.google.common.io.BaseEncoding;
 import com.google.gson.Gson;
 
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.Helper;
+import io.dockstore.webservice.helpers.Helper;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
