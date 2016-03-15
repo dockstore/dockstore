@@ -133,9 +133,9 @@ public class CommonTestUtilities {
                     + "', 'dockstore', 2, 'admin@admin.com');", new KeyedHandler<>("id"));
 
             runInsertStatement(
-                    "insert into tool(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered, toolname) VALUES (5, 'test1', 'test_org', 'QUAY_IO', 'quay.io/test_org/test1', false, false, false, false,'');",
+                    "insert into tool(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered, toolname) VALUES (9, 'test1', 'test_org', 'QUAY_IO', 'quay.io/test_org/test1', false, false, false, false,'');",
                     new KeyedHandler<>("id"));
-            runInsertStatement("insert into user_entry(userid, entryid) VALUES (2, 5);", new KeyedHandler<>("entryid"));
+            runInsertStatement("insert into user_entry(userid, entryid) VALUES (2, 9);", new KeyedHandler<>("entryid"));
 
 
             // need to increment past manually entered ids above
