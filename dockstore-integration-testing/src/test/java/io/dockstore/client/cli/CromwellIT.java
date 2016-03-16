@@ -17,17 +17,25 @@
 package io.dockstore.client.cli;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
+import com.google.gson.Gson;
 
 import cromwell.Main;
 import io.dockstore.client.Bridge;
+import io.dockstore.common.WDLFileProvisioning;
 import io.dropwizard.testing.ResourceHelpers;
 import scala.collection.JavaConversions;
 import scala.collection.immutable.List;
+
 
 /**
  * This tests integration with the CromWell engine and what will eventually be wdltool.
@@ -55,6 +63,34 @@ public class CromwellIT {
         // run a workflow
         final int run = main.run(wdlRunList);
         Assert.assertTrue(run == 0);
+    }
+    @Test
+    public void fileProvisioning() {
+        Main main = new Main();
+        File workflowFile = new File(ResourceHelpers.resourceFilePath("wdlfileprov.wdl"));
+        File parameterFile = new File(ResourceHelpers.resourceFilePath("wdlfileprov.json"));
+        Bridge bridge = new Bridge();
+        Map<String,String> wdlInputs = bridge.getInputFiles(workflowFile);
+
+        WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning(ResourceHelpers.resourceFilePath("config_file.txt"));
+        Gson gson = new Gson();
+        String jsonString = null;
+        try {
+            jsonString = FileUtils.readFileToString(parameterFile);
+            Map<String, Object> map = new HashMap<>();
+            Map<String, Object> inputJson = gson.fromJson(jsonString, map.getClass());
+
+            Map<String,Object> fileMap = wdlFileProvisioning.pullFiles(inputJson, wdlInputs);
+
+            String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
+            final java.util.List<String> wdlRun = Lists.newArrayList(workflowFile.getAbsolutePath(), newJsonPath);
+            final List<String> wdlRunList = JavaConversions.asScalaBuffer(wdlRun).toList();
+            // run a workflow
+            final int run = main.run(wdlRunList);
+            Assert.assertTrue(run == 0);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 }

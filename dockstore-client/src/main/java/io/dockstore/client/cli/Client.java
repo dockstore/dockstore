@@ -13,6 +13,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+
 package io.dockstore.client.cli;
 
 import java.io.BufferedReader;
@@ -25,7 +26,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
@@ -37,6 +37,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -49,6 +50,7 @@ import java.util.regex.Pattern;
 
 import javax.ws.rs.ProcessingException;
 
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
@@ -58,7 +60,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 
-import com.esotericsoftware.yamlbeans.YamlReader;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
@@ -72,6 +73,7 @@ import com.google.gson.JsonParser;
 import cromwell.Main;
 import io.cwl.avro.CWL;
 import io.dockstore.client.Bridge;
+import io.dockstore.common.WDLFileProvisioning;
 import io.github.collaboratory.LauncherCWL;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -81,14 +83,12 @@ import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.GAGHApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.Body;
-import io.swagger.client.model.Container;
-import io.swagger.client.model.Container.ModeEnum;
-import io.swagger.client.model.Container.RegistryEnum;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.Metadata;
 import io.swagger.client.model.RegisterRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
+import io.swagger.client.model.Tool;
 import io.swagger.client.model.User;
 
  /** Main entrypoint for the dockstore CLI.
@@ -117,6 +117,7 @@ public class Client {
     public static final int GENERIC_ERROR = 1;
     public static final int CONNECTION_ERROR = 150;
     public static final int INPUT_ERROR = 3;
+    private static String configFile = null;
 
     // This should be linked to common, but we won't do this now because we don't want dependencies changing during testing
     public enum Registry {
@@ -251,10 +252,10 @@ public class Client {
         return val;
     }
 
-    private static int[] columnWidths(List<Container> containers) {
+    private static int[] columnWidths(List<Tool> containers) {
         int[] maxWidths = { NAME_HEADER.length(), DESCRIPTION_HEADER.length(), GIT_HEADER.length() };
 
-        for (Container container : containers) {
+        for (Tool container : containers) {
             final String toolPath = container.getToolPath();
             if (toolPath != null && toolPath.length() > maxWidths[0]) {
                 maxWidths[0] = toolPath.length();
@@ -274,8 +275,8 @@ public class Client {
         return maxWidths;
     }
 
-    private static class ContainerComparator implements Comparator<Container> {
-        @Override public int compare(Container c1, Container c2) {
+    private static class ContainerComparator implements Comparator<Tool> {
+        @Override public int compare(Tool c1, Tool c2) {
             String path1 = c1.getPath();
             String path2 = c2.getPath();
 
@@ -283,7 +284,7 @@ public class Client {
         }
     }
 
-    private static void printContainerList(List<Container> containers) {
+    private static void printContainerList(List<Tool> containers) {
         Collections.sort(containers, new ContainerComparator());
 
         int[] maxWidths = columnWidths(containers);
@@ -294,7 +295,7 @@ public class Client {
         String format = "%-" + nameWidth + "s%-" + descWidth + "s%-" + gitWidth + "s%-16s%-16s%-10s";
         out(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "On Dockstore?", "Descriptor", "Automated");
 
-        for (Container container : containers) {
+        for (Tool container : containers) {
             String descriptor = "No";
             String automated = "No";
             String description = "";
@@ -320,7 +321,7 @@ public class Client {
         }
     }
 
-    private static void printRegisteredList(List<Container> containers) {
+    private static void printRegisteredList(List<Tool> containers) {
         Collections.sort(containers, new ContainerComparator());
 
         int[] maxWidths = columnWidths(containers);
@@ -331,7 +332,7 @@ public class Client {
         String format = "%-" + nameWidth + "s%-" + descWidth + "s%-" + gitWidth + "s";
         out(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER);
 
-        for (Container container : containers) {
+        for (Tool container : containers) {
             String description = "";
             String gitUrl = "";
 
@@ -358,7 +359,7 @@ public class Client {
                 throw new RuntimeException("User not found");
             }
             // List<Container> containers = containersApi.allRegisteredContainers();
-            List<Container> containers = usersApi.userRegisteredContainers(user.getId());
+            List<Tool> containers = usersApi.userRegisteredContainers(user.getId());
             printRegisteredList(containers);
         } catch (ApiException ex) {
             kill("Exception: " + ex);
@@ -384,7 +385,7 @@ public class Client {
         }
         String pattern = args.get(0);
         try {
-            List<Container> containers = containersApi.search(pattern);
+            List<Tool> containers = containersApi.search(pattern);
 
             out("MATCHING CONTAINERS");
             out("-------------------");
@@ -402,7 +403,7 @@ public class Client {
                 if (user == null) {
                     throw new RuntimeException("User not found");
                 }
-                List<Container> containers = usersApi.userContainers(user.getId());
+                List<Tool> containers = usersApi.userContainers(user.getId());
 
                 out("YOUR AVAILABLE CONTAINERS");
                 out("-------------------");
@@ -420,7 +421,7 @@ public class Client {
                 } else {
                     String second = args.get(1);
                     try {
-                        Container container = containersApi.getContainerByToolPath(second);
+                        Tool container = containersApi.getContainerByToolPath(second);
                         RegisterRequest req = new RegisterRequest();
                         req.setRegister(false);
                         container = containersApi.register(container.getId(), req);
@@ -437,7 +438,7 @@ public class Client {
             } else {
                 if (args.size() == 1) {
                     try {
-                        Container container = containersApi.getContainerByToolPath(first);
+                        Tool container = containersApi.getContainerByToolPath(first);
                         RegisterRequest req = new RegisterRequest();
                         req.setRegister(true);
                         container = containersApi.register(container.getId(), req);
@@ -453,8 +454,8 @@ public class Client {
                 } else {
                     String toolname = args.get(1);
                     try {
-                        Container container = containersApi.getContainerByToolPath(first);
-                        Container newContainer = new Container();
+                        Tool container = containersApi.getContainerByToolPath(first);
+                        Tool newContainer = new Tool();
                         // copy only the fields that we want to replicate, not sure why simply blanking
                         // the returned container does not work
                         newContainer.setMode(container.getMode());
@@ -519,11 +520,11 @@ public class Client {
             final String toolname = optVal(args, "--toolname", null);
             final String registry = optVal(args, "--registry", "registry.hub.docker.com");
 
-            Container container = new Container();
-            container.setMode(ModeEnum.MANUAL_IMAGE_PATH);
+            Tool container = new Tool();
+            container.setMode(Tool.ModeEnum.MANUAL_IMAGE_PATH);
             container.setName(name);
             container.setNamespace(namespace);
-            container.setRegistry("quay.io".equals(registry) ? RegistryEnum.QUAY_IO : RegistryEnum.DOCKER_HUB);
+            container.setRegistry("quay.io".equals(registry) ? Tool.RegistryEnum.QUAY_IO : Tool.RegistryEnum.DOCKER_HUB);
             container.setDefaultDockerfilePath(dockerfilePath);
             container.setDefaultCwlPath(cwlPath);
             container.setDefaultWdlPath(wdlPath);
@@ -635,10 +636,6 @@ public class Client {
         final File tempCWL = File.createTempFile("temp", ".cwl", Files.createTempDir());
         Files.write(cwlFromServer.getContent(), tempCWL, StandardCharsets.UTF_8);
 
-        // stub out invocation and fake out a config file
-        final File tempConfig = File.createTempFile("temp", ".cwl", Files.createTempDir());
-        Files.write("working-directory=./datastore/", tempConfig, StandardCharsets.UTF_8);
-
         final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
         if (jsonRun != null) {
             // if the root document is an array, this indicates multiple runs
@@ -650,11 +647,11 @@ public class Client {
                     final String finalString = gson.toJson(element);
                     final File tempJson = File.createTempFile("temp", ".json", Files.createTempDir());
                     FileUtils.write(tempJson, finalString);
-                    final LauncherCWL cwlLauncher = new LauncherCWL(tempConfig.getAbsolutePath(), tempCWL.getAbsolutePath(), tempJson.getAbsolutePath(), System.out, System.err);
+                    final LauncherCWL cwlLauncher = new LauncherCWL(configFile, tempCWL.getAbsolutePath(), tempJson.getAbsolutePath(), System.out, System.err);
                     cwlLauncher.run();
                 }
             } else {
-                final LauncherCWL cwlLauncher = new LauncherCWL(tempConfig.getAbsolutePath(), tempCWL.getAbsolutePath(), jsonRun, System.out, System.err);
+                final LauncherCWL cwlLauncher = new LauncherCWL(configFile, tempCWL.getAbsolutePath(), jsonRun, System.out, System.err);
                 cwlLauncher.run();
             }
         } else if (csvRuns != null) {
@@ -693,7 +690,7 @@ public class Client {
 
                         //final String stringMapAsString = gson.toJson(stringMap);
                         //Files.write(stringMapAsString, tempJson, StandardCharsets.UTF_8);
-                        final LauncherCWL cwlLauncher = new LauncherCWL(tempConfig.getAbsolutePath(), tempCWL.getAbsolutePath(),
+                        final LauncherCWL cwlLauncher = new LauncherCWL(configFile, tempCWL.getAbsolutePath(),
                             tempJson.getAbsolutePath(), System.out, System.err);
                         cwlLauncher.run();
                     }
@@ -724,18 +721,37 @@ public class Client {
             Main main = new Main();
             File parameterFile = new File(json);
 
-            final SourceFile cwlFromServer;
+            final SourceFile wdlFromServer;
             try {
                 // Grab WDL from server and store to file
-                cwlFromServer = getDescriptorFromServer(entry, "wdl");
+                wdlFromServer = getDescriptorFromServer(entry, "wdl");
                 final File tempWdl = File.createTempFile("temp", ".wdl", Files.createTempDir());
-                Files.write(cwlFromServer.getContent(), tempWdl, StandardCharsets.UTF_8);
+                Files.write(wdlFromServer.getContent(), tempWdl, StandardCharsets.UTF_8);
 
-                final List<String> wdlRun = Lists.newArrayList(tempWdl.getAbsolutePath(), parameterFile.getAbsolutePath());
+                // Get list of input files
+                Bridge bridge = new Bridge();
+                Map<String, String> wdlInputs = bridge.getInputFiles(tempWdl);
+
+                // Convert parameter JSON to a map
+                WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning(configFile);
+                Gson gson = new Gson();
+                String jsonString = FileUtils.readFileToString(parameterFile);
+                Map<String, Object> map = new HashMap<>();
+                Map<String, Object> inputJson = gson.fromJson(jsonString, map.getClass());
+
+                // Download files and change to local location
+                // Make a new map of the inputs with updated locations
+                Map<String,Object> fileMap = wdlFileProvisioning.pullFiles(inputJson, wdlInputs);
+
+                // Make new json file
+                String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
+
+                final List<String> wdlRun = Lists.newArrayList(newJsonPath, parameterFile.getAbsolutePath());
                 final scala.collection.immutable.List<String> wdlRunList = scala.collection.JavaConversions.asScalaBuffer(wdlRun).toList();
+
                 // run a workflow
                 final int run = main.run(wdlRunList);
-
+                
             } catch (ApiException e) {
                 e.printStackTrace();
             } catch (IOException e) {
@@ -931,7 +947,7 @@ public class Client {
 
         String path = args.get(0);
         try {
-            Container container = containersApi.getRegisteredContainerByToolPath(path);
+            Tool container = containersApi.getRegisteredContainerByToolPath(path);
             if (container == null || !container.getIsRegistered()) {
                 kill("This container is not registered.");
             } else {
@@ -1027,7 +1043,7 @@ public class Client {
         String tag = (parts.length > 1) ? parts[1] : null;
         SourceFile file = new SourceFile();
         // simply getting published descriptors does not require permissions
-        Container container = containersApi.getRegisteredContainerByToolPath(path);
+        Tool container = containersApi.getRegisteredContainerByToolPath(path);
         if (container.getValidTrigger()) {
             try {
                 if (descriptorType.equals(CWL)) {
@@ -1055,10 +1071,10 @@ public class Client {
             } else {
                 try {
                     final String toolpath = reqVal(args, "--toolpath");
-                    Container container = containersApi.getContainerByToolPath(toolpath);
+                    Tool container = containersApi.getContainerByToolPath(toolpath);
                     final Long containerId = container.getId();
-                    Container updatedContainer = containersApi.refresh(containerId);
-                    List<Container> containerList = new ArrayList<>();
+                    Tool updatedContainer = containersApi.refresh(containerId);
+                    List<Tool> containerList = new ArrayList<>();
                     containerList.add(updatedContainer);
                     out("YOUR UPDATED CONTAINER");
                     out("-------------------");
@@ -1074,7 +1090,7 @@ public class Client {
                 if (user == null) {
                     throw new RuntimeException("User not found");
                 }
-                List<Container> containers = usersApi.refresh(user.getId());
+                List<Tool> containers = usersApi.refresh(user.getId());
 
                 out("YOUR UPDATED CONTAINERS");
                 out("-------------------");
@@ -1127,7 +1143,7 @@ public class Client {
 
             // Try and update the labels for the given container
             try {
-                Container container = containersApi.getContainerByToolPath(toolpath);
+                Tool container = containersApi.getContainerByToolPath(toolpath);
                 long containerId = container.getId();
                 List<Label> existingLabels = container.getLabels();
                 Set<String> newLabelSet = new HashSet<>();
@@ -1150,7 +1166,7 @@ public class Client {
 
                 String combinedLabelString = Joiner.on(",").join(newLabelSet);
 
-                Container updatedContainer = containersApi.updateLabels(containerId, combinedLabelString, new Body());
+                Tool updatedContainer = containersApi.updateLabels(containerId, combinedLabelString, new Body());
 
                 List<Label> newLabels = updatedContainer.getLabels();
                 if (newLabels.size() > 0) {
@@ -1175,10 +1191,10 @@ public class Client {
         if (args.size() > 0 && !isHelpRequest(args.get(0))) {
             final String toolpath = reqVal(args, "--entry");
             try {
-                Container container = containersApi.getContainerByToolPath(toolpath);
+                Tool container = containersApi.getContainerByToolPath(toolpath);
                 long containerId = container.getId();
                 if (args.contains("--add")) {
-                    if (container.getMode() != ModeEnum.MANUAL_IMAGE_PATH) {
+                    if (container.getMode() != Tool.ModeEnum.MANUAL_IMAGE_PATH) {
                         err("Only manually added images can add version tags.");
                         System.exit(INPUT_ERROR);
                     }
@@ -1245,7 +1261,7 @@ public class Client {
                         System.exit(INPUT_ERROR);
                     }
                 } else if (args.contains("--remove")) {
-                    if (container.getMode() != ModeEnum.MANUAL_IMAGE_PATH) {
+                    if (container.getMode() != Tool.ModeEnum.MANUAL_IMAGE_PATH) {
                         err("Only manually added images can add version tags.");
                         System.exit(INPUT_ERROR);
                     }
@@ -1308,7 +1324,7 @@ public class Client {
         if (args.size() > 0 && !isHelpRequest(args.get(0))) {
             final String toolpath = reqVal(args, "--entry");
             try {
-                Container container = containersApi.getContainerByToolPath(toolpath);
+                Tool container = containersApi.getContainerByToolPath(toolpath);
                 long containerId = container.getId();
 
                 final String cwlPath = optVal(args, "--cwl-path", container.getDefaultCwlPath());
@@ -1660,15 +1676,12 @@ public class Client {
         String userHome = System.getProperty("user.home");
 
         try {
-            String configFile = optVal(args, "--config", userHome + File.separator + ".dockstore" + File.separator + "config");
-            InputStreamReader f = new InputStreamReader(new FileInputStream(configFile), Charset.defaultCharset());
-            YamlReader reader = new YamlReader(f);
-            Object object = reader.read();
-            Map map = (Map) object;
+            configFile = optVal(args, "--config", userHome + File.separator + ".dockstore" + File.separator + "config");
+            HierarchicalINIConfiguration config = new HierarchicalINIConfiguration(configFile);
 
             // pull out the variables from the config
-            String token = (String) map.get("token");
-            String serverUrl = (String) map.get("server-url");
+            String token = config.getString("token");
+            String serverUrl = config.getString("server-url");
 
             if (token == null) {
                 err("The token is missing from your config file.");
