@@ -1,37 +1,19 @@
-/*
- *    Copyright 2016 OICR
- *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
- *
- *        http://www.apache.org/licenses/LICENSE-2.0
- *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
- */
-
 package io.swagger.client.api;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
+import io.swagger.client.ApiClient;
 import io.swagger.client.Configuration;
 import io.swagger.client.Pair;
 import io.swagger.client.TypeRef;
-import io.swagger.client.model.Group;
-import io.swagger.client.model.Token;
-import io.swagger.client.model.Tool;
-import io.swagger.client.model.User;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-11T15:28:43.725-05:00")
+import io.swagger.client.model.User;
+import io.swagger.client.model.Group;
+import io.swagger.client.model.DockstoreTool;
+import io.swagger.client.model.Token;
+
+import java.util.*;
+
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-16T12:02:55.364-04:00")
 public class UsersApi {
   private ApiClient apiClient;
 
@@ -546,9 +528,9 @@ public class UsersApi {
    * List repos owned by the logged-in user
    * Lists all registered and unregistered containers owned by the user
    * @param userId User ID
-   * @return List<Tool>
+   * @return List<DockstoreTool>
    */
-  public List<Tool> userContainers (Long userId) throws ApiException {
+  public List<DockstoreTool> userContainers (Long userId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'userId' is set
@@ -584,7 +566,7 @@ public class UsersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<List<Tool>>() {};
+    TypeRef returnType = new TypeRef<List<DockstoreTool>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -593,9 +575,9 @@ public class UsersApi {
    * Refresh repos owned by the logged-in user
    * Updates some metadata
    * @param userId User ID
-   * @return List<Tool>
+   * @return List<DockstoreTool>
    */
-  public List<Tool> refresh (Long userId) throws ApiException {
+  public List<DockstoreTool> refresh (Long userId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'userId' is set
@@ -631,7 +613,7 @@ public class UsersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<List<Tool>>() {};
+    TypeRef returnType = new TypeRef<List<DockstoreTool>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -640,9 +622,9 @@ public class UsersApi {
    * List all registered containers from a user
    * Get user&#39;s registered containers only
    * @param userId User ID
-   * @return List<Tool>
+   * @return List<DockstoreTool>
    */
-  public List<Tool> userRegisteredContainers (Long userId) throws ApiException {
+  public List<DockstoreTool> userRegisteredContainers (Long userId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'userId' is set
@@ -678,7 +660,7 @@ public class UsersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<List<Tool>>() {};
+    TypeRef returnType = new TypeRef<List<DockstoreTool>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }

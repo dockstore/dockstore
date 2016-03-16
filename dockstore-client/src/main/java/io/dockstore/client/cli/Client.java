@@ -88,7 +88,7 @@ import io.swagger.client.model.Metadata;
 import io.swagger.client.model.RegisterRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
-import io.swagger.client.model.Tool;
+import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.User;
 
  /** Main entrypoint for the dockstore CLI.
@@ -252,10 +252,10 @@ public class Client {
         return val;
     }
 
-    private static int[] columnWidths(List<Tool> containers) {
+    private static int[] columnWidths(List<DockstoreTool> containers) {
         int[] maxWidths = { NAME_HEADER.length(), DESCRIPTION_HEADER.length(), GIT_HEADER.length() };
 
-        for (Tool container : containers) {
+        for (DockstoreTool container : containers) {
             final String toolPath = container.getToolPath();
             if (toolPath != null && toolPath.length() > maxWidths[0]) {
                 maxWidths[0] = toolPath.length();
@@ -275,8 +275,8 @@ public class Client {
         return maxWidths;
     }
 
-    private static class ContainerComparator implements Comparator<Tool> {
-        @Override public int compare(Tool c1, Tool c2) {
+    private static class ContainerComparator implements Comparator<DockstoreTool> {
+        @Override public int compare(DockstoreTool c1, DockstoreTool c2) {
             String path1 = c1.getPath();
             String path2 = c2.getPath();
 
@@ -284,7 +284,7 @@ public class Client {
         }
     }
 
-    private static void printContainerList(List<Tool> containers) {
+    private static void printContainerList(List<DockstoreTool> containers) {
         Collections.sort(containers, new ContainerComparator());
 
         int[] maxWidths = columnWidths(containers);
@@ -295,7 +295,7 @@ public class Client {
         String format = "%-" + nameWidth + "s%-" + descWidth + "s%-" + gitWidth + "s%-16s%-16s%-10s";
         out(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "On Dockstore?", "Descriptor", "Automated");
 
-        for (Tool container : containers) {
+        for (DockstoreTool container : containers) {
             String descriptor = "No";
             String automated = "No";
             String description = "";
@@ -321,7 +321,7 @@ public class Client {
         }
     }
 
-    private static void printRegisteredList(List<Tool> containers) {
+    private static void printRegisteredList(List<DockstoreTool> containers) {
         Collections.sort(containers, new ContainerComparator());
 
         int[] maxWidths = columnWidths(containers);
@@ -332,7 +332,7 @@ public class Client {
         String format = "%-" + nameWidth + "s%-" + descWidth + "s%-" + gitWidth + "s";
         out(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER);
 
-        for (Tool container : containers) {
+        for (DockstoreTool container : containers) {
             String description = "";
             String gitUrl = "";
 
@@ -359,7 +359,7 @@ public class Client {
                 throw new RuntimeException("User not found");
             }
             // List<Container> containers = containersApi.allRegisteredContainers();
-            List<Tool> containers = usersApi.userRegisteredContainers(user.getId());
+            List<DockstoreTool> containers = usersApi.userRegisteredContainers(user.getId());
             printRegisteredList(containers);
         } catch (ApiException ex) {
             kill("Exception: " + ex);
@@ -385,7 +385,7 @@ public class Client {
         }
         String pattern = args.get(0);
         try {
-            List<Tool> containers = containersApi.search(pattern);
+            List<DockstoreTool> containers = containersApi.search(pattern);
 
             out("MATCHING CONTAINERS");
             out("-------------------");
@@ -403,7 +403,7 @@ public class Client {
                 if (user == null) {
                     throw new RuntimeException("User not found");
                 }
-                List<Tool> containers = usersApi.userContainers(user.getId());
+                List<DockstoreTool> containers = usersApi.userContainers(user.getId());
 
                 out("YOUR AVAILABLE CONTAINERS");
                 out("-------------------");
@@ -421,7 +421,7 @@ public class Client {
                 } else {
                     String second = args.get(1);
                     try {
-                        Tool container = containersApi.getContainerByToolPath(second);
+                        DockstoreTool container = containersApi.getContainerByToolPath(second);
                         RegisterRequest req = new RegisterRequest();
                         req.setRegister(false);
                         container = containersApi.register(container.getId(), req);
@@ -438,7 +438,7 @@ public class Client {
             } else {
                 if (args.size() == 1) {
                     try {
-                        Tool container = containersApi.getContainerByToolPath(first);
+                        DockstoreTool container = containersApi.getContainerByToolPath(first);
                         RegisterRequest req = new RegisterRequest();
                         req.setRegister(true);
                         container = containersApi.register(container.getId(), req);
@@ -454,8 +454,8 @@ public class Client {
                 } else {
                     String toolname = args.get(1);
                     try {
-                        Tool container = containersApi.getContainerByToolPath(first);
-                        Tool newContainer = new Tool();
+                        DockstoreTool container = containersApi.getContainerByToolPath(first);
+                        DockstoreTool newContainer = new DockstoreTool();
                         // copy only the fields that we want to replicate, not sure why simply blanking
                         // the returned container does not work
                         newContainer.setMode(container.getMode());
@@ -520,11 +520,11 @@ public class Client {
             final String toolname = optVal(args, "--toolname", null);
             final String registry = optVal(args, "--registry", "registry.hub.docker.com");
 
-            Tool container = new Tool();
-            container.setMode(Tool.ModeEnum.MANUAL_IMAGE_PATH);
+            DockstoreTool container = new DockstoreTool();
+            container.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
             container.setName(name);
             container.setNamespace(namespace);
-            container.setRegistry("quay.io".equals(registry) ? Tool.RegistryEnum.QUAY_IO : Tool.RegistryEnum.DOCKER_HUB);
+            container.setRegistry("quay.io".equals(registry) ? DockstoreTool.RegistryEnum.QUAY_IO : DockstoreTool.RegistryEnum.DOCKER_HUB);
             container.setDefaultDockerfilePath(dockerfilePath);
             container.setDefaultCwlPath(cwlPath);
             container.setDefaultWdlPath(wdlPath);
@@ -947,7 +947,7 @@ public class Client {
 
         String path = args.get(0);
         try {
-            Tool container = containersApi.getRegisteredContainerByToolPath(path);
+            DockstoreTool container = containersApi.getRegisteredContainerByToolPath(path);
             if (container == null || !container.getIsRegistered()) {
                 kill("This container is not registered.");
             } else {
@@ -1043,7 +1043,7 @@ public class Client {
         String tag = (parts.length > 1) ? parts[1] : null;
         SourceFile file = new SourceFile();
         // simply getting published descriptors does not require permissions
-        Tool container = containersApi.getRegisteredContainerByToolPath(path);
+        DockstoreTool container = containersApi.getRegisteredContainerByToolPath(path);
         if (container.getValidTrigger()) {
             try {
                 if (descriptorType.equals(CWL)) {
@@ -1071,10 +1071,10 @@ public class Client {
             } else {
                 try {
                     final String toolpath = reqVal(args, "--toolpath");
-                    Tool container = containersApi.getContainerByToolPath(toolpath);
+                    DockstoreTool container = containersApi.getContainerByToolPath(toolpath);
                     final Long containerId = container.getId();
-                    Tool updatedContainer = containersApi.refresh(containerId);
-                    List<Tool> containerList = new ArrayList<>();
+                    DockstoreTool updatedContainer = containersApi.refresh(containerId);
+                    List<DockstoreTool> containerList = new ArrayList<>();
                     containerList.add(updatedContainer);
                     out("YOUR UPDATED CONTAINER");
                     out("-------------------");
@@ -1090,7 +1090,7 @@ public class Client {
                 if (user == null) {
                     throw new RuntimeException("User not found");
                 }
-                List<Tool> containers = usersApi.refresh(user.getId());
+                List<DockstoreTool> containers = usersApi.refresh(user.getId());
 
                 out("YOUR UPDATED CONTAINERS");
                 out("-------------------");
@@ -1143,7 +1143,7 @@ public class Client {
 
             // Try and update the labels for the given container
             try {
-                Tool container = containersApi.getContainerByToolPath(toolpath);
+                DockstoreTool container = containersApi.getContainerByToolPath(toolpath);
                 long containerId = container.getId();
                 List<Label> existingLabels = container.getLabels();
                 Set<String> newLabelSet = new HashSet<>();
@@ -1166,7 +1166,7 @@ public class Client {
 
                 String combinedLabelString = Joiner.on(",").join(newLabelSet);
 
-                Tool updatedContainer = containersApi.updateLabels(containerId, combinedLabelString, new Body());
+                DockstoreTool updatedContainer = containersApi.updateLabels(containerId, combinedLabelString, new Body());
 
                 List<Label> newLabels = updatedContainer.getLabels();
                 if (newLabels.size() > 0) {
@@ -1191,10 +1191,10 @@ public class Client {
         if (args.size() > 0 && !isHelpRequest(args.get(0))) {
             final String toolpath = reqVal(args, "--entry");
             try {
-                Tool container = containersApi.getContainerByToolPath(toolpath);
+                DockstoreTool container = containersApi.getContainerByToolPath(toolpath);
                 long containerId = container.getId();
                 if (args.contains("--add")) {
-                    if (container.getMode() != Tool.ModeEnum.MANUAL_IMAGE_PATH) {
+                    if (container.getMode() != DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH) {
                         err("Only manually added images can add version tags.");
                         System.exit(INPUT_ERROR);
                     }
@@ -1261,7 +1261,7 @@ public class Client {
                         System.exit(INPUT_ERROR);
                     }
                 } else if (args.contains("--remove")) {
-                    if (container.getMode() != Tool.ModeEnum.MANUAL_IMAGE_PATH) {
+                    if (container.getMode() != DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH) {
                         err("Only manually added images can add version tags.");
                         System.exit(INPUT_ERROR);
                     }
@@ -1324,7 +1324,7 @@ public class Client {
         if (args.size() > 0 && !isHelpRequest(args.get(0))) {
             final String toolpath = reqVal(args, "--entry");
             try {
-                Tool container = containersApi.getContainerByToolPath(toolpath);
+                DockstoreTool container = containersApi.getContainerByToolPath(toolpath);
                 long containerId = container.getId();
 
                 final String cwlPath = optVal(args, "--cwl-path", container.getDefaultCwlPath());

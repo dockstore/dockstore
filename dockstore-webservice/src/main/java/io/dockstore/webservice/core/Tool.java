@@ -49,7 +49,7 @@ import io.swagger.annotations.ApiModelProperty;
  * @author xliu
  * @author dyuen
  */
-@ApiModel(value = "Tool", description = "This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be\n"
+@ApiModel(value = "DockstoreTool", description = "This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be\n"
         + " * associated with CWL and Dockerfile documents")
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = { "registry", "namespace", "name", "toolname" }))
