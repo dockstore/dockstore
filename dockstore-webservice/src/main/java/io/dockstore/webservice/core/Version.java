@@ -16,8 +16,10 @@
 
 package io.dockstore.webservice.core;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.annotations.ApiModelProperty;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -32,9 +34,12 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Ordering;
+
+import io.swagger.annotations.ApiModelProperty;
 
 /**
  * This describes one version of either a workflow or a tool.
@@ -147,10 +152,7 @@ public abstract class Version<T extends Version> implements Comparable<T>{
         this.valid = valid;
     }
 
-    @Override
-    public int compareTo(T o) {
-        return Long.compare(id, (o).getId());
-    }
+
 
     @JsonProperty
     public String getName() {
@@ -159,5 +161,27 @@ public abstract class Version<T extends Version> implements Comparable<T>{
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    @Override public int hashCode() {
+        return Objects.hash(id, lastModified, reference, hidden, valid, name);
+    }
+
+    @Override public boolean equals(Object obj) {
+        if (this == obj) {return true;}
+        if (obj == null || getClass() != obj.getClass()) {return false;}
+        final Version other = (Version) obj;
+        return Objects.equals(this.id, other.id) && Objects.equals(this.lastModified, other.lastModified) && Objects.equals(this.reference,
+            other.reference) && Objects.equals(this.hidden, other.hidden) && Objects.equals(this.valid, other.valid) && Objects.equals(
+            this.name, other.name);
+    }
+
+    @Override public int compareTo(T that) {
+        return ComparisonChain.start()
+                   .compare(this.id, that.getId(), Ordering.natural().nullsLast())
+                   .compare(this.lastModified, that.getLastModified(), Ordering.natural().nullsLast())
+                   .compare(this.reference, that.getReference(), Ordering.natural().nullsLast())
+                   .compare(this.name, that.getName(), Ordering.natural().nullsLast())
+                   .result();
     }
 }

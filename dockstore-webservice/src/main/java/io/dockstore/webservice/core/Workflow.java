@@ -78,7 +78,7 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     @Column(columnDefinition = "text")
     @JsonProperty("workflow_path")
     @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL document", required = true)
-    private String defaultWorkflowPath = "/Dockstore.workflow.cwl";
+    private String defaultWorkflowPath = "/Dockstore.cwl";
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinTable(name = "workflow_workflowversion", joinColumns = @JoinColumn(name = "workflowid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "workflowversionid", referencedColumnName = "id"))
@@ -171,7 +171,7 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     public String getPath() {
         String constructedPath;
         if (path == null){
-            constructedPath = organization + '/' + repository + '/' + workflowName;
+            constructedPath = organization + '/' + repository + (workflowName == null ? "": '/' + workflowName);
             path = constructedPath;
         }else{
             constructedPath = path;

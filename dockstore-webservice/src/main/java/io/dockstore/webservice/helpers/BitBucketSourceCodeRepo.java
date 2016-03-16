@@ -200,11 +200,6 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public void updateWorkflow(Workflow workflow) {
-        throw new UnsupportedOperationException();
-    }
-
     @Override public Workflow getNewWorkflow(String repositoryId) {
         return null;
     }

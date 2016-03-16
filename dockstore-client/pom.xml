@@ -109,6 +109,8 @@
             <groupId>io.cwl</groupId>
             <artifactId>cwlavro-tools</artifactId>
         </dependency>
+
+        <!-- broad - cromwell stuff -->
         <dependency>
             <groupId>org.broadinstitute</groupId>
             <artifactId>cromwell_2.11</artifactId>

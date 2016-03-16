@@ -16,6 +16,7 @@
 package io.dockstore.webservice.resources;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -51,7 +52,6 @@ import io.dockstore.webservice.helpers.EntryLabelHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.Helper;
-import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
@@ -132,7 +132,7 @@ public class WorkflowResource {
                     continue;
                 }
                 final SourceCodeRepoInterface sourceCodeRepo = new GitHubSourceCodeRepo(user.getUsername(),githubToken.getContent(), null);
-
+                // TODO: do this for bitbucket as well as for github
                 final Map<String, String> workflowGitUrl2Name = sourceCodeRepo.getWorkflowGitUrl2RepositoryId();
                 for(Map.Entry<String, String> entry : workflowGitUrl2Name.entrySet()) {
                     final List<Workflow> byGitUrl = workflowDAO.findByGitUrl(entry.getKey());
@@ -140,11 +140,18 @@ public class WorkflowResource {
                         for (Workflow workflow : byGitUrl) {
                             // when 1) workflows are already known, update the copy in the db
                             // update the one workflow from github
-                            sourceCodeRepo.updateWorkflow(workflow);
+                            final Workflow newWorkflow = sourceCodeRepo.getNewWorkflow(entry.getValue());
+                            updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow);
                         }
                     } else{
                         // when 2) workflows are not known, create them
-                        workflowDAO.create(sourceCodeRepo.getNewWorkflow(entry.getValue()));
+                        final Workflow newWorkflow = sourceCodeRepo.getNewWorkflow(entry.getValue());
+                        if (newWorkflow != null) {
+                            final long workflowID = workflowDAO.create(newWorkflow);
+                            // need to create nested data models
+                            final Workflow workflowFromDB = workflowDAO.findById(workflowID);
+                            updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow);
+                        }
                     }
                 }
                 // when 3) no data is found for a workflow in the db, we may want to create a warning, note, or label
@@ -183,14 +190,50 @@ public class WorkflowResource {
         Token bitbucketToken = Helper.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
         Token githubToken = Helper.extractToken(tokens, TokenType.GITHUB_COM.toString());
 
-        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(null, client,
-            bitbucketToken == null ? null : bitbucketToken.getContent(), githubToken.getContent());
+        final SourceCodeRepoInterface sourceCodeRepo = new GitHubSourceCodeRepo(user.getUsername(),githubToken.getContent(), null);
 
-        sourceCodeRepo.updateWorkflow(workflow);
+        final Workflow newWorkflow = sourceCodeRepo.getNewWorkflow(workflow.getOrganization() + '/' + workflow.getRepository());
+        updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow);
 
         return workflowDAO.findById(workflowId);
     }
 
+    /**
+     *
+     * @param workflow workflow to be updated
+     * @param newWorkflow workflow to grab new content from
+     */
+    private void updateDBWorkflowWithSourceControlWorkflow(Workflow workflow, Workflow newWorkflow) {
+        // update root workflow
+        workflow.update(newWorkflow);
+        // update workflow versions
+        Map<String, WorkflowVersion> existingVersionMap = new HashMap<>();
+        workflow.getWorkflowVersions().forEach(version -> existingVersionMap.put(version.getName(), version));
+        for(WorkflowVersion version:  newWorkflow.getVersions() ){
+            WorkflowVersion workflowVersionFromDB = existingVersionMap.get(version.getName());
+            if (existingVersionMap.containsKey(version.getName())){
+                workflowVersionFromDB.update(version);
+            } else{
+                // create a new one and replace the old one
+                final long workflowVersionId = workflowVersionDAO.create(version);
+                workflowVersionFromDB = workflowVersionDAO.findById(workflowVersionId);
+                workflow.getVersions().add(workflowVersionFromDB);
+                existingVersionMap.put(workflowVersionFromDB.getName(), workflowVersionFromDB);
+            }
+            // update source files for each version
+            Map<FileType, SourceFile> existingFileMap = new HashMap<>();
+            workflowVersionFromDB.getSourceFiles().forEach(file -> existingFileMap.put(file.getType(), file));
+            for(SourceFile file : version.getSourceFiles()){
+                if (existingFileMap.containsKey(file.getType())){
+                    existingFileMap.get(file.getType()).setContent(file.getContent());
+                } else{
+                    final long fileID = fileDAO.create(file);
+                    final SourceFile fileFromDB = fileDAO.findById(fileID);
+                    workflowVersionFromDB.getSourceFiles().add(fileFromDB);
+                }
+            }
+        }
+    }
 
     @GET
     @Timed

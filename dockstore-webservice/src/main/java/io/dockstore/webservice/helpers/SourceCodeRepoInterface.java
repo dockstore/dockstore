@@ -116,8 +116,6 @@ public abstract class SourceCodeRepoInterface {
 
     public abstract Map<String, String> getWorkflowGitUrl2RepositoryId();
 
-    public abstract void updateWorkflow(Workflow workflow);
-
     public abstract Workflow getNewWorkflow(String repositoryId);
 
     public static class FileResponse {

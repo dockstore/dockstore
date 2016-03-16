@@ -18,6 +18,7 @@ package io.dockstore.webservice.helpers;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -35,8 +36,11 @@ import org.eclipse.egit.github.core.service.RepositoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowVersion;
+import wdl4s.NamespaceWithWorkflow;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -82,9 +86,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             }
 
             if (!(contents == null || contents.isEmpty())) {
-                String encoded = contents.get(0).getContent().replace("\n", "");
-                byte[] decode = Base64.getDecoder().decode(encoded);
-                String content = new String(decode, StandardCharsets.UTF_8);
+                String content = extractGitHubContents(contents);
                 // builder.append(content);
                 cwl.setContent(content);
             } else {
@@ -116,9 +118,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 List<RepositoryContents> contents;
                 contents = cService.getContents(repository, fileName);
                 if (!(contents == null || contents.isEmpty())) {
-                    String encoded = contents.get(0).getContent().replace("\n", "");
-                    byte[] decode = Base64.getDecoder().decode(encoded);
-                    String content = new String(decode, StandardCharsets.UTF_8);
+                    String content = extractGitHubContents(contents);
 
                     // Add for new descriptor types
                     // Grab important metadata from CWL file (expects file to have .cwl extension)
@@ -171,23 +171,79 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public void updateWorkflow(Workflow workflow) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override public Workflow getNewWorkflow(String repositoryId) {
+    public Workflow getNewWorkflow(String repositoryId) {
+        //TODO: need to add pass-through when paths are custom
         RepositoryId id = RepositoryId.createFromId(repositoryId);
         try {
             final Repository repository = service.getRepository(id);
+            LOG.info("Looking at repo: " + repository.getGitUrl());
             Workflow workflow = new Workflow();
             workflow.setOrganization(repository.getOwner().getLogin());
             workflow.setRepository(repository.getName());
             workflow.setGitUrl(repository.getGitUrl());
+            // look for versions and check each version for valid workflows
+            List<String> references = new ArrayList<>();
+            service.getBranches(id).forEach(branch -> references.add(branch.getName()));
+            service.getTags(id).forEach(tag -> references.add(tag.getName()));
+            for (String ref : references) {
+                LOG.info("Looking at reference: " + ref);
+                WorkflowVersion version = new WorkflowVersion();
+                version.setName(ref);
+                version.setReference(ref);
+                version.setValid(false);
+                version.setWorkflowPath(workflow.getDefaultWorkflowPath());
+                // look for workflow file
+                try {
+                    final List<RepositoryContents> cwlContents = cService.getContents(id, workflow.getDefaultWorkflowPath(), ref);
+                    if (cwlContents != null && cwlContents.size() > 0) {
+                        String content = extractGitHubContents(cwlContents);
+                        if (content.contains("class: Workflow")) {
+                            // if we have a valid workflow document
+                            SourceFile file = new SourceFile();
+                            file.setType(SourceFile.FileType.DOCKSTORE_CWL);
+                            file.setContent(content);
+                            version.getSourceFiles().add(file);
+                        }
+                    }
+                } catch (Exception ex) {
+                    LOG.info(workflow.getDefaultWorkflowPath() + " on " + ref + " was not valid CWL workflow");
+                }
+                String defaultPath = workflow.getDefaultWorkflowPath();
+                //TODO: this won't work if the default is WDL
+                defaultPath = defaultPath.subSequence(0, defaultPath.lastIndexOf(".cwl")) + ".wdl";
+                try {
+                    final List<RepositoryContents> wdlContents = cService.getContents(id, defaultPath, ref);
+                    if (wdlContents != null && wdlContents.size() > 0) {
+                        String content = extractGitHubContents(wdlContents);
+
+                        final NamespaceWithWorkflow nameSpaceWithWorkflow = NamespaceWithWorkflow.load(content);
+                        if (nameSpaceWithWorkflow != null) {
+                            // if we have a valid workflow document
+                            SourceFile file = new SourceFile();
+                            file.setType(SourceFile.FileType.DOCKSTORE_WDL);
+                            file.setContent(content);
+                            version.getSourceFiles().add(file);
+                        }
+                    }
+                } catch (Exception ex) {
+                    LOG.info(defaultPath + " on " + ref + " was not valid WDL workflow");
+                }
+                if (version.getSourceFiles().size() > 0) {
+                    version.setValid(true);
+                }
+                workflow.addWorkflowVersion(version);
+            }
             return workflow;
         } catch (IOException e) {
             LOG.info("Cannot getNewWorkflow {}", gitUsername);
             return null;
         }
+    }
+
+    private String extractGitHubContents(List<RepositoryContents> cwlContents) {
+        String encoded = cwlContents.get(0).getContent().replace("\n", "");
+        byte[] decode = Base64.getDecoder().decode(encoded);
+        return new String(decode, StandardCharsets.UTF_8);
     }
 
 }
