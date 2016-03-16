@@ -1,3 +1,19 @@
+/*
+ *    Copyright 2016 OICR
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
 package io.swagger.client.api;
 
 import io.swagger.client.ApiException;
@@ -11,7 +27,7 @@ import java.util.*;
 
 import java.util.*;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-01T15:18:10.919-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-11T15:28:43.725-05:00")
 public class ContainertagsApi {
   private ApiClient apiClient;
 
@@ -35,7 +51,7 @@ public class ContainertagsApi {
   /**
    * Get tags  for a container by id
    * Lists tags for a container. Enter full path (include quay.io in path).
-   * @param containerId Container to modify.
+   * @param containerId Tool to modify.
    * @return List<Tag>
    */
   public List<Tag> getTagsByPath (Long containerId) throws ApiException {
@@ -82,7 +98,7 @@ public class ContainertagsApi {
   /**
    * Update the tags linked to a container
    * Tag correspond to each row of the versions table listing all information for a docker repo tag
-   * @param containerId Container to modify.
+   * @param containerId Tool to modify.
    * @param body List of modified tags
    * @return List<Tag>
    */
@@ -135,7 +151,7 @@ public class ContainertagsApi {
   /**
    * Add new tags linked to a container
    * Tag correspond to each row of the versions table listing all information for a docker repo tag
-   * @param containerId Container to modify.
+   * @param containerId Tool to modify.
    * @param body List of new tags
    * @return List<Tag>
    */
@@ -188,7 +204,7 @@ public class ContainertagsApi {
   /**
    * Delete tag linked to a container
    * Tag correspond to each row of the versions table listing all information for a docker repo tag
-   * @param containerId Container to modify.
+   * @param containerId Tool to modify.
    * @param tagId Tag to delete
    * @return void
    */

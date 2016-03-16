@@ -1,3 +1,19 @@
+/*
+ *    Copyright 2016 OICR
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
 package io.swagger.client.api;
 
 import java.util.ArrayList;
@@ -11,12 +27,12 @@ import io.swagger.client.Configuration;
 import io.swagger.client.Pair;
 import io.swagger.client.TypeRef;
 import io.swagger.client.model.Body;
-import io.swagger.client.model.Container;
 import io.swagger.client.model.RegisterRequest;
 import io.swagger.client.model.SourceFile;
+import io.swagger.client.model.Tool;
 import io.swagger.client.model.User;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-01T15:18:10.919-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-11T15:28:43.725-05:00")
 public class ContainersApi {
   private ApiClient apiClient;
 
@@ -40,9 +56,9 @@ public class ContainersApi {
   /**
    * List all docker containers cached in database
    * List docker container repos currently known. Admin Only
-   * @return List<Container>
+   * @return List<Tool>
    */
-  public List<Container> allContainers () throws ApiException {
+  public List<Tool> allContainers () throws ApiException {
     Object postBody = null;
     
     // create path and map variables
@@ -72,7 +88,7 @@ public class ContainersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<List<Container>>() {};
+    TypeRef returnType = new TypeRef<List<Tool>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -81,9 +97,9 @@ public class ContainersApi {
    * Get a container by tool path
    * Lists info of container. Enter full path (include quay.io in path).
    * @param repository repository path
-   * @return Container
+   * @return Tool
    */
-  public Container getContainerByToolPath (String repository) throws ApiException {
+  public Tool getContainerByToolPath (String repository) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'repository' is set
@@ -119,7 +135,7 @@ public class ContainersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<Container>() {};
+    TypeRef returnType = new TypeRef<Tool>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -128,9 +144,9 @@ public class ContainersApi {
    * Get a container by tool path
    * Lists info of container. Enter full path (include quay.io in path).
    * @param repository repository path
-   * @return Container
+   * @return Tool
    */
-  public Container getRegisteredContainerByToolPath (String repository) throws ApiException {
+  public Tool getRegisteredContainerByToolPath (String repository) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'repository' is set
@@ -166,7 +182,7 @@ public class ContainersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<Container>() {};
+    TypeRef returnType = new TypeRef<Tool>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -175,9 +191,9 @@ public class ContainersApi {
    * Get a list of containers by path
    * Lists info of container. Enter full path (include quay.io in path).
    * @param repository repository path
-   * @return List<Container>
+   * @return List<Tool>
    */
-  public List<Container> getContainerByPath (String repository) throws ApiException {
+  public List<Tool> getContainerByPath (String repository) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'repository' is set
@@ -213,7 +229,7 @@ public class ContainersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<List<Container>>() {};
+    TypeRef returnType = new TypeRef<List<Tool>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -222,9 +238,9 @@ public class ContainersApi {
    * Get a registered container by path
    * NO authentication
    * @param repository repository path
-   * @return List<Container>
+   * @return List<Tool>
    */
-  public List<Container> getRegisteredContainerByPath (String repository) throws ApiException {
+  public List<Tool> getRegisteredContainerByPath (String repository) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'repository' is set
@@ -260,7 +276,7 @@ public class ContainersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<List<Container>>() {};
+    TypeRef returnType = new TypeRef<List<Tool>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -268,9 +284,9 @@ public class ContainersApi {
   /**
    * Refresh all repos
    * Updates some metadata. ADMIN ONLY
-   * @return List<Container>
+   * @return List<Tool>
    */
-  public List<Container> refreshAll () throws ApiException {
+  public List<Tool> refreshAll () throws ApiException {
     Object postBody = null;
     
     // create path and map variables
@@ -300,7 +316,7 @@ public class ContainersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<List<Container>>() {};
+    TypeRef returnType = new TypeRef<List<Tool>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -308,10 +324,10 @@ public class ContainersApi {
   /**
    * Register an image manually, along with tags
    * Register/publish an image manually.
-   * @param body Container to be registered
-   * @return Container
+   * @param body Tool to be registered
+   * @return Tool
    */
-  public Container registerManual (Container body) throws ApiException {
+  public Tool registerManual (Tool body) throws ApiException {
     Object postBody = body;
     
     // verify the required parameter 'body' is set
@@ -346,7 +362,7 @@ public class ContainersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<Container>() {};
+    TypeRef returnType = new TypeRef<Tool>() {};
     return apiClient.invokeAPI(path, "POST", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -354,9 +370,9 @@ public class ContainersApi {
   /**
    * List all registered containers.
    * NO authentication
-   * @return List<Container>
+   * @return List<Tool>
    */
-  public List<Container> allRegisteredContainers () throws ApiException {
+  public List<Tool> allRegisteredContainers () throws ApiException {
     Object postBody = null;
     
     // create path and map variables
@@ -386,7 +402,7 @@ public class ContainersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<List<Container>>() {};
+    TypeRef returnType = new TypeRef<List<Tool>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -394,10 +410,10 @@ public class ContainersApi {
   /**
    * Get a registered container
    * NO authentication
-   * @param containerId Container ID
-   * @return Container
+   * @param containerId Tool ID
+   * @return Tool
    */
-  public Container getRegisteredContainer (Long containerId) throws ApiException {
+  public Tool getRegisteredContainer (Long containerId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'containerId' is set
@@ -433,7 +449,7 @@ public class ContainersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<Container>() {};
+    TypeRef returnType = new TypeRef<Tool>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -442,9 +458,9 @@ public class ContainersApi {
    * Search for matching registered containers.
    * Search on the name (full path name) and description. NO authentication
    * @param pattern 
-   * @return List<Container>
+   * @return List<Tool>
    */
-  public List<Container> search (String pattern) throws ApiException {
+  public List<Tool> search (String pattern) throws ApiException {
     Object postBody = null;
     
     // create path and map variables
@@ -476,7 +492,7 @@ public class ContainersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<List<Container>>() {};
+    TypeRef returnType = new TypeRef<List<Tool>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -484,10 +500,10 @@ public class ContainersApi {
   /**
    * Get a cached repo
    * 
-   * @param containerId Container ID
-   * @return Container
+   * @param containerId Tool ID
+   * @return Tool
    */
-  public Container getContainer (Long containerId) throws ApiException {
+  public Tool getContainer (Long containerId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'containerId' is set
@@ -523,19 +539,19 @@ public class ContainersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<Container>() {};
+    TypeRef returnType = new TypeRef<Tool>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
   
   /**
-   * Update the container with the given container.
+   * Update the tool with the given tool.
    * 
-   * @param containerId Container to modify.
-   * @param body Container with updated information
-   * @return Container
+   * @param containerId Tool to modify.
+   * @param body Tool with updated information
+   * @return Tool
    */
-  public Container updateContainer (Long containerId, Container body) throws ApiException {
+  public Tool updateContainer (Long containerId, Tool body) throws ApiException {
     Object postBody = body;
     
     // verify the required parameter 'containerId' is set
@@ -576,7 +592,7 @@ public class ContainersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<Container>() {};
+    TypeRef returnType = new TypeRef<Tool>() {};
     return apiClient.invokeAPI(path, "PUT", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -584,7 +600,7 @@ public class ContainersApi {
   /**
    * Delete manually registered image
    * 
-   * @param containerId Container id to delete
+   * @param containerId Tool id to delete
    * @return void
    */
   public void deleteContainer (Long containerId) throws ApiException {
@@ -630,7 +646,7 @@ public class ContainersApi {
   /**
    * Get the corresponding Dockstore.cwl file on Github.
    * Does not need authentication
-   * @param containerId Container id
+   * @param containerId Tool id
    * @param tag 
    * @return SourceFile
    */
@@ -680,7 +696,7 @@ public class ContainersApi {
   /**
    * Get the corresponding Dockerfile on Github.
    * Does not need authentication
-   * @param containerId Container id
+   * @param containerId Tool id
    * @param tag 
    * @return SourceFile
    */
@@ -730,12 +746,12 @@ public class ContainersApi {
   /**
    * Update the labels linked to a container.
    * Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.
-   * @param containerId Container to modify.
+   * @param containerId Tool to modify.
    * @param labels Comma-delimited list of labels.
    * @param body This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.
-   * @return Container
+   * @return Tool
    */
-  public Container updateLabels (Long containerId, String labels, Body body) throws ApiException {
+  public Tool updateLabels (Long containerId, String labels, Body body) throws ApiException {
     Object postBody = body;
     
     // verify the required parameter 'containerId' is set
@@ -778,7 +794,7 @@ public class ContainersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<Container>() {};
+    TypeRef returnType = new TypeRef<Tool>() {};
     return apiClient.invokeAPI(path, "PUT", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -786,10 +802,10 @@ public class ContainersApi {
   /**
    * Refresh one particular repo
    * 
-   * @param containerId Container ID
-   * @return Container
+   * @param containerId Tool ID
+   * @return Tool
    */
-  public Container refresh (Long containerId) throws ApiException {
+  public Tool refresh (Long containerId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'containerId' is set
@@ -825,7 +841,7 @@ public class ContainersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<Container>() {};
+    TypeRef returnType = new TypeRef<Tool>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -833,11 +849,11 @@ public class ContainersApi {
   /**
    * Register or unregister a container
    * Register/publish a container (public or private). Assumes that user is using quay.io and github.
-   * @param containerId Container id to register/publish
+   * @param containerId Tool id to register/publish
    * @param body RegisterRequest to refresh the list of repos for a user
-   * @return Container
+   * @return Tool
    */
-  public Container register (Long containerId, RegisterRequest body) throws ApiException {
+  public Tool register (Long containerId, RegisterRequest body) throws ApiException {
     Object postBody = body;
     
     // verify the required parameter 'containerId' is set
@@ -878,7 +894,7 @@ public class ContainersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<Container>() {};
+    TypeRef returnType = new TypeRef<Tool>() {};
     return apiClient.invokeAPI(path, "POST", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -886,7 +902,7 @@ public class ContainersApi {
   /**
    * Get users of a container
    * 
-   * @param containerId Container ID
+   * @param containerId Tool ID
    * @return List<User>
    */
   public List<User> getUsers (Long containerId) throws ApiException {
@@ -933,7 +949,7 @@ public class ContainersApi {
   /**
    * Get the corresponding Dockstore.wdl file on Github.
    * Does not need authentication
-   * @param containerId Container id
+   * @param containerId Tool id
    * @param tag 
    * @return SourceFile
    */

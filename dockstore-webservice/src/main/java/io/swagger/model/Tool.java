@@ -16,14 +16,14 @@
 
 package io.swagger.model;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonValue;
+
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import io.swagger.model.ToolType;
-import io.swagger.model.ToolVersion;
-import java.util.*;
 
 
 
@@ -32,7 +32,7 @@ import java.util.*;
  **/
 
 @ApiModel(description = "A tool (or described tool) describes one pairing of a tool as described in a descriptor file (which potentially describes multiple tools) and a Docker image.")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JaxRSServerCodegen", date = "2016-01-29T22:00:17.650Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-03-11T20:14:17.098Z")
 public class Tool   {
   
   private String globalId = null;
@@ -52,6 +52,11 @@ public class Tool   {
   /**
    * The unique identifier for the image. (Proposed - This id should be globally unique across systems and should also identify the system that it comes from for example This id should be globally unique across systems, should also identify the system that it comes from, and be a URL that resolves for example `http://agora.broadinstitute.org/tools/123456`)
    **/
+  public Tool globalId(String globalId) {
+    this.globalId = globalId;
+    return this;
+  }
+
   
   @ApiModelProperty(required = true, value = "The unique identifier for the image. (Proposed - This id should be globally unique across systems and should also identify the system that it comes from for example This id should be globally unique across systems, should also identify the system that it comes from, and be a URL that resolves for example `http://agora.broadinstitute.org/tools/123456`)")
   @JsonProperty("global-id")
@@ -66,6 +71,11 @@ public class Tool   {
   /**
    * A unique identifier of the tool for this particular tool registry, for example `123456` or `123456_v1`
    **/
+  public Tool registryId(String registryId) {
+    this.registryId = registryId;
+    return this;
+  }
+
   
   @ApiModelProperty(required = true, value = "A unique identifier of the tool for this particular tool registry, for example `123456` or `123456_v1`")
   @JsonProperty("registry-id")
@@ -80,6 +90,11 @@ public class Tool   {
   /**
    * The registry that contains the image.
    **/
+  public Tool registry(String registry) {
+    this.registry = registry;
+    return this;
+  }
+
   
   @ApiModelProperty(required = true, value = "The registry that contains the image.")
   @JsonProperty("registry")
@@ -94,6 +109,11 @@ public class Tool   {
   /**
    * The organization that published the image.
    **/
+  public Tool organization(String organization) {
+    this.organization = organization;
+    return this;
+  }
+
   
   @ApiModelProperty(required = true, value = "The organization that published the image.")
   @JsonProperty("organization")
@@ -108,6 +128,11 @@ public class Tool   {
   /**
    * The name of the image.
    **/
+  public Tool name(String name) {
+    this.name = name;
+    return this;
+  }
+
   
   @ApiModelProperty(required = true, value = "The name of the image.")
   @JsonProperty("name")
@@ -122,6 +147,11 @@ public class Tool   {
   /**
    * The name of the tool.
    **/
+  public Tool toolname(String toolname) {
+    this.toolname = toolname;
+    return this;
+  }
+
   
   @ApiModelProperty(value = "The name of the tool.")
   @JsonProperty("toolname")
@@ -134,10 +164,14 @@ public class Tool   {
 
   
   /**
-   * A constrained category for the tool.
    **/
+  public Tool tooltype(ToolType tooltype) {
+    this.tooltype = tooltype;
+    return this;
+  }
+
   
-  @ApiModelProperty(required = true, value = "A constrained category for the tool.")
+  @ApiModelProperty(required = true, value = "")
   @JsonProperty("tooltype")
   public ToolType getTooltype() {
     return tooltype;
@@ -150,6 +184,11 @@ public class Tool   {
   /**
    * The description of the tool.
    **/
+  public Tool description(String description) {
+    this.description = description;
+    return this;
+  }
+
   
   @ApiModelProperty(value = "The description of the tool.")
   @JsonProperty("description")
@@ -164,6 +203,11 @@ public class Tool   {
   /**
    * Contact information for the author of this tool entry in the registry. (More complex authorship information is handled by the descriptor)
    **/
+  public Tool author(String author) {
+    this.author = author;
+    return this;
+  }
+
   
   @ApiModelProperty(required = true, value = "Contact information for the author of this tool entry in the registry. (More complex authorship information is handled by the descriptor)")
   @JsonProperty("author")
@@ -178,6 +222,11 @@ public class Tool   {
   /**
    * The version of this tool in the registry. Iterates when fields like the description, author, etc. are updated.
    **/
+  public Tool metaVersion(String metaVersion) {
+    this.metaVersion = metaVersion;
+    return this;
+  }
+
   
   @ApiModelProperty(required = true, value = "The version of this tool in the registry. Iterates when fields like the description, author, etc. are updated.")
   @JsonProperty("meta-version")
@@ -192,6 +241,11 @@ public class Tool   {
   /**
    * An array of IDs for the applications that are stored inside this tool (for example `https://bio.tools/tool/mytum.de/SNAP2/1`)
    **/
+  public Tool contains(List<String> contains) {
+    this.contains = contains;
+    return this;
+  }
+
   
   @ApiModelProperty(value = "An array of IDs for the applications that are stored inside this tool (for example `https://bio.tools/tool/mytum.de/SNAP2/1`)")
   @JsonProperty("contains")
@@ -205,6 +259,11 @@ public class Tool   {
   
   /**
    **/
+  public Tool versions(List<ToolVersion> versions) {
+    this.versions = versions;
+    return this;
+  }
+
   
   @ApiModelProperty(value = "")
   @JsonProperty("versions")

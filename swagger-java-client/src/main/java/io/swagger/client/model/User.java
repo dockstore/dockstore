@@ -1,8 +1,24 @@
+/*
+ *    Copyright 2016 OICR
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
 package io.swagger.client.model;
 
 import io.swagger.client.StringUtil;
 import io.swagger.client.model.Group;
-import io.swagger.client.model.Container;
+import io.swagger.client.model.Entry;
 import java.util.*;
 
 
@@ -15,14 +31,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * End users for the dockstore
  **/
 @ApiModel(description = "End users for the dockstore")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-01T15:18:10.919-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-11T15:28:43.725-05:00")
 public class User   {
   
   private Long id = null;
   private String username = null;
   private Boolean isAdmin = null;
   private List<Group> groups = new ArrayList<Group>();
-  private List<Container> containers = new ArrayList<Container>();
+  private List<Entry> entries = new ArrayList<Entry>();
 
   
   /**
@@ -81,12 +97,12 @@ public class User   {
    * Entries in the dockstore that this user manages
    **/
   @ApiModelProperty(value = "Entries in the dockstore that this user manages")
-  @JsonProperty("containers")
-  public List<Container> getContainers() {
-    return containers;
+  @JsonProperty("entries")
+  public List<Entry> getEntries() {
+    return entries;
   }
-  public void setContainers(List<Container> containers) {
-    this.containers = containers;
+  public void setEntries(List<Entry> entries) {
+    this.entries = entries;
   }
 
   
@@ -100,7 +116,7 @@ public class User   {
     sb.append("    username: ").append(StringUtil.toIndentedString(username)).append("\n");
     sb.append("    isAdmin: ").append(StringUtil.toIndentedString(isAdmin)).append("\n");
     sb.append("    groups: ").append(StringUtil.toIndentedString(groups)).append("\n");
-    sb.append("    containers: ").append(StringUtil.toIndentedString(containers)).append("\n");
+    sb.append("    entries: ").append(StringUtil.toIndentedString(entries)).append("\n");
     sb.append("}");
     return sb.toString();
   }
