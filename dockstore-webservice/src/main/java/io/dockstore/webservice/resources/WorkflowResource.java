@@ -131,7 +131,7 @@ public class WorkflowResource {
                 if (githubToken == null || githubToken.getContent() == null){
                     continue;
                 }
-                final SourceCodeRepoInterface sourceCodeRepo = new GitHubSourceCodeRepo(user.getUsername(),githubToken.getContent(), null );
+                final SourceCodeRepoInterface sourceCodeRepo = new GitHubSourceCodeRepo(user.getUsername(),githubToken.getContent(), null);
 
                 final Map<String, String> workflowGitUrl2Name = sourceCodeRepo.getWorkflowGitUrl2RepositoryId();
                 for(Map.Entry<String, String> entry : workflowGitUrl2Name.entrySet()) {
