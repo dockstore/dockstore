@@ -351,6 +351,10 @@
                         <groupId>com.google.auth</groupId>
                         <artifactId>google-auth-library-oauth2-http</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>com.google.guava</groupId>
+                        <artifactId>guava-jdk5</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
