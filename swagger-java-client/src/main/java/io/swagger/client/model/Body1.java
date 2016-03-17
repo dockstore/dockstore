@@ -14,30 +14,29 @@
  *    limitations under the License.
  */
 
-package io.dockstore.webservice.api;
+package io.swagger.client.model;
 
+import io.swagger.client.StringUtil;
+
+
+
+import io.swagger.annotations.*;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.annotations.ApiModel;
 
-/**
- * This is an object to encapsulate a register request in an entity. Does not need to be stored in the database. Used for the body of
- * /containers/{containerId}/register
- *
- * @author xliu
- */
-@ApiModel("RegisterRequest")
-public class RegisterRequest {
-    private boolean register;
 
-    public RegisterRequest() {
-    }
+@ApiModel(description = "")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-16T11:18:05.004-04:00")
+public class Body1   {
+  
 
-    public RegisterRequest(boolean register) {
-        this.register = register;
-    }
+  
 
-    @JsonProperty
-    public boolean getRegister() {
-        return register;
-    }
+  @Override
+  public String toString()  {
+    StringBuilder sb = new StringBuilder();
+    sb.append("class Body1 {\n");
+    
+    sb.append("}");
+    return sb.toString();
+  }
 }

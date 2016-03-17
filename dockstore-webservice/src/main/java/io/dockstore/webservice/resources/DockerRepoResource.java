@@ -52,7 +52,7 @@ import com.google.gson.Gson;
 
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.Helper;
-import io.dockstore.webservice.api.RegisterRequest;
+import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ContainerMode;
 import io.dockstore.webservice.core.Label;
@@ -298,10 +298,10 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/registered/{containerId}")
-    @ApiOperation(value = "Get a registered container", notes = "NO authentication", response = Tool.class)
-    public Tool getRegisteredContainer(@ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
-        Tool c = toolDAO.findRegisteredById(containerId);
+    @Path("/published/{containerId}")
+    @ApiOperation(value = "Get a published container", notes = "NO authentication", response = Tool.class)
+    public Tool getPublishedContainer(@ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
+        Tool c = toolDAO.findPublishedById(containerId);
         Helper.checkContainer(c);
         return this.filterContainersForHiddenTags(c);
     }
@@ -310,7 +310,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/registerManual")
-    @ApiOperation(value = "Register an image manually, along with tags", notes = "Register/publish an image manually.", response = Tool.class)
+    @ApiOperation(value = "Register an image manually, along with tags", notes = "Register an image manually.", response = Tool.class)
     public Tool registerManual(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "Tool to be registered", required = true) Tool tool) {
         User user = userDAO.findById(authToken.getUserId());
@@ -394,18 +394,18 @@ public class DockerRepoResource {
     @POST
     @Timed
     @UnitOfWork
-    @Path("/{containerId}/register")
-    @ApiOperation(value = "Register or unregister a container", notes = "Register/publish a container (public or private). Assumes that user is using quay.io and github.", response = Tool.class)
-    public Tool register(@ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "Tool id to register/publish", required = true) @PathParam("containerId") Long containerId,
-            @ApiParam(value = "RegisterRequest to refresh the list of repos for a user", required = true) RegisterRequest request) {
+    @Path("/{containerId}/publish")
+    @ApiOperation(value = "Publish or unpublish a container", notes = "publish a container (public or private). Assumes that user is using quay.io and github.", response = Tool.class)
+    public Tool publish(@ApiParam(hidden = true) @Auth Token authToken,
+            @ApiParam(value = "Tool id to publish", required = true) @PathParam("containerId") Long containerId,
+            @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) PublishRequest request) {
         Tool c = toolDAO.findById(containerId);
         Helper.checkContainer(c);
 
         User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
 
-        if (request.getRegister()) {
+        if (request.getPublish()) {
             boolean validTag = false;
 
             if (c.getMode() == ContainerMode.MANUAL_IMAGE_PATH) {
@@ -423,13 +423,13 @@ public class DockerRepoResource {
             // TODO: for now, validTrigger signals if the user has a cwl file in their git repository's default branch. Don't need to check
             // this if we check the cwl in the tags.
             // if (validTag && c.getValidTrigger() && !c.getGitUrl().isEmpty()) {
-            if (validTag && !c.getGitUrl().isEmpty()) {
-                c.setIsRegistered(true);
+            if (validTag && !c.getGitUrl().isEmpty() && c.getValidTrigger()) {
+                c.setIsPublished(true);
             } else {
                 throw new CustomWebApplicationException("Repository does not meet requirements to publish.", HttpStatus.SC_BAD_REQUEST);
             }
         } else {
-            c.setIsRegistered(false);
+            c.setIsPublished(false);
         }
 
         long id = toolDAO.create(c);
@@ -440,10 +440,10 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("registered")
-    @ApiOperation(value = "List all registered containers.", tags = { "containers" }, notes = "NO authentication", response = Tool.class, responseContainer = "List")
-    public List<Tool> allRegisteredContainers() {
-        List<Tool> tools = toolDAO.findAllRegistered();
+    @Path("published")
+    @ApiOperation(value = "List all published containers.", tags = { "containers" }, notes = "NO authentication", response = Tool.class, responseContainer = "List")
+    public List<Tool> allPublishedContainers() {
+        List<Tool> tools = toolDAO.findAllPublished();
         filterContainersForHiddenTags(tools);
         return tools;
     }
@@ -464,11 +464,11 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/path/{repository}/registered")
-    @ApiOperation(value = "Get a registered container by path", notes = "NO authentication", response = Tool.class, responseContainer = "List")
-    public List<Tool> getRegisteredContainerByPath(
+    @Path("/path/{repository}/published")
+    @ApiOperation(value = "Get a published container by path", notes = "NO authentication", response = Tool.class, responseContainer = "List")
+    public List<Tool> getPublishedContainerByPath(
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
-        List<Tool> containers = toolDAO.findRegisteredByPath(path);
+        List<Tool> containers = toolDAO.findPublishedByPath(path);
         filterContainersForHiddenTags(containers);
         Helper.checkContainer(containers);
         return containers;
@@ -519,9 +519,9 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/path/tool/{repository}/registered")
-    @ApiOperation(value = "Get a container by tool path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Tool.class)
-    public Tool getRegisteredContainerByToolPath(
+    @Path("/path/tool/{repository}/published")
+    @ApiOperation(value = "Get a published container by tool path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Tool.class)
+    public Tool getPublishedContainerByToolPath(
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         final String[] split = path.split("/");
         // check that this is a tool path
@@ -531,7 +531,7 @@ public class DockerRepoResource {
             toolname = split[toolPathLength - 1];
         }
 
-        Tool tool = toolDAO.findRegisteredByToolPath(Joiner.on("/").join(split[0], split[1], split[2]), toolname);
+        Tool tool = toolDAO.findPublishedByToolPath(Joiner.on("/").join(split[0], split[1], split[2]), toolname);
         Helper.checkContainer(tool);
 
         return tool;

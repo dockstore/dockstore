@@ -70,27 +70,27 @@ public class CommonTestUtilities {
 
             //TODO: this stuff should probably use JPA statements
             runInsertStatement(
-                    "insert into tool(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered, toolname) VALUES (1, 'test1', 'test_org', 'QUAY_IO', 'quay.io/test_org/test1', false, false, false, false,'');",
+                    "insert into tool(id, name, namespace, registry, path, validTrigger, ispublished, toolname) VALUES (1, 'test1', 'test_org', 'QUAY_IO', 'quay.io/test_org/test1', false, false,'');",
                     new KeyedHandler<>("id"));
             runInsertStatement("insert into user_entry(userid, entryid) VALUES (1, 1);", new KeyedHandler<>("entryid"));
             runInsertStatement(
-                    "insert into tool(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered,toolname) VALUES (2, 'test2', 'test_org', 'QUAY_IO', 'quay.io/test_org/test2', false, false, false, false,'');",
+                    "insert into tool(id, name, namespace, registry, path, validTrigger, ispublished,toolname) VALUES (2, 'test2', 'test_org', 'QUAY_IO', 'quay.io/test_org/test2', false, false,'');",
                     new KeyedHandler<>("id"));
             runInsertStatement("insert into user_entry(userid, entryid) VALUES (2, 2);", new KeyedHandler<>("entryid"));
             runInsertStatement(
-                    "insert into tool(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered,toolname) VALUES (3, 'test3', 'test_org', 'QUAY_IO', 'quay.io/test_org/test3', true, false, false, false,'');",
+                    "insert into tool(id, name, namespace, registry, path, validTrigger, ispublished,toolname) VALUES (3, 'test3', 'test_org', 'QUAY_IO', 'quay.io/test_org/test3', false, false,'');",
                     new KeyedHandler<>("id"));
             runInsertStatement("insert into user_entry(userid, entryid) VALUES (2, 3);", new KeyedHandler<>("entryid"));
             runInsertStatement(
-                    "insert into tool(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered, giturl,toolname) VALUES (4, 'test4', 'test_org', 'QUAY_IO', 'quay.io/test_org/test4', false, false, false, false, 'git@github.com:test/test4.git','');",
+                    "insert into tool(id, name, namespace, registry, path, validTrigger, ispublished, giturl,toolname) VALUES (4, 'test4', 'test_org', 'QUAY_IO', 'quay.io/test_org/test4', false, false, 'git@github.com:test/test4.git','');",
                     new KeyedHandler<>("id"));
             runInsertStatement("insert into user_entry(userid, entryid) VALUES (2, 4);", new KeyedHandler<>("entryid"));
             runInsertStatement(
-                    "insert into tool(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered, giturl,toolname) VALUES (5, 'test5', 'test_org', 'QUAY_IO', 'quay.io/test_org/test5', true, false, false, false, 'git@github.com:test/test5.git','');",
+                    "insert into tool(id, name, namespace, registry, path, validTrigger, ispublished, giturl,toolname) VALUES (5, 'test5', 'test_org', 'QUAY_IO', 'quay.io/test_org/test5', false, false, 'git@github.com:test/test5.git','');",
                     new KeyedHandler<>("id"));
             runInsertStatement("insert into user_entry(userid, entryid) VALUES (2, 5);", new KeyedHandler<>("entryid"));
             runInsertStatement(
-                    "insert into tool(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered, giturl,toolname) VALUES (6, 'test6', 'test_org', 'QUAY_IO', 'quay.io/test_org/test6', true, false, false, true, 'git@github.com:test/test6.git','');",
+                    "insert into tool(id, name, namespace, registry, path, validTrigger, ispublished, giturl,toolname) VALUES (6, 'test6', 'test_org', 'QUAY_IO', 'quay.io/test_org/test6', false, true, 'git@github.com:test/test6.git','');",
                     new KeyedHandler<>("id"));
 
             runInsertStatement("insert into user_entry(userid, entryid) VALUES (1, 6);", new KeyedHandler<>("entryid"));
@@ -112,17 +112,8 @@ public class CommonTestUtilities {
         public void clearDatabaseMakePrivate() throws IOException {
             super.clearDatabase();
 
-            BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(ResourceHelpers.resourceFilePath("db_confidential_dump_full.sql")), "utf-8"));
-            String line = null;
+            runInsertDump(ResourceHelpers.resourceFilePath("db_confidential_dump_full.sql"));
 
-            while ((line = br.readLine()) != null) {
-                if (line.startsWith("INSERT")) {
-                    runUpdateStatementConfidential(line);
-                } else if (line.startsWith("SELECT")){
-                    this.runSelectStatement(line, new ScalarHandler<>(), null);
-                }
-            }
-            br.close();
 
             /*
              Todo: When features that require multiple users for testing, which depend on other sources such as Github,
@@ -134,10 +125,37 @@ public class CommonTestUtilities {
                     + "', 'dockstore', 2, 'admin@admin.com');", new KeyedHandler<>("id"));
 
             runInsertStatement(
-                    "insert into tool(id, name, namespace, registry, path, validTrigger, isstarred, ispublic, isregistered, toolname) VALUES (5, 'test1', 'test_org', 'QUAY_IO', 'quay.io/test_org/test1', false, false, false, false,'');",
+                    "insert into tool(id, name, namespace, registry, path, validTrigger, ispublished, toolname) VALUES (9, 'test1', 'test_org', 'QUAY_IO', 'quay.io/test_org/test1', false, false,'');",
                     new KeyedHandler<>("id"));
-            runInsertStatement("insert into user_entry(userid, entryid) VALUES (2, 5);", new KeyedHandler<>("entryid"));
+            runInsertStatement("insert into user_entry(userid, entryid) VALUES (2, 9);", new KeyedHandler<>("entryid"));
 
+
+            // need to increment past manually entered ids above
+            runUpdateStatementConfidential("alter sequence container_id_seq restart with 1000;");
+            runUpdateStatementConfidential("alter sequence tag_id_seq restart with 1000;");
+            runUpdateStatementConfidential("alter sequence sourcefile_id_seq restart with 1000;");
+            runUpdateStatementConfidential("alter sequence label_id_seq restart with 1000;");
+
+        }
+
+        private void runInsertDump(String sqlDumpPath) throws IOException {
+            BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(sqlDumpPath), "utf-8"));
+            String line = null;
+
+            while ((line = br.readLine()) != null) {
+                if (line.startsWith("INSERT")) {
+                    runUpdateStatementConfidential(line);
+                } else if (line.startsWith("SELECT")){
+                    this.runSelectStatement(line, new ScalarHandler<>(), null);
+                }
+            }
+            br.close();
+        }
+
+        public void clearDatabaseMakePrivate2() throws IOException {
+            super.clearDatabase();
+
+            runInsertDump(ResourceHelpers.resourceFilePath("db_confidential_dump_full_2.sql"));
 
             // need to increment past manually entered ids above
             runUpdateStatementConfidential("alter sequence container_id_seq restart with 1000;");
@@ -167,12 +185,22 @@ public class CommonTestUtilities {
     }
 
     /**
-     * Clears database state and known queues for confidential testing.
+     * Clears database state and known queues for confidential testing. For DockstoreTestUser
      * @throws IOException
          */
     public static void clearStateMakePrivate() throws IOException {
         final TestingPostgres postgres = getTestingPostgres();
         postgres.clearDatabaseMakePrivate();
+
+    }
+
+    /**
+     * Clears database state and known queues for confidential testing. For DockstoreTestUser2
+     * @throws IOException
+     */
+    public static void clearStateMakePrivate2() throws IOException {
+        final TestingPostgres postgres = getTestingPostgres();
+        postgres.clearDatabaseMakePrivate2();
 
     }
 

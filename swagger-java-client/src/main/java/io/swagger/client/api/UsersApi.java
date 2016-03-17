@@ -16,22 +16,20 @@
 
 package io.swagger.client.api;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
+import io.swagger.client.ApiClient;
 import io.swagger.client.Configuration;
 import io.swagger.client.Pair;
 import io.swagger.client.TypeRef;
-import io.swagger.client.model.Group;
-import io.swagger.client.model.Token;
-import io.swagger.client.model.Tool;
-import io.swagger.client.model.User;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-11T15:28:43.725-05:00")
+import io.swagger.client.model.User;
+import io.swagger.client.model.Group;
+import io.swagger.client.model.DockstoreTool;
+import io.swagger.client.model.Token;
+
+import java.util.*;
+
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-17T14:12:33.169-04:00")
 public class UsersApi {
   private ApiClient apiClient;
 
@@ -546,9 +544,9 @@ public class UsersApi {
    * List repos owned by the logged-in user
    * Lists all registered and unregistered containers owned by the user
    * @param userId User ID
-   * @return List<Tool>
+   * @return List<DockstoreTool>
    */
-  public List<Tool> userContainers (Long userId) throws ApiException {
+  public List<DockstoreTool> userContainers (Long userId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'userId' is set
@@ -584,7 +582,54 @@ public class UsersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<List<Tool>>() {};
+    TypeRef returnType = new TypeRef<List<DockstoreTool>>() {};
+    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    
+  }
+  
+  /**
+   * List all published containers from a user
+   * Get user&#39;s published containers only
+   * @param userId User ID
+   * @return List<DockstoreTool>
+   */
+  public List<DockstoreTool> userPublishedContainers (Long userId) throws ApiException {
+    Object postBody = null;
+    
+    // verify the required parameter 'userId' is set
+    if (userId == null) {
+      throw new ApiException(400, "Missing the required parameter 'userId' when calling userPublishedContainers");
+    }
+    
+    // create path and map variables
+    String path = "/users/{userId}/containers/published".replaceAll("\\{format\\}","json")
+      .replaceAll("\\{" + "userId" + "\\}", apiClient.escapeString(userId.toString()));
+
+    // query params
+    List<Pair> queryParams = new ArrayList<Pair>();
+    Map<String, String> headerParams = new HashMap<String, String>();
+    Map<String, Object> formParams = new HashMap<String, Object>();
+
+    
+
+    
+
+    
+
+    final String[] accepts = {
+      "application/json"
+    };
+    final String accept = apiClient.selectHeaderAccept(accepts);
+
+    final String[] contentTypes = {
+      "application/json"
+    };
+    final String contentType = apiClient.selectHeaderContentType(contentTypes);
+
+    String[] authNames = new String[] {  };
+
+    
+    TypeRef returnType = new TypeRef<List<DockstoreTool>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -593,9 +638,9 @@ public class UsersApi {
    * Refresh repos owned by the logged-in user
    * Updates some metadata
    * @param userId User ID
-   * @return List<Tool>
+   * @return List<DockstoreTool>
    */
-  public List<Tool> refresh (Long userId) throws ApiException {
+  public List<DockstoreTool> refresh (Long userId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'userId' is set
@@ -631,54 +676,7 @@ public class UsersApi {
     String[] authNames = new String[] {  };
 
     
-    TypeRef returnType = new TypeRef<List<Tool>>() {};
-    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
-    
-  }
-  
-  /**
-   * List all registered containers from a user
-   * Get user&#39;s registered containers only
-   * @param userId User ID
-   * @return List<Tool>
-   */
-  public List<Tool> userRegisteredContainers (Long userId) throws ApiException {
-    Object postBody = null;
-    
-    // verify the required parameter 'userId' is set
-    if (userId == null) {
-      throw new ApiException(400, "Missing the required parameter 'userId' when calling userRegisteredContainers");
-    }
-    
-    // create path and map variables
-    String path = "/users/{userId}/containers/registered".replaceAll("\\{format\\}","json")
-      .replaceAll("\\{" + "userId" + "\\}", apiClient.escapeString(userId.toString()));
-
-    // query params
-    List<Pair> queryParams = new ArrayList<Pair>();
-    Map<String, String> headerParams = new HashMap<String, String>();
-    Map<String, Object> formParams = new HashMap<String, Object>();
-
-    
-
-    
-
-    
-
-    final String[] accepts = {
-      "application/json"
-    };
-    final String accept = apiClient.selectHeaderAccept(accepts);
-
-    final String[] contentTypes = {
-      "application/json"
-    };
-    final String contentType = apiClient.selectHeaderContentType(contentTypes);
-
-    String[] authNames = new String[] {  };
-
-    
-    TypeRef returnType = new TypeRef<List<Tool>>() {};
+    TypeRef returnType = new TypeRef<List<DockstoreTool>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
@@ -734,7 +732,7 @@ public class UsersApi {
    * Add a group to a user
    * 
    * @param userId User ID of user
-   * @param body RegisterRequest to refresh the list of repos for a user
+   * @param body PublishRequest to refresh the list of repos for a user
    * @return User
    */
   public User addGroupToUser (Long userId, Group body) throws ApiException {

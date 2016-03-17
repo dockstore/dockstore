@@ -17,8 +17,7 @@
 package io.swagger.client.model;
 
 import io.swagger.client.StringUtil;
-import io.swagger.client.model.User;
-import io.swagger.client.model.Label;
+
 import java.util.*;
 import java.util.Date;
 
@@ -28,9 +27,12 @@ import io.swagger.annotations.*;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 
-@ApiModel(description = "")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-17T14:12:33.169-04:00")
-public class Entry   {
+/**
+ * This describes one workflow in the dockstore
+ **/
+@ApiModel(description = "This describes one workflow in the dockstore")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-16T11:18:05.004-04:00")
+public class Workflow   {
   
   private Long id = null;
   private String author = null;
@@ -40,8 +42,15 @@ public class Entry   {
   private String email = null;
   private Date lastUpdated = null;
   private String gitUrl = null;
+  private String workflowName = null;
+  private String organization = null;
+  private String repository = null;
+  private String path = null;
+  private List<Workflow> workflowVersions = new ArrayList<Workflow>();
+  private List<Workflow> versions = new ArrayList<Workflow>();
   private Boolean isPublished = null;
   private Integer lastModified = null;
+  private String workflowPath = null;
 
   
   /**
@@ -149,6 +158,82 @@ public class Entry   {
 
   
   /**
+   * This is the name of the workflow, not needed when only one workflow in a repo
+   **/
+  @ApiModelProperty(value = "This is the name of the workflow, not needed when only one workflow in a repo")
+  @JsonProperty("workflowName")
+  public String getWorkflowName() {
+    return workflowName;
+  }
+  public void setWorkflowName(String workflowName) {
+    this.workflowName = workflowName;
+  }
+
+  
+  /**
+   * This is a git organization for the workflow
+   **/
+  @ApiModelProperty(required = true, value = "This is a git organization for the workflow")
+  @JsonProperty("organization")
+  public String getOrganization() {
+    return organization;
+  }
+  public void setOrganization(String organization) {
+    this.organization = organization;
+  }
+
+  
+  /**
+   * This is a git repository name
+   **/
+  @ApiModelProperty(required = true, value = "This is a git repository name")
+  @JsonProperty("repository")
+  public String getRepository() {
+    return repository;
+  }
+  public void setRepository(String repository) {
+    this.repository = repository;
+  }
+
+  
+  /**
+   * This is a generated full workflow path including organization, repository name, and workflow name
+   **/
+  @ApiModelProperty(value = "This is a generated full workflow path including organization, repository name, and workflow name")
+  @JsonProperty("path")
+  public String getPath() {
+    return path;
+  }
+  public void setPath(String path) {
+    this.path = path;
+  }
+
+  
+  /**
+   * Implementation specific tracking of valid build workflowVersions for the docker container
+   **/
+  @ApiModelProperty(value = "Implementation specific tracking of valid build workflowVersions for the docker container")
+  @JsonProperty("workflowVersions")
+  public List<Workflow> getWorkflowVersions() {
+    return workflowVersions;
+  }
+  public void setWorkflowVersions(List<Workflow> workflowVersions) {
+    this.workflowVersions = workflowVersions;
+  }
+
+  
+  /**
+   **/
+  @ApiModelProperty(value = "")
+  @JsonProperty("versions")
+  public List<Workflow> getVersions() {
+    return versions;
+  }
+  public void setVersions(List<Workflow> versions) {
+    this.versions = versions;
+  }
+
+  /**
    * Implementation specific visibility in this web service
    **/
   @ApiModelProperty(value = "Implementation specific visibility in this web service")
@@ -172,13 +257,25 @@ public class Entry   {
   public void setLastModified(Integer lastModified) {
     this.lastModified = lastModified;
   }
+  
+  /**
+   * This indicates for the associated git repository, the default path to the CWL document
+   **/
+  @ApiModelProperty(required = true, value = "This indicates for the associated git repository, the default path to the CWL document")
+  @JsonProperty("workflow_path")
+  public String getWorkflowPath() {
+    return workflowPath;
+  }
+  public void setWorkflowPath(String workflowPath) {
+    this.workflowPath = workflowPath;
+  }
 
   
 
   @Override
   public String toString()  {
     StringBuilder sb = new StringBuilder();
-    sb.append("class Entry {\n");
+    sb.append("class Workflow {\n");
     
     sb.append("    id: ").append(StringUtil.toIndentedString(id)).append("\n");
     sb.append("    author: ").append(StringUtil.toIndentedString(author)).append("\n");
@@ -188,8 +285,15 @@ public class Entry   {
     sb.append("    email: ").append(StringUtil.toIndentedString(email)).append("\n");
     sb.append("    lastUpdated: ").append(StringUtil.toIndentedString(lastUpdated)).append("\n");
     sb.append("    gitUrl: ").append(StringUtil.toIndentedString(gitUrl)).append("\n");
+    sb.append("    workflowName: ").append(StringUtil.toIndentedString(workflowName)).append("\n");
+    sb.append("    organization: ").append(StringUtil.toIndentedString(organization)).append("\n");
+    sb.append("    repository: ").append(StringUtil.toIndentedString(repository)).append("\n");
+    sb.append("    path: ").append(StringUtil.toIndentedString(path)).append("\n");
+    sb.append("    workflowVersions: ").append(StringUtil.toIndentedString(workflowVersions)).append("\n");
+    sb.append("    versions: ").append(StringUtil.toIndentedString(versions)).append("\n");
     sb.append("    isPublished: ").append(StringUtil.toIndentedString(isPublished)).append("\n");
     sb.append("    lastModified: ").append(StringUtil.toIndentedString(lastModified)).append("\n");
+    sb.append("    workflowPath: ").append(StringUtil.toIndentedString(workflowPath)).append("\n");
     sb.append("}");
     return sb.toString();
   }

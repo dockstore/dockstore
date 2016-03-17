@@ -25,7 +25,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 @ApiModel(description = "")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-11T15:28:43.725-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-17T11:42:38.138-04:00")
 public class RegisterRequest   {
   
   private Boolean register = null;

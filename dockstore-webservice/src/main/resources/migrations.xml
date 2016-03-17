@@ -68,9 +68,7 @@
             <column name="description" type="TEXT"/>
             <column name="email" type="VARCHAR(255)"/>
             <column name="giturl" type="VARCHAR(255)"/>
-            <column name="ispublic" type="BOOL"/>
-            <column name="isregistered" type="BOOL"/>
-            <column name="isstarred" type="BOOL"/>
+            <column name="ispublished" type="BOOL"/>
             <column name="lastmodified" type="INT4"/>
             <column name="lastupdated" type="TIMESTAMP WITHOUT TIME ZONE"/>
             <column name="defaultworkflowpath" type="TEXT"/>

@@ -45,12 +45,12 @@ public class ToolDAO extends EntryDAO<Tool> {
         return list(namedQuery("io.dockstore.webservice.core.Tool.findByMode").setParameter("mode", mode));
     }
 
-    public List<Tool> findRegisteredByPath(String path) {
-        return list(namedQuery("io.dockstore.webservice.core.Tool.findRegisteredByPath").setParameter("path", path));
+    public List<Tool> findPublishedByPath(String path) {
+        return list(namedQuery("io.dockstore.webservice.core.Tool.findPublishedByPath").setParameter("path", path));
     }
 
-    public Tool findRegisteredByToolPath(String path, String tool) {
-        return uniqueResult(namedQuery("io.dockstore.webservice.core.Tool.findRegisteredByToolPath").setParameter("path", path)
+    public Tool findPublishedByToolPath(String path, String tool) {
+        return uniqueResult(namedQuery("io.dockstore.webservice.core.Tool.findPublishedByToolPath").setParameter("path", path)
                 .setParameter("toolname", tool));
     }
 }
