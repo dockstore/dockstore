@@ -423,7 +423,7 @@ public class DockerRepoResource {
             // TODO: for now, validTrigger signals if the user has a cwl file in their git repository's default branch. Don't need to check
             // this if we check the cwl in the tags.
             // if (validTag && c.getValidTrigger() && !c.getGitUrl().isEmpty()) {
-            if (validTag && !c.getGitUrl().isEmpty()) {
+            if (validTag && !c.getGitUrl().isEmpty() && c.getValidTrigger()) {
                 c.setIsPublished(true);
             } else {
                 throw new CustomWebApplicationException("Repository does not meet requirements to publish.", HttpStatus.SC_BAD_REQUEST);

@@ -543,17 +543,35 @@ public class Client {
                 container.getTags().add(tag);
             }
 
+            // Register new tool
             final String fullName = Joiner.on("/").skipNulls().join(registry, namespace, name, toolname);
             try {
                 container = containersApi.registerManual(container);
                 if (container != null) {
                     containersApi.refresh(container.getId());
-                    out("Successfully published " + fullName);
                 } else {
-                    kill("Unable to publish " + fullName);
+                    kill("Unable to register " + fullName);
                 }
             } catch (final ApiException ex) {
-                kill("Unable to publish " + fullName);
+                kill("Unable to register " + fullName);
+            }
+
+
+            // If registration is successful then attempt to publish it
+            if (container != null) {
+                PublishRequest pub = new PublishRequest();
+                pub.setPublish(true);
+                DockstoreTool publishedTool = null;
+                try {
+                    publishedTool = containersApi.publish(container.getId(), pub);
+                    if (publishedTool.getIsPublished()) {
+                        out("Successfully published " + fullName);
+                    } else {
+                        out("Successfully registered " + fullName + ", however it is not valid to publish.");
+                    }
+                } catch (ApiException e) {
+                    out("Successfully registered " + fullName + ", however it is not valid to publish.");
+                }
             }
         }
     }

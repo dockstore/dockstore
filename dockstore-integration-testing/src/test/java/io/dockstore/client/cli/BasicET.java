@@ -297,13 +297,13 @@ public class BasicET {
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
                 final long count = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='t'", new ScalarHandler<>());
 
-                Assert.assertTrue("there should be 1 entries", count == 1);
+                Assert.assertTrue("there should be 1 entries, there are " + count, count == 1);
 
                 // Unpublish
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "publish", "--unpub", "quay.io/dockstoretestuser/quayandgithubalternate/alternate", "--script" });
                 final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='t'", new ScalarHandler<>());
 
-                Assert.assertTrue("there should be 0 entries", count2 == 0);
+                Assert.assertTrue("there should be 0 entries, there are " + count2, count2 == 0);
         }
 
         /**
