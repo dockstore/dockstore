@@ -1,3 +1,19 @@
+/*
+ *    Copyright 2016 OICR
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
 package io.swagger.client.model;
 
 import io.swagger.client.StringUtil;
@@ -13,7 +29,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 @ApiModel(description = "")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-16T15:56:27.334-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-17T14:12:33.169-04:00")
 public class Entry   {
   
   private Long id = null;
@@ -24,10 +40,8 @@ public class Entry   {
   private String email = null;
   private Date lastUpdated = null;
   private String gitUrl = null;
-  private Boolean isStarred = null;
-  private Boolean isPublic = null;
+  private Boolean isPublished = null;
   private Integer lastModified = null;
-  private Boolean isRegistered = null;
 
   
   /**
@@ -135,28 +149,15 @@ public class Entry   {
 
   
   /**
-   * Implementation specific hook for social starring in this web service
-   **/
-  @ApiModelProperty(value = "Implementation specific hook for social starring in this web service")
-  @JsonProperty("is_starred")
-  public Boolean getIsStarred() {
-    return isStarred;
-  }
-  public void setIsStarred(Boolean isStarred) {
-    this.isStarred = isStarred;
-  }
-
-  
-  /**
    * Implementation specific visibility in this web service
    **/
   @ApiModelProperty(value = "Implementation specific visibility in this web service")
-  @JsonProperty("is_public")
-  public Boolean getIsPublic() {
-    return isPublic;
+  @JsonProperty("is_published")
+  public Boolean getIsPublished() {
+    return isPublished;
   }
-  public void setIsPublic(Boolean isPublic) {
-    this.isPublic = isPublic;
+  public void setIsPublished(Boolean isPublished) {
+    this.isPublished = isPublished;
   }
 
   
@@ -170,19 +171,6 @@ public class Entry   {
   }
   public void setLastModified(Integer lastModified) {
     this.lastModified = lastModified;
-  }
-
-  
-  /**
-   * Implementation specific indication as to whether this is properly registered with this web service
-   **/
-  @ApiModelProperty(value = "Implementation specific indication as to whether this is properly registered with this web service")
-  @JsonProperty("is_registered")
-  public Boolean getIsRegistered() {
-    return isRegistered;
-  }
-  public void setIsRegistered(Boolean isRegistered) {
-    this.isRegistered = isRegistered;
   }
 
   
@@ -200,10 +188,8 @@ public class Entry   {
     sb.append("    email: ").append(StringUtil.toIndentedString(email)).append("\n");
     sb.append("    lastUpdated: ").append(StringUtil.toIndentedString(lastUpdated)).append("\n");
     sb.append("    gitUrl: ").append(StringUtil.toIndentedString(gitUrl)).append("\n");
-    sb.append("    isStarred: ").append(StringUtil.toIndentedString(isStarred)).append("\n");
-    sb.append("    isPublic: ").append(StringUtil.toIndentedString(isPublic)).append("\n");
+    sb.append("    isPublished: ").append(StringUtil.toIndentedString(isPublished)).append("\n");
     sb.append("    lastModified: ").append(StringUtil.toIndentedString(lastModified)).append("\n");
-    sb.append("    isRegistered: ").append(StringUtil.toIndentedString(isRegistered)).append("\n");
     sb.append("}");
     return sb.toString();
   }

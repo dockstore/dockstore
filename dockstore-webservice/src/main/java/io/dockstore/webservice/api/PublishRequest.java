@@ -20,24 +20,24 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 
 /**
- * This is an object to encapsulate a register request in an entity. Does not need to be stored in the database. Used for the body of
- * /containers/{containerId}/register
+ * This is an object to encapsulate a publish request in an entity. Does not need to be stored in the database. Used for the body of
+ * /containers/{containerId}/publish
  *
  * @author xliu
  */
-@ApiModel("RegisterRequest")
-public class RegisterRequest {
-    private boolean register;
+@ApiModel("PublishRequest")
+public class PublishRequest {
+    private boolean publish;
 
-    public RegisterRequest() {
+    public PublishRequest() {
     }
 
-    public RegisterRequest(boolean register) {
-        this.register = register;
+    public PublishRequest(boolean publish) {
+        this.publish = publish;
     }
 
     @JsonProperty
-    public boolean getRegister() {
-        return register;
+    public boolean getPublish() {
+        return publish;
     }
 }

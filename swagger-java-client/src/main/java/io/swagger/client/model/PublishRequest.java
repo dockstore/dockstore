@@ -14,25 +14,43 @@
  *    limitations under the License.
  */
 
-package io.swagger.client;
+package io.swagger.client.model;
 
+import io.swagger.client.StringUtil;
+
+
+
+import io.swagger.annotations.*;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+
+@ApiModel(description = "")
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-17T14:12:33.169-04:00")
-public class Configuration {
-  private static ApiClient defaultApiClient = new ApiClient();
+public class PublishRequest   {
+  
+  private Boolean publish = null;
 
+  
   /**
-   * Get the default API client, which would be used when creating API
-   * instances without providing an API client.
-   */
-  public static ApiClient getDefaultApiClient() {
-    return defaultApiClient;
-   }
+   **/
+  @ApiModelProperty(value = "")
+  @JsonProperty("publish")
+  public Boolean getPublish() {
+    return publish;
+  }
+  public void setPublish(Boolean publish) {
+    this.publish = publish;
+  }
 
-  /**
-   * Set the default API client, which would be used when creating API
-   * instances without providing an API client.
-   */
-  public static void setDefaultApiClient(ApiClient apiClient) {
-    defaultApiClient = apiClient;
+  
+
+  @Override
+  public String toString()  {
+    StringBuilder sb = new StringBuilder();
+    sb.append("class PublishRequest {\n");
+    
+    sb.append("    publish: ").append(StringUtil.toIndentedString(publish)).append("\n");
+    sb.append("}");
+    return sb.toString();
   }
 }

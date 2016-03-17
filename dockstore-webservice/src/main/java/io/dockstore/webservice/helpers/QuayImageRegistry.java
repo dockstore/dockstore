@@ -140,6 +140,8 @@ public class QuayImageRegistry implements ImageRegistryInterface {
                 try {
                     // interesting, this relies upon our container object having the same fields
                     // as quay.io's repositories
+
+                    // PLEASE NOTE : is_public is from quay.  It has NO connection to our is_published!
                     repos = objectMapper.readValue(asString.get(), RepoList.class);
 
                     List<Tool> tools = repos.getRepositories();

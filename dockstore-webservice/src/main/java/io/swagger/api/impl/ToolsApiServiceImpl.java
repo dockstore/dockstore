@@ -74,7 +74,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         if (container == null) {
             response = Response.status(Response.Status.NOT_FOUND).build();
         }
-        else if (!container.getIsPublic()){
+        else if (!container.getIsPublished()){
             // check whether this is registered
             response = Response.status(Response.Status.UNAUTHORIZED).build();
         } else {
@@ -274,7 +274,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         }
         Tool tool = toolDAO.findPublishedByToolPath(parsedID.getPath(),parsedID.getToolName());
         // check whether this is registered
-        if (!tool.getIsPublic()){
+        if (!tool.getIsPublished()){
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
         // convert our toolName model to that expected

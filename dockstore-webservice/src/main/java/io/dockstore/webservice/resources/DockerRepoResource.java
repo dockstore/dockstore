@@ -52,7 +52,7 @@ import com.google.gson.Gson;
 
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.Helper;
-import io.dockstore.webservice.api.RegisterRequest;
+import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ContainerMode;
 import io.dockstore.webservice.core.Label;
@@ -309,10 +309,10 @@ public class DockerRepoResource {
     @POST
     @Timed
     @UnitOfWork
-    @Path("/registerAndPublishManual")
-    @ApiOperation(value = "Register and publish an image manually, along with tags", notes = "Register/publish an image manually.", response = Tool.class)
-    public Tool registerAndPublishManual(@ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "Tool to be registered and published", required = true) Tool tool) {
+    @Path("/registerManual")
+    @ApiOperation(value = "Register an image manually, along with tags", notes = "Register an image manually.", response = Tool.class)
+    public Tool registerManual(@ApiParam(hidden = true) @Auth Token authToken,
+            @ApiParam(value = "Tool to be registered", required = true) Tool tool) {
         User user = userDAO.findById(authToken.getUserId());
         // populate user in tool
         tool.addUser(user);
@@ -398,14 +398,14 @@ public class DockerRepoResource {
     @ApiOperation(value = "Publish or unpublish a container", notes = "publish a container (public or private). Assumes that user is using quay.io and github.", response = Tool.class)
     public Tool publish(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "Tool id to publish", required = true) @PathParam("containerId") Long containerId,
-            @ApiParam(value = "RegisterRequest to refresh the list of repos for a user", required = true) RegisterRequest request) {
+            @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) PublishRequest request) {
         Tool c = toolDAO.findById(containerId);
         Helper.checkContainer(c);
 
         User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
 
-        if (request.getRegister()) {
+        if (request.getPublish()) {
             boolean validTag = false;
 
             if (c.getMode() == ContainerMode.MANUAL_IMAGE_PATH) {
@@ -423,13 +423,13 @@ public class DockerRepoResource {
             // TODO: for now, validTrigger signals if the user has a cwl file in their git repository's default branch. Don't need to check
             // this if we check the cwl in the tags.
             // if (validTag && c.getValidTrigger() && !c.getGitUrl().isEmpty()) {
-            if (validTag && !c.getGitUrl().isEmpty()) {
-                c.setIsPublic(true);
+            if (validTag && !c.getGitUrl().isEmpty() && c.getValidTrigger()) {
+                c.setIsPublished(true);
             } else {
                 throw new CustomWebApplicationException("Repository does not meet requirements to publish.", HttpStatus.SC_BAD_REQUEST);
             }
         } else {
-            c.setIsPublic(false);
+            c.setIsPublished(false);
         }
 
         long id = toolDAO.create(c);

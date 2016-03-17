@@ -1,3 +1,19 @@
+/*
+ *    Copyright 2016 OICR
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
 package io.swagger.client.api;
 
 import io.swagger.client.ApiException;
@@ -9,12 +25,12 @@ import io.swagger.client.TypeRef;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Body;
-import io.swagger.client.model.RegisterRequest;
+import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.User;
 
 import java.util.*;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-16T15:56:27.334-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-17T14:12:33.169-04:00")
 public class ContainersApi {
   private ApiClient apiClient;
 
@@ -391,21 +407,21 @@ public class ContainersApi {
   }
   
   /**
-   * Register and publish an image manually, along with tags
-   * Register/publish an image manually.
-   * @param body Tool to be registered and published
+   * Register an image manually, along with tags
+   * Register an image manually.
+   * @param body Tool to be registered
    * @return DockstoreTool
    */
-  public DockstoreTool registerAndPublishManual (DockstoreTool body) throws ApiException {
+  public DockstoreTool registerManual (DockstoreTool body) throws ApiException {
     Object postBody = body;
     
     // verify the required parameter 'body' is set
     if (body == null) {
-      throw new ApiException(400, "Missing the required parameter 'body' when calling registerAndPublishManual");
+      throw new ApiException(400, "Missing the required parameter 'body' when calling registerManual");
     }
     
     // create path and map variables
-    String path = "/containers/registerAndPublishManual".replaceAll("\\{format\\}","json");
+    String path = "/containers/registerManual".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();
@@ -785,10 +801,10 @@ public class ContainersApi {
    * Publish or unpublish a container
    * publish a container (public or private). Assumes that user is using quay.io and github.
    * @param containerId Tool id to publish
-   * @param body RegisterRequest to refresh the list of repos for a user
+   * @param body PublishRequest to refresh the list of repos for a user
    * @return DockstoreTool
    */
-  public DockstoreTool publish (Long containerId, RegisterRequest body) throws ApiException {
+  public DockstoreTool publish (Long containerId, PublishRequest body) throws ApiException {
     Object postBody = body;
     
     // verify the required parameter 'containerId' is set
