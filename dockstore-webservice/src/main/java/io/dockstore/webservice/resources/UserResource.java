@@ -319,7 +319,7 @@ public class UserResource {
     @ApiOperation(value = "Add a group to a user", response = User.class)
     public User addGroupToUser(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam("User ID of user") @PathParam("userId") long userId,
-            @ApiParam(value = "RegisterRequest to refresh the list of repos for a user", required = true) Group group) {
+            @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) Group group) {
         User authUser = userDAO.findById(authToken.getUserId());
         Helper.checkUser(authUser, userId);
 
@@ -363,9 +363,9 @@ public class UserResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/{userId}/containers/registered")
-    @ApiOperation(value = "List all registered containers from a user", notes = "Get user's registered containers only", response = Tool.class, responseContainer = "List")
-    public List<Tool> userRegisteredContainers(@ApiParam(hidden = true) @Auth Token authToken,
+    @Path("/{userId}/containers/published")
+    @ApiOperation(value = "List all published containers from a user", notes = "Get user's published containers only", response = Tool.class, responseContainer = "List")
+    public List<Tool> userPublishedContainers(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, userId);
@@ -375,7 +375,7 @@ public class UserResource {
         for (Iterator<Tool> iterator = repositories.iterator(); iterator.hasNext();) {
             Tool c = iterator.next();
 
-            if (!c.getIsRegistered()) {
+            if (!c.getIsPublished()) {
                 iterator.remove();
             }
         }

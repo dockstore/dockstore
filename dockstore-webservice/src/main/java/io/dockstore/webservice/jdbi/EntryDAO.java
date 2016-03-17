@@ -60,8 +60,8 @@ public class EntryDAO<T extends Entry> extends AbstractDAO<T> {
         session.evict(entry);
     }
 
-    public T findRegisteredById(long id) {
-        return uniqueResult(namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findRegisteredById").setParameter(
+    public T findPublishedById(long id) {
+        return uniqueResult(namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findPublishedById").setParameter(
                 "id", id));
     }
 
@@ -69,8 +69,8 @@ public class EntryDAO<T extends Entry> extends AbstractDAO<T> {
         return list(namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findAll"));
     }
 
-    public List<T> findAllRegistered() {
-        return list(namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findAllRegistered"));
+    public List<T> findAllPublished() {
+        return list(namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findAllPublished"));
     }
 
     public List<T> searchPattern(String pattern) {

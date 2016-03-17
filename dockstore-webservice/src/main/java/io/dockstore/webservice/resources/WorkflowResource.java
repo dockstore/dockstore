@@ -40,7 +40,7 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Optional;
 
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.api.RegisterRequest;
+import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
 import io.dockstore.webservice.core.Token;
@@ -329,25 +329,25 @@ public class WorkflowResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/registered/{workflowId}")
-    @ApiOperation(value = "Get a registered container", notes = "NO authentication", response = Workflow.class)
-    public Workflow getRegisteredContainer(@ApiParam(value = "Workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
-        Workflow workflow = workflowDAO.findRegisteredById(workflowId);
+    @Path("/published/{workflowId}")
+    @ApiOperation(value = "Get a published container", notes = "NO authentication", response = Workflow.class)
+    public Workflow getPublishedContainer(@ApiParam(value = "Workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
+        Workflow workflow = workflowDAO.findPublishedById(workflowId);
         Helper.checkEntry(workflow);
         return entryVersionHelper.filterContainersForHiddenTags(workflow);
     }
 
-    @POST @Timed @UnitOfWork @Path("/{workflowId}/register") @ApiOperation(value = "Register or unregister a workflow", notes = "Register/publish a container (public or private).", response = Workflow.class) public Workflow register(
+    @POST @Timed @UnitOfWork @Path("/{workflowId}/publish") @ApiOperation(value = "Publish or unpublish a workflow", notes = "Publish/publish a container (public or private).", response = Workflow.class) public Workflow publish(
             @ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "Tool id to register/publish", required = true) @PathParam("workflowId") Long workflowId,
-            @ApiParam(value = "RegisterRequest to refresh the list of repos for a user", required = true) RegisterRequest request) {
+            @ApiParam(value = "Tool id to publish/unpublish", required = true) @PathParam("workflowId") Long workflowId,
+            @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) PublishRequest request) {
         Workflow c = workflowDAO.findById(workflowId);
         Helper.checkEntry(c);
 
         User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
 
-        if (request.getRegister()) {
+        if (request.getPublish()) {
             boolean validTag = false;
             Set<WorkflowVersion> versions = c.getVersions();
             for (WorkflowVersion workflowVersion : versions) {
@@ -358,12 +358,12 @@ public class WorkflowResource {
             }
 
             if (validTag && !c.getGitUrl().isEmpty()) {
-                c.setIsRegistered(true);
+                c.setIsPublished(true);
             } else {
                 throw new CustomWebApplicationException("Repository does not meet requirements to publish.", HttpStatus.SC_BAD_REQUEST);
             }
         } else {
-            c.setIsRegistered(false);
+            c.setIsPublished(false);
         }
 
         long id = workflowDAO.create(c);
@@ -374,10 +374,10 @@ public class WorkflowResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("registered")
-    @ApiOperation(value = "List all registered containers.", tags = { "workflows" }, notes = "NO authentication", response = Workflow.class, responseContainer = "List")
-    public List<Workflow> allRegisteredContainers() {
-        List<Workflow> tools = workflowDAO.findAllRegistered();
+    @Path("published")
+    @ApiOperation(value = "List all published containers.", tags = { "workflows" }, notes = "NO authentication", response = Workflow.class, responseContainer = "List")
+    public List<Workflow> allPublishedContainers() {
+        List<Workflow> tools = workflowDAO.findAllPublished();
         entryVersionHelper.filterContainersForHiddenTags(tools);
         return tools;
     }
@@ -400,11 +400,11 @@ public class WorkflowResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/path/workflow/{repository}/registered")
+    @Path("/path/workflow/{repository}/published")
     @ApiOperation(value = "Get a workflow by path", notes = "Lists info of workflow. Enter full path.", response = Workflow.class)
-    public Workflow getRegisteredContainerByToolPath(
+    public Workflow getPublishedContainerByToolPath(
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
-        Workflow workflow = workflowDAO.findRegisteredByPath(path);
+        Workflow workflow = workflowDAO.findPublishedByPath(path);
         Helper.checkEntry(workflow);
         return workflow;
     }
@@ -415,7 +415,7 @@ public class WorkflowResource {
     @Timed
     @UnitOfWork
     @Path("/search")
-    @ApiOperation(value = "Search for matching registered containers."
+    @ApiOperation(value = "Search for matching published containers."
             , notes = "Search on the name (full path name) and description. NO authentication", response = Workflow.class, responseContainer = "List", tags = {
             "containers" })
     public List<Workflow> search(@QueryParam("pattern") String word) {
@@ -426,7 +426,7 @@ public class WorkflowResource {
     @Timed
     @UnitOfWork
     @Path("/versions")
-    @ApiOperation(value = "List the versions for a registered workflow", response = WorkflowVersion.class, responseContainer = "List", hidden = true)
+    @ApiOperation(value = "List the versions for a published workflow", response = WorkflowVersion.class, responseContainer = "List", hidden = true)
     public List<WorkflowVersion> tags(@ApiParam(hidden = true) @Auth Token authToken, @QueryParam("workflowId") long workflowId) {
         Workflow repository = workflowDAO.findById(workflowId);
         Helper.checkEntry(repository);

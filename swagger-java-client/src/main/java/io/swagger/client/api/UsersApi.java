@@ -1,3 +1,19 @@
+/*
+ *    Copyright 2016 OICR
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
 package io.swagger.client.api;
 
 import io.swagger.client.ApiException;
@@ -13,7 +29,7 @@ import io.swagger.client.model.Token;
 
 import java.util.*;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-16T12:02:55.364-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-17T14:12:33.169-04:00")
 public class UsersApi {
   private ApiClient apiClient;
 
@@ -572,21 +588,21 @@ public class UsersApi {
   }
   
   /**
-   * Refresh repos owned by the logged-in user
-   * Updates some metadata
+   * List all published containers from a user
+   * Get user&#39;s published containers only
    * @param userId User ID
    * @return List<DockstoreTool>
    */
-  public List<DockstoreTool> refresh (Long userId) throws ApiException {
+  public List<DockstoreTool> userPublishedContainers (Long userId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'userId' is set
     if (userId == null) {
-      throw new ApiException(400, "Missing the required parameter 'userId' when calling refresh");
+      throw new ApiException(400, "Missing the required parameter 'userId' when calling userPublishedContainers");
     }
     
     // create path and map variables
-    String path = "/users/{userId}/containers/refresh".replaceAll("\\{format\\}","json")
+    String path = "/users/{userId}/containers/published".replaceAll("\\{format\\}","json")
       .replaceAll("\\{" + "userId" + "\\}", apiClient.escapeString(userId.toString()));
 
     // query params
@@ -619,21 +635,21 @@ public class UsersApi {
   }
   
   /**
-   * List all registered containers from a user
-   * Get user&#39;s registered containers only
+   * Refresh repos owned by the logged-in user
+   * Updates some metadata
    * @param userId User ID
    * @return List<DockstoreTool>
    */
-  public List<DockstoreTool> userRegisteredContainers (Long userId) throws ApiException {
+  public List<DockstoreTool> refresh (Long userId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'userId' is set
     if (userId == null) {
-      throw new ApiException(400, "Missing the required parameter 'userId' when calling userRegisteredContainers");
+      throw new ApiException(400, "Missing the required parameter 'userId' when calling refresh");
     }
     
     // create path and map variables
-    String path = "/users/{userId}/containers/registered".replaceAll("\\{format\\}","json")
+    String path = "/users/{userId}/containers/refresh".replaceAll("\\{format\\}","json")
       .replaceAll("\\{" + "userId" + "\\}", apiClient.escapeString(userId.toString()));
 
     // query params
@@ -716,7 +732,7 @@ public class UsersApi {
    * Add a group to a user
    * 
    * @param userId User ID of user
-   * @param body RegisterRequest to refresh the list of repos for a user
+   * @param body PublishRequest to refresh the list of repos for a user
    * @return User
    */
   public User addGroupToUser (Long userId, Group body) throws ApiException {

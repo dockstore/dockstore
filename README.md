@@ -197,6 +197,15 @@ To dump a new copy of the encrypted database from one that you have setup, use t
     pg_dump --data-only --column-inserts   webservice_test &> dockstore-integration-testing/src/test/resources/db_confidential_dump_full.sql
 
 
+## Adding Copyright header to all files with IntelliJ
+
+To add copyright headers to all files with IntelliJ
+
+1. Ensure the Copyright plugin is installed (Settings -> Plugins)
+2. Create a new copyright profile matching existing copyright header found on all files, name it Dockstore (Settings -> Copyright -> Copyright Profiles -> Add New)
+3. Set the default project copyright to Dockstore (Settings -> Copyright)
+
+
 ## TODO
 
 1. items from Brian

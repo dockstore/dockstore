@@ -55,15 +55,15 @@ import io.swagger.annotations.ApiModelProperty;
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = { "registry", "namespace", "name", "toolname" }))
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByNameAndNamespaceAndRegistry", query = "SELECT c FROM Tool c WHERE c.name = :name AND c.namespace = :namespace AND c.registry = :registry"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findRegisteredById", query = "SELECT c FROM Tool c WHERE c.id = :id AND c.isRegistered = true"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findAllRegistered", query = "SELECT c FROM Tool c WHERE c.isRegistered = true"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedById", query = "SELECT c FROM Tool c WHERE c.id = :id AND c.isPublished = true"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findAllPublished", query = "SELECT c FROM Tool c WHERE c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findAll", query = "SELECT c FROM Tool c"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByPath", query = "SELECT c FROM Tool c WHERE c.path = :path"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByToolPath", query = "SELECT c FROM Tool c WHERE c.path = :path AND c.toolname = :toolname"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findRegisteredByToolPath", query = "SELECT c FROM Tool c WHERE c.path = :path AND c.toolname = :toolname AND c.isRegistered = true"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByToolPath", query = "SELECT c FROM Tool c WHERE c.path = :path AND c.toolname = :toolname AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByMode", query = "SELECT c FROM Tool c WHERE c.mode = :mode"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findRegisteredByPath", query = "SELECT c FROM Tool c WHERE c.path = :path AND c.isRegistered = true"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.searchPattern", query = "SELECT c FROM Tool c WHERE ((c.path LIKE :pattern) OR (c.registry LIKE :pattern) OR (c.description LIKE :pattern)) AND c.isRegistered = true") })
+        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByPath", query = "SELECT c FROM Tool c WHERE c.path = :path AND c.isPublished = true"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Tool.searchPattern", query = "SELECT c FROM Tool c WHERE ((c.path LIKE :pattern) OR (c.registry LIKE :pattern) OR (c.description LIKE :pattern)) AND c.isPublished = true") })
 public class Tool extends Entry<Tool, Tag> {
 
     @Column(nullable = false, columnDefinition = "Text default 'AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS'")

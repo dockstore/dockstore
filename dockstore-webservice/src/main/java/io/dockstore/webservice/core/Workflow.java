@@ -51,13 +51,13 @@ import io.swagger.annotations.ApiModelProperty;
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = { "organization", "repository", "workflowName" }))
 @NamedQueries({
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findRegisteredById", query = "SELECT c FROM Workflow c WHERE c.id = :id AND c.isRegistered = true"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findAllRegistered", query = "SELECT c FROM Workflow c WHERE c.isRegistered = true"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedById", query = "SELECT c FROM Workflow c WHERE c.id = :id AND c.isPublished = true"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findAllPublished", query = "SELECT c FROM Workflow c WHERE c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findAll", query = "SELECT c FROM Workflow c"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByPath", query = "SELECT c FROM Workflow c WHERE c.path = :path"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findRegisteredByPath", query = "SELECT c FROM Workflow c WHERE c.path = :path AND c.isRegistered = true"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByPath", query = "SELECT c FROM Workflow c WHERE c.path = :path AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByGitUrl", query = "SELECT c FROM Workflow c WHERE c.gitUrl = :gitUrl"),
-                  @NamedQuery(name = "io.dockstore.webservice.core.Workflow.searchPattern", query = "SELECT c FROM Workflow c WHERE ((c.defaultWorkflowPath LIKE :pattern) OR (c.description LIKE :pattern)) AND c.isRegistered = true") })
+                  @NamedQuery(name = "io.dockstore.webservice.core.Workflow.searchPattern", query = "SELECT c FROM Workflow c WHERE ((c.defaultWorkflowPath LIKE :pattern) OR (c.description LIKE :pattern)) AND c.isPublished = true") })
 @DiscriminatorValue("workflow")
 public class Workflow extends Entry<Workflow, WorkflowVersion> {
 

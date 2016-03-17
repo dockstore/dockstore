@@ -65,7 +65,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     @Override
     public Response toolsRegistryIdGet(String id, SecurityContext securityContext) throws NotFoundException {
         ParsedRegistryID parsedID = new ParsedRegistryID(id);
-        Tool tool = toolDAO.findRegisteredByToolPath(parsedID.getPath(),parsedID.getToolName());
+        Tool tool = toolDAO.findPublishedByToolPath(parsedID.getPath(),parsedID.getToolName());
         return buildToolResponse(tool, null);
     }
 
@@ -74,7 +74,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         if (container == null) {
             response = Response.status(Response.Status.NOT_FOUND).build();
         }
-        else if (!container.getIsRegistered()){
+        else if (!container.getIsPublished()){
             // check whether this is registered
             response = Response.status(Response.Status.UNAUTHORIZED).build();
         } else {
@@ -104,7 +104,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
-        Tool tool = toolDAO.findRegisteredByToolPath(parsedID.getPath(),parsedID.getToolName());
+        Tool tool = toolDAO.findPublishedByToolPath(parsedID.getPath(),parsedID.getToolName());
         return buildToolResponse(tool, versionId);
     }
 
@@ -128,7 +128,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     @Override
     public Response toolsGet(String registryId, String registry, String organization, String name, String toolname, String description,
             String author, SecurityContext securityContext) throws NotFoundException {
-        final List<Tool> all = toolDAO.findAllRegistered();
+        final List<Tool> all = toolDAO.findAllPublished();
         List<io.swagger.model.Tool> results = new ArrayList<>();
         for (Tool c : all) {
             // check each criteria. This sucks. Can we do this better with reflection? Or should we pre-convert?
@@ -272,9 +272,9 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
-        Tool tool = toolDAO.findRegisteredByToolPath(parsedID.getPath(),parsedID.getToolName());
+        Tool tool = toolDAO.findPublishedByToolPath(parsedID.getPath(),parsedID.getToolName());
         // check whether this is registered
-        if (!tool.getIsRegistered()){
+        if (!tool.getIsPublished()){
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
         // convert our toolName model to that expected

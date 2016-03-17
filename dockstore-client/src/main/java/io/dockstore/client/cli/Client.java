@@ -85,7 +85,7 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.Body;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.Metadata;
-import io.swagger.client.model.RegisterRequest;
+import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.DockstoreTool;
@@ -317,11 +317,11 @@ public class Client {
                 }
             }
 
-            out(format, container.getToolPath(), description, gitUrl, boolWord(container.getIsRegistered()), descriptor, automated);
+            out(format, container.getToolPath(), description, gitUrl, boolWord(container.getIsPublished()), descriptor, automated);
         }
     }
 
-    private static void printRegisteredList(List<DockstoreTool> containers) {
+    private static void printPublishedList(List<DockstoreTool> containers) {
         Collections.sort(containers, new ContainerComparator());
 
         int[] maxWidths = columnWidths(containers);
@@ -359,8 +359,8 @@ public class Client {
                 throw new RuntimeException("User not found");
             }
             // List<Container> containers = containersApi.allRegisteredContainers();
-            List<DockstoreTool> containers = usersApi.userRegisteredContainers(user.getId());
-            printRegisteredList(containers);
+            List<DockstoreTool> containers = usersApi.userPublishedContainers(user.getId());
+            printPublishedList(containers);
         } catch (ApiException ex) {
             kill("Exception: " + ex);
         }
@@ -422,9 +422,9 @@ public class Client {
                     String second = args.get(1);
                     try {
                         DockstoreTool container = containersApi.getContainerByToolPath(second);
-                        RegisterRequest req = new RegisterRequest();
-                        req.setRegister(false);
-                        container = containersApi.register(container.getId(), req);
+                        PublishRequest pub = new PublishRequest();
+                        pub.setPublish(false);
+                        container = containersApi.publish(container.getId(), pub);
 
                         if (container != null) {
                             out("Successfully unpublished " + second);
@@ -439,9 +439,9 @@ public class Client {
                 if (args.size() == 1) {
                     try {
                         DockstoreTool container = containersApi.getContainerByToolPath(first);
-                        RegisterRequest req = new RegisterRequest();
-                        req.setRegister(true);
-                        container = containersApi.register(container.getId(), req);
+                        PublishRequest pub = new PublishRequest();
+                        pub.setPublish(true);
+                        container = containersApi.publish(container.getId(), pub);
 
                         if (container != null) {
                             out("Successfully published " + first);
@@ -465,8 +465,7 @@ public class Client {
                         newContainer.setDefaultDockerfilePath(container.getDefaultDockerfilePath());
                         newContainer.setDefaultCwlPath(container.getDefaultCwlPath());
                         newContainer.setDefaultWdlPath(container.getDefaultWdlPath());
-                        newContainer.setIsPublic(container.getIsPublic());
-                        newContainer.setIsRegistered(container.getIsRegistered());
+                        newContainer.setIsPublished(container.getIsPublished());
                         newContainer.setGitUrl(container.getGitUrl());
                         newContainer.setPath(container.getPath());
                         newContainer.setToolname(toolname);
@@ -528,8 +527,7 @@ public class Client {
             container.setDefaultDockerfilePath(dockerfilePath);
             container.setDefaultCwlPath(cwlPath);
             container.setDefaultWdlPath(wdlPath);
-            container.setIsPublic(true);
-            container.setIsRegistered(true);
+            container.setIsPublished(false);
             container.setGitUrl(gitURL);
             container.setToolname(toolname);
             container.setPath(Joiner.on("/").skipNulls().join(registry, namespace, name));
@@ -545,17 +543,35 @@ public class Client {
                 container.getTags().add(tag);
             }
 
+            // Register new tool
             final String fullName = Joiner.on("/").skipNulls().join(registry, namespace, name, toolname);
             try {
                 container = containersApi.registerManual(container);
                 if (container != null) {
                     containersApi.refresh(container.getId());
-                    out("Successfully published " + fullName);
                 } else {
-                    kill("Unable to publish " + fullName);
+                    kill("Unable to register " + fullName);
                 }
             } catch (final ApiException ex) {
-                kill("Unable to publish " + fullName);
+                kill("Unable to register " + fullName);
+            }
+
+
+            // If registration is successful then attempt to publish it
+            if (container != null) {
+                PublishRequest pub = new PublishRequest();
+                pub.setPublish(true);
+                DockstoreTool publishedTool = null;
+                try {
+                    publishedTool = containersApi.publish(container.getId(), pub);
+                    if (publishedTool.getIsPublished()) {
+                        out("Successfully published " + fullName);
+                    } else {
+                        out("Successfully registered " + fullName + ", however it is not valid to publish.");
+                    }
+                } catch (ApiException e) {
+                    out("Successfully registered " + fullName + ", however it is not valid to publish.");
+                }
             }
         }
     }
@@ -918,11 +934,11 @@ public class Client {
         out("");
         out("dockstore publish                          :  lists the current and potential containers to share");
         out("");
-        out("dockstore publish <container>              :  registers that container for use by others in the dockstore");
+        out("dockstore publish <container>              :  publishes given container for use by others in the dockstore");
         out("");
-        out("dockstore publish <container> <toolname>   :  registers that container for use by others in the dockstore under a specific toolname");
+        out("dockstore publish <container> <toolname>   :  publishes given container for use by others in the dockstore under a specific toolname");
         out("");
-        out("dockstore publish --unpub <toolname_path>   :  unregisters that container from use by others in the dockstore under a specific toolname");
+        out("dockstore publish --unpub <toolname_path>  :  unpublishes given container from use by others in the dockstore under a specific toolname");
         out("------------------");
         out("");
     }
@@ -947,9 +963,9 @@ public class Client {
 
         String path = args.get(0);
         try {
-            DockstoreTool container = containersApi.getRegisteredContainerByToolPath(path);
-            if (container == null || !container.getIsRegistered()) {
-                kill("This container is not registered.");
+            DockstoreTool container = containersApi.getPublishedContainerByToolPath(path);
+            if (container == null || !container.getIsPublished()) {
+                kill("This container is not published.");
             } else {
 
                 Date dateUploaded = container.getLastBuild();
@@ -998,7 +1014,7 @@ public class Client {
             }
         } catch (ApiException ex) {
             // if (ex.getCode() == BAD_REQUEST) {
-            // out("This container is not registered.");
+            // out("This container is not published.");
             // } else {
             // out("Exception: " + ex);
             // }
@@ -1043,7 +1059,7 @@ public class Client {
         String tag = (parts.length > 1) ? parts[1] : null;
         SourceFile file = new SourceFile();
         // simply getting published descriptors does not require permissions
-        DockstoreTool container = containersApi.getRegisteredContainerByToolPath(path);
+        DockstoreTool container = containersApi.getPublishedContainerByToolPath(path);
         if (container.getValidTrigger()) {
             try {
                 if (descriptorType.equals(CWL)) {
@@ -1625,13 +1641,13 @@ public class Client {
         out("");
         out("Possible sub-commands include:");
         out("");
-        out("  list             :  lists all the containers registered by the user ");
+        out("  list             :  lists all the containers published by the user ");
         out("");
         out("  search <pattern> :  allows a user to search for all containers that match the criteria");
         out("");
-        out("  publish          :  register/unregister a container in the dockstore");
+        out("  publish          :  publish/unpublish a container in the dockstore");
         out("");
-        out("  manual_publish   :  register a Docker Hub container in the dockstore");
+        out("  manual_publish   :  registers a Docker Hub container in the dockstore");
         out("");
         out("  info <container> :  print detailed information about a particular public container");
         out("");

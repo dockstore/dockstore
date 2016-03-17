@@ -1,3 +1,19 @@
+/*
+ *    Copyright 2016 OICR
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
 package io.swagger.client.model;
 
 import io.swagger.client.StringUtil;
@@ -17,7 +33,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be\n * associated with CWL and Dockerfile documents
  **/
 @ApiModel(description = "This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be\n * associated with CWL and Dockerfile documents")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-16T12:02:55.364-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-17T14:12:33.169-04:00")
 public class DockstoreTool   {
   
   private Long id = null;
@@ -71,10 +87,8 @@ public enum RegistryEnum {
   private Date lastBuild = null;
   private Boolean validTrigger = null;
   private List<Tag> tags = new ArrayList<Tag>();
-  private Boolean isStarred = null;
-  private Boolean isPublic = null;
+  private Boolean isPublished = null;
   private Integer lastModified = null;
-  private Boolean isRegistered = null;
   private String defaultDockerfilePath = null;
   private String defaultCwlPath = null;
   private String defaultWdlPath = null;
@@ -291,28 +305,15 @@ public enum RegistryEnum {
 
   
   /**
-   * Implementation specific hook for social starring in this web service
-   **/
-  @ApiModelProperty(value = "Implementation specific hook for social starring in this web service")
-  @JsonProperty("is_starred")
-  public Boolean getIsStarred() {
-    return isStarred;
-  }
-  public void setIsStarred(Boolean isStarred) {
-    this.isStarred = isStarred;
-  }
-
-  
-  /**
    * Implementation specific visibility in this web service
    **/
   @ApiModelProperty(value = "Implementation specific visibility in this web service")
-  @JsonProperty("is_public")
-  public Boolean getIsPublic() {
-    return isPublic;
+  @JsonProperty("is_published")
+  public Boolean getIsPublished() {
+    return isPublished;
   }
-  public void setIsPublic(Boolean isPublic) {
-    this.isPublic = isPublic;
+  public void setIsPublished(Boolean isPublished) {
+    this.isPublished = isPublished;
   }
 
   
@@ -326,19 +327,6 @@ public enum RegistryEnum {
   }
   public void setLastModified(Integer lastModified) {
     this.lastModified = lastModified;
-  }
-
-  
-  /**
-   * Implementation specific indication as to whether this is properly registered with this web service
-   **/
-  @ApiModelProperty(value = "Implementation specific indication as to whether this is properly registered with this web service")
-  @JsonProperty("is_registered")
-  public Boolean getIsRegistered() {
-    return isRegistered;
-  }
-  public void setIsRegistered(Boolean isRegistered) {
-    this.isRegistered = isRegistered;
   }
 
   
@@ -428,10 +416,8 @@ public enum RegistryEnum {
     sb.append("    lastBuild: ").append(StringUtil.toIndentedString(lastBuild)).append("\n");
     sb.append("    validTrigger: ").append(StringUtil.toIndentedString(validTrigger)).append("\n");
     sb.append("    tags: ").append(StringUtil.toIndentedString(tags)).append("\n");
-    sb.append("    isStarred: ").append(StringUtil.toIndentedString(isStarred)).append("\n");
-    sb.append("    isPublic: ").append(StringUtil.toIndentedString(isPublic)).append("\n");
+    sb.append("    isPublished: ").append(StringUtil.toIndentedString(isPublished)).append("\n");
     sb.append("    lastModified: ").append(StringUtil.toIndentedString(lastModified)).append("\n");
-    sb.append("    isRegistered: ").append(StringUtil.toIndentedString(isRegistered)).append("\n");
     sb.append("    defaultDockerfilePath: ").append(StringUtil.toIndentedString(defaultDockerfilePath)).append("\n");
     sb.append("    defaultCwlPath: ").append(StringUtil.toIndentedString(defaultCwlPath)).append("\n");
     sb.append("    defaultWdlPath: ").append(StringUtil.toIndentedString(defaultWdlPath)).append("\n");

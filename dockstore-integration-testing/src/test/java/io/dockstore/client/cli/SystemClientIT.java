@@ -27,6 +27,7 @@ import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.io.Resources;
@@ -46,7 +47,7 @@ import io.swagger.client.api.GAGHApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Group;
-import io.swagger.client.model.RegisterRequest;
+import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Token;
@@ -137,7 +138,7 @@ public class SystemClientIT {
     public void testFailedContainerRegistration() throws ApiException, IOException, TimeoutException {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
-        List<DockstoreTool> containers = containersApi.allRegisteredContainers();
+        List<DockstoreTool> containers = containersApi.allPublishedContainers();
 
         assertTrue(containers.size() == 1);
 
@@ -148,14 +149,14 @@ public class SystemClientIT {
         assertTrue(containers.size() == 5);
 
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
-        assertFalse(container.getIsRegistered());
+        assertFalse(container.getIsPublished());
 
         long containerId = container.getId();
 
-        RegisterRequest req = new RegisterRequest();
-        req.setRegister(true);
+        PublishRequest pub = new PublishRequest();
+        pub.setPublish(true);
 
-        containersApi.register(containerId, req);
+        containersApi.publish(containerId, pub);
     }
 
     @Test
@@ -177,8 +178,7 @@ public class SystemClientIT {
         c.setDefaultDockerfilePath("/Dockerfile");
         c.setDefaultCwlPath("/Dockstore.cwl");
         c.setRegistry(DockstoreTool.RegistryEnum.DOCKER_HUB);
-        c.setIsRegistered(true);
-        c.setIsPublic(true);
+        c.setIsPublished(true);
         c.setValidTrigger(true);
         c.setNamespace("seqware");
         c.setToolname("test5");
@@ -273,11 +273,12 @@ public class SystemClientIT {
         assertTrue(cwl.getDescriptor().contains("cwlstuff"));
     }
 
-    @Test
+    // Can't test publish repos that don't exist
+    @Ignore
     public void testContainerRegistration() throws ApiException, IOException, TimeoutException {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
-        List<DockstoreTool> containers = containersApi.allRegisteredContainers();
+        List<DockstoreTool> containers = containersApi.allPublishedContainers();
 
         assertTrue(containers.size() == 1);
 
@@ -288,23 +289,23 @@ public class SystemClientIT {
         assertTrue(containers.size() == 5);
 
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test5");
-        assertFalse(container.getIsRegistered());
+        assertFalse(container.getIsPublished());
 
         long containerId = container.getId();
 
-        RegisterRequest req = new RegisterRequest();
-        req.setRegister(true);
+        PublishRequest pub = new PublishRequest();
+        pub.setPublish(true);
 
-        container = containersApi.register(containerId, req);
-        assertTrue(container.getIsRegistered());
+        container = containersApi.publish(containerId, pub);
+        assertTrue(container.getIsPublished());
 
-        containers = containersApi.allRegisteredContainers();
+        containers = containersApi.allPublishedContainers();
         assertTrue(containers.size() == 2);
 
-        req.setRegister(false);
+        pub.setPublish(false);
 
-        container = containersApi.register(containerId, req);
-        assertFalse(container.getIsRegistered());
+        container = containersApi.publish(containerId, pub);
+        assertFalse(container.getIsPublished());
     }
 
     @Test
@@ -334,7 +335,7 @@ public class SystemClientIT {
 
         ApiClient muggleClient = getWebClient();
         ContainersApi muggleContainersApi = new ContainersApi(muggleClient);
-        final DockstoreTool registeredContainer = muggleContainersApi.getRegisteredContainer(c.getId());
+        final DockstoreTool registeredContainer = muggleContainersApi.getPublishedContainer(c.getId());
         assertTrue("should see no tags as a regular user, saw " + registeredContainer.getTags().size(), registeredContainer.getTags().size() == 0);
     }
 

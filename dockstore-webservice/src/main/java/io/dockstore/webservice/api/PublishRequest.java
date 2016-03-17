@@ -14,29 +14,30 @@
  *    limitations under the License.
  */
 
-package io.swagger.client.model;
+package io.dockstore.webservice.api;
 
-import io.swagger.client.StringUtil;
-
-
-
-import io.swagger.annotations.*;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.annotations.ApiModel;
 
+/**
+ * This is an object to encapsulate a publish request in an entity. Does not need to be stored in the database. Used for the body of
+ * /containers/{containerId}/publish
+ *
+ * @author xliu
+ */
+@ApiModel("PublishRequest")
+public class PublishRequest {
+    private boolean publish;
 
-@ApiModel(description = "")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-17T14:12:33.169-04:00")
-public class Body   {
-  
+    public PublishRequest() {
+    }
 
-  
+    public PublishRequest(boolean publish) {
+        this.publish = publish;
+    }
 
-  @Override
-  public String toString()  {
-    StringBuilder sb = new StringBuilder();
-    sb.append("class Body {\n");
-    
-    sb.append("}");
-    return sb.toString();
-  }
+    @JsonProperty
+    public boolean getPublish() {
+        return publish;
+    }
 }
