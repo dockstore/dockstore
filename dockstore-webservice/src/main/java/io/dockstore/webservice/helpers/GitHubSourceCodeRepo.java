@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,9 +37,12 @@ import org.eclipse.egit.github.core.service.RepositoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Optional;
+
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import wdl4s.NamespaceWithWorkflow;
 
@@ -171,7 +175,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public Workflow getNewWorkflow(String repositoryId) {
+    public Workflow getNewWorkflow(String repositoryId, Optional<Workflow> existingWorkflow) {
         //TODO: need to add pass-through when paths are custom
         RepositoryId id = RepositoryId.createFromId(repositoryId);
         try {
@@ -181,7 +185,27 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             workflow.setOrganization(repository.getOwner().getLogin());
             workflow.setRepository(repository.getName());
             workflow.setGitUrl(repository.getGitUrl());
-            // look for versions and check each version for valid workflows
+            workflow.setLastUpdated(new Date());
+            // make sure path is constructed
+            workflow.setPath(workflow.getPath());
+
+            if (!existingWorkflow.isPresent()){
+                // when there is no existing workflow at all, just return a stub workflow
+                return workflow;
+            }
+            if (existingWorkflow.get().getMode() == WorkflowMode.STUB){
+                // when there is an existing stub workflow, just return the new stub as well
+                return workflow;
+            }
+            workflow.setMode(WorkflowMode.FULL);
+
+            // if it exists, extract paths from the previous workflow entry
+            Map<String, String> existingDefaults = new HashMap<>();
+            if (existingWorkflow.isPresent()){
+                existingWorkflow.get().getWorkflowVersions().forEach(existingVersion -> existingDefaults.put(existingVersion.getReference(), existingVersion.getWorkflowPath()));
+            }
+
+            // when getting a full workflow, look for versions and check each version for valid workflows
             List<String> references = new ArrayList<>();
             service.getBranches(id).forEach(branch -> references.add(branch.getName()));
             service.getTags(id).forEach(tag -> references.add(tag.getName()));
@@ -191,42 +215,46 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 version.setName(ref);
                 version.setReference(ref);
                 version.setValid(false);
-                version.setWorkflowPath(workflow.getDefaultWorkflowPath());
-                // look for workflow file
-                try {
-                    final List<RepositoryContents> cwlContents = cService.getContents(id, workflow.getDefaultWorkflowPath(), ref);
-                    if (cwlContents != null && cwlContents.size() > 0) {
-                        String content = extractGitHubContents(cwlContents);
-                        if (content.contains("class: Workflow")) {
-                            // if we have a valid workflow document
-                            SourceFile file = new SourceFile();
-                            file.setType(SourceFile.FileType.DOCKSTORE_CWL);
-                            file.setContent(content);
-                            version.getSourceFiles().add(file);
-                        }
-                    }
-                } catch (Exception ex) {
-                    LOG.info(workflow.getDefaultWorkflowPath() + " on " + ref + " was not valid CWL workflow");
-                }
-                String defaultPath = workflow.getDefaultWorkflowPath();
-                //TODO: this won't work if the default is WDL
-                defaultPath = defaultPath.subSequence(0, defaultPath.lastIndexOf(".cwl")) + ".wdl";
-                try {
-                    final List<RepositoryContents> wdlContents = cService.getContents(id, defaultPath, ref);
-                    if (wdlContents != null && wdlContents.size() > 0) {
-                        String content = extractGitHubContents(wdlContents);
+                // determine workflow version from previous
+                String calculatedPath = existingDefaults.getOrDefault(ref, existingWorkflow.get().getDefaultWorkflowPath());
+                version.setWorkflowPath(calculatedPath);
 
-                        final NamespaceWithWorkflow nameSpaceWithWorkflow = NamespaceWithWorkflow.load(content);
-                        if (nameSpaceWithWorkflow != null) {
-                            // if we have a valid workflow document
-                            SourceFile file = new SourceFile();
-                            file.setType(SourceFile.FileType.DOCKSTORE_WDL);
-                            file.setContent(content);
-                            version.getSourceFiles().add(file);
+                //TODO: is there a case-insensitive endsWith?
+                if (calculatedPath.endsWith(".cwl") || calculatedPath.endsWith(".CWL")) {
+                    // look for workflow file
+                    try {
+                        final List<RepositoryContents> cwlContents = cService.getContents(id, calculatedPath, ref);
+                        if (cwlContents != null && cwlContents.size() > 0) {
+                            String content = extractGitHubContents(cwlContents);
+                            if (content.contains("class: Workflow")) {
+                                // if we have a valid workflow document
+                                SourceFile file = new SourceFile();
+                                file.setType(SourceFile.FileType.DOCKSTORE_CWL);
+                                file.setContent(content);
+                                version.getSourceFiles().add(file);
+                            }
                         }
+                    } catch (Exception ex) {
+                        LOG.info(workflow.getDefaultWorkflowPath() + " on " + ref + " was not valid CWL workflow");
                     }
-                } catch (Exception ex) {
-                    LOG.info(defaultPath + " on " + ref + " was not valid WDL workflow");
+                } else {
+                    try {
+                        final List<RepositoryContents> wdlContents = cService.getContents(id, calculatedPath, ref);
+                        if (wdlContents != null && wdlContents.size() > 0) {
+                            String content = extractGitHubContents(wdlContents);
+
+                            final NamespaceWithWorkflow nameSpaceWithWorkflow = NamespaceWithWorkflow.load(content);
+                            if (nameSpaceWithWorkflow != null) {
+                                // if we have a valid workflow document
+                                SourceFile file = new SourceFile();
+                                file.setType(SourceFile.FileType.DOCKSTORE_WDL);
+                                file.setContent(content);
+                                version.getSourceFiles().add(file);
+                            }
+                        }
+                    } catch (Exception ex) {
+                        LOG.info(calculatedPath + " on " + ref + " was not valid WDL workflow");
+                    }
                 }
                 if (version.getSourceFiles().size() > 0) {
                     version.setValid(true);

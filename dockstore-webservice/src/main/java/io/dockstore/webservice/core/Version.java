@@ -66,7 +66,7 @@ public abstract class Version<T extends Version> implements Comparable<T>{
     private String reference;
 
 
-    @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
+    @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "version_sourcefile", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "sourcefileid", referencedColumnName = "id"))
     @ApiModelProperty("Cached files for each version. Includes Dockerfile and Descriptor files")
     private final Set<SourceFile> sourceFiles;
@@ -93,6 +93,7 @@ public abstract class Version<T extends Version> implements Comparable<T>{
     }
 
     public void update(T version) {
+        valid = version.isValid();
         lastModified = version.getLastModified();
         name = version.getName();
     }
@@ -163,25 +164,30 @@ public abstract class Version<T extends Version> implements Comparable<T>{
         this.name = name;
     }
 
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
         return Objects.hash(id, lastModified, reference, hidden, valid, name);
     }
 
-    @Override public boolean equals(Object obj) {
-        if (this == obj) {return true;}
-        if (obj == null || getClass() != obj.getClass()) {return false;}
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
         final Version other = (Version) obj;
-        return Objects.equals(this.id, other.id) && Objects.equals(this.lastModified, other.lastModified) && Objects.equals(this.reference,
-            other.reference) && Objects.equals(this.hidden, other.hidden) && Objects.equals(this.valid, other.valid) && Objects.equals(
-            this.name, other.name);
+        return Objects.equals(this.id, other.id) && Objects.equals(this.lastModified, other.lastModified)
+                && Objects.equals(this.reference, other.reference) && Objects.equals(this.hidden, other.hidden)
+                && Objects.equals(this.valid, other.valid) && Objects.equals(this.name, other.name);
     }
 
-    @Override public int compareTo(T that) {
-        return ComparisonChain.start()
-                   .compare(this.id, that.getId(), Ordering.natural().nullsLast())
-                   .compare(this.lastModified, that.getLastModified(), Ordering.natural().nullsLast())
-                   .compare(this.reference, that.getReference(), Ordering.natural().nullsLast())
-                   .compare(this.name, that.getName(), Ordering.natural().nullsLast())
-                   .result();
+    @Override
+    public int compareTo(T that) {
+        return ComparisonChain.start().compare(this.id, that.getId(), Ordering.natural().nullsLast())
+                .compare(this.lastModified, that.getLastModified(), Ordering.natural().nullsLast())
+                .compare(this.reference, that.getReference(), Ordering.natural().nullsLast())
+                .compare(this.name, that.getName(), Ordering.natural().nullsLast()).result();
     }
 }

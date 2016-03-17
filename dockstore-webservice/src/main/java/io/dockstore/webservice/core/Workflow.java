@@ -23,6 +23,8 @@ import java.util.TreeSet;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
@@ -58,6 +60,11 @@ import io.swagger.annotations.ApiModelProperty;
                   @NamedQuery(name = "io.dockstore.webservice.core.Workflow.searchPattern", query = "SELECT c FROM Workflow c WHERE ((c.defaultWorkflowPath LIKE :pattern) OR (c.description LIKE :pattern)) AND c.isRegistered = true") })
 @DiscriminatorValue("workflow")
 public class Workflow extends Entry<Workflow, WorkflowVersion> {
+
+    @Column(nullable = false, columnDefinition = "Text default 'STUB'")
+    @Enumerated(EnumType.STRING)
+    @ApiModelProperty(value = "This indicates what mode this is in which informs how we do things like refresh, dockstore specific", required = true)
+    private WorkflowMode mode = WorkflowMode.STUB;
 
     @Column(columnDefinition = "text")
     @ApiModelProperty(value = "This is the name of the workflow, not needed when only one workflow in a repo", required = false)
@@ -108,9 +115,19 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
      */
     public void update(Workflow workflow) {
         super.update(workflow);
+        this.setMode(workflow.getMode());
         this.setWorkflowName(workflow.getWorkflowName());
+        this.setPath(workflow.getPath());
     }
 
+    @JsonProperty
+    public WorkflowMode getMode() {
+        return mode;
+    }
+
+    public void setMode(WorkflowMode mode) {
+        this.mode = mode;
+    }
 
     @JsonProperty
     public String getWorkflowName() {

@@ -37,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.codahale.metrics.annotation.Timed;
+import com.google.common.base.Optional;
 
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.RegisterRequest;
@@ -44,9 +45,9 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
-import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.EntryLabelHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
@@ -121,7 +122,8 @@ public class WorkflowResource {
         for (User user : users) {
             try {
                 List<Token> tokens = checkOnBitbucketToken(user);
-                Token bitbucketToken = Helper.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
+                // TODO: do this for bitbucket as well as for github
+                // Token bitbucketToken = Helper.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
                 Token githubToken = Helper.extractToken(tokens, TokenType.GITHUB_COM.toString());
 
 
@@ -132,7 +134,6 @@ public class WorkflowResource {
                     continue;
                 }
                 final SourceCodeRepoInterface sourceCodeRepo = new GitHubSourceCodeRepo(user.getUsername(),githubToken.getContent(), null);
-                // TODO: do this for bitbucket as well as for github
                 final Map<String, String> workflowGitUrl2Name = sourceCodeRepo.getWorkflowGitUrl2RepositoryId();
                 for(Map.Entry<String, String> entry : workflowGitUrl2Name.entrySet()) {
                     final List<Workflow> byGitUrl = workflowDAO.findByGitUrl(entry.getKey());
@@ -140,12 +141,13 @@ public class WorkflowResource {
                         for (Workflow workflow : byGitUrl) {
                             // when 1) workflows are already known, update the copy in the db
                             // update the one workflow from github
-                            final Workflow newWorkflow = sourceCodeRepo.getNewWorkflow(entry.getValue());
+                            final Workflow newWorkflow = sourceCodeRepo.getNewWorkflow(entry.getValue(), Optional.of(workflow));
                             updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow);
                         }
                     } else{
                         // when 2) workflows are not known, create them
-                        final Workflow newWorkflow = sourceCodeRepo.getNewWorkflow(entry.getValue());
+                        // create a stub new workflow, don't go all out to conserve rate limit from github
+                        final Workflow newWorkflow = sourceCodeRepo.getNewWorkflow(entry.getValue(), Optional.absent());
                         if (newWorkflow != null) {
                             final long workflowID = workflowDAO.create(newWorkflow);
                             // need to create nested data models
@@ -178,7 +180,7 @@ public class WorkflowResource {
     @Path("/{workflowId}/refresh")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "Refresh one particular workflow", response = Workflow.class)
+    @ApiOperation(value = "Refresh one particular workflow. Always do a full refresh when targetted", response = Workflow.class)
     public Workflow refresh(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
@@ -187,12 +189,18 @@ public class WorkflowResource {
         Helper.checkUser(user, workflow);
         List<Token> tokens = checkOnBitbucketToken(user);
 
-        Token bitbucketToken = Helper.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
+        //TODO: need to integrate bitbucket
+        // Token bitbucketToken = Helper.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
         Token githubToken = Helper.extractToken(tokens, TokenType.GITHUB_COM.toString());
+        if (githubToken == null || githubToken.getContent() == null){
+            throw new CustomWebApplicationException("No github token for this user.", HttpStatus.SC_BAD_REQUEST);
+        }
 
         final SourceCodeRepoInterface sourceCodeRepo = new GitHubSourceCodeRepo(user.getUsername(),githubToken.getContent(), null);
 
-        final Workflow newWorkflow = sourceCodeRepo.getNewWorkflow(workflow.getOrganization() + '/' + workflow.getRepository());
+        // do a full refresh when targetted like this
+        workflow.setMode(WorkflowMode.FULL);
+        final Workflow newWorkflow = sourceCodeRepo.getNewWorkflow(workflow.getOrganization() + '/' + workflow.getRepository(), Optional.of(workflow));
         updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow);
 
         return workflowDAO.findById(workflowId);
@@ -209,7 +217,7 @@ public class WorkflowResource {
         // update workflow versions
         Map<String, WorkflowVersion> existingVersionMap = new HashMap<>();
         workflow.getWorkflowVersions().forEach(version -> existingVersionMap.put(version.getName(), version));
-        for(WorkflowVersion version:  newWorkflow.getVersions() ){
+        for(WorkflowVersion version:  newWorkflow.getVersions()){
             WorkflowVersion workflowVersionFromDB = existingVersionMap.get(version.getName());
             if (existingVersionMap.containsKey(version.getName())){
                 workflowVersionFromDB.update(version);
@@ -232,6 +240,7 @@ public class WorkflowResource {
                     workflowVersionFromDB.getSourceFiles().add(fileFromDB);
                 }
             }
+            //TODO: this needs a strategy for dealing with content on our side that has since been deleted
         }
     }
 
@@ -291,14 +300,6 @@ public class WorkflowResource {
 
         User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
-
-        // TODO: we should check for duplicates, but what do duplicates mean in the context of workflows?
-//        Tool duplicate = toolDAO.findByToolPath(tool.getPath(), tool.getToolname());
-//
-//        if (duplicate != null && duplicate.getId() != workflowId) {
-//            LOG.info("duplicate tool found: {}" + tool.getToolPath());
-//            throw new CustomWebApplicationException("Tool " + tool.getToolPath() + " already exists.", HttpStatus.SC_BAD_REQUEST);
-//        }
 
         c.update(workflow);
 
@@ -381,41 +382,6 @@ public class WorkflowResource {
         return tools;
     }
 
-
-
-    @GET
-    @Timed
-    @UnitOfWork
-    @Path("/path/{repository}/registered")
-    @ApiOperation(value = "Get a registered container by path", notes = "NO authentication", response = Workflow.class, responseContainer = "List")
-    public List<Tool> getRegisteredContainerByPath(
-            @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
-        //TODO: what is the equivalent of a toolpath for a workflow?
-//        List<Tool> containers = workflowDAO.findRegisteredByPath(path);
-//        entryVersionHelper.filterContainersForHiddenTags(containers);
-//        Helper.checkEntry(containers);
-//        return containers;
-        return null;
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork
-    @Path("/path/{repository}")
-    @ApiOperation(value = "Get a list of containers by path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Workflow.class, responseContainer = "List")
-    public List<Workflow> getContainerByPath(@ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
-        //TODO: what is the equivalent of a toolpath for a workflow?
-//        List<Tool> tool = toolDAO.findByPath(path);
-//
-//        Helper.checkEntry(tool);
-//
-//        User user = userDAO.findById(authToken.getUserId());
-//        Helper.checkUser(user, tool);
-
-        return null;
-    }
-
     @GET
     @Timed
     @UnitOfWork
@@ -423,24 +389,12 @@ public class WorkflowResource {
     @ApiOperation(value = "Get a workflow by path", notes = "Lists info of workflow. Enter full path.", response = Workflow.class)
     public Workflow getContainerByToolPath(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
-        //TODO: what is the equivalent of a toolpath for a workflow?
-//        final String[] split = path.split("/");
-//        // check that this is a tool path
-//        final int toolPathLength = 4;
-//        String toolname = "";
-//        if (split.length == toolPathLength) {
-//            toolname = split[toolPathLength - 1];
-//        }
-//
-//        Tool tool = toolDAO.findByToolPath(Joiner.on("/").join(split[0], split[1], split[2]), toolname);
-//
-//        Helper.checkEntry(tool);
-//
-//        User user = userDAO.findById(authToken.getUserId());
-//        Helper.checkUser(user, tool);
-//
-//        return tool;
-        return null;
+
+        Workflow workflow = workflowDAO.findByPath(path);
+        Helper.checkEntry(workflow);
+        User user = userDAO.findById(authToken.getUserId());
+        Helper.checkUser(user, workflow);
+        return workflow;
     }
 
     @GET
@@ -450,20 +404,9 @@ public class WorkflowResource {
     @ApiOperation(value = "Get a workflow by path", notes = "Lists info of workflow. Enter full path.", response = Workflow.class)
     public Workflow getRegisteredContainerByToolPath(
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
-//        //TODO: what is the equivalent of a toolpath for a workflow?
-//        final String[] split = path.split("/");
-//        // check that this is a tool path
-//        final int toolPathLength = 4;
-//        String toolname = "";
-//        if (split.length == toolPathLength) {
-//            toolname = split[toolPathLength - 1];
-//        }
-//
-//        Tool tool = toolDAO.findRegisteredByToolPath(Joiner.on("/").join(split[0], split[1], split[2]), toolname);
-//        Helper.checkEntry(tool);
-//
-//        return tool;
-        return null;
+        Workflow workflow = workflowDAO.findRegisteredByPath(path);
+        Helper.checkEntry(workflow);
+        return workflow;
     }
 
 
@@ -497,18 +440,6 @@ public class WorkflowResource {
     }
 
     // TODO: this method is very repetative with the method below, need to refactor
-    @GET
-    @Timed
-    @UnitOfWork
-    @Path("/{workflowId}/dockerfile")
-    @ApiOperation(value = "Get the corresponding Dockerfile on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
-    public SourceFile dockerfile(@ApiParam(value = "Tool id", required = true) @PathParam("workflowId") Long workflowId,
-            @QueryParam("tag") String tag) {
-
-        return entryVersionHelper.getSourceFile(workflowId, tag, FileType.DOCKERFILE);
-    }
-
-    // Add for new descriptor types
     @GET
     @Timed
     @UnitOfWork

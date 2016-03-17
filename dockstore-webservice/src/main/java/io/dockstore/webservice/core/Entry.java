@@ -37,6 +37,7 @@ import javax.persistence.ManyToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.SequenceGenerator;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.swagger.annotations.ApiModelProperty;
@@ -221,7 +222,7 @@ public abstract class Entry<S extends Entry, T extends Version> {
         return isStarred;
     }
 
-    @JsonProperty
+    @JsonProperty()
     public boolean getIsPublic() {
         return isPublic;
     }
@@ -277,5 +278,10 @@ public abstract class Entry<S extends Entry, T extends Version> {
         }
     }
 
+    /**
+     * Convenience method to access versions in a generic manner
+     * @return versions
+     */
+    @JsonIgnore
     public abstract Set<T> getVersions();
 }

@@ -38,6 +38,7 @@ import io.swagger.annotations.Tag;
         @Tag(name = "integration.github.com", description = "stop-gap allowing developers to associate with github"),
         @Tag(name = "integration.quay.io", description = "stop-gap allowing developers to associate with quay.io"),
         @Tag(name = "tokens", description = "List, modify, refresh, and delete tokens for external services"),
+        @Tag(name = "workflows", description = "List and register workflows in the dockstore (CWL or WDL)"),
         @Tag(name = "users", description = "List, modify, and manage end users of the dockstore") }, externalDocs = @ExternalDocs(value = "Dockstore documentation", url = "https://www.dockstore.org/docs/getting-started"))
 public class Description {
 }

@@ -34,9 +34,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
 
+import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.helpers.Helper.RepoList;
 import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.ContainerMode;
 import io.dockstore.webservice.core.Registry;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
@@ -145,7 +145,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
                     // tag all of these with where they came from
                     tools.stream().forEach(container -> container.setRegistry(Registry.QUAY_IO));
                     // not quite correct, they could be mixed but how can we tell from quay?
-                    tools.stream().forEach(container -> container.setMode(ContainerMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS));
+                    tools.stream().forEach(container -> container.setMode(ToolMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS));
                     toolList.addAll(tools);
                 } catch (IOException ex) {
                     LOG.info("Exception: {}", ex);
@@ -175,7 +175,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
             tool.setPath(path);
 
             LOG.info("========== Configuring {} ==========", path);
-            // if (tool.getMode() != ContainerMode.MANUAL_IMAGE_PATH) {
+            // if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
             // checkTriggers(tool);
             // if (tool.hasValidTrigger()) {
 
@@ -238,7 +238,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
                         LOG.info("Build date did not match format 'EEE, d MMM yyyy HH:mm:ss Z'");
                     }
                 }
-                if (tool.getMode() != ContainerMode.MANUAL_IMAGE_PATH) {
+                if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
                     tool.setRegistry(Registry.QUAY_IO);
                     tool.setGitUrl(gitURL);
                 }

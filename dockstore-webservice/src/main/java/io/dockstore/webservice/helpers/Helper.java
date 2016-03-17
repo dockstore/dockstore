@@ -37,7 +37,7 @@ import com.google.common.base.Optional;
 import com.google.gson.Gson;
 
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.ContainerMode;
+import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Registry;
 import io.dockstore.webservice.core.SourceFile;
@@ -143,7 +143,7 @@ public final class Helper {
 
             // TODO: For a manually added tool with a Quay.io registry, auto-populate its tags if it does not have any.
             // May find another way so that tags are initially auto-populated, and never auto-populated again.
-            if (tool.getMode() != ContainerMode.MANUAL_IMAGE_PATH
+            if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH
                     || (tool.getRegistry() == Registry.QUAY_IO && existingTags.isEmpty())) {
 
                 List<Tag> newTags = tagMap.get(tool.getPath());
@@ -214,11 +214,11 @@ public final class Helper {
                     tool.getTags().remove(t);
                 }
 
-                if (tool.getMode() != ContainerMode.MANUAL_IMAGE_PATH) {
+                if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
                     if (allAutomated) {
-                        tool.setMode(ContainerMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
+                        tool.setMode(ToolMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
                     } else {
-                        tool.setMode(ContainerMode.AUTO_DETECT_QUAY_TAGS_WITH_MIXED);
+                        tool.setMode(ToolMode.AUTO_DETECT_QUAY_TAGS_WITH_MIXED);
                     }
                 }
             }
@@ -278,7 +278,7 @@ public final class Helper {
                     break;
                 }
             }
-            if (!exists && oldTool.getMode() != ContainerMode.MANUAL_IMAGE_PATH) {
+            if (!exists && oldTool.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
                 oldTool.removeUser(user);
                 // user.removeTool(oldTool);
                 toDelete.add(oldTool);
@@ -371,8 +371,8 @@ public final class Helper {
             }
             final List<Tag> tags = imageRegistry.getTags(c);
 
-            // if (c.getMode() == ContainerMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS
-            // || c.getMode() == ContainerMode.AUTO_DETECT_QUAY_TAGS_WITH_MIXED) {
+            // if (c.getMode() == ToolMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS
+            // || c.getMode() == ToolMode.AUTO_DETECT_QUAY_TAGS_WITH_MIXED) {
             if (c.getRegistry() == Registry.QUAY_IO) {
                 // TODO: this part isn't very good, a true implementation of Docker Hub would need to return
                 // a quay.io-like data structure, we need to replace mapOfBuilds
@@ -533,7 +533,7 @@ public final class Helper {
         // TODO: when we get proper docker hub support, get this above
         // hack: read relevant containers from database
         User currentUser = userDAO.findById(userId);
-        List<Tool> findByMode = toolDAO.findByMode(ContainerMode.MANUAL_IMAGE_PATH);
+        List<Tool> findByMode = toolDAO.findByMode(ToolMode.MANUAL_IMAGE_PATH);
         findByMode.removeIf(test -> !test.getUsers().contains(currentUser));
         apiTools.addAll(findByMode);
 
@@ -609,19 +609,19 @@ public final class Helper {
         Tool duplicatePath = null;
         List<Tool> containersList = toolDAO.findByPath(tool.getPath());
         for(Tool c : containersList) {
-            if (c.getMode() != ContainerMode.MANUAL_IMAGE_PATH) {
+            if (c.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
                 duplicatePath = c;
                 break;
             }
         }
 
         // If exists, check conditions to see if it should be changed to auto (in sync with quay tags and git repo)
-        if (tool.getMode() == ContainerMode.MANUAL_IMAGE_PATH && duplicatePath != null  && tool.getRegistry().toString().equals(
+        if (tool.getMode() == ToolMode.MANUAL_IMAGE_PATH && duplicatePath != null  && tool.getRegistry().toString().equals(
                 Registry.QUAY_IO.toString()) && duplicatePath.getGitUrl().equals(tool.getGitUrl())) {
             tool.setMode(duplicatePath.getMode());
         }
 
-        if (tool.getMode() == ContainerMode.MANUAL_IMAGE_PATH) {
+        if (tool.getMode() == ToolMode.MANUAL_IMAGE_PATH) {
             apiTools.add(tool);
         } else {
             List<String> namespaces = new ArrayList<>();
@@ -663,7 +663,7 @@ public final class Helper {
         // TODO: for now, with no info coming back from Docker Hub, just skip them always
         dbTools.removeIf(container1 -> container1.getRegistry() == Registry.DOCKER_HUB);
         // also skip containers on quay.io but in manual mode
-        dbTools.removeIf(container1 -> container1.getMode() == ContainerMode.MANUAL_IMAGE_PATH);
+        dbTools.removeIf(container1 -> container1.getMode() == ToolMode.MANUAL_IMAGE_PATH);
     }
 
     public static Token extractToken(List<Token> tokens, String source) {
@@ -861,7 +861,7 @@ public final class Helper {
      */
     public static void checkEntry(Entry entry) {
         if (entry == null) {
-            throw new CustomWebApplicationException("Tool not found", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Entry not found", HttpStatus.SC_BAD_REQUEST);
         }
     }
 
@@ -872,7 +872,7 @@ public final class Helper {
      */
     public static void checkEntry(List<? extends Entry> entry) {
         if (entry == null) {
-            throw new CustomWebApplicationException("No containers provided", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("No entries provided", HttpStatus.SC_BAD_REQUEST);
         }
         entry.forEach(Helper::checkEntry);
     }

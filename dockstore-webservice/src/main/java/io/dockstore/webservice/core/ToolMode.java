@@ -25,7 +25,7 @@ import io.swagger.annotations.ApiModel;
  * @author dyuen
  */
 @ApiModel(description = "This enumerates the types of containers (really, images) that we can add to the dockstore. Implementation specific.")
-public enum ContainerMode {
+public enum ToolMode {
     /**
      * from quay.io automated builds or not, try to track back to source control regardless of whether it is github or bitbucket and find
      * Dockerfiles and dockstore.cwl for all tags, track back to git identifier via quay.io API, find documents in default location

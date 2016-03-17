@@ -24,38 +24,49 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.esotericsoftware.yamlbeans.YamlReader;
+import com.google.common.base.Optional;
 
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import wdl4s.parser.WdlParser;
 
 /**
+ * This defines the set of operations that is needed to interact with a particular
+ * source code repository.
  * @author dyuen
  */
 public abstract class SourceCodeRepoInterface {
 
     public static final Logger LOG = LoggerFactory.getLogger(SourceCodeRepoInterface.class);
 
+    /**
+     * If this interface is pointed at a specific repository, grab a
+     * file from a specific branch/tag
+     * @param fileName the name of the file (full path) to retrieve
+     * @param reference the tag/branch to get the file from
+     * @return a wrapper for the file
+     */
     public abstract FileResponse readFile(String fileName, String reference);
 
     /**
      * Update a container with the contents of the descriptor file from a source code repo
      * 
-     * @param c
-     *            a container to be updated
+     * @param c a container to be updated
      * @return an updated container with fields from the descriptor filled in
      */
     public abstract Tool findDescriptor(Tool c, String fileName);
 
+    /**
+     * Get the email for the current user
+     * @return email for the logged in user
+     */
     public abstract String getOrganizationEmail();
 
     /**
      * Parses the cwl content to get the author and description. Updates the tool with the author, description, and hasCollab fields.
      *
-     * @param tool
-     *            a tool to be updated
-     * @param content
-     *            a cwl document
+     * @param tool a tool to be updated
+     * @param content a cwl document
      * @return the updated tool
      */
     protected Tool parseCWLContent(Tool tool, String content) {
@@ -92,6 +103,13 @@ public abstract class SourceCodeRepoInterface {
         return tool;
     }
 
+    /**
+     * Default implementation that parses WDL content from a tool?
+     * TODO: does this belong here?
+     * @param tool the source for the wdl content
+     * @param content the actual wdl content
+     * @return the tool that was given
+     */
     protected Tool parseWDLContent(Tool tool, String content) {
         // Use Broad WDL parser to grab data
         // Todo: Currently just checks validity of file.  In the future pull data such as author from the WDL file
@@ -114,9 +132,22 @@ public abstract class SourceCodeRepoInterface {
         return tool;
     }
 
+    /**
+     * Get a map of git url to an id that can uniquely identify a repository
+     * @return giturl -> repositoryid
+     */
     public abstract Map<String, String> getWorkflowGitUrl2RepositoryId();
 
-    public abstract Workflow getNewWorkflow(String repositoryId);
+    /**
+     * Given a repositoryid, get a workflow
+     * TODO: pass in an existing workflow when we need to override paths
+     * @param repositoryId uniquely identify a repo
+     * @param existingWorkflow an existing workflow entry, when existingWorkflow is a stub or empty, simply create a new stub entry
+     *                         when existingWorkflow is a full workflow, do a full refresh but use the existing workflow paths as a guide
+     *                         for where to look for files
+     * @return a fully realized workflow
+     */
+    public abstract Workflow getNewWorkflow(String repositoryId, Optional<Workflow> existingWorkflow);
 
     public static class FileResponse {
         private String content;

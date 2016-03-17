@@ -47,11 +47,11 @@ import com.google.common.base.Optional;
 import com.google.gson.Gson;
 
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.helpers.EntryLabelHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.Helper;
 import io.dockstore.webservice.api.RegisterRequest;
-import io.dockstore.webservice.core.ContainerMode;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Registry;
 import io.dockstore.webservice.core.SourceFile;
@@ -351,7 +351,7 @@ public class DockerRepoResource {
         Helper.checkUser(user, tool);
 
         // only allow users to delete manually added images
-        if (tool.getMode() == ContainerMode.MANUAL_IMAGE_PATH) {
+        if (tool.getMode() == ToolMode.MANUAL_IMAGE_PATH) {
             tool.getTags().clear();
             toolDAO.delete(tool);
 
@@ -383,7 +383,7 @@ public class DockerRepoResource {
         if (request.getRegister()) {
             boolean validTag = false;
 
-            if (c.getMode() == ContainerMode.MANUAL_IMAGE_PATH) {
+            if (c.getMode() == ToolMode.MANUAL_IMAGE_PATH) {
                 validTag = true;
             } else {
                 Set<Tag> tags = c.getTags();

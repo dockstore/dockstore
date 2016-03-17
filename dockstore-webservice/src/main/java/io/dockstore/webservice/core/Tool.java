@@ -69,7 +69,7 @@ public class Tool extends Entry<Tool, Tag> {
     @Column(nullable = false, columnDefinition = "Text default 'AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS'")
     @Enumerated(EnumType.STRING)
     @ApiModelProperty(value = "This indicates what mode this is in which informs how we do things like refresh, dockstore specific", required = true)
-    private ContainerMode mode = ContainerMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS;
+    private ToolMode mode = ToolMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS;
 
     @Column(nullable = false)
     @ApiModelProperty(value = "This is the name of the container, required: GA4GH", required = true)
@@ -244,11 +244,11 @@ public class Tool extends Entry<Tool, Tag> {
     }
 
     @JsonProperty
-    public ContainerMode getMode() {
+    public ToolMode getMode() {
         return mode;
     }
 
-    public void setMode(ContainerMode mode) {
+    public void setMode(ToolMode mode) {
         this.mode = mode;
     }
 
