@@ -17,7 +17,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be\n * associated with CWL and Dockerfile documents
  **/
 @ApiModel(description = "This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be\n * associated with CWL and Dockerfile documents")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-16T15:56:27.334-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-17T11:07:48.615-04:00")
 public class DockstoreTool   {
   
   private Long id = null;
@@ -26,6 +26,7 @@ public class DockstoreTool   {
   private List<Label> labels = new ArrayList<Label>();
   private List<User> users = new ArrayList<User>();
   private String email = null;
+  private Boolean isPublic = null;
   private Date lastUpdated = null;
   private String gitUrl = null;
 
@@ -72,7 +73,6 @@ public enum RegistryEnum {
   private Boolean validTrigger = null;
   private List<Tag> tags = new ArrayList<Tag>();
   private Boolean isStarred = null;
-  private Boolean isPublic = null;
   private Integer lastModified = null;
   private Boolean isRegistered = null;
   private String defaultDockerfilePath = null;
@@ -157,6 +157,19 @@ public enum RegistryEnum {
   }
   public void setEmail(String email) {
     this.email = email;
+  }
+
+  
+  /**
+   * Implementation specific visibility in this web service
+   **/
+  @ApiModelProperty(value = "Implementation specific visibility in this web service")
+  @JsonProperty("isPublic")
+  public Boolean getIsPublic() {
+    return isPublic;
+  }
+  public void setIsPublic(Boolean isPublic) {
+    this.isPublic = isPublic;
   }
 
   
@@ -304,19 +317,6 @@ public enum RegistryEnum {
 
   
   /**
-   * Implementation specific visibility in this web service
-   **/
-  @ApiModelProperty(value = "Implementation specific visibility in this web service")
-  @JsonProperty("is_public")
-  public Boolean getIsPublic() {
-    return isPublic;
-  }
-  public void setIsPublic(Boolean isPublic) {
-    this.isPublic = isPublic;
-  }
-
-  
-  /**
    * Implementation specific timestamp for last modified
    **/
   @ApiModelProperty(value = "Implementation specific timestamp for last modified")
@@ -418,6 +418,7 @@ public enum RegistryEnum {
     sb.append("    labels: ").append(StringUtil.toIndentedString(labels)).append("\n");
     sb.append("    users: ").append(StringUtil.toIndentedString(users)).append("\n");
     sb.append("    email: ").append(StringUtil.toIndentedString(email)).append("\n");
+    sb.append("    isPublic: ").append(StringUtil.toIndentedString(isPublic)).append("\n");
     sb.append("    lastUpdated: ").append(StringUtil.toIndentedString(lastUpdated)).append("\n");
     sb.append("    gitUrl: ").append(StringUtil.toIndentedString(gitUrl)).append("\n");
     sb.append("    mode: ").append(StringUtil.toIndentedString(mode)).append("\n");
@@ -429,7 +430,6 @@ public enum RegistryEnum {
     sb.append("    validTrigger: ").append(StringUtil.toIndentedString(validTrigger)).append("\n");
     sb.append("    tags: ").append(StringUtil.toIndentedString(tags)).append("\n");
     sb.append("    isStarred: ").append(StringUtil.toIndentedString(isStarred)).append("\n");
-    sb.append("    isPublic: ").append(StringUtil.toIndentedString(isPublic)).append("\n");
     sb.append("    lastModified: ").append(StringUtil.toIndentedString(lastModified)).append("\n");
     sb.append("    isRegistered: ").append(StringUtil.toIndentedString(isRegistered)).append("\n");
     sb.append("    defaultDockerfilePath: ").append(StringUtil.toIndentedString(defaultDockerfilePath)).append("\n");

@@ -13,7 +13,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 @ApiModel(description = "")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-16T15:56:27.334-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-17T11:07:48.615-04:00")
 public class Entry   {
   
   private Long id = null;
@@ -22,10 +22,10 @@ public class Entry   {
   private List<Label> labels = new ArrayList<Label>();
   private List<User> users = new ArrayList<User>();
   private String email = null;
+  private Boolean isPublic = null;
   private Date lastUpdated = null;
   private String gitUrl = null;
   private Boolean isStarred = null;
-  private Boolean isPublic = null;
   private Integer lastModified = null;
   private Boolean isRegistered = null;
 
@@ -109,6 +109,19 @@ public class Entry   {
 
   
   /**
+   * Implementation specific visibility in this web service
+   **/
+  @ApiModelProperty(value = "Implementation specific visibility in this web service")
+  @JsonProperty("isPublic")
+  public Boolean getIsPublic() {
+    return isPublic;
+  }
+  public void setIsPublic(Boolean isPublic) {
+    this.isPublic = isPublic;
+  }
+
+  
+  /**
    * Implementation specific timestamp for last updated on webservice
    **/
   @ApiModelProperty(value = "Implementation specific timestamp for last updated on webservice")
@@ -144,19 +157,6 @@ public class Entry   {
   }
   public void setIsStarred(Boolean isStarred) {
     this.isStarred = isStarred;
-  }
-
-  
-  /**
-   * Implementation specific visibility in this web service
-   **/
-  @ApiModelProperty(value = "Implementation specific visibility in this web service")
-  @JsonProperty("is_public")
-  public Boolean getIsPublic() {
-    return isPublic;
-  }
-  public void setIsPublic(Boolean isPublic) {
-    this.isPublic = isPublic;
   }
 
   
@@ -198,10 +198,10 @@ public class Entry   {
     sb.append("    labels: ").append(StringUtil.toIndentedString(labels)).append("\n");
     sb.append("    users: ").append(StringUtil.toIndentedString(users)).append("\n");
     sb.append("    email: ").append(StringUtil.toIndentedString(email)).append("\n");
+    sb.append("    isPublic: ").append(StringUtil.toIndentedString(isPublic)).append("\n");
     sb.append("    lastUpdated: ").append(StringUtil.toIndentedString(lastUpdated)).append("\n");
     sb.append("    gitUrl: ").append(StringUtil.toIndentedString(gitUrl)).append("\n");
     sb.append("    isStarred: ").append(StringUtil.toIndentedString(isStarred)).append("\n");
-    sb.append("    isPublic: ").append(StringUtil.toIndentedString(isPublic)).append("\n");
     sb.append("    lastModified: ").append(StringUtil.toIndentedString(lastModified)).append("\n");
     sb.append("    isRegistered: ").append(StringUtil.toIndentedString(isRegistered)).append("\n");
     sb.append("}");

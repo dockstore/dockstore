@@ -14,7 +14,7 @@ import io.swagger.client.model.User;
 
 import java.util.*;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-16T15:56:27.334-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-17T11:07:48.615-04:00")
 public class ContainersApi {
   private ApiClient apiClient;
 
@@ -391,21 +391,21 @@ public class ContainersApi {
   }
   
   /**
-   * Register and publish an image manually, along with tags
-   * Register/publish an image manually.
-   * @param body Tool to be registered and published
+   * Register an image manually, along with tags
+   * Register an image manually.
+   * @param body Tool to be registered
    * @return DockstoreTool
    */
-  public DockstoreTool registerAndPublishManual (DockstoreTool body) throws ApiException {
+  public DockstoreTool registerManual (DockstoreTool body) throws ApiException {
     Object postBody = body;
     
     // verify the required parameter 'body' is set
     if (body == null) {
-      throw new ApiException(400, "Missing the required parameter 'body' when calling registerAndPublishManual");
+      throw new ApiException(400, "Missing the required parameter 'body' when calling registerManual");
     }
     
     // create path and map variables
-    String path = "/containers/registerAndPublishManual".replaceAll("\\{format\\}","json");
+    String path = "/containers/registerManual".replaceAll("\\{format\\}","json");
 
     // query params
     List<Pair> queryParams = new ArrayList<Pair>();

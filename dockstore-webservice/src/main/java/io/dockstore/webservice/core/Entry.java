@@ -82,7 +82,7 @@ public abstract class Entry {
     @JsonProperty("is_starred")
     private boolean isStarred;
     @Column
-    @JsonProperty("is_public")
+    @JsonProperty
     @ApiModelProperty("Implementation specific visibility in this web service")
     private boolean isPublic;
     @Column
@@ -129,7 +129,7 @@ public abstract class Entry {
 
     /**
      * @param description
-     *            the repo name to set
+     *            the repo description to set
      */
     public void setDescription(String description) {
         this.description = description;
@@ -170,7 +170,7 @@ public abstract class Entry {
 
     /**
      * @param isStarred
-     *            the repo name to set
+     *            will the repo be starred
      */
     public void setIsStarred(boolean isStarred) {
         this.isStarred = isStarred;
@@ -178,7 +178,7 @@ public abstract class Entry {
 
     /**
      * @param isPublic
-     *            the repo name to set
+     *            will the repo be published
      */
     public void setIsPublic(boolean isPublic) {
         this.isPublic = isPublic;

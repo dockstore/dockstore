@@ -239,7 +239,7 @@ public class Workflow   {
    * Implementation specific visibility in this web service
    **/
   @ApiModelProperty(value = "Implementation specific visibility in this web service")
-  @JsonProperty("is_public")
+  @JsonProperty
   public Boolean getIsPublic() {
     return isPublic;
   }

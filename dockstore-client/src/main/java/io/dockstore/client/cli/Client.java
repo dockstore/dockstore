@@ -471,7 +471,7 @@ public class Client {
                         newContainer.setPath(container.getPath());
                         newContainer.setToolname(toolname);
 
-                        newContainer = containersApi.registerAndPublishManual(newContainer);
+                        newContainer = containersApi.registerManual(newContainer);
 
                         if (newContainer != null) {
                             out("Successfully published " + toolname);
@@ -528,7 +528,7 @@ public class Client {
             container.setDefaultDockerfilePath(dockerfilePath);
             container.setDefaultCwlPath(cwlPath);
             container.setDefaultWdlPath(wdlPath);
-            container.setIsPublic(true);
+            container.setIsPublic(false);
             container.setIsRegistered(true);
             container.setGitUrl(gitURL);
             container.setToolname(toolname);
@@ -547,7 +547,7 @@ public class Client {
 
             final String fullName = Joiner.on("/").skipNulls().join(registry, namespace, name, toolname);
             try {
-                container = containersApi.registerAndPublishManual(container);
+                container = containersApi.registerManual(container);
                 if (container != null) {
                     containersApi.refresh(container.getId());
                     out("Successfully published " + fullName);

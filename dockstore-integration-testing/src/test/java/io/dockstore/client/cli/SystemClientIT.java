@@ -165,7 +165,7 @@ public class SystemClientIT {
 
         DockstoreTool c = getContainer();
 
-        containersApi.registerAndPublishManual(c);
+        containersApi.registerManual(c);
     }
 
     private DockstoreTool getContainer() {
@@ -208,8 +208,8 @@ public class SystemClientIT {
 
         DockstoreTool c = getContainer();
 
-        final DockstoreTool container = containersApi.registerAndPublishManual(c);
-        containersApi.registerAndPublishManual(container);
+        final DockstoreTool container = containersApi.registerManual(c);
+        containersApi.registerManual(container);
     }
 
     @Test
@@ -229,7 +229,7 @@ public class SystemClientIT {
         ContainersApi containersApi = new ContainersApi(client);
         // register one more to give us something to look at
         DockstoreTool c = getContainer();
-        containersApi.registerAndPublishManual(c);
+        containersApi.registerManual(c);
 
         List<Tool> tools = toolApi.toolsGet(null, null, null, null, null, null, null);
         assertTrue(tools.size() == 2);
@@ -251,7 +251,7 @@ public class SystemClientIT {
 //        ContainersApi containersApi = new ContainersApi(client);
 //        // register one more to give us something to look at
 //        Tool c = getContainer();
-//        containersApi.registerAndPublishManual(c);
+//        containersApi.registerManual(c);
 //
 //        final Tool tool = toolApi.toolsRegistryIdGet("quay.io/test_org/test6");
 //        assertTrue(tool != null);
@@ -265,7 +265,7 @@ public class SystemClientIT {
         ContainersApi containersApi = new ContainersApi(client);
         // register one more to give us something to look at
         DockstoreTool c = getContainer();
-        containersApi.registerAndPublishManual(c);
+        containersApi.registerManual(c);
 
         final ToolDockerfile toolDockerfile = toolApi.toolsRegistryIdVersionVersionIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5","master");
         assertTrue(toolDockerfile.getDockerfile().contains("dockerstuff"));
@@ -328,7 +328,7 @@ public class SystemClientIT {
         // register one more to give us something to look at
         DockstoreTool c = getContainer();
         c.getTags().get(0).setHidden(true);
-        c = containersApi.registerAndPublishManual(c);
+        c = containersApi.registerManual(c);
 
         assertTrue("should see one tag as an admin, saw " + c.getTags().size(), c.getTags().size() == 1);
 
