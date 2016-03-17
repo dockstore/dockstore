@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * Describes a type of tool allowing us to categorize workflows, the language of the workflow, tools, and maybe even other entities separately
  **/
 @ApiModel(description = "Describes a type of tool allowing us to categorize workflows, the language of the workflow, tools, and maybe even other entities separately")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-16T12:02:55.364-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-16T15:56:27.334-04:00")
 public class ToolType   {
   
   private String id = null;

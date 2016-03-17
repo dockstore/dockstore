@@ -274,13 +274,13 @@ public class BasicET {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "publish", "quay.io/dockstoretestuser/quayandgithub", "--script" });
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from tool where name = 'quayandgithub' and isregistered='t'", new ScalarHandler<>());
+                final long count = testingPostgres.runSelectStatement("select count(*) from tool where name = 'quayandgithub' and ispublic='t'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 1 registered", count == 1);
 
                 // Unpublish
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "publish", "--unpub", "quay.io/dockstoretestuser/quayandgithub", "--script" });
 
-                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where name = 'quayandgithub' and isregistered='t'", new ScalarHandler<>());
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where name = 'quayandgithub' and ispublic='t'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 0 registered", count2 == 0);
         }
 
@@ -295,13 +295,13 @@ public class BasicET {
                         "master", "--toolname", "alternate", "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and isregistered='t'", new ScalarHandler<>());
+                final long count = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublic='t'", new ScalarHandler<>());
 
                 Assert.assertTrue("there should be 1 entries", count == 1);
 
                 // Unpublish
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "publish", "--unpub", "quay.io/dockstoretestuser/quayandgithubalternate/alternate", "--script" });
-                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and isregistered='t'", new ScalarHandler<>());
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublic='t'", new ScalarHandler<>());
 
                 Assert.assertTrue("there should be 0 entries", count2 == 0);
         }
@@ -380,13 +380,13 @@ public class BasicET {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "publish", "quay.io/dockstoretestuser/quayandbitbucket", "--script" });
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from tool where name = 'quayandbitbucket' and isregistered='t'", new ScalarHandler<>());
+                final long count = testingPostgres.runSelectStatement("select count(*) from tool where name = 'quayandbitbucket' and ispublic='t'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 1 registered", count == 1);
 
                 // Unpublish
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "publish", "--unpub", "quay.io/dockstoretestuser/quayandbitbucket", "--script" });
 
-                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where name = 'quayandbitbucket' and isregistered='t'", new ScalarHandler<>());
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where name = 'quayandbitbucket' and ispublic='t'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 0 registered", count2 == 0);
         }
 
@@ -401,13 +401,13 @@ public class BasicET {
                         "master", "--toolname", "alternate", "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and isregistered='t'", new ScalarHandler<>());
+                final long count = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublic='t'", new ScalarHandler<>());
 
                 Assert.assertTrue("there should be 1 entries, there are " + count, count == 1);
 
                 // Unpublish
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "publish", "--unpub", "quay.io/dockstoretestuser/quayandbitbucketalternate/alternate", "--script" });
-                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and isregistered='t'", new ScalarHandler<>());
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublic='t'", new ScalarHandler<>());
 
                 Assert.assertTrue("there should be 0 entries, there are " + count2, count2 == 0);
 
@@ -438,13 +438,13 @@ public class BasicET {
                         "master", "--toolname", "regular", "--script" });
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'regular' and isregistered='t'", new ScalarHandler<>());
+                final long count = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'regular' and ispublic='t'", new ScalarHandler<>());
 
                 Assert.assertTrue("there should be 1 entries", count == 1);
 
                 // Unpublish
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "publish", "--unpub", "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub/regular", "--script" });
-                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'regular' and isregistered='t'", new ScalarHandler<>());
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'regular' and ispublic='t'", new ScalarHandler<>());
 
                 Assert.assertTrue("there should be 0 entries", count2 == 0);
 
@@ -460,13 +460,13 @@ public class BasicET {
                         "master", "--toolname", "alternate", "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and isregistered='t' and validtrigger='t'", new ScalarHandler<>());
+                final long count = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublic='t' and validtrigger='t'", new ScalarHandler<>());
 
                 Assert.assertTrue("there should be 1 entry", count == 1);
 
                 // Unpublish
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "publish", "--unpub", "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub/alternate", "--script" });
-                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and isregistered='f' and validtrigger='t'", new ScalarHandler<>());
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublic='f' and validtrigger='t'", new ScalarHandler<>());
 
                 Assert.assertTrue("there should be 1 entry", count2 == 1);
         }
@@ -493,7 +493,7 @@ public class BasicET {
                         "master", "--toolname", "regular", "--script" });
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'regular' and isregistered='t'", new ScalarHandler<>());
+                final long count = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'regular' and ispublic='t'", new ScalarHandler<>());
 
                 Assert.assertTrue("there should be 1 entry", count == 1);
 
@@ -503,16 +503,16 @@ public class BasicET {
                         "master", "--toolname", "regular2", "--script" });
 
                 // Unpublish the duplicate entrys
-                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where toolname like 'regular%' and isregistered='t'", new ScalarHandler<>());
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where toolname like 'regular%' and ispublic='t'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 2 entries", count2 == 2);
 
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "publish", "--unpub", "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub/regular", "--script" });
-                final long count3 = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'regular2' and isregistered='t'", new ScalarHandler<>());
+                final long count3 = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'regular2' and ispublic='t'", new ScalarHandler<>());
 
                 Assert.assertTrue("there should be 1 entry", count3 == 1);
 
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "publish", "--unpub", "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub/regular2", "--script" });
-                final long count4 = testingPostgres.runSelectStatement("select count(*) from tool where toolname like 'regular%' and isregistered='t'", new ScalarHandler<>());
+                final long count4 = testingPostgres.runSelectStatement("select count(*) from tool where toolname like 'regular%' and ispublic='t'", new ScalarHandler<>());
 
                 Assert.assertTrue("there should be 0 entries", count4 == 0);
 
@@ -533,13 +533,13 @@ public class BasicET {
                         "master", "--toolname", "regular", "--script" });
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'regular' and isregistered='t'", new ScalarHandler<>());
+                final long count = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'regular' and ispublic='t'", new ScalarHandler<>());
 
                 Assert.assertTrue("there should be 1 entries, there are " + count, count == 1);
 
                 // Unpublish
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "publish", "--unpub", "registry.hub.docker.com/dockstoretestuser/dockerhubandbitbucket/regular", "--script" });
-                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'regular' and isregistered='t'", new ScalarHandler<>());
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'regular' and ispublic='t'", new ScalarHandler<>());
 
                 Assert.assertTrue("there should be 0 entries, there are " + count2, count2 == 0);
         }
@@ -554,7 +554,7 @@ public class BasicET {
                         "master", "--toolname", "alternate", "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and isregistered='t'", new ScalarHandler<>());
+                final long count = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublic='t'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 1 entry", count == 1);
 
                 final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate'  and validtrigger='t'", new ScalarHandler<>());
@@ -563,7 +563,7 @@ public class BasicET {
                 // Unpublish
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "publish", "--unpub", "registry.hub.docker.com/dockstoretestuser/dockerhubandbitbucket/alternate", "--script" });
 
-                final long count3 = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and isregistered='f'", new ScalarHandler<>());
+                final long count3 = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublic='f'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 1 entry", count3 == 1);
 
                 final long count4 = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and validtrigger='t'", new ScalarHandler<>());
@@ -592,7 +592,7 @@ public class BasicET {
                         "master", "--toolname", "regular", "--script" });
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'regular' and isregistered='t'", new ScalarHandler<>());
+                final long count = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'regular' and ispublic='t'", new ScalarHandler<>());
 
                 Assert.assertTrue("there should be 1 entry", count == 1);
 
@@ -602,16 +602,16 @@ public class BasicET {
                         "master", "--toolname", "regular2", "--script" });
 
                 // Unpublish the duplicate entrys
-                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where toolname like 'regular%' and isregistered='t'", new ScalarHandler<>());
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where toolname like 'regular%' and ispublic='t'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 2 entries", count2 == 2);
 
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "publish", "--unpub", "registry.hub.docker.com/dockstoretestuser/dockerhubandbitbucket/regular", "--script" });
-                final long count3 = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'regular2' and isregistered='t'", new ScalarHandler<>());
+                final long count3 = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'regular2' and ispublic='t'", new ScalarHandler<>());
 
                 Assert.assertTrue("there should be 1 entry", count3 == 1);
 
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "publish", "--unpub", "registry.hub.docker.com/dockstoretestuser/dockerhubandbitbucket/regular2", "--script" });
-                final long count4 = testingPostgres.runSelectStatement("select count(*) from tool where toolname like 'regular%' and isregistered='t'", new ScalarHandler<>());
+                final long count4 = testingPostgres.runSelectStatement("select count(*) from tool where toolname like 'regular%' and ispublic='t'", new ScalarHandler<>());
 
                 Assert.assertTrue("there should be 0 entries", count4 == 0);
 

@@ -137,7 +137,7 @@ public class SystemClientIT {
     public void testFailedContainerRegistration() throws ApiException, IOException, TimeoutException {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
-        List<DockstoreTool> containers = containersApi.allRegisteredContainers();
+        List<DockstoreTool> containers = containersApi.allPublishedContainers();
 
         assertTrue(containers.size() == 1);
 
@@ -148,14 +148,14 @@ public class SystemClientIT {
         assertTrue(containers.size() == 5);
 
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
-        assertFalse(container.getIsRegistered());
+        assertFalse(container.getIsPublic());
 
         long containerId = container.getId();
 
         RegisterRequest req = new RegisterRequest();
         req.setRegister(true);
 
-        containersApi.register(containerId, req);
+        containersApi.publish(containerId, req);
     }
 
     @Test
@@ -165,7 +165,7 @@ public class SystemClientIT {
 
         DockstoreTool c = getContainer();
 
-        containersApi.registerManual(c);
+        containersApi.registerAndPublishManual(c);
     }
 
     private DockstoreTool getContainer() {
@@ -208,8 +208,8 @@ public class SystemClientIT {
 
         DockstoreTool c = getContainer();
 
-        final DockstoreTool container = containersApi.registerManual(c);
-        containersApi.registerManual(container);
+        final DockstoreTool container = containersApi.registerAndPublishManual(c);
+        containersApi.registerAndPublishManual(container);
     }
 
     @Test
@@ -229,7 +229,7 @@ public class SystemClientIT {
         ContainersApi containersApi = new ContainersApi(client);
         // register one more to give us something to look at
         DockstoreTool c = getContainer();
-        containersApi.registerManual(c);
+        containersApi.registerAndPublishManual(c);
 
         List<Tool> tools = toolApi.toolsGet(null, null, null, null, null, null, null);
         assertTrue(tools.size() == 2);
@@ -251,7 +251,7 @@ public class SystemClientIT {
 //        ContainersApi containersApi = new ContainersApi(client);
 //        // register one more to give us something to look at
 //        Tool c = getContainer();
-//        containersApi.registerManual(c);
+//        containersApi.registerAndPublishManual(c);
 //
 //        final Tool tool = toolApi.toolsRegistryIdGet("quay.io/test_org/test6");
 //        assertTrue(tool != null);
@@ -265,7 +265,7 @@ public class SystemClientIT {
         ContainersApi containersApi = new ContainersApi(client);
         // register one more to give us something to look at
         DockstoreTool c = getContainer();
-        containersApi.registerManual(c);
+        containersApi.registerAndPublishManual(c);
 
         final ToolDockerfile toolDockerfile = toolApi.toolsRegistryIdVersionVersionIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5","master");
         assertTrue(toolDockerfile.getDockerfile().contains("dockerstuff"));
@@ -277,7 +277,7 @@ public class SystemClientIT {
     public void testContainerRegistration() throws ApiException, IOException, TimeoutException {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
-        List<DockstoreTool> containers = containersApi.allRegisteredContainers();
+        List<DockstoreTool> containers = containersApi.allPublishedContainers();
 
         assertTrue(containers.size() == 1);
 
@@ -288,23 +288,23 @@ public class SystemClientIT {
         assertTrue(containers.size() == 5);
 
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test5");
-        assertFalse(container.getIsRegistered());
+        assertFalse(container.getIsPublic());
 
         long containerId = container.getId();
 
         RegisterRequest req = new RegisterRequest();
         req.setRegister(true);
 
-        container = containersApi.register(containerId, req);
-        assertTrue(container.getIsRegistered());
+        container = containersApi.publish(containerId, req);
+        assertTrue(container.getIsPublic());
 
-        containers = containersApi.allRegisteredContainers();
+        containers = containersApi.allPublishedContainers();
         assertTrue(containers.size() == 2);
 
         req.setRegister(false);
 
-        container = containersApi.register(containerId, req);
-        assertFalse(container.getIsRegistered());
+        container = containersApi.publish(containerId, req);
+        assertFalse(container.getIsPublic());
     }
 
     @Test
@@ -328,13 +328,13 @@ public class SystemClientIT {
         // register one more to give us something to look at
         DockstoreTool c = getContainer();
         c.getTags().get(0).setHidden(true);
-        c = containersApi.registerManual(c);
+        c = containersApi.registerAndPublishManual(c);
 
         assertTrue("should see one tag as an admin, saw " + c.getTags().size(), c.getTags().size() == 1);
 
         ApiClient muggleClient = getWebClient();
         ContainersApi muggleContainersApi = new ContainersApi(muggleClient);
-        final DockstoreTool registeredContainer = muggleContainersApi.getRegisteredContainer(c.getId());
+        final DockstoreTool registeredContainer = muggleContainersApi.getPublishedContainer(c.getId());
         assertTrue("should see no tags as a regular user, saw " + registeredContainer.getTags().size(), registeredContainer.getTags().size() == 0);
     }
 

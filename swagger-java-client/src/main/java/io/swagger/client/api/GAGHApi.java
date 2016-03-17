@@ -14,7 +14,7 @@ import io.swagger.client.model.ToolDockerfile;
 
 import java.util.*;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-16T12:02:55.364-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-16T15:56:27.334-04:00")
 public class GAGHApi {
   private ApiClient apiClient;
 

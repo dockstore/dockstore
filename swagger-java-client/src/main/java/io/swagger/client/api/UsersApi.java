@@ -13,7 +13,7 @@ import io.swagger.client.model.Token;
 
 import java.util.*;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-16T12:02:55.364-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-16T15:56:27.334-04:00")
 public class UsersApi {
   private ApiClient apiClient;
 
@@ -572,21 +572,21 @@ public class UsersApi {
   }
   
   /**
-   * Refresh repos owned by the logged-in user
-   * Updates some metadata
+   * List all published containers from a user
+   * Get user&#39;s published containers only
    * @param userId User ID
    * @return List<DockstoreTool>
    */
-  public List<DockstoreTool> refresh (Long userId) throws ApiException {
+  public List<DockstoreTool> userPublishedContainers (Long userId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'userId' is set
     if (userId == null) {
-      throw new ApiException(400, "Missing the required parameter 'userId' when calling refresh");
+      throw new ApiException(400, "Missing the required parameter 'userId' when calling userPublishedContainers");
     }
     
     // create path and map variables
-    String path = "/users/{userId}/containers/refresh".replaceAll("\\{format\\}","json")
+    String path = "/users/{userId}/containers/published".replaceAll("\\{format\\}","json")
       .replaceAll("\\{" + "userId" + "\\}", apiClient.escapeString(userId.toString()));
 
     // query params
@@ -619,21 +619,21 @@ public class UsersApi {
   }
   
   /**
-   * List all registered containers from a user
-   * Get user&#39;s registered containers only
+   * Refresh repos owned by the logged-in user
+   * Updates some metadata
    * @param userId User ID
    * @return List<DockstoreTool>
    */
-  public List<DockstoreTool> userRegisteredContainers (Long userId) throws ApiException {
+  public List<DockstoreTool> refresh (Long userId) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'userId' is set
     if (userId == null) {
-      throw new ApiException(400, "Missing the required parameter 'userId' when calling userRegisteredContainers");
+      throw new ApiException(400, "Missing the required parameter 'userId' when calling refresh");
     }
     
     // create path and map variables
-    String path = "/users/{userId}/containers/registered".replaceAll("\\{format\\}","json")
+    String path = "/users/{userId}/containers/refresh".replaceAll("\\{format\\}","json")
       .replaceAll("\\{" + "userId" + "\\}", apiClient.escapeString(userId.toString()));
 
     // query params
