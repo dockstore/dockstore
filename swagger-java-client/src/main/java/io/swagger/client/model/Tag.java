@@ -15,7 +15,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * This describes one tag associated with a container.
  **/
 @ApiModel(description = "This describes one tag associated with a container.")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-17T11:07:48.615-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-17T14:12:33.169-04:00")
 public class Tag   {
   
   private Long id = null;

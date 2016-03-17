@@ -52,7 +52,7 @@ import com.google.gson.Gson;
 
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.Helper;
-import io.dockstore.webservice.api.RegisterRequest;
+import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ContainerMode;
 import io.dockstore.webservice.core.Label;
@@ -398,14 +398,14 @@ public class DockerRepoResource {
     @ApiOperation(value = "Publish or unpublish a container", notes = "publish a container (public or private). Assumes that user is using quay.io and github.", response = Tool.class)
     public Tool publish(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "Tool id to publish", required = true) @PathParam("containerId") Long containerId,
-            @ApiParam(value = "RegisterRequest to refresh the list of repos for a user", required = true) RegisterRequest request) {
+            @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) PublishRequest request) {
         Tool c = toolDAO.findById(containerId);
         Helper.checkContainer(c);
 
         User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
 
-        if (request.getRegister()) {
+        if (request.getPublish()) {
             boolean validTag = false;
 
             if (c.getMode() == ContainerMode.MANUAL_IMAGE_PATH) {
@@ -424,12 +424,12 @@ public class DockerRepoResource {
             // this if we check the cwl in the tags.
             // if (validTag && c.getValidTrigger() && !c.getGitUrl().isEmpty()) {
             if (validTag && !c.getGitUrl().isEmpty()) {
-                c.setIsPublic(true);
+                c.setIsPublished(true);
             } else {
                 throw new CustomWebApplicationException("Repository does not meet requirements to publish.", HttpStatus.SC_BAD_REQUEST);
             }
         } else {
-            c.setIsPublic(false);
+            c.setIsPublished(false);
         }
 
         long id = toolDAO.create(c);

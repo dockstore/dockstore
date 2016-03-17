@@ -319,7 +319,7 @@ public class UserResource {
     @ApiOperation(value = "Add a group to a user", response = User.class)
     public User addGroupToUser(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam("User ID of user") @PathParam("userId") long userId,
-            @ApiParam(value = "RegisterRequest to refresh the list of repos for a user", required = true) Group group) {
+            @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) Group group) {
         User authUser = userDAO.findById(authToken.getUserId());
         Helper.checkUser(authUser, userId);
 
@@ -375,7 +375,7 @@ public class UserResource {
         for (Iterator<Tool> iterator = repositories.iterator(); iterator.hasNext();) {
             Tool c = iterator.next();
 
-            if (!c.getIsPublic()) {
+            if (!c.getIsPublished()) {
                 iterator.remove();
             }
         }

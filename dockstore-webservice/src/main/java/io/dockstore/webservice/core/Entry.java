@@ -78,13 +78,9 @@ public abstract class Entry {
     @ApiModelProperty("This is the email of the git organization")
     private String email;
     @Column
-    @ApiModelProperty("Implementation specific hook for social starring in this web service")
-    @JsonProperty("is_starred")
-    private boolean isStarred;
-    @Column
-    @JsonProperty
+    @JsonProperty("is_published")
     @ApiModelProperty("Implementation specific visibility in this web service")
-    private boolean isPublic;
+    private boolean isPublished;
     @Column
     @ApiModelProperty("Implementation specific timestamp for last modified")
     private Integer lastModified;
@@ -94,9 +90,6 @@ public abstract class Entry {
     @Column
     @ApiModelProperty(value = "This is a link to the associated repo with a descriptor, required GA4GH", required = true)
     private String gitUrl;
-    @Column
-    @ApiModelProperty("Implementation specific indication as to whether this is properly registered with this web service")
-    private boolean isRegistered;
 
     @JsonProperty
     public String getAuthor() {
@@ -169,19 +162,11 @@ public abstract class Entry {
     }
 
     /**
-     * @param isStarred
-     *            will the repo be starred
-     */
-    public void setIsStarred(boolean isStarred) {
-        this.isStarred = isStarred;
-    }
-
-    /**
-     * @param isPublic
+     * @param isPublished
      *            will the repo be published
      */
-    public void setIsPublic(boolean isPublic) {
-        this.isPublic = isPublic;
+    public void setIsPublished(boolean isPublished) {
+        this.isPublished = isPublished;
     }
 
     /**
@@ -192,38 +177,19 @@ public abstract class Entry {
         this.lastModified = lastModified;
     }
 
-
-    public void setIsRegistered(boolean isRegistered) {
-        this.isRegistered = isRegistered;
-    }
-
-
     /**
-     * @return the isPublic
+     * @return the isPublished
      */
-    public boolean isIsPublic() {
-        return isPublic;
-    }
-
-    /**
-     * @return the isStarred
-     */
-    public boolean isIsStarred() {
-        return isStarred;
+    public boolean isIsPublished() {
+        return isPublished;
     }
 
     public void setGitUrl(String gitUrl) {
         this.gitUrl = gitUrl;
     }
 
-    @JsonProperty
-    public boolean getIsStarred() {
-        return isStarred;
-    }
-
-    @JsonProperty
-    public boolean getIsPublic() {
-        return isPublic;
+    public boolean getIsPublished() {
+        return isPublished;
     }
 
     @JsonProperty("last_modified")
@@ -243,11 +209,6 @@ public abstract class Entry {
         return gitUrl;
     }
 
-    @JsonProperty("is_registered")
-    public boolean getIsRegistered() {
-        return isRegistered;
-    }
-
     @JsonProperty
     public Date getLastUpdated() {
         return lastUpdated;
@@ -264,8 +225,7 @@ public abstract class Entry {
      */
     public void update(Entry entry) {
         this.setDescription(entry.getDescription());
-        isPublic = entry.getIsPublic();
-        isStarred = entry.getIsStarred();
+        isPublished = entry.getIsPublished();
         lastModified = entry.getLastModified();
         this.setAuthor(entry.getAuthor());
 

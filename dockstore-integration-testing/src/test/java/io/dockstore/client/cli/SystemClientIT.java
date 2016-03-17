@@ -46,7 +46,7 @@ import io.swagger.client.api.GAGHApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Group;
-import io.swagger.client.model.RegisterRequest;
+import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Token;
@@ -148,14 +148,14 @@ public class SystemClientIT {
         assertTrue(containers.size() == 5);
 
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
-        assertFalse(container.getIsPublic());
+        assertFalse(container.getIsPublished());
 
         long containerId = container.getId();
 
-        RegisterRequest req = new RegisterRequest();
-        req.setRegister(true);
+        PublishRequest pub = new PublishRequest();
+        pub.setPublish(true);
 
-        containersApi.publish(containerId, req);
+        containersApi.publish(containerId, pub);
     }
 
     @Test
@@ -177,8 +177,7 @@ public class SystemClientIT {
         c.setDefaultDockerfilePath("/Dockerfile");
         c.setDefaultCwlPath("/Dockstore.cwl");
         c.setRegistry(DockstoreTool.RegistryEnum.DOCKER_HUB);
-        c.setIsRegistered(true);
-        c.setIsPublic(true);
+        c.setIsPublished(true);
         c.setValidTrigger(true);
         c.setNamespace("seqware");
         c.setToolname("test5");
@@ -288,23 +287,23 @@ public class SystemClientIT {
         assertTrue(containers.size() == 5);
 
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test5");
-        assertFalse(container.getIsPublic());
+        assertFalse(container.getIsPublished());
 
         long containerId = container.getId();
 
-        RegisterRequest req = new RegisterRequest();
-        req.setRegister(true);
+        PublishRequest pub = new PublishRequest();
+        pub.setPublish(true);
 
-        container = containersApi.publish(containerId, req);
-        assertTrue(container.getIsPublic());
+        container = containersApi.publish(containerId, pub);
+        assertTrue(container.getIsPublished());
 
         containers = containersApi.allPublishedContainers();
         assertTrue(containers.size() == 2);
 
-        req.setRegister(false);
+        pub.setPublish(false);
 
-        container = containersApi.publish(containerId, req);
-        assertFalse(container.getIsPublic());
+        container = containersApi.publish(containerId, pub);
+        assertFalse(container.getIsPublished());
     }
 
     @Test

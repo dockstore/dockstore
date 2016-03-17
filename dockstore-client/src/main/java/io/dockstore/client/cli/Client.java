@@ -85,7 +85,7 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.Body;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.Metadata;
-import io.swagger.client.model.RegisterRequest;
+import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.DockstoreTool;
@@ -317,7 +317,7 @@ public class Client {
                 }
             }
 
-            out(format, container.getToolPath(), description, gitUrl, boolWord(container.getIsPublic()), descriptor, automated);
+            out(format, container.getToolPath(), description, gitUrl, boolWord(container.getIsPublished()), descriptor, automated);
         }
     }
 
@@ -422,9 +422,9 @@ public class Client {
                     String second = args.get(1);
                     try {
                         DockstoreTool container = containersApi.getContainerByToolPath(second);
-                        RegisterRequest req = new RegisterRequest();
-                        req.setRegister(false);
-                        container = containersApi.publish(container.getId(), req);
+                        PublishRequest pub = new PublishRequest();
+                        pub.setPublish(false);
+                        container = containersApi.publish(container.getId(), pub);
 
                         if (container != null) {
                             out("Successfully unpublished " + second);
@@ -439,9 +439,9 @@ public class Client {
                 if (args.size() == 1) {
                     try {
                         DockstoreTool container = containersApi.getContainerByToolPath(first);
-                        RegisterRequest req = new RegisterRequest();
-                        req.setRegister(true);
-                        container = containersApi.publish(container.getId(), req);
+                        PublishRequest pub = new PublishRequest();
+                        pub.setPublish(true);
+                        container = containersApi.publish(container.getId(), pub);
 
                         if (container != null) {
                             out("Successfully published " + first);
@@ -465,8 +465,7 @@ public class Client {
                         newContainer.setDefaultDockerfilePath(container.getDefaultDockerfilePath());
                         newContainer.setDefaultCwlPath(container.getDefaultCwlPath());
                         newContainer.setDefaultWdlPath(container.getDefaultWdlPath());
-                        newContainer.setIsPublic(container.getIsPublic());
-                        newContainer.setIsRegistered(container.getIsRegistered());
+                        newContainer.setIsPublished(container.getIsPublished());
                         newContainer.setGitUrl(container.getGitUrl());
                         newContainer.setPath(container.getPath());
                         newContainer.setToolname(toolname);
@@ -528,8 +527,7 @@ public class Client {
             container.setDefaultDockerfilePath(dockerfilePath);
             container.setDefaultCwlPath(cwlPath);
             container.setDefaultWdlPath(wdlPath);
-            container.setIsPublic(false);
-            container.setIsRegistered(true);
+            container.setIsPublished(false);
             container.setGitUrl(gitURL);
             container.setToolname(toolname);
             container.setPath(Joiner.on("/").skipNulls().join(registry, namespace, name));
@@ -948,7 +946,7 @@ public class Client {
         String path = args.get(0);
         try {
             DockstoreTool container = containersApi.getPublishedContainerByToolPath(path);
-            if (container == null || !container.getIsPublic()) {
+            if (container == null || !container.getIsPublished()) {
                 kill("This container is not published.");
             } else {
 
@@ -1631,7 +1629,7 @@ public class Client {
         out("");
         out("  publish          :  publish/unpublish a container in the dockstore");
         out("");
-        out("  manual_publish   :  registers a Docker Hub container in the dockstore and publishes it");
+        out("  manual_publish   :  registers a Docker Hub container in the dockstore");
         out("");
         out("  info <container> :  print detailed information about a particular public container");
         out("");

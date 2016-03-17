@@ -13,7 +13,7 @@ import io.swagger.client.model.Token;
 
 import java.util.*;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-17T11:07:48.615-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-17T14:12:33.169-04:00")
 public class UsersApi {
   private ApiClient apiClient;
 
@@ -716,7 +716,7 @@ public class UsersApi {
    * Add a group to a user
    * 
    * @param userId User ID of user
-   * @param body RegisterRequest to refresh the list of repos for a user
+   * @param body PublishRequest to refresh the list of repos for a user
    * @return User
    */
   public User addGroupToUser (Long userId, Group body) throws ApiException {

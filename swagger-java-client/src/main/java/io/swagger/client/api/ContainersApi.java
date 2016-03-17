@@ -9,12 +9,12 @@ import io.swagger.client.TypeRef;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Body;
-import io.swagger.client.model.RegisterRequest;
+import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.User;
 
 import java.util.*;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-17T11:07:48.615-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-17T14:12:33.169-04:00")
 public class ContainersApi {
   private ApiClient apiClient;
 
@@ -785,10 +785,10 @@ public class ContainersApi {
    * Publish or unpublish a container
    * publish a container (public or private). Assumes that user is using quay.io and github.
    * @param containerId Tool id to publish
-   * @param body RegisterRequest to refresh the list of repos for a user
+   * @param body PublishRequest to refresh the list of repos for a user
    * @return DockstoreTool
    */
-  public DockstoreTool publish (Long containerId, RegisterRequest body) throws ApiException {
+  public DockstoreTool publish (Long containerId, PublishRequest body) throws ApiException {
     Object postBody = body;
     
     // verify the required parameter 'containerId' is set

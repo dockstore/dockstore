@@ -1,9 +1,7 @@
 package io.swagger.client.model;
 
 import io.swagger.client.StringUtil;
-import io.swagger.client.model.User;
-import io.swagger.client.model.Label;
-import io.swagger.client.model.Workflow;
+
 import java.util.*;
 import java.util.Date;
 
@@ -34,10 +32,8 @@ public class Workflow   {
   private String path = null;
   private List<Workflow> workflowVersions = new ArrayList<Workflow>();
   private List<Workflow> versions = new ArrayList<Workflow>();
-  private Boolean isStarred = null;
-  private Boolean isPublic = null;
+  private Boolean isPublished = null;
   private Integer lastModified = null;
-  private Boolean isRegistered = null;
   private String workflowPath = null;
 
   
@@ -221,30 +217,16 @@ public class Workflow   {
     this.versions = versions;
   }
 
-  
-  /**
-   * Implementation specific hook for social starring in this web service
-   **/
-  @ApiModelProperty(value = "Implementation specific hook for social starring in this web service")
-  @JsonProperty("is_starred")
-  public Boolean getIsStarred() {
-    return isStarred;
-  }
-  public void setIsStarred(Boolean isStarred) {
-    this.isStarred = isStarred;
-  }
-
-  
   /**
    * Implementation specific visibility in this web service
    **/
   @ApiModelProperty(value = "Implementation specific visibility in this web service")
-  @JsonProperty
-  public Boolean getIsPublic() {
-    return isPublic;
+  @JsonProperty("is_published")
+  public Boolean getIsPublished() {
+    return isPublished;
   }
-  public void setIsPublic(Boolean isPublic) {
-    this.isPublic = isPublic;
+  public void setIsPublished(Boolean isPublished) {
+    this.isPublished = isPublished;
   }
 
   
@@ -259,20 +241,6 @@ public class Workflow   {
   public void setLastModified(Integer lastModified) {
     this.lastModified = lastModified;
   }
-
-  
-  /**
-   * Implementation specific indication as to whether this is properly registered with this web service
-   **/
-  @ApiModelProperty(value = "Implementation specific indication as to whether this is properly registered with this web service")
-  @JsonProperty("is_registered")
-  public Boolean getIsRegistered() {
-    return isRegistered;
-  }
-  public void setIsRegistered(Boolean isRegistered) {
-    this.isRegistered = isRegistered;
-  }
-
   
   /**
    * This indicates for the associated git repository, the default path to the CWL document
@@ -307,10 +275,8 @@ public class Workflow   {
     sb.append("    path: ").append(StringUtil.toIndentedString(path)).append("\n");
     sb.append("    workflowVersions: ").append(StringUtil.toIndentedString(workflowVersions)).append("\n");
     sb.append("    versions: ").append(StringUtil.toIndentedString(versions)).append("\n");
-    sb.append("    isStarred: ").append(StringUtil.toIndentedString(isStarred)).append("\n");
-    sb.append("    isPublic: ").append(StringUtil.toIndentedString(isPublic)).append("\n");
+    sb.append("    isPublished: ").append(StringUtil.toIndentedString(isPublished)).append("\n");
     sb.append("    lastModified: ").append(StringUtil.toIndentedString(lastModified)).append("\n");
-    sb.append("    isRegistered: ").append(StringUtil.toIndentedString(isRegistered)).append("\n");
     sb.append("    workflowPath: ").append(StringUtil.toIndentedString(workflowPath)).append("\n");
     sb.append("}");
     return sb.toString();

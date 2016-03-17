@@ -60,7 +60,7 @@ public class GeneralET {
         @Test
         public void testListAvailableContainers() {
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublic='f'", new ScalarHandler<>());
+                final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='f'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 4 entries, there are " + count, count == 4);
         }
 

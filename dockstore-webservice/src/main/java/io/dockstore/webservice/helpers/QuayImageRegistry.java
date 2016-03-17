@@ -140,8 +140,8 @@ public class QuayImageRegistry implements ImageRegistryInterface {
                 try {
                     // interesting, this relies upon our container object having the same fields
                     // as quay.io's repositories
-                    // This is grabbing some values (isStarred, isPublic, etc.) from quay.  isPublic to quay means a repo is public, our isPublic means a tool is visible to the public on dockstore.
-                    // Likely we need to rename this (and possible isStarred and others in the future)
+
+                    // PLEASE NOTE : is_public is from quay.  It has NO connection to our is_published!
                     repos = objectMapper.readValue(asString.get(), RepoList.class);
 
                     List<Tool> tools = repos.getRepositories();
