@@ -22,7 +22,7 @@ For the related web UI see the [dockstore-ui](https://github.com/ga4gh/dockstore
 
 To install CWL tool:
 
-    pip install cwl-runner  cwltool==1.0.20160316150250 schema-salad==1.4.20160108200836 avro==1.7.7
+    pip install cwl-runner  cwltool==1.0.20160316150250 schema-salad==1.7.20160316150109 avro==1.7.7
 
 ### Building
 
