@@ -31,7 +31,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -47,11 +46,7 @@ import com.google.common.base.Optional;
 import com.google.gson.Gson;
 
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.ToolMode;
-import io.dockstore.webservice.helpers.EntryLabelHelper;
 import io.dockstore.webservice.api.PublishRequest;
-import io.dockstore.webservice.helpers.EntryVersionHelper;
-import io.dockstore.webservice.helpers.Helper;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Registry;
 import io.dockstore.webservice.core.SourceFile;
@@ -60,7 +55,11 @@ import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.helpers.EntryLabelHelper;
+import io.dockstore.webservice.helpers.EntryVersionHelper;
+import io.dockstore.webservice.helpers.Helper;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
@@ -127,7 +126,6 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @ApiOperation(value = "Refresh all repos", notes = "Updates some metadata. ADMIN ONLY", response = Tool.class, responseContainer = "List")
-    // @SuppressWarnings("checkstyle:methodlength")
     public List<Tool> refreshAll(@ApiParam(hidden = true) @Auth Token authToken) {
         User authUser = userDAO.findById(authToken.getUserId());
         Helper.checkUser(authUser);
@@ -135,23 +133,23 @@ public class DockerRepoResource {
         List<Tool> tools;
         List<User> users = userDAO.findAll();
         for (User user : users) {
-            try {
-                List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
-
-                if (!tokens.isEmpty()) {
-                    Token bitbucketToken = tokens.get(0);
-                    Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
-                }
-
-                Helper.refresh(user.getId(), client, objectMapper, userDAO, toolDAO, tokenDAO, tagDAO, fileDAO);
-            } catch (WebApplicationException ex) {
-                LOG.info("Failed to refresh user {}", user.getId());
-            }
+            refreshToolsForUser(user.getId());
         }
 
         tools = toolDAO.findAll();
 
         return tools;
+    }
+
+    public List<Tool> refreshToolsForUser(Long userId) {
+        List<Token> tokens = tokenDAO.findBitbucketByUserId(userId);
+
+        if (!tokens.isEmpty()) {
+            Token bitbucketToken = tokens.get(0);
+            Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
+        }
+
+        return Helper.refresh(userId, client, objectMapper, userDAO, toolDAO, tokenDAO, tagDAO, fileDAO);
     }
 
     @GET

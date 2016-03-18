@@ -89,7 +89,7 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinTable(name = "workflow_workflowversion", joinColumns = @JoinColumn(name = "workflowid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "workflowversionid", referencedColumnName = "id"))
-    @ApiModelProperty("Implementation specific tracking of valid build workflowVersions for the docker container")
+    @ApiModelProperty(value = "Implementation specific tracking of valid build workflowVersions for the docker container")
     @OrderBy("id")
     private final SortedSet<WorkflowVersion> workflowVersions;
 

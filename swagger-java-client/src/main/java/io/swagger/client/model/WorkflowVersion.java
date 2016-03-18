@@ -28,11 +28,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 /**
- * This describes one tag associated with a container.
+ * This describes one workflow version associated with a workflow.
  **/
-@ApiModel(description = "This describes one tag associated with a container.")
+@ApiModel(description = "This describes one workflow version associated with a workflow.")
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-18T16:51:57.948-04:00")
-public class Tag   {
+public class WorkflowVersion   {
   
   private Long id = null;
   private String reference = null;
@@ -40,13 +40,8 @@ public class Tag   {
   private Boolean hidden = null;
   private Boolean valid = null;
   private String name = null;
-  private Long size = null;
-  private Boolean automated = null;
   private Date lastModified = null;
-  private String imageId = null;
-  private String dockerfilePath = null;
-  private String cwlPath = null;
-  private String wdlPath = null;
+  private String workflowPath = null;
 
   
   /**
@@ -128,32 +123,6 @@ public class Tag   {
 
   
   /**
-   * Size of the image
-   **/
-  @ApiModelProperty(value = "Size of the image")
-  @JsonProperty("size")
-  public Long getSize() {
-    return size;
-  }
-  public void setSize(Long size) {
-    this.size = size;
-  }
-
-  
-  /**
-   * Implementation specific, indicates whether this is an automated build on quay.io
-   **/
-  @ApiModelProperty(value = "Implementation specific, indicates whether this is an automated build on quay.io")
-  @JsonProperty("automated")
-  public Boolean getAutomated() {
-    return automated;
-  }
-  public void setAutomated(Boolean automated) {
-    this.automated = automated;
-  }
-
-  
-  /**
    * The last time this image was modified in the image registry
    **/
   @ApiModelProperty(value = "The last time this image was modified in the image registry")
@@ -167,54 +136,15 @@ public class Tag   {
 
   
   /**
-   * Tag for this image in quay.ui/docker hub
+   * Path for the workflow
    **/
-  @ApiModelProperty(required = true, value = "Tag for this image in quay.ui/docker hub")
-  @JsonProperty("image_id")
-  public String getImageId() {
-    return imageId;
+  @ApiModelProperty(value = "Path for the workflow")
+  @JsonProperty("workflow_path")
+  public String getWorkflowPath() {
+    return workflowPath;
   }
-  public void setImageId(String imageId) {
-    this.imageId = imageId;
-  }
-
-  
-  /**
-   * Path for the Dockerfile
-   **/
-  @ApiModelProperty(value = "Path for the Dockerfile")
-  @JsonProperty("dockerfile_path")
-  public String getDockerfilePath() {
-    return dockerfilePath;
-  }
-  public void setDockerfilePath(String dockerfilePath) {
-    this.dockerfilePath = dockerfilePath;
-  }
-
-  
-  /**
-   * Path for the CWL document
-   **/
-  @ApiModelProperty(value = "Path for the CWL document")
-  @JsonProperty("cwl_path")
-  public String getCwlPath() {
-    return cwlPath;
-  }
-  public void setCwlPath(String cwlPath) {
-    this.cwlPath = cwlPath;
-  }
-
-  
-  /**
-   * Path for the WDL document
-   **/
-  @ApiModelProperty(value = "Path for the WDL document")
-  @JsonProperty("wdl_path")
-  public String getWdlPath() {
-    return wdlPath;
-  }
-  public void setWdlPath(String wdlPath) {
-    this.wdlPath = wdlPath;
+  public void setWorkflowPath(String workflowPath) {
+    this.workflowPath = workflowPath;
   }
 
   
@@ -222,7 +152,7 @@ public class Tag   {
   @Override
   public String toString()  {
     StringBuilder sb = new StringBuilder();
-    sb.append("class Tag {\n");
+    sb.append("class WorkflowVersion {\n");
     
     sb.append("    id: ").append(StringUtil.toIndentedString(id)).append("\n");
     sb.append("    reference: ").append(StringUtil.toIndentedString(reference)).append("\n");
@@ -230,13 +160,8 @@ public class Tag   {
     sb.append("    hidden: ").append(StringUtil.toIndentedString(hidden)).append("\n");
     sb.append("    valid: ").append(StringUtil.toIndentedString(valid)).append("\n");
     sb.append("    name: ").append(StringUtil.toIndentedString(name)).append("\n");
-    sb.append("    size: ").append(StringUtil.toIndentedString(size)).append("\n");
-    sb.append("    automated: ").append(StringUtil.toIndentedString(automated)).append("\n");
     sb.append("    lastModified: ").append(StringUtil.toIndentedString(lastModified)).append("\n");
-    sb.append("    imageId: ").append(StringUtil.toIndentedString(imageId)).append("\n");
-    sb.append("    dockerfilePath: ").append(StringUtil.toIndentedString(dockerfilePath)).append("\n");
-    sb.append("    cwlPath: ").append(StringUtil.toIndentedString(cwlPath)).append("\n");
-    sb.append("    wdlPath: ").append(StringUtil.toIndentedString(wdlPath)).append("\n");
+    sb.append("    workflowPath: ").append(StringUtil.toIndentedString(workflowPath)).append("\n");
     sb.append("}");
     return sb.toString();
   }

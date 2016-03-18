@@ -17,8 +17,10 @@
 package io.swagger.client.model;
 
 import io.swagger.client.StringUtil;
-
+import io.swagger.client.model.User;
+import io.swagger.client.model.Label;
 import java.util.*;
+import io.swagger.client.model.WorkflowVersion;
 import java.util.Date;
 
 
@@ -31,7 +33,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * This describes one workflow in the dockstore
  **/
 @ApiModel(description = "This describes one workflow in the dockstore")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-16T11:18:05.004-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-18T16:51:57.948-04:00")
 public class Workflow   {
   
   private Long id = null;
@@ -42,12 +44,29 @@ public class Workflow   {
   private String email = null;
   private Date lastUpdated = null;
   private String gitUrl = null;
+
+public enum ModeEnum {
+  FULL("FULL"),
+  STUB("STUB");
+
+  private String value;
+
+  ModeEnum(String value) {
+    this.value = value;
+  }
+
+  @Override
+  public String toString() {
+    return value;
+  }
+}
+
+  private ModeEnum mode = null;
   private String workflowName = null;
   private String organization = null;
   private String repository = null;
   private String path = null;
-  private List<Workflow> workflowVersions = new ArrayList<Workflow>();
-  private List<Workflow> versions = new ArrayList<Workflow>();
+  private List<WorkflowVersion> workflowVersions = new ArrayList<WorkflowVersion>();
   private Boolean isPublished = null;
   private Integer lastModified = null;
   private String workflowPath = null;
@@ -158,6 +177,19 @@ public class Workflow   {
 
   
   /**
+   * This indicates what mode this is in which informs how we do things like refresh, dockstore specific
+   **/
+  @ApiModelProperty(required = true, value = "This indicates what mode this is in which informs how we do things like refresh, dockstore specific")
+  @JsonProperty("mode")
+  public ModeEnum getMode() {
+    return mode;
+  }
+  public void setMode(ModeEnum mode) {
+    this.mode = mode;
+  }
+
+  
+  /**
    * This is the name of the workflow, not needed when only one workflow in a repo
    **/
   @ApiModelProperty(value = "This is the name of the workflow, not needed when only one workflow in a repo")
@@ -214,25 +246,14 @@ public class Workflow   {
    **/
   @ApiModelProperty(value = "Implementation specific tracking of valid build workflowVersions for the docker container")
   @JsonProperty("workflowVersions")
-  public List<Workflow> getWorkflowVersions() {
+  public List<WorkflowVersion> getWorkflowVersions() {
     return workflowVersions;
   }
-  public void setWorkflowVersions(List<Workflow> workflowVersions) {
+  public void setWorkflowVersions(List<WorkflowVersion> workflowVersions) {
     this.workflowVersions = workflowVersions;
   }
 
   
-  /**
-   **/
-  @ApiModelProperty(value = "")
-  @JsonProperty("versions")
-  public List<Workflow> getVersions() {
-    return versions;
-  }
-  public void setVersions(List<Workflow> versions) {
-    this.versions = versions;
-  }
-
   /**
    * Implementation specific visibility in this web service
    **/
@@ -257,6 +278,7 @@ public class Workflow   {
   public void setLastModified(Integer lastModified) {
     this.lastModified = lastModified;
   }
+
   
   /**
    * This indicates for the associated git repository, the default path to the CWL document
@@ -285,12 +307,12 @@ public class Workflow   {
     sb.append("    email: ").append(StringUtil.toIndentedString(email)).append("\n");
     sb.append("    lastUpdated: ").append(StringUtil.toIndentedString(lastUpdated)).append("\n");
     sb.append("    gitUrl: ").append(StringUtil.toIndentedString(gitUrl)).append("\n");
+    sb.append("    mode: ").append(StringUtil.toIndentedString(mode)).append("\n");
     sb.append("    workflowName: ").append(StringUtil.toIndentedString(workflowName)).append("\n");
     sb.append("    organization: ").append(StringUtil.toIndentedString(organization)).append("\n");
     sb.append("    repository: ").append(StringUtil.toIndentedString(repository)).append("\n");
     sb.append("    path: ").append(StringUtil.toIndentedString(path)).append("\n");
     sb.append("    workflowVersions: ").append(StringUtil.toIndentedString(workflowVersions)).append("\n");
-    sb.append("    versions: ").append(StringUtil.toIndentedString(versions)).append("\n");
     sb.append("    isPublished: ").append(StringUtil.toIndentedString(isPublished)).append("\n");
     sb.append("    lastModified: ").append(StringUtil.toIndentedString(lastModified)).append("\n");
     sb.append("    workflowPath: ").append(StringUtil.toIndentedString(workflowPath)).append("\n");

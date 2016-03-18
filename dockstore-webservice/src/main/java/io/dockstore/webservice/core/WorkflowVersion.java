@@ -33,7 +33,7 @@ import io.swagger.annotations.ApiModelProperty;
  * 
  * @author dyuen
  */
-@ApiModel(value = "Workflow", description = "This describes one tag associated with a container.")
+@ApiModel(value = "WorkflowVersion", description = "This describes one workflow version associated with a workflow.")
 @Entity
 public class WorkflowVersion extends Version<WorkflowVersion> implements Comparable<WorkflowVersion> {
 

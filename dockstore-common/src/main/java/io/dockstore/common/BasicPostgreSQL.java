@@ -108,6 +108,7 @@ public class BasicPostgreSQL {
         runUpdateStatement("delete from sourcefile;");
         runUpdateStatement("delete from tool_tag;");
         runUpdateStatement("delete from tag;");
+        runUpdateStatement("delete from workflow_workflowversion;");
         runUpdateStatement("delete from workflowversion;");
         runUpdateStatement("delete from entry_label;");
         runUpdateStatement("delete from label;");

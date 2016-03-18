@@ -1,0 +1,8 @@
+[webservice]
+base_path = http://localhost:8080
+
+[database]
+postgresHost = 127.0.0.1
+postgresUser = dockstore
+postgresPass = dockstore
+postgresDBName = webservice_test

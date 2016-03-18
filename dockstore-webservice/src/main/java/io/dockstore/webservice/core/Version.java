@@ -39,6 +39,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 
+import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 /**
@@ -47,6 +48,7 @@ import io.swagger.annotations.ApiModelProperty;
  * @author dyuen
  */
 @Entity
+@ApiModel(value = "Base class for versions of entries in the Dockstore")
 @Inheritance(strategy= InheritanceType.TABLE_PER_CLASS)
 public abstract class Version<T extends Version> implements Comparable<T>{
     /** re-use existing generator for backwards compatibility */

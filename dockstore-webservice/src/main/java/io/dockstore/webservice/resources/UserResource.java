@@ -40,24 +40,24 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.codahale.metrics.annotation.Timed;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
 import com.google.gson.Gson;
 
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.helpers.Helper;
-import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
+import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.jdbi.ToolDAO;
-import io.dockstore.webservice.jdbi.FileDAO;
+import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.helpers.Helper;
 import io.dockstore.webservice.jdbi.GroupDAO;
-import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.auth.Auth;
@@ -80,29 +80,20 @@ public class UserResource {
     private final UserDAO userDAO;
     private final GroupDAO groupDAO;
     private final TokenDAO tokenDAO;
-    private final ToolDAO toolDAO;
-    private final TagDAO tagDAO;
-    private final FileDAO fileDAO;
-    private final String bitbucketClientID;
-    private final String bitbucketClientSecret;
 
-    private final ObjectMapper objectMapper;
 
     private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
+    private final WorkflowResource workflowResource;
+    private final DockerRepoResource dockerRepoResource;
 
-    @SuppressWarnings("checkstyle:parameternumber")
-    public UserResource(ObjectMapper mapper, HttpClient client, TokenDAO tokenDAO, UserDAO userDAO, GroupDAO groupDAO,
-            ToolDAO toolDAO, TagDAO tagDAO, FileDAO fileDAO, String bitbucketClientID, String bitbucketClientSecret) {
-        objectMapper = mapper;
+    public UserResource(HttpClient client, TokenDAO tokenDAO, UserDAO userDAO, GroupDAO groupDAO,
+            WorkflowResource workflowResource, DockerRepoResource dockerRepoResource) {
         this.client = client;
         this.userDAO = userDAO;
         this.groupDAO = groupDAO;
         this.tokenDAO = tokenDAO;
-        this.toolDAO = toolDAO;
-        this.tagDAO = tagDAO;
-        this.fileDAO = fileDAO;
-        this.bitbucketClientID = bitbucketClientID;
-        this.bitbucketClientSecret = bitbucketClientSecret;
+        this.workflowResource = workflowResource;
+        this.dockerRepoResource = dockerRepoResource;
     }
 
     @POST
@@ -273,8 +264,7 @@ public class UserResource {
             throw new CustomWebApplicationException("User not found.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        List grouplist = new ArrayList(user.getGroups());
-        return grouplist;
+        return new ArrayList<>(user.getGroups());
     }
 
     @GET
@@ -289,9 +279,7 @@ public class UserResource {
             throw new CustomWebApplicationException("Group not found.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        List userlist = new ArrayList(group.getUsers());
-        return userlist;
-
+        return new ArrayList<>(group.getUsers());
     }
 
     @GET
@@ -370,7 +358,8 @@ public class UserResource {
         User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, userId);
 
-        List<Tool> repositories = new ArrayList(user.getEntries());
+        final ImmutableList<Tool> immutableList = FluentIterable.from(user.getEntries()).filter(Tool.class).toList();
+        final List<Tool> repositories = Lists.newArrayList(immutableList);
 
         for (Iterator<Tool> iterator = repositories.iterator(); iterator.hasNext();) {
             Tool c = iterator.next();
@@ -388,23 +377,45 @@ public class UserResource {
     @UnitOfWork
     @Path("/{userId}/containers/refresh")
     @ApiOperation(value = "Refresh repos owned by the logged-in user", notes = "Updates some metadata", response = Tool.class, responseContainer = "List")
-    @SuppressWarnings("checkstyle:methodlength")
     public List<Tool> refresh(@ApiParam(hidden = true) @Auth Token authToken,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
 
         User authUser = userDAO.findById(authToken.getUserId());
         Helper.checkUser(authUser, userId);
 
-        List<Token> tokens = tokenDAO.findBitbucketByUserId(userId);
-
-        if (!tokens.isEmpty()) {
-            Token bitbucketToken = tokens.get(0);
-            Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
-        }
-
-        List<Tool> tools = Helper.refresh(userId, client, objectMapper, userDAO, toolDAO, tokenDAO, tagDAO, fileDAO);
-        return tools;
+        return dockerRepoResource.refreshToolsForUser(userId);
     }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{userId}/workflows/refresh")
+    @ApiOperation(value = "Refresh workflows owned by the logged-in user", notes = "Updates some metadata", response = Workflow.class, responseContainer = "List")
+    public List<Workflow> refreshWorkflows(@ApiParam(hidden = true) @Auth Token authToken,
+                                 @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
+
+        User authUser = userDAO.findById(authToken.getUserId());
+        Helper.checkUser(authUser, userId);
+
+        workflowResource.refreshStubWorkflowsForUser(authUser);
+        // refresh the user
+        authUser = userDAO.findById(authToken.getUserId());
+        return FluentIterable.from(authUser.getEntries()).filter(Workflow.class).toList();
+    }
+
+    @GET
+    @Path("/{userId}/workflows")
+    @Timed
+    @UnitOfWork
+    @ApiOperation(value = "List workflows owned by the logged-in user", notes = "Lists all registered and unregistered workflows owned by the user", response = Workflow.class, responseContainer = "List")
+    public List<Workflow> userWorkflows(@ApiParam(hidden = true) @Auth Token token,
+                                        @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
+        User user = userDAO.findById(token.getUserId());
+        Helper.checkUser(user, userId);
+
+        return FluentIterable.from(user.getEntries()).filter(Workflow.class).toList();
+    }
+
 
     @GET
     @Path("/{userId}/containers")
@@ -416,8 +427,7 @@ public class UserResource {
         User user = userDAO.findById(token.getUserId());
         Helper.checkUser(user, userId);
 
-        List<Tool> ownedTools = new ArrayList(user.getEntries());
-        return ownedTools;
+        return FluentIterable.from(user.getEntries()).filter(Tool.class).toList();
     }
 
     @GET
@@ -426,8 +436,7 @@ public class UserResource {
     @Path("/user")
     @ApiOperation(value = "Get the logged-in user", response = User.class)
     public User getUser(@ApiParam(hidden = true) @Auth Token authToken) {
-        User user = userDAO.findById(authToken.getUserId());
-        return user;
+        return userDAO.findById(authToken.getUserId());
     }
 
     @GET
@@ -462,9 +471,7 @@ public class UserResource {
 
             Map<String, ArrayList> map2 = new HashMap<>();
             map2 = (Map<String, ArrayList>) gson.fromJson(response, map2.getClass());
-            ArrayList organizations = map2.get("organizations");
-
-            return organizations;
+            return map2.get("organizations");
         }
         return null;
     }

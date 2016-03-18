@@ -26,10 +26,11 @@ import io.swagger.client.model.User;
 import io.swagger.client.model.Group;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Token;
+import io.swagger.client.model.Workflow;
 
 import java.util.*;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-17T14:12:33.169-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-18T16:51:57.948-04:00")
 public class UsersApi {
   private ApiClient apiClient;
 
@@ -1019,6 +1020,100 @@ public class UsersApi {
 
     
     TypeRef returnType = new TypeRef<List<Token>>() {};
+    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    
+  }
+  
+  /**
+   * List workflows owned by the logged-in user
+   * Lists all registered and unregistered workflows owned by the user
+   * @param userId User ID
+   * @return List<Workflow>
+   */
+  public List<Workflow> userWorkflows (Long userId) throws ApiException {
+    Object postBody = null;
+    
+    // verify the required parameter 'userId' is set
+    if (userId == null) {
+      throw new ApiException(400, "Missing the required parameter 'userId' when calling userWorkflows");
+    }
+    
+    // create path and map variables
+    String path = "/users/{userId}/workflows".replaceAll("\\{format\\}","json")
+      .replaceAll("\\{" + "userId" + "\\}", apiClient.escapeString(userId.toString()));
+
+    // query params
+    List<Pair> queryParams = new ArrayList<Pair>();
+    Map<String, String> headerParams = new HashMap<String, String>();
+    Map<String, Object> formParams = new HashMap<String, Object>();
+
+    
+
+    
+
+    
+
+    final String[] accepts = {
+      "application/json"
+    };
+    final String accept = apiClient.selectHeaderAccept(accepts);
+
+    final String[] contentTypes = {
+      "application/json"
+    };
+    final String contentType = apiClient.selectHeaderContentType(contentTypes);
+
+    String[] authNames = new String[] {  };
+
+    
+    TypeRef returnType = new TypeRef<List<Workflow>>() {};
+    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    
+  }
+  
+  /**
+   * Refresh workflows owned by the logged-in user
+   * Updates some metadata
+   * @param userId User ID
+   * @return List<Workflow>
+   */
+  public List<Workflow> refreshWorkflows (Long userId) throws ApiException {
+    Object postBody = null;
+    
+    // verify the required parameter 'userId' is set
+    if (userId == null) {
+      throw new ApiException(400, "Missing the required parameter 'userId' when calling refreshWorkflows");
+    }
+    
+    // create path and map variables
+    String path = "/users/{userId}/workflows/refresh".replaceAll("\\{format\\}","json")
+      .replaceAll("\\{" + "userId" + "\\}", apiClient.escapeString(userId.toString()));
+
+    // query params
+    List<Pair> queryParams = new ArrayList<Pair>();
+    Map<String, String> headerParams = new HashMap<String, String>();
+    Map<String, Object> formParams = new HashMap<String, Object>();
+
+    
+
+    
+
+    
+
+    final String[] accepts = {
+      "application/json"
+    };
+    final String accept = apiClient.selectHeaderAccept(accepts);
+
+    final String[] contentTypes = {
+      "application/json"
+    };
+    final String contentType = apiClient.selectHeaderContentType(contentTypes);
+
+    String[] authNames = new String[] {  };
+
+    
+    TypeRef returnType = new TypeRef<List<Workflow>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
