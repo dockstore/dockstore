@@ -487,26 +487,7 @@ public class Client {
 
     private static void manualPublish(final List<String> args) {
         if (isHelp(args, true)) {
-            out("");
-            out("Usage: dockstore manual_publish --help");
-            out("       dockstore manual_publish <params>");
-            out("");
-            out("Description:");
-            out("  Manually register an entry in the dockstore. Currently this is used to " + "register entries for images on Docker Hub .");
-            out("");
-            out("Required parameters:");
-            out("  --name <name>                Name for the docker container");
-            out("  --namespace <namespace>      Organization for the docker container");
-            out("  --git-url <url>              Reference to the git repo holding descriptor(s) and Dockerfile ex: \"git@github.com:user/test1.git\"");
-            out("  --git-reference <reference>  Reference to git branch or tag where the CWL and Dockerfile is checked-in");
-            out("Optional parameters:");
-            out("  --dockerfile-path <file>     Path for the dockerfile, defaults to /Dockerfile");
-            out("  --cwl-path <file>            Path for the CWL document, defaults to /Dockstore.cwl");
-            out("  --wdl-path <file>            Path for the WDL document, defaults to /Dockstore.wdl");
-            out("  --toolname <toolname>        Name of the tool, can be omitted");
-            out("  --registry <registry>        Docker registry, can be omitted, defaults to registry.hub.docker.com");
-            out("  --version-name <version>     Version tag name for Dockerhub containers only, defaults to latest");
-            out("");
+            manualPublishHelp();
         } else {
             final String name = reqVal(args, "--name");
             final String namespace = reqVal(args, "--namespace");
@@ -578,16 +559,7 @@ public class Client {
 
     private static void convert(final List<String> args) throws ApiException, IOException {
         if (isHelp(args, true)) {
-            out("");
-            out("Usage: dockstore " + CONVERT + " --help");
-            out("       dockstore " + CONVERT + " cwl2json");
-            out("       dockstore " + CONVERT + " tool2json");
-            out("       dockstore " + CONVERT + " tool2tsv");
-            out("");
-            out("Description:");
-            out("  These are preview features that will be finalized for the next major release.");
-            out("  They allow you to convert between file representations.");
-            out("");
+            convertHelp();
         } else {
             final String cmd = args.remove(0);
             if (null != cmd) {
@@ -614,19 +586,7 @@ public class Client {
 
      private static void launch(final List<String> args) {
          if (isHelp(args, true)) {
-             out("");
-             out("Usage: dockstore " + LAUNCH + " --help");
-             out("       dockstore " + LAUNCH);
-             out("");
-             out("Description:");
-             out("  Launch an entry locally.");
-             out("Required parameters:");
-             out("  --entry <entry>                Complete tool path in the Dockstore");
-             out("Optional parameters:");
-             out("  --json <json file>            Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs");
-             out("  --tsv <tsv file>             One row corresponds to parameters for one run in the dockstore");
-             out("  --descriptor <descriptor type>             Descriptor type used to launch workflow. Defaults to " + CWL);
-             out("");
+             launchHelp();
          } else {
              final String descriptor = optVal(args, "--descriptor", CWL);
              if (descriptor.equals(CWL)) {
@@ -719,17 +679,7 @@ public class Client {
 
     private static void launchWdl(final List<String> args) {
         if (isHelp(args, true)) {
-            out("");
-            out("Usage: dockstore launch_wdl --help");
-            out("       dockstore launch_wdl");
-            out("");
-            out("Description:");
-            out("  Launch an entry locally.");
-            out("Required parameters:");
-            out("  --entry <entry>                Complete tool path in the Dockstore");
-            out("Optional parameters:");
-            out("  --json <json file>            Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs");
-            out("");
+            launchWdlHelp();
         } else {
             final String entry = reqVal(args, "--entry");
             final String json = reqVal(args, "--json");
@@ -779,16 +729,7 @@ public class Client {
 
     private static void tool2json(final List<String> args) throws ApiException, IOException {
         if (isHelp(args, true)) {
-            out("");
-            out("Usage: dockstore " + CONVERT + " tool2json --help");
-            out("       dockstore " + CONVERT + " tool2json");
-            out("");
-            out("Description:");
-            out("  Spit out a json run file for a given cwl document.");
-            out("Required parameters:");
-            out("  --entry <entry>                Complete tool path in the Dockstore");
-            out("  --descriptor <descriptor>      Type of descriptor language used. Defaults to cwl");
-            out("");
+            tool2jsonHelp();
         } else {
             final String runString = runString(args, true);
             out(runString);
@@ -854,15 +795,7 @@ public class Client {
 
     private static void tool2tsv(final List<String> args) throws ApiException, IOException {
         if (isHelp(args, true)) {
-            out("");
-            out("Usage: dockstore " + CONVERT + " tool2tsv --help");
-            out("       dockstore " + CONVERT + " tool2tsv");
-            out("");
-            out("Description:");
-            out("  Spit out a tsv run file for a given cwl document.");
-            out("Required parameters:");
-            out("  --entry <entry>                Complete tool path in the Dockstore");
-            out("");
+            tool2tsvHelp();
         } else {
             final String runString = runString(args, false);
             out(runString);
@@ -871,15 +804,7 @@ public class Client {
 
     private static void cwl2json(final List<String> args) {
         if (isHelp(args, true)) {
-            out("");
-            out("Usage: dockstore " + CONVERT + " --help");
-            out("       dockstore " + CONVERT + " cwl2json");
-            out("");
-            out("Description:");
-            out("  Spit out a json run file for a given cwl document.");
-            out("Required parameters:");
-            out("  --cwl <file>                Path to cwl file");
-            out("");
+            cwl2jsonHelp();
         } else {
 
             final String cwlPath = reqVal(args, "--cwl");
@@ -893,15 +818,7 @@ public class Client {
 
     private static void wdl2json(final List<String> args) {
         if (isHelp(args, true)) {
-            out("");
-            out("Usage: dockstore " + CONVERT + " --help");
-            out("       dockstore " + CONVERT + " wdl2json");
-            out("");
-            out("Description:");
-            out("  Spit out a json run file for a given wdl document.");
-            out("Required parameters:");
-            out("  --wdl <file>                Path to wdl file");
-            out("");
+            wdl2jsonHelp();
         } else {
             // Will eventually need to update this to use wdltool
             final String wdlPath = reqVal(args, "--wdl");
@@ -917,44 +834,6 @@ public class Client {
     /**
      * this ends the section from dockstore-descriptor launcher
      **/
-
-    private static boolean isHelpRequest(String first) {
-        return "-h".equals(first) || "--help".equals(first);
-    }
-
-    private static boolean isUnpublishRequest(String first) {
-        return "--unpub".equals(first);
-    }
-
-    private static void publishHelp() {
-        out("");
-        out("HELP FOR DOCKSTORE");
-        out("------------------");
-        out("See https://www.dockstore.org for more information");
-        out("");
-        out("dockstore publish                          :  lists the current and potential containers to share");
-        out("");
-        out("dockstore publish <container>              :  publishes given container for use by others in the dockstore");
-        out("");
-        out("dockstore publish <container> <toolname>   :  publishes given container for use by others in the dockstore under a specific toolname");
-        out("");
-        out("dockstore publish --unpub <toolname_path>  :  unpublishes given container from use by others in the dockstore under a specific toolname");
-        out("------------------");
-        out("");
-    }
-
-    private static void refreshHelp() {
-        out("");
-        out("HELP FOR DOCKSTORE");
-        out("------------------");
-        out("See https://www.dockstore.org for more information");
-        out("");
-        out("dockstore refresh                         :  updates your list of containers on Dockstore");
-        out("");
-        out("dockstore refresh --toolpath <toolpath>   :  updates a given container on Dockstore");
-        out("------------------");
-        out("");
-    }
 
     private static void info(List<String> args) {
         if (args.isEmpty()) {
@@ -1026,15 +905,7 @@ public class Client {
         if (args.isEmpty()) {
             kill("Please provide a container.");
         } else if (isHelp(args, true)) {
-            out("");
-            out("Usage: dockstore " + descriptorType + " --help");
-            out("       dockstore " + descriptorType);
-            out("");
-            out("Description:");
-            out("  Grab a " + descriptorType + " document for a particular entry");
-            out("Required parameters:");
-            out("  --entry <entry>              Complete tool path in the Dockstore ex: quay.io/collaboratory/seqware-bwa-workflow:develop ");
-            out("");
+            descriptorHelp(descriptorType);
         } else {
             try {
                 final String entry = reqVal(args, "--entry");
@@ -1115,18 +986,6 @@ public class Client {
                 kill("Exception: " + ex);
             }
         }
-    }
-
-    private static void labelHelp() {
-        out("");
-        out("HELP FOR DOCKSTORE");
-        out("------------------");
-        out("See https://www.dockstore.org for more information");
-        out("");
-        out("dockstore label --add <label> (--add <label>) --remove (--remove <label>) --entry <path to tool>         :  Add or remove label(s) for a given dockstore container");
-        out("");
-        out("------------------");
-        out("");
     }
 
     public static void label(List<String> args) {
@@ -1320,22 +1179,6 @@ public class Client {
         }
     }
 
-    private static void versionTagHelp() {
-        out("");
-        out("HELP FOR DOCKSTORE");
-        out("------------------");
-        out("See https://www.dockstore.org for more information");
-        out("");
-        out("dockstore versionTag --add <name> --entry <path to tool> --git-reference <git reference> --hidden <true/false> --cwl-path <cwl path> --wdl-path <wdl path> --dockerfile-path <dockerfile path> --image-id <image id>         :  Add version tag for a manually registered dockstore container");
-        out("");
-        out("dockstore versionTag --update <name> --entry <path to tool>  --hidden <true/false> --cwl-path <cwl path> --wdl-path <wdl path> --dockerfile-path <dockerfile path> --image-id <image id>                                     :  Update version tag for a dockstore container");
-        out("");
-        out("dockstore versionTag --remove <name> --entry <path to tool>                                                                                                                                            :  Remove version tag from a manually registered dockstore container");
-        out("");
-        out("------------------");
-        out("");
-    }
-
     public static void updateContainer(List<String> args) {
         if (args.size() > 0 && !isHelpRequest(args.get(0))) {
             final String toolpath = reqVal(args, "--entry");
@@ -1364,18 +1207,6 @@ public class Client {
         } else {
             updateContainerHelp();
         }
-    }
-
-    public static void updateContainerHelp() {
-        out("");
-        out("HELP FOR DOCKSTORE");
-        out("------------------");
-        out("See https://www.dockstore.org for more information");
-        out("");
-        out("dockstore updateContainer --entry <path to tool> --cwl-path <cwl path> --dockerfile-path <dockerfile path> --toolname <toolname> --git-url <git-url>         :  Updates some fields for a container");
-        out("");
-        out("------------------");
-        out("");
     }
 
     /**
@@ -1633,23 +1464,38 @@ public class Client {
         }
     }
 
+     /*
+     Dockstore CLI help functions
+     ----------------------------------------------------------------------------------------------------------------------------------------
+      */
+
+     private static boolean isHelpRequest(String first) {
+         return "-h".equals(first) || "--help".equals(first);
+     }
+
+     private static boolean isUnpublishRequest(String first) {
+         return "--unpub".equals(first);
+     }
+
     public static void printGeneralHelp() {
         out("");
         out("HELP FOR DOCKSTORE");
         out("------------------");
         out("See https://www.dockstore.org for more information");
         out("");
-        out("Possible sub-commands include:");
+        out("Usage: dockstore [flags] [command] [command arguments]");
+        out("");
+        out("Commands:");
         out("");
         out("  list             :  lists all the containers published by the user ");
         out("");
-        out("  search <pattern> :  allows a user to search for all containers that match the criteria");
+        out("  search <pattern> :  allows a user to search for all published containers that match the criteria");
         out("");
         out("  publish          :  publish/unpublish a container in the dockstore");
         out("");
-        out("  manual_publish   :  registers a Docker Hub container in the dockstore");
+        out("  manual_publish   :  registers a Docker Hub (or manual Quay) container in the dockstore and then attempt to publish");
         out("");
-        out("  info <container> :  print detailed information about a particular public container");
+        out("  info <container> :  print detailed information about a particular published container");
         out("");
         out("  "+CWL+" <container>  :  returns the Common Workflow Language tool definition for this Docker image ");
         out("                      which enables integration with Global Alliance compliant systems");
@@ -1672,12 +1518,220 @@ public class Client {
         out("");
         out("Flags:");
         out("  --debug              Print debugging information");
+        out("                       Default: false");
         out("  --version            Print dockstore's version");
+        out("                       Default: false");
         out("  --server-metadata    Print metdata describing the dockstore webservice");
+        out("                       Default: false");
         out("  --upgrade            Upgrades to the latest stable release of Dockstore");
+        out("                       Default: false");
         out("  --config <file>      Override config file");
+        out("                       Default: ~/.dockstore/config");
         out("  --script             Will not check Github for newer versions of Dockstore");
+        out("                       Default: false");
     }
+
+     public static void updateContainerHelp() {
+         out("");
+         out("HELP FOR DOCKSTORE");
+         out("------------------");
+         out("See https://www.dockstore.org for more information");
+         out("");
+         out("dockstore updateContainer --entry <path to tool> --cwl-path <cwl path> --dockerfile-path <dockerfile path> --toolname <toolname> --git-url <git-url>         :  Updates some fields for a container");
+         out("");
+         out("------------------");
+         out("");
+     }
+
+     private static void versionTagHelp() {
+         out("");
+         out("HELP FOR DOCKSTORE");
+         out("------------------");
+         out("See https://www.dockstore.org for more information");
+         out("");
+         out("dockstore versionTag --add <name> --entry <path to tool> --git-reference <git reference> --hidden <true/false> --cwl-path <cwl path> --wdl-path <wdl path> --dockerfile-path <dockerfile path> --image-id <image id>         :  Add version tag for a manually registered dockstore container");
+         out("");
+         out("dockstore versionTag --update <name> --entry <path to tool>  --hidden <true/false> --cwl-path <cwl path> --wdl-path <wdl path> --dockerfile-path <dockerfile path> --image-id <image id>                                     :  Update version tag for a dockstore container");
+         out("");
+         out("dockstore versionTag --remove <name> --entry <path to tool>                                                                                                                                            :  Remove version tag from a manually registered dockstore container");
+         out("");
+         out("------------------");
+         out("");
+     }
+
+     private static void publishHelp() {
+         out("");
+         out("HELP FOR DOCKSTORE");
+         out("------------------");
+         out("See https://www.dockstore.org for more information");
+         out("");
+         out("dockstore publish                          :  lists the current and potential containers to share");
+         out("");
+         out("dockstore publish <container>              :  publishes given container for use by others in the dockstore");
+         out("");
+         out("dockstore publish <container> <toolname>   :  publishes given container for use by others in the dockstore under a specific toolname");
+         out("");
+         out("dockstore publish --unpub <toolname_path>  :  unpublishes given container from use by others in the dockstore under a specific toolname");
+         out("------------------");
+         out("");
+     }
+
+     private static void refreshHelp() {
+         out("");
+         out("HELP FOR DOCKSTORE");
+         out("------------------");
+         out("See https://www.dockstore.org for more information");
+         out("");
+         out("dockstore refresh                         :  updates your list of containers on Dockstore");
+         out("");
+         out("dockstore refresh --toolpath <toolpath>   :  updates a given container on Dockstore");
+         out("------------------");
+         out("");
+     }
+
+     private static void labelHelp() {
+         out("");
+         out("HELP FOR DOCKSTORE");
+         out("------------------");
+         out("See https://www.dockstore.org for more information");
+         out("");
+         out("dockstore label --add <label> (--add <label>) --remove (--remove <label>) --entry <path to tool>         :  Add or remove label(s) for a given dockstore container");
+         out("");
+         out("------------------");
+         out("");
+     }
+
+     private static void manualPublishHelp() {
+         out("");
+         out("Usage: dockstore manual_publish --help");
+         out("       dockstore manual_publish <params>");
+         out("");
+         out("Description:");
+         out("  Manually register an entry in the dockstore. Currently this is used to " + "register entries for images on Docker Hub .");
+         out("");
+         out("Required parameters:");
+         out("  --name <name>                Name for the docker container");
+         out("  --namespace <namespace>      Organization for the docker container");
+         out("  --git-url <url>              Reference to the git repo holding descriptor(s) and Dockerfile ex: \"git@github.com:user/test1.git\"");
+         out("  --git-reference <reference>  Reference to git branch or tag where the CWL and Dockerfile is checked-in");
+         out("Optional parameters:");
+         out("  --dockerfile-path <file>     Path for the dockerfile, defaults to /Dockerfile");
+         out("  --cwl-path <file>            Path for the CWL document, defaults to /Dockstore.cwl");
+         out("  --wdl-path <file>            Path for the WDL document, defaults to /Dockstore.wdl");
+         out("  --toolname <toolname>        Name of the tool, can be omitted");
+         out("  --registry <registry>        Docker registry, can be omitted, defaults to registry.hub.docker.com");
+         out("  --version-name <version>     Version tag name for Dockerhub containers only, defaults to latest");
+         out("");
+     }
+
+     private static void convertHelp() {
+         out("");
+         out("Usage: dockstore " + CONVERT + " --help");
+         out("       dockstore " + CONVERT + " cwl2json");
+         out("       dockstore " + CONVERT + " tool2json");
+         out("       dockstore " + CONVERT + " tool2tsv");
+         out("");
+         out("Description:");
+         out("  These are preview features that will be finalized for the next major release.");
+         out("  They allow you to convert between file representations.");
+         out("");
+     }
+
+     private static void launchHelp() {
+         out("");
+         out("Usage: dockstore " + LAUNCH + " --help");
+         out("       dockstore " + LAUNCH);
+         out("");
+         out("Description:");
+         out("  Launch an entry locally.");
+         out("Required parameters:");
+         out("  --entry <entry>                Complete tool path in the Dockstore");
+         out("Optional parameters:");
+         out("  --json <json file>            Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs");
+         out("  --tsv <tsv file>             One row corresponds to parameters for one run in the dockstore");
+         out("  --descriptor <descriptor type>             Descriptor type used to launch workflow. Defaults to " + CWL);
+         out("");
+     }
+
+     private static void launchWdlHelp() {
+         out("");
+         out("Usage: dockstore launch_wdl --help");
+         out("       dockstore launch_wdl");
+         out("");
+         out("Description:");
+         out("  Launch an entry locally.");
+         out("Required parameters:");
+         out("  --entry <entry>                Complete tool path in the Dockstore");
+         out("Optional parameters:");
+         out("  --json <json file>            Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs");
+         out("");
+     }
+
+     private static void tool2jsonHelp() {
+         out("");
+         out("Usage: dockstore " + CONVERT + " tool2json --help");
+         out("       dockstore " + CONVERT + " tool2json");
+         out("");
+         out("Description:");
+         out("  Spit out a json run file for a given cwl document.");
+         out("Required parameters:");
+         out("  --entry <entry>                Complete tool path in the Dockstore");
+         out("  --descriptor <descriptor>      Type of descriptor language used. Defaults to cwl");
+         out("");
+     }
+
+     private static void tool2tsvHelp() {
+         out("");
+         out("Usage: dockstore " + CONVERT + " tool2tsv --help");
+         out("       dockstore " + CONVERT + " tool2tsv");
+         out("");
+         out("Description:");
+         out("  Spit out a tsv run file for a given cwl document.");
+         out("Required parameters:");
+         out("  --entry <entry>                Complete tool path in the Dockstore");
+         out("");
+     }
+
+     private static void cwl2jsonHelp(){
+         out("");
+         out("Usage: dockstore " + CONVERT + " --help");
+         out("       dockstore " + CONVERT + " cwl2json");
+         out("");
+         out("Description:");
+         out("  Spit out a json run file for a given cwl document.");
+         out("Required parameters:");
+         out("  --cwl <file>                Path to cwl file");
+         out("");
+     }
+
+     private static void wdl2jsonHelp() {
+         out("");
+         out("Usage: dockstore " + CONVERT + " --help");
+         out("       dockstore " + CONVERT + " wdl2json");
+         out("");
+         out("Description:");
+         out("  Spit out a json run file for a given wdl document.");
+         out("Required parameters:");
+         out("  --wdl <file>                Path to wdl file");
+         out("");
+     }
+
+     private static void descriptorHelp(String descriptorType) {
+         out("");
+         out("Usage: dockstore " + descriptorType + " --help");
+         out("       dockstore " + descriptorType);
+         out("");
+         out("Description:");
+         out("  Grab a " + descriptorType + " document for a particular entry");
+         out("Required parameters:");
+         out("  --entry <entry>              Complete tool path in the Dockstore ex: quay.io/collaboratory/seqware-bwa-workflow:develop ");
+         out("");
+     }
+
+     /*
+     End of Help functions
+     ----------------------------------------------------------------------------------------------------------------------------------------
+      */
 
     public static void main(String[] argv) {
         List<String> args = new ArrayList<>(Arrays.asList(argv));
