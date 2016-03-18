@@ -357,7 +357,7 @@ public class Client {
     }
 
     private static void list(List<String> args) {
-        if (isHelpRequest(args.get(0))) {
+        if (containsHelpRequest(args)) {
             listHelp();
         } else {
             try {
@@ -389,7 +389,7 @@ public class Client {
     }
 
     private static void search(List<String> args) {
-        if (args.isEmpty() || isHelpRequest(args.get(0))) {
+        if (args.isEmpty() || containsHelpRequest(args)) {
             searchHelp();
         } else {
             String pattern = args.get(0);
@@ -423,7 +423,7 @@ public class Client {
             }
         } else {
             String first = args.get(0);
-            if (isHelpRequest(first)) {
+            if (containsHelpRequest(args)) {
                 publishHelp();
             } else if (isUnpublishRequest(first)) {
                 if (args.size() == 1) {
@@ -496,7 +496,7 @@ public class Client {
     }
 
     private static void manualPublish(final List<String> args) {
-        if (isHelp(args, true)) {
+        if (containsHelpRequest(args)) {
             manualPublishHelp();
         } else {
             final String name = reqVal(args, "--name");
@@ -568,7 +568,7 @@ public class Client {
     }
 
     private static void convert(final List<String> args) throws ApiException, IOException {
-        if (isHelp(args, true)) {
+        if (containsHelpRequest(args)) {
             convertHelp();
         } else {
             final String cmd = args.remove(0);
@@ -595,7 +595,7 @@ public class Client {
     }
 
      private static void launch(final List<String> args) {
-         if (isHelp(args, true)) {
+         if (containsHelpRequest(args)) {
              launchHelp();
          } else {
              final String descriptor = optVal(args, "--descriptor", CWL);
@@ -688,7 +688,7 @@ public class Client {
     }
 
     private static void launchWdl(final List<String> args) {
-        if (isHelp(args, true)) {
+        if (containsHelpRequest(args)) {
             launchHelp();
         } else {
             final String entry = reqVal(args, "--entry");
@@ -738,7 +738,7 @@ public class Client {
     }
 
     private static void tool2json(final List<String> args) throws ApiException, IOException {
-        if (isHelp(args, true)) {
+        if (containsHelpRequest(args)) {
             tool2jsonHelp();
         } else {
             final String runString = runString(args, true);
@@ -804,7 +804,7 @@ public class Client {
     }
 
     private static void tool2tsv(final List<String> args) throws ApiException, IOException {
-        if (isHelp(args, true)) {
+        if (containsHelpRequest(args)) {
             tool2tsvHelp();
         } else {
             final String runString = runString(args, false);
@@ -813,7 +813,7 @@ public class Client {
     }
 
     private static void cwl2json(final List<String> args) {
-        if (isHelp(args, true)) {
+        if (containsHelpRequest(args)) {
             cwl2jsonHelp();
         } else {
 
@@ -827,7 +827,7 @@ public class Client {
     }
 
     private static void wdl2json(final List<String> args) {
-        if (isHelp(args, true)) {
+        if (containsHelpRequest(args)) {
             wdl2jsonHelp();
         } else {
             // Will eventually need to update this to use wdltool
@@ -846,7 +846,7 @@ public class Client {
      **/
 
     private static void info(List<String> args) {
-        if (args.isEmpty() || isHelpRequest(args.get(0))) {
+        if (args.isEmpty() || containsHelpRequest(args)) {
             infoHelp();
         } else {
 
@@ -915,7 +915,7 @@ public class Client {
     private static void descriptor(List<String> args, String descriptorType) {
         if (args.isEmpty()) {
             kill("Please provide a container.");
-        } else if (isHelp(args, true)) {
+        } else if (containsHelpRequest(args)) {
             descriptorHelp(descriptorType);
         } else {
             try {
@@ -964,7 +964,7 @@ public class Client {
 
     private static void refresh(List<String> args) {
         if (args.size() > 0) {
-            if (isHelpRequest(args.get(0))) {
+            if (containsHelpRequest(args)) {
                 refreshHelp();
             } else {
                 try {
@@ -1000,7 +1000,7 @@ public class Client {
     }
 
     public static void label(List<String> args) {
-        if (args.size() > 0 && !isHelpRequest(args.get(0))) {
+        if (args.size() > 0 && !containsHelpRequest(args)) {
             final String toolpath = reqVal(args, "--entry");
             final List<String> adds = optVals(args, "--add");
             final Set<String> addsSet = adds.isEmpty() ? new HashSet<>() : new HashSet<>(adds);
@@ -1080,7 +1080,7 @@ public class Client {
                 DockstoreTool container = containersApi.getContainerByToolPath(toolpath);
                 long containerId = container.getId();
                 if (args.contains("--add")) {
-                    if (isHelpRequest(args.get(0))) {
+                    if (containsHelpRequest(args)) {
                         versionTagAddHelp();
                     } else {
                         if (container.getMode() != DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH) {
@@ -1118,7 +1118,7 @@ public class Client {
                     }
 
                 } else if (args.contains("--update")) {
-                    if (isHelpRequest(args.get(0))) {
+                    if (containsHelpRequest(args)) {
                         versionTagUpdateHelp();
                     } else {
                         final String tagName = reqVal(args, "--update");
@@ -1155,7 +1155,7 @@ public class Client {
                         }
                     }
                 } else if (args.contains("--remove")) {
-                    if (isHelpRequest(args.get(0))) {
+                    if (containsHelpRequest(args)) {
                         versionTagRemoveHelp();
                     } else {
                         if (container.getMode() != DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH) {
@@ -1202,7 +1202,7 @@ public class Client {
     }
 
     public static void updateContainer(List<String> args) {
-        if (args.size() > 0 && !isHelpRequest(args.get(0))) {
+        if (args.size() > 0 && !containsHelpRequest(args)) {
             final String toolpath = reqVal(args, "--entry");
             try {
                 DockstoreTool container = containersApi.getContainerByToolPath(toolpath);
@@ -1493,6 +1493,19 @@ public class Client {
 
      private static boolean isHelpRequest(String first) {
          return "-h".equals(first) || "--help".equals(first);
+     }
+
+     private static boolean containsHelpRequest(List<String> args) {
+         boolean containsHelp = false;
+
+         for(String arg: args) {
+             if (isHelpRequest(arg)) {
+                 containsHelp = true;
+                 break;
+             }
+         }
+
+         return containsHelp;
      }
 
      private static boolean isUnpublishRequest(String first) {
