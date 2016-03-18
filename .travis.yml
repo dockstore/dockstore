@@ -21,8 +21,7 @@ before_script:
 - export PATH=$PATH:$PWD/dockstore-client/target
 script: mvn -B clean install -DskipITs=false -Pconfidential-tests
 after_success:
-- mvn -B clean -DskipITs=false cobertura:cobertura cobertura:cobertura-integration-test
-  coveralls:report
+- mvn -B clean -DskipITs=false cobertura:cobertura cobertura:cobertura-integration-test coveralls:report
 before_install:
 - openssl aes-256-cbc -K $encrypted_0e946875e1d4_key -iv $encrypted_0e946875e1d4_iv
   -in dockstore-integration-testing/src/test/resources/secrets.tar.enc -out dockstore-integration-testing/src/test/resources/secrets.tar -d
