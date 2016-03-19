@@ -341,9 +341,8 @@ public class LauncherCWL {
         }
 
         // make an updated JSON file that will be used to run the workflow
-        String workingDir = config.getString(WORKING_DIRECTORY, "./datastore/");
-        writeJob(workingDir+"/workflow_params.json", newJSON);
-        return workingDir+"/workflow_params.json";
+        writeJob(globalWorkingDir+"/workflow_params.json", newJSON);
+        return globalWorkingDir+"/workflow_params.json";
     }
 
     private Map<String, Object> loadJob(String jobPath) {
