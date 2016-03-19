@@ -340,9 +340,10 @@ public class LauncherCWL {
             }
         }
 
-        writeJob("foo.json", newJSON);
-
-        return "foo.json";
+        // make an updated JSON file that will be used to run the workflow
+        String workingDir = config.getString(WORKING_DIRECTORY, "./datastore/");
+        writeJob(workingDir+"/workflow_params.json", newJSON);
+        return workingDir+"/workflow_params.json";
     }
 
     private Map<String, Object> loadJob(String jobPath) {
