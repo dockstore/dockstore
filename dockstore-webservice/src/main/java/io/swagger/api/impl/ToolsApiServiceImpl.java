@@ -243,17 +243,32 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             version.setGlobalId(globalVersionId);
 
             version.setName(tag.getReference());
+
+            String urlBuilt;
+            final String githubPrefix = "git@github.com:";
+            final String bitbucketPrefix = "git@bitbucket.org:";
+            if (container.getGitUrl().startsWith(githubPrefix)){
+                urlBuilt = extractHTTPPrefix(container.getGitUrl(), tag.getReference(), githubPrefix, "https://raw.githubusercontent.com/");
+            } else if (container.getGitUrl().startsWith(bitbucketPrefix)){
+                urlBuilt = extractHTTPPrefix(container.getGitUrl(), tag.getReference(), bitbucketPrefix, "https://bitbucket.org/");
+            } else{
+                LOG.error("Found a git url neither from bitbucket or github " + container.getGitUrl());
+                urlBuilt = null;
+            }
+
             for (SourceFile file : tag.getSourceFiles()) {
                 switch (file.getType()) {
                 case DOCKERFILE:
                     ToolDockerfile dockerfile = new ToolDockerfile();
                     dockerfile.setDockerfile(file.getContent());
+                    dockerfile.setUrl(urlBuilt + tag.getDockerfilePath());
                     version.setDockerfile(dockerfile);
                     break;
                 case DOCKSTORE_CWL:
-                    ToolDescriptor descriptor = new ToolDescriptor();
-                    descriptor.setDescriptor(file.getContent());
-                    version.setDescriptor(descriptor);
+                    version.setDescriptor(buildSourceFile(urlBuilt + tag.getCwlPath(), file));
+                    break;
+                case DOCKSTORE_WDL:
+                    version.setDescriptor(buildSourceFile(urlBuilt + tag.getWdlPath(), file));
                     break;
                 }
             }
@@ -262,6 +277,34 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             version.setMetaVersion(String.valueOf(tag.getLastModified()));
         }
         return tool;
+    }
+
+    /**
+     * Build a descriptor and attach it to a version
+     * @param url url to set for the descriptor
+     * @param file a file with content for the descriptor
+     */
+    private static ToolDescriptor buildSourceFile(String url, SourceFile file) {
+        ToolDescriptor wdlDescriptor = new ToolDescriptor();
+        wdlDescriptor.setDescriptor(file.getContent());
+        wdlDescriptor.setUrl(url);
+        return wdlDescriptor;
+    }
+
+    /**
+     *
+     * @param gitUrl The git formatted url for the repo
+     * @param reference the git tag or branch
+     * @param githubPrefix the prefix for the git formatted url to strip out
+     * @param builtPrefix the prefix to use to start the extracted prefix
+     * @return the prefix to access these files
+     */
+    private static String extractHTTPPrefix(String gitUrl, String reference, String githubPrefix, String builtPrefix) {
+        StringBuilder urlBuilder = new StringBuilder();
+        urlBuilder.append(builtPrefix);
+        final String substring = gitUrl.substring(githubPrefix.length(), gitUrl.lastIndexOf(".git"));
+        urlBuilder.append(substring).append('/').append(reference);
+        return urlBuilder.toString();
     }
 
     private Response getFileByToolVersionID(String registryId, String versionId, SourceFile.FileType type) {
