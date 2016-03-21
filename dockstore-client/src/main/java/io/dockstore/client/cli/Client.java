@@ -1078,17 +1078,19 @@ public class Client {
             versionTagHelp();
         } else {
             String subcommand = args.remove(0);
-            if (subcommand.equals("add")) {
-                versionTagAddHelp();
-                kill("");
-            } else if (subcommand.equals("remove")) {
-                versionTagRemoveHelp();
-                kill("");
-            } else if  (subcommand.equals("update")) {
-                versionTagUpdateHelp();
-                kill("");
-            } else {
-                errorMessage("Please provide a correct subcommand", CLIENT_ERROR);
+            if (args.isEmpty()) {
+                if (subcommand.equals("add")) {
+                    versionTagAddHelp();
+                    kill("");
+                } else if (subcommand.equals("remove")) {
+                    versionTagRemoveHelp();
+                    kill("");
+                } else if (subcommand.equals("update")) {
+                    versionTagUpdateHelp();
+                    kill("");
+                } else {
+                    errorMessage("Please provide a correct subcommand", CLIENT_ERROR);
+                }
             }
 
             final String toolpath = reqVal(args, "--entry");
