@@ -417,7 +417,7 @@ public class Client {
         if (args.isEmpty() || containsHelpRequest(args)) {
             searchHelp();
         } else {
-            String pattern = args.get(0);
+            String pattern = reqVal(args, "--pattern");
             try {
                 List<DockstoreTool> containers = containersApi.search(pattern);
 
@@ -863,7 +863,7 @@ public class Client {
         if (args.isEmpty() || containsHelpRequest(args)) {
             infoHelp();
         } else {
-            String path = args.get(0);
+            String path = reqVal(args, "--entry");
             try {
                 DockstoreTool container = containersApi.getPublishedContainerByToolPath(path);
                 if (container == null || !container.getIsPublished()) {
@@ -1549,13 +1549,13 @@ public class Client {
         out("");
         out("  list             :  lists all the containers published by the user");
         out("");
-        out("  search <pattern> :  allows a user to search for all published containers that match the criteria");
+        out("  search           :  allows a user to search for all published containers that match the criteria");
         out("");
         out("  publish          :  publish/unpublish a container in the dockstore");
         out("");
         out("  manual_publish   :  registers a Docker Hub (or manual Quay) container in the dockstore and then attempt to publish");
         out("");
-        out("  info <tool>      :  print detailed information about a particular published container");
+        out("  info             :  print detailed information about a particular published container");
         out("");
         out("  "+CWL+" <tool>       :  returns the Common Workflow Language tool definition for this Docker image ");
         out("                      which enables integration with Global Alliance compliant systems");
@@ -1871,22 +1871,26 @@ public class Client {
      private static void searchHelp() {
          printHelpHeader();
          out("Usage: dockstore search --help");
-         out("       dockstore search <pattern>");
+         out("       dockstore search [parameters]");
          out("");
          out("Description:");
          out("  Search for published tools on Dockstore.");
-         out("  <pattern> is a pattern you want to search Dockstore with.");
+         out("");
+         out("Required Parameters:");
+         out("  --pattern <pattern>         Pattern to search Dockstore with.");
          printHelpFooter();
      }
 
      private static void infoHelp() {
          printHelpHeader();
          out("Usage: dockstore info --help");
-         out("       dockstore info <entry>");
+         out("       dockstore info [parameters]");
          out("");
          out("Description:");
          out("  Get information related to a published tool.");
-         out("  <entry> is the complete tool path in the Dockstore.");
+         out("");
+         out("Required Parameters:");
+         out("  --entry <entry>     The complete tool path in the Dockstore.");
          printHelpFooter();
      }
 
