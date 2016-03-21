@@ -82,7 +82,7 @@ public class ClientIT {
 
     @Test
     public void testListEntriesWithoutCreds() throws IOException, TimeoutException, ApiException {
-        systemExit.expectSystemExitWithStatus(1);
+        systemExit.expectSystemExitWithStatus(Client.API_ERROR);
         Client.main(new String[] { "--config", getConfigFileLocation(false), "list" });
     }
 
@@ -117,13 +117,13 @@ public class ClientIT {
 
     @Test
     public void quickRegisterInValidEntry() throws IOException {
-        systemExit.expectSystemExitWithStatus(Client.GENERIC_ERROR);
+        systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
         Client.main(new String[] { "--config", getConfigFileLocation(true), "publish", "quay.io/test_org/test1" });
     }
 
     @Test
     public void quickRegisterUnknownEntry() throws IOException {
-        systemExit.expectSystemExitWithStatus(Client.GENERIC_ERROR);
+        systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
         Client.main(new String[] { "--config", getConfigFileLocation(true), "publish", "quay.io/funky_container_that_does_not_exist" });
     }
 
@@ -158,7 +158,7 @@ public class ClientIT {
 
     @Test
     public void manualRegisterADuplicate() throws IOException {
-        systemExit.expectSystemExitWithStatus(Client.GENERIC_ERROR);
+        systemExit.expectSystemExitWithStatus(Client.API_ERROR);
         Client.main(new String[] { "--config", getConfigFileLocation(true), "manual_publish", "--registry", Registry.QUAY_IO.toString(),
                 "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url", "git@github.com:funky-user/test2.git", "--git-reference",
                 "refs/head/master" });
