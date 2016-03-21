@@ -33,6 +33,7 @@ dockstore-webservice/nbactions.xml
 # confidential testing files
 # The dockstore CLI config file for testing confidential data
 dockstore-integration-testing/src/test/resources/config_file.txt
+dockstore-integration-testing/src/test/resources/config_file2.txt
 
 # Contains SQL statements to initialize testing DB with a confidential user and tokens
 dockstore-integration-testing/src/test/resources/db_confidential_dump.sql

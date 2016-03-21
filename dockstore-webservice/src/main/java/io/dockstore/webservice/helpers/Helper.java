@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package io.dockstore.webservice;
+package io.dockstore.webservice.helpers;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -36,7 +36,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
 
-import io.dockstore.webservice.core.ContainerMode;
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Registry;
 import io.dockstore.webservice.core.SourceFile;
@@ -46,11 +47,6 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.helpers.ImageRegistryFactory;
-import io.dockstore.webservice.helpers.ImageRegistryInterface;
-import io.dockstore.webservice.helpers.QuayImageRegistry;
-import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
-import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface.FileResponse;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
@@ -69,8 +65,6 @@ public final class Helper {
 
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
 
-    public static final String QUAY_URL = "https://quay.io/api/v1/";
-
     // public static final String DOCKSTORE_CWL = "Dockstore.cwl";
     public static class RepoList {
 
@@ -85,8 +79,7 @@ public final class Helper {
         }
     }
 
-    private static void updateFiles(Tool tool, final HttpClient client, final TagDAO tagDAO, final FileDAO fileDAO,
-            final Token githubToken, final Token bitbucketToken) {
+    private static void updateFiles(Tool tool, final HttpClient client, final FileDAO fileDAO, final Token githubToken, final Token bitbucketToken) {
         Set<Tag> tags = tool.getTags();
 
         for (Tag tag : tags) {
@@ -150,11 +143,10 @@ public final class Helper {
 
             // TODO: For a manually added tool with a Quay.io registry, auto-populate its tags if it does not have any.
             // May find another way so that tags are initially auto-populated, and never auto-populated again.
-            if (tool.getMode() != ContainerMode.MANUAL_IMAGE_PATH
+            if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH
                     || (tool.getRegistry() == Registry.QUAY_IO && existingTags.isEmpty())) {
 
                 List<Tag> newTags = tagMap.get(tool.getPath());
-                Map<String, Set<SourceFile>> fileMap = new HashMap<>();
 
                 if (newTags == null) {
                     LOG.info("Tags for tool {} did not get updated because new tags were not found", tool.getPath());
@@ -199,7 +191,6 @@ public final class Helper {
                         existingTags.add(clonedTag);
                     }
 
-                    fileMap.put(newTag.getName(), newTag.getSourceFiles());
                 }
 
                 boolean allAutomated = true;
@@ -223,16 +214,16 @@ public final class Helper {
                     tool.getTags().remove(t);
                 }
 
-                if (tool.getMode() != ContainerMode.MANUAL_IMAGE_PATH) {
+                if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
                     if (allAutomated) {
-                        tool.setMode(ContainerMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
+                        tool.setMode(ToolMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
                     } else {
-                        tool.setMode(ContainerMode.AUTO_DETECT_QUAY_TAGS_WITH_MIXED);
+                        tool.setMode(ToolMode.AUTO_DETECT_QUAY_TAGS_WITH_MIXED);
                     }
                 }
             }
 
-            updateFiles(tool, client, tagDAO, fileDAO, githubToken, bitbucketToken);
+            updateFiles(tool, client, fileDAO, githubToken, bitbucketToken);
 
             final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(tool.getGitUrl(), client,
                     bitbucketToken == null ? null : bitbucketToken.getContent(), githubToken.getContent());
@@ -287,7 +278,7 @@ public final class Helper {
                     break;
                 }
             }
-            if (!exists && oldTool.getMode() != ContainerMode.MANUAL_IMAGE_PATH) {
+            if (!exists && oldTool.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
                 oldTool.removeUser(user);
                 // user.removeTool(oldTool);
                 toDelete.add(oldTool);
@@ -380,8 +371,8 @@ public final class Helper {
             }
             final List<Tag> tags = imageRegistry.getTags(c);
 
-            // if (c.getMode() == ContainerMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS
-            // || c.getMode() == ContainerMode.AUTO_DETECT_QUAY_TAGS_WITH_MIXED) {
+            // if (c.getMode() == ToolMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS
+            // || c.getMode() == ToolMode.AUTO_DETECT_QUAY_TAGS_WITH_MIXED) {
             if (c.getRegistry() == Registry.QUAY_IO) {
                 // TODO: this part isn't very good, a true implementation of Docker Hub would need to return
                 // a quay.io-like data structure, we need to replace mapOfBuilds
@@ -406,7 +397,7 @@ public final class Helper {
 
                                 Map<String, Map<String, String>> triggerMetadataMap = (Map<String, Map<String, String>>) build;
 
-                                Map<String, String> triggerMetadata = (Map<String, String>) triggerMetadataMap.get("trigger_metadata");
+                                Map<String, String> triggerMetadata = triggerMetadataMap.get("trigger_metadata");
 
                                 if (triggerMetadata != null) {
                                     String ref = triggerMetadata.get("ref");
@@ -542,7 +533,7 @@ public final class Helper {
         // TODO: when we get proper docker hub support, get this above
         // hack: read relevant containers from database
         User currentUser = userDAO.findById(userId);
-        List<Tool> findByMode = toolDAO.findByMode(ContainerMode.MANUAL_IMAGE_PATH);
+        List<Tool> findByMode = toolDAO.findByMode(ToolMode.MANUAL_IMAGE_PATH);
         findByMode.removeIf(test -> !test.getUsers().contains(currentUser));
         apiTools.addAll(findByMode);
 
@@ -618,19 +609,19 @@ public final class Helper {
         Tool duplicatePath = null;
         List<Tool> containersList = toolDAO.findByPath(tool.getPath());
         for(Tool c : containersList) {
-            if (c.getMode() != ContainerMode.MANUAL_IMAGE_PATH) {
+            if (c.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
                 duplicatePath = c;
                 break;
             }
         }
 
         // If exists, check conditions to see if it should be changed to auto (in sync with quay tags and git repo)
-        if (tool.getMode() == ContainerMode.MANUAL_IMAGE_PATH && duplicatePath != null  && tool.getRegistry().toString().equals(
+        if (tool.getMode() == ToolMode.MANUAL_IMAGE_PATH && duplicatePath != null  && tool.getRegistry().toString().equals(
                 Registry.QUAY_IO.toString()) && duplicatePath.getGitUrl().equals(tool.getGitUrl())) {
             tool.setMode(duplicatePath.getMode());
         }
 
-        if (tool.getMode() == ContainerMode.MANUAL_IMAGE_PATH) {
+        if (tool.getMode() == ToolMode.MANUAL_IMAGE_PATH) {
             apiTools.add(tool);
         } else {
             List<String> namespaces = new ArrayList<>();
@@ -672,10 +663,10 @@ public final class Helper {
         // TODO: for now, with no info coming back from Docker Hub, just skip them always
         dbTools.removeIf(container1 -> container1.getRegistry() == Registry.DOCKER_HUB);
         // also skip containers on quay.io but in manual mode
-        dbTools.removeIf(container1 -> container1.getMode() == ContainerMode.MANUAL_IMAGE_PATH);
+        dbTools.removeIf(container1 -> container1.getMode() == ToolMode.MANUAL_IMAGE_PATH);
     }
 
-    private static Token extractToken(List<Token> tokens, String source) {
+    public static Token extractToken(List<Token> tokens, String source) {
         for (Token token : tokens) {
             if (token.getTokenSource().equals(source)) {
                 return token;
@@ -841,10 +832,10 @@ public final class Helper {
      * Check if admin or if tool belongs to user
      *
      * @param user
-     * @param tool
+     * @param entry
      */
-    public static void checkUser(User user, Tool tool) {
-        if (!user.getIsAdmin() && !tool.getUsers().contains(user)) {
+    public static void checkUser(User user, Entry entry) {
+        if (!user.getIsAdmin() && !entry.getUsers().contains(user)) {
             throw new CustomWebApplicationException("Forbidden: please check your credentials.", HttpStatus.SC_FORBIDDEN);
         }
     }
@@ -855,9 +846,9 @@ public final class Helper {
      * @param user
      * @param list
      */
-    public static void checkUser(User user, List<Tool> list) {
-        for (Tool tool : list) {
-            if (!user.getIsAdmin() && !tool.getUsers().contains(user)) {
+    public static void checkUser(User user, List<? extends Entry> list) {
+        for (Entry entry : list) {
+            if (!user.getIsAdmin() && !entry.getUsers().contains(user)) {
                 throw new CustomWebApplicationException("Forbidden: please check your credentials.", HttpStatus.SC_FORBIDDEN);
             }
         }
@@ -866,24 +857,24 @@ public final class Helper {
     /**
      * Check if tool is null
      *
-     * @param tool
+     * @param entry
      */
-    public static void checkContainer(Tool tool) {
-        if (tool == null) {
-            throw new CustomWebApplicationException("Tool not found", HttpStatus.SC_BAD_REQUEST);
+    public static void checkEntry(Entry entry) {
+        if (entry == null) {
+            throw new CustomWebApplicationException("Entry not found", HttpStatus.SC_BAD_REQUEST);
         }
     }
 
     /**
      * Check if tool is null
      *
-     * @param tool
+     * @param entry
      */
-    public static void checkContainer(List<Tool> tool) {
-        if (tool == null) {
-            throw new CustomWebApplicationException("No containers provided", HttpStatus.SC_BAD_REQUEST);
+    public static void checkEntry(List<? extends Entry> entry) {
+        if (entry == null) {
+            throw new CustomWebApplicationException("No entries provided", HttpStatus.SC_BAD_REQUEST);
         }
-        tool.forEach(Helper::checkContainer);
+        entry.forEach(Helper::checkEntry);
     }
 
     public static String convertHttpsToSsh(String url) {

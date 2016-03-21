@@ -33,7 +33,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be\n * associated with CWL and Dockerfile documents
  **/
 @ApiModel(description = "This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be\n * associated with CWL and Dockerfile documents")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-17T14:12:33.169-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-18T16:51:57.948-04:00")
 public class DockstoreTool   {
   
   private Long id = null;

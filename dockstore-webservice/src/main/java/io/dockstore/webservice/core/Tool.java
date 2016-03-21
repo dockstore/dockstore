@@ -64,12 +64,12 @@ import io.swagger.annotations.ApiModelProperty;
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByMode", query = "SELECT c FROM Tool c WHERE c.mode = :mode"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByPath", query = "SELECT c FROM Tool c WHERE c.path = :path AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.searchPattern", query = "SELECT c FROM Tool c WHERE ((c.path LIKE :pattern) OR (c.registry LIKE :pattern) OR (c.description LIKE :pattern)) AND c.isPublished = true") })
-public class Tool extends Entry {
+public class Tool extends Entry<Tool, Tag> {
 
     @Column(nullable = false, columnDefinition = "Text default 'AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS'")
     @Enumerated(EnumType.STRING)
     @ApiModelProperty(value = "This indicates what mode this is in which informs how we do things like refresh, dockstore specific", required = true)
-    private ContainerMode mode = ContainerMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS;
+    private ToolMode mode = ToolMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS;
 
     @Column(nullable = false)
     @ApiModelProperty(value = "This is the name of the container, required: GA4GH", required = true)
@@ -127,6 +127,11 @@ public class Tool extends Entry {
 
     public Tool() {
         tags = new TreeSet<>();
+    }
+
+    @Override
+    public Set<Tag> getVersions() {
+        return tags;
     }
 
     public Tool(long id, String name) {
@@ -239,11 +244,11 @@ public class Tool extends Entry {
     }
 
     @JsonProperty
-    public ContainerMode getMode() {
+    public ToolMode getMode() {
         return mode;
     }
 
-    public void setMode(ContainerMode mode) {
+    public void setMode(ToolMode mode) {
         this.mode = mode;
     }
 

@@ -16,10 +16,14 @@
 
 package io.dockstore.webservice.core;
 
+import java.util.Objects;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Ordering;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -29,9 +33,9 @@ import io.swagger.annotations.ApiModelProperty;
  * 
  * @author dyuen
  */
-@ApiModel(value = "Workflow", description = "This describes one tag associated with a container.")
+@ApiModel(value = "WorkflowVersion", description = "This describes one workflow version associated with a workflow.")
 @Entity
-public class WorkflowVersion extends Version<WorkflowVersion> {
+public class WorkflowVersion extends Version<WorkflowVersion> implements Comparable<WorkflowVersion> {
 
     @Column(columnDefinition = "text")
     @JsonProperty("workflow_path")
@@ -68,8 +72,36 @@ public class WorkflowVersion extends Version<WorkflowVersion> {
         this.workflowPath = workflowPath;
     }
 
+
+
+    @Override public int hashCode() {
+        return 31 * super.hashCode() + Objects.hash(workflowPath);
+    }
+
     @Override
-    public int compareTo(WorkflowVersion o) {
-        return Long.compare(super.getId(), o.getId());
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        if (!super.equals(obj)) {
+            return false;
+        }
+        final WorkflowVersion other = (WorkflowVersion) obj;
+        return Objects.equals(this.workflowPath, other.workflowPath);
+    }
+
+    @Override public int compareTo(WorkflowVersion that) {
+        if (super.compareTo(that) < 0) {
+            return -1;
+        } else if (super.compareTo(that) > 0) {
+            return 1;
+        }
+
+        return ComparisonChain.start()
+            .compare(this.workflowPath, that.workflowPath, Ordering.natural().nullsLast())
+            .result();
     }
 }

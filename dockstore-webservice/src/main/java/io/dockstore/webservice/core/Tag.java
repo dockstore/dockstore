@@ -37,9 +37,7 @@ import io.swagger.annotations.ApiModelProperty;
 @DiscriminatorValue("tool")
 public class Tag extends Version<Tag> {
 
-    @Column
-    @ApiModelProperty(value = "a quay.io or docker hub tag name", required = true)
-    private String name;
+
 
     @Column
     @JsonProperty("image_id")
@@ -94,7 +92,6 @@ public class Tag extends Version<Tag> {
             super.setReference(tag.getReference());
         }
 
-        name = tag.name;
         automated = tag.automated;
         imageId = tag.imageId;
         size = tag.size;
@@ -107,7 +104,6 @@ public class Tag extends Version<Tag> {
             super.setReference(tag.getReference());
         }
 
-        name = tag.name;
         automated = tag.automated;
         imageId = tag.imageId;
         size = tag.size;
@@ -119,14 +115,7 @@ public class Tag extends Version<Tag> {
         dockerfilePath = tag.dockerfilePath;
     }
 
-    @JsonProperty
-    public String getName() {
-        return name;
-    }
 
-    public void setName(String name) {
-        this.name = name;
-    }
 
     @JsonProperty
     public String getImageId() {

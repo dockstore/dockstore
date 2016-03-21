@@ -54,6 +54,7 @@ import io.dockstore.webservice.resources.QuayIOAuthenticationResource;
 import io.dockstore.webservice.resources.TemplateHealthCheck;
 import io.dockstore.webservice.resources.TokenResource;
 import io.dockstore.webservice.resources.UserResource;
+import io.dockstore.webservice.resources.WorkflowResource;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.auth.AuthFactory;
@@ -145,9 +146,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final ToolDAO toolDAO = new ToolDAO(hibernate.getSessionFactory());
         final WorkflowDAO workflowDAO = new WorkflowDAO(hibernate.getSessionFactory());
         final WorkflowVersionDAO workflowVersionDAO = new WorkflowVersionDAO(hibernate.getSessionFactory());
-        /** dummy usage to satify compiler **/
-        workflowDAO.hashCode();
-        workflowVersionDAO.hashCode();
 
         final GroupDAO groupDAO = new GroupDAO(hibernate.getSessionFactory());
         final TagDAO tagDAO = new TagDAO(hibernate.getSessionFactory());
@@ -165,9 +163,10 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
-        environment.jersey().register(
-                new DockerRepoResource(mapper, httpClient, userDAO, tokenDAO, toolDAO, tagDAO, labelDAO, fileDAO, configuration
-                        .getBitbucketClientID(), configuration.getBitbucketClientSecret()));
+        final DockerRepoResource dockerRepoResource = new DockerRepoResource(mapper, httpClient, userDAO, tokenDAO, toolDAO, tagDAO, labelDAO,
+                                                                       fileDAO, configuration.getBitbucketClientID(),
+                                                                       configuration.getBitbucketClientSecret());
+        environment.jersey().register(dockerRepoResource);
         environment.jersey().register(new GitHubRepoResource(tokenDAO, userDAO));
         environment.jersey().register(new DockerRepoTagResource(userDAO, toolDAO, tagDAO));
 
@@ -182,9 +181,12 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 new TokenResource(tokenDAO, userDAO, configuration.getGithubClientID(), configuration.getGithubClientSecret(),
                         configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), httpClient, cachingAuthenticator));
 
-        environment.jersey().register(
-                new UserResource(mapper, httpClient, tokenDAO, userDAO, groupDAO, toolDAO, tagDAO, fileDAO, configuration
-                        .getBitbucketClientID(), configuration.getBitbucketClientSecret()));
+        final WorkflowResource workflowResource = new WorkflowResource(httpClient, userDAO, tokenDAO, workflowDAO, workflowVersionDAO,
+                labelDAO, fileDAO, configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret());
+        environment.jersey().register(workflowResource);
+
+        environment.jersey().register(new UserResource(httpClient, tokenDAO, userDAO, groupDAO, workflowResource, dockerRepoResource));
+
 
         // attach the container dao statically to avoid too much modification of generated code
         ToolsApiServiceImpl.setToolDAO(toolDAO);

@@ -20,7 +20,7 @@ import java.util.List;
 
 import org.hibernate.SessionFactory;
 
-import io.dockstore.webservice.core.ContainerMode;
+import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.Tool;
 
 /**
@@ -41,7 +41,7 @@ public class ToolDAO extends EntryDAO<Tool> {
                 "toolname", tool));
     }
 
-    public List<Tool> findByMode(final ContainerMode mode) {
+    public List<Tool> findByMode(final ToolMode mode) {
         return list(namedQuery("io.dockstore.webservice.core.Tool.findByMode").setParameter("mode", mode));
     }
 

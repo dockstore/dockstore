@@ -18,7 +18,6 @@ package io.swagger.client.model;
 
 import io.swagger.client.StringUtil;
 import io.swagger.client.model.Group;
-import io.swagger.client.model.Entry;
 import java.util.*;
 
 
@@ -31,14 +30,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * End users for the dockstore
  **/
 @ApiModel(description = "End users for the dockstore")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-17T14:12:33.169-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-18T16:51:57.948-04:00")
 public class User   {
   
   private Long id = null;
   private String username = null;
   private Boolean isAdmin = null;
   private List<Group> groups = new ArrayList<Group>();
-  private List<Entry> entries = new ArrayList<Entry>();
 
   
   /**
@@ -93,19 +91,6 @@ public class User   {
   }
 
   
-  /**
-   * Entries in the dockstore that this user manages
-   **/
-  @ApiModelProperty(value = "Entries in the dockstore that this user manages")
-  @JsonProperty("entries")
-  public List<Entry> getEntries() {
-    return entries;
-  }
-  public void setEntries(List<Entry> entries) {
-    this.entries = entries;
-  }
-
-  
 
   @Override
   public String toString()  {
@@ -116,7 +101,6 @@ public class User   {
     sb.append("    username: ").append(StringUtil.toIndentedString(username)).append("\n");
     sb.append("    isAdmin: ").append(StringUtil.toIndentedString(isAdmin)).append("\n");
     sb.append("    groups: ").append(StringUtil.toIndentedString(groups)).append("\n");
-    sb.append("    entries: ").append(StringUtil.toIndentedString(entries)).append("\n");
     sb.append("}");
     return sb.toString();
   }

@@ -18,6 +18,7 @@ package io.dockstore.webservice.core;
 
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.persistence.CascadeType;
@@ -35,7 +36,10 @@ import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Ordering;
 
+import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 /**
@@ -44,8 +48,9 @@ import io.swagger.annotations.ApiModelProperty;
  * @author dyuen
  */
 @Entity
+@ApiModel(value = "Base class for versions of entries in the Dockstore")
 @Inheritance(strategy= InheritanceType.TABLE_PER_CLASS)
-public abstract class Version<T> implements Comparable<T>{
+public abstract class Version<T extends Version> implements Comparable<T>{
     /** re-use existing generator for backwards compatibility */
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator="tag_id_seq")
@@ -63,7 +68,7 @@ public abstract class Version<T> implements Comparable<T>{
     private String reference;
 
 
-    @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
+    @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "version_sourcefile", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "sourcefileid", referencedColumnName = "id"))
     @ApiModelProperty("Cached files for each version. Includes Dockerfile and Descriptor files")
     private final Set<SourceFile> sourceFiles;
@@ -80,17 +85,24 @@ public abstract class Version<T> implements Comparable<T>{
     @ApiModelProperty("Implementation specific, whether this tag has valid files from source code repo")
     private boolean valid;
 
+    @Column
+    @ApiModelProperty(value = "Implementation specific, can be a quay.io or docker hub tag name", required = true)
+    private String name;
+
     public void updateByUser(final Version version) {
         reference = version.reference;
         hidden = version.hidden;
     }
 
-    public void update(Version version) {
-        lastModified = version.lastModified;
+    public void update(T version) {
+        valid = version.isValid();
+        lastModified = version.getLastModified();
+        name = version.getName();
     }
 
-    public void clone(Version version) {
-        lastModified = version.lastModified;
+    public void clone(T version) {
+        name = version.getName();
+        lastModified = version.getLastModified();
     }
 
     @JsonProperty
@@ -143,8 +155,41 @@ public abstract class Version<T> implements Comparable<T>{
         this.valid = valid;
     }
 
+
+
+    @JsonProperty
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     @Override
-    public int compareTo(T o) {
-        return Long.compare(id, ((Version)o).id);
+    public int hashCode() {
+        return Objects.hash(id, lastModified, reference, hidden, valid, name);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        final Version other = (Version) obj;
+        return Objects.equals(this.id, other.id) && Objects.equals(this.lastModified, other.lastModified)
+                && Objects.equals(this.reference, other.reference) && Objects.equals(this.hidden, other.hidden)
+                && Objects.equals(this.valid, other.valid) && Objects.equals(this.name, other.name);
+    }
+
+    @Override
+    public int compareTo(T that) {
+        return ComparisonChain.start().compare(this.id, that.getId(), Ordering.natural().nullsLast())
+                .compare(this.lastModified, that.getLastModified(), Ordering.natural().nullsLast())
+                .compare(this.reference, that.getReference(), Ordering.natural().nullsLast())
+                .compare(this.name, that.getName(), Ordering.natural().nullsLast()).result();
     }
 }

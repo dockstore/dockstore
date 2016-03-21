@@ -23,6 +23,8 @@ import java.util.TreeSet;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
@@ -30,6 +32,8 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -45,17 +49,37 @@ import io.swagger.annotations.ApiModelProperty;
  */
 @ApiModel(value = "Workflow", description = "This describes one workflow in the dockstore")
 @Entity
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = { "organization", "repository", "workflowName" }))
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedById", query = "SELECT c FROM Workflow c WHERE c.id = :id AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findAllPublished", query = "SELECT c FROM Workflow c WHERE c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findAll", query = "SELECT c FROM Workflow c"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.searchPattern", query = "SELECT c FROM Workflow c WHERE ((c.defaultWorkflowPath LIKE :pattern) OR (c.description LIKE :pattern)) AND c.isPublished = true") })
+        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByPath", query = "SELECT c FROM Workflow c WHERE c.path = :path"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByPath", query = "SELECT c FROM Workflow c WHERE c.path = :path AND c.isPublished = true"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByGitUrl", query = "SELECT c FROM Workflow c WHERE c.gitUrl = :gitUrl"),
+                  @NamedQuery(name = "io.dockstore.webservice.core.Workflow.searchPattern", query = "SELECT c FROM Workflow c WHERE ((c.defaultWorkflowPath LIKE :pattern) OR (c.description LIKE :pattern)) AND c.isPublished = true") })
 @DiscriminatorValue("workflow")
-public class Workflow extends Entry {
+public class Workflow extends Entry<Workflow, WorkflowVersion> {
+
+    @Column(nullable = false, columnDefinition = "Text default 'STUB'")
+    @Enumerated(EnumType.STRING)
+    @ApiModelProperty(value = "This indicates what mode this is in which informs how we do things like refresh, dockstore specific", required = true)
+    private WorkflowMode mode = WorkflowMode.STUB;
+
+    @Column(columnDefinition = "text")
+    @ApiModelProperty(value = "This is the name of the workflow, not needed when only one workflow in a repo", required = false)
+    private String workflowName;
 
     @Column(nullable = false)
-    @ApiModelProperty(value = "This is the name of the workflow", required = true)
-    private String name;
+    @ApiModelProperty(value = "This is a git organization for the workflow", required = true)
+    private String organization;
+    @Column(nullable = false)
+    @ApiModelProperty(value = "This is a git repository name", required = true)
+    private String repository;
+    @Column
+    @ApiModelProperty(value = "This is a generated full workflow path including organization, repository name, and workflow name", readOnly = true)
+    private String path;
+
 
     // Add for new descriptor types
     @Column(columnDefinition = "text")
@@ -65,7 +89,7 @@ public class Workflow extends Entry {
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinTable(name = "workflow_workflowversion", joinColumns = @JoinColumn(name = "workflowid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "workflowversionid", referencedColumnName = "id"))
-    @ApiModelProperty("Implementation specific tracking of valid build workflowVersions for the docker container")
+    @ApiModelProperty(value = "Implementation specific tracking of valid build workflowVersions for the docker container")
     @OrderBy("id")
     private final SortedSet<WorkflowVersion> workflowVersions;
 
@@ -73,10 +97,15 @@ public class Workflow extends Entry {
         workflowVersions = new TreeSet<>();
     }
 
-    public Workflow(long id, String name) {
+    @Override
+    public Set<WorkflowVersion> getVersions() {
+        return workflowVersions;
+    }
+
+    public Workflow(long id, String workflowName) {
         super(id);
         // this.userId = userId;
-        this.name = name;
+        this.workflowName = workflowName;
         workflowVersions = new TreeSet<>();
     }
 
@@ -86,13 +115,23 @@ public class Workflow extends Entry {
      */
     public void update(Workflow workflow) {
         super.update(workflow);
-        this.setName(workflow.getName());
+        this.setMode(workflow.getMode());
+        this.setWorkflowName(workflow.getWorkflowName());
+        this.setPath(workflow.getPath());
     }
 
+    @JsonProperty
+    public WorkflowMode getMode() {
+        return mode;
+    }
+
+    public void setMode(WorkflowMode mode) {
+        this.mode = mode;
+    }
 
     @JsonProperty
-    public String getName() {
-        return name;
+    public String getWorkflowName() {
+        return workflowName;
     }
 
 
@@ -109,11 +148,11 @@ public class Workflow extends Entry {
     }
 
     /**
-     * @param name
+     * @param workflowName
      *            the repo name to set
      */
-    public void setName(String name) {
-        this.name = name;
+    public void setWorkflowName(String workflowName) {
+        this.workflowName = workflowName;
     }
 
 
@@ -127,4 +166,37 @@ public class Workflow extends Entry {
         this.defaultWorkflowPath = defaultWorkflowPath;
     }
 
+    @JsonProperty
+    public String getOrganization() {
+        return organization;
+    }
+
+    public void setOrganization(String organization) {
+        this.organization = organization;
+    }
+
+    @JsonProperty
+    public String getRepository() {
+        return repository;
+    }
+
+    public void setRepository(String repository) {
+        this.repository = repository;
+    }
+
+    @JsonProperty
+    public String getPath() {
+        String constructedPath;
+        if (path == null){
+            constructedPath = organization + '/' + repository + (workflowName == null ? "": '/' + workflowName);
+            path = constructedPath;
+        }else{
+            constructedPath = path;
+        }
+        return constructedPath;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
 }

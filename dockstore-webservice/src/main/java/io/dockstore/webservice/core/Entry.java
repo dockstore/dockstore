@@ -37,6 +37,7 @@ import javax.persistence.ManyToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.SequenceGenerator;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.swagger.annotations.ApiModelProperty;
@@ -47,7 +48,7 @@ import io.swagger.annotations.ApiModelProperty;
  */
 @Entity
 @Inheritance(strategy= InheritanceType.TABLE_PER_CLASS)
-public abstract class Entry {
+public abstract class Entry<S extends Entry, T extends Version> {
 
     /** re-use existing generator for backwards compatibility */
     @Id
@@ -223,7 +224,7 @@ public abstract class Entry {
      * Used during refresh to update containers
      * @param entry
      */
-    public void update(Entry entry) {
+    public void update(S entry) {
         this.setDescription(entry.getDescription());
         isPublished = entry.getIsPublished();
         lastModified = entry.getLastModified();
@@ -236,4 +237,11 @@ public abstract class Entry {
             gitUrl = entry.getGitUrl();
         }
     }
+
+    /**
+     * Convenience method to access versions in a generic manner
+     * @return versions
+     */
+    @JsonIgnore
+    public abstract Set<T> getVersions();
 }

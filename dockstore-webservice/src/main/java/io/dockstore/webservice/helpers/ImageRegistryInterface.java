@@ -57,8 +57,6 @@ public interface ImageRegistryInterface {
     /**
      * A bit of a misnomer, this not only gets a map of builds but populates the container with CWL-parsed info
      *
-     * @param githubToken
-     * @param bitbucketToken
      * @param allRepos
      *            a list of images that gets modified with data from builds like data modified, size, etc.
      * @return map of path -> list of quay.io build data structure
