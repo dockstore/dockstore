@@ -421,48 +421,18 @@ public class Client {
             } catch (ApiException ex) {
                 out("Exception: " + ex);
             }
+        } else if (containsHelpRequest(args)) {
+            publishHelp();
         } else {
-            String first = args.get(0);
-            if (containsHelpRequest(args)) {
-                publishHelp();
-            } else if (isUnpublishRequest(first)) {
-                if (args.size() == 1) {
-                    publishHelp();
-                } else {
-                    String second = args.get(1);
-                    try {
-                        DockstoreTool container = containersApi.getContainerByToolPath(second);
-                        PublishRequest pub = new PublishRequest();
-                        pub.setPublish(false);
-                        container = containersApi.publish(container.getId(), pub);
+            String first = reqVal(args, "--entry");
 
-                        if (container != null) {
-                            out("Successfully unpublished " + second);
-                        } else {
-                            kill("Unable to unpublish invalid container " + second);
-                        }
-                    } catch (ApiException e) {
-                        kill("Unable to unpublish unknown container " + first);
-                    }
-                }
+            if (isUnpublishRequest(args)) {
+                publish(false, first);
             } else {
-                if (args.size() == 1) {
-                    try {
-                        DockstoreTool container = containersApi.getContainerByToolPath(first);
-                        PublishRequest pub = new PublishRequest();
-                        pub.setPublish(true);
-                        container = containersApi.publish(container.getId(), pub);
-
-                        if (container != null) {
-                            out("Successfully published " + first);
-                        } else {
-                            kill("Unable to publish invalid container " + first);
-                        }
-                    } catch (ApiException ex) {
-                        kill("Unable to publish unknown container " + first);
-                    }
+                String toolname = optVal(args, "--toolname", null);
+                if (toolname == null) {
+                    publish(true, first);
                 } else {
-                    String toolname = args.get(1);
                     try {
                         DockstoreTool container = containersApi.getContainerByToolPath(first);
                         DockstoreTool newContainer = new DockstoreTool();
@@ -475,7 +445,7 @@ public class Client {
                         newContainer.setDefaultDockerfilePath(container.getDefaultDockerfilePath());
                         newContainer.setDefaultCwlPath(container.getDefaultCwlPath());
                         newContainer.setDefaultWdlPath(container.getDefaultWdlPath());
-                        newContainer.setIsPublished(container.getIsPublished());
+                        newContainer.setIsPublished(false);
                         newContainer.setGitUrl(container.getGitUrl());
                         newContainer.setPath(container.getPath());
                         newContainer.setToolname(toolname);
@@ -483,7 +453,8 @@ public class Client {
                         newContainer = containersApi.registerManual(newContainer);
 
                         if (newContainer != null) {
-                            out("Successfully published " + toolname);
+                            out("Successfully registered " + first + "/" + toolname);
+                            publish(true, newContainer.getToolPath());
                         } else {
                             kill("Unable to publish " + toolname);
                         }
@@ -494,6 +465,28 @@ public class Client {
             }
         }
     }
+
+     private static void publish(boolean publish, String entry) {
+         String action = "publish";
+         if (!publish) {
+             action = "unpublish";
+         }
+
+         try {
+             DockstoreTool container = containersApi.getContainerByToolPath(entry);
+             PublishRequest pub = new PublishRequest();
+             pub.setPublish(publish);
+             container = containersApi.publish(container.getId(), pub);
+
+             if (container != null) {
+                 out("Successfully " + action + "ed  " + entry);
+             } else {
+                 kill("Unable to " + action + " invalid container " + entry);
+             }
+         } catch (ApiException e) {
+             kill("Unable to " + action + " unknown container " + entry);
+         }
+     }
 
     private static void manualPublish(final List<String> args) {
         if (containsHelpRequest(args)) {
@@ -1508,8 +1501,14 @@ public class Client {
          return containsHelp;
      }
 
-     private static boolean isUnpublishRequest(String first) {
-         return "--unpub".equals(first);
+     private static boolean isUnpublishRequest(List<String> args) {
+         boolean unpublish = false;
+         for (String arg : args) {
+             if ("--unpub".equals(arg)) {
+                 unpublish = true;
+             }
+         }
+         return unpublish;
      }
 
      private static void printHelpHeader() {

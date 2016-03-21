@@ -83,7 +83,7 @@ public class BasicET {
                         "master", "--toolname", "regular", "--script" });
 
                 // Add a tag
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "versionTag", "--entry", "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub/regular",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "version_tag", "--entry", "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub/regular",
                         "--add", "masterTest", "--image-id", "4728f8f5ce1709ec8b8a5282e274e63de3c67b95f03a519191e6ea675c5d34e8", "--git-reference", "master", "--script" });
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
@@ -91,14 +91,14 @@ public class BasicET {
                 Assert.assertTrue("there should be one tag", count == 1);
 
                 // Update tag
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "versionTag", "--entry", "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub/regular",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "version_tag", "--entry", "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub/regular",
                         "--update", "masterTest", "--hidden", "true", "--script" });
 
                 final long count2 = testingPostgres.runSelectStatement("select count(*) from tag where name = 'masterTest' and hidden='t'", new ScalarHandler<>());
                 Assert.assertTrue("there should be one tag", count2 == 1);
 
                 // Remove tag
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "versionTag", "--entry", "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub/regular",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "version_tag", "--entry", "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub/regular",
                         "--remove", "masterTest", "--script" });
 
                 final long count3 = testingPostgres.runSelectStatement("select count(*) from tag where name = 'masterTest'", new ScalarHandler<>());
@@ -139,7 +139,7 @@ public class BasicET {
          */
         @Test
         public void testManualQuayToAutoNoAutoWithoutToolname() {
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "updateContainer", "--entry", "quay.io/dockstoretestuser/quayandgithub",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "update_container", "--entry", "quay.io/dockstoretestuser/quayandgithub",
                         "--toolname", "testToolname", "--script" });
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--toolpath", "quay.io/dockstoretestuser/quayandgithub/testToolname" });
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.QUAY_IO.toString(),
@@ -181,14 +181,14 @@ public class BasicET {
          */
         @Test
         public void testQuayNoAutobuild() {
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "updateContainer", "--entry", "quay.io/dockstoretestuser/noautobuild",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "update_container", "--entry", "quay.io/dockstoretestuser/noautobuild",
                         "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--script" });
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
                 final long count = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser/noautobuild' and giturl = 'git@github.com:DockstoreTestUser/dockstore-whalesay.git'", new ScalarHandler<>());
                 Assert.assertTrue("the container should now have an associated git repo", count == 1);
 
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "updateContainer", "--entry", "quay.io/dockstoretestuser/nobuildsatall",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "update_container", "--entry", "quay.io/dockstoretestuser/nobuildsatall",
                         "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--script" });
 
                 final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser/nobuildsatall' and giturl = 'git@github.com:DockstoreTestUser/dockstore-whalesay.git'", new ScalarHandler<>());
