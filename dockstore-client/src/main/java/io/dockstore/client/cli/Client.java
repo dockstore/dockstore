@@ -173,12 +173,13 @@ public class Client {
     }
 
      private static void exceptionMessage(Exception exception, String message, int exitCode) {
-         err(exception.toString());
          if (!message.equals("")) {
              err(message);
          }
          if (DEBUG.get()) {
              exception.printStackTrace();
+         } else {
+             err(exception.toString());
          }
 
          System.exit(exitCode);
@@ -413,9 +414,7 @@ public class Client {
     }
 
     private static void search(List<String> args) {
-        if (args.isEmpty()) {
-            errorMessage("Please enter a pattern to search for", CLIENT_ERROR);
-        } else if (containsHelpRequest(args)) {
+        if (args.isEmpty() || containsHelpRequest(args)) {
             searchHelp();
         } else {
             String pattern = args.get(0);
@@ -480,6 +479,7 @@ public class Client {
 
                         if (newContainer != null) {
                             out("Successfully registered " + first + "/" + toolname);
+                            containersApi.refresh(newContainer.getId());
                             publish(true, newContainer.getToolPath());
                         } else {
                             errorMessage("Unable to publish " + toolname, COMMAND_ERROR);
@@ -507,17 +507,15 @@ public class Client {
              if (container != null) {
                  out("Successfully " + action + "ed  " + entry);
              } else {
-                 errorMessage("Unable to " + action + " invalid container " + entry, COMMAND_ERROR);
+                 errorMessage("Unable to " + action + " container " + entry, COMMAND_ERROR);
              }
          } catch (ApiException ex) {
-             exceptionMessage(ex, "Unable to " + action + " unknown container " + entry, API_ERROR);
+             exceptionMessage(ex, "Unable to " + action + " container " + entry, API_ERROR);
          }
      }
 
     private static void manualPublish(final List<String> args) {
-        if (args.isEmpty()) {
-            errorMessage("Please provide arguments for this command", CLIENT_ERROR);
-        } else if (containsHelpRequest(args)) {
+        if (args.isEmpty() || containsHelpRequest(args)) {
             manualPublishHelp();
         } else {
             final String name = reqVal(args, "--name");
@@ -590,9 +588,7 @@ public class Client {
     }
 
     private static void convert(final List<String> args) throws ApiException, IOException {
-        if (args.isEmpty()) {
-            errorMessage("Please provide arguments for this command", CLIENT_ERROR);
-        } else if (containsHelpRequest(args) && !args.contains("cwl2json") && !args.contains("wdl2json") && !args.contains("tool2json") && !args.contains("tool2tsv")) {
+        if (args.isEmpty() || (containsHelpRequest(args) && !args.contains("cwl2json") && !args.contains("wdl2json") && !args.contains("tool2json") && !args.contains("tool2tsv"))) {
             convertHelp(); // Display general help
         } else {
             final String cmd = args.remove(0);
@@ -619,9 +615,7 @@ public class Client {
     }
 
      private static void launch(final List<String> args) {
-         if (args.isEmpty()) {
-             errorMessage("Please provide arguments for this command", CLIENT_ERROR);
-         } else if (containsHelpRequest(args)) {
+         if (args.isEmpty() || containsHelpRequest(args)) {
              launchHelp();
          } else {
              final String descriptor = optVal(args, "--descriptor", CWL);
@@ -759,9 +753,7 @@ public class Client {
     }
 
     private static void tool2json(final List<String> args) throws ApiException, IOException {
-        if (args.isEmpty()) {
-            errorMessage("Please provide arguments for this command", CLIENT_ERROR);
-        } else if (containsHelpRequest(args)) {
+        if (args.isEmpty() || containsHelpRequest(args)) {
             tool2jsonHelp();
         } else {
             final String runString = runString(args, true);
@@ -827,9 +819,7 @@ public class Client {
     }
 
     private static void tool2tsv(final List<String> args) throws ApiException, IOException {
-        if (args.isEmpty()) {
-            errorMessage("Please provide arguments for this command", CLIENT_ERROR);
-        } else if (containsHelpRequest(args)) {
+        if (args.isEmpty() || containsHelpRequest(args)) {
             tool2tsvHelp();
         } else {
             final String runString = runString(args, false);
@@ -838,12 +828,9 @@ public class Client {
     }
 
     private static void cwl2json(final List<String> args) {
-        if (args.isEmpty()) {
-            errorMessage("Please provide arguments for this command", CLIENT_ERROR);
-        } else if (containsHelpRequest(args)) {
+        if (args.isEmpty() || containsHelpRequest(args)) {
             cwl2jsonHelp();
         } else {
-
             final String cwlPath = reqVal(args, "--cwl");
             final ImmutablePair<String, String> output = cwl.parseCWL(cwlPath, true);
 
@@ -854,9 +841,7 @@ public class Client {
     }
 
     private static void wdl2json(final List<String> args) {
-        if (args.isEmpty()) {
-            errorMessage("Please provide arguments for this command", CLIENT_ERROR);
-        } else if (containsHelpRequest(args)) {
+        if (args.isEmpty() || containsHelpRequest(args)) {
             wdl2jsonHelp();
         } else {
             // Will eventually need to update this to use wdltool
@@ -875,12 +860,9 @@ public class Client {
      **/
 
     private static void info(List<String> args) {
-        if (args.isEmpty()) {
-            errorMessage("Please provide arguments for this command", CLIENT_ERROR);
-        } else if (containsHelpRequest(args)) {
+        if (args.isEmpty() || containsHelpRequest(args)) {
             infoHelp();
         } else {
-
             String path = args.get(0);
             try {
                 DockstoreTool container = containersApi.getPublishedContainerByToolPath(path);
@@ -939,9 +921,7 @@ public class Client {
     }
 
     private static void descriptor(List<String> args, String descriptorType) {
-        if (args.isEmpty()) {
-            errorMessage("Please provide arguments for this command", CLIENT_ERROR);
-        } else if (containsHelpRequest(args)) {
+        if (args.isEmpty() || containsHelpRequest(args)) {
             descriptorHelp(descriptorType);
         } else {
             try {
@@ -1024,9 +1004,7 @@ public class Client {
     }
 
     public static void label(List<String> args) {
-        if (args.isEmpty()) {
-            errorMessage("Please provide arguments for this command", CLIENT_ERROR);
-        } else if (containsHelpRequest(args)) {
+        if (args.isEmpty() || containsHelpRequest(args)) {
             labelHelp();
         } else {
             final String toolpath = reqVal(args, "--entry");
@@ -1096,16 +1074,24 @@ public class Client {
     }
 
     public static void versionTag(List<String> args) {
-        if (args.isEmpty()) {
-            errorMessage("Please provide arguments for this command", CLIENT_ERROR);
-        } else if (containsHelpRequest(args) && !args.contains("add") && !args.contains("update") && !args.contains("remove")) {
+        if (args.isEmpty() || (containsHelpRequest(args) && !args.contains("add") && !args.contains("update") && !args.contains("remove"))) {
             versionTagHelp();
         } else {
+            String subcommand = args.remove(0);
+            if (subcommand.equals("add")) {
+                versionTagAddHelp();
+            } else if (subcommand.equals("remove")) {
+                versionTagRemoveHelp();
+            } else if  (subcommand.equals("update")) {
+                versionTagUpdateHelp();
+            } else {
+                errorMessage("Please provide a correct subcommand", CLIENT_ERROR);
+            }
+
             final String toolpath = reqVal(args, "--entry");
             try {
                 DockstoreTool container = containersApi.getContainerByToolPath(toolpath);
                 long containerId = container.getId();
-                String subcommand = args.remove(0);
                 if (subcommand.equals("add")) {
                     if (containsHelpRequest(args)) {
                         versionTagAddHelp();
@@ -1221,11 +1207,9 @@ public class Client {
     }
 
     public static void updateContainer(List<String> args) {
-        if (args.isEmpty()) {
-            errorMessage("Please provide arguments for this command", CLIENT_ERROR);
-        } else if (containsHelpRequest(args)) {
+        if (args.isEmpty() || containsHelpRequest(args)) {
             updateContainerHelp();
-        } else if (args.size() > 0 && !containsHelpRequest(args)) {
+        } else {
             final String toolpath = reqVal(args, "--entry");
             try {
                 DockstoreTool container = containersApi.getContainerByToolPath(toolpath);
@@ -1566,20 +1550,20 @@ public class Client {
         out("");
         out("  manual_publish   :  registers a Docker Hub (or manual Quay) container in the dockstore and then attempt to publish");
         out("");
-        out("  info <tool> :  print detailed information about a particular published container");
+        out("  info <tool>      :  print detailed information about a particular published container");
         out("");
-        out("  "+CWL+" <tool>  :  returns the Common Workflow Language tool definition for this Docker image ");
+        out("  "+CWL+" <tool>       :  returns the Common Workflow Language tool definition for this Docker image ");
         out("                      which enables integration with Global Alliance compliant systems");
         out("");
-        out("  "+WDL+" <tool>  :  returns the Workflow Descriptor Langauge definition for this Docker image.");
+        out("  "+WDL+" <tool>       :  returns the Workflow Descriptor Langauge definition for this Docker image.");
         out("");
         out("  refresh          :  updates your list of containers stored on Dockstore or an individual container");
         out("");
         out("  label            :  updates labels for an individual container");
         out("");
-        out("  versionTag       :  updates version tags for an individual container");
+        out("  version_tag       :  updates version tags for an individual container");
         out("");
-        out("  updateContainer  :  updates certain fields of a container");
+        out("  update_container  :  updates certain fields of a container");
         out("");
         out("  " + CONVERT + "          :  utilities that allow you to convert file types");
         out("");
@@ -1709,7 +1693,6 @@ public class Client {
          out("");
          out("Description:");
          out("  Publish/unpublish a registered tool.");
-         out("  <entry> is the complete tool path in the Dockstore");
          out("  No arguments will list the current and potential tools to share.");
          out("Optional Parameters:");
          out("  --entry <entry>             Complete tool path in the Dockstore");
@@ -1754,7 +1737,7 @@ public class Client {
          out("       dockstore manual_publish [parameters]");
          out("");
          out("Description:");
-         out("  Manually register an entry in the dockstore. Currently this is used to " + "register entries for images on Docker Hub .");
+         out("  Manually register an entry in the dockstore. Currently this is used to register entries for images on Docker Hub.");
          out("");
          out("Required parameters:");
          out("  --name <name>                Name for the docker container");
@@ -1766,7 +1749,7 @@ public class Client {
          out("  --dockerfile-path <file>     Path for the dockerfile, defaults to /Dockerfile");
          out("  --cwl-path <file>            Path for the CWL document, defaults to /Dockstore.cwl");
          out("  --wdl-path <file>            Path for the WDL document, defaults to /Dockstore.wdl");
-         out("  --toolname <toolname>        Name of the tool, can be omitted");
+         out("  --toolname <toolname>        Name of the tool, can be omitted, defaults to null");
          out("  --registry <registry>        Docker registry, can be omitted, defaults to registry.hub.docker.com");
          out("  --version-name <version>     Version tag name for Dockerhub containers only, defaults to latest");
          printHelpFooter();
