@@ -114,9 +114,12 @@ public class Client {
     private static final int PADDING = 3;
     private static final int MAX_DESCRIPTION = 50;
 
-    public static final int GENERIC_ERROR = 1;
-    public static final int CONNECTION_ERROR = 150;
-    public static final int INPUT_ERROR = 3;
+    public static final int GENERIC_ERROR = 1; // General error, not yet descriped by an error type
+    public static final int CONNECTION_ERROR = 150; // Connection exception
+    public static final int IO_ERROR = 3; // IO throws an exception
+    public static final int API_ERROR = 6; // API throws an exception
+    public static final int CLIENT_ERROR = 4; // Client does something wrong (ex. input validation)
+    public static final int COMMAND_ERROR = 10; // Command is not successful, but not due to errors
     private static String configFile = null;
 
     // This should be linked to common, but we won't do this now because we don't want dependencies changing during testing
@@ -133,6 +136,10 @@ public class Client {
         }
     }
 
+     /*
+     Helper functions
+     ----------------------------------------------------------------------------------------------------------------------------------------
+      */
     private static void out(String format, Object... args) {
         System.out.println(String.format(format, args));
     }
@@ -165,12 +172,29 @@ public class Client {
         throw new Kill();
     }
 
+     private static void exceptionMessage(Exception exception, String message, int exitCode) {
+         err(exception.toString());
+         if (!message.equals("")) {
+             err(message);
+         }
+         if (DEBUG.get()) {
+             exception.printStackTrace();
+         }
+
+         System.exit(exitCode);
+     }
+
+     private static void errorMessage(String message, int exitCode) {
+         err(message);
+         System.exit(exitCode);
+     }
+
     private static void invalid(String cmd) {
-        kill("dockstore: '%s' is not a dockstore command. See 'dockstore --help'.", cmd);
+        errorMessage("dockstore: " + cmd + " is not a dockstore command. See 'dockstore --help'.", CLIENT_ERROR);
     }
 
     private static void invalid(String cmd, String sub) {
-        kill("dockstore: '%s %s' is not a dockstore command. See 'dockstore %s --help'.", cmd, sub, cmd);
+        errorMessage("dockstore: " + cmd + " " + sub + " is not a dockstore command. See 'dockstore " + cmd + " --help'.", CLIENT_ERROR);
     }
 
     private static boolean flag(List<String> args, String flag) {
@@ -220,7 +244,7 @@ public class Client {
                         }
                     }
                 }
-                kill("dockstore: missing required argument to '%s'.", key);
+                errorMessage("dockstore: missing required argument to " + key, CLIENT_ERROR);
             } else {
                 i++;
             }
@@ -236,7 +260,7 @@ public class Client {
         if (vals.size() == 1) {
             val = vals.get(0);
         } else if (vals.size() > 1) {
-            kill("dockstore: multiple instances of '%s'.", key);
+            errorMessage("dockstore: multiple instances of " + key, CLIENT_ERROR);
         }
 
         return val;
@@ -246,7 +270,7 @@ public class Client {
         String val = optVal(args, key, null);
 
         if (val == null) {
-            kill("dockstore: missing required flag '%s'.", key);
+            errorMessage("dockstore: missing required flag " + key, CLIENT_ERROR);
         }
 
         return val;
@@ -364,13 +388,13 @@ public class Client {
                 // check user info after usage so that users can get usage without live webservice
                 User user = usersApi.getUser();
                 if (user == null) {
-                    throw new RuntimeException("User not found");
+                    errorMessage("User not found", CLIENT_ERROR);
                 }
                 // List<Container> containers = containersApi.allRegisteredContainers();
                 List<DockstoreTool> containers = usersApi.userPublishedContainers(user.getId());
                 printPublishedList(containers);
             } catch (ApiException ex) {
-                kill("Exception: " + ex);
+                exceptionMessage(ex, "", API_ERROR);
             }
         }
     }
@@ -384,12 +408,14 @@ public class Client {
             final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
             out(gson.toJson(metadata));
         } catch (ApiException ex) {
-            kill("Exception: " + ex);
+            exceptionMessage(ex, "", API_ERROR);
         }
     }
 
     private static void search(List<String> args) {
-        if (args.isEmpty() || containsHelpRequest(args)) {
+        if (args.isEmpty()) {
+            errorMessage("Please enter a pattern to search for", CLIENT_ERROR);
+        } else if (containsHelpRequest(args)) {
             searchHelp();
         } else {
             String pattern = args.get(0);
@@ -400,7 +426,7 @@ public class Client {
                 out("-------------------");
                 printContainerList(containers);
             } catch (ApiException ex) {
-                kill("Exception: " + ex);
+                exceptionMessage(ex, "", API_ERROR);
             }
         }
     }
@@ -411,7 +437,7 @@ public class Client {
                 // check user info after usage so that users can get usage without live webservice
                 User user = usersApi.getUser();
                 if (user == null) {
-                    throw new RuntimeException("User not found");
+                    errorMessage("User not found", CLIENT_ERROR);
                 }
                 List<DockstoreTool> containers = usersApi.userContainers(user.getId());
 
@@ -419,7 +445,7 @@ public class Client {
                 out("-------------------");
                 printContainerList(containers);
             } catch (ApiException ex) {
-                out("Exception: " + ex);
+                exceptionMessage(ex, "", API_ERROR);
             }
         } else if (containsHelpRequest(args)) {
             publishHelp();
@@ -456,10 +482,10 @@ public class Client {
                             out("Successfully registered " + first + "/" + toolname);
                             publish(true, newContainer.getToolPath());
                         } else {
-                            kill("Unable to publish " + toolname);
+                            errorMessage("Unable to publish " + toolname, COMMAND_ERROR);
                         }
                     } catch (ApiException ex) {
-                        kill("Unable to publish " + toolname);
+                        exceptionMessage(ex, "Unable to publish " + toolname, API_ERROR);
                     }
                 }
             }
@@ -481,15 +507,17 @@ public class Client {
              if (container != null) {
                  out("Successfully " + action + "ed  " + entry);
              } else {
-                 kill("Unable to " + action + " invalid container " + entry);
+                 errorMessage("Unable to " + action + " invalid container " + entry, COMMAND_ERROR);
              }
-         } catch (ApiException e) {
-             kill("Unable to " + action + " unknown container " + entry);
+         } catch (ApiException ex) {
+             exceptionMessage(ex, "Unable to " + action + " unknown container " + entry, API_ERROR);
          }
      }
 
     private static void manualPublish(final List<String> args) {
-        if (containsHelpRequest(args)) {
+        if (args.isEmpty()) {
+            errorMessage("Please provide arguments for this command", CLIENT_ERROR);
+        } else if (containsHelpRequest(args)) {
             manualPublishHelp();
         } else {
             final String name = reqVal(args, "--name");
@@ -501,7 +529,7 @@ public class Client {
             final String wdlPath = optVal(args, "--wdl-path", "/Dockstore.wdl");
             final String gitReference = reqVal(args, "--git-reference");
             final String toolname = optVal(args, "--toolname", null);
-            final String registry = optVal(args, "--registry", "registry.hub.docker.com");
+            final String registry = optVal(args, "--registry", Registry.DOCKER_HUB.toString());
 
             DockstoreTool container = new DockstoreTool();
             container.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
@@ -532,12 +560,13 @@ public class Client {
             try {
                 container = containersApi.registerManual(container);
                 if (container != null) {
+                    // Refresh to update validity
                     containersApi.refresh(container.getId());
                 } else {
-                    kill("Unable to register " + fullName);
+                    errorMessage("Unable to register " + fullName, COMMAND_ERROR);
                 }
             } catch (final ApiException ex) {
-                kill("Unable to register " + fullName);
+                exceptionMessage(ex, "Unable to register " + fullName, API_ERROR);
             }
 
 
@@ -551,18 +580,20 @@ public class Client {
                     if (publishedTool.getIsPublished()) {
                         out("Successfully published " + fullName);
                     } else {
-                        out("Successfully registered " + fullName + ", however it is not valid to publish.");
+                        out("Successfully registered " + fullName + ", however it is not valid to publish."); // Should this throw an error?
                     }
-                } catch (ApiException e) {
-                    out("Successfully registered " + fullName + ", however it is not valid to publish.");
+                } catch (ApiException ex) {
+                    exceptionMessage(ex, "Successfully registered " + fullName + ", however it is not valid to publish.", API_ERROR);
                 }
             }
         }
     }
 
     private static void convert(final List<String> args) throws ApiException, IOException {
-        if (containsHelpRequest(args)) {
-            convertHelp();
+        if (args.isEmpty()) {
+            errorMessage("Please provide arguments for this command", CLIENT_ERROR);
+        } else if (containsHelpRequest(args) && !args.contains("cwl2json") && !args.contains("wdl2json") && !args.contains("tool2json") && !args.contains("tool2tsv")) {
+            convertHelp(); // Display general help
         } else {
             final String cmd = args.remove(0);
             if (null != cmd) {
@@ -588,7 +619,9 @@ public class Client {
     }
 
      private static void launch(final List<String> args) {
-         if (containsHelpRequest(args)) {
+         if (args.isEmpty()) {
+             errorMessage("Please provide arguments for this command", CLIENT_ERROR);
+         } else if (containsHelpRequest(args)) {
              launchHelp();
          } else {
              final String descriptor = optVal(args, "--descriptor", CWL);
@@ -596,9 +629,9 @@ public class Client {
                  try {
                      launchCwl(args);
                  } catch (ApiException e) {
-                     throw new RuntimeException("api error launching workflow", e);
+                     exceptionMessage(e, "api error launching workflow", API_ERROR);
                  } catch (IOException e) {
-                     throw new RuntimeException("io error launching workflow", e);
+                     exceptionMessage(e, "io error launching workflow", IO_ERROR);
                  }
              } else if (descriptor.equals(WDL)){
                  launchWdl(args);
@@ -675,63 +708,60 @@ public class Client {
                     }
                 }
             } else {
-                kill("Missing required parameters, one of  --json or --tsv is required");
+                errorMessage("Missing required parameters, one of  --json or --tsv is required", CLIENT_ERROR);
             }
 
     }
 
     private static void launchWdl(final List<String> args) {
-        if (containsHelpRequest(args)) {
-            launchHelp();
-        } else {
-            final String entry = reqVal(args, "--entry");
-            final String json = reqVal(args, "--json");
+        final String entry = reqVal(args, "--entry");
+        final String json = reqVal(args, "--json");
 
-            Main main = new Main();
-            File parameterFile = new File(json);
+        Main main = new Main();
+        File parameterFile = new File(json);
 
-            final SourceFile wdlFromServer;
-            try {
-                // Grab WDL from server and store to file
-                wdlFromServer = getDescriptorFromServer(entry, "wdl");
-                final File tempWdl = File.createTempFile("temp", ".wdl", Files.createTempDir());
-                Files.write(wdlFromServer.getContent(), tempWdl, StandardCharsets.UTF_8);
+        final SourceFile wdlFromServer;
+        try {
+            // Grab WDL from server and store to file
+            wdlFromServer = getDescriptorFromServer(entry, "wdl");
+            final File tempWdl = File.createTempFile("temp", ".wdl", Files.createTempDir());
+            Files.write(wdlFromServer.getContent(), tempWdl, StandardCharsets.UTF_8);
 
-                // Get list of input files
-                Bridge bridge = new Bridge();
-                Map<String, String> wdlInputs = bridge.getInputFiles(tempWdl);
+            // Get list of input files
+            Bridge bridge = new Bridge();
+            Map<String, String> wdlInputs = bridge.getInputFiles(tempWdl);
 
-                // Convert parameter JSON to a map
-                WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning(configFile);
-                Gson gson = new Gson();
-                String jsonString = FileUtils.readFileToString(parameterFile);
-                Map<String, Object> map = new HashMap<>();
-                Map<String, Object> inputJson = gson.fromJson(jsonString, map.getClass());
+            // Convert parameter JSON to a map
+            WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning(configFile);
+            Gson gson = new Gson();
+            String jsonString = FileUtils.readFileToString(parameterFile);
+            Map<String, Object> map = new HashMap<>();
+            Map<String, Object> inputJson = gson.fromJson(jsonString, map.getClass());
 
-                // Download files and change to local location
-                // Make a new map of the inputs with updated locations
-                Map<String,Object> fileMap = wdlFileProvisioning.pullFiles(inputJson, wdlInputs);
+            // Download files and change to local location
+            // Make a new map of the inputs with updated locations
+            Map<String,Object> fileMap = wdlFileProvisioning.pullFiles(inputJson, wdlInputs);
 
-                // Make new json file
-                String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
+            // Make new json file
+            String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
 
-                final List<String> wdlRun = Lists.newArrayList(newJsonPath, parameterFile.getAbsolutePath());
-                final scala.collection.immutable.List<String> wdlRunList = scala.collection.JavaConversions.asScalaBuffer(wdlRun).toList();
+            final List<String> wdlRun = Lists.newArrayList(newJsonPath, parameterFile.getAbsolutePath());
+            final scala.collection.immutable.List<String> wdlRunList = scala.collection.JavaConversions.asScalaBuffer(wdlRun).toList();
 
-                // run a workflow
-                final int run = main.run(wdlRunList);
+            // run a workflow
+            final int run = main.run(wdlRunList);
                 
-            } catch (ApiException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "", API_ERROR);
+        } catch (IOException ex) {
+            exceptionMessage(ex, "", IO_ERROR);
         }
     }
 
     private static void tool2json(final List<String> args) throws ApiException, IOException {
-        if (containsHelpRequest(args)) {
+        if (args.isEmpty()) {
+            errorMessage("Please provide arguments for this command", CLIENT_ERROR);
+        } else if (containsHelpRequest(args)) {
             tool2jsonHelp();
         } else {
             final String runString = runString(args, true);
@@ -797,7 +827,9 @@ public class Client {
     }
 
     private static void tool2tsv(final List<String> args) throws ApiException, IOException {
-        if (containsHelpRequest(args)) {
+        if (args.isEmpty()) {
+            errorMessage("Please provide arguments for this command", CLIENT_ERROR);
+        } else if (containsHelpRequest(args)) {
             tool2tsvHelp();
         } else {
             final String runString = runString(args, false);
@@ -806,7 +838,9 @@ public class Client {
     }
 
     private static void cwl2json(final List<String> args) {
-        if (containsHelpRequest(args)) {
+        if (args.isEmpty()) {
+            errorMessage("Please provide arguments for this command", CLIENT_ERROR);
+        } else if (containsHelpRequest(args)) {
             cwl2jsonHelp();
         } else {
 
@@ -820,7 +854,9 @@ public class Client {
     }
 
     private static void wdl2json(final List<String> args) {
-        if (containsHelpRequest(args)) {
+        if (args.isEmpty()) {
+            errorMessage("Please provide arguments for this command", CLIENT_ERROR);
+        } else if (containsHelpRequest(args)) {
             wdl2jsonHelp();
         } else {
             // Will eventually need to update this to use wdltool
@@ -839,7 +875,9 @@ public class Client {
      **/
 
     private static void info(List<String> args) {
-        if (args.isEmpty() || containsHelpRequest(args)) {
+        if (args.isEmpty()) {
+            errorMessage("Please provide arguments for this command", CLIENT_ERROR);
+        } else if (containsHelpRequest(args)) {
             infoHelp();
         } else {
 
@@ -847,7 +885,7 @@ public class Client {
             try {
                 DockstoreTool container = containersApi.getPublishedContainerByToolPath(path);
                 if (container == null || !container.getIsPublished()) {
-                    kill("This container is not published.");
+                    errorMessage("This container is not published.", COMMAND_ERROR);
                 } else {
 
                     Date dateUploaded = container.getLastBuild();
@@ -895,19 +933,14 @@ public class Client {
                     // out(container.toString());
                 }
             } catch (ApiException ex) {
-                // if (ex.getCode() == BAD_REQUEST) {
-                // out("This container is not published.");
-                // } else {
-                // out("Exception: " + ex);
-                // }
-                kill("Could not find container");
+                exceptionMessage(ex, "Could not find container", API_ERROR);
             }
         }
     }
 
     private static void descriptor(List<String> args, String descriptorType) {
         if (args.isEmpty()) {
-            kill("Please provide a container.");
+            errorMessage("Please provide arguments for this command", CLIENT_ERROR);
         } else if (containsHelpRequest(args)) {
             descriptorHelp(descriptorType);
         } else {
@@ -918,10 +951,10 @@ public class Client {
                 if (file.getContent() != null && !file.getContent().isEmpty()) {
                     out(file.getContent());
                 } else {
-                    kill("No " + descriptorType + " file found.");
+                    errorMessage("No " + descriptorType + " file found", COMMAND_ERROR);
                 }
-            } catch (ApiException e) {
-                e.printStackTrace();
+            } catch (ApiException ex) {
+                exceptionMessage(ex, "", API_ERROR);
             }
         }
     }
@@ -944,35 +977,33 @@ public class Client {
                 }
             } catch (ApiException ex) {
                 if (ex.getCode() == HttpStatus.SC_BAD_REQUEST) {
-                    kill("Invalid tag");
+                    exceptionMessage(ex, "Invalid tag", API_ERROR);
                 } else {
-                    kill("No " + descriptorType + " file found.");
+                    exceptionMessage(ex, "No " + descriptorType + " file found.", API_ERROR);
                 }
             }
         } else {
-            kill("No " + descriptorType + " file found.");
+            errorMessage("No " + descriptorType + " file found.", COMMAND_ERROR);
         }
         return file;
     }
 
     private static void refresh(List<String> args) {
-        if (args.size() > 0) {
-            if (containsHelpRequest(args)) {
-                refreshHelp();
-            } else {
-                try {
-                    final String toolpath = reqVal(args, "--entry");
-                    DockstoreTool container = containersApi.getContainerByToolPath(toolpath);
-                    final Long containerId = container.getId();
-                    DockstoreTool updatedContainer = containersApi.refresh(containerId);
-                    List<DockstoreTool> containerList = new ArrayList<>();
-                    containerList.add(updatedContainer);
-                    out("YOUR UPDATED CONTAINER");
-                    out("-------------------");
-                    printContainerList(containerList);
-                } catch (ApiException ex) {
-                    kill("Exception: " + ex);
-                }
+        if (containsHelpRequest(args)) {
+            refreshHelp();
+        } else if (!args.isEmpty()) {
+            try {
+                final String toolpath = reqVal(args, "--entry");
+                DockstoreTool container = containersApi.getContainerByToolPath(toolpath);
+                final Long containerId = container.getId();
+                DockstoreTool updatedContainer = containersApi.refresh(containerId);
+                List<DockstoreTool> containerList = new ArrayList<>();
+                containerList.add(updatedContainer);
+                out("YOUR UPDATED CONTAINER");
+                out("-------------------");
+                printContainerList(containerList);
+            } catch (ApiException ex) {
+                exceptionMessage(ex, "", API_ERROR);
             }
         } else {
             try {
@@ -987,13 +1018,17 @@ public class Client {
                 out("-------------------");
                 printContainerList(containers);
             } catch (ApiException ex) {
-                kill("Exception: " + ex);
+                exceptionMessage(ex, "", API_ERROR);
             }
         }
     }
 
     public static void label(List<String> args) {
-        if (args.size() > 0 && !containsHelpRequest(args)) {
+        if (args.isEmpty()) {
+            errorMessage("Please provide arguments for this command", CLIENT_ERROR);
+        } else if (containsHelpRequest(args)) {
+            labelHelp();
+        } else {
             final String toolpath = reqVal(args, "--entry");
             final List<String> adds = optVals(args, "--add");
             final Set<String> addsSet = adds.isEmpty() ? new HashSet<>() : new HashSet<>(adds);
@@ -1005,18 +1040,15 @@ public class Client {
 
             for (String add : addsSet) {
                 if (!add.matches(labelStringPattern)) {
-                    err("The following label does not match the proper label format : " + add);
-                    System.exit(INPUT_ERROR);
+                    errorMessage("The following label does not match the proper label format : " + add, CLIENT_ERROR);
                 } else if (removesSet.contains(add)) {
-                    err("The following label is present in both add and remove : " + add);
-                    System.exit(INPUT_ERROR);
+                    errorMessage("The following label is present in both add and remove : " + add, CLIENT_ERROR);
                 }
             }
 
             for (String remove : removesSet) {
                 if (!remove.matches(labelStringPattern)) {
-                    err("The following label does not match the proper label format : " + remove);
-                    System.exit(INPUT_ERROR);
+                    errorMessage("The following label does not match the proper label format : " + remove, CLIENT_ERROR);
                 }
             }
 
@@ -1057,31 +1089,32 @@ public class Client {
                     out("The container has no labels.");
                 }
 
-            } catch (ApiException e) {
-                e.printStackTrace();
+            } catch (ApiException ex) {
+                exceptionMessage(ex, "", API_ERROR);
             }
-
-        } else {
-            labelHelp();
         }
     }
 
     public static void versionTag(List<String> args) {
-        if (args.size() > 0) {
+        if (args.isEmpty()) {
+            errorMessage("Please provide arguments for this command", CLIENT_ERROR);
+        } else if (containsHelpRequest(args) && !args.contains("add") && !args.contains("update") && !args.contains("remove")) {
+            versionTagHelp();
+        } else {
             final String toolpath = reqVal(args, "--entry");
             try {
                 DockstoreTool container = containersApi.getContainerByToolPath(toolpath);
                 long containerId = container.getId();
-                if (args.contains("--add")) {
+                String subcommand = args.remove(0);
+                if (subcommand.equals("add")) {
                     if (containsHelpRequest(args)) {
                         versionTagAddHelp();
                     } else {
                         if (container.getMode() != DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH) {
-                            err("Only manually added images can add version tags.");
-                            System.exit(INPUT_ERROR);
+                            errorMessage("Only manually added images can add version tags.", CLIENT_ERROR);
                         }
 
-                        final String tagName = reqVal(args, "--add");
+                        final String tagName = reqVal(args, "--name");
                         final String gitReference = reqVal(args, "--git-reference");
                         final Boolean hidden = Boolean.valueOf(optVal(args, "--hidden", "f"));
                         final String cwlPath = optVal(args, "--cwl-path", "/Dockstore.cwl");
@@ -1110,11 +1143,11 @@ public class Client {
                         }
                     }
 
-                } else if (args.contains("--update")) {
+                } else if (subcommand.equals("update")) {
                     if (containsHelpRequest(args)) {
                         versionTagUpdateHelp();
                     } else {
-                        final String tagName = reqVal(args, "--update");
+                        final String tagName = reqVal(args, "--name");
                         List<Tag> tags = container.getTags();
                         Boolean updated = false;
 
@@ -1143,20 +1176,18 @@ public class Client {
                             }
                         }
                         if (!updated) {
-                            err("Tag " + tagName + " does not exist.");
-                            System.exit(INPUT_ERROR);
+                            errorMessage("Tag " + tagName + " does not exist.", CLIENT_ERROR);
                         }
                     }
-                } else if (args.contains("--remove")) {
+                } else if (subcommand.equals("remove")) {
                     if (containsHelpRequest(args)) {
                         versionTagRemoveHelp();
                     } else {
                         if (container.getMode() != DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH) {
-                            err("Only manually added images can add version tags.");
-                            System.exit(INPUT_ERROR);
+                            errorMessage("Only manually added images can add version tags.", CLIENT_ERROR);
                         }
 
-                        final String tagName = reqVal(args, "--remove");
+                        final String tagName = reqVal(args, "--name");
                         List<Tag> tags = containerTagsApi.getTagsByPath(containerId);
                         long tagId;
                         Boolean removed = false;
@@ -1176,26 +1207,25 @@ public class Client {
                             }
                         }
                         if (!removed) {
-                            err("Tag " + tagName + " does not exist.");
-                            System.exit(INPUT_ERROR);
+                            errorMessage("Tag " + tagName + " does not exist.", CLIENT_ERROR);
                         }
                     }
                 } else {
-                    versionTagHelp();
+                    errorMessage("Not a valid subcommand", CLIENT_ERROR);
                 }
-            } catch (ApiException e) {
-                e.printStackTrace();
-                kill("Could not find container");
-
+            } catch (ApiException ex) {
+                exceptionMessage(ex, "Could not find container", API_ERROR);
             }
 
-        } else {
-            versionTagHelp();
         }
     }
 
     public static void updateContainer(List<String> args) {
-        if (args.size() > 0 && !containsHelpRequest(args)) {
+        if (args.isEmpty()) {
+            errorMessage("Please provide arguments for this command", CLIENT_ERROR);
+        } else if (containsHelpRequest(args)) {
+            updateContainerHelp();
+        } else if (args.size() > 0 && !containsHelpRequest(args)) {
             final String toolpath = reqVal(args, "--entry");
             try {
                 DockstoreTool container = containersApi.getContainerByToolPath(toolpath);
@@ -1216,11 +1246,9 @@ public class Client {
                 containersApi.updateContainer(containerId, container);
                 containersApi.refresh(containerId);
                 out("The container has been updated.");
-            } catch (ApiException e) {
-                e.printStackTrace();
+            } catch (ApiException ex) {
+                exceptionMessage(ex, "", API_ERROR);
             }
-        } else {
-            updateContainerHelp();
         }
     }
 
@@ -1343,12 +1371,12 @@ public class Client {
         // Try to get version installed
         String installLocation = getInstallLocation();
         if (installLocation == null) {
-            kill("Can't find location of Dockstore executable.  Is it on the PATH?");
+            errorMessage("Can't find location of Dockstore executable.  Is it on the PATH?", CLIENT_ERROR);
         }
 
         String currentVersion = getCurrentVersion(installLocation);
         if (currentVersion == null) {
-            kill("Can't find the current version.");
+            errorMessage("Can't find the current version.", CLIENT_ERROR);
         }
 
         // Update if necessary
@@ -1387,11 +1415,10 @@ public class Client {
                     out("Download complete. You are now on version " + latestVersion + " of Dockstore.");
                 }
             } catch (IOException e) {
-                out("Could not connect to Github. You may have reached your rate limit.");
-                out("Please try again in an hour.");
+                exceptionMessage(e, "Could not connect to Github. You may have reached your rate limit.", IO_ERROR);
             }
         } catch (MalformedURLException e) {
-            out("Issue with URL : " + latestPath);
+            exceptionMessage(e, "Issue with URL : " + latestPath, IO_ERROR);
         }
     }
 
@@ -1457,17 +1484,17 @@ public class Client {
     public static void version() {
         String installLocation = getInstallLocation();
         if (installLocation == null) {
-            kill("Can't find location of Dockstore executable. Is it on the PATH?");
+            errorMessage("Can't find location of Dockstore executable. Is it on the PATH?", CLIENT_ERROR);
         }
 
         String currentVersion = getCurrentVersion(installLocation);
         if (currentVersion == null) {
-            kill("Can't find the current version.");
+            errorMessage("Can't find the current version.", CLIENT_ERROR);
         }
 
         String latestVersion = getLatestVersion();
         if (latestVersion == null) {
-            kill("Can't find the latest version. Something might be wrong with the connection to Github.");
+            errorMessage("Can't find the latest version. Something might be wrong with the connection to Github.", CLIENT_ERROR);
         }
 
         out("Dockstore version " + currentVersion);
@@ -1608,37 +1635,39 @@ public class Client {
          out("  Add, update or remove version tags. For auto tools you can only update.");
          out("");
          out("Commands:");
-         out("  --add <name>        Add a new version tag");
+         out("  add         Add a new version tag");
          out("");
-         out("  --update <name>     Update an existing version tag");
+         out("  update      Update an existing version tag");
          out("");
-         out("  --remove <name>     Remove an existing version tag");
+         out("  remove      Remove an existing version tag");
          printHelpFooter();
      }
 
      private static void versionTagRemoveHelp() {
          printHelpHeader();
-         out("Usage: dockstore version_tag --remove --help");
-         out("       dockstore version_tag --remove <name> [parameters]");
+         out("Usage: dockstore version_tag remove --help");
+         out("       dockstore version_tag remove [parameters]");
          out("");
          out("Description:");
          out("  Remove an existing version tag of a tool.");
-         out("  <name> is the name of the existing version tag.");
+         out("");
          out("Required Parameters:");
          out("  --entry <entry>         Complete tool path in the Dockstore");
+         out("  --name <name>           Name of the version tag to remove");
          printHelpFooter();
      }
 
      private static void versionTagUpdateHelp() {
          printHelpHeader();
-         out("Usage: dockstore version_tag --update --help");
-         out("       dockstore version_tag --update <name> [parameters]");
+         out("Usage: dockstore version_tag update --help");
+         out("       dockstore version_tag update [parameters]");
          out("");
          out("Description:");
          out("  Update an existing version tag of a tool.");
-         out("  <name> is the name of the existing version tag.");
+         out("");
          out("Required Parameters:");
          out("  --entry <entry>         Complete tool path in the Dockstore");
+         out("  --name <name>           Name of the version tag to update");
          out("");
          out("Optional Parameters:");
          out("  --hidden <true/false>                       Hide the tag from public viewing, default false");
@@ -1651,14 +1680,15 @@ public class Client {
 
      private static void versionTagAddHelp() {
          printHelpHeader();
-         out("Usage: dockstore version_tag --add --help");
-         out("       dockstore version_tag --add <name> [parameters]");
+         out("Usage: dockstore version_tag add --help");
+         out("       dockstore version_tag add [parameters]");
          out("");
          out("Description:");
          out("  Add a new version tag to a manually added tool.");
-         out("  <name> is the name of the new version tag.");
+         out("");
          out("Required Parameters:");
          out("  --entry <entry>         Complete tool path in the Dockstore");
+         out("  --name <name>           Name of the version tag to add");
          out("");
          out("Optional Parameters:");
          out("  --git-reference <git-reference>             Git reference for the version tag");
@@ -1674,13 +1704,16 @@ public class Client {
          printHelpHeader();
          out("Usage: dockstore publish --help");
          out("       dockstore publish");
-         out("       dockstore publish <entry>");
-         out("       dockstore publish --unpub <entry>");
+         out("       dockstore publish [parameters]");
+         out("       dockstore publish --unpub [parameters]");
          out("");
          out("Description:");
          out("  Publish/unpublish a registered tool.");
          out("  <entry> is the complete tool path in the Dockstore");
          out("  No arguments will list the current and potential tools to share.");
+         out("Optional Parameters:");
+         out("  --entry <entry>             Complete tool path in the Dockstore");
+         out("  --toolname <toolname>       Toolname of new entry");
          printHelpFooter();
      }
 
@@ -1718,7 +1751,7 @@ public class Client {
      private static void manualPublishHelp() {
          printHelpHeader();
          out("Usage: dockstore manual_publish --help");
-         out("       dockstore manual_publish <params>");
+         out("       dockstore manual_publish [parameters]");
          out("");
          out("Description:");
          out("  Manually register an entry in the dockstore. Currently this is used to " + "register entries for images on Docker Hub .");
@@ -1742,10 +1775,10 @@ public class Client {
      private static void convertHelp() {
          printHelpHeader();
          out("Usage: dockstore " + CONVERT + " --help");
-         out("       dockstore " + CONVERT + " cwl2json");
-         out("       dockstore " + CONVERT + " wdl2json");
-         out("       dockstore " + CONVERT + " tool2json");
-         out("       dockstore " + CONVERT + " tool2tsv");
+         out("       dockstore " + CONVERT + " cwl2json [parameters]");
+         out("       dockstore " + CONVERT + " wdl2json [parameters]");
+         out("       dockstore " + CONVERT + " tool2json [parameters]");
+         out("       dockstore " + CONVERT + " tool2tsv [parameters]");
          out("");
          out("Description:");
          out("  These are preview features that will be finalized for the next major release.");
@@ -1774,7 +1807,7 @@ public class Client {
      private static void tool2jsonHelp() {
          printHelpHeader();
          out("Usage: dockstore " + CONVERT + " tool2json --help");
-         out("       dockstore " + CONVERT + " tool2json");
+         out("       dockstore " + CONVERT + " tool2json [parameters]");
          out("");
          out("Description:");
          out("  Spit out a json run file for a given cwl document.");
@@ -1788,7 +1821,7 @@ public class Client {
      private static void tool2tsvHelp() {
          printHelpHeader();
          out("Usage: dockstore " + CONVERT + " tool2tsv --help");
-         out("       dockstore " + CONVERT + " tool2tsv");
+         out("       dockstore " + CONVERT + " tool2tsv [parameters]");
          out("");
          out("Description:");
          out("  Spit out a tsv run file for a given cwl document.");
@@ -1801,7 +1834,7 @@ public class Client {
      private static void cwl2jsonHelp(){
          printHelpHeader();
          out("Usage: dockstore " + CONVERT + " --help");
-         out("       dockstore " + CONVERT + " cwl2json");
+         out("       dockstore " + CONVERT + " cwl2json [parameters]");
          out("");
          out("Description:");
          out("  Spit out a json run file for a given cwl document.");
@@ -1814,7 +1847,7 @@ public class Client {
      private static void wdl2jsonHelp() {
          printHelpHeader();
          out("Usage: dockstore " + CONVERT + " --help");
-         out("       dockstore " + CONVERT + " wdl2json");
+         out("       dockstore " + CONVERT + " wdl2json [parameters]");
          out("");
          out("Description:");
          out("  Spit out a json run file for a given wdl document.");
@@ -1827,7 +1860,7 @@ public class Client {
      private static void descriptorHelp(String descriptorType) {
          printHelpHeader();
          out("Usage: dockstore " + descriptorType + " --help");
-         out("       dockstore " + descriptorType);
+         out("       dockstore " + descriptorType + " [parameters]");
          out("");
          out("Description:");
          out("  Grab a " + descriptorType + " document for a particular entry");
@@ -1987,16 +2020,11 @@ public class Client {
                 }
             }
         } catch (IOException | ApiException ex) {
-            out("Exception: " + ex);
-            ex.printStackTrace();
-            System.exit(GENERIC_ERROR);
+            exceptionMessage(ex, "", GENERIC_ERROR);
         } catch (ProcessingException ex) {
-            out("Could not connect to Dockstore web service: " + ex);
-            System.exit(CONNECTION_ERROR);
+            exceptionMessage(ex, "Could not connect to Dockstore web service", CONNECTION_ERROR);
         } catch (Exception ex) {
-            out("Exception: " + ex);
-            ex.printStackTrace();
-            System.exit(GENERIC_ERROR);
+            exceptionMessage(ex, "", GENERIC_ERROR);
         }
     }
 }
