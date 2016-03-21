@@ -1080,10 +1080,13 @@ public class Client {
             String subcommand = args.remove(0);
             if (subcommand.equals("add")) {
                 versionTagAddHelp();
+                kill("");
             } else if (subcommand.equals("remove")) {
                 versionTagRemoveHelp();
+                kill("");
             } else if  (subcommand.equals("update")) {
                 versionTagUpdateHelp();
+                kill("");
             } else {
                 errorMessage("Please provide a correct subcommand", CLIENT_ERROR);
             }
