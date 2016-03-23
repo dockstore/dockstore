@@ -30,7 +30,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * End users for the dockstore
  **/
 @ApiModel(description = "End users for the dockstore")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-18T16:51:57.948-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-23T15:14:09.776-04:00")
 public class User   {
   
   private Long id = null;

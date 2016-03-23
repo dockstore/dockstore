@@ -28,7 +28,7 @@ import io.swagger.quay.client.model.ChangeVisibility;
 
 import java.util.*;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-11T12:10:45.220-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-23T15:13:48.378-04:00")
 public class RepositoryApi {
   private ApiClient apiClient;
 
@@ -52,16 +52,15 @@ public class RepositoryApi {
   /**
    * 
    * Fetch the list of repositories visible to the current user under a variety of situations.
+   * @param nextPage The page token for the next page
    * @param popularity Whether to include the repository&#39;s popularity metric.
    * @param lastModified Whether to include when the repository was last modified.
    * @param _public Adds any repositories visible to the user by virtue of being public
    * @param starred Filters the repositories returned to those starred by the user
    * @param namespace Filters the repositories returned to this namespace
-   * @param limit Limit on the number of results (int)
-   * @param page Offset page number. (int)
    * @return void
    */
-  public void listRepos (Boolean popularity, Boolean lastModified, Boolean _public, Boolean starred, String namespace, Integer limit, Integer page) throws ApiException {
+  public void listRepos (String nextPage, Boolean popularity, Boolean lastModified, Boolean _public, Boolean starred, String namespace) throws ApiException {
     Object postBody = null;
     
     // create path and map variables
@@ -73,6 +72,8 @@ public class RepositoryApi {
     Map<String, Object> formParams = new HashMap<String, Object>();
 
     
+    queryParams.addAll(apiClient.parameterToPairs("", "next_page", nextPage));
+    
     queryParams.addAll(apiClient.parameterToPairs("", "popularity", popularity));
     
     queryParams.addAll(apiClient.parameterToPairs("", "last_modified", lastModified));
@@ -82,10 +83,6 @@ public class RepositoryApi {
     queryParams.addAll(apiClient.parameterToPairs("", "starred", starred));
     
     queryParams.addAll(apiClient.parameterToPairs("", "namespace", namespace));
-    
-    queryParams.addAll(apiClient.parameterToPairs("", "limit", limit));
-    
-    queryParams.addAll(apiClient.parameterToPairs("", "page", page));
     
 
     

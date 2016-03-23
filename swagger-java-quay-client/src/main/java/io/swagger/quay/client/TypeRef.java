@@ -19,7 +19,7 @@ package io.swagger.quay.client;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-11T12:10:45.220-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-23T15:13:48.378-04:00")
 public class TypeRef<T> {
     private final Type type;
 

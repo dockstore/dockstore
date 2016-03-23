@@ -25,7 +25,7 @@ import io.swagger.quay.client.TypeRef;
 
 import java.util.*;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-11T12:10:45.220-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-23T15:13:48.378-04:00")
 public class LogsApi {
   private ApiClient apiClient;
 
@@ -105,13 +105,14 @@ public class LogsApi {
    * 
    * List the logs for the specified organization.
    * @param orgname The name of the organization
+   * @param nextPage The page token for the next page
    * @param page The page number for the logs
    * @param performer Username for which to filter logs.
    * @param endtime Latest time to which to get logs. (%m/%d/%Y %Z)
    * @param starttime Earliest time from which to get logs. (%m/%d/%Y %Z)
    * @return void
    */
-  public void listOrgLogs (String orgname, Integer page, String performer, String endtime, String starttime) throws ApiException {
+  public void listOrgLogs (String orgname, String nextPage, Integer page, String performer, String endtime, String starttime) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'orgname' is set
@@ -128,6 +129,8 @@ public class LogsApi {
     Map<String, String> headerParams = new HashMap<String, String>();
     Map<String, Object> formParams = new HashMap<String, Object>();
 
+    
+    queryParams.addAll(apiClient.parameterToPairs("", "next_page", nextPage));
     
     queryParams.addAll(apiClient.parameterToPairs("", "page", page));
     
@@ -215,12 +218,13 @@ public class LogsApi {
    * 
    * List the logs for the specified repository.
    * @param repository The full path of the repository. e.g. namespace/name
+   * @param nextPage The page token for the next page
    * @param page The page number for the logs
    * @param endtime Latest time to which to get logs (%m/%d/%Y %Z)
    * @param starttime Earliest time from which to get logs (%m/%d/%Y %Z)
    * @return void
    */
-  public void listRepoLogs (String repository, Integer page, String endtime, String starttime) throws ApiException {
+  public void listRepoLogs (String repository, String nextPage, Integer page, String endtime, String starttime) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'repository' is set
@@ -237,6 +241,8 @@ public class LogsApi {
     Map<String, String> headerParams = new HashMap<String, String>();
     Map<String, Object> formParams = new HashMap<String, Object>();
 
+    
+    queryParams.addAll(apiClient.parameterToPairs("", "next_page", nextPage));
     
     queryParams.addAll(apiClient.parameterToPairs("", "page", page));
     

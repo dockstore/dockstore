@@ -25,7 +25,7 @@ import io.swagger.quay.client.TypeRef;
 
 import java.util.*;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-11T12:10:45.220-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-23T15:13:48.378-04:00")
 public class RobotApi {
   private ApiClient apiClient;
 
@@ -300,7 +300,7 @@ public class RobotApi {
     };
     final String contentType = apiClient.selectHeaderContentType(contentTypes);
 
-    String[] authNames = new String[] {  };
+    String[] authNames = new String[] { "oauth2_implicit" };
 
     
     apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, null);
@@ -395,7 +395,7 @@ public class RobotApi {
     };
     final String contentType = apiClient.selectHeaderContentType(contentTypes);
 
-    String[] authNames = new String[] {  };
+    String[] authNames = new String[] { "oauth2_implicit" };
 
     
     apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, null);
@@ -441,7 +441,7 @@ public class RobotApi {
     };
     final String contentType = apiClient.selectHeaderContentType(contentTypes);
 
-    String[] authNames = new String[] {  };
+    String[] authNames = new String[] { "oauth2_implicit" };
 
     
     apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, null);
@@ -487,7 +487,7 @@ public class RobotApi {
     };
     final String contentType = apiClient.selectHeaderContentType(contentTypes);
 
-    String[] authNames = new String[] {  };
+    String[] authNames = new String[] { "oauth2_implicit" };
 
     
     apiClient.invokeAPI(path, "PUT", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, null);
@@ -533,7 +533,7 @@ public class RobotApi {
     };
     final String contentType = apiClient.selectHeaderContentType(contentTypes);
 
-    String[] authNames = new String[] {  };
+    String[] authNames = new String[] { "oauth2_implicit" };
 
     
     apiClient.invokeAPI(path, "DELETE", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, null);
@@ -579,7 +579,7 @@ public class RobotApi {
     };
     final String contentType = apiClient.selectHeaderContentType(contentTypes);
 
-    String[] authNames = new String[] {  };
+    String[] authNames = new String[] { "oauth2_implicit" };
 
     
     apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, null);
@@ -625,7 +625,7 @@ public class RobotApi {
     };
     final String contentType = apiClient.selectHeaderContentType(contentTypes);
 
-    String[] authNames = new String[] {  };
+    String[] authNames = new String[] { "oauth2_implicit" };
 
     
     apiClient.invokeAPI(path, "POST", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, null);

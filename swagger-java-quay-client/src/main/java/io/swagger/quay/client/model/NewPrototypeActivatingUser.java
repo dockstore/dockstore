@@ -28,7 +28,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * Repository creating user to whom the rule should apply
  **/
 @ApiModel(description = "Repository creating user to whom the rule should apply")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-11T12:10:45.220-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-23T15:13:48.378-04:00")
 public class NewPrototypeActivatingUser   {
   
   private String name = null;
