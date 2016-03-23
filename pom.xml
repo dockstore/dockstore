@@ -36,7 +36,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <github.url>scm:git:git@github.com:ga4gh/dockstore.git</github.url>
         <dropwizard.version>0.8.4</dropwizard.version>
-        <swagger-annotations-version>1.5.3</swagger-annotations-version>
+        <swagger-annotations-version>1.5.8</swagger-annotations-version>
         <assertj.version>3.2.0</assertj.version>
         <jackson.version>2.5.3</jackson.version>
         <jersey-version>2.21</jersey-version>
@@ -318,16 +318,6 @@
             </dependency>
 
             <dependency>
-                <groupId>io.cwl</groupId>
-                <artifactId>cwlavro-tools</artifactId>
-                <version>${cwlavro.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.cwl</groupId>
-                <artifactId>cwlavro-generated</artifactId>
-                <version>${cwlavro.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>jcl-over-slf4j</artifactId>
                 <version>1.7.10</version>
@@ -418,6 +408,37 @@
                 <version>1.20.0</version>
             </dependency>
 
+            <!--  cwl management -->
+            <dependency>
+                <groupId>io.cwl</groupId>
+                <artifactId>cwlavro-tools</artifactId>
+                <version>${cwlavro.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.httpcomponents</groupId>
+                        <artifactId>httpclient-osgi</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.httpcomponents</groupId>
+                        <artifactId>httpcore-osgi</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>io.cwl</groupId>
+                <artifactId>cwlavro-generated</artifactId>
+                <version>${cwlavro.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.httpcomponents</groupId>
+                        <artifactId>httpclient-osgi</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.httpcomponents</groupId>
+                        <artifactId>httpcore-osgi</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
