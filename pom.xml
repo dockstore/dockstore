@@ -273,6 +273,7 @@
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>annotations</artifactId>
                 <scope>test</scope>
+                <version>2.0.1</version>
             </dependency>
 
             <!-- mocking dependencies -->
