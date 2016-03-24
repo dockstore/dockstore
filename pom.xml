@@ -36,7 +36,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <github.url>scm:git:git@github.com:ga4gh/dockstore.git</github.url>
         <dropwizard.version>0.8.4</dropwizard.version>
-        <swagger-annotations-version>1.5.3</swagger-annotations-version>
+        <swagger-annotations-version>1.5.8</swagger-annotations-version>
         <assertj.version>3.2.0</assertj.version>
         <jackson.version>2.5.3</jackson.version>
         <jersey-version>2.21</jersey-version>
@@ -263,6 +263,19 @@
                 <version>1.10</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>${assertj.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.google.code.findbugs</groupId>
+                <artifactId>annotations</artifactId>
+                <scope>test</scope>
+                <version>2.0.1</version>
+            </dependency>
+
             <!-- mocking dependencies -->
             <dependency>
                 <groupId>org.powermock</groupId>
@@ -318,16 +331,6 @@
             </dependency>
 
             <dependency>
-                <groupId>io.cwl</groupId>
-                <artifactId>cwlavro-tools</artifactId>
-                <version>${cwlavro.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.cwl</groupId>
-                <artifactId>cwlavro-generated</artifactId>
-                <version>${cwlavro.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>jcl-over-slf4j</artifactId>
                 <version>1.7.10</version>
@@ -366,6 +369,7 @@
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>jsr305</artifactId>
                 <version>3.0.0</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>com.google.http-client</groupId>
@@ -418,6 +422,37 @@
                 <version>1.20.0</version>
             </dependency>
 
+            <!--  cwl management -->
+            <dependency>
+                <groupId>io.cwl</groupId>
+                <artifactId>cwlavro-tools</artifactId>
+                <version>${cwlavro.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.httpcomponents</groupId>
+                        <artifactId>httpclient-osgi</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.httpcomponents</groupId>
+                        <artifactId>httpcore-osgi</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>io.cwl</groupId>
+                <artifactId>cwlavro-generated</artifactId>
+                <version>${cwlavro.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.httpcomponents</groupId>
+                        <artifactId>httpclient-osgi</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.httpcomponents</groupId>
+                        <artifactId>httpcore-osgi</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

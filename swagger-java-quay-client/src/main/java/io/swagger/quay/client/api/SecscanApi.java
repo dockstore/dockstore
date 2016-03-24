@@ -25,7 +25,7 @@ import io.swagger.quay.client.TypeRef;
 
 import java.util.*;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-11T12:10:45.220-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-23T15:13:48.378-04:00")
 public class SecscanApi {
   private ApiClient apiClient;
 
@@ -48,26 +48,27 @@ public class SecscanApi {
   
   /**
    * 
-   * Fetches the packages added/removed in the given repo image.
+   * Fetches the features and vulnerabilities (if any) for a repository tag.
    * @param repository The full path of the repository. e.g. namespace/name
    * @param imageid The image ID
+   * @param vulnerabilities Include vulnerabilities informations
    * @return void
    */
-  public void getRepoImagePackages (String repository, String imageid) throws ApiException {
+  public void getRepoImageSecurity (String repository, String imageid, Boolean vulnerabilities) throws ApiException {
     Object postBody = null;
     
     // verify the required parameter 'repository' is set
     if (repository == null) {
-      throw new ApiException(400, "Missing the required parameter 'repository' when calling getRepoImagePackages");
+      throw new ApiException(400, "Missing the required parameter 'repository' when calling getRepoImageSecurity");
     }
     
     // verify the required parameter 'imageid' is set
     if (imageid == null) {
-      throw new ApiException(400, "Missing the required parameter 'imageid' when calling getRepoImagePackages");
+      throw new ApiException(400, "Missing the required parameter 'imageid' when calling getRepoImageSecurity");
     }
     
     // create path and map variables
-    String path = "/api/v1/repository/{repository}/image/{imageid}/packages".replaceAll("\\{format\\}","json")
+    String path = "/api/v1/repository/{repository}/image/{imageid}/security".replaceAll("\\{format\\}","json")
       .replaceAll("\\{" + "repository" + "\\}", apiClient.escapeString(repository.toString()))
       .replaceAll("\\{" + "imageid" + "\\}", apiClient.escapeString(imageid.toString()));
 
@@ -77,61 +78,7 @@ public class SecscanApi {
     Map<String, Object> formParams = new HashMap<String, Object>();
 
     
-
-    
-
-    
-
-    final String[] accepts = {
-      
-    };
-    final String accept = apiClient.selectHeaderAccept(accepts);
-
-    final String[] contentTypes = {
-      
-    };
-    final String contentType = apiClient.selectHeaderContentType(contentTypes);
-
-    String[] authNames = new String[] { "oauth2_implicit" };
-
-    
-    apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, null);
-    
-  }
-  
-  /**
-   * 
-   * Fetches the vulnerabilities (if any) for a repository tag.
-   * @param repository The full path of the repository. e.g. namespace/name
-   * @param imageid The image ID
-   * @param minimumPriority Minimum vulnerability priority
-   * @return void
-   */
-  public void getRepoImageVulnerabilities (String repository, String imageid, String minimumPriority) throws ApiException {
-    Object postBody = null;
-    
-    // verify the required parameter 'repository' is set
-    if (repository == null) {
-      throw new ApiException(400, "Missing the required parameter 'repository' when calling getRepoImageVulnerabilities");
-    }
-    
-    // verify the required parameter 'imageid' is set
-    if (imageid == null) {
-      throw new ApiException(400, "Missing the required parameter 'imageid' when calling getRepoImageVulnerabilities");
-    }
-    
-    // create path and map variables
-    String path = "/api/v1/repository/{repository}/image/{imageid}/vulnerabilities".replaceAll("\\{format\\}","json")
-      .replaceAll("\\{" + "repository" + "\\}", apiClient.escapeString(repository.toString()))
-      .replaceAll("\\{" + "imageid" + "\\}", apiClient.escapeString(imageid.toString()));
-
-    // query params
-    List<Pair> queryParams = new ArrayList<Pair>();
-    Map<String, String> headerParams = new HashMap<String, String>();
-    Map<String, Object> formParams = new HashMap<String, Object>();
-
-    
-    queryParams.addAll(apiClient.parameterToPairs("", "minimumPriority", minimumPriority));
+    queryParams.addAll(apiClient.parameterToPairs("", "vulnerabilities", vulnerabilities));
     
 
     

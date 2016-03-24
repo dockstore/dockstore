@@ -242,7 +242,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             }
             version.setGlobalId(globalVersionId);
 
-            version.setName(tag.getReference());
+            version.setName(tag.getName());
 
             String urlBuilt;
             final String githubPrefix = "git@github.com:";
