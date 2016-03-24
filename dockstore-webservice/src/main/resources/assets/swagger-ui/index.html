@@ -1,20 +1,5 @@
-<!DOCTYPE html>
-<!--
-  ~    Copyright 2016 OICR
-  ~
-  ~    Licensed under the Apache License, Version 2.0 (the "License");
-  ~    you may not use this file except in compliance with the License.
-  ~    You may obtain a copy of the License at
-  ~
-  ~        http://www.apache.org/licenses/LICENSE-2.0
-  ~
-  ~    Unless required by applicable law or agreed to in writing, software
-  ~    distributed under the License is distributed on an "AS IS" BASIS,
-  ~    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  ~    See the License for the specific language governing permissions and
-  ~    limitations under the License.
-  -->
 
+<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
@@ -35,6 +20,7 @@
   <script src='lib/backbone-min.js' type='text/javascript'></script>
   <script src='swagger-ui.js' type='text/javascript'></script>
   <script src='lib/highlight.7.3.pack.js' type='text/javascript'></script>
+  <script src='lib/jsoneditor.min.js' type='text/javascript'></script>
   <script src='lib/marked.js' type='text/javascript'></script>
   <script src='lib/swagger-oauth.js' type='text/javascript'></script>
 
@@ -45,13 +31,12 @@
 
   <script type="text/javascript">
     $(function () {
-      //var url = window.location.search.match(/url=([^&]+)/);
       var url = window.location.origin + '/swagger.json';
-      // if (url && url.length > 1) {
-      //   url = decodeURIComponent(url[1]);
-      // } else {
-      //   url = "http://localhost:8080/swagger.json";
-      // }
+      //if (url && url.length > 1) {
+      //  url = decodeURIComponent(url[1]);
+      //} else {
+      //  url = "http://petstore.swagger.io/v2/swagger.json";
+      //}
 
       // Pre load translate...
       if(window.SwaggerTranslator) {
@@ -65,10 +50,11 @@
           if(typeof initOAuth == "function") {
             initOAuth({
               clientId: "your-client-id",
-              clientSecret: "your-client-secret",
+              clientSecret: "your-client-secret-if-required",
               realm: "your-realms",
               appName: "your-app-name", 
-              scopeSeparator: ","
+              scopeSeparator: ",",
+              additionalQueryStringParams: {}
             });
           }
 
@@ -86,17 +72,17 @@
           log("Unable to Load SwaggerUI");
         },
         docExpansion: "none",
+        jsonEditor: true,
         apisSorter: "alpha",
+        defaultModelRendering: 'schema',
         showRequestHeaders: true
       });
 
       function addApiKeyAuthorization(){
         var key = encodeURIComponent($('#input_apiKey')[0].value);
         if(key && key.trim() != "") {
-//            var apiKeyAuth = new SwaggerClient.ApiKeyAuthorization("api_key", key, "query");
-//            window.swaggerUi.api.clientAuthorizations.add("api_key", apiKeyAuth);
-
             swaggerUi.api.clientAuthorizations.add("key", new SwaggerClient.ApiKeyAuthorization("Authorization", "Bearer " + key, "header"));
+            // window.swaggerUi.api.clientAuthorizations.add("api_key", apiKeyAuth);
             log("added key " + key);
         }
       }
