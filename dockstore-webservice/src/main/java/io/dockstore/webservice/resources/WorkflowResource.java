@@ -50,6 +50,7 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.helpers.BitBucketSourceCodeRepo;
 import io.dockstore.webservice.helpers.EntryLabelHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
@@ -132,13 +133,37 @@ public class WorkflowResource {
     public void refreshStubWorkflowsForUser(User user) {
         try {
             List<Token> tokens = checkOnBitbucketToken(user);
-            // TODO: do this for bitbucket as well as for github
-            // Token bitbucketToken = Helper.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
+
+            // Refresh Bitbucket
+            Token bitbucketToken = Helper.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
+
+            if (bitbucketToken != null && bitbucketToken.getContent() != null) {
+                // get workflows from github for a user, experiment with github first
+                final SourceCodeRepoInterface bitbucketSourceCodeRepo = new BitBucketSourceCodeRepo(bitbucketToken.getUsername(), client,
+                        bitbucketToken.getContent(), null);
+
+                final Map<String, String> bitbucketWorkflowGitUrl2Name = bitbucketSourceCodeRepo.getWorkflowGitUrl2RepositoryId();
+
+//                for(Map.Entry<String, String> entry : bitbucketWorkflowGitUrl2Name.entrySet()) {
+//                    LOG.info("++++++++++++++++++++ " + entry.getKey());
+//                    final List<Workflow> byGitUrl = workflowDAO.findByGitUrl(entry.getKey());
+//                    if (byGitUrl.size() > 0) {
+//                        // Workflows exist
+//                        for (Workflow workflow : byGitUrl) {
+//                            final Workflow newWorkflow = bitbucketSourceCodeRepo.getNewWorkflow(entry.getValue(), Optional.of(workflow));
+//                        }
+//                    } else {
+//                        // Workflows are not registered, add them
+//                        final Workflow newWorkflow = bitbucketSourceCodeRepo.getNewWorkflow(entry.getValue(), Optional.absent());
+//                    }
+//                }
+
+            }
+
+            // Refresh Github
+
             Token githubToken = Helper.extractToken(tokens, TokenType.GITHUB_COM.toString());
 
-            // get workflows from github for a user, experiment with github first
-            //final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(null, client,
-            //    bitbucketToken == null ? null : bitbucketToken.getContent(), githubToken.getContent());
             if (githubToken == null || githubToken.getContent() == null){
                 return;
             }

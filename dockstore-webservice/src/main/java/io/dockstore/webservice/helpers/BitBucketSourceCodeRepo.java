@@ -28,6 +28,10 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
@@ -197,10 +201,36 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public Map<String, String> getWorkflowGitUrl2RepositoryId() {
-        throw new UnsupportedOperationException();
+        Map<String, String> reposByGitURl = new HashMap<>();
+        String url = BITBUCKET_API_URL + "users/" + gitUsername;
+        final String BITBUCKET_GIT_URL_PREFIX = "git@bitbucket.org:";
+        final String BITBUCKET_GIT_URL_SUFFIX = ".git";
+
+        Optional<String> asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
+        LOG.info("RESOURCE CALL: {}", url);
+        Gson gson = new Gson();
+        if (asString.isPresent()) {
+            String userJson = asString.get();
+
+            JsonElement jsonElement = new JsonParser().parse(userJson);
+            JsonObject jsonObject = jsonElement.getAsJsonObject();
+            JsonArray asJsonArray = jsonObject.getAsJsonArray("repositories");
+            for (JsonElement element : asJsonArray) {
+                String owner = element.getAsJsonObject().get("owner").getAsString();
+                String name = element.getAsJsonObject().get("name").getAsString();
+                String bitbucketUrl = BITBUCKET_GIT_URL_PREFIX + owner + "/" + name + BITBUCKET_GIT_URL_SUFFIX;
+                LOG.info("++++++++++++++++++++ " + bitbucketUrl);
+
+                String id = owner + "/" + name;
+                reposByGitURl.put(bitbucketUrl,id);
+            }
+
+        }
+        return reposByGitURl;
     }
 
     @Override public Workflow getNewWorkflow(String repositoryId, Optional<Workflow> existingWorkflow) {
+
         throw new UnsupportedOperationException();
     }
 
