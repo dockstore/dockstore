@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.EnumSet;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.http.client.HttpClient;
 import org.eclipse.jetty.servlet.FilterHolder;
@@ -146,7 +147,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             }
             cache = new Cache(tempDir, cacheSize);
         }
-        OkHttpClient okHttpClient = new OkHttpClient().newBuilder().cache(cache).build();
+        // match HttpURLConnection which does not have a timeout by default
+        OkHttpClient okHttpClient = new OkHttpClient().newBuilder().cache(cache).connectTimeout(0, TimeUnit.SECONDS).readTimeout(0, TimeUnit.SECONDS).writeTimeout(0, TimeUnit.SECONDS).build();
         try {
             // this can only be called once per JVM, a factory exception is thrown in our tests
             URL.setURLStreamHandlerFactory(new OkUrlFactory(okHttpClient));
