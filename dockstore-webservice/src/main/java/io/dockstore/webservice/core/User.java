@@ -35,10 +35,8 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -53,7 +51,6 @@ import io.swagger.annotations.ApiModelProperty;
 @Table(name = "enduser")
 @NamedQueries({ @NamedQuery(name = "io.dockstore.webservice.core.User.findAll", query = "SELECT t FROM User t"),
         @NamedQuery(name = "io.dockstore.webservice.core.User.findByUsername", query = "SELECT t FROM User t WHERE t.username = :username") })
-@JsonIdentityInfo(generator=ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class User implements Principal {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -72,6 +69,7 @@ public class User implements Principal {
     @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinTable(name = "endusergroup", joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "groupid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty("Groups that this user belongs to")
+    @JsonIgnore
     private final Set<Group> groups;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
@@ -157,10 +155,8 @@ public class User implements Principal {
         if (!Objects.equals(username, other.username)) {
             return false;
         }
-        if (isAdmin != other.isAdmin) {
-            return false;
-        }
-        return Objects.equals(groups, other.groups);
+        // do not depend on lazily loaded collections for equality
+        return Objects.equals(isAdmin, other.isAdmin);
     }
 
 }

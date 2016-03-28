@@ -191,6 +191,9 @@ public class WorkflowResource {
         Workflow workflow = workflowDAO.findById(workflowId);
         Helper.checkEntry(workflow);
         Helper.checkUser(user, workflow);
+
+        // get a live user for the following
+        user = userDAO.findById(user.getId());
         List<Token> tokens = checkOnBitbucketToken(user);
 
         //TODO: need to integrate bitbucket
