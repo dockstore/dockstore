@@ -47,6 +47,7 @@
         <mockito.version>1.10.19</mockito.version>
         <cwlavro.version>1.0</cwlavro.version>
         <okhttp.version>3.2.0</okhttp.version>
+        <swagger-ui.version>2.1.4</swagger-ui.version>
     </properties>
 
     <organization>
@@ -137,6 +138,18 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.github.stefanbirkner</groupId>
+                <artifactId>system-rules</artifactId>
+                <version>1.16.0</version>
+                <!-- junit:junit-dep is deprecated, and junit:junit replaces it. -->
+                <exclusions>
+                    <exclusion>
+                        <groupId>junit</groupId>
+                        <artifactId>junit-dep</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
@@ -480,6 +493,11 @@
     <build>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>com.googlecode.maven-download-plugin</groupId>
+                    <artifactId>download-maven-plugin</artifactId>
+                    <version>1.2.1</version>
+                </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-scm-publish-plugin</artifactId>
