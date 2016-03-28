@@ -12,7 +12,7 @@ jdk:
 - oraclejdk8
 install:
 - docker version
-- pip2.7 install --user cwl-runner cwltool==1.0.20160108200940 schema-salad==1.4.20160108200836 avro==1.7.7
+- pip2.7 install --user cwl-runner cwltool==1.0.20160323212343 schema-salad==1.7.20160316203940 avro==1.7.7
 - docker pull commonworkflowlanguage/nodejs-engine
 before_script:
 - psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres

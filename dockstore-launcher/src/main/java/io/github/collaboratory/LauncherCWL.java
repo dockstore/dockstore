@@ -340,9 +340,9 @@ public class LauncherCWL {
             }
         }
 
-        writeJob("foo.json", newJSON);
-
-        return "foo.json";
+        // make an updated JSON file that will be used to run the workflow
+        writeJob(globalWorkingDir+"/workflow_params.json", newJSON);
+        return globalWorkingDir+"/workflow_params.json";
     }
 
     private Map<String, Object> loadJob(String jobPath) {
@@ -383,7 +383,7 @@ public class LauncherCWL {
     }
 
     private Map<String, Object> runCWLCommand(String cwlFile, String jsonSettings, String workingDir) {
-        String[] s = {"cwltool","--non-strict","--outdir", workingDir, cwlFile, jsonSettings};
+        String[] s = {"cwltool","--non-strict","--enable-net","--outdir", workingDir, cwlFile, jsonSettings};
         final ImmutablePair<String, String> execute = Utilities.executeCommand(Joiner.on(" ").join(Arrays.asList(s)), stdoutStream, stderrStream);
         Map<String, Object> obj = (Map<String, Object>)yaml.load(execute.getLeft());
         return obj;
