@@ -144,24 +144,34 @@ public class WorkflowResource {
 
                 final Map<String, String> bitbucketWorkflowGitUrl2Name = bitbucketSourceCodeRepo.getWorkflowGitUrl2RepositoryId();
 
-//                for(Map.Entry<String, String> entry : bitbucketWorkflowGitUrl2Name.entrySet()) {
-//                    LOG.info("++++++++++++++++++++ " + entry.getKey());
-//                    final List<Workflow> byGitUrl = workflowDAO.findByGitUrl(entry.getKey());
-//                    if (byGitUrl.size() > 0) {
-//                        // Workflows exist
-//                        for (Workflow workflow : byGitUrl) {
-//                            final Workflow newWorkflow = bitbucketSourceCodeRepo.getNewWorkflow(entry.getValue(), Optional.of(workflow));
-//                        }
-//                    } else {
-//                        // Workflows are not registered, add them
-//                        final Workflow newWorkflow = bitbucketSourceCodeRepo.getNewWorkflow(entry.getValue(), Optional.absent());
-//                    }
-//                }
+                for(Map.Entry<String, String> entry : bitbucketWorkflowGitUrl2Name.entrySet()) {
+                    final List<Workflow> byGitUrl = workflowDAO.findByGitUrl(entry.getKey());
+                    if (byGitUrl.size() > 0) {
+                        // Workflows exist
+                        for (Workflow workflow : byGitUrl) {
+                            final Workflow newWorkflow = bitbucketSourceCodeRepo.getNewWorkflow(entry.getValue(), Optional.of(workflow));
+
+                            // take ownership of these workflows
+                            workflow.getUsers().add(user);
+                            updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow);
+                        }
+                    } else {
+                        // Workflows are not registered, add them
+                        final Workflow newWorkflow = bitbucketSourceCodeRepo.getNewWorkflow(entry.getValue(), Optional.absent());
+
+                        if (newWorkflow != null) {
+                            final long workflowID = workflowDAO.create(newWorkflow);
+                            // need to create nested data models
+                            final Workflow workflowFromDB = workflowDAO.findById(workflowID);
+                            workflowFromDB.getUsers().add(user);
+                            updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow);
+                        }
+                    }
+                }
 
             }
 
             // Refresh Github
-
             Token githubToken = Helper.extractToken(tokens, TokenType.GITHUB_COM.toString());
 
             if (githubToken == null || githubToken.getContent() == null){
@@ -223,16 +233,28 @@ public class WorkflowResource {
         Helper.checkUser(user, workflow);
         List<Token> tokens = checkOnBitbucketToken(user);
 
-        //TODO: need to integrate bitbucket
-        // Token bitbucketToken = Helper.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
-        Token githubToken = Helper.extractToken(tokens, TokenType.GITHUB_COM.toString());
-        if (githubToken == null || githubToken.getContent() == null){
-            throw new CustomWebApplicationException("No github token for this user.", HttpStatus.SC_BAD_REQUEST);
+        SourceCodeRepoInterface sourceCodeRepo = null;
+
+        // check if bitbucket
+        if (workflow.getGitUrl().contains("bitbucket")) {
+            Token bitbucketToken = Helper.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
+            if (bitbucketToken == null || bitbucketToken.getContent() == null) {
+                throw new CustomWebApplicationException("No bitbucket token for this user.", HttpStatus.SC_BAD_REQUEST);
+            }
+
+            sourceCodeRepo = new BitBucketSourceCodeRepo(bitbucketToken.getUsername(), client, bitbucketToken.getContent(), null);
+
+        } else if (workflow.getGitUrl().contains("github")) {
+            Token githubToken = Helper.extractToken(tokens, TokenType.GITHUB_COM.toString());
+            if (githubToken == null || githubToken.getContent() == null) {
+                throw new CustomWebApplicationException("No github token for this user.", HttpStatus.SC_BAD_REQUEST);
+            }
+
+            sourceCodeRepo = new GitHubSourceCodeRepo(user.getUsername(), githubToken.getContent(), null);
+
         }
 
-        final SourceCodeRepoInterface sourceCodeRepo = new GitHubSourceCodeRepo(user.getUsername(),githubToken.getContent(), null);
-
-        // do a full refresh when targetted like this
+        // do a full refresh when targeted like this
         workflow.setMode(WorkflowMode.FULL);
         final Workflow newWorkflow = sourceCodeRepo.getNewWorkflow(workflow.getOrganization() + '/' + workflow.getRepository(), Optional.of(workflow));
         workflow.getUsers().add(user);
