@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.core;
 
+import java.security.Principal;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -34,8 +35,10 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -50,7 +53,8 @@ import io.swagger.annotations.ApiModelProperty;
 @Table(name = "enduser")
 @NamedQueries({ @NamedQuery(name = "io.dockstore.webservice.core.User.findAll", query = "SELECT t FROM User t"),
         @NamedQuery(name = "io.dockstore.webservice.core.User.findByUsername", query = "SELECT t FROM User t WHERE t.username = :username") })
-public class User {
+@JsonIdentityInfo(generator=ObjectIdGenerators.PropertyGenerator.class, property = "id")
+public class User implements Principal {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", unique = true, nullable = false)
@@ -131,6 +135,11 @@ public class User {
     @Override
     public int hashCode() {
         return Objects.hash(id, username);
+    }
+
+    @Override
+    public String getName() {
+        return getUsername();
     }
 
     @Override

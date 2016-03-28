@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -48,10 +49,10 @@ import com.google.common.io.BaseEncoding;
 import com.google.gson.Gson;
 
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.helpers.Helper;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.helpers.Helper;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.auth.Auth;
@@ -87,11 +88,11 @@ public class TokenResource {
     private static final int MAX_ITERATIONS = 5;
 
     private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
-    private final CachingAuthenticator<String, Token> cachingAuthenticator;
+    private final CachingAuthenticator<String, User> cachingAuthenticator;
 
     @SuppressWarnings("checkstyle:parameternumber")
     public TokenResource(TokenDAO tokenDAO, UserDAO enduserDAO, String githubClientID, String githubClientSecret, String bitbucketClientID,
-            String bitbucketClientSecret, HttpClient client, CachingAuthenticator<String, Token> cachingAuthenticator) {
+            String bitbucketClientSecret, HttpClient client, CachingAuthenticator<String, User> cachingAuthenticator) {
         this.tokenDAO = tokenDAO;
         userDAO = enduserDAO;
         this.githubClientID = githubClientID;
@@ -105,11 +106,9 @@ public class TokenResource {
     @GET
     @Timed
     @UnitOfWork
+    @RolesAllowed("admin")
     @ApiOperation(value = "List all known tokens", notes = "List all tokens. Admin Only.", response = Token.class, responseContainer = "List")
-    public List<Token> listTokens(@ApiParam(hidden = true) @Auth Token authToken) {
-        User user = userDAO.findById(authToken.getUserId());
-        Helper.checkUser(user);
-
+    public List<Token> listTokens(@ApiParam(hidden = true) @Auth User user) {
         return tokenDAO.findAll();
     }
 
@@ -120,9 +119,8 @@ public class TokenResource {
     @ApiOperation(value = "Get a specific token by id", notes = "Get a specific token by id", response = Token.class)
     @ApiResponses({ @ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid ID supplied"),
             @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = "Token not found") })
-    public Token listToken(@ApiParam(hidden = true) @Auth Token authToken,
+    public Token listToken(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("ID of token to return") @PathParam("tokenId") Long tokenId) {
-        User user = userDAO.findById(authToken.getUserId());
         Token t = tokenDAO.findById(tokenId);
         Helper.checkUser(user, t.getUserId());
 
@@ -136,12 +134,10 @@ public class TokenResource {
     @ApiOperation(value = "Add a new quay IO token", notes = "This is used as part of the OAuth 2 web flow. "
             + "Once a user has approved permissions for Collaboratory"
             + "Their browser will load the redirect URI which should resolve here", response = Token.class)
-    public Token addQuayToken(@ApiParam(hidden = true) @Auth Token authToken, @QueryParam("access_token") String accessToken) {
+    public Token addQuayToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("access_token") String accessToken) {
         if (accessToken.isEmpty()) {
             throw new CustomWebApplicationException("Please provide an access token.", HttpStatus.SC_BAD_REQUEST);
         }
-
-        User user = userDAO.findById(authToken.getUserId());
 
         String url = QUAY_URL + "user/";
         Optional<String> asString = ResourceUtilities.asString(url, accessToken, client);
@@ -191,9 +187,8 @@ public class TokenResource {
     @UnitOfWork
     @ApiOperation("Deletes a token")
     @ApiResponses(@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid token value"))
-    public Response deleteToken(@ApiParam(hidden = true) @Auth Token authToken,
+    public Response deleteToken(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Token id to delete", required = true) @PathParam("tokenId") Long tokenId) {
-        User user = userDAO.findById(authToken.getUserId());
         Token token = tokenDAO.findById(tokenId);
         Helper.checkUser(user, token.getUserId());
 
@@ -339,13 +334,11 @@ public class TokenResource {
     @ApiOperation(value = "Add a new bitbucket.org token, used by quay.io redirect", notes = "This is used as part of the OAuth 2 web flow. "
             + "Once a user has approved permissions for Collaboratory"
             + "Their browser will load the redirect URI which should resolve here", response = Token.class)
-    public Token addBitbucketToken(@ApiParam(hidden = true) @Auth Token authToken, @QueryParam("code") String code)
+    public Token addBitbucketToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("code") String code)
             throws UnsupportedEncodingException {
         if (code.isEmpty()) {
             throw new CustomWebApplicationException("Please provide an access code", HttpStatus.SC_BAD_REQUEST);
         }
-
-        User user = userDAO.findById(authToken.getUserId());
 
         String url = BITBUCKET_URL + "site/oauth2/access_token";
 
@@ -418,8 +411,8 @@ public class TokenResource {
     @UnitOfWork
     @Path("/bitbucket.org/refresh")
     @ApiOperation(value = "Refresh Bitbucket token", notes = "The Bitbucket token expire in one hour. When this happens you'll get 401 responses", response = Token.class)
-    public Token refreshBitbucketToken(@ApiParam(hidden = true) @Auth Token authToken) {
-        List<Token> tokens = tokenDAO.findBitbucketByUserId(authToken.getUserId());
+    public Token refreshBitbucketToken(@ApiParam(hidden = true) @Auth User user) {
+        List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
 
         if (tokens.isEmpty()) {
             throw new CustomWebApplicationException("User's Bitbucket token not found.", HttpStatus.SC_BAD_REQUEST);

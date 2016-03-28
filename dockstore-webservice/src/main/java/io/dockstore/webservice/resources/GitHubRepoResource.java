@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
 
+import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -40,11 +41,9 @@ import org.slf4j.LoggerFactory;
 
 import com.codahale.metrics.annotation.Timed;
 
-import io.dockstore.webservice.helpers.Helper;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.jdbi.TokenDAO;
-import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
@@ -61,11 +60,9 @@ import io.swagger.annotations.ApiParam;
 public class GitHubRepoResource {
     private static final Logger LOG = LoggerFactory.getLogger(GitHubRepoResource.class);
     private final TokenDAO dao;
-    private final UserDAO userDAO;
 
-    public GitHubRepoResource(TokenDAO dao, UserDAO userDAO) {
+    public GitHubRepoResource(TokenDAO dao) {
         this.dao = dao;
-        this.userDAO = userDAO;
     }
 
     @GET
@@ -91,13 +88,12 @@ public class GitHubRepoResource {
     @GET
     @Timed
     @UnitOfWork
+    @RolesAllowed("admin")
     @ApiOperation(value = "List all repos known via all registered tokens", notes = "List docker container repos currently known. "
             + "Right now, tokens are used to synchronously talk to the quay.io API to list repos. "
             + "Ultimately, we should cache this information and refresh either by user request or by time "
             + "TODO: This should be a properly defined list of objects, it also needs admin authentication", response = String.class)
-    public String getRepos(@ApiParam(hidden = true) @Auth Token authToken) {
-        io.dockstore.webservice.core.User authUser = userDAO.findById(authToken.getUserId());
-        Helper.checkUser(authUser);
+    public String getRepos(@ApiParam(hidden = true) @Auth io.dockstore.webservice.core.User authUser) {
 
         List<Token> findAll = dao.findAll();
         StringBuilder builder = new StringBuilder();

@@ -21,6 +21,7 @@ import java.util.EnumSet;
 import org.apache.http.client.HttpClient;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
+import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,12 +58,14 @@ import io.dockstore.webservice.resources.UserResource;
 import io.dockstore.webservice.resources.WorkflowResource;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
-import io.dropwizard.auth.AuthFactory;
+import io.dropwizard.auth.AuthDynamicFeature;
+import io.dropwizard.auth.AuthValueFactoryProvider;
 import io.dropwizard.auth.CachingAuthenticator;
-import io.dropwizard.auth.oauth.OAuthFactory;
+import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
 import io.dropwizard.client.HttpClientBuilder;
 import io.dropwizard.db.DataSourceFactory;
 import io.dropwizard.hibernate.HibernateBundle;
+import io.dropwizard.hibernate.UnitOfWorkAwareProxyFactory;
 import io.dropwizard.migrations.MigrationsBundle;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
@@ -153,11 +156,15 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final FileDAO fileDAO = new FileDAO(hibernate.getSessionFactory());
 
         LOG.info("This is our custom logger saying that we're about to load authenticators");
-        // setup authentication
-        SimpleAuthenticator authenticator = new SimpleAuthenticator(tokenDAO);
-        CachingAuthenticator<String, Token> cachingAuthenticator = new CachingAuthenticator<>(environment.metrics(), authenticator,
-                configuration.getAuthenticationCachePolicy());
-        environment.jersey().register(AuthFactory.binder(new OAuthFactory<>(cachingAuthenticator, "SUPER SECRET STUFF", Token.class)));
+        // setup authentication to allow session access in authenticators, see https://github.com/dropwizard/dropwizard/pull/1361
+        SimpleAuthenticator authenticator = new UnitOfWorkAwareProxyFactory(getHibernate()).create(SimpleAuthenticator.class,
+            new Class[]{TokenDAO.class, UserDAO.class}, new Object[]{tokenDAO, userDAO});
+        CachingAuthenticator<String, User> cachingAuthenticator = new CachingAuthenticator<>(environment.metrics(), authenticator,
+                                                                                                configuration.getAuthenticationCachePolicy());
+        environment.jersey().register(new AuthDynamicFeature(new OAuthCredentialAuthFilter.Builder<User>().setAuthenticator(cachingAuthenticator)
+                                                                 .setAuthorizer(new SimpleAuthorizer()).setPrefix("Bearer").setRealm("SUPER SECRET STUFF").buildAuthFilter()));
+        environment.jersey().register(new AuthValueFactoryProvider.Binder<>(User.class));
+        environment.jersey().register(RolesAllowedDynamicFeature.class);
 
         final ObjectMapper mapper = environment.getObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -167,8 +174,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                                                                        fileDAO, configuration.getBitbucketClientID(),
                                                                        configuration.getBitbucketClientSecret());
         environment.jersey().register(dockerRepoResource);
-        environment.jersey().register(new GitHubRepoResource(tokenDAO, userDAO));
-        environment.jersey().register(new DockerRepoTagResource(userDAO, toolDAO, tagDAO));
+        environment.jersey().register(new GitHubRepoResource(tokenDAO));
+        environment.jersey().register(new DockerRepoTagResource(toolDAO, tagDAO));
 
         final GitHubComAuthenticationResource resource3 = new GitHubComAuthenticationResource(configuration.getGithubClientID(),
                 configuration.getGithubRedirectURI());

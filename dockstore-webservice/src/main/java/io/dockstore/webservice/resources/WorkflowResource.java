@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -112,16 +113,11 @@ public class WorkflowResource {
     @Path("/refresh")
     @Timed
     @UnitOfWork
+    @RolesAllowed("admin")
     @ApiOperation(value = "Refresh all workflows", notes = "Updates some metadata. ADMIN ONLY", response = Workflow.class, responseContainer = "List")
-    // @SuppressWarnings("checkstyle:methodlength")
-    public List<Workflow> refreshAll(@ApiParam(hidden = true) @Auth Token authToken) {
-        User authUser = userDAO.findById(authToken.getUserId());
-        Helper.checkUser(authUser);
-
+    public List<Workflow> refreshAll(@ApiParam(hidden = true) @Auth User authUser) {
         List<User> users = userDAO.findAll();
-
         users.forEach(this::refreshStubWorkflowsForUser);
-
         return workflowDAO.findAll();
     }
 
@@ -190,11 +186,10 @@ public class WorkflowResource {
     @Timed
     @UnitOfWork
     @ApiOperation(value = "Refresh one particular workflow. Always do a full refresh when targetted", response = Workflow.class)
-    public Workflow refresh(@ApiParam(hidden = true) @Auth Token authToken,
+    public Workflow refresh(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         Helper.checkEntry(workflow);
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, workflow);
         List<Token> tokens = checkOnBitbucketToken(user);
 
@@ -257,11 +252,9 @@ public class WorkflowResource {
     @GET
     @Timed
     @UnitOfWork
+    @RolesAllowed("admin")
     @ApiOperation(value = "List all workflows cached in database", notes = "List workflows currently known. Admin Only", response = Workflow.class, responseContainer = "List")
-    public List<Workflow> allWorkflows(@ApiParam(hidden = true) @Auth Token authToken) {
-        User user = userDAO.findById(authToken.getUserId());
-        Helper.checkUser(user);
-
+    public List<Workflow> allWorkflows(@ApiParam(hidden = true) @Auth User user) {
         return workflowDAO.findAll();
     }
 
@@ -269,13 +262,12 @@ public class WorkflowResource {
     @Timed
     @UnitOfWork
     @Path("/{workflowId}")
-    @ApiOperation(value = "Get a cached workflow", response = Workflow.class)
-    public Workflow getWorkflow(@ApiParam(hidden = true) @Auth Token authToken,
+    @ApiOperation(value = "Get a registered workflow", response = Workflow.class)
+    public Workflow getWorkflow(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow c = workflowDAO.findById(workflowId);
         Helper.checkEntry(c);
 
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
 
         return c;
@@ -286,7 +278,7 @@ public class WorkflowResource {
     @UnitOfWork
     @Path("/{workflowId}/labels")
     @ApiOperation(value = "Update the labels linked to a workflow.", notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Workflow.class)
-    public Workflow updateLabels(@ApiParam(hidden = true) @Auth Token authToken,
+    public Workflow updateLabels(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("workflowId") Long workflowId,
             @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings,
             @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", defaultValue = "") String emptyBody) {
@@ -302,13 +294,12 @@ public class WorkflowResource {
     @UnitOfWork
     @Path("/{workflowId}")
     @ApiOperation(value = "Update the tool with the given workflow.", response = Workflow.class)
-    public Workflow updateWorkflow(@ApiParam(hidden = true) @Auth Token authToken,
+    public Workflow updateWorkflow(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
             @ApiParam(value = "Workflow with updated information", required = true) Workflow workflow) {
         Workflow c = workflowDAO.findById(workflowId);
         Helper.checkEntry(c);
 
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
 
         c.update(workflow);
@@ -325,12 +316,11 @@ public class WorkflowResource {
     @UnitOfWork
     @Path("/{workflowId}/users")
     @ApiOperation(value = "Get users of a workflow", response = User.class, responseContainer = "List")
-    public List<User> getUsers(@ApiParam(hidden = true) @Auth Token authToken,
+    public List<User> getUsers(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow c = workflowDAO.findById(workflowId);
         Helper.checkEntry(c);
 
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
 
         return new ArrayList(c.getUsers());
@@ -347,14 +337,17 @@ public class WorkflowResource {
         return entryVersionHelper.filterContainersForHiddenTags(workflow);
     }
 
-    @POST @Timed @UnitOfWork @Path("/{workflowId}/publish") @ApiOperation(value = "Publish or unpublish a workflow", notes = "Publish/publish a workflow (public or private).", response = Workflow.class) public Workflow publish(
-            @ApiParam(hidden = true) @Auth Token authToken,
+    @POST
+    @Timed
+    @UnitOfWork
+    @Path("/{workflowId}/publish")
+    @ApiOperation(value = "Publish or unpublish a workflow", notes = "Publish/publish a workflow (public or private).", response = Workflow.class)
+    public Workflow publish(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool id to publish/unpublish", required = true) @PathParam("workflowId") Long workflowId,
             @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) PublishRequest request) {
         Workflow c = workflowDAO.findById(workflowId);
         Helper.checkEntry(c);
 
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
 
         if (request.getPublish()) {
@@ -397,12 +390,11 @@ public class WorkflowResource {
     @UnitOfWork
     @Path("/path/workflow/{repository}")
     @ApiOperation(value = "Get a workflow by path", notes = "Lists info of workflow. Enter full path.", response = Workflow.class)
-    public Workflow getWorkflowByPath(@ApiParam(hidden = true) @Auth Token authToken,
+    public Workflow getWorkflowByPath(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
 
         Workflow workflow = workflowDAO.findByPath(path);
         Helper.checkEntry(workflow);
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, workflow);
         return workflow;
     }
@@ -437,11 +429,10 @@ public class WorkflowResource {
     @UnitOfWork
     @Path("/versions")
     @ApiOperation(value = "List the versions for a published workflow", response = WorkflowVersion.class, responseContainer = "List", hidden = true)
-    public List<WorkflowVersion> tags(@ApiParam(hidden = true) @Auth Token authToken, @QueryParam("workflowId") long workflowId) {
+    public List<WorkflowVersion> tags(@ApiParam(hidden = true) @Auth User user, @QueryParam("workflowId") long workflowId) {
         Workflow repository = workflowDAO.findById(workflowId);
         Helper.checkEntry(repository);
 
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, repository);
 
         List<WorkflowVersion> tags = new ArrayList<>();
@@ -449,7 +440,6 @@ public class WorkflowResource {
         return tags;
     }
 
-    // TODO: this method is very repetative with the method below, need to refactor
     @GET
     @Timed
     @UnitOfWork
@@ -457,7 +447,6 @@ public class WorkflowResource {
     @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile cwl(@ApiParam(value = "Tool id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag) {
-
         return entryVersionHelper.getSourceFile(workflowId, tag, FileType.DOCKSTORE_CWL);
     }
 
@@ -468,7 +457,6 @@ public class WorkflowResource {
     @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile wdl(@ApiParam(value = "Tool id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag) {
-
         return entryVersionHelper.getSourceFile(workflowId, tag, FileType.DOCKSTORE_WDL);
     }
 
