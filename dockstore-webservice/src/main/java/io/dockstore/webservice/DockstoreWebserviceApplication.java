@@ -16,7 +16,12 @@
 
 package io.dockstore.webservice;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Files;
 import java.util.EnumSet;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.http.client.HttpClient;
 import org.eclipse.jetty.servlet.FilterHolder;
@@ -75,6 +80,9 @@ import io.swagger.api.impl.ToolsApiServiceImpl;
 import io.swagger.jaxrs.config.BeanConfig;
 import io.swagger.jaxrs.listing.ApiListingResource;
 import io.swagger.jaxrs.listing.SwaggerSerializers;
+import okhttp3.Cache;
+import okhttp3.OkHttpClient;
+import okhttp3.OkUrlFactory;
 
 import static javax.servlet.DispatcherType.REQUEST;
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ACCESS_CONTROL_ALLOW_METHODS_HEADER;
@@ -90,6 +98,10 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
     private static final Logger LOG = LoggerFactory.getLogger(DockstoreWebserviceApplication.class);
     public static final String GA4GH_API_PATH = "/api/v1";
+    private static final int BYTES_IN_KILOBYTE = 1024;
+    private static final int KILOBYTES_IN_MEGABYTE = 1024;
+    private static final int CACHE_IN_MB = 100;
+    private static Cache cache = null;
 
     public static void main(String[] args) throws Exception {
         new DockstoreWebserviceApplication().run(args);
@@ -126,6 +138,31 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 return configuration.getDataSourceFactory();
             }
         });
+
+        if (cache == null) {
+            int cacheSize = CACHE_IN_MB * BYTES_IN_KILOBYTE * KILOBYTES_IN_MEGABYTE; // 100 MiB
+            final File tempDir;
+            try {
+                tempDir = Files.createTempDirectory("dockstore-web-cache-").toFile();
+            } catch (IOException e) {
+                LOG.error("Could no create web cache");
+                throw new RuntimeException(e);
+            }
+            cache = new Cache(tempDir, cacheSize);
+        }
+        // match HttpURLConnection which does not have a timeout by default
+        OkHttpClient okHttpClient = new OkHttpClient().newBuilder().cache(cache).connectTimeout(0, TimeUnit.SECONDS).readTimeout(0, TimeUnit.SECONDS).writeTimeout(0, TimeUnit.SECONDS).build();
+        try {
+            // this can only be called once per JVM, a factory exception is thrown in our tests
+            URL.setURLStreamHandlerFactory(new OkUrlFactory(okHttpClient));
+        } catch(Error factoryException){
+            if (factoryException.getMessage().contains("factory already defined")){
+                LOG.info("OkHttpClient already registered, skipping");
+            } else{
+                LOG.error("Could no create web cache, factory exception");
+                throw new RuntimeException(factoryException);
+            }
+        }
     }
 
     @Override
@@ -155,6 +192,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final LabelDAO labelDAO = new LabelDAO(hibernate.getSessionFactory());
         final FileDAO fileDAO = new FileDAO(hibernate.getSessionFactory());
 
+        LOG.info("Cache directory for OkHttp is: " + cache.directory().getAbsolutePath());
         LOG.info("This is our custom logger saying that we're about to load authenticators");
         // setup authentication to allow session access in authenticators, see https://github.com/dropwizard/dropwizard/pull/1361
         SimpleAuthenticator authenticator = new UnitOfWorkAwareProxyFactory(getHibernate()).create(SimpleAuthenticator.class,

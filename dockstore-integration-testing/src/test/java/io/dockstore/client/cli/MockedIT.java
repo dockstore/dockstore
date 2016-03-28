@@ -18,6 +18,8 @@ package io.dockstore.client.cli;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
@@ -89,6 +91,15 @@ public class MockedIT {
         FileUtils.deleteQuietly(new File("/tmp/wc1.out"));
         FileUtils.deleteQuietly(new File("/tmp/wc2.out"));
         FileUtils.deleteQuietly(new File("/tmp/example.bedGraph"));
+    }
+
+    @Before
+    public void moveExampleBedGraph() {
+        try {
+            FileUtils.copyFile(new File(ResourceHelpers.resourceFilePath("example.bedGraph")), new File("./datastore/example.bedGraph"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @After
