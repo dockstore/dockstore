@@ -370,7 +370,7 @@ public class TokenResource {
 
         String username = null;
 
-        url = BITBUCKET_URL + "api/2.0/users/victoroicr";
+        url = BITBUCKET_URL + "api/2.0/user";
         Optional<String> asString2 = ResourceUtilities.asString(url, accessToken, client);
 
         if (asString2.isPresent()) {

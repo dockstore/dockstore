@@ -499,7 +499,7 @@ public class UserResource {
 
         String json = "";
 
-        String url = "https://bitbucket.org/api/2.0/users/victoroicr";
+        String url = "https://bitbucket.org/api/2.0/user";
         Optional<String> asString = ResourceUtilities.asString(url, bitbucketToken.getContent(), client);
 
         if (asString.isPresent()) {

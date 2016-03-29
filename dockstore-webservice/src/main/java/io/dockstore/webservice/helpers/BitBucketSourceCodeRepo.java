@@ -62,7 +62,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public FileResponse readFile(String fileName, String reference) {
+    public FileResponse readFile(String fileName, String reference, String gitUrl) {
+        String repositoryId = this.getRepositoryId(gitUrl);
         if (fileName.startsWith("/")) {
             fileName = fileName.substring(1);
         }
@@ -73,7 +74,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         String branch = null;
 
         if (reference == null) {
-            String mainBranchUrl = BITBUCKET_API_URL + "repositories/" + gitUsername + '/' + gitRepository + "/main-branch";
+            String mainBranchUrl = BITBUCKET_API_URL + "repositories/" + repositoryId + "/main-branch";
 
             Optional<String> asString = ResourceUtilities.asString(mainBranchUrl, bitbucketTokenContent, client);
             LOG.info("RESOURCE CALL: {}", mainBranchUrl);
@@ -98,7 +99,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             branch = reference;
         }
 
-        String url = BITBUCKET_API_URL + "repositories/" + gitUsername + '/' + gitRepository + "/raw/" + branch + '/' + fileName;
+        String url = BITBUCKET_API_URL + "repositories/" + repositoryId + "/raw/" + branch + '/' + fileName;
         Optional<String> asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
         LOG.info("RESOURCE CALL: {}", url);
         if (asString.isPresent()) {
@@ -348,6 +349,22 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             }
         }
         return file;
+    }
+
+    private String getRepositoryId(String gitUrl) {
+        String repoId;
+
+        Pattern p = Pattern.compile("git@bitbucket\\.org:(\\S+)\\.git");
+        Matcher m = p.matcher(gitUrl);
+        int repoIdPos = 1;
+
+        if (!m.find()) {
+            LOG.info("Owner and Repository name could not be found from giturl");
+            return null;
+        }
+
+        repoId = m.group(repoIdPos);
+        return repoId;
     }
 
 }

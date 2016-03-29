@@ -77,11 +77,11 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public FileResponse readFile(String fileName, String reference) {
+    public FileResponse readFile(String fileName, String reference, String gitUrl) {
         FileResponse cwl = new FileResponse();
         checkNotNull(fileName, "The fileName given is null.");
         try {
-            Repository repo = service.getRepository(gitUsername, gitRepository);
+            Repository repo = service.getRepository(gitUsername, gitRepository); // may need to pass owner from git url, as this may differ from the git username
             List<RepositoryContents> contents;
             try {
                 contents = cService.getContents(repo, fileName, reference);

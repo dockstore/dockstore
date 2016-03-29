@@ -732,7 +732,7 @@ public final class Helper {
             fileName = tag.getWdlPath();
         }
 
-        return sourceCodeRepo.readFile(fileName, reference);
+        return sourceCodeRepo.readFile(fileName, reference, tool.getGitUrl());
     }
 
     /**
