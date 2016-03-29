@@ -806,17 +806,6 @@ public final class Helper {
     }
 
     /**
-     * Check if admin
-     *
-     * @param user
-     */
-    public static void checkUser(User user) {
-        if (!user.getIsAdmin()) {
-            throw new CustomWebApplicationException("Forbidden: please check your credentials.", HttpStatus.SC_FORBIDDEN);
-        }
-    }
-
-    /**
      * Check if admin or correct user
      *
      * @param user

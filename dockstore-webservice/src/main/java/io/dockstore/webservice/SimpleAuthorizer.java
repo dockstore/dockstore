@@ -14,8 +14,21 @@
  *    limitations under the License.
  */
 
-package io.swagger.client.auth;
+package io.dockstore.webservice;
 
-public enum OAuthFlow {
-    accessCode, implicit, password, application
+    import io.dockstore.webservice.core.User;
+    import io.dropwizard.auth.Authorizer;
+
+/**
+ * @author dyuen
+ */
+public class SimpleAuthorizer implements Authorizer<User> {
+
+    @Override public boolean authorize(User principal, String role) {
+        if (role.equalsIgnoreCase("admin")){
+            return principal.getIsAdmin();
+        } else{
+            return true;
+        }
+    }
 }

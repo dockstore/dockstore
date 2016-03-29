@@ -27,7 +27,7 @@ import io.swagger.quay.client.model.NewStarredRepository;
 
 import java.util.*;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-11T12:10:45.220-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-23T15:13:48.378-04:00")
 public class UserApi {
   private ApiClient apiClient;
 
@@ -91,11 +91,10 @@ public class UserApi {
   /**
    * 
    * List all starred repositories.
-   * @param limit Limit on the number of results (int)
-   * @param page Offset page number. (int)
+   * @param nextPage The page token for the next page
    * @return void
    */
-  public void listStarredRepos (Integer limit, Integer page) throws ApiException {
+  public void listStarredRepos (String nextPage) throws ApiException {
     Object postBody = null;
     
     // create path and map variables
@@ -107,9 +106,7 @@ public class UserApi {
     Map<String, Object> formParams = new HashMap<String, Object>();
 
     
-    queryParams.addAll(apiClient.parameterToPairs("", "limit", limit));
-    
-    queryParams.addAll(apiClient.parameterToPairs("", "page", page));
+    queryParams.addAll(apiClient.parameterToPairs("", "next_page", nextPage));
     
 
     
@@ -126,7 +123,7 @@ public class UserApi {
     };
     final String contentType = apiClient.selectHeaderContentType(contentTypes);
 
-    String[] authNames = new String[] {  };
+    String[] authNames = new String[] { "oauth2_implicit" };
 
     
     apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, null);
@@ -217,7 +214,7 @@ public class UserApi {
     };
     final String contentType = apiClient.selectHeaderContentType(contentTypes);
 
-    String[] authNames = new String[] {  };
+    String[] authNames = new String[] { "oauth2_implicit" };
 
     
     apiClient.invokeAPI(path, "DELETE", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, null);

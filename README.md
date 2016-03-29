@@ -22,7 +22,7 @@ For the related web UI see the [dockstore-ui](https://github.com/ga4gh/dockstore
 
 To install CWL tool:
 
-    pip install cwl-runner  cwltool==1.0.20160108200940 schema-salad==1.4.20160108200836 avro==1.7.7
+    pip install cwl-runner  cwltool==1.0.20160316150250 schema-salad==1.7.20160316150109 avro==1.7.7
 
 ### Building
 
@@ -123,7 +123,7 @@ To regenerate the swagger client:
 
 1. Have the dockstore webservice running
 2. Pull the code from their repo and cd to the directory. We are using v2.1.4. Build using `mvn clean install`
-3. Run `java -jar modules/swagger-codegen-cli/target/swagger-codegen-cli.jar generate -i http://localhost:8080/swagger.json -l java -o <output directory> --library jersey2`. The output directory is where you have dockstore/swagger-java-client/.
+3. Run `java -jar modules/swagger-codegen-cli/target/swagger-codegen-cli.jar generate -i http://localhost:8080/swagger.json -l java -o <output directory> --library jersey2 --config config.json`. The output directory is where you have dockstore/swagger-java-client/.
 4. NOTE: Rengenerating the swagger client will probably generate an incorrect pom file. Use git checkout on the pom file to undo the changes to it.
 
  * v2.1.5 is a major update for swagger, and should be explored in the future

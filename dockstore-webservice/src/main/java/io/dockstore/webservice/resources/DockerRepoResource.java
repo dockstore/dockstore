@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -125,10 +126,9 @@ public class DockerRepoResource {
     @Path("/refresh")
     @Timed
     @UnitOfWork
+    @RolesAllowed("admin")
     @ApiOperation(value = "Refresh all repos", notes = "Updates some metadata. ADMIN ONLY", response = Tool.class, responseContainer = "List")
-    public List<Tool> refreshAll(@ApiParam(hidden = true) @Auth Token authToken) {
-        User authUser = userDAO.findById(authToken.getUserId());
-        Helper.checkUser(authUser);
+    public List<Tool> refreshAll(@ApiParam(hidden = true) @Auth User authUser) {
 
         List<Tool> tools;
         List<User> users = userDAO.findAll();
@@ -157,12 +157,11 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @ApiOperation(value = "Refresh one particular repo", response = Tool.class)
-    public Tool refresh(@ApiParam(hidden = true) @Auth Token authToken,
+    public Tool refresh(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
         Tool c = toolDAO.findById(containerId);
         Helper.checkEntry(c);
 
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
 
         List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
@@ -172,7 +171,7 @@ public class DockerRepoResource {
             Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
         }
 
-        Tool tool = Helper.refreshContainer(containerId, authToken.getUserId(), client, objectMapper, userDAO, toolDAO,
+        Tool tool = Helper.refreshContainer(containerId, user.getId(), client, objectMapper, userDAO, toolDAO,
                 tokenDAO, tagDAO, fileDAO);
 
 
@@ -182,11 +181,9 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
+    @RolesAllowed("admin")
     @ApiOperation(value = "List all docker containers cached in database", notes = "List docker container repos currently known. Admin Only", response = Tool.class, responseContainer = "List")
-    public List<Tool> allContainers(@ApiParam(hidden = true) @Auth Token authToken) {
-        User user = userDAO.findById(authToken.getUserId());
-        Helper.checkUser(user);
-
+    public List<Tool> allContainers(@ApiParam(hidden = true) @Auth User user) {
         return toolDAO.findAll();
     }
 
@@ -194,13 +191,12 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}")
-    @ApiOperation(value = "Get a cached repo", response = Tool.class)
-    public Tool getContainer(@ApiParam(hidden = true) @Auth Token authToken,
+    @ApiOperation(value = "Get a registered repo", response = Tool.class)
+    public Tool getContainer(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
         Tool c = toolDAO.findById(containerId);
         Helper.checkEntry(c);
 
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
 
         return c;
@@ -211,7 +207,7 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/{containerId}/labels")
     @ApiOperation(value = "Update the labels linked to a container.", notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Tool.class)
-    public Tool updateLabels(@ApiParam(hidden = true) @Auth Token authToken,
+    public Tool updateLabels(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings,
             @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", defaultValue = "") String emptyBody) {
@@ -227,13 +223,12 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/{containerId}")
     @ApiOperation(value = "Update the tool with the given tool.", response = Tool.class)
-    public Tool updateContainer(@ApiParam(hidden = true) @Auth Token authToken,
+    public Tool updateContainer(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "Tool with updated information", required = true) Tool tool) {
         Tool c = toolDAO.findById(containerId);
         Helper.checkEntry(c);
 
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
 
         Tool duplicate = toolDAO.findByToolPath(tool.getPath(), tool.getToolname());
@@ -257,12 +252,11 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/{containerId}/users")
     @ApiOperation(value = "Get users of a container", response = User.class, responseContainer = "List")
-    public List<User> getUsers(@ApiParam(hidden = true) @Auth Token authToken,
+    public List<User> getUsers(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
         Tool c = toolDAO.findById(containerId);
         Helper.checkEntry(c);
 
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
 
         return new ArrayList(c.getUsers());
@@ -284,9 +278,8 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/registerManual")
     @ApiOperation(value = "Register an image manually, along with tags", notes = "Register an image manually.", response = Tool.class)
-    public Tool registerManual(@ApiParam(hidden = true) @Auth Token authToken,
+    public Tool registerManual(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to be registered", required = true) Tool tool) {
-        User user = userDAO.findById(authToken.getUserId());
         // populate user in tool
         tool.addUser(user);
         // create dependent Tags before creating tool
@@ -342,9 +335,8 @@ public class DockerRepoResource {
     @Path("/{containerId}")
     @ApiOperation(value = "Delete manually registered image")
     @ApiResponses(@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid "))
-    public Response deleteContainer(@ApiParam(hidden = true) @Auth Token authToken,
+    public Response deleteContainer(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool id to delete", required = true) @PathParam("containerId") Long containerId) {
-        User user = userDAO.findById(authToken.getUserId());
         Tool tool = toolDAO.findById(containerId);
         Helper.checkUser(user, tool);
 
@@ -369,13 +361,12 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/{containerId}/publish")
     @ApiOperation(value = "Publish or unpublish a container", notes = "publish a container (public or private). Assumes that user is using quay.io and github.", response = Tool.class)
-    public Tool publish(@ApiParam(hidden = true) @Auth Token authToken,
+    public Tool publish(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool id to publish", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) PublishRequest request) {
         Tool c = toolDAO.findById(containerId);
         Helper.checkEntry(c);
 
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
 
         if (request.getPublish()) {
@@ -440,13 +431,12 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/path/{repository}")
     @ApiOperation(value = "Get a list of containers by path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Tool.class, responseContainer = "List")
-    public List<Tool> getContainerByPath(@ApiParam(hidden = true) @Auth Token authToken,
+    public List<Tool> getContainerByPath(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         List<Tool> tool = toolDAO.findByPath(path);
 
         Helper.checkEntry(tool);
 
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, tool);
 
         return tool;
@@ -457,7 +447,7 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/path/tool/{repository}")
     @ApiOperation(value = "Get a container by tool path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Tool.class)
-    public Tool getContainerByToolPath(@ApiParam(hidden = true) @Auth Token authToken,
+    public Tool getContainerByToolPath(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         final String[] split = path.split("/");
         // check that this is a tool path
@@ -471,7 +461,6 @@ public class DockerRepoResource {
 
         Helper.checkEntry(tool);
 
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, tool);
 
         return tool;
@@ -521,9 +510,8 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/builds")
     @ApiOperation(value = "Get the list of repository builds.", notes = "For TESTING purposes. Also useful for getting more information about the repository.\n Enter full path without quay.io", response = String.class, hidden = true)
-    public String builds(@ApiParam(hidden = true) @Auth Token authToken, @QueryParam("repository") String repo,
+    public String builds(@ApiParam(hidden = true) @Auth User user, @QueryParam("repository") String repo,
             @QueryParam("userId") long userId) {
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, userId);
 
         List<Token> tokens = tokenDAO.findByUserId(userId);
@@ -581,11 +569,10 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/tags")
     @ApiOperation(value = "List the tags for a registered container", response = Tag.class, responseContainer = "List", hidden = true)
-    public List<Tag> tags(@ApiParam(hidden = true) @Auth Token authToken, @QueryParam("containerId") long containerId) {
+    public List<Tag> tags(@ApiParam(hidden = true) @Auth User user, @QueryParam("containerId") long containerId) {
         Tool repository = toolDAO.findById(containerId);
         Helper.checkEntry(repository);
 
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, repository);
 
         List<Tag> tags = new ArrayList<>();
@@ -593,7 +580,6 @@ public class DockerRepoResource {
         return tags;
     }
 
-    // TODO: this method is very repetative with the method below, need to refactor
     @GET
     @Timed
     @UnitOfWork

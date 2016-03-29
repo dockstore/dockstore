@@ -29,7 +29,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * Describes a user
  **/
 @ApiModel(description = "Describes a user")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2015-12-11T12:10:45.220-05:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-23T15:13:48.378-04:00")
 public class UserView   {
   
   private List<Object> organizations = new ArrayList<Object>();
