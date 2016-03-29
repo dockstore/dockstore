@@ -28,6 +28,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 
+import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -133,7 +134,7 @@ public class BasicET {
          */
         @Test
         public void testManualQuayToAutoNoAutoWithoutToolname() {
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), Client.UPDATE_TOOL, "--entry", "quay.io/dockstoretestuser/quayandgithub",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), ToolClient.UPDATE_TOOL, "--entry", "quay.io/dockstoretestuser/quayandgithub",
                         "--toolname", "testToolname", "--script" });
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "refresh", "--entry", "quay.io/dockstoretestuser/quayandgithub/testToolname" });
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "manual_publish", "--registry", Registry.QUAY_IO.toString(),
@@ -175,14 +176,14 @@ public class BasicET {
          */
         @Test
         public void testQuayNoAutobuild() {
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), Client.UPDATE_TOOL, "--entry", "quay.io/dockstoretestuser/noautobuild",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), ToolClient.UPDATE_TOOL, "--entry", "quay.io/dockstoretestuser/noautobuild",
                         "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--script" });
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
                 final long count = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser/noautobuild' and giturl = 'git@github.com:DockstoreTestUser/dockstore-whalesay.git'", new ScalarHandler<>());
                 Assert.assertTrue("the container should now have an associated git repo", count == 1);
 
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), Client.UPDATE_TOOL, "--entry", "quay.io/dockstoretestuser/nobuildsatall",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), ToolClient.UPDATE_TOOL, "--entry", "quay.io/dockstoretestuser/nobuildsatall",
                         "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--script" });
 
                 final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser/nobuildsatall' and giturl = 'git@github.com:DockstoreTestUser/dockstore-whalesay.git'", new ScalarHandler<>());
