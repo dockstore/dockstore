@@ -101,7 +101,8 @@ public class Client {
     private static final String LAUNCH = "launch";
     private static final String CWL = "cwl";
     private static final String WDL = "wdl";
-    private static GAGHApi ga4ghApi;
+     public static final String UPDATE_TOOL = "update_tool";
+     private static GAGHApi ga4ghApi;
     private static ContainersApi containersApi;
     private static ContainertagsApi containerTagsApi;
     private static UsersApi usersApi;
@@ -1211,9 +1212,9 @@ public class Client {
         }
     }
 
-    public static void updateContainer(List<String> args) {
+    private static void updateTool(List<String> args) {
         if (args.isEmpty() || containsHelpRequest(args)) {
-            updateContainerHelp();
+            updateToolHelp();
         } else {
             final String toolpath = reqVal(args, "--entry");
             try {
@@ -1547,32 +1548,32 @@ public class Client {
         out("");
         out("Commands:");
         out("");
-        out("  list             :  lists all the containers published by the user");
+        out("  list             :  lists all the tools published by the user");
         out("");
-        out("  search           :  allows a user to search for all published containers that match the criteria");
+        out("  search           :  allows a user to search for all published tools that match the criteria");
         out("");
-        out("  publish          :  publish/unpublish a container in the dockstore");
+        out("  publish          :  publish/unpublish a tool in the dockstore");
         out("");
-        out("  manual_publish   :  registers a Docker Hub (or manual Quay) container in the dockstore and then attempt to publish");
+        out("  manual_publish   :  registers a Docker Hub (or manual Quay) tool in the dockstore and then attempt to publish");
         out("");
-        out("  info             :  print detailed information about a particular published container");
+        out("  info             :  print detailed information about a particular published tool");
         out("");
         out("  "+CWL+" <tool>       :  returns the Common Workflow Language tool definition for this Docker image ");
         out("                      which enables integration with Global Alliance compliant systems");
         out("");
         out("  "+WDL+" <tool>       :  returns the Workflow Descriptor Langauge definition for this Docker image.");
         out("");
-        out("  refresh          :  updates your list of containers stored on Dockstore or an individual container");
+        out("  refresh          :  updates your list of tools stored on Dockstore or an individual tool");
         out("");
-        out("  label            :  updates labels for an individual container");
+        out("  label            :  updates labels for an individual tool");
         out("");
-        out("  version_tag       :  updates version tags for an individual container");
+        out("  version_tag       :  updates version tags for an individual tool");
         out("");
-        out("  update_container  :  updates certain fields of a container");
+        out("  " + UPDATE_TOOL + "  :  updates certain fields of a tool");
         out("");
         out("  " + CONVERT + "          :  utilities that allow you to convert file types");
         out("");
-        out("  " + LAUNCH + "           :  launch containers (locally)");
+        out("  " + LAUNCH + "           :  launch tools (locally)");
         out("");
         out("------------------");
         out("");
@@ -1594,10 +1595,10 @@ public class Client {
         printHelpFooter();
     }
 
-     public static void updateContainerHelp() {
+     public static void updateToolHelp() {
          printHelpHeader();
-         out("Usage: dockstore update_container --help");
-         out("       dockstore update_container [parameters]");
+         out("Usage: dockstore " + UPDATE_TOOL + " --help");
+         out("       dockstore " + UPDATE_TOOL + " [parameters]");
          out("");
          out("Description:");
          out("  Update certain fields for a given tool.");
@@ -1995,8 +1996,8 @@ public class Client {
                         case "version_tag":
                             versionTag(args);
                             break;
-                        case "update_container":
-                            updateContainer(args);
+                        case UPDATE_TOOL:
+                            updateTool(args);
                             break;
                         case "--upgrade":
                             upgrade();
