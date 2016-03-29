@@ -109,18 +109,31 @@ public class WorkflowET {
         workflowApi.refreshAll();
 
         // do targetted refresh, should promote workflow to fully-fleshed out workflow
-        final Workflow workflowByPath = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW);
-        final Workflow refresh = workflowApi.refresh(workflowByPath.getId());
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW);
+        final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId());
+        final Workflow workflowByPathBitbucket = workflowApi.getWorkflowByPath("dockstore_testuser2/dockstore-workflow");
+        final Workflow refreshBitbucket = workflowApi.refresh(workflowByPathBitbucket.getId());
 
-        assertTrue("workflow is not in full mode", refresh.getMode() == Workflow.ModeEnum.FULL);
-        assertTrue("workflow version count is wrong: " + refresh.getWorkflowVersions().size(), refresh.getWorkflowVersions().size() == 4);
+        assertTrue("github workflow is not in full mode", refreshGithub.getMode() == Workflow.ModeEnum.FULL);
+        assertTrue("github workflow version count is wrong: " + refreshGithub.getWorkflowVersions().size(), refreshGithub.getWorkflowVersions().size() == 4);
         assertTrue(
-                "should find two versions with files, found : "
-                        + refresh.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty())
+                "should find two versions with files for github workflow, found : "
+                        + refreshGithub.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty())
                                 .count(),
-                refresh.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count() == 2);
-        assertTrue("should find two valid versions, found : "
-                + refresh.getWorkflowVersions().stream().filter(WorkflowVersion::getValid).count(), refresh.getWorkflowVersions().stream()
+                refreshGithub.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count() == 2);
+        assertTrue("should find two valid versions for github workflow, found : "
+                + refreshGithub.getWorkflowVersions().stream().filter(WorkflowVersion::getValid).count(), refreshGithub.getWorkflowVersions().stream()
+                .filter(WorkflowVersion::getValid).count() == 2);
+
+        assertTrue("bitbucket workflow is not in full mode", refreshBitbucket.getMode() == Workflow.ModeEnum.FULL);
+        assertTrue("bitbucket workflow version count is wrong: " + refreshBitbucket.getWorkflowVersions().size(), refreshBitbucket.getWorkflowVersions().size() == 2);
+        assertTrue(
+                "should find two versions with files for bitbucket workflow, found : "
+                        + refreshBitbucket.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty())
+                        .count(),
+                refreshBitbucket.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count() == 2);
+        assertTrue("should find two valid versions for bitbucket workflow, found : "
+                + refreshBitbucket.getWorkflowVersions().stream().filter(WorkflowVersion::getValid).count(), refreshBitbucket.getWorkflowVersions().stream()
                 .filter(WorkflowVersion::getValid).count() == 2);
     }
 
