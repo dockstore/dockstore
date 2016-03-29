@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -101,7 +102,7 @@ public class UserResource {
     @UnitOfWork
     @Path("/groups")
     @ApiOperation(value = "Create user group", response = Group.class)
-    public Group createGroup(@ApiParam(hidden = true) @Auth Token authToken, @QueryParam("group_name") String name) {
+    public Group createGroup(@ApiParam(hidden = true) @Auth User user, @QueryParam("group_name") String name) {
         Group group = new Group();
         group.setName(name);
         long create = groupDAO.create(group);
@@ -112,13 +113,12 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/groups/{groupId}")
-    @ApiOperation(value = "Deletes a group", response = Response.class)
+    @RolesAllowed("admin")
+    @ApiOperation(value = "Deletes a group, admin only", response = Response.class)
     @ApiResponses(@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid groupId value"))
-    public Response deleteGroup(@ApiParam(hidden = true) @Auth Token authToken,
+    public Response deleteGroup(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Group id to delete", required = true) @PathParam("groupId") Long groupId) {
-        User user = userDAO.findById(authToken.getUserId());
         Group group = groupDAO.findById(groupId);
-        Helper.checkUser(user);
 
         groupDAO.delete(group);
 
@@ -133,11 +133,9 @@ public class UserResource {
     @GET
     @Timed
     @UnitOfWork
+    @RolesAllowed("admin")
     @ApiOperation(value = "List all known users", notes = "List all users. Admin only.", response = User.class, responseContainer = "List")
-    public List<User> listUsers(@ApiParam(hidden = true) @Auth Token authToken) {
-        User user = userDAO.findById(authToken.getUserId());
-        Helper.checkUser(user);
-
+    public List<User> listUsers(@ApiParam(hidden = true) @Auth User user) {
         return userDAO.findAll();
     }
 
@@ -146,9 +144,8 @@ public class UserResource {
     @UnitOfWork
     @Path("/username/{username}")
     @ApiOperation(value = "Get user", response = User.class)
-    public User listUser(@ApiParam(hidden = true) @Auth Token authToken,
+    public User listUser(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam("Username of user to return") @PathParam("username") String username) {
-        User authUser = userDAO.findById(authToken.getUserId());
         User user = userDAO.findByUsername(username);
         Helper.checkUser(authUser, user.getId());
 
@@ -160,8 +157,7 @@ public class UserResource {
     @UnitOfWork
     @Path("/{userId}")
     @ApiOperation(value = "Get user with id", response = User.class)
-    public User getUser(@ApiParam(hidden = true) @Auth Token authToken, @ApiParam("User to return") @PathParam("userId") long userId) {
-        User authUser = userDAO.findById(authToken.getUserId());
+    public User getUser(@ApiParam(hidden = true) @Auth User authUser, @ApiParam("User to return") @PathParam("userId") long userId) {
         Helper.checkUser(authUser, userId);
 
         User user = userDAO.findById(userId);
@@ -176,9 +172,8 @@ public class UserResource {
     @UnitOfWork
     @Path("/{userId}/tokens")
     @ApiOperation(value = "Get tokens with user id", response = Token.class, responseContainer = "List")
-    public List<Token> getUserTokens(@ApiParam(hidden = true) @Auth Token authToken,
+    public List<Token> getUserTokens(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, userId);
 
         return tokenDAO.findByUserId(userId);
@@ -189,9 +184,8 @@ public class UserResource {
     @UnitOfWork
     @Path("/{userId}/tokens/github.com")
     @ApiOperation(value = "Get Github tokens with user id", response = Token.class, responseContainer = "List")
-    public List<Token> getGithubUserTokens(@ApiParam(hidden = true) @Auth Token authToken,
+    public List<Token> getGithubUserTokens(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, userId);
 
         return tokenDAO.findGithubByUserId(userId);
@@ -202,9 +196,8 @@ public class UserResource {
     @UnitOfWork
     @Path("/{userId}/tokens/quay.io")
     @ApiOperation(value = "Get Quay tokens with user id", response = Token.class, responseContainer = "List")
-    public List<Token> getQuayUserTokens(@ApiParam(hidden = true) @Auth Token authToken,
+    public List<Token> getQuayUserTokens(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, userId);
 
         return tokenDAO.findQuayByUserId(userId);
@@ -215,9 +208,8 @@ public class UserResource {
     @UnitOfWork
     @Path("/{userId}/tokens/dockstore")
     @ApiOperation(value = "Get Dockstore tokens with user id", response = Token.class, responseContainer = "List")
-    public List<Token> getDockstoreUserTokens(@ApiParam(hidden = true) @Auth Token authToken,
+    public List<Token> getDockstoreUserTokens(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, userId);
 
         return tokenDAO.findQuayByUserId(userId);
@@ -226,7 +218,8 @@ public class UserResource {
     @POST
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "Add new user", notes = "Register a new user", response = User.class)
+    @RolesAllowed("admin")
+    @ApiOperation(value = "Add new user", notes = "Register a new user, admin only", response = User.class)
     public User registerUser(@QueryParam("username") String username, @QueryParam("is_admin") boolean isAdmin) {
         final Random random = new Random();
         final int bufferLength = 1024;
@@ -255,8 +248,7 @@ public class UserResource {
     @UnitOfWork
     @Path("/{userId}/groups")
     @ApiOperation(value = "Get groups that the user belongs to", response = Group.class, responseContainer = "List")
-    public List<Group> getGroupsFromUser(@ApiParam(hidden = true) @Auth Token authToken, @ApiParam("User") @PathParam("userId") long userId) {
-        User authUser = userDAO.findById(authToken.getUserId());
+    public List<Group> getGroupsFromUser(@ApiParam(hidden = true) @Auth User authUser, @ApiParam("User") @PathParam("userId") long userId) {
         Helper.checkUser(authUser, userId);
 
         User user = userDAO.findById(userId);
@@ -272,7 +264,7 @@ public class UserResource {
     @UnitOfWork
     @Path("/groups/{groupId}/users")
     @ApiOperation(value = "Get users that belongs to a group", response = User.class, responseContainer = "List")
-    public List<User> getUsersFromGroup(@ApiParam(hidden = true) @Auth Token authToken,
+    public List<User> getUsersFromGroup(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("Group") @PathParam("groupId") long groupId) {
         Group group = groupDAO.findById(groupId);
         if (group == null) {
@@ -287,7 +279,7 @@ public class UserResource {
     @UnitOfWork
     @Path("/groups")
     @ApiOperation(value = "List all groups", response = Group.class, responseContainer = "List")
-    public List<Group> allGroups(@ApiParam(hidden = true) @Auth Token authToken) {
+    public List<Group> allGroups(@ApiParam(hidden = true) @Auth User user) {
         return groupDAO.findAll();
     }
 
@@ -296,7 +288,7 @@ public class UserResource {
     @UnitOfWork
     @Path("/groups/{groupId}")
     @ApiOperation(value = "List a group", response = Group.class)
-    public Group getGroup(@ApiParam(hidden = true) @Auth Token authToken, @ApiParam("Group") @PathParam("groupId") long groupId) {
+    public Group getGroup(@ApiParam(hidden = true) @Auth User user, @ApiParam("Group") @PathParam("groupId") long groupId) {
         return groupDAO.findById(groupId);
     }
 
@@ -305,14 +297,14 @@ public class UserResource {
     @UnitOfWork
     @Path("/{userId}/groups")
     @ApiOperation(value = "Add a group to a user", response = User.class)
-    public User addGroupToUser(@ApiParam(hidden = true) @Auth Token authToken,
+    public User addGroupToUser(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam("User ID of user") @PathParam("userId") long userId,
-            @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) Group group) {
-        User authUser = userDAO.findById(authToken.getUserId());
+            @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) Group groupParam) {
         Helper.checkUser(authUser, userId);
 
         User user = userDAO.findById(userId);
-        // Group group = groupDAO.findById(groupId);
+        // need a live group
+        Group group = groupDAO.findById(groupParam.getId());
 
         if (user != null && group != null) {
             user.addGroup(group);
@@ -331,9 +323,8 @@ public class UserResource {
     @Path("/{userId}/groups/{groupId}")
     @ApiOperation(value = "Remove a user from a group", response = User.class)
     @ApiResponses(@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid user or group value"))
-    public User removeUserFromGroup(@ApiParam(hidden = true) @Auth Token authToken,
+    public User removeUserFromGroup(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam("User ID of user") @PathParam("userId") long userId, @ApiParam("Group ID of group") @PathParam("groupId") long groupId) {
-        User authUser = userDAO.findById(authToken.getUserId());
         Helper.checkUser(authUser, userId);
 
         User user = userDAO.findById(userId);
@@ -353,12 +344,13 @@ public class UserResource {
     @UnitOfWork
     @Path("/{userId}/containers/published")
     @ApiOperation(value = "List all published containers from a user", notes = "Get user's published containers only", response = Tool.class, responseContainer = "List")
-    public List<Tool> userPublishedContainers(@ApiParam(hidden = true) @Auth Token authToken,
+    public List<Tool> userPublishedContainers(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, userId);
 
-        final ImmutableList<Tool> immutableList = FluentIterable.from(user.getEntries()).filter(Tool.class).toList();
+        // get live entity
+        final User byId = this.userDAO.findById(user.getId());
+        final ImmutableList<Tool> immutableList = FluentIterable.from(byId.getEntries()).filter(Tool.class).toList();
         final List<Tool> repositories = Lists.newArrayList(immutableList);
 
         for (Iterator<Tool> iterator = repositories.iterator(); iterator.hasNext();) {
@@ -377,10 +369,9 @@ public class UserResource {
     @UnitOfWork
     @Path("/{userId}/containers/refresh")
     @ApiOperation(value = "Refresh repos owned by the logged-in user", notes = "Updates some metadata", response = Tool.class, responseContainer = "List")
-    public List<Tool> refresh(@ApiParam(hidden = true) @Auth Token authToken,
+    public List<Tool> refresh(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
 
-        User authUser = userDAO.findById(authToken.getUserId());
         Helper.checkUser(authUser, userId);
 
         return dockerRepoResource.refreshToolsForUser(userId);
@@ -391,15 +382,14 @@ public class UserResource {
     @UnitOfWork
     @Path("/{userId}/workflows/refresh")
     @ApiOperation(value = "Refresh workflows owned by the logged-in user", notes = "Updates some metadata", response = Workflow.class, responseContainer = "List")
-    public List<Workflow> refreshWorkflows(@ApiParam(hidden = true) @Auth Token authToken,
+    public List<Workflow> refreshWorkflows(@ApiParam(hidden = true) @Auth User authUser,
                                  @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
 
-        User authUser = userDAO.findById(authToken.getUserId());
         Helper.checkUser(authUser, userId);
 
         workflowResource.refreshStubWorkflowsForUser(authUser);
         // refresh the user
-        authUser = userDAO.findById(authToken.getUserId());
+        authUser = userDAO.findById(authUser.getId());
         return FluentIterable.from(authUser.getEntries()).filter(Workflow.class).toList();
     }
 
@@ -422,12 +412,12 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @ApiOperation(value = "List repos owned by the logged-in user", notes = "Lists all registered and unregistered containers owned by the user", response = Tool.class, responseContainer = "List")
-    public List<Tool> userContainers(@ApiParam(hidden = true) @Auth Token token,
+    public List<Tool> userContainers(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
-        User user = userDAO.findById(token.getUserId());
         Helper.checkUser(user, userId);
-
-        return FluentIterable.from(user.getEntries()).filter(Tool.class).toList();
+        // need to avoid lazy initialize error
+        final User byId = this.userDAO.findById(userId);
+        return FluentIterable.from(byId.getEntries()).filter(Tool.class).toList();
     }
 
     @GET
@@ -435,17 +425,17 @@ public class UserResource {
     @UnitOfWork
     @Path("/user")
     @ApiOperation(value = "Get the logged-in user", response = User.class)
-    public User getUser(@ApiParam(hidden = true) @Auth Token authToken) {
-        return userDAO.findById(authToken.getUserId());
+    public User getUser(@ApiParam(hidden = true) @Auth User user) {
+        return userDAO.findById(user.getId());
     }
 
     @GET
     @Timed
     @UnitOfWork
     @Path("/organizations")
+    @RolesAllowed("admin")
     @ApiOperation(value = "Get user's organizations", notes = "For testing purposes. Returns the list of organizations from user's Quay.io account", response = ArrayList.class, responseContainer = "List", hidden = true)
-    public ArrayList getOrganizations(@ApiParam(hidden = true) @Auth Token authToken) {
-        User authUser = userDAO.findById(authToken.getUserId());
+    public ArrayList getOrganizations(@ApiParam(hidden = true) @Auth User authUser) {
         // Helper.checkUser(authUser);
 
         List<Token> tokens = tokenDAO.findQuayByUserId(authUser.getId());
@@ -474,38 +464,5 @@ public class UserResource {
             return map2.get("organizations");
         }
         return null;
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork
-    @Path("/{userId}/bitbucketUser")
-    @ApiOperation(value = "Test bitbucket", notes = "NO authentication", response = String.class)
-    public String getBitbucketUser(@ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
-        User user = userDAO.findById(authToken.getUserId());
-        Helper.checkUser(user, userId);
-
-        List<Token> tokens = tokenDAO.findBySource(TokenType.BITBUCKET_ORG.toString());
-
-        Token bitbucketToken;
-
-        if (tokens.isEmpty()) {
-            LOG.info("BITBUCKET token not found!");
-            throw new CustomWebApplicationException("Bitbucket token not found", HttpStatus.SC_CONFLICT);
-        } else {
-            bitbucketToken = tokens.get(0);
-        }
-
-        String json = "";
-
-        String url = "https://bitbucket.org/api/2.0/users/victoroicr";
-        Optional<String> asString = ResourceUtilities.asString(url, bitbucketToken.getContent(), client);
-
-        if (asString.isPresent()) {
-            json = asString.get();
-        }
-
-        return json;
     }
 }

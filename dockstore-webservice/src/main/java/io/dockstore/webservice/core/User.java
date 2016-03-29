@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.core;
 
+import java.security.Principal;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -50,7 +51,7 @@ import io.swagger.annotations.ApiModelProperty;
 @Table(name = "enduser")
 @NamedQueries({ @NamedQuery(name = "io.dockstore.webservice.core.User.findAll", query = "SELECT t FROM User t"),
         @NamedQuery(name = "io.dockstore.webservice.core.User.findByUsername", query = "SELECT t FROM User t WHERE t.username = :username") })
-public class User {
+public class User implements Principal {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", unique = true, nullable = false)
@@ -68,6 +69,7 @@ public class User {
     @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinTable(name = "endusergroup", joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "groupid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty("Groups that this user belongs to")
+    @JsonIgnore
     private final Set<Group> groups;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
@@ -134,6 +136,11 @@ public class User {
     }
 
     @Override
+    public String getName() {
+        return getUsername();
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj == null) {
             return false;
@@ -148,10 +155,8 @@ public class User {
         if (!Objects.equals(username, other.username)) {
             return false;
         }
-        if (isAdmin != other.isAdmin) {
-            return false;
-        }
-        return Objects.equals(groups, other.groups);
+        // do not depend on lazily loaded collections for equality
+        return Objects.equals(isAdmin, other.isAdmin);
     }
 
 }
