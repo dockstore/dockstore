@@ -88,7 +88,7 @@ public class ClientIT {
 
     @Test
     public void testListEntriesOnWrongPort() throws IOException, TimeoutException, ApiException {
-        systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
+        systemExit.expectSystemExitWithStatus(Client.CONNECTION_ERROR);
         Client.main(new String[] { "--config", getConfigFileLocation(true, false), "list" });
     }
 

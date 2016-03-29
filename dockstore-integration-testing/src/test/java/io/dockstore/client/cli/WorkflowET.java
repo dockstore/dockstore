@@ -138,6 +138,34 @@ public class WorkflowET {
     }
 
     /**
+     * This test checks that a user can successfully refresh their workflows (only stubs)
+     * @throws IOException
+     * @throws TimeoutException
+     * @throws ApiException
+         */
+    @Test
+    public void testRefreshAllForAUser() throws IOException, TimeoutException, ApiException {
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+        testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
+        long userId = 1;
+
+        final ApiClient webClient = getWebClient();
+        UsersApi usersApi = new UsersApi(webClient);
+        final List<Workflow> workflow = usersApi.refreshWorkflows(userId);
+
+        // Check that there are multiple workflows
+        final long count = testingPostgres.runSelectStatement("select count(*) from workflow", new ScalarHandler<>());
+        assertTrue("Workflow entries should exist", count > 0);
+
+        // Check that there are only stubs (no workflow version)
+        final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion", new ScalarHandler<>());
+        assertTrue("No entries in workflowversion", count2 == 0);
+        final long count3 = testingPostgres.runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
+        assertTrue("No workflows are in full mode", count3 == 0);
+
+    }
+
+    /**
      * This test does not use admin rights, note that a number of operations go through the UserApi to get this to work
      * @throws IOException
      * @throws TimeoutException

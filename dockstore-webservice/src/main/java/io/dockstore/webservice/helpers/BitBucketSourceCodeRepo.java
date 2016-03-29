@@ -47,6 +47,8 @@ import wdl4s.NamespaceWithWorkflow;
  */
 public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     private static final String BITBUCKET_API_URL = "https://bitbucket.org/api/1.0/";
+    private static final String BITBUCKET_GIT_URL_PREFIX = "git@bitbucket.org:";
+    private static final String BITBUCKET_GIT_URL_SUFFIX = ".git";
 
     private static final Logger LOG = LoggerFactory.getLogger(BitBucketSourceCodeRepo.class);
     private final String gitUsername;
@@ -209,8 +211,6 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     public Map<String, String> getWorkflowGitUrl2RepositoryId() {
         Map<String, String> reposByGitURl = new HashMap<>();
         String url = BITBUCKET_API_URL + "users/" + gitUsername;
-        final String bitbucketGitUrlPrefix = "git@bitbucket.org:";
-        final String bitbucketGitUrlSuffix = ".git";
 
         // Call to Bitbucket API to get list of Workflows owned by the current user (is it possible that owner is a group the user is part of?)
         Optional<String> asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
@@ -225,7 +225,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             for (JsonElement element : asJsonArray) {
                 String owner = element.getAsJsonObject().get("owner").getAsString();
                 String name = element.getAsJsonObject().get("name").getAsString();
-                String bitbucketUrl = bitbucketGitUrlPrefix + owner + "/" + name + bitbucketGitUrlSuffix;
+                String bitbucketUrl = BITBUCKET_GIT_URL_PREFIX + owner + "/" + name + BITBUCKET_GIT_URL_SUFFIX;
 
                 String id = owner + "/" + name;
                 reposByGitURl.put(bitbucketUrl,id);
@@ -236,9 +236,6 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override public Workflow getNewWorkflow(String repositoryId, Optional<Workflow> existingWorkflow) {
-        final String bitbucketGitUrlPrefix = "git@bitbucket.org:";
-        final String bitbucketGitUrlSuffix = ".git";
-
         // repository id of the form owner/name
         String[] id = repositoryId.split("/");
         String owner = id[0];
@@ -249,11 +246,10 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
         workflow.setOrganization(owner);
         workflow.setRepository(name);
-        workflow.setGitUrl(bitbucketGitUrlPrefix + repositoryId + bitbucketGitUrlSuffix);
+        workflow.setGitUrl(BITBUCKET_GIT_URL_PREFIX + repositoryId + BITBUCKET_GIT_URL_SUFFIX);
         workflow.setLastUpdated(new Date());
         // make sure path is constructed
         workflow.setPath(workflow.getPath());
-
 
         if (!existingWorkflow.isPresent()){
             // when there is no existing workflow at all, just return a stub workflow
@@ -327,6 +323,14 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         return workflow;
     }
 
+    /**
+     * Uses Bitbucket API to grab a raw source file and return it
+     * @param path
+     * @param repositoryId
+     * @param branch
+         * @param type
+         * @return source file
+         */
     private SourceFile getSourceFile(String path, String repositoryId, String branch, String type) {
         SourceFile file = new SourceFile();
         String url = BITBUCKET_API_URL + "repositories/" + repositoryId + "/raw/" + branch + "/" + path;
@@ -351,6 +355,11 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         return file;
     }
 
+    /**
+     * Parses git url for bitbucket to get the owner/repo_name
+     * @param gitUrl
+     * @return String of the form owner/repo_name
+         */
     private String getRepositoryId(String gitUrl) {
         String repoId;
 
@@ -359,7 +368,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         int repoIdPos = 1;
 
         if (!m.find()) {
-            LOG.info("Owner and Repository name could not be found from giturl");
+            LOG.info("Owner and Repository name could not be found from the giturl");
             return null;
         }
 
