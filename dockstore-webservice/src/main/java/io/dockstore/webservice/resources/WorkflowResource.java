@@ -156,9 +156,9 @@ public class WorkflowResource {
 
     private void refreshHelper(final SourceCodeRepoInterface sourceCodeRepoInterface, User user) {
         // Mapping of git url to repository name (owner/repo)
-        final Map<String, String> WorkflowGitUrl2Name = sourceCodeRepoInterface.getWorkflowGitUrl2RepositoryId();
+        final Map<String, String> workflowGitUrl2Name = sourceCodeRepoInterface.getWorkflowGitUrl2RepositoryId();
 
-        for(Map.Entry<String, String> entry : WorkflowGitUrl2Name.entrySet()) {
+        for(Map.Entry<String, String> entry : workflowGitUrl2Name.entrySet()) {
             final List<Workflow> byGitUrl = workflowDAO.findByGitUrl(entry.getKey());
             if (byGitUrl.size() > 0) {
                 // Workflows exist
