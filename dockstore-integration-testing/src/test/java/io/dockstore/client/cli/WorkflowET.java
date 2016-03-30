@@ -60,6 +60,7 @@ public class WorkflowET {
     public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
             DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstoreTest.yml"));
     private static final String DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW = "DockstoreTestUser2/hello-dockstore-workflow";
+    private static final String DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW = "dockstore_testuser2/dockstore-workflow";
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
@@ -111,7 +112,7 @@ public class WorkflowET {
         // do targetted refresh, should promote workflow to fully-fleshed out workflow
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW);
         final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId());
-        final Workflow workflowByPathBitbucket = workflowApi.getWorkflowByPath("dockstore_testuser2/dockstore-workflow");
+        final Workflow workflowByPathBitbucket = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW);
         final Workflow refreshBitbucket = workflowApi.refresh(workflowByPathBitbucket.getId());
 
         assertTrue("github workflow is not in full mode", refreshGithub.getMode() == Workflow.ModeEnum.FULL);
