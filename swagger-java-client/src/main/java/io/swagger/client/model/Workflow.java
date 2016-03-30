@@ -17,7 +17,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * This describes one workflow in the dockstore
  **/
 @ApiModel(description = "This describes one workflow in the dockstore")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-29T16:03:15.870-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-30T12:14:47.169-04:00")
 public class Workflow   {
   
   private Long id = null;

@@ -14,7 +14,7 @@ import io.swagger.client.model.Workflow;
 
 import java.util.*;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-29T16:03:15.870-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-30T12:14:47.169-04:00")
 public class UsersApi {
   private ApiClient apiClient;
 
@@ -474,53 +474,6 @@ public class UsersApi {
 
     
     TypeRef returnType = new TypeRef<User>() {};
-    return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
-    
-  }
-  
-  /**
-   * Test bitbucket
-   * NO authentication
-   * @param userId User ID
-   * @return String
-   */
-  public String getBitbucketUser (Long userId) throws ApiException {
-    Object postBody = null;
-    
-    // verify the required parameter 'userId' is set
-    if (userId == null) {
-      throw new ApiException(400, "Missing the required parameter 'userId' when calling getBitbucketUser");
-    }
-    
-    // create path and map variables
-    String path = "/users/{userId}/bitbucketUser".replaceAll("\\{format\\}","json")
-      .replaceAll("\\{" + "userId" + "\\}", apiClient.escapeString(userId.toString()));
-
-    // query params
-    List<Pair> queryParams = new ArrayList<Pair>();
-    Map<String, String> headerParams = new HashMap<String, String>();
-    Map<String, Object> formParams = new HashMap<String, Object>();
-
-    
-
-    
-
-    
-
-    final String[] accepts = {
-      "application/json"
-    };
-    final String accept = apiClient.selectHeaderAccept(accepts);
-
-    final String[] contentTypes = {
-      "application/json"
-    };
-    final String contentType = apiClient.selectHeaderContentType(contentTypes);
-
-    String[] authNames = new String[] {  };
-
-    
-    TypeRef returnType = new TypeRef<String>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
