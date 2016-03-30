@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.helpers;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -28,16 +29,26 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
+import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowMode;
+import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.resources.ResourceUtilities;
+import wdl4s.NamespaceWithWorkflow;
 
 /**
  * @author dyuen
  */
 public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     private static final String BITBUCKET_API_URL = "https://bitbucket.org/api/1.0/";
+    private static final String BITBUCKET_GIT_URL_PREFIX = "git@bitbucket.org:";
+    private static final String BITBUCKET_GIT_URL_SUFFIX = ".git";
 
     private static final Logger LOG = LoggerFactory.getLogger(BitBucketSourceCodeRepo.class);
     private final String gitUsername;
@@ -53,7 +64,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public FileResponse readFile(String fileName, String reference) {
+    public FileResponse readFile(String fileName, String reference, String gitUrl) {
+        String repositoryId = this.getRepositoryId(gitUrl);
         if (fileName.startsWith("/")) {
             fileName = fileName.substring(1);
         }
@@ -64,7 +76,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         String branch = null;
 
         if (reference == null) {
-            String mainBranchUrl = BITBUCKET_API_URL + "repositories/" + gitUsername + '/' + gitRepository + "/main-branch";
+            String mainBranchUrl = BITBUCKET_API_URL + "repositories/" + repositoryId + "/main-branch";
 
             Optional<String> asString = ResourceUtilities.asString(mainBranchUrl, bitbucketTokenContent, client);
             LOG.info("RESOURCE CALL: {}", mainBranchUrl);
@@ -89,7 +101,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             branch = reference;
         }
 
-        String url = BITBUCKET_API_URL + "repositories/" + gitUsername + '/' + gitRepository + "/raw/" + branch + '/' + fileName;
+        String url = BITBUCKET_API_URL + "repositories/" + repositoryId + "/raw/" + branch + '/' + fileName;
         Optional<String> asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
         LOG.info("RESOURCE CALL: {}", url);
         if (asString.isPresent()) {
@@ -197,11 +209,171 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public Map<String, String> getWorkflowGitUrl2RepositoryId() {
-        throw new UnsupportedOperationException();
+        Map<String, String> reposByGitURl = new HashMap<>();
+        String url = BITBUCKET_API_URL + "users/" + gitUsername;
+
+        // Call to Bitbucket API to get list of Workflows owned by the current user (is it possible that owner is a group the user is part of?)
+        Optional<String> asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
+        LOG.info("RESOURCE CALL: {}", url);
+
+        if (asString.isPresent()) {
+            String userJson = asString.get();
+
+            JsonElement jsonElement = new JsonParser().parse(userJson);
+            JsonObject jsonObject = jsonElement.getAsJsonObject();
+            JsonArray asJsonArray = jsonObject.getAsJsonArray("repositories");
+            for (JsonElement element : asJsonArray) {
+                String owner = element.getAsJsonObject().get("owner").getAsString();
+                String name = element.getAsJsonObject().get("name").getAsString();
+                String bitbucketUrl = BITBUCKET_GIT_URL_PREFIX + owner + "/" + name + BITBUCKET_GIT_URL_SUFFIX;
+
+                String id = owner + "/" + name;
+                reposByGitURl.put(bitbucketUrl,id);
+            }
+
+        }
+        return reposByGitURl;
     }
 
     @Override public Workflow getNewWorkflow(String repositoryId, Optional<Workflow> existingWorkflow) {
-        throw new UnsupportedOperationException();
+        // repository id of the form owner/name
+        String[] id = repositoryId.split("/");
+        String owner = id[0];
+        String name = id[1];
+
+        // Create new workflow object based on repository ID
+        Workflow workflow = new Workflow();
+
+        workflow.setOrganization(owner);
+        workflow.setRepository(name);
+        workflow.setGitUrl(BITBUCKET_GIT_URL_PREFIX + repositoryId + BITBUCKET_GIT_URL_SUFFIX);
+        workflow.setLastUpdated(new Date());
+        // make sure path is constructed
+        workflow.setPath(workflow.getPath());
+
+        if (!existingWorkflow.isPresent()){
+            // when there is no existing workflow at all, just return a stub workflow
+            return workflow;
+        }
+        if (existingWorkflow.get().getMode() == WorkflowMode.STUB){
+            // when there is an existing stub workflow, just return the new stub as well
+            return workflow;
+        }
+
+        workflow.setMode(WorkflowMode.FULL);
+
+        // Get versions of workflow
+
+        // If existing workflow, then set versions to existing ones
+        Map<String, String> existingDefaults = new HashMap<>();
+        if (existingWorkflow.isPresent()) {
+            existingWorkflow.get().getWorkflowVersions().forEach(existingVersion -> existingDefaults.put(existingVersion.getReference(), existingVersion.getWorkflowPath()));
+        }
+
+        // Look at each version, check for valid workflows
+
+        String url = BITBUCKET_API_URL + "repositories/" + repositoryId + "/branches-tags";
+
+        // Call to Bitbucket API to get list of branches for a given repo (what about tags)
+        Optional<String> asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
+        LOG.info("RESOURCE CALL: {}", url);
+
+        if (asString.isPresent()) {
+            String repoJson = asString.get();
+
+            JsonElement jsonElement = new JsonParser().parse(repoJson);
+            JsonObject jsonObject = jsonElement.getAsJsonObject();
+            // Iterate to find branches and tags arrays
+            for (Map.Entry<String, JsonElement> objectEntry : jsonObject.entrySet()) {
+                JsonArray branchArray = objectEntry.getValue().getAsJsonArray();
+                // Iterate over both arrays
+                for (JsonElement branch : branchArray) {
+                    String branchName = branch.getAsJsonObject().get("name").getAsString();
+
+                    WorkflowVersion version = new WorkflowVersion();
+                    version.setName(branchName);
+                    version.setReference(branchName);
+                    version.setValid(false);
+
+                    // determine workflow version from previous
+                    String calculatedPath = existingDefaults.getOrDefault(branchName, existingWorkflow.get().getDefaultWorkflowPath());
+                    version.setWorkflowPath(calculatedPath);
+
+                    // Now grab source files
+                    SourceFile sourceFile;
+                    if (calculatedPath.toLowerCase().endsWith(".cwl")) {
+                        // check if workflow exists
+                        sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, "cwl");
+                    } else {
+                        sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, "wdl");
+                    }
+
+                    version.getSourceFiles().add(sourceFile);
+
+                    if (version.getSourceFiles().size() > 0) {
+                        version.setValid(true);
+                    }
+
+                    workflow.addWorkflowVersion(version);
+                }
+            }
+
+        }
+
+        return workflow;
+    }
+
+    /**
+     * Uses Bitbucket API to grab a raw source file and return it
+     * @param path
+     * @param repositoryId
+     * @param branch
+         * @param type
+         * @return source file
+         */
+    private SourceFile getSourceFile(String path, String repositoryId, String branch, String type) {
+        SourceFile file = new SourceFile();
+        String url = BITBUCKET_API_URL + "repositories/" + repositoryId + "/raw/" + branch + "/" + path;
+
+        Optional<String> asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
+        LOG.info("RESOURCE CALL: {}", url);
+
+        if (asString.isPresent()) {
+            String content = asString.get();
+            if (content != null) {
+                if (type.equals("cwl") && content.contains("class: Workflow")) {
+                    file.setType(SourceFile.FileType.DOCKSTORE_CWL);
+                } else {
+                    final NamespaceWithWorkflow nameSpaceWithWorkflow = NamespaceWithWorkflow.load(content);
+                    if (nameSpaceWithWorkflow != null) {
+                        file.setType(SourceFile.FileType.DOCKSTORE_WDL);
+                    }
+                }
+                file.setContent(content);
+            }
+        }
+        return file;
+    }
+
+    /**
+     * Parses git url for bitbucket to get the owner/repo_name
+     * @param gitUrl
+     * @return String of the form owner/repo_name
+         */
+    private String getRepositoryId(String gitUrl) {
+        String repoId;
+
+        Pattern p = Pattern.compile("git@bitbucket\\.org:(\\S+)\\.git");
+        Matcher m = p.matcher(gitUrl);
+        int repoIdPos = 1;
+
+        if (!m.find()) {
+            LOG.info("Owner and Repository name could not be found from the giturl");
+            return null;
+        }
+
+        repoId = m.group(repoIdPos);
+        return repoId;
     }
 
 }

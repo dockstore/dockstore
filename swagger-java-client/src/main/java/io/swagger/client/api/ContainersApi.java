@@ -30,7 +30,7 @@ import io.swagger.client.model.User;
 
 import java.util.*;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-23T15:14:09.776-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-30T12:14:47.169-04:00")
 public class ContainersApi {
   private ApiClient apiClient;
 
@@ -496,7 +496,7 @@ public class ContainersApi {
   }
   
   /**
-   * Get a cached repo
+   * Get a registered repo
    * 
    * @param containerId Tool ID
    * @return DockstoreTool

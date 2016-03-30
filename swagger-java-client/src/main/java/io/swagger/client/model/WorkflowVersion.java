@@ -31,7 +31,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * This describes one workflow version associated with a workflow.
  **/
 @ApiModel(description = "This describes one workflow version associated with a workflow.")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-23T15:14:09.776-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-30T12:14:47.169-04:00")
 public class WorkflowVersion   {
   
   private Long id = null;

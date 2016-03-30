@@ -16,27 +16,25 @@
 
 package io.swagger.client.model;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 import io.swagger.client.StringUtil;
+
+
+
+import io.swagger.annotations.*;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 /**
  * End users for the dockstore
  **/
 @ApiModel(description = "End users for the dockstore")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-23T15:14:09.776-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-30T12:14:47.169-04:00")
 public class User   {
   
   private Long id = null;
   private String username = null;
   private Boolean isAdmin = null;
-  private List<Group> groups = new ArrayList<Group>();
+  private String name = null;
 
   
   /**
@@ -79,15 +77,14 @@ public class User   {
 
   
   /**
-   * Groups that this user belongs to
    **/
-  @ApiModelProperty(value = "Groups that this user belongs to")
-  @JsonProperty("groups")
-  public List<Group> getGroups() {
-    return groups;
+  @ApiModelProperty(value = "")
+  @JsonProperty("name")
+  public String getName() {
+    return name;
   }
-  public void setGroups(List<Group> groups) {
-    this.groups = groups;
+  public void setName(String name) {
+    this.name = name;
   }
 
   
@@ -100,7 +97,7 @@ public class User   {
     sb.append("    id: ").append(StringUtil.toIndentedString(id)).append("\n");
     sb.append("    username: ").append(StringUtil.toIndentedString(username)).append("\n");
     sb.append("    isAdmin: ").append(StringUtil.toIndentedString(isAdmin)).append("\n");
-    sb.append("    groups: ").append(StringUtil.toIndentedString(groups)).append("\n");
+    sb.append("    name: ").append(StringUtil.toIndentedString(name)).append("\n");
     sb.append("}");
     return sb.toString();
   }
