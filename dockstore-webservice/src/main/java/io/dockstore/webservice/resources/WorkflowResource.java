@@ -68,6 +68,7 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import io.swagger.api.ApiException;
 
 /**
  *
@@ -509,6 +510,7 @@ public class WorkflowResource {
         if (!workflowName.equals("")) {
             completeWorkflowPath += "/" + workflowName;
         }
+
         Workflow duplicate = workflowDAO.findByPath(completeWorkflowPath);
         if (duplicate != null) {
             throw new CustomWebApplicationException("A workflow with the same path and name already exists.", HttpStatus.SC_BAD_REQUEST);
@@ -526,17 +528,23 @@ public class WorkflowResource {
             } else {
                 throw new CustomWebApplicationException("No bitbucket token for this user.", HttpStatus.SC_BAD_REQUEST);
             }
-        } else {
+        } else if (workflowRegistry.toLowerCase().equals("github")){
             token = Helper.extractToken(tokens, TokenType.GITHUB_COM.toString());
             if (token != null && token.getContent() != null) {
                 sourceCodeRepoInterface = new GitHubSourceCodeRepo(user.getUsername(), token.getContent(), null);
             } else {
                 throw new CustomWebApplicationException("No github token for this user.", HttpStatus.SC_BAD_REQUEST);
             }
+        } else {
+            throw new CustomWebApplicationException("The given git registry is not supported.", HttpStatus.SC_BAD_REQUEST);
         }
 
         // Create workflow
         Workflow newWorkflow = sourceCodeRepoInterface.getNewWorkflow(workflowPath, Optional.absent());
+
+        if (newWorkflow == null) {
+            throw new CustomWebApplicationException("Please enter a valid repository.", HttpStatus.SC_BAD_REQUEST);
+        }
         newWorkflow.setDefaultWorkflowPath(defaultWorkflowPath);
         newWorkflow.setWorkflowName(workflowName);
 

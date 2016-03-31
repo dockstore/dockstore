@@ -254,13 +254,13 @@ public class WorkflowET {
     }
 
     /**
-     * Tests that trying to register a duplicate workflow fails
+     * Tests that trying to register a duplicate workflow fails, and that registering a non-existant repository failes
      * @throws ApiException
      * @throws IOException
      * @throws TimeoutException
          */
     @Test
-    public void testManualRegisterDuplicate() throws ApiException, IOException, TimeoutException {
+    public void testManualRegisterErrors() throws ApiException, IOException, TimeoutException {
         final ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
@@ -279,6 +279,14 @@ public class WorkflowET {
         } finally {
             assertTrue("The workflow cannot be registered as it is a duplicate.", !success);
         }
-    }
 
+        success = true;
+        try {
+            workflowApi.manualRegister("github", "dasn/iodnasiodnasio", "/Dockstore.wdl", "");
+        } catch (ApiException c) {
+            success = false;
+        } finally {
+            assertTrue("The workflow cannot be registered as the repository doesn't exist.", !success);
+        }
+    }
 }
