@@ -127,15 +127,16 @@ public class WorkflowET {
                 .filter(WorkflowVersion::getValid).count() == 2);
 
         assertTrue("bitbucket workflow is not in full mode", refreshBitbucket.getMode() == Workflow.ModeEnum.FULL);
-        assertTrue("bitbucket workflow version count is wrong: " + refreshBitbucket.getWorkflowVersions().size(), refreshBitbucket.getWorkflowVersions().size() == 2);
+        final int numberOfExpectedTags = 3;
+        assertTrue("bitbucket workflow version count is wrong: " + refreshBitbucket.getWorkflowVersions().size(), refreshBitbucket.getWorkflowVersions().size() == numberOfExpectedTags);
         assertTrue(
-                "should find two versions with files for bitbucket workflow, found : "
+                "should find "+numberOfExpectedTags+" versions with files for bitbucket workflow, found : "
                         + refreshBitbucket.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty())
                         .count(),
-                refreshBitbucket.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count() == 2);
-        assertTrue("should find two valid versions for bitbucket workflow, found : "
+                refreshBitbucket.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count() == numberOfExpectedTags);
+        assertTrue("should find "+numberOfExpectedTags+" valid versions for bitbucket workflow, found : "
                 + refreshBitbucket.getWorkflowVersions().stream().filter(WorkflowVersion::getValid).count(), refreshBitbucket.getWorkflowVersions().stream()
-                .filter(WorkflowVersion::getValid).count() == 2);
+                .filter(WorkflowVersion::getValid).count() == numberOfExpectedTags);
     }
 
     /**
