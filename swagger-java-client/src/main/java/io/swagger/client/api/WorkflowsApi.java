@@ -1,19 +1,3 @@
-/*
- *    Copyright 2016 OICR
- *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
- *
- *        http://www.apache.org/licenses/LICENSE-2.0
- *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
- */
-
 package io.swagger.client.api;
 
 import io.swagger.client.ApiException;
@@ -30,7 +14,7 @@ import io.swagger.client.model.User;
 
 import java.util.*;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-30T12:14:47.169-04:00")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaClientCodegen", date = "2016-03-31T13:11:43.123-04:00")
 public class WorkflowsApi {
   private ApiClient apiClient;
 
@@ -88,6 +72,78 @@ public class WorkflowsApi {
     
     TypeRef returnType = new TypeRef<List<Workflow>>() {};
     return apiClient.invokeAPI(path, "GET", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
+    
+  }
+  
+  /**
+   * Manually register a workflow
+   * Manually register workflow (public or private).
+   * @param workflowRegistry Workflow registry
+   * @param workflowPath Workflow repository
+   * @param defaultWorkflowPath Workflow container new descriptor path (CWL or WDL) and/or name
+   * @param workflowName Workflow name
+   * @return Workflow
+   */
+  public Workflow manualRegister (String workflowRegistry, String workflowPath, String defaultWorkflowPath, String workflowName) throws ApiException {
+    Object postBody = null;
+    
+    // verify the required parameter 'workflowRegistry' is set
+    if (workflowRegistry == null) {
+      throw new ApiException(400, "Missing the required parameter 'workflowRegistry' when calling manualRegister");
+    }
+    
+    // verify the required parameter 'workflowPath' is set
+    if (workflowPath == null) {
+      throw new ApiException(400, "Missing the required parameter 'workflowPath' when calling manualRegister");
+    }
+    
+    // verify the required parameter 'defaultWorkflowPath' is set
+    if (defaultWorkflowPath == null) {
+      throw new ApiException(400, "Missing the required parameter 'defaultWorkflowPath' when calling manualRegister");
+    }
+    
+    // verify the required parameter 'workflowName' is set
+    if (workflowName == null) {
+      throw new ApiException(400, "Missing the required parameter 'workflowName' when calling manualRegister");
+    }
+    
+    // create path and map variables
+    String path = "/workflows/manualRegister".replaceAll("\\{format\\}","json");
+
+    // query params
+    List<Pair> queryParams = new ArrayList<Pair>();
+    Map<String, String> headerParams = new HashMap<String, String>();
+    Map<String, Object> formParams = new HashMap<String, Object>();
+
+    
+    queryParams.addAll(apiClient.parameterToPairs("", "workflowRegistry", workflowRegistry));
+    
+    queryParams.addAll(apiClient.parameterToPairs("", "workflowPath", workflowPath));
+    
+    queryParams.addAll(apiClient.parameterToPairs("", "defaultWorkflowPath", defaultWorkflowPath));
+    
+    queryParams.addAll(apiClient.parameterToPairs("", "workflowName", workflowName));
+    
+
+    
+
+    
+
+    final String[] accepts = {
+      "application/json"
+    };
+    final String accept = apiClient.selectHeaderAccept(accepts);
+
+    final String[] contentTypes = {
+      "application/json"
+    };
+    final String contentType = apiClient.selectHeaderContentType(contentTypes);
+
+    String[] authNames = new String[] {  };
+
+    
+    TypeRef returnType = new TypeRef<Workflow>() {};
+    return apiClient.invokeAPI(path, "POST", queryParams, postBody, headerParams, formParams, accept, contentType, authNames, returnType);
     
   }
   

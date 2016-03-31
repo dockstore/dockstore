@@ -493,4 +493,63 @@ public class WorkflowResource {
         return entryVersionHelper.getSourceFile(workflowId, tag, FileType.DOCKSTORE_WDL);
     }
 
+    @POST
+    @Timed
+    @UnitOfWork
+    @Path("/manualRegister")
+    @ApiOperation(value = "Manually register a workflow", notes = "Manually register workflow (public or private).", response = Workflow.class)
+    public Workflow manualRegister(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Workflow registry", required = true) @QueryParam("workflowRegistry") String workflowRegistry,
+            @ApiParam(value = "Workflow repository", required = true) @QueryParam("workflowPath") String workflowPath,
+            @ApiParam(value = "Workflow container new descriptor path (CWL or WDL) and/or name", required = true) @QueryParam("defaultWorkflowPath") String defaultWorkflowPath,
+            @ApiParam(value = "Workflow name", required = true) @QueryParam("workflowName") String workflowName) {
+
+        String completeWorkflowPath = workflowPath;
+        // Check that no duplicate workflow (same WorkflowPath) exists
+        if (!workflowName.equals("")) {
+            completeWorkflowPath += "/" + workflowName;
+        }
+        Workflow duplicate = workflowDAO.findByPath(completeWorkflowPath);
+        if (duplicate != null) {
+            throw new CustomWebApplicationException("A workflow with the same path and name already exists.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // Set up source code interface and ensure token is set up
+        List<Token> tokens = checkOnBitbucketToken(user);
+        Token token;
+        SourceCodeRepoInterface sourceCodeRepoInterface;
+
+        if (workflowRegistry.toLowerCase().equals("bitbucket")) {
+            token = Helper.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
+            if (token != null && token.getContent() != null) {
+                sourceCodeRepoInterface = new BitBucketSourceCodeRepo(token.getUsername(), client, token.getContent(), null);
+            } else {
+                throw new CustomWebApplicationException("No bitbucket token for this user.", HttpStatus.SC_BAD_REQUEST);
+            }
+        } else {
+            token = Helper.extractToken(tokens, TokenType.GITHUB_COM.toString());
+            if (token != null && token.getContent() != null) {
+                sourceCodeRepoInterface = new GitHubSourceCodeRepo(user.getUsername(), token.getContent(), null);
+            } else {
+                throw new CustomWebApplicationException("No github token for this user.", HttpStatus.SC_BAD_REQUEST);
+            }
+        }
+
+        // Create workflow
+        Workflow newWorkflow = sourceCodeRepoInterface.getNewWorkflow(workflowPath, Optional.absent());
+        newWorkflow.setDefaultWorkflowPath(defaultWorkflowPath);
+        newWorkflow.setWorkflowName(workflowName);
+
+        if (newWorkflow != null) {
+            final long workflowID = workflowDAO.create(newWorkflow);
+            // need to create nested data models
+            final Workflow workflowFromDB = workflowDAO.findById(workflowID);
+            workflowFromDB.getUsers().add(user);
+            updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow);
+            return workflowDAO.findById(workflowID);
+        } else {
+            throw new CustomWebApplicationException("Error registering the given workflow.", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
 }

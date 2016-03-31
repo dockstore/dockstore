@@ -308,7 +308,9 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                         sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, "wdl");
                     }
 
-                    version.getSourceFiles().add(sourceFile);
+                    if (sourceFile.getContent() != null) {
+                        version.getSourceFiles().add(sourceFile);
+                    }
 
                     if (version.getSourceFiles().size() > 0) {
                         version.setValid(true);

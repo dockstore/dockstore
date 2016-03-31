@@ -187,7 +187,7 @@ public class WorkflowET {
        // assertTrue("should have a bunch of stub workflows: " +  usersApi..allWorkflows().size(), workflowApi.allWorkflows().size() == 4);
 
         final Workflow workflowByPath = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW);
-        // refresh targetted
+        // refresh targeted
         workflowApi.refresh(workflowByPath.getId());
 
         // publish one
@@ -199,6 +199,74 @@ public class WorkflowET {
         assertTrue("did not get published workflow", publishedWorkflow != null);
         final Workflow publishedWorkflowByPath = workflowApi.getPublishedWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW);
         assertTrue("did not get published workflow", publishedWorkflowByPath != null);
+    }
+
+    @Test
+    public void testManualRegisterThenPublish() throws IOException, TimeoutException, ApiException {
+        final ApiClient webClient = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
+        UsersApi usersApi = new UsersApi(webClient);
+        final Long userId = usersApi.getUser().getId();
+
+        // Make publish request (true)
+        final PublishRequest publishRequest = new PublishRequest();
+        publishRequest.setPublish(true);
+
+        // Set up postgres
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+        // Get workflows
+        usersApi.refreshWorkflows(userId);
+
+        // Manually register workflow github
+        Workflow githubWorkflow = workflowApi.manualRegister("github", DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, "/Dockstore.wdl", "altname");
+
+        // Manually register workflow bitbucket
+        Workflow bitbucketWorkflow = workflowApi.manualRegister("bitbucket", DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, "/Dockstore.cwl", "altname");
+
+        // Assert some things
+        final long count = testingPostgres.runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
+        assertTrue("No workflows are in full mode", count == 0);
+        final long count2= testingPostgres.runSelectStatement("select count(*) from workflow where workflowname = 'altname'", new ScalarHandler<>());
+        assertTrue("There should be two workflows with name altname, there are " + count2, count2 == 2);
+
+        // Publish github workflow
+        workflowApi.refresh(githubWorkflow.getId());
+        workflowApi.publish(githubWorkflow.getId(), publishRequest);
+
+        // Publish bitbucket workflow
+        workflowApi.refresh(bitbucketWorkflow.getId());
+        workflowApi.publish(bitbucketWorkflow.getId(), publishRequest);
+
+        // Assert some things
+        assertTrue("should have two published, found  " + workflowApi.allPublishedWorkflows().size(), workflowApi.allPublishedWorkflows().size() == 2);
+        final long count3 = testingPostgres.runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
+        assertTrue("Two workflows are in full mode", count3 == 2);
+        final long count4 = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid = 't'", new ScalarHandler<>());
+        assertTrue("There should be 5 valid version tags, there are " + count4, count4 == 5);
+    }
+
+    @Test
+    public void testManualRegisterDuplicate() throws ApiException, IOException, TimeoutException {
+        final ApiClient webClient = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
+        UsersApi usersApi = new UsersApi(webClient);
+        final Long userId = usersApi.getUser().getId();
+
+        // Get workflows
+        usersApi.refreshWorkflows(userId);
+
+        // Manually register workflow
+        boolean success = true;
+        try {
+            workflowApi.manualRegister("github", DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, "/Dockstore.wdl", "");
+        } catch (ApiException c) {
+            success = false;
+        } finally {
+            assertTrue("The workflow cannot be registered as it is a duplicate.", !success);
+        }
     }
 
 }
