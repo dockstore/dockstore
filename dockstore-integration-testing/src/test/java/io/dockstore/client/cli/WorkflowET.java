@@ -127,15 +127,15 @@ public class WorkflowET {
                 .filter(WorkflowVersion::getValid).count() == 2);
 
         assertTrue("bitbucket workflow is not in full mode", refreshBitbucket.getMode() == Workflow.ModeEnum.FULL);
-        assertTrue("bitbucket workflow version count is wrong: " + refreshBitbucket.getWorkflowVersions().size(), refreshBitbucket.getWorkflowVersions().size() == 2);
+        assertTrue("bitbucket workflow version count is wrong: " + refreshBitbucket.getWorkflowVersions().size(), refreshBitbucket.getWorkflowVersions().size() == 3);
         assertTrue(
                 "should find two versions with files for bitbucket workflow, found : "
                         + refreshBitbucket.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty())
                         .count(),
-                refreshBitbucket.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count() == 2);
+                refreshBitbucket.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count() == 3);
         assertTrue("should find two valid versions for bitbucket workflow, found : "
                 + refreshBitbucket.getWorkflowVersions().stream().filter(WorkflowVersion::getValid).count(), refreshBitbucket.getWorkflowVersions().stream()
-                .filter(WorkflowVersion::getValid).count() == 2);
+                .filter(WorkflowVersion::getValid).count() == 3);
     }
 
     /**
