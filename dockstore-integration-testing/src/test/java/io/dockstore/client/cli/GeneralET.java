@@ -20,14 +20,20 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
-import io.dockstore.common.CommonTestUtilities;
-import io.dockstore.webservice.core.Registry;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Ignore;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 
+import io.dockstore.client.cli.nested.ToolClient;
+import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.Registry;
 import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit.DropwizardAppRule;
 
@@ -269,14 +275,14 @@ public class GeneralET {
          */
         @Test
         public void testUpdateAlternateStructureQuickReg(){
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "update_container", "--entry", "quay.io/dockstoretestuser2/quayandgithubalternate",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), ToolClient.UPDATE_TOOL, "--entry", "quay.io/dockstoretestuser2/quayandgithubalternate",
                         "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
                 final long count = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser2/quayandgithubalternate' and validtrigger = 't'", new ScalarHandler<>());
                 Assert.assertTrue("the container should now have a valid trigger", count == 1);
 
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "update_container", "--entry", "quay.io/dockstoretestuser2/quayandgithubalternate",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), ToolClient.UPDATE_TOOL, "--entry", "quay.io/dockstoretestuser2/quayandgithubalternate",
                         "--cwl-path", "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile", "--script" });
 
                 final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser2/quayandgithubalternate' and validtrigger = 't'", new ScalarHandler<>());
@@ -297,14 +303,14 @@ public class GeneralET {
                 final long count = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser2/quayandgithubalternate' and toolname = 'alternate' and validtrigger = 't'", new ScalarHandler<>());
                 Assert.assertTrue("the container should now have a valid trigger", count == 1);
 
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "update_container", "--entry", "quay.io/dockstoretestuser2/quayandgithubalternate/alternate",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), ToolClient.UPDATE_TOOL, "--entry", "quay.io/dockstoretestuser2/quayandgithubalternate/alternate",
                         "--cwl-path", "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile", "--script" });
 
                 // check invalid trigger
                 final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser2/quayandgithubalternate' and toolname = 'alternate' and validtrigger = 'f'", new ScalarHandler<>());
                 Assert.assertTrue("the container should now have an invalid trigger", count2 == 1);
 
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "update_container", "--entry", "quay.io/dockstoretestuser2/quayandgithubalternate/alternate",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), ToolClient.UPDATE_TOOL, "--entry", "quay.io/dockstoretestuser2/quayandgithubalternate/alternate",
                         "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
 
                 // check valid trigger
@@ -326,14 +332,14 @@ public class GeneralET {
                 final long count = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser2/quayandgithubwdl' and toolname = 'validWdl' and validtrigger = 't'", new ScalarHandler<>());
                 Assert.assertTrue("the container should have a valid trigger", count == 1);
 
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "update_container", "--entry", "quay.io/dockstoretestuser2/quayandgithubwdl/validWdl",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), ToolClient.UPDATE_TOOL, "--entry", "quay.io/dockstoretestuser2/quayandgithubwdl/validWdl",
                         "--wdl-path", "/testDir/Dockstore.wdl", "--script" });
 
                 // check invalid trigger
                 final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser2/quayandgithubwdl' and toolname = 'validWdl' and validtrigger = 'f'", new ScalarHandler<>());
                 Assert.assertTrue("the container should now have an invalid trigger", count2 == 1);
 
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "update_container", "--entry", "quay.io/dockstoretestuser2/quayandgithubwdl/validWdl",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), ToolClient.UPDATE_TOOL, "--entry", "quay.io/dockstoretestuser2/quayandgithubwdl/validWdl",
                         "--wdl-path", "/Dockstore.wdl", "--script" });
 
                 // check valid trigger
@@ -350,14 +356,14 @@ public class GeneralET {
                         "--namespace", "dockstoretestuser2", "--name", "quayandgithubalternate", "--git-url", "git@github.com:dockstoretestuser2/quayandgithubalternate.git", "--git-reference",
                         "master", "--toolname", "alternate", "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
 
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "update_container", "--entry", "quay.io/dockstoretestuser2/quayandgithubalternate/alternate",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), ToolClient.UPDATE_TOOL, "--entry", "quay.io/dockstoretestuser2/quayandgithubalternate/alternate",
                         "--toolname", "alternate", "--script" });
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
                 final long count = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser2/quayandgithubalternate' and toolname = 'alternate'", new ScalarHandler<>());
                 Assert.assertTrue("there should only be one instance of the container with the toolname set to alternate", count == 1);
 
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "update_container", "--entry", "quay.io/dockstoretestuser2/quayandgithubalternate",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), ToolClient.UPDATE_TOOL, "--entry", "quay.io/dockstoretestuser2/quayandgithubalternate",
                         "--toolname", "toolnameTest", "--script" });
 
                 final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser2/quayandgithubalternate' and toolname = 'toolnameTest'", new ScalarHandler<>());
