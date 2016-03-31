@@ -113,7 +113,8 @@ If you are working with a custom-built or updated dockstore client you will need
 
 ## Swagger Java Client for Dockstore
 
-This will no longer be necessary to do manually and is left here for reference purposes. 
+This will no longer be necessary to do manually and is now done as part of the Maven build process.
+Content is left here for reference purposes. 
 
 Background:
 
@@ -132,6 +133,9 @@ To regenerate the swagger client:
  * v2.1.5 is a major update for swagger, and should be explored in the future
  
 ## Swagger Java Client for quay.io
+
+This will no longer be necessary to do manually and is now done as part of the Maven build process.
+Content is left here for reference purposes. 
 
 Background:
 
