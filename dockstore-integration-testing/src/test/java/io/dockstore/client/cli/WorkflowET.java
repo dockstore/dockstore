@@ -201,6 +201,12 @@ public class WorkflowET {
         assertTrue("did not get published workflow", publishedWorkflowByPath != null);
     }
 
+    /**
+     * Tests manual registration and publishing of a github and bitbucket workflow
+     * @throws IOException
+     * @throws TimeoutException
+     * @throws ApiException
+         */
     @Test
     public void testManualRegisterThenPublish() throws IOException, TimeoutException, ApiException {
         final ApiClient webClient = getWebClient();
@@ -247,6 +253,12 @@ public class WorkflowET {
         assertTrue("There should be 5 valid version tags, there are " + count4, count4 == 5);
     }
 
+    /**
+     * Tests that trying to register a duplicate workflow fails
+     * @throws ApiException
+     * @throws IOException
+     * @throws TimeoutException
+         */
     @Test
     public void testManualRegisterDuplicate() throws ApiException, IOException, TimeoutException {
         final ApiClient webClient = getWebClient();
