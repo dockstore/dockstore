@@ -114,6 +114,7 @@ If you are working with a custom-built or updated dockstore client you will need
 ## Swagger Java Client for Dockstore
 
 This will no longer be necessary to do manually and is now done as part of the Maven build process.
+Just remember to commit a new `dockstore-webservice/src/main/resources/swagger.yaml` when the dockstore API changes. 
 Content is left here for reference purposes. 
 
 Background:
