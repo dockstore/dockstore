@@ -450,7 +450,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <systemPropertyVariables>
-                        <buildDirectory>${project.build.directory}</buildDirectory>
+                        <baseDir>${project.basedir}</baseDir>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

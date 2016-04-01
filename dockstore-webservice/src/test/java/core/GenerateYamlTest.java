@@ -44,7 +44,7 @@ public class GenerateYamlTest {
     public void generateYAML() throws IOException {
         final int localPort = RULE.getLocalPort();
         final String swagger_filename = "/swagger.yaml";
-        File destination = new File(System.getProperty("buildDirectory")+"/generated-sources/", "swagger.yaml");
+        File destination = new File(System.getProperty("baseDir")+"/src/main/resources/", "swagger.yaml");
         final URL url = new URL("http", "localhost", localPort, swagger_filename);
         System.out.println(url.toString());
         FileUtils.copyURLToFile(url,destination);
