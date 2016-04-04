@@ -87,7 +87,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
             List<Label> newLabels = updatedWorkflow.getLabels();
             if (!newLabels.isEmpty()) {
-                out("The workflow now has the following labels:");
+                out("The workflow has the following labels:");
                 for (Label newLabel : newLabels) {
                     out(newLabel.getValue());
                 }
@@ -130,6 +130,7 @@ public class WorkflowClient extends AbstractEntryClient {
                     date = dateUploaded.toString();
                 }
 
+                out(workflow.getPath());
                 out("");
                 out("DESCRIPTION:");
                 out(description);
@@ -344,7 +345,7 @@ public class WorkflowClient extends AbstractEntryClient {
             workflow.setRepository(repository);
             workflow.setWorkflowName(workflowname);
             workflow.setMode(Workflow.ModeEnum.STUB);
-            workflow.setGitUrl("create git url");
+            workflow.setGitUrl(gitUrl);
             workflow.setPath(path);
             workflow.setWorkflowPath(workflowPath);
             workflow.setIsPublished(false);
@@ -397,7 +398,7 @@ public class WorkflowClient extends AbstractEntryClient {
         int nameWidth = maxWidths[0] + Client.PADDING;
         int descWidth = maxWidths[1] + Client.PADDING;
         int gitWidth = maxWidths[2] + Client.PADDING;
-        String format = "%-" + nameWidth + "s%-" + descWidth + "s%-" + gitWidth + "s%";
+        String format = "%-" + nameWidth + "s%-" + descWidth + "s%-" + gitWidth + "s%-16s";
         out(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "On Dockstore?");
 
         for (Workflow workflow : workflows) {

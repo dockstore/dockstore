@@ -94,6 +94,7 @@ import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.ArgumentUtility.flag;
 import static io.dockstore.client.cli.ArgumentUtility.invalid;
 import static io.dockstore.client.cli.ArgumentUtility.Kill;
+import static io.dockstore.client.cli.ArgumentUtility.isHelpRequest;
 import static io.dockstore.client.cli.ArgumentUtility.optVal;
 import static io.dockstore.client.cli.ArgumentUtility.out;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
@@ -844,6 +845,27 @@ public class Client {
         printHelpHeader();
         out("Usage: dockstore [mode] [flags] [command] [command parameters]");
         out("");
+        out("Modes:");
+        out("   tool                Puts dockstore into tool mode.");
+        out("   workflow            Puts dockstore into workflow mode.");
+        out("");
+        out("------------------");
+        out("");
+        out("Flags:");
+        out("  --help               Print help information");
+        out("                       Default: false");
+        out("  --debug              Print debugging information");
+        out("                       Default: false");
+        out("  --version            Print dockstore's version");
+        out("                       Default: false");
+        out("  --server-metadata    Print metdata describing the dockstore webservice");
+        out("                       Default: false");
+        out("  --upgrade            Upgrades to the latest stable release of Dockstore");
+        out("                       Default: false");
+        out("  --config <file>      Override config file");
+        out("                       Default: ~/.dockstore/config");
+        out("  --script             Will not check Github for newer versions of Dockstore");
+        out("                       Default: false");
         printHelpFooter();
     }
 
@@ -911,7 +933,9 @@ public class Client {
                     // see if this is a tool command
                     boolean handled = false;
                     if (mode.equals("tool")) {
-                        if (!args.isEmpty()) {
+                        if (args.size() == 1 && isHelpRequest(args.get(0))) {
+                            toolClient.printGeneralHelp();
+                        } else if (!args.isEmpty()) {
                             cmd = args.remove(0);
                             handled = toolClient.processEntryCommands(args, cmd);
                         } else {
@@ -919,7 +943,9 @@ public class Client {
                             return;
                         }
                     } else if (mode.equals("workflow")) {
-                        if (!args.isEmpty()) {
+                        if (args.size() == 1 && isHelpRequest(args.get(0))) {
+                            workflowClient.printGeneralHelp();
+                        } else if (!args.isEmpty()) {
                             cmd = args.remove(0);
                             handled = workflowClient.processEntryCommands(args, cmd);
                         } else {
@@ -928,6 +954,10 @@ public class Client {
                         }
                     } else {
                         // mode is cmd if it is not workflow or tool
+                        if (isHelpRequest(mode)) {
+                            printGeneralHelp();
+                            return;
+                        }
                         cmd = mode;
                     }
 

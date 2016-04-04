@@ -68,6 +68,12 @@ public class BasicET {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--script" });
         }
 
+        @Test
+        public void aaaa() {
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "workflow", "refresh", "--script" });
+        }
+
+
         /**
          * Tests manually adding, updating, and removing a dockerhub container
          */

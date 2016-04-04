@@ -388,10 +388,10 @@ public abstract class AbstractEntryClient {
 
     private void publishHelp() {
         printHelpHeader();
-        out("Usage: dockstore " + getEntryType() + " publish --help");
-        out("       dockstore " + getEntryType() + " publish");
-        out("       dockstore " + getEntryType() + " publish [parameters]");
-        out("       dockstore " + getEntryType() + " publish --unpub [parameters]");
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " publish --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " publish");
+        out("       dockstore " + getEntryType().toLowerCase() + " publish [parameters]");
+        out("       dockstore " + getEntryType().toLowerCase() + " publish --unpub [parameters]");
         out("");
         out("Description:");
         out("  Publish/unpublish a registered " + getEntryType() + ".");
@@ -405,8 +405,8 @@ public abstract class AbstractEntryClient {
 
     private void listHelp() {
         printHelpHeader();
-        out("Usage: dockstore " + getEntryType() + " list --help");
-        out("       dockstore " + getEntryType() + " list");
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " list --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " list");
         out("");
         out("Description:");
         out("  lists all the " + getEntryType() + " published by the user");
@@ -415,8 +415,8 @@ public abstract class AbstractEntryClient {
 
     private void labelHelp() {
         printHelpHeader();
-        out("Usage: dockstore " + getEntryType() + " label --help");
-        out("       dockstore " + getEntryType() + " label [parameters]");
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " label --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " label [parameters]");
         out("");
         out("Description:");
         out("  Add or remove labels from a given Dockstore " + getEntryType());
@@ -432,8 +432,8 @@ public abstract class AbstractEntryClient {
 
     private void infoHelp() {
         printHelpHeader();
-        out("Usage: dockstore " + getEntryType() + " info --help");
-        out("       dockstore " + getEntryType() + " info [parameters]");
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " info --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " info [parameters]");
         out("");
         out("Description:");
         out("  Get information related to a published " + getEntryType());
@@ -445,8 +445,8 @@ public abstract class AbstractEntryClient {
 
     private void descriptorHelp(String descriptorType) {
         printHelpHeader();
-        out("Usage: dockstore " + getEntryType() + " " + descriptorType + " --help");
-        out("       dockstore " + getEntryType() + " " + descriptorType + " [parameters]");
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " " + descriptorType + " --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " " + descriptorType + " [parameters]");
         out("");
         out("Description:");
         out("  Grab a " + descriptorType + " document for a particular entry");
@@ -459,9 +459,9 @@ public abstract class AbstractEntryClient {
 
     private void refreshHelp() {
         printHelpHeader();
-        out("Usage: dockstore " + getEntryType() + " refresh --help");
-        out("       dockstore " + getEntryType() + " refresh");
-        out("       dockstore " + getEntryType() + " refresh [parameters]");
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " refresh --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " refresh");
+        out("       dockstore " + getEntryType().toLowerCase() + " refresh [parameters]");
         out("");
         out("Description:");
         out("  Refresh an individual " + getEntryType() + " or all your " + getEntryType() + ".");
@@ -473,8 +473,8 @@ public abstract class AbstractEntryClient {
 
     private void searchHelp() {
         printHelpHeader();
-        out("Usage: dockstore " + getEntryType() + " search --help");
-        out("       dockstore " + getEntryType() + " search [parameters]");
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " search --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " search [parameters]");
         out("");
         out("Description:");
         out("  Search for published " + getEntryType() + " on Dockstore.");
