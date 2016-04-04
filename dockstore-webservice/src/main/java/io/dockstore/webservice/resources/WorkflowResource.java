@@ -539,13 +539,14 @@ public class WorkflowResource {
         }
 
         // Create workflow
-        Workflow newWorkflow = sourceCodeRepoInterface.getNewWorkflow(workflowPath, Optional.absent());
+        Workflow newWorkflow = sourceCodeRepoInterface.getNewWorkflow(completeWorkflowPath, Optional.absent());
 
         if (newWorkflow == null) {
             throw new CustomWebApplicationException("Please enter a valid repository.", HttpStatus.SC_BAD_REQUEST);
         }
         newWorkflow.setDefaultWorkflowPath(defaultWorkflowPath);
         newWorkflow.setWorkflowName(workflowName);
+        newWorkflow.setPath(completeWorkflowPath);
 
         if (newWorkflow != null) {
             final long workflowID = workflowDAO.create(newWorkflow);

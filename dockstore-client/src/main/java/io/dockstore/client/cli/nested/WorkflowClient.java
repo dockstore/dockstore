@@ -329,26 +329,8 @@ public class WorkflowClient extends AbstractEntryClient {
 
             // Make new workflow object
             String path = Joiner.on("/").skipNulls().join(organization, repository, workflowname);
-            String gitUrl = "";
-            if (gitVersionControl.toLowerCase().equals("bitbucket")) {
-                gitUrl = "git@bitbucket.org:";
-            } else if (gitVersionControl.toLowerCase().equals("github")) {
-                gitUrl = "git@github.com:";
-            } else {
-                errorMessage("Invalid git version control", client.CLIENT_ERROR);
-            }
 
-            gitUrl += organization + "/" + repository + ".git";
-
-            Workflow workflow = new Workflow();
-            workflow.setOrganization(organization);
-            workflow.setRepository(repository);
-            workflow.setWorkflowName(workflowname);
-            workflow.setMode(Workflow.ModeEnum.STUB);
-            workflow.setGitUrl(gitUrl);
-            workflow.setPath(path);
-            workflow.setWorkflowPath(workflowPath);
-            workflow.setIsPublished(false);
+            Workflow workflow = null;
 
             // Try and register
             try {
