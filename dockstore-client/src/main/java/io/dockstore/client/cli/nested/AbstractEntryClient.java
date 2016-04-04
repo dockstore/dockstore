@@ -20,6 +20,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.google.common.base.Joiner;
+import io.swagger.client.model.Label;
+
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.LAUNCH;
@@ -79,6 +82,7 @@ public abstract class AbstractEntryClient {
         out("");
         out("  " + LAUNCH + "           :  launch " + getEntryType() + "s (locally)");
         out("");
+        printClientSpecificHelp();
         out("------------------");
         out("");
         out("Flags:");
@@ -153,6 +157,9 @@ public abstract class AbstractEntryClient {
                 break;
             case "label":
                 label(args);
+                break;
+            case "manual_publish":
+                manualPublish(args);
                 break;
             default:
                 return false;
@@ -242,6 +249,13 @@ public abstract class AbstractEntryClient {
      */
     protected abstract boolean processEntrySpecificCommands(List<String> args, String activeCommand);
 
+    /**
+     * Manually publish a given entry
+     *
+     * @param args
+     */
+    protected abstract void manualPublish(final List<String> args);
+
     /** private helper methods */
 
     public void publish(List<String> args) {
@@ -251,9 +265,9 @@ public abstract class AbstractEntryClient {
             publishHelp();
         } else {
             String first = reqVal(args, "--entry");
-            String toolname = optVal(args, "--entryname", null);
+            String entryname = optVal(args, "--entryname", null);
             final boolean unpublishRequest = isUnpublishRequest(args);
-            handlePublishUnpublish(first, toolname, unpublishRequest);
+            handlePublishUnpublish(first, entryname, unpublishRequest);
         }
     }
 
@@ -335,6 +349,31 @@ public abstract class AbstractEntryClient {
         }
     }
 
+    /*
+    Generate label string given add set, remove set, and existing labels
+      */
+    public String generateLabelString(Set<String> addsSet, Set<String> removesSet, List<Label> existingLabels) {
+        Set<String> newLabelSet = new HashSet<String>();
+
+        // Get existing labels and store in a List
+        for (Label existingLabel : existingLabels) {
+            newLabelSet.add(existingLabel.getValue());
+        }
+
+        // Add new labels to the List of labels
+        for (String add : addsSet) {
+            final String label = add.toLowerCase();
+            newLabelSet.add(label);
+        }
+        // Remove labels from the list of labels
+        for (String remove : removesSet) {
+            final String label = remove.toLowerCase();
+            newLabelSet.remove(label);
+        }
+
+        return Joiner.on(",").join(newLabelSet);
+    }
+
     private void search(List<String> args) {
         if (args.isEmpty() || containsHelpRequest(args)) {
             searchHelp();
@@ -349,10 +388,10 @@ public abstract class AbstractEntryClient {
 
     private void publishHelp() {
         printHelpHeader();
-        out("Usage: dockstore publish --help");
-        out("       dockstore publish");
-        out("       dockstore publish [parameters]");
-        out("       dockstore publish --unpub [parameters]");
+        out("Usage: dockstore " + getEntryType() + " publish --help");
+        out("       dockstore " + getEntryType() + " publish");
+        out("       dockstore " + getEntryType() + " publish [parameters]");
+        out("       dockstore " + getEntryType() + " publish --unpub [parameters]");
         out("");
         out("Description:");
         out("  Publish/unpublish a registered " + getEntryType() + ".");
@@ -366,8 +405,8 @@ public abstract class AbstractEntryClient {
 
     private void listHelp() {
         printHelpHeader();
-        out("Usage: dockstore list --help");
-        out("       dockstore list");
+        out("Usage: dockstore " + getEntryType() + " list --help");
+        out("       dockstore " + getEntryType() + " list");
         out("");
         out("Description:");
         out("  lists all the " + getEntryType() + " published by the user");
@@ -376,8 +415,8 @@ public abstract class AbstractEntryClient {
 
     private void labelHelp() {
         printHelpHeader();
-        out("Usage: dockstore label --help");
-        out("       dockstore label [parameters]");
+        out("Usage: dockstore " + getEntryType() + " label --help");
+        out("       dockstore " + getEntryType() + " label [parameters]");
         out("");
         out("Description:");
         out("  Add or remove labels from a given Dockstore " + getEntryType());
@@ -393,8 +432,8 @@ public abstract class AbstractEntryClient {
 
     private void infoHelp() {
         printHelpHeader();
-        out("Usage: dockstore info --help");
-        out("       dockstore info [parameters]");
+        out("Usage: dockstore " + getEntryType() + " info --help");
+        out("       dockstore " + getEntryType() + " info [parameters]");
         out("");
         out("Description:");
         out("  Get information related to a published " + getEntryType());
@@ -406,8 +445,8 @@ public abstract class AbstractEntryClient {
 
     private void descriptorHelp(String descriptorType) {
         printHelpHeader();
-        out("Usage: dockstore " + descriptorType + " --help");
-        out("       dockstore " + descriptorType + " [parameters]");
+        out("Usage: dockstore " + getEntryType() + " " + descriptorType + " --help");
+        out("       dockstore " + getEntryType() + " " + descriptorType + " [parameters]");
         out("");
         out("Description:");
         out("  Grab a " + descriptorType + " document for a particular entry");
@@ -420,9 +459,9 @@ public abstract class AbstractEntryClient {
 
     private void refreshHelp() {
         printHelpHeader();
-        out("Usage: dockstore refresh --help");
-        out("       dockstore refresh");
-        out("       dockstore refresh [parameters]");
+        out("Usage: dockstore " + getEntryType() + " refresh --help");
+        out("       dockstore " + getEntryType() + " refresh");
+        out("       dockstore " + getEntryType() + " refresh [parameters]");
         out("");
         out("Description:");
         out("  Refresh an individual " + getEntryType() + " or all your " + getEntryType() + ".");
@@ -434,8 +473,8 @@ public abstract class AbstractEntryClient {
 
     private void searchHelp() {
         printHelpHeader();
-        out("Usage: dockstore search --help");
-        out("       dockstore search [parameters]");
+        out("Usage: dockstore " + getEntryType() + " search --help");
+        out("       dockstore " + getEntryType() + " search [parameters]");
         out("");
         out("Description:");
         out("  Search for published " + getEntryType() + " on Dockstore.");

@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -44,7 +43,7 @@ import static io.dockstore.client.cli.ArgumentUtility.GIT_HEADER;
 import static io.dockstore.client.cli.ArgumentUtility.MAX_DESCRIPTION;
 import static io.dockstore.client.cli.ArgumentUtility.NAME_HEADER;
 import static io.dockstore.client.cli.ArgumentUtility.boolWord;
-import static io.dockstore.client.cli.ArgumentUtility.columnWidths;
+import static io.dockstore.client.cli.ArgumentUtility.columnWidthsTool;
 import static io.dockstore.client.cli.ArgumentUtility.containsHelpRequest;
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
@@ -82,9 +81,6 @@ public class ToolClient extends AbstractEntryClient {
     public boolean processEntrySpecificCommands(List<String> args, String activeCommand) {
         if (null != activeCommand) {
             switch (activeCommand) {
-            case "manual_publish":
-                manualPublish(args);
-                break;
             case "version_tag":
                 versionTag(args);
                 break;
@@ -102,7 +98,7 @@ public class ToolClient extends AbstractEntryClient {
     private static void printToolList(List<DockstoreTool> containers) {
         Collections.sort(containers, new ToolComparator());
 
-        int[] maxWidths = columnWidths(containers);
+        int[] maxWidths = columnWidthsTool(containers);
 
         int nameWidth = maxWidths[0] + Client.PADDING;
         int descWidth = maxWidths[1] + Client.PADDING;
@@ -140,7 +136,7 @@ public class ToolClient extends AbstractEntryClient {
     private static void printPublishedList(List<DockstoreTool> containers) {
         Collections.sort(containers, new ToolComparator());
 
-        int[] maxWidths = columnWidths(containers);
+        int[] maxWidths = columnWidthsTool(containers);
 
         int nameWidth = maxWidths[0] + Client.PADDING;
         int descWidth = maxWidths[1] + Client.PADDING;
@@ -273,6 +269,7 @@ public class ToolClient extends AbstractEntryClient {
         }
     }
 
+    @Override
     public void manualPublish(final List<String> args) {
         if (args.isEmpty() || containsHelpRequest(args)) {
             manualPublishHelp();
@@ -403,30 +400,13 @@ public class ToolClient extends AbstractEntryClient {
             DockstoreTool container = containersApi.getContainerByToolPath(entryPath);
             long containerId = container.getId();
             List<Label> existingLabels = container.getLabels();
-            Set<String> newLabelSet = new HashSet<>();
 
-            // Get existing labels and store in a List
-            for (Label existingLabel : existingLabels) {
-                newLabelSet.add(existingLabel.getValue());
-            }
-
-            // Add new labels to the List of labels
-            for (String add : addsSet) {
-                final String label = add.toLowerCase();
-                newLabelSet.add(label);
-            }
-            // Remove labels from the list of labels
-            for (String remove : removesSet) {
-                final String label = remove.toLowerCase();
-                newLabelSet.remove(label);
-            }
-
-            String combinedLabelString = Joiner.on(",").join(newLabelSet);
+            String combinedLabelString = generateLabelString(addsSet, removesSet, existingLabels);
 
             DockstoreTool updatedContainer = containersApi.updateLabels(containerId, combinedLabelString, new Body());
 
             List<Label> newLabels = updatedContainer.getLabels();
-            if (newLabels.size() > 0) {
+            if (!newLabels.isEmpty()) {
                 out("The container now has the following labels:");
                 for (Label newLabel : newLabels) {
                     out(newLabel.getValue());
@@ -677,8 +657,8 @@ public class ToolClient extends AbstractEntryClient {
 
     public static void updateToolHelp() {
         printHelpHeader();
-        out("Usage: dockstore " + UPDATE_TOOL + " --help");
-        out("       dockstore " + UPDATE_TOOL + " [parameters]");
+        out("Usage: dockstore tool " + UPDATE_TOOL + " --help");
+        out("       dockstore tool " + UPDATE_TOOL + " [parameters]");
         out("");
         out("Description:");
         out("  Update certain fields for a given tool.");
@@ -697,9 +677,9 @@ public class ToolClient extends AbstractEntryClient {
 
     private static void versionTagHelp() {
         printHelpHeader();
-        out("Usage: dockstore version_tag --help");
-        out("       dockstore version_tag [command] --help");
-        out("       dockstore version_tag [command] [parameters]");
+        out("Usage: dockstore tool version_tag --help");
+        out("       dockstore tool version_tag [command] --help");
+        out("       dockstore tool version_tag [command] [parameters]");
         out("");
         out("Description:");
         out("  Add, update or remove version tags. For auto tools you can only update.");
@@ -715,8 +695,8 @@ public class ToolClient extends AbstractEntryClient {
 
     private static void versionTagRemoveHelp() {
         printHelpHeader();
-        out("Usage: dockstore version_tag remove --help");
-        out("       dockstore version_tag remove [parameters]");
+        out("Usage: dockstore tool version_tag remove --help");
+        out("       dockstore tool version_tag remove [parameters]");
         out("");
         out("Description:");
         out("  Remove an existing version tag of a tool.");
@@ -729,8 +709,8 @@ public class ToolClient extends AbstractEntryClient {
 
     private static void versionTagUpdateHelp() {
         printHelpHeader();
-        out("Usage: dockstore version_tag update --help");
-        out("       dockstore version_tag update [parameters]");
+        out("Usage: dockstore tool version_tag update --help");
+        out("       dockstore tool version_tag update [parameters]");
         out("");
         out("Description:");
         out("  Update an existing version tag of a tool.");
@@ -750,8 +730,8 @@ public class ToolClient extends AbstractEntryClient {
 
     private static void versionTagAddHelp() {
         printHelpHeader();
-        out("Usage: dockstore version_tag add --help");
-        out("       dockstore version_tag add [parameters]");
+        out("Usage: dockstore tool version_tag add --help");
+        out("       dockstore tool version_tag add [parameters]");
         out("");
         out("Description:");
         out("  Add a new version tag to a manually added tool.");
@@ -772,11 +752,11 @@ public class ToolClient extends AbstractEntryClient {
 
     private static void manualPublishHelp() {
         printHelpHeader();
-        out("Usage: dockstore manual_publish --help");
-        out("       dockstore manual_publish [parameters]");
+        out("Usage: dockstore tool manual_publish --help");
+        out("       dockstore tool manual_publish [parameters]");
         out("");
         out("Description:");
-        out("  Manually register an entry in the dockstore. Currently this is used to register entries for images on Docker Hub.");
+        out("  Manually register an tool in the dockstore. Currently this is used to register entries for images on Docker Hub.");
         out("");
         out("Required parameters:");
         out("  --name <name>                Name for the docker container");

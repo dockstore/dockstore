@@ -84,6 +84,8 @@ import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Metadata;
 import io.swagger.client.model.SourceFile;
+import io.swagger.client.model.Workflow;
+import io.swagger.client.model.WorkflowVersion;
 
 import static io.dockstore.client.cli.ArgumentUtility.containsHelpRequest;
 import static io.dockstore.client.cli.ArgumentUtility.err;
@@ -360,6 +362,44 @@ public class Client {
             } catch (ApiException ex) {
                 if (ex.getCode() == HttpStatus.SC_BAD_REQUEST) {
                     exceptionMessage(ex, "Invalid tag", Client.API_ERROR);
+                } else {
+                    exceptionMessage(ex, "No " + descriptorType + " file found.", Client.API_ERROR);
+                }
+            }
+        } else {
+            errorMessage("No " + descriptorType + " file found.", Client.COMMAND_ERROR);
+        }
+        return file;
+    }
+
+    public SourceFile getWorkflowDescriptorFromServer(String entry, String descriptorType) throws ApiException {
+        String[] parts = entry.split(":");
+
+        String path = parts[0];
+
+        String version = (parts.length > 1) ? parts[1] : null;
+        SourceFile file = new SourceFile();
+        // simply getting published descriptors does not require permissions
+        Workflow workflow = workflowsApi.getPublishedWorkflowByPath(path);
+
+        boolean valid = false;
+        for (WorkflowVersion workflowVersion : workflow.getWorkflowVersions()) {
+            if (workflowVersion.getValid()) {
+                valid = true;
+                break;
+            }
+        }
+
+        if (valid) {
+            try {
+                if (descriptorType.equals(CWL_STRING)) {
+                    file = workflowsApi.cwl(workflow.getId(), version);
+                } else if (descriptorType.equals(WDL_STRING)) {
+                    file = workflowsApi.wdl(workflow.getId(), version);
+                }
+            } catch (ApiException ex) {
+                if (ex.getCode() == HttpStatus.SC_BAD_REQUEST) {
+                    exceptionMessage(ex, "Invalid version", Client.API_ERROR);
                 } else {
                     exceptionMessage(ex, "No " + descriptorType + " file found.", Client.API_ERROR);
                 }
@@ -852,7 +892,7 @@ public class Client {
             this.ga4ghApi = new GAGHApi(defaultApiClient);
 
             ToolClient toolClient = new ToolClient(containersApi, new ContainertagsApi(defaultApiClient), new UsersApi(defaultApiClient), this);
-            WorkflowClient workflowClient = new WorkflowClient(new WorkflowsApi(defaultApiClient));
+            WorkflowClient workflowClient = new WorkflowClient(new WorkflowsApi(defaultApiClient), new UsersApi(defaultApiClient), this);
 
             defaultApiClient.setDebugging(DEBUG.get());
 
