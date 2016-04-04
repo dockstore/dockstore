@@ -92,7 +92,6 @@ import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.ArgumentUtility.flag;
 import static io.dockstore.client.cli.ArgumentUtility.invalid;
 import static io.dockstore.client.cli.ArgumentUtility.Kill;
-import static io.dockstore.client.cli.ArgumentUtility.isHelp;
 import static io.dockstore.client.cli.ArgumentUtility.optVal;
 import static io.dockstore.client.cli.ArgumentUtility.out;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
@@ -115,6 +114,7 @@ public class Client {
 
     private String configFile = null;
     private ContainersApi containersApi;
+    private WorkflowsApi workflowsApi;
     private GAGHApi ga4ghApi;
 
     public static final int PADDING = 3;
@@ -800,6 +800,13 @@ public class Client {
         printHelpFooter();
     }
 
+    private static void printGeneralHelp() {
+        printHelpHeader();
+        out("Usage: dockstore [mode] [flags] [command] [command parameters]");
+        out("");
+        printHelpFooter();
+    }
+
     /*
      * Main Method
      * --------------------------------------------------------------------------------------------------------------------------
@@ -854,13 +861,36 @@ public class Client {
                 checkForUpdates();
             }
 
-            if (isHelp(args, true)) {
-                toolClient.printGeneralHelp();
+            if (args.isEmpty()) {
+                printGeneralHelp();
             } else {
                 try {
-                    String cmd = args.remove(0);
+                    String mode = args.remove(0);
+                    String cmd = null;
+
                     // see if this is a tool command
-                    boolean handled = toolClient.processEntryCommands(args, cmd);
+                    boolean handled = false;
+                    if (mode.equals("tool")) {
+                        if (!args.isEmpty()) {
+                            cmd = args.remove(0);
+                            handled = toolClient.processEntryCommands(args, cmd);
+                        } else {
+                            toolClient.printGeneralHelp();
+                            return;
+                        }
+                    } else if (mode.equals("workflow")) {
+                        if (!args.isEmpty()) {
+                            cmd = args.remove(0);
+                            handled = workflowClient.processEntryCommands(args, cmd);
+                        } else {
+                            workflowClient.printGeneralHelp();
+                            return;
+                        }
+                    } else {
+                        // mode is cmd if it is not workflow or tool
+                        cmd = mode;
+                    }
+
                     if (handled){
                         return;
                     }
@@ -883,15 +913,6 @@ public class Client {
                             break;
                         case "--upgrade":
                             upgrade();
-                            break;
-                        case "workflow":
-                            // process workflow as nested command for now
-                            if (args.isEmpty()){
-                                workflowClient.printGeneralHelp();
-                                break;
-                            }
-                            String nestedCmd = args.remove(0);
-                            workflowClient.processEntryCommands(args, nestedCmd);
                             break;
                         default:
                             invalid(cmd);

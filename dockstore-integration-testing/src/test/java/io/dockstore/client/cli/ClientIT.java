@@ -72,30 +72,30 @@ public class ClientIT {
 
     @Test
     public void testListEntries() throws IOException, TimeoutException, ApiException {
-        Client.main(new String[] { "--config", getConfigFileLocation(true), "list" });
+        Client.main(new String[] { "--config", getConfigFileLocation(true), "tool", "list" });
     }
 
     @Test
     public void testDebugModeListEntries() throws IOException, TimeoutException, ApiException {
-        Client.main(new String[] { "--debug", "--config", getConfigFileLocation(true), "list" });
+        Client.main(new String[] { "--debug", "--config", getConfigFileLocation(true), "tool", "list" });
     }
 
     @Test
     public void testListEntriesWithoutCreds() throws IOException, TimeoutException, ApiException {
         systemExit.expectSystemExitWithStatus(Client.API_ERROR);
-        Client.main(new String[] { "--config", getConfigFileLocation(false), "list" });
+        Client.main(new String[] { "--config", getConfigFileLocation(false), "tool", "list" });
     }
 
     @Test
     public void testListEntriesOnWrongPort() throws IOException, TimeoutException, ApiException {
         systemExit.expectSystemExitWithStatus(Client.CONNECTION_ERROR);
-        Client.main(new String[] { "--config", getConfigFileLocation(true, false), "list" });
+        Client.main(new String[] { "--config", getConfigFileLocation(true, false), "tool", "list" });
     }
 
     // Won't work as entry must be valid
     @Ignore
     public void quickRegisterValidEntry() throws IOException {
-        Client.main(new String[] { "--config", getConfigFileLocation(true), "publish", "quay.io/test_org/test6" });
+        Client.main(new String[] { "--config", getConfigFileLocation(true), "tool", "publish", "quay.io/test_org/test6" });
 
         // verify DB
         final TestingPostgres testingPostgres = getTestingPostgres();
@@ -105,9 +105,9 @@ public class ClientIT {
 
     @Ignore
     public void quickRegisterDuplicateEntry() throws IOException {
-        Client.main(new String[] { "--config", getConfigFileLocation(true), "publish", "quay.io/test_org/test6" });
-        Client.main(new String[] { "--config", getConfigFileLocation(true), "publish", "quay.io/test_org/test6", "view1" });
-        Client.main(new String[] { "--config", getConfigFileLocation(true), "publish", "quay.io/test_org/test6", "view2" });
+        Client.main(new String[] { "--config", getConfigFileLocation(true), "tool", "publish", "quay.io/test_org/test6" });
+        Client.main(new String[] { "--config", getConfigFileLocation(true), "tool", "publish", "quay.io/test_org/test6", "view1" });
+        Client.main(new String[] { "--config", getConfigFileLocation(true), "tool", "publish", "quay.io/test_org/test6", "view2" });
 
         // verify DB
         final TestingPostgres testingPostgres = getTestingPostgres();
@@ -118,13 +118,13 @@ public class ClientIT {
     @Test
     public void quickRegisterInValidEntry() throws IOException {
         systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
-        Client.main(new String[] { "--config", getConfigFileLocation(true), "publish", "quay.io/test_org/test1" });
+        Client.main(new String[] { "--config", getConfigFileLocation(true), "tool", "publish", "quay.io/test_org/test1" });
     }
 
     @Test
     public void quickRegisterUnknownEntry() throws IOException {
         systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
-        Client.main(new String[] { "--config", getConfigFileLocation(true), "publish", "quay.io/funky_container_that_does_not_exist" });
+        Client.main(new String[] { "--config", getConfigFileLocation(true), "tool", "publish", "quay.io/funky_container_that_does_not_exist" });
     }
 
     /* When you manually publish on the dockstore CLI, it will now refresh the container after it is added.
@@ -133,19 +133,19 @@ public class ClientIT {
      */
     @Ignore("Since dockstore now checks for associated tags for Quay container, manual publishing of nonexistant images won't work")
     public void manualRegisterABunchOfValidEntries() throws IOException {
-        Client.main(new String[] { "--config", getConfigFileLocation(true), "manual_publish", "--registry", Registry.QUAY_IO.toString(),
+        Client.main(new String[] { "--config", getConfigFileLocation(true), "tool", "manual_publish", "--registry", Registry.QUAY_IO.toString(),
                 "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url", "git@github.com:funky-user/test2.git", "--git-reference",
                 "refs/head/master" });
-        Client.main(new String[] { "--config", getConfigFileLocation(true), "manual_publish", "--registry", Registry.QUAY_IO.toString(),
+        Client.main(new String[] { "--config", getConfigFileLocation(true), "tool", "manual_publish", "--registry", Registry.QUAY_IO.toString(),
                 "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url", "git@github.com:funky-user/test2.git", "--git-reference",
                 "refs/head/master", "--toolname", "test1" });
-        Client.main(new String[] { "--config", getConfigFileLocation(true), "manual_publish", "--registry", Registry.QUAY_IO.toString(),
+        Client.main(new String[] { "--config", getConfigFileLocation(true), "tool", "manual_publish", "--registry", Registry.QUAY_IO.toString(),
                 "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url", "git@github.com:funky-user/test2.git", "--git-reference",
                 "refs/head/master", "--toolname", "test2" });
-        Client.main(new String[] { "--config", getConfigFileLocation(true), "manual_publish", "--registry", Registry.DOCKER_HUB.toString(),
+        Client.main(new String[] { "--config", getConfigFileLocation(true), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.toString(),
                 "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url", "git@github.com:funky-user/test2.git", "--git-reference",
                 "refs/head/master" });
-        Client.main(new String[] { "--config", getConfigFileLocation(true), "manual_publish", "--registry", Registry.DOCKER_HUB.toString(),
+        Client.main(new String[] { "--config", getConfigFileLocation(true), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.toString(),
                 "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url", "git@github.com:funky-user/test2.git", "--git-reference",
                 "refs/head/master", "--toolname", "test1" });
 
@@ -159,13 +159,13 @@ public class ClientIT {
     @Test
     public void manualRegisterADuplicate() throws IOException {
         systemExit.expectSystemExitWithStatus(Client.API_ERROR);
-        Client.main(new String[] { "--config", getConfigFileLocation(true), "manual_publish", "--registry", Registry.QUAY_IO.toString(),
+        Client.main(new String[] { "--config", getConfigFileLocation(true), "tool", "manual_publish", "--registry", Registry.QUAY_IO.toString(),
                 "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url", "git@github.com:funky-user/test2.git", "--git-reference",
                 "refs/head/master" });
-        Client.main(new String[] { "--config", getConfigFileLocation(true), "manual_publish", "--registry", Registry.QUAY_IO.toString(),
+        Client.main(new String[] { "--config", getConfigFileLocation(true), "tool", "manual_publish", "--registry", Registry.QUAY_IO.toString(),
                 "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url", "git@github.com:funky-user/test2.git", "--git-reference",
                 "refs/head/master", "--toolname", "test1" });
-        Client.main(new String[] { "--config", getConfigFileLocation(true), "manual_publish", "--registry", Registry.QUAY_IO.toString(),
+        Client.main(new String[] { "--config", getConfigFileLocation(true), "tool", "manual_publish", "--registry", Registry.QUAY_IO.toString(),
                 "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url", "git@github.com:funky-user/test2.git", "--git-reference",
                 "refs/head/master", "--toolname", "test1" });
     }
