@@ -342,12 +342,16 @@ public class WorkflowClient extends AbstractEntryClient {
             final String gitVersionControl = reqVal(args, "--git-version-control");
 
             final String workflowPath = optVal(args, "--workflow-path", "/Dockstore.cwl");
-            final String workflowname = optVal(args, "--workflow-name", null);
+            String workflowname = optVal(args, "--workflow-name", null);
 
             // Make new workflow object
             String path = Joiner.on("/").skipNulls().join(organization, repository, workflowname);
 
             Workflow workflow = null;
+
+            if (workflowname == null) {
+                workflowname = "";
+            }
 
             // Try and register
             try {
@@ -384,7 +388,7 @@ public class WorkflowClient extends AbstractEntryClient {
                     }
                 } else {
                     // Not valid to publish, but has been registered
-                    out("The workflow has been registered, however it is not valid to publish.");
+                    errorMessage("The workflow has been registered, however it is not valid to publish.", Client.API_ERROR);
                 }
             }
 
