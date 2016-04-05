@@ -63,6 +63,8 @@ public class EntryVersionHelper<T extends Entry> {
                 Version tagInstance = null;
 
                 if (tag == null) {
+                        // This is an assumption made for quay tools. Workflows will not have a latest unless it is created by the user,
+                        // and would thus make more sense to use master for workflows.
                         tag = "latest";
                 }
 

@@ -378,7 +378,8 @@ public class Client {
 
         String path = parts[0];
 
-        String version = (parts.length > 1) ? parts[1] : null;
+        // Workflows are git repositories, so a master is likely to exist (if null passed then dockstore will look for latest tag, which is special to quay tools)
+        String version = (parts.length > 1) ? parts[1] : "master";
         SourceFile file = new SourceFile();
         // simply getting published descriptors does not require permissions
         Workflow workflow = workflowsApi.getPublishedWorkflowByPath(path);
@@ -911,6 +912,7 @@ public class Client {
             defaultApiClient.setBasePath(serverUrl);
 
             this.containersApi = new ContainersApi(defaultApiClient);
+            this.workflowsApi = new WorkflowsApi(defaultApiClient);
             this.ga4ghApi = new GAGHApi(defaultApiClient);
 
             ToolClient toolClient = new ToolClient(containersApi, new ContainertagsApi(defaultApiClient), new UsersApi(defaultApiClient), this);
