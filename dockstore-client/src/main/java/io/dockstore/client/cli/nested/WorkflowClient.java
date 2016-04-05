@@ -212,14 +212,31 @@ public class WorkflowClient extends AbstractEntryClient {
 
     @Override
     protected void handlePublishUnpublish(String entryPath, String newName, boolean unpublishRequest) {
+        Workflow existingWorkflow = null;
+        boolean isPublished = false;
+        try {
+            existingWorkflow = workflowsApi.getWorkflowByPath(entryPath);
+            isPublished = existingWorkflow.getIsPublished();
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "Unable to publish/unpublish " + newName, Client.API_ERROR);
+        }
         if (unpublishRequest) {
-            publish(false, entryPath);
+            if (isPublished) {
+                publish(false, entryPath);
+            } else {
+                out("This workflow is already unpublished.");
+            }
         } else {
             if (newName == null) {
-                publish(true, entryPath);
+                if (isPublished) {
+                    out("This workflow is already published.");
+                } else {
+                    publish(true, entryPath);
+                }
             } else {
                 try {
                     Workflow workflow = workflowsApi.getWorkflowByPath(entryPath);
+
                     Workflow newWorkflow = new Workflow();
                     String registry = null;
 
@@ -336,12 +353,12 @@ public class WorkflowClient extends AbstractEntryClient {
             try {
                 workflow = workflowsApi.manualRegister(gitVersionControl, organization + "/" + repository, workflowPath, workflowname);
                 if (workflow != null) {
-                    workflowsApi.refresh(workflow.getId());
+                    workflow = workflowsApi.refresh(workflow.getId());
                 } else {
                     errorMessage("Unable to register " + path, Client.COMMAND_ERROR);
                 }
             } catch (ApiException ex) {
-                    exceptionMessage(ex, "Unable to register " + path, Client.API_ERROR);
+                    exceptionMessage(ex, "Error when trying to register " + path, Client.API_ERROR);
             }
 
             // Check if valid
