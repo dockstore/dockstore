@@ -423,12 +423,12 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @ApiOperation(value = "List workflows owned by the logged-in user", notes = "Lists all registered and unregistered workflows owned by the user", response = Workflow.class, responseContainer = "List")
-    public List<Workflow> userWorkflows(@ApiParam(hidden = true) @Auth Token token,
+    public List<Workflow> userWorkflows(@ApiParam(hidden = true) @Auth User user,
                                         @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
-        User user = userDAO.findById(token.getUserId());
         Helper.checkUser(user, userId);
-
-        return FluentIterable.from(user.getEntries()).filter(Workflow.class).toList();
+        // need to avoid lazy initialize error
+        final User byId = this.userDAO.findById(userId);
+        return FluentIterable.from(byId.getEntries()).filter(Workflow.class).toList();
     }
 
 
