@@ -326,7 +326,7 @@ public class WorkflowResource {
     @Timed
     @UnitOfWork
     @Path("/{workflowId}")
-    @ApiOperation(value = "Update the tool with the given workflow.", response = Workflow.class)
+    @ApiOperation(value = "Update the workflow with the given workflow.", response = Workflow.class)
     public Workflow updateWorkflow(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
             @ApiParam(value = "Workflow with updated information", required = true) Workflow workflow) {
@@ -335,7 +335,14 @@ public class WorkflowResource {
 
         Helper.checkUser(user, c);
 
-        c.update(workflow);
+        Workflow duplicate = workflowDAO.findByPath(workflow.getPath());
+
+        if (duplicate != null && duplicate.getId() != workflowId) {
+            LOG.info("duplicate workflow found: {}" + workflow.getPath());
+            throw new CustomWebApplicationException("Workflow " + workflow.getPath() + " already exists.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        c.updateInfo(workflow);
 
         Workflow result = workflowDAO.findById(workflowId);
         Helper.checkEntry(result);
@@ -591,5 +598,4 @@ public class WorkflowResource {
         Helper.checkEntry(result);
         return result.getVersions();
     }
-
 }

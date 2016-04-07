@@ -199,4 +199,9 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     public void setPath(String path) {
         this.path = path;
     }
+
+    public void updateInfo(Workflow workflow) {
+        defaultWorkflowPath = workflow.getDefaultWorkflowPath();
+        workflowName = workflow.getWorkflowName();
+    }
 }

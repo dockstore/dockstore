@@ -203,4 +203,36 @@ public class GeneralWorkflowET {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish", "--repository", "hello-dockstore-workflow", "--organization", "DockstoreTestUser2",
                         "--git-version-control", "github", "--workflow-name", "testname", "--workflow-path", "/Dockstore.wdl", "--script" });
         }
+
+        /**
+         * This tests that a workflow can be updated to have a new workflow name and default workflow path
+         */
+        @Test
+        public void testUpdateWorkflowNameAndPath() {
+                // Set up DB
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+                // Update workflow
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish", "--repository", "hello-dockstore-workflow", "--organization", "DockstoreTestUser2",
+                        "--git-version-control", "github", "--workflow-name", "testname", "--workflow-path", "/Dockstore.wdl", "--script" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry", "DockstoreTestUser2/hello-dockstore-workflow/testname", "--workflow-name", "newname", "--workflow-path", "/Dockstore.cwl", "--script" });
+
+                final long count = testingPostgres.runSelectStatement("select count(*) from workflow where workflowname = 'newname' and defaultworkflowpath = '/Dockstore.cwl'", new ScalarHandler<>());
+                Assert.assertTrue("there should be 1 matching workflow, there is " + count, count == 1);
+        }
+
+        @Test
+        public void testUpdateWorkflowVersion() {
+                // Set up DB
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+                // Update workflow
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish", "--repository", "hello-dockstore-workflow", "--organization", "DockstoreTestUser2",
+                        "--git-version-control", "github", "--workflow-name", "testname", "--workflow-path", "/Dockstore.wdl", "--script" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "version_tag", "--entry", "DockstoreTestUser2/hello-dockstore-workflow/testname", "--name", "master", "--workflow-path", "/Dockstore.cwl", "--hidden", "true", "--script" });
+
+
+                final long count = testingPostgres.runSelectStatement("select count(*) from workflowversion where name = 'master' and hidden = 't' and workflowpath = '/Dockstore.cwl'", new ScalarHandler<>());
+                Assert.assertTrue("there should be 1 matching workflow version, there is " + count, count == 1);
+        }
 }

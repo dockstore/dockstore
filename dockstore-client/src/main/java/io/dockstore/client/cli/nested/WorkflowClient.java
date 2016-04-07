@@ -58,6 +58,7 @@ import static io.dockstore.client.cli.ArgumentUtility.boolWord;
  */
 public class WorkflowClient extends AbstractEntryClient {
 
+    public static final String UPDATE_WORKFLOW = "update_workflow";
     private final WorkflowsApi workflowsApi;
     private final UsersApi usersApi;
     private final Client client;
@@ -103,6 +104,8 @@ public class WorkflowClient extends AbstractEntryClient {
     @Override
     protected void printClientSpecificHelp() {
         out("  manual_publish   :  registers a Github or Bitbucket workflow in the dockstore and then attempts to publish");
+        out("");
+        out("  " + UPDATE_WORKFLOW + "   :   updates certain fields of a workflow");
         out("");
     }
 
@@ -162,7 +165,6 @@ public class WorkflowClient extends AbstractEntryClient {
         }
     }
 
-    @Override
     protected void refreshAllEntries() {
         try {
             User user = usersApi.getUser();
@@ -329,6 +331,19 @@ public class WorkflowClient extends AbstractEntryClient {
 
     @Override
     public boolean processEntrySpecificCommands(List<String> args, String activeCommand) {
+        if (null != activeCommand) {
+            switch (activeCommand) {
+            case UPDATE_WORKFLOW:
+                updateWorkflow(args);
+                break;
+            case "version_tag":
+                versionTag(args);
+                break;
+            default:
+                return false;
+            }
+            return true;
+        }
         return false;
     }
 
@@ -381,6 +396,7 @@ public class WorkflowClient extends AbstractEntryClient {
                     pub.setPublish(true);
                     try {
                         workflowsApi.publish(workflow.getId(), pub);
+                        out("Successfully registered and published the given workflow.");
                     } catch (ApiException ex) {
                         // Unable to publish but has registered
                         exceptionMessage(ex, "Successfully registered " + path + ", however it is not valid to publish.",
@@ -440,6 +456,99 @@ public class WorkflowClient extends AbstractEntryClient {
         out("  --workflow-path <workflow-path>     Path for the descriptor file, defaults to /Dockstore.cwl");
         out("  --workflow-name <workflow-name>     Workflow name, defaults to null");
 
+        printHelpFooter();
+    }
+
+    private void updateWorkflow(List<String> args) {
+        if (args.isEmpty() || containsHelpRequest(args)) {
+            updateWorkflowHelp();
+        } else {
+            final String entry = reqVal(args, "--entry");
+            try {
+                Workflow workflow = workflowsApi.getWorkflowByPath(entry);
+                long workflowId = workflow.getId();
+
+                final String workflowPath = optVal(args, "--workflow-path", workflow.getWorkflowPath());
+                final String workflowName = optVal(args, "--workflow-name", workflow.getWorkflowName());
+
+                workflow.setWorkflowName(workflowName);
+                workflow.setWorkflowPath(workflowPath);
+
+                workflowsApi.updateWorkflow(workflowId, workflow);
+                out("The workflow has been updated.");
+            } catch (ApiException ex) {
+                exceptionMessage(ex, "", Client.API_ERROR);
+            }
+        }
+    }
+
+    public static void updateWorkflowHelp() {
+        printHelpHeader();
+        out("Usage: dockstore workflow " + UPDATE_WORKFLOW + " --help");
+        out("       dockstore workflow " + UPDATE_WORKFLOW + " [parameters]");
+        out("");
+        out("Description:");
+        out("  Update certain fields for a given workflow.");
+        out("");
+        out("Required Parameters:");
+        out("  --entry <entry>             Complete workflow path in the Dockstore");
+        out("");
+        out("Optional Parameters");
+        out("  --workflow-path <wdl-path>                       Path to default workflow location");
+        out("  --workflow-name <workflow-name>                  Name for the given workflow");
+        printHelpFooter();
+    }
+
+    private void versionTag(List<String> args) {
+        if (args.isEmpty() || containsHelpRequest(args)) {
+            versionTagHelp();
+        } else {
+            final String entry = reqVal(args, "--entry");
+            final String name = reqVal(args, "--name");
+
+            try {
+                Workflow workflow = workflowsApi.getWorkflowByPath(entry);
+                List<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
+
+                for (WorkflowVersion workflowVersion : workflowVersions) {
+                    if (workflowVersion.getName().equals(name)) {
+                        final Boolean hidden = Boolean.valueOf(optVal(args, "--hidden", workflowVersion.getHidden().toString()));
+                        final String workflowPath = optVal(args, "--workflow-path", workflowVersion.getWorkflowPath());
+
+                        workflowVersion.setHidden(hidden);
+                        workflowVersion.setWorkflowPath(workflowPath);
+
+                        List<WorkflowVersion> newVersions = new ArrayList<>();
+                        newVersions.add(workflowVersion);
+
+                        workflowsApi.updateWorkflowVersion(workflow.getId(), newVersions);
+                        workflowsApi.refresh(workflow.getId());
+                        out("Workflow Version " + name + " has been updated.");
+                        break;
+                    }
+                }
+
+            } catch (ApiException ex) {
+                exceptionMessage(ex, "Could not find workflow", Client.API_ERROR);
+            }
+        }
+    }
+
+    public static void versionTagHelp() {
+        printHelpHeader();
+        out("Usage: dockstore workflow version_tag --help");
+        out("       dockstore workflow version_tag [parameters]");
+        out("");
+        out("Description:");
+        out("  Update certain fields for a given workflow version.");
+        out("");
+        out("Required Parameters:");
+        out("  --entry <entry>                  Complete workflow path in the Dockstore");
+        out("  --name <name>                    Name of the workflow version.");
+        out("");
+        out("Optional Parameters");
+        out("  --workflow-path <wdl-path>       Path to default workflow location");
+        out("  --hidden <true/false>            Hide the tag from public viewing, default false");
         printHelpFooter();
     }
 }
