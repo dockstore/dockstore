@@ -560,4 +560,36 @@ public class WorkflowResource {
         }
     }
 
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/{workflowId}/workflowVersions")
+    @ApiOperation(value = "Update the workflow versions linked to a workflow", notes = "Workflow version correspond to each row of the versions table listing all information for a workflow", response = WorkflowVersion.class, responseContainer = "List")
+    public Set<WorkflowVersion> updateWorkflowVersion(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
+            @ApiParam(value = "List of modified workflow versions", required = true) List<WorkflowVersion> workflowVersions) {
+
+        Workflow w = workflowDAO.findById(workflowId);
+        Helper.checkEntry(w);
+
+        Helper.checkUser(user, w);
+
+        // create a map for quick lookup
+        Map<Long, WorkflowVersion> mapOfExistingWorkflowVersions = new HashMap<>();
+        for (WorkflowVersion version : w.getVersions()) {
+            mapOfExistingWorkflowVersions.put(version.getId(), version);
+        }
+
+        for (WorkflowVersion version : workflowVersions) {
+            if (mapOfExistingWorkflowVersions.containsKey(version.getId())) {
+                // remove existing copy and add the new one
+                final WorkflowVersion existingTag = mapOfExistingWorkflowVersions.get(version.getId());
+                existingTag.updateByUser(version);
+            }
+        }
+        Workflow result = workflowDAO.findById(workflowId);
+        Helper.checkEntry(result);
+        return result.getVersions();
+    }
+
 }
