@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import io.swagger.client.model.DockstoreTool;
+import io.swagger.client.model.Workflow;
 
 /**
  * Organizes all methods that have to do with parsing of input and creation of output.
@@ -135,7 +136,7 @@ public final class ArgumentUtility {
         return val;
     }
 
-    public static int[] columnWidths(List<DockstoreTool> containers) {
+    public static int[] columnWidthsTool(List<DockstoreTool> containers) {
         int[] maxWidths = { NAME_HEADER.length(), DESCRIPTION_HEADER.length(), GIT_HEADER.length() };
 
         for (DockstoreTool container : containers) {
@@ -157,6 +158,29 @@ public final class ArgumentUtility {
 
         return maxWidths;
     }
+
+    public static int[] columnWidthsWorkflow(List<Workflow> workflows) {
+        int[] maxWidths = { NAME_HEADER.length(), DESCRIPTION_HEADER.length(), GIT_HEADER.length() };
+
+        for (Workflow workflow : workflows) {
+            final String workflowGitPath = workflow.getPath();
+            if (workflowGitPath != null && workflowGitPath.length() > maxWidths[0]) {
+                maxWidths[0] = workflowGitPath.length();
+            }
+            final String description = workflow.getDescription();
+            if (description != null && description.length() > maxWidths[1]) {
+                maxWidths[1] = description.length();
+            }
+            final String gitUrl = workflow.getGitUrl();
+            if (gitUrl != null && gitUrl.length() > maxWidths[2]) {
+                maxWidths[2] = gitUrl.length();
+            }
+        }
+
+        maxWidths[1] = (maxWidths[1] > MAX_DESCRIPTION) ? MAX_DESCRIPTION : maxWidths[1];
+
+        return maxWidths;
+        }
 
     static boolean isHelpRequest(String first) {
         return "-h".equals(first) || "--help".equals(first);
@@ -224,4 +248,14 @@ public final class ArgumentUtility {
 
     static class Kill extends RuntimeException {
     }
+    public static String getGitRegistry(String gitUrl) {
+        if (gitUrl.contains("bitbucket")) {
+            return "bitbucket";
+        } else if (gitUrl.contains("github")) {
+            return "github";
+        } else {
+            return null;
+        }
+    }
+
 }

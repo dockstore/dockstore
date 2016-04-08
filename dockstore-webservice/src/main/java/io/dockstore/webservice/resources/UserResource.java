@@ -367,6 +367,31 @@ public class UserResource {
     @GET
     @Timed
     @UnitOfWork
+    @Path("/{userId}/workflows/published")
+    @ApiOperation(value = "List all published workflows from a user", notes = "Get user's published workflows only", response = Workflow.class, responseContainer = "List")
+    public List<Workflow> userPublishedWorkflows(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
+        Helper.checkUser(user, userId);
+
+        // get live entity
+        final User byId = this.userDAO.findById(user.getId());
+        final ImmutableList<Workflow> immutableList = FluentIterable.from(byId.getEntries()).filter(Workflow.class).toList();
+        final List<Workflow> repositories = Lists.newArrayList(immutableList);
+
+        for (Iterator<Workflow> iterator = repositories.iterator(); iterator.hasNext();) {
+            Workflow workflow = iterator.next();
+
+            if (!workflow.getIsPublished()) {
+                iterator.remove();
+            }
+        }
+
+        return repositories;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
     @Path("/{userId}/containers/refresh")
     @ApiOperation(value = "Refresh repos owned by the logged-in user", notes = "Updates some metadata", response = Tool.class, responseContainer = "List")
     public List<Tool> refresh(@ApiParam(hidden = true) @Auth User authUser,
@@ -398,12 +423,12 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @ApiOperation(value = "List workflows owned by the logged-in user", notes = "Lists all registered and unregistered workflows owned by the user", response = Workflow.class, responseContainer = "List")
-    public List<Workflow> userWorkflows(@ApiParam(hidden = true) @Auth Token token,
+    public List<Workflow> userWorkflows(@ApiParam(hidden = true) @Auth User user,
                                         @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
-        User user = userDAO.findById(token.getUserId());
         Helper.checkUser(user, userId);
-
-        return FluentIterable.from(user.getEntries()).filter(Workflow.class).toList();
+        // need to avoid lazy initialize error
+        final User byId = this.userDAO.findById(userId);
+        return FluentIterable.from(byId.getEntries()).filter(Workflow.class).toList();
     }
 
 

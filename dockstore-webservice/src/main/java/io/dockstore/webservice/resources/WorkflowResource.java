@@ -326,7 +326,7 @@ public class WorkflowResource {
     @Timed
     @UnitOfWork
     @Path("/{workflowId}")
-    @ApiOperation(value = "Update the tool with the given workflow.", response = Workflow.class)
+    @ApiOperation(value = "Update the workflow with the given workflow.", response = Workflow.class)
     public Workflow updateWorkflow(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
             @ApiParam(value = "Workflow with updated information", required = true) Workflow workflow) {
@@ -335,7 +335,14 @@ public class WorkflowResource {
 
         Helper.checkUser(user, c);
 
-        c.update(workflow);
+        Workflow duplicate = workflowDAO.findByPath(workflow.getPath());
+
+        if (duplicate != null && duplicate.getId() != workflowId) {
+            LOG.info("duplicate workflow found: {}" + workflow.getPath());
+            throw new CustomWebApplicationException("Workflow " + workflow.getPath() + " already exists.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        c.updateInfo(workflow);
 
         Workflow result = workflowDAO.findById(workflowId);
         Helper.checkEntry(result);
@@ -539,13 +546,14 @@ public class WorkflowResource {
         }
 
         // Create workflow
-        Workflow newWorkflow = sourceCodeRepoInterface.getNewWorkflow(workflowPath, Optional.absent());
+        Workflow newWorkflow = sourceCodeRepoInterface.getNewWorkflow(completeWorkflowPath, Optional.absent());
 
         if (newWorkflow == null) {
             throw new CustomWebApplicationException("Please enter a valid repository.", HttpStatus.SC_BAD_REQUEST);
         }
         newWorkflow.setDefaultWorkflowPath(defaultWorkflowPath);
         newWorkflow.setWorkflowName(workflowName);
+        newWorkflow.setPath(completeWorkflowPath);
 
         if (newWorkflow != null) {
             final long workflowID = workflowDAO.create(newWorkflow);
@@ -559,4 +567,35 @@ public class WorkflowResource {
         }
     }
 
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/{workflowId}/workflowVersions")
+    @ApiOperation(value = "Update the workflow versions linked to a workflow", notes = "Workflow version correspond to each row of the versions table listing all information for a workflow", response = WorkflowVersion.class, responseContainer = "List")
+    public Set<WorkflowVersion> updateWorkflowVersion(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
+            @ApiParam(value = "List of modified workflow versions", required = true) List<WorkflowVersion> workflowVersions) {
+
+        Workflow w = workflowDAO.findById(workflowId);
+        Helper.checkEntry(w);
+
+        Helper.checkUser(user, w);
+
+        // create a map for quick lookup
+        Map<Long, WorkflowVersion> mapOfExistingWorkflowVersions = new HashMap<>();
+        for (WorkflowVersion version : w.getVersions()) {
+            mapOfExistingWorkflowVersions.put(version.getId(), version);
+        }
+
+        for (WorkflowVersion version : workflowVersions) {
+            if (mapOfExistingWorkflowVersions.containsKey(version.getId())) {
+                // remove existing copy and add the new one
+                final WorkflowVersion existingTag = mapOfExistingWorkflowVersions.get(version.getId());
+                existingTag.updateByUser(version);
+            }
+        }
+        Workflow result = workflowDAO.findById(workflowId);
+        Helper.checkEntry(result);
+        return result.getVersions();
+    }
 }

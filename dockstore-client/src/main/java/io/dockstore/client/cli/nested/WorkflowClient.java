@@ -16,7 +16,8 @@
 
 package io.dockstore.client.cli.nested;
 
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -28,9 +29,26 @@ import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Body1;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.Workflow;
-
+import io.swagger.client.model.User;
+import io.swagger.client.model.SourceFile;
+import io.swagger.client.model.WorkflowVersion;
+import io.swagger.client.api.UsersApi;
+import io.swagger.client.model.PublishRequest;
+import static io.dockstore.client.cli.ArgumentUtility.DESCRIPTION_HEADER;
+import static io.dockstore.client.cli.ArgumentUtility.GIT_HEADER;
+import static io.dockstore.client.cli.ArgumentUtility.MAX_DESCRIPTION;
+import static io.dockstore.client.cli.ArgumentUtility.NAME_HEADER;
+import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.ArgumentUtility.out;
+import static io.dockstore.client.cli.ArgumentUtility.containsHelpRequest;
+import static io.dockstore.client.cli.ArgumentUtility.getGitRegistry;
+import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
+import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
+import static io.dockstore.client.cli.ArgumentUtility.reqVal;
+import static io.dockstore.client.cli.ArgumentUtility.optVal;
+import static io.dockstore.client.cli.ArgumentUtility.columnWidthsWorkflow;
+import static io.dockstore.client.cli.ArgumentUtility.boolWord;
 
 /**
  * This stub will eventually implement all operations on the CLI that are
@@ -40,10 +58,15 @@ import static io.dockstore.client.cli.ArgumentUtility.out;
  */
 public class WorkflowClient extends AbstractEntryClient {
 
+    public static final String UPDATE_WORKFLOW = "update_workflow";
     private final WorkflowsApi workflowsApi;
+    private final UsersApi usersApi;
+    private final Client client;
 
-    public WorkflowClient(WorkflowsApi workflowApi) {
+    public WorkflowClient(WorkflowsApi workflowApi, UsersApi usersApi, Client client) {
         this.workflowsApi = workflowApi;
+        this.usersApi = usersApi;
+        this.client = client;
     }
 
     @Override
@@ -53,43 +76,24 @@ public class WorkflowClient extends AbstractEntryClient {
 
     @Override
     public void handleLabels(String entryPath, Set<String> addsSet, Set<String> removesSet) {
-        // Try and update the labels for the given container
+        // Try and update the labels for the given workflow
         try {
-            Workflow container = workflowsApi.getWorkflowByPath(entryPath);
-            long containerId = container.getId();
-            List<Label> existingLabels = container.getLabels();
-            Set<String> newLabelSet = new HashSet<>();
+            Workflow workflow = workflowsApi.getWorkflowByPath(entryPath);
+            long workflowId = workflow.getId();
+            List<Label> existingLabels = workflow.getLabels();
 
-            // TODO: this following part is repetitive, see if we can refactor along with ToolClient
+            String combinedLabelString = generateLabelString(addsSet, removesSet, existingLabels);
 
-            // Get existing labels and store in a List
-            for (Label existingLabel : existingLabels) {
-                newLabelSet.add(existingLabel.getValue());
-            }
+            Workflow updatedWorkflow = workflowsApi.updateLabels(workflowId, combinedLabelString, new Body1());
 
-            // Add new labels to the List of labels
-            for (String add : addsSet) {
-                final String label = add.toLowerCase();
-                newLabelSet.add(label);
-            }
-            // Remove labels from the list of labels
-            for (String remove : removesSet) {
-                final String label = remove.toLowerCase();
-                newLabelSet.remove(label);
-            }
-
-            String combinedLabelString = Joiner.on(",").join(newLabelSet);
-
-            Workflow updatedContainer = workflowsApi.updateLabels(containerId, combinedLabelString, new Body1());
-
-            List<Label> newLabels = updatedContainer.getLabels();
-            if (newLabels.size() > 0) {
-                out("The container now has the following labels:");
+            List<Label> newLabels = updatedWorkflow.getLabels();
+            if (!newLabels.isEmpty()) {
+                out("The workflow has the following labels:");
                 for (Label newLabel : newLabels) {
                     out(newLabel.getValue());
                 }
             } else {
-                out("The container has no labels.");
+                out("The workflow has no labels.");
             }
 
         } catch (ApiException ex) {
@@ -99,56 +103,458 @@ public class WorkflowClient extends AbstractEntryClient {
 
     @Override
     protected void printClientSpecificHelp() {
-        /** do nothing for now */
+        out("  manual_publish   :  registers a Github or Bitbucket workflow in the dockstore and then attempts to publish");
+        out("");
+        out("  " + UPDATE_WORKFLOW + "  :   updates certain fields of a workflow");
+        out("");
+        out("  version_tag      :  updates an existing version tag of a workflow");
+        out("");
     }
 
     @Override
     public void handleInfo(String entryPath) {
-        throw new UnsupportedOperationException();
+        try {
+            Workflow workflow = workflowsApi.getPublishedWorkflowByPath(entryPath);
+            if (workflow == null || !workflow.getIsPublished()) {
+                errorMessage("This workflow is not published.", Client.COMMAND_ERROR);
+            } else {
+                Date dateUploaded = workflow.getLastUpdated();
+
+                String description = workflow.getDescription();
+                if (description == null) {
+                    description = "";
+                }
+
+                String author = workflow.getAuthor();
+                if (author == null) {
+                    author = "";
+                }
+
+                String date = "";
+                if (dateUploaded != null) {
+                    date = dateUploaded.toString();
+                }
+
+                out(workflow.getPath());
+                out("");
+                out("DESCRIPTION:");
+                out(description);
+                out("AUTHOR:");
+                out(author);
+                out("DATE UPLOADED:");
+                out(date);
+                out("WORKFLOW VERSIONS");
+
+                List<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
+                int workflowVersionsSize = workflowVersions.size();
+                StringBuilder builder = new StringBuilder();
+                if (workflowVersionsSize > 0) {
+                    builder.append(workflowVersions.get(0).getName());
+                    for (int i = 1; i < workflowVersionsSize; i++) {
+                        builder.append(", ").append(workflowVersions.get(i).getName());
+                    }
+                }
+
+                out(builder.toString());
+
+                out("GIT REPO:");
+                out(workflow.getGitUrl());
+
+            }
+
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "Could not find workflow", Client.API_ERROR);
+        }
     }
 
-    @Override
     protected void refreshAllEntries() {
-        throw new UnsupportedOperationException();
+        try {
+            User user = usersApi.getUser();
+            if (user == null) {
+                throw new RuntimeException("User not found");
+            }
+            List<Workflow> workflows = usersApi.refreshWorkflows(user.getId());
+
+            out("YOUR UPDATED WORKFLOWS");
+            out("-------------------");
+            printWorkflowList(workflows);
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "", Client.API_ERROR);
+        }
     }
 
     @Override
-    protected void refreshTargetEntry(String toolpath) {
-        throw new UnsupportedOperationException();
+    protected void refreshTargetEntry(String path) {
+        try {
+            Workflow workflow = workflowsApi.getWorkflowByPath(path);
+            final Long workflowId = workflow.getId();
+            Workflow updatedWorkflow = workflowsApi.refresh(workflowId);
+            List<Workflow> workflowList = new ArrayList<>();
+            workflowList.add(updatedWorkflow);
+            out("YOUR UPDATED WORKFLOW");
+            out("-------------------");
+            printWorkflowList(workflowList);
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "", Client.API_ERROR);
+        }
     }
 
     @Override
     protected void handleDescriptor(String descriptorType, String entry) {
-        throw new UnsupportedOperationException();
+        try {
+            SourceFile file = client.getWorkflowDescriptorFromServer(entry, descriptorType);
+
+            if (file.getContent() != null && !file.getContent().isEmpty()) {
+                out(file.getContent());
+            } else {
+                errorMessage("No " + descriptorType + " file found", Client.COMMAND_ERROR);
+            }
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "", Client.API_ERROR);
+        }
     }
 
     @Override
     protected void handlePublishUnpublish(String entryPath, String newName, boolean unpublishRequest) {
-        throw new UnsupportedOperationException();
+        Workflow existingWorkflow = null;
+        boolean isPublished = false;
+        try {
+            existingWorkflow = workflowsApi.getWorkflowByPath(entryPath);
+            isPublished = existingWorkflow.getIsPublished();
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "Unable to publish/unpublish " + newName, Client.API_ERROR);
+        }
+        if (unpublishRequest) {
+            if (isPublished) {
+                publish(false, entryPath);
+            } else {
+                out("This workflow is already unpublished.");
+            }
+        } else {
+            if (newName == null) {
+                if (isPublished) {
+                    out("This workflow is already published.");
+                } else {
+                    publish(true, entryPath);
+                }
+            } else {
+                try {
+                    Workflow workflow = workflowsApi.getWorkflowByPath(entryPath);
+
+                    Workflow newWorkflow = new Workflow();
+                    String registry = null;
+
+                    registry = getGitRegistry(workflow.getGitUrl());
+
+                    newWorkflow = workflowsApi.manualRegister(registry, workflow.getPath(), workflow.getWorkflowPath(), newWorkflow.getWorkflowName());
+
+                    if (newWorkflow != null) {
+                        out("Successfully registered " + entryPath + "/" + newName);
+                        workflowsApi.refresh(newWorkflow.getId());
+                        publish(true, newWorkflow.getPath());
+                    } else {
+                        errorMessage("Unable to publish " + newName, Client.COMMAND_ERROR);
+                    }
+                } catch (ApiException ex) {
+                    exceptionMessage(ex, "Unable to publish " + newName, Client.API_ERROR);
+                }
+            }
+        }
     }
 
     @Override
     protected void handleListNonpublishedEntries() {
-        throw new UnsupportedOperationException();
+        try {
+            // check user info after usage so that users can get usage without live webservice
+            User user = usersApi.getUser();
+            if (user == null) {
+                errorMessage("User not found", Client.CLIENT_ERROR);
+            }
+            List<Workflow> workflows = usersApi.userWorkflows(user.getId());
+
+            out("YOUR AVAILABLE WORKFLOWS");
+            out("-------------------");
+            printWorkflowList(workflows);
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "", Client.API_ERROR);
+        }
     }
 
-    @Override
-    public void publish(List<String> args) {
-        throw new UnsupportedOperationException();
+    public void publish(boolean publish, String entry) {
+        String action = "publish";
+        if (!publish) {
+            action = "unpublish";
+        }
+
+        try {
+            Workflow workflow = workflowsApi.getWorkflowByPath(entry);
+            PublishRequest pub = new PublishRequest();
+            pub.setPublish(publish);
+            workflow = workflowsApi.publish(workflow.getId(), pub);
+
+            if (workflow != null) {
+                out("Successfully " + action + "ed  " + entry);
+            } else {
+                errorMessage("Unable to " + action + " workflow " + entry, Client.COMMAND_ERROR);
+            }
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "Unable to " + action + " workflow " + entry, Client.API_ERROR);
+        }
     }
 
     @Override
     protected void handleSearch(String pattern) {
-        throw new UnsupportedOperationException();
+        try {
+            List<Workflow> workflows = workflowsApi.search(pattern);
+
+            out("MATCHING WORKFLOWS");
+            out("-------------------");
+            printWorkflowList(workflows);
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "", Client.API_ERROR);
+        }
     }
 
     @Override
     protected void handleList() {
-        throw new UnsupportedOperationException();
+        try {
+            // check user info after usage so that users can get usage without live webservice
+            User user = usersApi.getUser();
+            if (user == null) {
+                errorMessage("User not found", Client.CLIENT_ERROR);
+            }
+
+            List<Workflow> workflows = usersApi.userPublishedWorkflows(user.getId());
+            printWorkflowList(workflows);
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "", Client.API_ERROR);
+        }
     }
 
     @Override
     public boolean processEntrySpecificCommands(List<String> args, String activeCommand) {
+        if (null != activeCommand) {
+            switch (activeCommand) {
+            case UPDATE_WORKFLOW:
+                updateWorkflow(args);
+                break;
+            case "version_tag":
+                versionTag(args);
+                break;
+            default:
+                return false;
+            }
+            return true;
+        }
         return false;
+    }
+
+    @Override
+    public void manualPublish(final List<String> args) {
+        if (args.isEmpty() || containsHelpRequest(args)) {
+            manualPublishHelp();
+        } else {
+            final String repository = reqVal(args, "--repository");
+            final String organization = reqVal(args, "--organization");
+            final String gitVersionControl = reqVal(args, "--git-version-control");
+
+            final String workflowPath = optVal(args, "--workflow-path", "/Dockstore.cwl");
+            String workflowname = optVal(args, "--workflow-name", null);
+
+            // Make new workflow object
+            String path = Joiner.on("/").skipNulls().join(organization, repository, workflowname);
+
+            Workflow workflow = null;
+
+            if (workflowname == null) {
+                workflowname = "";
+            }
+
+            // Try and register
+            try {
+                workflow = workflowsApi.manualRegister(gitVersionControl, organization + "/" + repository, workflowPath, workflowname);
+                if (workflow != null) {
+                    workflow = workflowsApi.refresh(workflow.getId());
+                } else {
+                    errorMessage("Unable to register " + path, Client.COMMAND_ERROR);
+                }
+            } catch (ApiException ex) {
+                    exceptionMessage(ex, "Error when trying to register " + path, Client.API_ERROR);
+            }
+
+            // Check if valid
+            boolean valid = false;
+            if (workflow != null) {
+                for (WorkflowVersion workflowVersion : workflow.getWorkflowVersions()) {
+                    if (workflowVersion.getValid()) {
+                        valid = true;
+                        break;
+                    }
+                }
+
+                if (valid) {
+                    // Valid so try and publish
+                    PublishRequest pub = new PublishRequest();
+                    pub.setPublish(true);
+                    try {
+                        workflowsApi.publish(workflow.getId(), pub);
+                        out("Successfully registered and published the given workflow.");
+                    } catch (ApiException ex) {
+                        // Unable to publish but has registered
+                        exceptionMessage(ex, "Successfully registered " + path + ", however it is not valid to publish.",
+                                Client.API_ERROR);
+                    }
+                } else {
+                    // Not valid to publish, but has been registered
+                    errorMessage("The workflow has been registered, however it is not valid to publish.", Client.API_ERROR);
+                }
+            }
+
+        }
+    }
+
+    private static void printWorkflowList(List<Workflow> workflows) {
+        int[] maxWidths = columnWidthsWorkflow(workflows);
+
+        int nameWidth = maxWidths[0] + Client.PADDING;
+        int descWidth = maxWidths[1] + Client.PADDING;
+        int gitWidth = maxWidths[2] + Client.PADDING;
+        String format = "%-" + nameWidth + "s%-" + descWidth + "s%-" + gitWidth + "s%-16s";
+        out(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "On Dockstore?");
+
+        for (Workflow workflow : workflows) {
+            String description = "";
+            String gitUrl = "";
+
+            if (workflow.getGitUrl() != null && !workflow.getGitUrl().isEmpty()) {
+                gitUrl = workflow.getGitUrl();
+            }
+
+            if (workflow.getDescription() != null) {
+                description = workflow.getDescription();
+                if (description.length() > MAX_DESCRIPTION) {
+                    description = description.substring(0, MAX_DESCRIPTION - Client.PADDING) + "...";
+                }
+            }
+
+            out(format, workflow.getPath(), description, gitUrl, boolWord(workflow.getIsPublished()));
+        }
+    }
+
+    private static void manualPublishHelp() {
+        printHelpHeader();
+        out("Usage: dockstore workflow manual_publish --help");
+        out("       dockstore workflow manual_publish [parameters]");
+        out("");
+        out("Description:");
+        out("  Manually register an workflow in the dockstore. If this is successful and the workflow is valid, then publish.");
+        out("");
+        out("Required parameters:");
+        out("  --repository <repository>                        Name for the git repository");
+        out("  --organization <organization>                    Organization for the git repo");
+        out("  --git-version-control <git version control>      Either github or bitbucket");
+        out("");
+        out("Optional parameters:");
+        out("  --workflow-path <workflow-path>     Path for the descriptor file, defaults to /Dockstore.cwl");
+        out("  --workflow-name <workflow-name>     Workflow name, defaults to null");
+
+        printHelpFooter();
+    }
+
+    private void updateWorkflow(List<String> args) {
+        if (args.isEmpty() || containsHelpRequest(args)) {
+            updateWorkflowHelp();
+        } else {
+            final String entry = reqVal(args, "--entry");
+            try {
+                Workflow workflow = workflowsApi.getWorkflowByPath(entry);
+                long workflowId = workflow.getId();
+
+                String workflowName = optVal(args, "--workflow-name", workflow.getWorkflowName());
+
+                if (workflowName != null && workflowName.equals("")) {
+                    workflowName = null;
+                }
+
+                workflow.setWorkflowName(workflowName);
+
+                String path = Joiner.on("/").skipNulls().join(workflow.getOrganization(), workflow.getRepository(), workflow.getWorkflowName());
+                workflow.setPath(path);
+
+                workflowsApi.updateWorkflow(workflowId, workflow);
+                out("The workflow has been updated.");
+            } catch (ApiException ex) {
+                exceptionMessage(ex, "", Client.API_ERROR);
+            }
+        }
+    }
+
+    public static void updateWorkflowHelp() {
+        printHelpHeader();
+        out("Usage: dockstore workflow " + UPDATE_WORKFLOW + " --help");
+        out("       dockstore workflow " + UPDATE_WORKFLOW + " [parameters]");
+        out("");
+        out("Description:");
+        out("  Update certain fields for a given workflow.");
+        out("");
+        out("Required Parameters:");
+        out("  --entry <entry>                              Complete workflow path in the Dockstore");
+        out("");
+        out("Optional Parameters");
+        out("  --workflow-name <workflow-name>              Name for the given workflow");
+        printHelpFooter();
+    }
+
+    private void versionTag(List<String> args) {
+        if (args.isEmpty() || containsHelpRequest(args)) {
+            versionTagHelp();
+        } else {
+            final String entry = reqVal(args, "--entry");
+            final String name = reqVal(args, "--name");
+
+            try {
+                Workflow workflow = workflowsApi.getWorkflowByPath(entry);
+                List<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
+
+                for (WorkflowVersion workflowVersion : workflowVersions) {
+                    if (workflowVersion.getName().equals(name)) {
+                        final Boolean hidden = Boolean.valueOf(optVal(args, "--hidden", workflowVersion.getHidden().toString()));
+                        final String workflowPath = optVal(args, "--workflow-path", workflowVersion.getWorkflowPath());
+
+                        workflowVersion.setHidden(hidden);
+                        workflowVersion.setWorkflowPath(workflowPath);
+
+                        List<WorkflowVersion> newVersions = new ArrayList<>();
+                        newVersions.add(workflowVersion);
+
+                        workflowsApi.updateWorkflowVersion(workflow.getId(), newVersions);
+                        workflowsApi.refresh(workflow.getId());
+                        out("Workflow Version " + name + " has been updated.");
+                        break;
+                    }
+                }
+
+            } catch (ApiException ex) {
+                exceptionMessage(ex, "Could not find workflow", Client.API_ERROR);
+            }
+        }
+    }
+
+    public static void versionTagHelp() {
+        printHelpHeader();
+        out("Usage: dockstore workflow version_tag --help");
+        out("       dockstore workflow version_tag [parameters]");
+        out("");
+        out("Description:");
+        out("  Update certain fields for a given workflow version.");
+        out("");
+        out("Required Parameters:");
+        out("  --entry <entry>                       Complete workflow path in the Dockstore");
+        out("  --name <name>                         Name of the workflow version.");
+        out("");
+        out("Optional Parameters");
+        out("  --workflow-path <workflow-path>       Path to default workflow location");
+        out("  --hidden <true/false>                 Hide the tag from public viewing, default false");
+        printHelpFooter();
     }
 }

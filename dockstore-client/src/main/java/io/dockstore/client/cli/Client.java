@@ -84,6 +84,8 @@ import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Metadata;
 import io.swagger.client.model.SourceFile;
+import io.swagger.client.model.Workflow;
+import io.swagger.client.model.WorkflowVersion;
 
 import static io.dockstore.client.cli.ArgumentUtility.containsHelpRequest;
 import static io.dockstore.client.cli.ArgumentUtility.err;
@@ -92,7 +94,7 @@ import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.ArgumentUtility.flag;
 import static io.dockstore.client.cli.ArgumentUtility.invalid;
 import static io.dockstore.client.cli.ArgumentUtility.Kill;
-import static io.dockstore.client.cli.ArgumentUtility.isHelp;
+import static io.dockstore.client.cli.ArgumentUtility.isHelpRequest;
 import static io.dockstore.client.cli.ArgumentUtility.optVal;
 import static io.dockstore.client.cli.ArgumentUtility.out;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
@@ -115,6 +117,7 @@ public class Client {
 
     private String configFile = null;
     private ContainersApi containersApi;
+    private WorkflowsApi workflowsApi;
     private GAGHApi ga4ghApi;
 
     public static final int PADDING = 3;
@@ -360,6 +363,45 @@ public class Client {
             } catch (ApiException ex) {
                 if (ex.getCode() == HttpStatus.SC_BAD_REQUEST) {
                     exceptionMessage(ex, "Invalid tag", Client.API_ERROR);
+                } else {
+                    exceptionMessage(ex, "No " + descriptorType + " file found.", Client.API_ERROR);
+                }
+            }
+        } else {
+            errorMessage("No " + descriptorType + " file found.", Client.COMMAND_ERROR);
+        }
+        return file;
+    }
+
+    public SourceFile getWorkflowDescriptorFromServer(String entry, String descriptorType) throws ApiException {
+        String[] parts = entry.split(":");
+
+        String path = parts[0];
+
+        // Workflows are git repositories, so a master is likely to exist (if null passed then dockstore will look for latest tag, which is special to quay tools)
+        String version = (parts.length > 1) ? parts[1] : "master";
+        SourceFile file = new SourceFile();
+        // simply getting published descriptors does not require permissions
+        Workflow workflow = workflowsApi.getPublishedWorkflowByPath(path);
+
+        boolean valid = false;
+        for (WorkflowVersion workflowVersion : workflow.getWorkflowVersions()) {
+            if (workflowVersion.getValid()) {
+                valid = true;
+                break;
+            }
+        }
+
+        if (valid) {
+            try {
+                if (descriptorType.equals(CWL_STRING)) {
+                    file = workflowsApi.cwl(workflow.getId(), version);
+                } else if (descriptorType.equals(WDL_STRING)) {
+                    file = workflowsApi.wdl(workflow.getId(), version);
+                }
+            } catch (ApiException ex) {
+                if (ex.getCode() == HttpStatus.SC_BAD_REQUEST) {
+                    exceptionMessage(ex, "Invalid version", Client.API_ERROR);
                 } else {
                     exceptionMessage(ex, "No " + descriptorType + " file found.", Client.API_ERROR);
                 }
@@ -800,6 +842,34 @@ public class Client {
         printHelpFooter();
     }
 
+    private static void printGeneralHelp() {
+        printHelpHeader();
+        out("Usage: dockstore [mode] [flags] [command] [command parameters]");
+        out("");
+        out("Modes:");
+        out("   tool                Puts dockstore into tool mode.");
+        out("   workflow            Puts dockstore into workflow mode.");
+        out("");
+        out("------------------");
+        out("");
+        out("Flags:");
+        out("  --help               Print help information");
+        out("                       Default: false");
+        out("  --debug              Print debugging information");
+        out("                       Default: false");
+        out("  --version            Print dockstore's version");
+        out("                       Default: false");
+        out("  --server-metadata    Print metdata describing the dockstore webservice");
+        out("                       Default: false");
+        out("  --upgrade            Upgrades to the latest stable release of Dockstore");
+        out("                       Default: false");
+        out("  --config <file>      Override config file");
+        out("                       Default: ~/.dockstore/config");
+        out("  --script             Will not check Github for newer versions of Dockstore");
+        out("                       Default: false");
+        printHelpFooter();
+    }
+
     /*
      * Main Method
      * --------------------------------------------------------------------------------------------------------------------------
@@ -842,10 +912,11 @@ public class Client {
             defaultApiClient.setBasePath(serverUrl);
 
             this.containersApi = new ContainersApi(defaultApiClient);
+            this.workflowsApi = new WorkflowsApi(defaultApiClient);
             this.ga4ghApi = new GAGHApi(defaultApiClient);
 
             ToolClient toolClient = new ToolClient(containersApi, new ContainertagsApi(defaultApiClient), new UsersApi(defaultApiClient), this);
-            WorkflowClient workflowClient = new WorkflowClient(new WorkflowsApi(defaultApiClient));
+            WorkflowClient workflowClient = new WorkflowClient(new WorkflowsApi(defaultApiClient), new UsersApi(defaultApiClient), this);
 
             defaultApiClient.setDebugging(DEBUG.get());
 
@@ -854,13 +925,44 @@ public class Client {
                 checkForUpdates();
             }
 
-            if (isHelp(args, true)) {
-                toolClient.printGeneralHelp();
+            if (args.isEmpty()) {
+                printGeneralHelp();
             } else {
                 try {
-                    String cmd = args.remove(0);
+                    String mode = args.remove(0);
+                    String cmd = null;
+
                     // see if this is a tool command
-                    boolean handled = toolClient.processEntryCommands(args, cmd);
+                    boolean handled = false;
+                    if (mode.equals("tool")) {
+                        if (args.size() == 1 && isHelpRequest(args.get(0))) {
+                            toolClient.printGeneralHelp();
+                        } else if (!args.isEmpty()) {
+                            cmd = args.remove(0);
+                            handled = toolClient.processEntryCommands(args, cmd);
+                        } else {
+                            toolClient.printGeneralHelp();
+                            return;
+                        }
+                    } else if (mode.equals("workflow")) {
+                        if (args.size() == 1 && isHelpRequest(args.get(0))) {
+                            workflowClient.printGeneralHelp();
+                        } else if (!args.isEmpty()) {
+                            cmd = args.remove(0);
+                            handled = workflowClient.processEntryCommands(args, cmd);
+                        } else {
+                            workflowClient.printGeneralHelp();
+                            return;
+                        }
+                    } else {
+                        // mode is cmd if it is not workflow or tool
+                        if (isHelpRequest(mode)) {
+                            printGeneralHelp();
+                            return;
+                        }
+                        cmd = mode;
+                    }
+
                     if (handled){
                         return;
                     }
@@ -883,15 +985,6 @@ public class Client {
                             break;
                         case "--upgrade":
                             upgrade();
-                            break;
-                        case "workflow":
-                            // process workflow as nested command for now
-                            if (args.isEmpty()){
-                                workflowClient.printGeneralHelp();
-                                break;
-                            }
-                            String nestedCmd = args.remove(0);
-                            workflowClient.processEntryCommands(args, nestedCmd);
                             break;
                         default:
                             invalid(cmd);

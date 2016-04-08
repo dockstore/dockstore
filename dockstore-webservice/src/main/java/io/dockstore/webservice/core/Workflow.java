@@ -57,7 +57,7 @@ import io.swagger.annotations.ApiModelProperty;
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByPath", query = "SELECT c FROM Workflow c WHERE c.path = :path"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByPath", query = "SELECT c FROM Workflow c WHERE c.path = :path AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByGitUrl", query = "SELECT c FROM Workflow c WHERE c.gitUrl = :gitUrl"),
-                  @NamedQuery(name = "io.dockstore.webservice.core.Workflow.searchPattern", query = "SELECT c FROM Workflow c WHERE ((c.defaultWorkflowPath LIKE :pattern) OR (c.description LIKE :pattern)) AND c.isPublished = true") })
+                  @NamedQuery(name = "io.dockstore.webservice.core.Workflow.searchPattern", query = "SELECT c FROM Workflow c WHERE ((c.defaultWorkflowPath LIKE :pattern) OR (c.description LIKE :pattern) OR (c.path LIKE :pattern)) AND c.isPublished = true") })
 @DiscriminatorValue("workflow")
 public class Workflow extends Entry<Workflow, WorkflowVersion> {
 
@@ -198,5 +198,10 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public void updateInfo(Workflow workflow) {
+        workflowName = workflow.getWorkflowName();
+        path = workflow.getPath();
     }
 }
