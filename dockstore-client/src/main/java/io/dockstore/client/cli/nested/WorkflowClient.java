@@ -105,7 +105,9 @@ public class WorkflowClient extends AbstractEntryClient {
     protected void printClientSpecificHelp() {
         out("  manual_publish   :  registers a Github or Bitbucket workflow in the dockstore and then attempts to publish");
         out("");
-        out("  " + UPDATE_WORKFLOW + "   :   updates certain fields of a workflow");
+        out("  " + UPDATE_WORKFLOW + "  :   updates certain fields of a workflow");
+        out("");
+        out("  version_tag      :  updates an existing version tag of a workflow");
         out("");
     }
 
@@ -468,11 +470,16 @@ public class WorkflowClient extends AbstractEntryClient {
                 Workflow workflow = workflowsApi.getWorkflowByPath(entry);
                 long workflowId = workflow.getId();
 
-                final String workflowPath = optVal(args, "--workflow-path", workflow.getWorkflowPath());
-                final String workflowName = optVal(args, "--workflow-name", workflow.getWorkflowName());
+                String workflowName = optVal(args, "--workflow-name", workflow.getWorkflowName());
+
+                if (workflowName != null && workflowName.equals("")) {
+                    workflowName = null;
+                }
 
                 workflow.setWorkflowName(workflowName);
-                workflow.setWorkflowPath(workflowPath);
+
+                String path = Joiner.on("/").skipNulls().join(workflow.getOrganization(), workflow.getRepository(), workflow.getWorkflowName());
+                workflow.setPath(path);
 
                 workflowsApi.updateWorkflow(workflowId, workflow);
                 out("The workflow has been updated.");
@@ -491,11 +498,10 @@ public class WorkflowClient extends AbstractEntryClient {
         out("  Update certain fields for a given workflow.");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>             Complete workflow path in the Dockstore");
+        out("  --entry <entry>                              Complete workflow path in the Dockstore");
         out("");
         out("Optional Parameters");
-        out("  --workflow-path <wdl-path>                       Path to default workflow location");
-        out("  --workflow-name <workflow-name>                  Name for the given workflow");
+        out("  --workflow-name <workflow-name>              Name for the given workflow");
         printHelpFooter();
     }
 
@@ -543,12 +549,12 @@ public class WorkflowClient extends AbstractEntryClient {
         out("  Update certain fields for a given workflow version.");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>                  Complete workflow path in the Dockstore");
-        out("  --name <name>                    Name of the workflow version.");
+        out("  --entry <entry>                       Complete workflow path in the Dockstore");
+        out("  --name <name>                         Name of the workflow version.");
         out("");
         out("Optional Parameters");
-        out("  --workflow-path <wdl-path>       Path to default workflow location");
-        out("  --hidden <true/false>            Hide the tag from public viewing, default false");
+        out("  --workflow-path <workflow-path>       Path to default workflow location");
+        out("  --hidden <true/false>                 Hide the tag from public viewing, default false");
         printHelpFooter();
     }
 }
