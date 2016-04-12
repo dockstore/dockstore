@@ -122,6 +122,45 @@ public class WorkflowResource {
         return workflowDAO.findAll();
     }
 
+    @GET
+    @Path("/{workflowId}/restub")
+    @Timed
+    @UnitOfWork
+    @ApiOperation(value = "Restub a workflow", notes = "Restubs a full, unpublished workflow.", response = Workflow.class)
+    public Workflow restub(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        // Check that workflow is valid to restub
+        if (workflow.getIsPublished()) {
+            throw new CustomWebApplicationException("A workflow must be unpublished to restub.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (workflow.getMode().toString().equals("STUB")) {
+            throw new CustomWebApplicationException("The given workflow is already a stub.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        Workflow newWorkflow = new Workflow();
+        newWorkflow.setMode(WorkflowMode.STUB);
+        newWorkflow.setDefaultWorkflowPath(workflow.getDefaultWorkflowPath());
+        newWorkflow.setOrganization(workflow.getOrganization());
+        newWorkflow.setRepository(workflow.getRepository());
+        newWorkflow.setPath(workflow.getPath());
+        newWorkflow.setIsPublished(workflow.getIsPublished());
+        newWorkflow.setGitUrl(workflow.getGitUrl());
+        newWorkflow.setLastUpdated(workflow.getLastUpdated());
+        newWorkflow.setWorkflowName(workflow.getWorkflowName());
+
+        // copy to new object
+        workflowDAO.delete(workflow);
+
+        // now should just be a stub
+
+        long id = workflowDAO.create(newWorkflow);
+        newWorkflow = workflowDAO.findById(id);
+        return newWorkflow;
+
+    }
+
     /**
      * Refresh workflows for one user
      * @param user a user to refresh workflows for

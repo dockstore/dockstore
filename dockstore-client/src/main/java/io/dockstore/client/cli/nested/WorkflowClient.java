@@ -109,6 +109,8 @@ public class WorkflowClient extends AbstractEntryClient {
         out("");
         out("  version_tag      :  updates an existing version tag of a workflow");
         out("");
+        out("  restub           :  converts a full, unpublished workflow back to a stub");
+        out("");
     }
 
     @Override
@@ -341,6 +343,9 @@ public class WorkflowClient extends AbstractEntryClient {
             case "version_tag":
                 versionTag(args);
                 break;
+            case "restub":
+                restub(args);
+                break;
             default:
                 return false;
             }
@@ -555,6 +560,43 @@ public class WorkflowClient extends AbstractEntryClient {
         out("Optional Parameters");
         out("  --workflow-path <workflow-path>       Path to default workflow location");
         out("  --hidden <true/false>                 Hide the tag from public viewing, default false");
+        printHelpFooter();
+    }
+
+    private void restub(List<String> args) {
+        if (args.isEmpty() || args.contains("--help") || args.contains("-h")) {
+            restubHelp();
+        } else {
+            try {
+                final String entry = reqVal(args, "--entry");
+                Workflow workflow = workflowsApi.getWorkflowByPath(entry);
+
+                if (workflow.getIsPublished()) {
+                    errorMessage("Cannot restub a published workflow. Please unpublish if you wish to restub.", Client.CLIENT_ERROR);
+                }
+
+                if (workflow.getMode() == io.swagger.client.model.Workflow.ModeEnum.STUB) {
+                    errorMessage("The given workflow is already a stub.", Client.CLIENT_ERROR);
+                }
+
+                workflowsApi.restub(workflow.getId());
+            } catch (ApiException ex) {
+                exceptionMessage(ex, "", Client.API_ERROR);
+            }
+        }
+    }
+
+    public void restubHelp() {
+        printHelpHeader();
+        out("Usage: dockstore workflow restub --help");
+        out("       dockstore workflow restub [parameters]");
+        out("");
+        out("Description:");
+        out("  Converts a full, unpublished workflow back to a stub.");
+        out("");
+        out("Required Parameters:");
+        out("  --entry <entry>                       Complete workflow path in the Dockstore");
+        out("");
         printHelpFooter();
     }
 }

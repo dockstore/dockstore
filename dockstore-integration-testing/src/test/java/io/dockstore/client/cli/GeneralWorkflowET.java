@@ -221,6 +221,9 @@ public class GeneralWorkflowET {
                 Assert.assertTrue("there should be 1 matching workflow, there is " + count, count == 1);
         }
 
+        /**
+         * This tests that a user can update a workflow version
+         */
         @Test
         public void testUpdateWorkflowVersion() {
                 // Set up DB
@@ -234,5 +237,39 @@ public class GeneralWorkflowET {
 
                 final long count = testingPostgres.runSelectStatement("select count(*) from workflowversion where name = 'master' and hidden = 't' and workflowpath = '/Dockstore.cwl'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 1 matching workflow version, there is " + count, count == 1);
+        }
+
+        /**
+         * This tests that a restub will work on an unpublished, full workflow
+         */
+        @Test
+        public void testRestub() {
+                // Set up DB
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+                // Refresh and then restub
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "restub", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+
+                final long count = testingPostgres.runSelectStatement("select count(*) from workflowversion", new ScalarHandler<>());
+                Assert.assertTrue("there should be 0 workflow versions, there are " + count, count == 0);
+        }
+
+        /**
+         * This tests that a restub will not work on an unpublished, full workflow
+         */
+        @Test
+        public void testRestubError() {
+                // Set up DB
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+                // Refresh and then restub
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+
+                systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "restub", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--script" });
         }
 }
