@@ -559,7 +559,7 @@ public class WorkflowResource {
         }
 
         if (!defaultWorkflowPath.endsWith(descriptorType)) {
-            throw new CustomWebApplicationException("Please ensure that the given workflow path '" + workflowPath + "' is of type " + descriptorType + " and has the file extension " + descriptorType, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Please ensure that the given workflow path '" + defaultWorkflowPath + "' is of type " + descriptorType + " and has the file extension " + descriptorType, HttpStatus.SC_BAD_REQUEST);
         }
 
         Workflow duplicate = workflowDAO.findByPath(completeWorkflowPath);
@@ -599,6 +599,7 @@ public class WorkflowResource {
         newWorkflow.setDefaultWorkflowPath(defaultWorkflowPath);
         newWorkflow.setWorkflowName(workflowName);
         newWorkflow.setPath(completeWorkflowPath);
+        newWorkflow.setDescriptorType(descriptorType);
 
         if (newWorkflow != null) {
             final long workflowID = workflowDAO.create(newWorkflow);
