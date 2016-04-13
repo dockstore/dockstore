@@ -79,6 +79,9 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     @Column
     @ApiModelProperty(value = "This is a generated full workflow path including organization, repository name, and workflow name", readOnly = true)
     private String path;
+    @Column(nullable = false)
+    @ApiModelProperty(value = "This is a descriptor type for the workflow, either CWL or WDL (Defaults to CWL)", required = true)
+    private String descriptorType;
 
 
     // Add for new descriptor types
@@ -200,8 +203,17 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         this.path = path;
     }
 
+    public void setDescriptorType(String descriptorType) {
+        this.descriptorType = descriptorType;
+    }
+
+    public String getDescriptorType() {
+        return this.descriptorType;
+    }
+
     public void updateInfo(Workflow workflow) {
         workflowName = workflow.getWorkflowName();
         path = workflow.getPath();
+        descriptorType = workflow.getDescriptorType();
     }
 }

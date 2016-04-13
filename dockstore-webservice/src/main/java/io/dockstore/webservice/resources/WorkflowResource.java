@@ -149,6 +149,7 @@ public class WorkflowResource {
         newWorkflow.setGitUrl(workflow.getGitUrl());
         newWorkflow.setLastUpdated(workflow.getLastUpdated());
         newWorkflow.setWorkflowName(workflow.getWorkflowName());
+        newWorkflow.setDescriptorType(workflow.getDescriptorType());
 
         // copy to new object
         workflowDAO.delete(workflow);
@@ -548,12 +549,17 @@ public class WorkflowResource {
             @ApiParam(value = "Workflow registry", required = true) @QueryParam("workflowRegistry") String workflowRegistry,
             @ApiParam(value = "Workflow repository", required = true) @QueryParam("workflowPath") String workflowPath,
             @ApiParam(value = "Workflow container new descriptor path (CWL or WDL) and/or name", required = true) @QueryParam("defaultWorkflowPath") String defaultWorkflowPath,
-            @ApiParam(value = "Workflow name", required = true) @QueryParam("workflowName") String workflowName) {
+            @ApiParam(value = "Workflow name", required = true) @QueryParam("workflowName") String workflowName,
+            @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType) {
 
         String completeWorkflowPath = workflowPath;
         // Check that no duplicate workflow (same WorkflowPath) exists
         if (!workflowName.equals("")) {
             completeWorkflowPath += "/" + workflowName;
+        }
+
+        if (!defaultWorkflowPath.endsWith(descriptorType)) {
+            throw new CustomWebApplicationException("Please ensure that the given workflow path '" + workflowPath + "' is of type " + descriptorType + " and has the file extension " + descriptorType, HttpStatus.SC_BAD_REQUEST);
         }
 
         Workflow duplicate = workflowDAO.findByPath(completeWorkflowPath);

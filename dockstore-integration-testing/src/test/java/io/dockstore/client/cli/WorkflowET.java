@@ -228,10 +228,10 @@ public class WorkflowET {
         usersApi.refreshWorkflows(userId);
 
         // Manually register workflow github
-        Workflow githubWorkflow = workflowApi.manualRegister("github", DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, "/Dockstore.wdl", "altname");
+        Workflow githubWorkflow = workflowApi.manualRegister("github", DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, "/Dockstore.wdl", "altname", "wdl");
 
         // Manually register workflow bitbucket
-        Workflow bitbucketWorkflow = workflowApi.manualRegister("bitbucket", DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, "/Dockstore.cwl", "altname");
+        Workflow bitbucketWorkflow = workflowApi.manualRegister("bitbucket", DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, "/Dockstore.cwl", "altname", "cwl");
 
         // Assert some things
         final long count = testingPostgres.runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
@@ -275,7 +275,7 @@ public class WorkflowET {
         // Manually register workflow
         boolean success = true;
         try {
-            workflowApi.manualRegister("github", DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, "/Dockstore.wdl", "");
+            workflowApi.manualRegister("github", DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, "/Dockstore.wdl", "", "wdl");
         } catch (ApiException c) {
             success = false;
         } finally {
@@ -284,7 +284,7 @@ public class WorkflowET {
 
         success = true;
         try {
-            workflowApi.manualRegister("github", "dasn/iodnasiodnasio", "/Dockstore.wdl", "");
+            workflowApi.manualRegister("github", "dasn/iodnasiodnasio", "/Dockstore.wdl", "", "wdl");
         } catch (ApiException c) {
             success = false;
         } finally {

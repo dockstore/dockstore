@@ -252,7 +252,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         workflow.setPath(workflow.getPath());
 
         if (!existingWorkflow.isPresent()){
-            // when there is no existing workflow at all, just return a stub workflow
+            // when there is no existing workflow at all, just return a stub workflow. Also set descriptor type to default cwl.
+            workflow.setDescriptorType("cwl");
             return workflow;
         }
         if (existingWorkflow.get().getMode() == WorkflowMode.STUB){

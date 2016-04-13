@@ -248,7 +248,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
                     registry = getGitRegistry(workflow.getGitUrl());
 
-                    newWorkflow = workflowsApi.manualRegister(registry, workflow.getPath(), workflow.getWorkflowPath(), newWorkflow.getWorkflowName());
+                    newWorkflow = workflowsApi.manualRegister(registry, workflow.getPath(), workflow.getWorkflowPath(), newWorkflow.getWorkflowName(), workflow.getDescriptorType());
 
                     if (newWorkflow != null) {
                         out("Successfully registered " + entryPath + "/" + newName);
@@ -364,6 +364,17 @@ public class WorkflowClient extends AbstractEntryClient {
             final String gitVersionControl = reqVal(args, "--git-version-control");
 
             final String workflowPath = optVal(args, "--workflow-path", "/Dockstore.cwl");
+            final String descriptorType = optVal(args, "--descriptor-type", "cwl");
+
+            // Check if valid input
+            if (!descriptorType.toLowerCase().equals("cwl") && !descriptorType.toLowerCase().equals("wdl")) {
+                errorMessage("Please ensure that the descriptor type is either cwl or wdl.", Client.CLIENT_ERROR);
+            }
+
+            if (!workflowPath.endsWith(descriptorType)) {
+                errorMessage("Please ensure that the given workflow path '" + workflowPath + "' is of type " + descriptorType + " and has the file extension " + descriptorType, Client.CLIENT_ERROR);
+            }
+
             String workflowname = optVal(args, "--workflow-name", null);
 
             // Make new workflow object
@@ -377,7 +388,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
             // Try and register
             try {
-                workflow = workflowsApi.manualRegister(gitVersionControl, organization + "/" + repository, workflowPath, workflowname);
+                workflow = workflowsApi.manualRegister(gitVersionControl, organization + "/" + repository, workflowPath, workflowname, descriptorType);
                 if (workflow != null) {
                     workflow = workflowsApi.refresh(workflow.getId());
                 } else {
@@ -462,6 +473,7 @@ public class WorkflowClient extends AbstractEntryClient {
         out("Optional parameters:");
         out("  --workflow-path <workflow-path>     Path for the descriptor file, defaults to /Dockstore.cwl");
         out("  --workflow-name <workflow-name>     Workflow name, defaults to null");
+        out("  --descriptor-type <workflow-name>   Descriptor type, defaults to cwl");
 
         printHelpFooter();
     }
@@ -476,6 +488,19 @@ public class WorkflowClient extends AbstractEntryClient {
                 long workflowId = workflow.getId();
 
                 String workflowName = optVal(args, "--workflow-name", workflow.getWorkflowName());
+                String descriptorType = optVal(args, "--descriptor-type", workflow.getDescriptorType());
+
+                if (workflow.getMode() == io.swagger.client.model.Workflow.ModeEnum.STUB) {
+
+                    // Check if valid input
+                    if (!descriptorType.toLowerCase().equals("cwl") && !descriptorType.toLowerCase().equals("wdl")) {
+                        errorMessage("Please ensure that the descriptor type is either cwl or wdl.", Client.CLIENT_ERROR);
+                    }
+
+                    workflow.setDescriptorType(descriptorType);
+                } else if (!descriptorType.equals(workflow.getDescriptorType())) {
+                    errorMessage("You cannot change the descriptor type of a FULL workflow. Revert it to a STUB if you wish to change descriptor type.", Client.CLIENT_ERROR);
+                }
 
                 if (workflowName != null && workflowName.equals("")) {
                     workflowName = null;
@@ -507,6 +532,7 @@ public class WorkflowClient extends AbstractEntryClient {
         out("");
         out("Optional Parameters");
         out("  --workflow-name <workflow-name>              Name for the given workflow");
+        out("  --descriptor-type <descriptor-type>          Descriptor type of the given workflow.  Can only be altered if workflow is a STUB.");
         printHelpFooter();
     }
 
@@ -525,6 +551,11 @@ public class WorkflowClient extends AbstractEntryClient {
                     if (workflowVersion.getName().equals(name)) {
                         final Boolean hidden = Boolean.valueOf(optVal(args, "--hidden", workflowVersion.getHidden().toString()));
                         final String workflowPath = optVal(args, "--workflow-path", workflowVersion.getWorkflowPath());
+
+                        // Check that workflow path matches with the workflow descriptor type
+                        if (!workflowPath.toLowerCase().endsWith(workflow.getDescriptorType())) {
+                            errorMessage("Please ensure that the workflow path uses the file extension " + workflow.getDescriptorType(), Client.CLIENT_ERROR);
+                        }
 
                         workflowVersion.setHidden(hidden);
                         workflowVersion.setWorkflowPath(workflowPath);
