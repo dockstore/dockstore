@@ -16,12 +16,25 @@
 
 package io.dockstore.client.cli.nested;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
+
 import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
+import com.google.gson.Gson;
+
+import io.cwl.avro.CWL;
+import io.dockstore.client.Bridge;
 import io.swagger.client.model.Label;
+import io.swagger.client.ApiException;
+import io.swagger.client.model.SourceFile;
+
 
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
@@ -29,6 +42,7 @@ import static io.dockstore.client.cli.ArgumentUtility.LAUNCH;
 import static io.dockstore.client.cli.ArgumentUtility.CONVERT;
 import static io.dockstore.client.cli.ArgumentUtility.containsHelpRequest;
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
+import static io.dockstore.client.cli.ArgumentUtility.invalid;
 import static io.dockstore.client.cli.ArgumentUtility.optVal;
 import static io.dockstore.client.cli.ArgumentUtility.optVals;
 import static io.dockstore.client.cli.ArgumentUtility.out;
@@ -51,6 +65,7 @@ import static io.dockstore.client.cli.Client.CLIENT_ERROR;
  * @author dyuen
  */
 public abstract class AbstractEntryClient {
+    protected final CWL cwlUtil = new CWL();
 
     /**
      * Print help for this group of commands.
@@ -125,7 +140,7 @@ public abstract class AbstractEntryClient {
      *            the current command that we're interested in
      * @return whether this interface handled the active command
      */
-    public final boolean processEntryCommands(List<String> args, String activeCommand) {
+    public final boolean processEntryCommands(List<String> args, String activeCommand) throws IOException, ApiException{
         if (null != activeCommand) {
             // see if it is a command specific to this kind of Entry
             boolean processed = processEntrySpecificCommands(args, activeCommand);
@@ -160,6 +175,9 @@ public abstract class AbstractEntryClient {
                 break;
             case "manual_publish":
                 manualPublish(args);
+                break;
+            case "convert":
+                convert(args);
                 break;
             default:
                 return false;
@@ -255,6 +273,16 @@ public abstract class AbstractEntryClient {
      * @param args
      */
     protected abstract void manualPublish(final List<String> args);
+
+    protected abstract void handleEntry2json(List<String> args) throws ApiException, IOException ;
+
+    protected abstract void handleEntry2tsv(List<String> args) throws ApiException, IOException ;
+
+    protected abstract String runString(List<String> args, final boolean json) throws
+            ApiException, IOException;
+
+    protected abstract SourceFile getDescriptorFromServer(String entry, String descriptorType) throws
+            ApiException, IOException;
 
     /** private helper methods */
 
@@ -383,6 +411,62 @@ public abstract class AbstractEntryClient {
         }
     }
 
+    private void convert(final List<String> args) throws ApiException, IOException {
+        if (args.isEmpty()
+                || (containsHelpRequest(args) && !args.contains("cwl2json") && !args.contains("wdl2json") && !args.contains("entry2json") && !args
+                .contains("entry2tsv"))) {
+            convertHelp(); // Display general help
+        } else {
+            final String cmd = args.remove(0);
+            if (null != cmd) {
+                switch (cmd) {
+                case "cwl2json":
+                    cwl2json(args);
+                    break;
+                case "wdl2json":
+                    wdl2json(args);
+                    break;
+                case "entry2json":
+                    handleEntry2json(args);
+                    break;
+                case "entry2tsv":
+                    handleEntry2tsv(args);
+                    break;
+                default:
+                    invalid(cmd);
+                    break;
+                }
+            }
+        }
+    }
+
+    private void cwl2json(final List<String> args) throws ApiException, IOException {
+        if (args.isEmpty() || containsHelpRequest(args)) {
+            cwl2jsonHelp();
+        } else {
+            final String cwlPath = reqVal(args, "--cwl");
+            final ImmutablePair<String, String> output = cwlUtil.parseCWL(cwlPath, true);
+
+            final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
+            final Map<String, Object> runJson = cwlUtil.extractRunJson(output.getLeft());
+            out(gson.toJson(runJson));
+        }
+    }
+
+    private void wdl2json(final List<String> args) throws ApiException, IOException {
+        if (args.isEmpty() || containsHelpRequest(args)) {
+            wdl2jsonHelp();
+        } else {
+            // Will eventually need to update this to use wdltool
+            final String wdlPath = reqVal(args, "--wdl");
+            File wdlFile = new File(wdlPath);
+            final List<String> wdlDocuments = Lists.newArrayList(wdlFile.getAbsolutePath());
+            final scala.collection.immutable.List<String> wdlList = scala.collection.JavaConversions.asScalaBuffer(wdlDocuments).toList();
+            Bridge bridge = new Bridge();
+            String inputs = bridge.inputs(wdlList);
+            out(inputs);
+        }
+    }
 
     /** help text output */
 
@@ -401,7 +485,6 @@ public abstract class AbstractEntryClient {
         out("  --entryname <" + getEntryType() + "name>       " + getEntryType() + "name of new entry");
         printHelpFooter();
     }
-
 
     private void listHelp() {
         printHelpHeader();
@@ -481,6 +564,46 @@ public abstract class AbstractEntryClient {
         out("");
         out("Required Parameters:");
         out("  --pattern <pattern>         Pattern to search Dockstore with.");
+        printHelpFooter();
+    }
+
+    private void cwl2jsonHelp() {
+        printHelpHeader();
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " " + CONVERT + " --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " " + CONVERT + " cwl2json [parameters]");
+        out("");
+        out("Description:");
+        out("  Spit out a json run file for a given cwl document.");
+        out("");
+        out("Required parameters:");
+        out("  --cwl <file>                Path to cwl file");
+        printHelpFooter();
+    }
+
+    private void wdl2jsonHelp() {
+        printHelpHeader();
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " " + CONVERT + " --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " " + CONVERT + " wdl2json [parameters]");
+        out("");
+        out("Description:");
+        out("  Spit out a json run file for a given wdl document.");
+        out("");
+        out("Required parameters:");
+        out("  --wdl <file>                Path to wdl file");
+        printHelpFooter();
+    }
+
+    private void convertHelp() {
+        printHelpHeader();
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " " + CONVERT + " --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " " + CONVERT + " cwl2json [parameters]");
+        out("       dockstore " + getEntryType().toLowerCase() + " " + CONVERT + " wdl2json [parameters]");
+        out("       dockstore " + getEntryType().toLowerCase() + " " + CONVERT + " entry2json [parameters]");
+        out("       dockstore " + getEntryType().toLowerCase() + " " + CONVERT + " entry2tsv [parameters]");
+        out("");
+        out("Description:");
+        out("  These are preview features that will be finalized for the next major release.");
+        out("  They allow you to convert between file representations.");
         printHelpFooter();
     }
 

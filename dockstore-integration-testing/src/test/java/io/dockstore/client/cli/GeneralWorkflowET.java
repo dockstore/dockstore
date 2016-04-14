@@ -232,10 +232,10 @@ public class GeneralWorkflowET {
                 // Update workflow
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish", "--repository", "hello-dockstore-workflow", "--organization", "DockstoreTestUser2",
                         "--git-version-control", "github", "--workflow-name", "testname", "--workflow-path", "/Dockstore.wdl", "--descriptor-type", "wdl", "--script" });
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "version_tag", "--entry", "DockstoreTestUser2/hello-dockstore-workflow/testname", "--name", "master", "--workflow-path", "/Dockstore.cwl", "--hidden", "true", "--script" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "version_tag", "--entry", "DockstoreTestUser2/hello-dockstore-workflow/testname", "--name", "master", "--workflow-path", "/Dockstore2.wdl", "--hidden", "true", "--script" });
 
 
-                final long count = testingPostgres.runSelectStatement("select count(*) from workflowversion where name = 'master' and hidden = 't' and workflowpath = '/Dockstore.cwl'", new ScalarHandler<>());
+                final long count = testingPostgres.runSelectStatement("select count(*) from workflowversion where name = 'master' and hidden = 't' and workflowpath = '/Dockstore2.wdl'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 1 matching workflow version, there is " + count, count == 1);
         }
 

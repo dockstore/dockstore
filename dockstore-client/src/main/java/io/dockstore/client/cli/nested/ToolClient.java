@@ -16,15 +16,29 @@
 
 package io.dockstore.client.cli.nested;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
-import com.google.common.base.Joiner;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.http.HttpStatus;
 
+import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
+import com.google.common.io.Files;
+import com.google.gson.Gson;
+
+import io.cwl.avro.CWL;
+import io.dockstore.client.Bridge;
 import io.dockstore.client.cli.Client;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
@@ -38,10 +52,13 @@ import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.User;
 
+import static io.dockstore.client.cli.ArgumentUtility.CONVERT;
+import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.DESCRIPTION_HEADER;
 import static io.dockstore.client.cli.ArgumentUtility.GIT_HEADER;
 import static io.dockstore.client.cli.ArgumentUtility.MAX_DESCRIPTION;
 import static io.dockstore.client.cli.ArgumentUtility.NAME_HEADER;
+import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.boolWord;
 import static io.dockstore.client.cli.ArgumentUtility.columnWidthsTool;
 import static io.dockstore.client.cli.ArgumentUtility.containsHelpRequest;
@@ -646,6 +663,137 @@ public class ToolClient extends AbstractEntryClient {
         }
     }
 
+    protected void handleEntry2json(List<String> args) throws ApiException, IOException {
+        if (args.isEmpty() || containsHelpRequest(args)) {
+            tool2jsonHelp();
+        } else {
+            final String runString = runString(args, true);
+            out(runString);
+        }
+    }
+
+    protected void handleEntry2tsv(List<String> args) throws ApiException, IOException {
+        if (args.isEmpty() || containsHelpRequest(args)) {
+            tool2tsvHelp();
+        } else {
+            final String runString = runString(args, false);
+            out(runString);
+        }
+    }
+
+    protected SourceFile getDescriptorFromServer(String entry, String descriptorType) throws ApiException {
+        String[] parts = entry.split(":");
+
+        String path = parts[0];
+
+        String tag = (parts.length > 1) ? parts[1] : null;
+        SourceFile file = new SourceFile();
+        // simply getting published descriptors does not require permissions
+        DockstoreTool container = containersApi.getPublishedContainerByToolPath(path);
+        if (container.getValidTrigger()) {
+            try {
+                if (descriptorType.equals(CWL_STRING)) {
+                    file = containersApi.cwl(container.getId(), tag);
+                } else if (descriptorType.equals(WDL_STRING)) {
+                    file = containersApi.wdl(container.getId(), tag);
+                }
+            } catch (ApiException ex) {
+                if (ex.getCode() == HttpStatus.SC_BAD_REQUEST) {
+                    exceptionMessage(ex, "Invalid tag", Client.API_ERROR);
+                } else {
+                    exceptionMessage(ex, "No " + descriptorType + " file found.", Client.API_ERROR);
+                }
+            }
+        } else {
+            errorMessage("No " + descriptorType + " file found.", Client.COMMAND_ERROR);
+        }
+        return file;
+    }
+
+    protected String runString(final List<String> args, final boolean json) throws ApiException, IOException {
+        final String entry = reqVal(args, "--entry");
+        final String descriptor = optVal(args, "--descriptor", CWL_STRING);
+
+        final SourceFile descriptorFromServer = getDescriptorFromServer(entry, descriptor);
+        final File tempDescriptor = File.createTempFile("temp", ".cwl", Files.createTempDir());
+        Files.write(descriptorFromServer.getContent(), tempDescriptor, StandardCharsets.UTF_8);
+
+        if (descriptor.equals(CWL_STRING)) {
+            // need to suppress output
+            final ImmutablePair<String, String> output = cwlUtil.parseCWL(tempDescriptor.getAbsolutePath(), true);
+            final Map<String, Object> stringObjectMap = cwlUtil.extractRunJson(output.getLeft());
+            if (json) {
+                final Gson gson = CWL.getTypeSafeCWLToolDocument();
+                return gson.toJson(stringObjectMap);
+            } else {
+                // re-arrange as rows and columns
+                final Map<String, String> typeMap = cwlUtil.extractCWLTypes(output.getLeft());
+                final List<String> headers = new ArrayList<>();
+                final List<String> types = new ArrayList<>();
+                final List<String> entries = new ArrayList<>();
+                for (final Map.Entry<String, Object> objectEntry : stringObjectMap.entrySet()) {
+                    headers.add(objectEntry.getKey());
+                    types.add(typeMap.get(objectEntry.getKey()));
+                    Object value = objectEntry.getValue();
+                    if (value instanceof Map) {
+                        Map map = (Map) value;
+                        if (map.containsKey("class") && "File".equals(map.get("class"))) {
+                            value = map.get("path");
+                        }
+
+                    }
+                    entries.add(value.toString());
+                }
+                final StringBuffer buffer = new StringBuffer();
+                try (CSVPrinter printer = new CSVPrinter(buffer, CSVFormat.DEFAULT)) {
+                    printer.printRecord(headers);
+                    printer.printComment("do not edit the following row, describes CWL types");
+                    printer.printRecord(types);
+                    printer.printComment("duplicate the following row and fill in the values for each run you wish to set parameters for");
+                    printer.printRecord(entries);
+                }
+                return buffer.toString();
+            }
+        } else if (descriptor.equals(WDL_STRING)) {
+            if (json) {
+                final List<String> wdlDocuments = Lists.newArrayList(tempDescriptor.getAbsolutePath());
+                final scala.collection.immutable.List<String> wdlList = scala.collection.JavaConversions.asScalaBuffer(wdlDocuments)
+                        .toList();
+                Bridge bridge = new Bridge();
+                return bridge.inputs(wdlList);
+            }
+        }
+        return null;
+    }
+
+    // Help Commands
+    private static void tool2tsvHelp() {
+        printHelpHeader();
+        out("Usage: dockstore " + CONVERT + " tool2tsv --help");
+        out("       dockstore " + CONVERT + " tool2tsv [parameters]");
+        out("");
+        out("Description:");
+        out("  Spit out a tsv run file for a given cwl document.");
+        out("");
+        out("Required parameters:");
+        out("  --entry <entry>                Complete tool path in the Dockstore");
+        printHelpFooter();
+    }
+
+    private static void tool2jsonHelp() {
+        printHelpHeader();
+        out("Usage: dockstore " + CONVERT + " tool2json --help");
+        out("       dockstore " + CONVERT + " tool2json [parameters]");
+        out("");
+        out("Description:");
+        out("  Spit out a json run file for a given cwl document.");
+        out("");
+        out("Required parameters:");
+        out("  --entry <entry>                Complete tool path in the Dockstore");
+        out("  --descriptor <descriptor>      Type of descriptor language used. Defaults to cwl");
+        printHelpFooter();
+    }
+
     protected void printClientSpecificHelp() {
         out("  version_tag      :  updates version tags for an individual tool");
         out("");
@@ -773,6 +921,7 @@ public class ToolClient extends AbstractEntryClient {
         out("  --version-name <version>     Version tag name for Dockerhub containers only, defaults to latest");
         printHelpFooter();
     }
+
 
     // This should be linked to common, but we won't do this now because we don't want dependencies changing during testing
     public enum Registry {

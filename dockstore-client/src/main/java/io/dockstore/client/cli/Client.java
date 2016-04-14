@@ -50,11 +50,9 @@ import javax.ws.rs.ProcessingException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.csv.QuoteMode;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -102,7 +100,6 @@ import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
 import static io.dockstore.client.cli.ArgumentUtility.reqVal;
 import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
-import static io.dockstore.client.cli.ArgumentUtility.CONVERT;
 import static io.dockstore.client.cli.ArgumentUtility.LAUNCH;
 
 /**
@@ -149,100 +146,6 @@ public class Client {
         } catch (ApiException ex) {
             exceptionMessage(ex, "", API_ERROR);
         }
-    }
-
-    private void convert(final List<String> args) throws ApiException, IOException {
-        if (args.isEmpty()
-                || (containsHelpRequest(args) && !args.contains("cwl2json") && !args.contains("wdl2json") && !args.contains("tool2json") && !args
-                        .contains("tool2tsv"))) {
-            convertHelp(); // Display general help
-        } else {
-            final String cmd = args.remove(0);
-            if (null != cmd) {
-                switch (cmd) {
-                case "cwl2json":
-                    cwl2json(args);
-                    break;
-                case "wdl2json":
-                    wdl2json(args);
-                    break;
-                case "tool2json":
-                    tool2json(args);
-                    break;
-                case "tool2tsv":
-                    tool2tsv(args);
-                    break;
-                default:
-                    invalid(cmd);
-                    break;
-                }
-            }
-        }
-    }
-
-    private void tool2json(final List<String> args) throws ApiException, IOException {
-        if (args.isEmpty() || containsHelpRequest(args)) {
-            Client.tool2jsonHelp();
-        } else {
-            final String runString = runString(args, true);
-            out(runString);
-        }
-    }
-
-    private String runString(final List<String> args, final boolean json) throws ApiException, IOException {
-        final String entry = reqVal(args, "--entry");
-        final String descriptor = optVal(args, "--descriptor", CWL_STRING);
-
-        final SourceFile descriptorFromServer = getDescriptorFromServer(entry, descriptor);
-        final File tempDescriptor = File.createTempFile("temp", ".cwl", Files.createTempDir());
-        Files.write(descriptorFromServer.getContent(), tempDescriptor, StandardCharsets.UTF_8);
-
-        if (descriptor.equals(CWL_STRING)) {
-            // need to suppress output
-            final ImmutablePair<String, String> output = cwlUtil.parseCWL(tempDescriptor.getAbsolutePath(), true);
-            final Map<String, Object> stringObjectMap = cwlUtil.extractRunJson(output.getLeft());
-            if (json) {
-                final Gson gson = CWL.getTypeSafeCWLToolDocument();
-                return gson.toJson(stringObjectMap);
-            } else {
-                // re-arrange as rows and columns
-                final Map<String, String> typeMap = cwlUtil.extractCWLTypes(output.getLeft());
-                final List<String> headers = new ArrayList<>();
-                final List<String> types = new ArrayList<>();
-                final List<String> entries = new ArrayList<>();
-                for (final Map.Entry<String, Object> objectEntry : stringObjectMap.entrySet()) {
-                    headers.add(objectEntry.getKey());
-                    types.add(typeMap.get(objectEntry.getKey()));
-                    Object value = objectEntry.getValue();
-                    if (value instanceof Map) {
-                        Map map = (Map) value;
-                        if (map.containsKey("class") && "File".equals(map.get("class"))) {
-                            value = map.get("path");
-                        }
-
-                    }
-                    entries.add(value.toString());
-                }
-                final StringBuffer buffer = new StringBuffer();
-                try (CSVPrinter printer = new CSVPrinter(buffer, CSVFormat.DEFAULT)) {
-                    printer.printRecord(headers);
-                    printer.printComment("do not edit the following row, describes CWL types");
-                    printer.printRecord(types);
-                    printer.printComment("duplicate the following row and fill in the values for each run you wish to set parameters for");
-                    printer.printRecord(entries);
-                }
-                return buffer.toString();
-            }
-        } else if (descriptor.equals(WDL_STRING)) {
-            if (json) {
-                final List<String> wdlDocuments = Lists.newArrayList(tempDescriptor.getAbsolutePath());
-                final scala.collection.immutable.List<String> wdlList = scala.collection.JavaConversions.asScalaBuffer(wdlDocuments)
-                                                                            .toList();
-                Bridge bridge = new Bridge();
-                return bridge.inputs(wdlList);
-            }
-        }
-        return null;
     }
 
     /**
@@ -454,43 +357,6 @@ public class Client {
             exceptionMessage(ex, "", API_ERROR);
         } catch (IOException ex) {
             exceptionMessage(ex, "", IO_ERROR);
-        }
-    }
-
-    private void cwl2json(final List<String> args) {
-        if (args.isEmpty() || containsHelpRequest(args)) {
-            cwl2jsonHelp();
-        } else {
-            final String cwlPath = reqVal(args, "--cwl");
-            final ImmutablePair<String, String> output = cwlUtil.parseCWL(cwlPath, true);
-
-            final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
-            final Map<String, Object> runJson = cwlUtil.extractRunJson(output.getLeft());
-            out(gson.toJson(runJson));
-        }
-    }
-
-    private void tool2tsv(final List<String> args) throws ApiException, IOException {
-        if (args.isEmpty() || containsHelpRequest(args)) {
-            Client.tool2tsvHelp();
-        } else {
-            final String runString = runString(args, false);
-            out(runString);
-        }
-    }
-
-    private static void wdl2json(final List<String> args) {
-        if (args.isEmpty() || containsHelpRequest(args)) {
-            wdl2jsonHelp();
-        } else {
-            // Will eventually need to update this to use wdltool
-            final String wdlPath = reqVal(args, "--wdl");
-            File wdlFile = new File(wdlPath);
-            final List<String> wdlDocuments = Lists.newArrayList(wdlFile.getAbsolutePath());
-            final scala.collection.immutable.List<String> wdlList = scala.collection.JavaConversions.asScalaBuffer(wdlDocuments).toList();
-            Bridge bridge = new Bridge();
-            String inputs = bridge.inputs(wdlList);
-            out(inputs);
         }
     }
 
@@ -757,20 +623,6 @@ public class Client {
      * ------------------------------
      */
 
-    private static void convertHelp() {
-        printHelpHeader();
-        out("Usage: dockstore " + CONVERT + " --help");
-        out("       dockstore " + CONVERT + " cwl2json [parameters]");
-        out("       dockstore " + CONVERT + " wdl2json [parameters]");
-        out("       dockstore " + CONVERT + " tool2json [parameters]");
-        out("       dockstore " + CONVERT + " tool2tsv [parameters]");
-        out("");
-        out("Description:");
-        out("  These are preview features that will be finalized for the next major release.");
-        out("  They allow you to convert between file representations.");
-        printHelpFooter();
-    }
-
     private static void launchHelp() {
         printHelpHeader();
         out("Usage: dockstore launch --help");
@@ -786,59 +638,6 @@ public class Client {
         out("  --json <json file>                  Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs");
         out("  --tsv <tsv file>                    One row corresponds to parameters for one run in the dockstore (Only for CWL)");
         out("  --descriptor <descriptor type>      Descriptor type used to launch workflow. Defaults to " + CWL_STRING);
-        printHelpFooter();
-    }
-
-    private static void tool2jsonHelp() {
-        printHelpHeader();
-        out("Usage: dockstore " + CONVERT + " tool2json --help");
-        out("       dockstore " + CONVERT + " tool2json [parameters]");
-        out("");
-        out("Description:");
-        out("  Spit out a json run file for a given cwl document.");
-        out("");
-        out("Required parameters:");
-        out("  --entry <entry>                Complete tool path in the Dockstore");
-        out("  --descriptor <descriptor>      Type of descriptor language used. Defaults to cwl");
-        printHelpFooter();
-    }
-
-    private static void tool2tsvHelp() {
-        printHelpHeader();
-        out("Usage: dockstore " + CONVERT + " tool2tsv --help");
-        out("       dockstore " + CONVERT + " tool2tsv [parameters]");
-        out("");
-        out("Description:");
-        out("  Spit out a tsv run file for a given cwl document.");
-        out("");
-        out("Required parameters:");
-        out("  --entry <entry>                Complete tool path in the Dockstore");
-        printHelpFooter();
-    }
-
-    private static void cwl2jsonHelp() {
-        printHelpHeader();
-        out("Usage: dockstore " + CONVERT + " --help");
-        out("       dockstore " + CONVERT + " cwl2json [parameters]");
-        out("");
-        out("Description:");
-        out("  Spit out a json run file for a given cwl document.");
-        out("");
-        out("Required parameters:");
-        out("  --cwl <file>                Path to cwl file");
-        printHelpFooter();
-    }
-
-    private static void wdl2jsonHelp() {
-        printHelpHeader();
-        out("Usage: dockstore " + CONVERT + " --help");
-        out("       dockstore " + CONVERT + " wdl2json [parameters]");
-        out("");
-        out("Description:");
-        out("  Spit out a json run file for a given wdl document.");
-        out("");
-        out("Required parameters:");
-        out("  --wdl <file>                Path to wdl file");
         printHelpFooter();
     }
 
@@ -976,9 +775,6 @@ public class Client {
                             break;
                         case "--server-metadata":
                             serverMetadata();
-                            break;
-                        case CONVERT:
-                            convert(args);
                             break;
                         case LAUNCH:
                             launch(args);

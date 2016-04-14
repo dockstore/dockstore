@@ -222,7 +222,7 @@ public final class ArgumentUtility {
         return isHelpRequest(first);
     }
 
-    static void invalid(String cmd) {
+    public static void invalid(String cmd) {
         errorMessage("dockstore: " + cmd + " is not a dockstore command. See 'dockstore --help'.", Client.CLIENT_ERROR);
     }
 

@@ -16,10 +16,13 @@
 
 package io.dockstore.client.cli.nested;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+
+import org.apache.http.HttpStatus;
 
 import com.google.common.base.Joiner;
 
@@ -34,10 +37,13 @@ import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.WorkflowVersion;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.PublishRequest;
+
+import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.DESCRIPTION_HEADER;
 import static io.dockstore.client.cli.ArgumentUtility.GIT_HEADER;
 import static io.dockstore.client.cli.ArgumentUtility.MAX_DESCRIPTION;
 import static io.dockstore.client.cli.ArgumentUtility.NAME_HEADER;
+import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.ArgumentUtility.out;
@@ -629,5 +635,56 @@ public class WorkflowClient extends AbstractEntryClient {
         out("  --entry <entry>                       Complete workflow path in the Dockstore");
         out("");
         printHelpFooter();
+    }
+
+    protected void handleEntry2json(List<String> args) throws ApiException, IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    protected void handleEntry2tsv(List<String> args) throws ApiException, IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    protected SourceFile getDescriptorFromServer(String entry, String descriptorType) throws ApiException {
+        String[] parts = entry.split(":");
+
+        String path = parts[0];
+
+        // Workflows are git repositories, so a master is likely to exist (if null passed then dockstore will look for latest tag, which is special to quay tools)
+        String version = (parts.length > 1) ? parts[1] : "master";
+        SourceFile file = new SourceFile();
+        // simply getting published descriptors does not require permissions
+        Workflow workflow = workflowsApi.getPublishedWorkflowByPath(path);
+
+        boolean valid = false;
+        for (WorkflowVersion workflowVersion : workflow.getWorkflowVersions()) {
+            if (workflowVersion.getValid()) {
+                valid = true;
+                break;
+            }
+        }
+
+        if (valid) {
+            try {
+                if (descriptorType.equals(CWL_STRING)) {
+                    file = workflowsApi.cwl(workflow.getId(), version);
+                } else if (descriptorType.equals(WDL_STRING)) {
+                    file = workflowsApi.wdl(workflow.getId(), version);
+                }
+            } catch (ApiException ex) {
+                if (ex.getCode() == HttpStatus.SC_BAD_REQUEST) {
+                    exceptionMessage(ex, "Invalid version", Client.API_ERROR);
+                } else {
+                    exceptionMessage(ex, "No " + descriptorType + " file found.", Client.API_ERROR);
+                }
+            }
+        } else {
+            errorMessage("No " + descriptorType + " file found.", Client.COMMAND_ERROR);
+        }
+        return file;
+    }
+
+    protected String runString(final List<String> args, final boolean json) throws ApiException, IOException {
+        return null;
     }
 }
