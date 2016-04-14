@@ -16,7 +16,6 @@
 
 package io.dockstore.client.cli.nested;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -637,14 +636,6 @@ public class WorkflowClient extends AbstractEntryClient {
         printHelpFooter();
     }
 
-    protected void handleEntry2json(List<String> args) throws ApiException, IOException {
-        throw new UnsupportedOperationException();
-    }
-
-    protected void handleEntry2tsv(List<String> args) throws ApiException, IOException {
-        throw new UnsupportedOperationException();
-    }
-
     protected SourceFile getDescriptorFromServer(String entry, String descriptorType) throws ApiException {
         String[] parts = entry.split(":");
 
@@ -684,7 +675,9 @@ public class WorkflowClient extends AbstractEntryClient {
         return file;
     }
 
-    protected String runString(final List<String> args, final boolean json) throws ApiException, IOException {
-        return null;
+    protected String getEntryGitRegistry(String entry) throws ApiException{
+        Workflow workflow = workflowsApi.getWorkflowByPath(entry.split(":")[0]);
+        return workflow.getGitUrl().contains("bitbucket") ? "bitbucket" : "github";
     }
+
 }
