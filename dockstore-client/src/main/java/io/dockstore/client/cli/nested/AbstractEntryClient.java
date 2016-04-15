@@ -282,8 +282,6 @@ public abstract class AbstractEntryClient {
     protected abstract SourceFile getDescriptorFromServer(String entry, String descriptorType) throws
             ApiException, IOException;
 
-    protected abstract String getEntryGitRegistry(String entry) throws ApiException;
-
     /** private helper methods */
 
     public void publish(List<String> args) {
@@ -486,73 +484,23 @@ public abstract class AbstractEntryClient {
         }
     }
 
-    /**
-     * Wrapper for finding and downloading import files
-     * @param entryPath
-     * @param descriptor
-     * @param entry
-         * @throws ApiException
-         */
-    protected void handleImports(String entryPath, String descriptor, String entry) throws ApiException{
-        List<String> imports = new ArrayList<>();
-        if (descriptor.equals(CWL_STRING)) {
-            imports = getWdlImports(entryPath);
-        } else if (descriptor.equals(WDL_STRING)) {
-            imports = getCwlImports(entryPath);
-        }
-
-        String gitRegistry = getEntryGitRegistry(entry.split(":")[0]);
-        out("Git registry is - " + gitRegistry);
-        importFilesDownload(imports, gitRegistry);
-    }
-
-    /**
-     * Given a list of file paths (assumes github or bitbucket), will download the files to the current working directory
-     * TODO : an idea might be for it to take the 'base path' of a site, that will make it easier to find
-     * or base path can be the path minus the given cwl or wdl
-     * @param filesToDownload
-         */
-    private void importFilesDownload(List<String> filesToDownload, String gitRegistry) {
-        if (gitRegistry.equals("bitbucket")) {
-            for (String file : filesToDownload) {
-                out("Downloading - " + file);
-            }
-        } else if (gitRegistry.equals("github")) {
-            for (String file : filesToDownload) {
-                out("Downloading - " + file);
-            }
-        }
-    }
-
-    /**
-     * Parses WDL file to make a list of files that need importing (relative paths and absolute)
-     * @param filepath
-     * @return
-         */
-    private List<String> getWdlImports(String filepath) {
-
-        return new ArrayList<>();
-    }
-
-    /**
-     * Parses CWL file to make a list of files that need importing (relative paths and absolute)
-     * @param filepath
-     * @return
-         */
-    private List<String> getCwlImports(String filepath) {
-        return new ArrayList<>();
-    }
+    protected abstract void downloadDescriptors(String entry, String descriptor, File tempDir);
 
     protected String runString(List<String> args, final boolean json) throws
             ApiException, IOException {
         final String entry = reqVal(args, "--entry");
         final String descriptor = optVal(args, "--descriptor", CWL_STRING);
 
+        final File tempDir = Files.createTempDir();
         final SourceFile descriptorFromServer = getDescriptorFromServer(entry, descriptor);
-        final File tempDescriptor = File.createTempFile("temp", ".cwl", Files.createTempDir());
+        final File tempDescriptor = File.createTempFile("temp", "." + descriptor, tempDir);
         Files.write(descriptorFromServer.getContent(), tempDescriptor, StandardCharsets.UTF_8);
 
-        handleImports(tempDescriptor.getAbsolutePath(), descriptor, entry);
+        out("The temp directory is " + tempDir.getAbsolutePath());
+        downloadDescriptors(entry, descriptor, tempDir);
+
+
+        // Download extra descriptors
 
         if (descriptor.equals(CWL_STRING)) {
             // need to suppress output

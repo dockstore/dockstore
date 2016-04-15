@@ -16,6 +16,9 @@
 
 package io.dockstore.client.cli.nested;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -23,9 +26,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.http.HttpStatus;
 
 import com.google.common.base.Joiner;
+import com.google.common.io.Files;
 
 import io.dockstore.client.cli.Client;
 import io.swagger.client.ApiException;
@@ -679,9 +684,42 @@ public class ToolClient extends AbstractEntryClient {
         return file;
     }
 
-    protected String getEntryGitRegistry(String entry) throws ApiException{
-        DockstoreTool tool = containersApi.getContainerByToolPath(entry.split(":")[0]);
-        return tool.getGitUrl().contains("bitbucket") ? "bitbucket" : "github";
+    protected void downloadDescriptors(String entry, String descriptor, File tempDir) {
+        // In the future, delete tmp files
+        DockstoreTool tool = null;
+        String[] parts = entry.split(":");
+        String path = parts[0];
+        String version = (parts.length > 1) ? parts[1] : "master";
+
+        try {
+            tool = containersApi.getPublishedContainerByToolPath(path);
+        } catch (ApiException e) {
+            exceptionMessage(e, "No match for entry", Client.API_ERROR);
+        }
+
+        if (tool != null) {
+            try {
+                if (descriptor.toLowerCase().equals("cwl")) {
+                    List<SourceFile> files = containersApi.secondaryCwl(tool.getId(), version);
+                    for (SourceFile sourceFile : files) {
+                        out(sourceFile.getPath());
+                        File tempDescriptor = new File(tempDir.getAbsolutePath() + sourceFile.getPath());
+                        Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
+                    }
+                } else {
+                    List<SourceFile> files = containersApi.secondaryWdl(tool.getId(), version);
+                    for (SourceFile sourceFile : files) {
+                        out(sourceFile.getPath());
+                        File tempDescriptor = File.createTempFile(FilenameUtils.removeExtension(sourceFile.getPath()), FilenameUtils.getExtension(sourceFile.getPath()), tempDir);
+                        Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
+                    }
+                }
+            } catch (ApiException e) {
+                exceptionMessage(e, "Error getting file(s) from server", Client.API_ERROR);
+            } catch (IOException e) {
+                exceptionMessage(e, "Error writing to File", Client.IO_ERROR);
+            }
+        }
     }
 
     // Help Commands

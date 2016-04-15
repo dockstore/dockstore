@@ -215,5 +215,6 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         workflowName = workflow.getWorkflowName();
         path = workflow.getPath();
         descriptorType = workflow.getDescriptorType();
+        defaultWorkflowPath = workflow.getDefaultWorkflowPath();
     }
 }

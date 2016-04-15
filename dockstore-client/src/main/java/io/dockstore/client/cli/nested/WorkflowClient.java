@@ -16,14 +16,19 @@
 
 package io.dockstore.client.cli.nested;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.http.HttpStatus;
 
 import com.google.common.base.Joiner;
+import com.google.common.io.Files;
 
 import io.dockstore.client.cli.Client;
 import io.swagger.client.ApiException;
@@ -209,7 +214,7 @@ public class WorkflowClient extends AbstractEntryClient {
     @Override
     protected void handleDescriptor(String descriptorType, String entry) {
         try {
-            SourceFile file = client.getWorkflowDescriptorFromServer(entry, descriptorType);
+            SourceFile file = getDescriptorFromServer(entry, descriptorType);
 
             if (file.getContent() != null && !file.getContent().isEmpty()) {
                 out(file.getContent());
@@ -494,6 +499,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
                 String workflowName = optVal(args, "--workflow-name", workflow.getWorkflowName());
                 String descriptorType = optVal(args, "--descriptor-type", workflow.getDescriptorType());
+                String workflowDescriptorPath = optVal(args, "--workflow-path", workflow.getWorkflowPath());
 
                 if (workflow.getMode() == io.swagger.client.model.Workflow.ModeEnum.STUB) {
 
@@ -512,6 +518,7 @@ public class WorkflowClient extends AbstractEntryClient {
                 }
 
                 workflow.setWorkflowName(workflowName);
+                workflow.setWorkflowPath(workflowDescriptorPath);
 
                 String path = Joiner.on("/").skipNulls().join(workflow.getOrganization(), workflow.getRepository(), workflow.getWorkflowName());
                 workflow.setPath(path);
@@ -538,6 +545,7 @@ public class WorkflowClient extends AbstractEntryClient {
         out("Optional Parameters");
         out("  --workflow-name <workflow-name>              Name for the given workflow");
         out("  --descriptor-type <descriptor-type>          Descriptor type of the given workflow.  Can only be altered if workflow is a STUB.");
+        out("  --workflow-path <workflow-path>              Path to default workflow location");
         printHelpFooter();
     }
 
@@ -675,9 +683,42 @@ public class WorkflowClient extends AbstractEntryClient {
         return file;
     }
 
-    protected String getEntryGitRegistry(String entry) throws ApiException{
-        Workflow workflow = workflowsApi.getWorkflowByPath(entry.split(":")[0]);
-        return workflow.getGitUrl().contains("bitbucket") ? "bitbucket" : "github";
+    protected void downloadDescriptors(String entry, String descriptor, File tempDir) {
+        // In the future, delete tmp files
+        Workflow workflow = null;
+        String[] parts = entry.split(":");
+        String path = parts[0];
+        String version = (parts.length > 1) ? parts[1] : "master";
+
+        try {
+            workflow = workflowsApi.getPublishedWorkflowByPath(path);
+        } catch (ApiException e) {
+            exceptionMessage(e, "No match for entry", Client.API_ERROR);
+        }
+
+        if (workflow != null) {
+            try {
+                if (descriptor.toLowerCase().equals("cwl")) {
+                    List<SourceFile> files = workflowsApi.secondaryCwl(workflow.getId(), version);
+                    for (SourceFile sourceFile : files) {
+                        out(sourceFile.getPath());
+                        File tempDescriptor = new File(tempDir.getAbsolutePath() + sourceFile.getPath());
+                        Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
+                    }
+                } else {
+                    List<SourceFile> files = workflowsApi.secondaryWdl(workflow.getId(), version);
+                    for (SourceFile sourceFile : files) {
+                        out(sourceFile.getPath());
+                        File tempDescriptor = File.createTempFile(FilenameUtils.removeExtension(sourceFile.getPath()), FilenameUtils.getExtension(sourceFile.getPath()), tempDir);
+                        Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
+                    }
+                }
+            } catch (ApiException e) {
+                exceptionMessage(e, "Error getting file(s) from server", Client.API_ERROR);
+            } catch (IOException e) {
+                exceptionMessage(e, "Error writing to File", Client.IO_ERROR);
+            }
+        }
     }
 
 }

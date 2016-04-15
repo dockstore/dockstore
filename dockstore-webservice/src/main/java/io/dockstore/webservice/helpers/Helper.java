@@ -472,9 +472,16 @@ public final class Helper {
                 SourceFile dockstoreFile = new SourceFile();
                 dockstoreFile.setType(f);
                 dockstoreFile.setContent(fileResponse.getContent());
-
+                if (f == FileType.DOCKERFILE) {
+                    dockstoreFile.setPath(tag.getDockerfilePath());
+                } else if (f == FileType.DOCKSTORE_CWL) {
+                    dockstoreFile.setPath(tag.getCwlPath());
+                } else if (f == FileType.DOCKSTORE_WDL) {
+                    dockstoreFile.setPath(tag.getWdlPath());
+                }
                 files.add(dockstoreFile);
             }
+
         }
 
         return files;
