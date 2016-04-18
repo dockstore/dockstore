@@ -308,4 +308,22 @@ public class GeneralWorkflowET {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "version_tag", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--name", "master", "--workflow-path", "/Dockstore.wdl", "--script" });
 
         }
+
+        /**
+         * Tests that convert with valid imports will work, but convert without valid imports will throw an error
+         */
+        @Test
+        public void testRefreshAndConvertWithImports() {
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh",
+                        "--script" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "convert", "entry2json", "--entry", "DockstoreTestUser2/hello-dockstore-workflow:testBoth",
+                        "--descriptor", "cwl", "--script" });
+
+                systemExit.expectSystemExitWithStatus(Client.API_ERROR);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "convert", "entry2json", "--entry", "DockstoreTestUser2/hello-dockstore-workflow:testCwl",
+                        "--descriptor", "cwl", "--script" });
+
+        }
 }

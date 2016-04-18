@@ -326,7 +326,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                     // Now grab source files
                     SourceFile sourceFile;
                     Set<SourceFile> sourceFileSet = new HashSet<>();
-                    ArrayList<String> importPaths = null;
+                    ArrayList<String> importPaths;
 
                     if (calculatedPath.toLowerCase().endsWith(".cwl")) {
                         sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, "cwl");
@@ -339,10 +339,9 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                         try {
                             final File tempDesc = File.createTempFile("temp", ".descriptor", Files.createTempDir());
                             Files.write(sourceFile.getContent(), tempDesc, StandardCharsets.UTF_8);
-                            LOG.info("Finding import paths...");
                             importPaths = calculatedPath.toLowerCase().endsWith(".cwl") ? getCwlImports(tempDesc) : getWdlImports(tempDesc);
                             for (String importPath : importPaths) {
-                                LOG.info("Grabbing file " + importPath);
+                                LOG.info("Grabbing file " + basepath + importPath);
                                 sourceFileSet.add(getSourceFile(basepath + importPath, repositoryId, branchName,
                                         calculatedPath.toLowerCase().endsWith(".cwl") ? "cwl" : "wdl"));
                             }
@@ -361,7 +360,9 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                     }
 
                     // add extra source files here
-                    version.getSourceFiles().addAll(sourceFileSet);
+                    if (sourceFileSet.size() > 0) {
+                        version.getSourceFiles().addAll(sourceFileSet);
+                    }
 
                     workflow.addWorkflowVersion(version);
                 }

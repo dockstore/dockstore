@@ -16,14 +16,18 @@
 
 package io.dockstore.webservice.helpers;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.io.FilenameUtils;
 import org.eclipse.egit.github.core.Repository;
@@ -38,6 +42,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Optional;
+import com.google.common.io.Files;
 
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
@@ -224,9 +229,21 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 version.setName(ref);
                 version.setReference(ref);
                 version.setValid(false);
+
                 // determine workflow version from previous
                 String calculatedPath = existingDefaults.getOrDefault(ref, existingWorkflow.get().getDefaultWorkflowPath());
                 version.setWorkflowPath(calculatedPath);
+
+                // Get relative path of main workflow descriptor to find relative paths
+                String[] path = calculatedPath.split("/");
+                String basepath = "";
+                for (int i = 0; i < path.length - 1; i++) {
+                    basepath += path[i] + "/";
+                }
+
+                ArrayList<String> importPaths;
+                Set<SourceFile> sourceFileSet = new HashSet<>();
+
 
                 //TODO: is there a case-insensitive endsWith?
                 if (calculatedPath.endsWith(".cwl") || calculatedPath.endsWith(".CWL")) {
@@ -240,9 +257,24 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                                 SourceFile file = new SourceFile();
                                 file.setType(SourceFile.FileType.DOCKSTORE_CWL);
                                 file.setContent(content);
+                                file.setPath(calculatedPath);
                                 version.getSourceFiles().add(file);
+                                final File tempDesc = File.createTempFile("temp", ".cwl", Files.createTempDir());
+                                Files.write(content, tempDesc, StandardCharsets.UTF_8);
+                                importPaths = getCwlImports(tempDesc);
+                                for (String importPath : importPaths) {
+                                    LOG.info("Grabbing file " + basepath + importPath);
+                                    SourceFile importFile = new SourceFile();
+                                    importFile.setContent(extractGitHubContents(cService.getContents(id, basepath + importPath, ref)));
+                                    importFile.setPath(basepath + importPath);
+                                    importFile.setType(SourceFile.FileType.DOCKSTORE_CWL);
+                                    sourceFileSet.add(importFile);
+                                }
                             }
                         }
+
+                    } catch (IOException ex) {
+                        LOG.info("Error getting contents of file.");
                     } catch (Exception ex) {
                         LOG.info(workflow.getDefaultWorkflowPath() + " on " + ref + " was not valid CWL workflow");
                     }
@@ -258,16 +290,35 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                                 SourceFile file = new SourceFile();
                                 file.setType(SourceFile.FileType.DOCKSTORE_WDL);
                                 file.setContent(content);
+                                file.setPath(calculatedPath);
                                 version.getSourceFiles().add(file);
+                                final File tempDesc = File.createTempFile("temp", ".wdl", Files.createTempDir());
+                                Files.write(content, tempDesc, StandardCharsets.UTF_8);
+                                importPaths = getWdlImports(tempDesc);
+                                for (String importPath : importPaths) {
+                                    LOG.info("Grabbing file " + importPath);
+                                    SourceFile importFile = new SourceFile();
+                                    importFile.setContent(extractGitHubContents(cService.getContents(id, basepath + importPath, ref)));
+                                    importFile.setPath(basepath + importPath);
+                                    importFile.setType(SourceFile.FileType.DOCKSTORE_WDL);
+                                    sourceFileSet.add(importFile);
+                                }
                             }
                         }
                     } catch (Exception ex) {
                         LOG.info(calculatedPath + " on " + ref + " was not valid WDL workflow");
                     }
                 }
+
                 if (version.getSourceFiles().size() > 0) {
                     version.setValid(true);
                 }
+
+                // add extra source files here
+                if (sourceFileSet.size() > 0) {
+                    version.getSourceFiles().addAll(sourceFileSet);
+                }
+
                 workflow.addWorkflowVersion(version);
             }
             return workflow;

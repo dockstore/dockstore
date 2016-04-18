@@ -702,14 +702,12 @@ public class ToolClient extends AbstractEntryClient {
                 if (descriptor.toLowerCase().equals("cwl")) {
                     List<SourceFile> files = containersApi.secondaryCwl(tool.getId(), version);
                     for (SourceFile sourceFile : files) {
-                        out(sourceFile.getPath());
                         File tempDescriptor = new File(tempDir.getAbsolutePath() + sourceFile.getPath());
                         Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
                     }
                 } else {
                     List<SourceFile> files = containersApi.secondaryWdl(tool.getId(), version);
                     for (SourceFile sourceFile : files) {
-                        out(sourceFile.getPath());
                         File tempDescriptor = File.createTempFile(FilenameUtils.removeExtension(sourceFile.getPath()), FilenameUtils.getExtension(sourceFile.getPath()), tempDir);
                         Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
                     }
