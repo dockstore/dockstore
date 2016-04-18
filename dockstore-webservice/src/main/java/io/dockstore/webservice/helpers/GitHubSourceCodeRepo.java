@@ -216,6 +216,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 workflow.setOrganization(existingWorkflow.get().getOrganization());
                 workflow.setRepository(existingWorkflow.get().getRepository());
                 workflow.setGitUrl(existingWorkflow.get().getGitUrl());
+                workflow.setDescriptorType(existingWorkflow.get().getDescriptorType());
             }
 
             // when getting a full workflow, look for versions and check each version for valid workflows

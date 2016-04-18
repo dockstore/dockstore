@@ -307,11 +307,11 @@ public class WorkflowResource {
                 existingVersionMap.put(workflowVersionFromDB.getName(), workflowVersionFromDB);
             }
             // update source files for each version
-            Map<FileType, SourceFile> existingFileMap = new HashMap<>();
-            workflowVersionFromDB.getSourceFiles().forEach(file -> existingFileMap.put(file.getType(), file));
+            Map<String, SourceFile> existingFileMap = new HashMap<>();
+            workflowVersionFromDB.getSourceFiles().forEach(file -> existingFileMap.put(file.getType().toString() + file.getPath(), file));
             for(SourceFile file : version.getSourceFiles()){
-                if (existingFileMap.containsKey(file.getType())){
-                    existingFileMap.get(file.getType()).setContent(file.getContent());
+                if (existingFileMap.containsKey(file.getType().toString() + file.getPath())){
+                    existingFileMap.get(file.getType().toString() + file.getPath()).setContent(file.getContent());
                 } else{
                     final long fileID = fileDAO.create(file);
                     final SourceFile fileFromDB = fileDAO.findById(fileID);

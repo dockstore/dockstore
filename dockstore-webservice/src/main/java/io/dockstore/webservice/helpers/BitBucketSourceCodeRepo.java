@@ -285,6 +285,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             workflow.setOrganization(existingWorkflow.get().getOrganization());
             workflow.setRepository(existingWorkflow.get().getRepository());
             workflow.setGitUrl(existingWorkflow.get().getGitUrl());
+            workflow.setDescriptorType(existingWorkflow.get().getDescriptorType());
         }
 
         // Look at each version, check for valid workflows
@@ -343,7 +344,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                             for (String importPath : importPaths) {
                                 LOG.info("Grabbing file " + basepath + importPath);
                                 sourceFileSet.add(getSourceFile(basepath + importPath, repositoryId, branchName,
-                                        calculatedPath.toLowerCase().endsWith(".cwl") ? "cwl" : "wdl"));
+                                        importPath.toLowerCase().endsWith(".cwl") ? "cwl" : "wdl"));
                             }
                         } catch (IOException e) {
                             LOG.info("Error writing descriptor file to temp file.");
@@ -391,14 +392,10 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         if (asString.isPresent()) {
             String content = asString.get();
             if (content != null) {
-//                if (type.equals("cwl") && content.contains("class: Workflow")) {
                 if (type.equals("cwl")) {
                     file.setType(SourceFile.FileType.DOCKSTORE_CWL);
                 } else {
-                    final NamespaceWithWorkflow nameSpaceWithWorkflow = NamespaceWithWorkflow.load(content);
-                    if (nameSpaceWithWorkflow != null) {
-                        file.setType(SourceFile.FileType.DOCKSTORE_WDL);
-                    }
+                    file.setType(SourceFile.FileType.DOCKSTORE_WDL);
                 }
                 file.setContent(content);
                 file.setPath(path);

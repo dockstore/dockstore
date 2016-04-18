@@ -21,8 +21,12 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -174,7 +178,25 @@ public abstract class SourceCodeRepoInterface {
     }
 
     public ArrayList<String> getWdlImports(File workflowFile) {
-        return new ArrayList<>();
+        ArrayList<String> imports = new ArrayList<>();
+
+        try {
+            List<String> lines = FileUtils.readLines(workflowFile);
+            Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"");
+            for (String line : lines) {
+                Matcher m = p.matcher(line);
+                if (!m.find()) {
+                    continue;
+                } else {
+                    LOG.info(m.group(1));
+                    imports.add(m.group(1));
+                }
+            }
+
+        } catch (IOException e) {
+            LOG.info("Error reading WDL file.");
+        }
+        return imports;
     }
 
     public static class FileResponse {
