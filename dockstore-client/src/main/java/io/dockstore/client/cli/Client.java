@@ -26,7 +26,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.text.ParseException;
@@ -35,8 +34,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -48,29 +45,12 @@ import java.util.regex.Pattern;
 import javax.ws.rs.ProcessingException;
 
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVRecord;
-import org.apache.commons.csv.QuoteMode;
-import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Lists;
-import com.google.common.io.Files;
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
-import cromwell.Main;
-import io.cwl.avro.CWL;
-import io.dockstore.client.Bridge;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.client.cli.nested.WorkflowClient;
-import io.dockstore.common.WDLFileProvisioning;
-import io.github.collaboratory.LauncherCWL;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;
@@ -82,10 +62,7 @@ import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Metadata;
 import io.swagger.client.model.SourceFile;
-import io.swagger.client.model.Workflow;
-import io.swagger.client.model.WorkflowVersion;
 
-import static io.dockstore.client.cli.ArgumentUtility.containsHelpRequest;
 import static io.dockstore.client.cli.ArgumentUtility.err;
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
@@ -97,10 +74,8 @@ import static io.dockstore.client.cli.ArgumentUtility.optVal;
 import static io.dockstore.client.cli.ArgumentUtility.out;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
-import static io.dockstore.client.cli.ArgumentUtility.reqVal;
 import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
-import static io.dockstore.client.cli.ArgumentUtility.LAUNCH;
 
 /**
  * Main entrypoint for the dockstore CLI.
@@ -109,8 +84,6 @@ import static io.dockstore.client.cli.ArgumentUtility.LAUNCH;
  *
  */
 public class Client {
-
-    private final CWL cwlUtil = new CWL();
 
     private String configFile = null;
     private ContainersApi containersApi;
@@ -148,105 +121,6 @@ public class Client {
         }
     }
 
-    /**
-     * TODO: this may need to be moved to ToolClient depending on whether we can re-use
-     * this for workflows.
-     * @param args
-     */
-    private void launch(final List<String> args) {
-        if (args.isEmpty() || containsHelpRequest(args)) {
-            launchHelp();
-        } else {
-            final String descriptor = optVal(args, "--descriptor", CWL_STRING);
-            if (descriptor.equals(CWL_STRING)) {
-                try {
-                    launchCwl(args);
-                } catch (ApiException e) {
-                    exceptionMessage(e, "api error launching workflow", API_ERROR);
-                } catch (IOException e) {
-                    exceptionMessage(e, "io error launching workflow", IO_ERROR);
-                }
-            } else if (descriptor.equals(WDL_STRING)) {
-                launchWdl(args);
-            }
-        }
-    }
-
-    private void launchCwl(final List<String> args) throws ApiException, IOException {
-        final String entry = reqVal(args, "--entry");
-        final String jsonRun = optVal(args, "--json", null);
-        final String csvRuns = optVal(args, "--tsv", null);
-
-        final SourceFile cwlFromServer = getDescriptorFromServer(entry, "cwl");
-        final File tempCWL = File.createTempFile("temp", ".cwl", Files.createTempDir());
-        Files.write(cwlFromServer.getContent(), tempCWL, StandardCharsets.UTF_8);
-
-        final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
-        if (jsonRun != null) {
-            // if the root document is an array, this indicates multiple runs
-            JsonParser parser = new JsonParser();
-            final JsonElement parsed = parser.parse(new InputStreamReader(new FileInputStream(jsonRun), StandardCharsets.UTF_8));
-            if (parsed.isJsonArray()) {
-                final JsonArray asJsonArray = parsed.getAsJsonArray();
-                for (JsonElement element : asJsonArray) {
-                    final String finalString = gson.toJson(element);
-                    final File tempJson = File.createTempFile("temp", ".json", Files.createTempDir());
-                    FileUtils.write(tempJson, finalString);
-                    final LauncherCWL cwlLauncher = new LauncherCWL(configFile, tempCWL.getAbsolutePath(), tempJson.getAbsolutePath(),
-                            System.out, System.err);
-                    cwlLauncher.run();
-                }
-            } else {
-                final LauncherCWL cwlLauncher = new LauncherCWL(configFile, tempCWL.getAbsolutePath(), jsonRun, System.out, System.err);
-                cwlLauncher.run();
-            }
-        } else if (csvRuns != null) {
-            final File csvData = new File(csvRuns);
-            try (CSVParser parser = CSVParser.parse(csvData, StandardCharsets.UTF_8, CSVFormat.DEFAULT.withDelimiter('\t').withEscape('\\')
-                    .withQuoteMode(QuoteMode.NONE))) {
-                // grab header
-                final Iterator<CSVRecord> iterator = parser.iterator();
-                final CSVRecord headers = iterator.next();
-                // ignore row with type information
-                iterator.next();
-                // process rows
-                while (iterator.hasNext()) {
-                    final CSVRecord csvRecord = iterator.next();
-                    final File tempJson = File.createTempFile("temp", ".json", Files.createTempDir());
-                    StringBuilder buffer = new StringBuilder();
-                    buffer.append("{");
-                    for (int i = 0; i < csvRecord.size(); i++) {
-                        buffer.append("\"").append(headers.get(i)).append("\"");
-                        buffer.append(":");
-                        // if the type is an array, just pass it through
-                        buffer.append(csvRecord.get(i));
-
-                        if (i < csvRecord.size() - 1) {
-                            buffer.append(",");
-                        }
-                    }
-                    buffer.append("}");
-                    // prettify it
-                    JsonParser prettyParser = new JsonParser();
-                    JsonObject json = prettyParser.parse(buffer.toString()).getAsJsonObject();
-                    final String finalString = gson.toJson(json);
-
-                    // write it out
-                    FileUtils.write(tempJson, finalString);
-
-                    // final String stringMapAsString = gson.toJson(stringMap);
-                    // Files.write(stringMapAsString, tempJson, StandardCharsets.UTF_8);
-                    final LauncherCWL cwlLauncher = new LauncherCWL(configFile, tempCWL.getAbsolutePath(), tempJson.getAbsolutePath(),
-                            System.out, System.err);
-                    cwlLauncher.run();
-                }
-            }
-        } else {
-            errorMessage("Missing required parameters, one of  --json or --tsv is required", CLIENT_ERROR);
-        }
-
-    }
-
     public SourceFile getDescriptorFromServer(String entry, String descriptorType) throws ApiException {
         String[] parts = entry.split(":");
 
@@ -274,90 +148,6 @@ public class Client {
             errorMessage("No " + descriptorType + " file found.", Client.COMMAND_ERROR);
         }
         return file;
-    }
-
-    public SourceFile getWorkflowDescriptorFromServer(String entry, String descriptorType) throws ApiException {
-        String[] parts = entry.split(":");
-
-        String path = parts[0];
-
-        // Workflows are git repositories, so a master is likely to exist (if null passed then dockstore will look for latest tag, which is special to quay tools)
-        String version = (parts.length > 1) ? parts[1] : "master";
-        SourceFile file = new SourceFile();
-        // simply getting published descriptors does not require permissions
-        Workflow workflow = workflowsApi.getPublishedWorkflowByPath(path);
-
-        boolean valid = false;
-        for (WorkflowVersion workflowVersion : workflow.getWorkflowVersions()) {
-            if (workflowVersion.getValid()) {
-                valid = true;
-                break;
-            }
-        }
-
-        if (valid) {
-            try {
-                if (descriptorType.equals(CWL_STRING)) {
-                    file = workflowsApi.cwl(workflow.getId(), version);
-                } else if (descriptorType.equals(WDL_STRING)) {
-                    file = workflowsApi.wdl(workflow.getId(), version);
-                }
-            } catch (ApiException ex) {
-                if (ex.getCode() == HttpStatus.SC_BAD_REQUEST) {
-                    exceptionMessage(ex, "Invalid version", Client.API_ERROR);
-                } else {
-                    exceptionMessage(ex, "No " + descriptorType + " file found.", Client.API_ERROR);
-                }
-            }
-        } else {
-            errorMessage("No " + descriptorType + " file found.", Client.COMMAND_ERROR);
-        }
-        return file;
-    }
-
-    private void launchWdl(final List<String> args) {
-        final String entry = reqVal(args, "--entry");
-        final String json = reqVal(args, "--json");
-
-        Main main = new Main();
-        File parameterFile = new File(json);
-
-        final SourceFile wdlFromServer;
-        try {
-            // Grab WDL from server and store to file
-            wdlFromServer = getDescriptorFromServer(entry, "wdl");
-            final File tempWdl = File.createTempFile("temp", ".wdl", Files.createTempDir());
-            Files.write(wdlFromServer.getContent(), tempWdl, StandardCharsets.UTF_8);
-
-            // Get list of input files
-            Bridge bridge = new Bridge();
-            Map<String, String> wdlInputs = bridge.getInputFiles(tempWdl);
-
-            // Convert parameter JSON to a map
-            WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning(configFile);
-            Gson gson = new Gson();
-            String jsonString = FileUtils.readFileToString(parameterFile);
-            Map<String, Object> map = new HashMap<>();
-            Map<String, Object> inputJson = gson.fromJson(jsonString, map.getClass());
-
-            // Download files and change to local location
-            // Make a new map of the inputs with updated locations
-            Map<String, Object> fileMap = wdlFileProvisioning.pullFiles(inputJson, wdlInputs);
-
-            // Make new json file
-            String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
-
-            final List<String> wdlRun = Lists.newArrayList(newJsonPath, parameterFile.getAbsolutePath());
-            final scala.collection.immutable.List<String> wdlRunList = scala.collection.JavaConversions.asScalaBuffer(wdlRun).toList();
-
-            // run a workflow
-            final int run = main.run(wdlRunList);
-
-        } catch (ApiException ex) {
-            exceptionMessage(ex, "", API_ERROR);
-        } catch (IOException ex) {
-            exceptionMessage(ex, "", IO_ERROR);
-        }
     }
 
     /**
@@ -623,24 +413,6 @@ public class Client {
      * ------------------------------
      */
 
-    private static void launchHelp() {
-        printHelpHeader();
-        out("Usage: dockstore launch --help");
-        out("       dockstore launch [parameters]");
-        out("");
-        out("Description:");
-        out("  Launch an entry locally.");
-        out("");
-        out("Required parameters:");
-        out("  --entry <entry>                     Complete tool path in the Dockstore");
-        out("");
-        out("Optional parameters:");
-        out("  --json <json file>                  Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs");
-        out("  --tsv <tsv file>                    One row corresponds to parameters for one run in the dockstore (Only for CWL)");
-        out("  --descriptor <descriptor type>      Descriptor type used to launch workflow. Defaults to " + CWL_STRING);
-        printHelpFooter();
-    }
-
     private static void printGeneralHelp() {
         printHelpHeader();
         out("Usage: dockstore [mode] [flags] [command] [command parameters]");
@@ -775,9 +547,6 @@ public class Client {
                             break;
                         case "--server-metadata":
                             serverMetadata();
-                            break;
-                        case LAUNCH:
-                            launch(args);
                             break;
                         case "--upgrade":
                             upgrade();

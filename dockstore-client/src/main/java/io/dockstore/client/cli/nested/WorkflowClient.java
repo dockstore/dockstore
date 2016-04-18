@@ -701,14 +701,12 @@ public class WorkflowClient extends AbstractEntryClient {
                 if (descriptor.toLowerCase().equals("cwl")) {
                     List<SourceFile> files = workflowsApi.secondaryCwl(workflow.getId(), version);
                     for (SourceFile sourceFile : files) {
-                        out(sourceFile.getPath());
                         File tempDescriptor = new File(tempDir.getAbsolutePath() + sourceFile.getPath());
                         Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
                     }
                 } else {
                     List<SourceFile> files = workflowsApi.secondaryWdl(workflow.getId(), version);
                     for (SourceFile sourceFile : files) {
-                        out(sourceFile.getPath());
                         File tempDescriptor = File.createTempFile(FilenameUtils.removeExtension(sourceFile.getPath()), FilenameUtils.getExtension(sourceFile.getPath()), tempDir);
                         Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
                     }
