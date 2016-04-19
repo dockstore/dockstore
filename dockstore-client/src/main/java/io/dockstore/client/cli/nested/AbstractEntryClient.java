@@ -638,9 +638,27 @@ public abstract class AbstractEntryClient {
             Files.write(wdlFromServer.getContent(), tempWdl, StandardCharsets.UTF_8);
             downloadDescriptors(entry, "wdl", tempDir);
 
+            Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"(.*)");
+            File file = new File(tempWdl.getAbsolutePath());
+            List<String> lines = FileUtils.readLines(file);
+            File tmp = new File(tempDir + File.separator + "overwrittenImports.wdl");
+
+            // Replace relative imports with absolute (to temp dir)
+            for (String line : lines) {
+                Matcher m = p.matcher(line);
+                if (!m.find()) {
+                    FileUtils.writeStringToFile(tmp, line + "\n", true);
+                } else {
+                    if (!m.group(1).startsWith(File.separator)) {
+                        String newImportLine = "import \"" + tempDir + File.separator + m.group(1) + "\"" + m.group(2) + "\n";
+                        FileUtils.writeStringToFile(tmp, newImportLine, true);
+                    }
+                }
+            }
+
             // Get list of input files
             Bridge bridge = new Bridge();
-            Map<String, String> wdlInputs = bridge.getInputFiles(tempWdl);
+            Map<String, String> wdlInputs = bridge.getInputFiles(tmp);
 
             // Convert parameter JSON to a map
             WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning(configFile);
@@ -656,7 +674,7 @@ public abstract class AbstractEntryClient {
             // Make new json file
             String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
 
-            final List<String> wdlRun = Lists.newArrayList(newJsonPath, parameterFile.getAbsolutePath());
+            final List<String> wdlRun = Lists.newArrayList(tmp.getAbsolutePath(), newJsonPath);
             final scala.collection.immutable.List<String> wdlRunList = scala.collection.JavaConversions.asScalaBuffer(wdlRun).toList();
 
             // run a workflow

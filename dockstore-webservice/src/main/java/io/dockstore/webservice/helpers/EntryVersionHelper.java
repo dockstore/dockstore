@@ -91,7 +91,7 @@ public class EntryVersionHelper<T extends Entry> {
                         } else if (fileType == SourceFile.FileType.DOCKSTORE_WDL) {
                                 path = tagVersion.getWdlPath();
                         } else if (fileType == SourceFile.FileType.DOCKERFILE) {
-                                path = tagVersion.getWdlPath();
+                                path = tagVersion.getDockerfilePath();
                         }
                 }
 
