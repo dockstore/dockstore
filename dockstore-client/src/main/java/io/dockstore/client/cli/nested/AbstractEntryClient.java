@@ -58,7 +58,6 @@ import io.swagger.client.model.Label;
 import io.swagger.client.ApiException;
 import io.swagger.client.model.SourceFile;
 
-
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.LAUNCH;
@@ -562,11 +561,19 @@ public abstract class AbstractEntryClient {
                     FileUtils.write(tempJson, finalString);
                     final LauncherCWL cwlLauncher = new LauncherCWL(configFile, tempCWL.getAbsolutePath(), tempJson.getAbsolutePath(),
                             System.out, System.err);
-                    cwlLauncher.run();
+                    if (this instanceof WorkflowClient) {
+                        cwlLauncher.runWorkflow();
+                    } else {
+                        cwlLauncher.run();
+                    }
                 }
             } else {
                 final LauncherCWL cwlLauncher = new LauncherCWL(configFile, tempCWL.getAbsolutePath(), jsonRun, System.out, System.err);
-                cwlLauncher.run();
+                if (this instanceof WorkflowClient) {
+                    cwlLauncher.runWorkflow();
+                } else {
+                    cwlLauncher.run();
+                }
             }
         } else if (csvRuns != null) {
             final File csvData = new File(csvRuns);

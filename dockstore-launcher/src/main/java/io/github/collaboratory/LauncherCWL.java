@@ -140,6 +140,23 @@ public class LauncherCWL {
         gson = CWL.getTypeSafeCWLToolDocument();
     }
 
+    public void runWorkflow() {
+        // now read in the INI file
+        try {
+            config = new HierarchicalINIConfiguration(configFilePath);
+        } catch (ConfigurationException e) {
+            throw new RuntimeException("could not read launcher config ini", e);
+        }
+
+        // setup directories
+        globalWorkingDir = setupDirectories();
+
+        // Todo: file provisioning
+
+        LOG.info("RUNNING COMMAND");
+        Map<String, Object> outputObj = runCWLCommand(imageDescriptorPath, runtimeDescriptorPath, globalWorkingDir + "/outputs/");
+    }
+
     public void run(){
         // now read in the INI file
         try {

@@ -342,7 +342,7 @@ public class GeneralWorkflowET {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry", "dockstore_testuser2/dockstore-workflow", "--script" });
 
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "convert", "entry2json", "--entry", "dockstore_testuser2/dockstore-workflow:wdl_import",
-                        "--descriptor", "wdl", "--script" q});
+                        "--descriptor", "wdl", "--script" });
 
         }
 }
