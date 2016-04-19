@@ -128,16 +128,15 @@ public class WorkflowET {
 
         assertTrue("bitbucket workflow is not in full mode", refreshBitbucket.getMode() == Workflow.ModeEnum.FULL);
 
-        final int numberOfExpectedTags = 3;
-        assertTrue("bitbucket workflow version count is wrong: " + refreshBitbucket.getWorkflowVersions().size(), refreshBitbucket.getWorkflowVersions().size() == numberOfExpectedTags);
+        assertTrue("bitbucket workflow version count is wrong: " + refreshBitbucket.getWorkflowVersions().size(), refreshBitbucket.getWorkflowVersions().size() == 5);
         assertTrue(
-                "should find "+numberOfExpectedTags+" versions with files for bitbucket workflow, found : "
+                "should find 4 versions with files for bitbucket workflow, found : "
                         + refreshBitbucket.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty())
                         .count(),
-                refreshBitbucket.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count() == numberOfExpectedTags);
-        assertTrue("should find "+numberOfExpectedTags+" valid versions for bitbucket workflow, found : "
+                refreshBitbucket.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count() == 4);
+        assertTrue("should find 4 valid versions for bitbucket workflow, found : "
                 + refreshBitbucket.getWorkflowVersions().stream().filter(WorkflowVersion::getValid).count(), refreshBitbucket.getWorkflowVersions().stream()
-                .filter(WorkflowVersion::getValid).count() == numberOfExpectedTags);
+                .filter(WorkflowVersion::getValid).count() == 4);
     }
 
     /**
@@ -252,7 +251,7 @@ public class WorkflowET {
         final long count3 = testingPostgres.runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
         assertTrue("Two workflows are in full mode", count3 == 2);
         final long count4 = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid = 't'", new ScalarHandler<>());
-        assertTrue("There should be 5 valid version tags, there are " + count4, count4 == 5);
+        assertTrue("There should be 5 valid version tags, there are " + count4, count4 == 6);
     }
 
     /**
