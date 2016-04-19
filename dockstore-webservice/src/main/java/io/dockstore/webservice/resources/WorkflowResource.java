@@ -155,8 +155,8 @@ public class WorkflowResource {
         workflowDAO.delete(workflow);
 
         // now should just be a stub
-
         long id = workflowDAO.create(newWorkflow);
+        newWorkflow.addUser(user);
         newWorkflow = workflowDAO.findById(id);
         return newWorkflow;
 

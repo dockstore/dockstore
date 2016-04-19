@@ -310,7 +310,7 @@ public class GeneralWorkflowET {
         }
 
         /**
-         * Tests that convert with valid imports will work, but convert without valid imports will throw an error
+         * Tests that convert with valid imports will work, but convert without valid imports will throw an error (for CWL)
          */
         @Test
         public void testRefreshAndConvertWithImportsCWL() {
@@ -329,7 +329,7 @@ public class GeneralWorkflowET {
 
 
         /**
-         * Tests that convert with valid imports will work, but convert without valid imports will throw an error
+         * Tests that convert with valid imports will work (for WDL)
          */
         @Test
         public void testRefreshAndConvertWithImportsWDL() {

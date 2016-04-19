@@ -623,6 +623,7 @@ public class WorkflowClient extends AbstractEntryClient {
                 }
 
                 workflowsApi.restub(workflow.getId());
+                out("The workflow " + workflow.getPath() + " has been converted back to a stub.");
             } catch (ApiException ex) {
                 exceptionMessage(ex, "", Client.API_ERROR);
             }
