@@ -106,19 +106,19 @@ public class MockedIT {
 
     @Test
     public void runLaunchOneJson() throws IOException, ApiException {
-        Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "launch", "--entry",
+        Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "tool", "launch", "--entry",
             "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testOneRun.json") });
     }
 
     @Test
     public void runLaunchNJson() throws IOException {
-        Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "launch", "--entry",
+        Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "tool", "launch", "--entry",
                 "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testMultipleRun.json") });
     }
 
     @Test
     public void runLaunchTSV() throws IOException {
-        Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "launch", "--entry",
+        Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "tool", "launch", "--entry",
                 "quay.io/collaboratory/dockstore-tool-linux-sort", "--tsv", ResourceHelpers.resourceFilePath("testMultipleRun.tsv") });
     }
 
@@ -129,7 +129,7 @@ public class MockedIT {
      */
     @Test
     public void runLaunchOneLocalArrayedJson() throws IOException, ApiException {
-        Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "launch", "--entry",
+        Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "tool", "launch", "--entry",
             "quay.io/collaboratory/arrays", "--json", ResourceHelpers.resourceFilePath("testArrayLocalInputLocalOutput.json") });
 
         Assert.assertTrue(new File("/tmp/example.bedGraph").exists());
@@ -142,7 +142,7 @@ public class MockedIT {
      */
     @Test
     public void runLaunchOneHTTPArrayedJson() throws IOException, ApiException {
-        Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "launch", "--entry",
+        Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "tool", "launch", "--entry",
             "quay.io/collaboratory/arrays", "--json", ResourceHelpers.resourceFilePath("testArrayHttpInputLocalOutput.json") });
 
         Assert.assertTrue(new File("/tmp/wc1.out").exists());

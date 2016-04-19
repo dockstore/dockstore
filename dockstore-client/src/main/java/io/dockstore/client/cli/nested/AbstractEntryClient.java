@@ -28,6 +28,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -672,7 +674,6 @@ public abstract class AbstractEntryClient {
         final File tempDescriptor = File.createTempFile("temp", "." + descriptor, tempDir);
         Files.write(descriptorFromServer.getContent(), tempDescriptor, StandardCharsets.UTF_8);
 
-        out("The temp directory is " + tempDir.getAbsolutePath());
         downloadDescriptors(entry, descriptor, tempDir);
 
 
@@ -716,7 +717,26 @@ public abstract class AbstractEntryClient {
             }
         } else if (descriptor.equals(WDL_STRING)) {
             if (json) {
-                final List<String> wdlDocuments = Lists.newArrayList(tempDescriptor.getAbsolutePath());
+
+                Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"(.*)");
+                File file = new File(tempDescriptor.getAbsolutePath());
+                List<String> lines = FileUtils.readLines(file);
+                File tmp = new File(tempDir + File.separator + "overwrittenImports.wdl");
+
+                // Replace relative imports with absolute (to temp dir)
+                for (String line : lines) {
+                    Matcher m = p.matcher(line);
+                    if (!m.find()) {
+                        FileUtils.writeStringToFile(tmp, line + "\n", true);
+                    } else {
+                        if (!m.group(1).startsWith(File.separator)) {
+                            String newImportLine = "import \"" + tempDir + File.separator + m.group(1) + "\"" + m.group(2) + "\n";
+                            FileUtils.writeStringToFile(tmp, newImportLine, true);
+                        }
+                    }
+                }
+
+                final List<String> wdlDocuments = Lists.newArrayList(tmp.getAbsolutePath());
                 final scala.collection.immutable.List<String> wdlList = scala.collection.JavaConversions.asScalaBuffer(wdlDocuments)
                         .toList();
                 Bridge bridge = new Bridge();

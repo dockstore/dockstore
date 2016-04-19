@@ -20,6 +20,8 @@ import java.io.{File => JFile}
 import java.util
 
 import wdl4s.formatter.{AnsiSyntaxHighlighter, HtmlSyntaxHighlighter, SyntaxFormatter}
+import wdl4s.parser.WdlParser
+import wdl4s.parser.WdlParser.AstNode
 import wdl4s.types.{WdlArrayType, WdlFileType}
 import wdl4s.values.WdlString
 import wdl4s.{AstTools, _}
@@ -63,13 +65,26 @@ class Bridge {
 
     val inputList = new util.HashMap[String, String]()
 
-    import scala.collection.JavaConversions._
     ns.workflow.inputs foreach {case(key,value) =>
       if (value.wdlType == WdlFileType || value.wdlType == WdlArrayType(WdlFileType)) {
         inputList.put(value.fqn, value.wdlType.toWdlString)
       }
     }
     return inputList
+  }
+
+  def getImportFiles(file: JFile): util.ArrayList[String] = {
+    val lines = scala.io.Source.fromFile(file).mkString
+    val importList = new util.ArrayList[String]()
+
+    val ns = NamespaceWithWorkflow.load(lines, (s: String) => "")
+
+    ns.imports foreach { imported =>
+      println(imported.uri)
+      importList.add(imported.uri)
+    }
+
+    return importList
   }
 
 }

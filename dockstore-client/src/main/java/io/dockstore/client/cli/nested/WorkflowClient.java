@@ -24,7 +24,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.io.FilenameUtils;
 import org.apache.http.HttpStatus;
 
 import com.google.common.base.Joiner;
@@ -707,7 +706,7 @@ public class WorkflowClient extends AbstractEntryClient {
                 } else {
                     List<SourceFile> files = workflowsApi.secondaryWdl(workflow.getId(), version);
                     for (SourceFile sourceFile : files) {
-                        File tempDescriptor = File.createTempFile(FilenameUtils.removeExtension(sourceFile.getPath()), FilenameUtils.getExtension(sourceFile.getPath()), tempDir);
+                        File tempDescriptor = new File(tempDir.getAbsolutePath() + sourceFile.getPath());
                         Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
                     }
                 }

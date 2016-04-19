@@ -47,7 +47,6 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.resources.ResourceUtilities;
-import wdl4s.NamespaceWithWorkflow;
 
 /**
  * @author dyuen

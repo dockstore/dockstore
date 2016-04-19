@@ -21,12 +21,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +31,7 @@ import org.yaml.snakeyaml.Yaml;
 import com.esotericsoftware.yamlbeans.YamlReader;
 import com.google.common.base.Optional;
 
+import io.dockstore.client.Bridge;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import wdl4s.parser.WdlParser;
@@ -178,24 +175,9 @@ public abstract class SourceCodeRepoInterface {
     }
 
     public ArrayList<String> getWdlImports(File workflowFile) {
-        ArrayList<String> imports = new ArrayList<>();
+        Bridge bridge = new Bridge();
+        ArrayList<String> imports = bridge.getImportFiles(workflowFile);
 
-        try {
-            List<String> lines = FileUtils.readLines(workflowFile);
-            Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"");
-            for (String line : lines) {
-                Matcher m = p.matcher(line);
-                if (!m.find()) {
-                    continue;
-                } else {
-                    LOG.info(m.group(1));
-                    imports.add(m.group(1));
-                }
-            }
-
-        } catch (IOException e) {
-            LOG.info("Error reading WDL file.");
-        }
         return imports;
     }
 

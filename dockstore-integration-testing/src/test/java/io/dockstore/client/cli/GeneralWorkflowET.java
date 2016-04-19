@@ -313,7 +313,7 @@ public class GeneralWorkflowET {
          * Tests that convert with valid imports will work, but convert without valid imports will throw an error
          */
         @Test
-        public void testRefreshAndConvertWithImports() {
+        public void testRefreshAndConvertWithImportsCWL() {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh",
                         "--script" });
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--script" });
@@ -324,6 +324,25 @@ public class GeneralWorkflowET {
                 systemExit.expectSystemExitWithStatus(Client.API_ERROR);
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "convert", "entry2json", "--entry", "DockstoreTestUser2/hello-dockstore-workflow:testCwl",
                         "--descriptor", "cwl", "--script" });
+
+        }
+
+
+        /**
+         * Tests that convert with valid imports will work, but convert without valid imports will throw an error
+         */
+        @Test
+        public void testRefreshAndConvertWithImportsWDL() {
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh",
+                        "--script" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry", "dockstore_testuser2/dockstore-workflow",
+                        "--descriptor-type", "wdl", "--workflow-path", "/Dockstore.wdl", "--script"});
+
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry", "dockstore_testuser2/dockstore-workflow", "--script" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry", "dockstore_testuser2/dockstore-workflow", "--script" });
+
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "convert", "entry2json", "--entry", "dockstore_testuser2/dockstore-workflow:wdl_import",
+                        "--descriptor", "wdl", "--script" q});
 
         }
 }
