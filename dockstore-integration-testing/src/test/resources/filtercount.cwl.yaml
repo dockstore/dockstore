@@ -15,7 +15,7 @@ outputs:
     source: "#wc.outfile"
 steps:
   - id: "#grep"
-    run: {import: grep.cwl.yaml}
+    run: {import: ../../grep.cwl.yaml}
     scatter: "#grep.infile"
     inputs:
       - id: "#grep.pattern"
@@ -26,7 +26,7 @@ steps:
       - id: "#grep.outfile"
 
   - id: "#wc"
-    run: {import: wc.cwl.yaml}
+    run: {import: ../../wc.cwl.yaml}
     inputs:
       - id: "#wc.infile"
         source: "#grep.outfile"
