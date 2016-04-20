@@ -345,4 +345,23 @@ public class GeneralWorkflowET {
                         "--descriptor", "wdl", "--script" });
 
         }
+
+        /**
+         * Tests that a developer can launch a CWL workflow locally, instead of getting files from Dockstore
+         */
+        @Test
+        public void testLocalLaunchCWL() {
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry", ResourceHelpers.resourceFilePath("filtercount.cwl.yaml") , "--json",
+                        ResourceHelpers.resourceFilePath("filtercount-job.json"), "--script", "--local-entry" });
+        }
+
+        /**
+         * Tests that a developer can launch a WDL workflow locally, instead of getting files from Dockstore
+         */
+        @Test
+        public void testLocalLaunchWDL() {
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry", ResourceHelpers.resourceFilePath("wdl.wdl") , "--json",
+                        ResourceHelpers.resourceFilePath("wdl.json"), "--descriptor", "wdl", "--script", "--local-entry" });
+        }
+
 }

@@ -537,16 +537,28 @@ public abstract class AbstractEntryClient {
     }
 
     private void launchCwl(final List<String> args) throws ApiException, IOException {
-        final String entry = reqVal(args, "--entry");
+        boolean isLocalEntry = false;
+        String entry = reqVal(args, "--entry");
+        if (args.contains("--local-entry")) {
+            isLocalEntry = true;
+        }
+
         final String jsonRun = optVal(args, "--json", null);
         final String csvRuns = optVal(args, "--tsv", null);
 
         final File tempDir = Files.createTempDir();
-        final SourceFile cwlFromServer = getDescriptorFromServer(entry, "cwl");
-        final File tempCWL = File.createTempFile("temp", ".cwl", tempDir);
-        Files.write(cwlFromServer.getContent(), tempCWL, StandardCharsets.UTF_8);
+        File tempCWL;
+        if (!isLocalEntry) {
+            tempCWL = File.createTempFile("temp", ".cwl", tempDir);
+        } else {
+            tempCWL = new File(entry);
+        }
 
-        downloadDescriptors(entry, "cwl", tempDir);
+        if (!isLocalEntry) {
+            final SourceFile cwlFromServer = getDescriptorFromServer(entry, "cwl");
+            Files.write(cwlFromServer.getContent(), tempCWL, StandardCharsets.UTF_8);
+            downloadDescriptors(entry, "cwl", tempDir);
+        }
 
         final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
         if (jsonRun != null) {
@@ -557,7 +569,7 @@ public abstract class AbstractEntryClient {
                 final JsonArray asJsonArray = parsed.getAsJsonArray();
                 for (JsonElement element : asJsonArray) {
                     final String finalString = gson.toJson(element);
-                    final File tempJson = File.createTempFile("temp", ".json", Files.createTempDir());
+                    final File tempJson = File.createTempFile("parameter", ".json", Files.createTempDir());
                     FileUtils.write(tempJson, finalString);
                     final LauncherCWL cwlLauncher = new LauncherCWL(configFile, tempCWL.getAbsolutePath(), tempJson.getAbsolutePath(),
                             System.out, System.err);
@@ -627,7 +639,11 @@ public abstract class AbstractEntryClient {
     }
 
     private void launchWdl(final List<String> args) {
+        boolean isLocalEntry = false;
         final String entry = reqVal(args, "--entry");
+        if (args.contains("--local-entry")) {
+            isLocalEntry = true;
+        }
         final String json = reqVal(args, "--json");
 
         Main main = new Main();
@@ -636,28 +652,33 @@ public abstract class AbstractEntryClient {
         final SourceFile wdlFromServer;
         try {
             // Grab WDL from server and store to file
-            wdlFromServer = getDescriptorFromServer(entry, "wdl");
             final File tempDir = Files.createTempDir();
-            final File tempWdl = File.createTempFile("temp", ".wdl", tempDir);
-            Files.write(wdlFromServer.getContent(), tempWdl, StandardCharsets.UTF_8);
-            downloadDescriptors(entry, "wdl", tempDir);
+            File tmp;
+            if (!isLocalEntry) {
+                wdlFromServer = getDescriptorFromServer(entry, "wdl");
+                File tempWdl = File.createTempFile("temp", ".wdl", tempDir);
+                Files.write(wdlFromServer.getContent(), tempWdl, StandardCharsets.UTF_8);
+                downloadDescriptors(entry, "wdl", tempDir);
 
-            Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"(.*)");
-            File file = new File(tempWdl.getAbsolutePath());
-            List<String> lines = FileUtils.readLines(file);
-            File tmp = new File(tempDir + File.separator + "overwrittenImports.wdl");
+                Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"(.*)");
+                File file = new File(tempWdl.getAbsolutePath());
+                List<String> lines = FileUtils.readLines(file);
+                tmp = new File(tempDir + File.separator + "overwrittenImports.wdl");
 
-            // Replace relative imports with absolute (to temp dir)
-            for (String line : lines) {
-                Matcher m = p.matcher(line);
-                if (!m.find()) {
-                    FileUtils.writeStringToFile(tmp, line + "\n", true);
-                } else {
-                    if (!m.group(1).startsWith(File.separator)) {
-                        String newImportLine = "import \"" + tempDir + File.separator + m.group(1) + "\"" + m.group(2) + "\n";
-                        FileUtils.writeStringToFile(tmp, newImportLine, true);
+                // Replace relative imports with absolute (to temp dir)
+                for (String line : lines) {
+                    Matcher m = p.matcher(line);
+                    if (!m.find()) {
+                        FileUtils.writeStringToFile(tmp, line + "\n", true);
+                    } else {
+                        if (!m.group(1).startsWith(File.separator)) {
+                            String newImportLine = "import \"" + tempDir + File.separator + m.group(1) + "\"" + m.group(2) + "\n";
+                            FileUtils.writeStringToFile(tmp, newImportLine, true);
+                        }
                     }
                 }
+            } else {
+                tmp = new File(entry);
             }
 
             // Get list of input files
@@ -955,6 +976,7 @@ public abstract class AbstractEntryClient {
         out("  --json <json file>                  Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs");
         out("  --tsv <tsv file>                    One row corresponds to parameters for one run in the dockstore (Only for CWL)");
         out("  --descriptor <descriptor type>      Descriptor type used to launch workflow. Defaults to " + CWL_STRING);
+        out("  --local-entry                       Full path to local descriptor");
         printHelpFooter();
     }
 

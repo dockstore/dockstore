@@ -436,5 +436,13 @@ public class GeneralET {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "wdl", "--entry", "quay.io/dockstoretestuser2/quayandgithub", "--script" });
         }
 
+        /**
+         * Tests that a developer can launch a CWL Tool locally, instead of getting files from Dockstore
+         */
+        @Test
+        public void testLocalLaunchCWL() {
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "launch", "--entry",
+                        ResourceHelpers.resourceFilePath("arrays.cwl") , "--json", ResourceHelpers.resourceFilePath("testArrayHttpInputLocalOutput.json"), "--script", "--local-entry" });
+        }
 
 }
