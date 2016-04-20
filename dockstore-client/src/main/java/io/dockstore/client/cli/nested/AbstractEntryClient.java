@@ -613,7 +613,11 @@ public abstract class AbstractEntryClient {
                     // Files.write(stringMapAsString, tempJson, StandardCharsets.UTF_8);
                     final LauncherCWL cwlLauncher = new LauncherCWL(configFile, tempCWL.getAbsolutePath(), tempJson.getAbsolutePath(),
                             System.out, System.err);
-                    cwlLauncher.run();
+                    if (this instanceof WorkflowClient) {
+                        cwlLauncher.runWorkflow();
+                    } else {
+                        cwlLauncher.run();
+                    }
                 }
             }
         } else {
@@ -699,10 +703,8 @@ public abstract class AbstractEntryClient {
         final File tempDescriptor = File.createTempFile("temp", "." + descriptor, tempDir);
         Files.write(descriptorFromServer.getContent(), tempDescriptor, StandardCharsets.UTF_8);
 
+        // Download imported descriptors (secondary descriptors)
         downloadDescriptors(entry, descriptor, tempDir);
-
-
-        // Download extra descriptors
 
         if (descriptor.equals(CWL_STRING)) {
             // need to suppress output

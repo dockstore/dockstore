@@ -360,7 +360,7 @@ public class ToolClient extends AbstractEntryClient {
      */
     protected void handleDescriptor(String descriptorType, String entry) {
         try {
-            SourceFile file = client.getDescriptorFromServer(entry, descriptorType);
+            SourceFile file = getDescriptorFromServer(entry, descriptorType);
 
             if (file.getContent() != null && !file.getContent().isEmpty()) {
                 out(file.getContent());

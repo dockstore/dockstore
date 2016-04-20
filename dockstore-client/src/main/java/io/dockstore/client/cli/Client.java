@@ -121,6 +121,9 @@ public class Client {
         }
     }
 
+    /*
+    Todo: Can be removed once MockedIT is fixed
+     */
     public SourceFile getDescriptorFromServer(String entry, String descriptorType) throws ApiException {
         String[] parts = entry.split(":");
 
