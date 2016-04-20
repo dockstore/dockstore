@@ -122,6 +122,46 @@ public class WorkflowResource {
         return workflowDAO.findAll();
     }
 
+    @GET
+    @Path("/{workflowId}/restub")
+    @Timed
+    @UnitOfWork
+    @ApiOperation(value = "Restub a workflow", notes = "Restubs a full, unpublished workflow.", response = Workflow.class)
+    public Workflow restub(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        // Check that workflow is valid to restub
+        if (workflow.getIsPublished()) {
+            throw new CustomWebApplicationException("A workflow must be unpublished to restub.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (workflow.getMode().toString().equals("STUB")) {
+            throw new CustomWebApplicationException("The given workflow is already a stub.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        Workflow newWorkflow = new Workflow();
+        newWorkflow.setMode(WorkflowMode.STUB);
+        newWorkflow.setDefaultWorkflowPath(workflow.getDefaultWorkflowPath());
+        newWorkflow.setOrganization(workflow.getOrganization());
+        newWorkflow.setRepository(workflow.getRepository());
+        newWorkflow.setPath(workflow.getPath());
+        newWorkflow.setIsPublished(workflow.getIsPublished());
+        newWorkflow.setGitUrl(workflow.getGitUrl());
+        newWorkflow.setLastUpdated(workflow.getLastUpdated());
+        newWorkflow.setWorkflowName(workflow.getWorkflowName());
+        newWorkflow.setDescriptorType(workflow.getDescriptorType());
+
+        // copy to new object
+        workflowDAO.delete(workflow);
+
+        // now should just be a stub
+        long id = workflowDAO.create(newWorkflow);
+        newWorkflow.addUser(user);
+        newWorkflow = workflowDAO.findById(id);
+        return newWorkflow;
+
+    }
+
     /**
      * Refresh workflows for one user
      * @param user a user to refresh workflows for
@@ -267,11 +307,11 @@ public class WorkflowResource {
                 existingVersionMap.put(workflowVersionFromDB.getName(), workflowVersionFromDB);
             }
             // update source files for each version
-            Map<FileType, SourceFile> existingFileMap = new HashMap<>();
-            workflowVersionFromDB.getSourceFiles().forEach(file -> existingFileMap.put(file.getType(), file));
+            Map<String, SourceFile> existingFileMap = new HashMap<>();
+            workflowVersionFromDB.getSourceFiles().forEach(file -> existingFileMap.put(file.getType().toString() + file.getPath(), file));
             for(SourceFile file : version.getSourceFiles()){
-                if (existingFileMap.containsKey(file.getType())){
-                    existingFileMap.get(file.getType()).setContent(file.getContent());
+                if (existingFileMap.containsKey(file.getType().toString() + file.getPath())){
+                    existingFileMap.get(file.getType().toString() + file.getPath()).setContent(file.getContent());
                 } else{
                     final long fileID = fileDAO.create(file);
                     final SourceFile fileFromDB = fileDAO.findById(fileID);
@@ -486,7 +526,7 @@ public class WorkflowResource {
     @Path("/{workflowId}/cwl")
     @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile cwl(@ApiParam(value = "Tool id", required = true) @PathParam("workflowId") Long workflowId,
-            @QueryParam("tag") String tag) {
+            @QueryParam("tag") String tag)  {
         return entryVersionHelper.getSourceFile(workflowId, tag, FileType.DOCKSTORE_CWL);
     }
 
@@ -499,6 +539,26 @@ public class WorkflowResource {
             @QueryParam("tag") String tag) {
         return entryVersionHelper.getSourceFile(workflowId, tag, FileType.DOCKSTORE_WDL);
     }
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{workflowId}/secondaryCwl")
+    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
+    public List<SourceFile> secondaryCwl(@ApiParam(value = "Tool id", required = true) @PathParam("workflowId") Long workflowId,
+            @QueryParam("tag") String tag)  {
+        return entryVersionHelper.getSourceFiles(workflowId, tag, FileType.DOCKSTORE_CWL);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{workflowId}/secondaryWdl")
+    @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
+    public List<SourceFile> secondaryWdl(@ApiParam(value = "Tool id", required = true) @PathParam("workflowId") Long workflowId,
+            @QueryParam("tag") String tag) {
+        return entryVersionHelper.getSourceFiles(workflowId, tag, FileType.DOCKSTORE_WDL);
+    }
+
 
     @POST
     @Timed
@@ -509,12 +569,17 @@ public class WorkflowResource {
             @ApiParam(value = "Workflow registry", required = true) @QueryParam("workflowRegistry") String workflowRegistry,
             @ApiParam(value = "Workflow repository", required = true) @QueryParam("workflowPath") String workflowPath,
             @ApiParam(value = "Workflow container new descriptor path (CWL or WDL) and/or name", required = true) @QueryParam("defaultWorkflowPath") String defaultWorkflowPath,
-            @ApiParam(value = "Workflow name", required = true) @QueryParam("workflowName") String workflowName) {
+            @ApiParam(value = "Workflow name", required = true) @QueryParam("workflowName") String workflowName,
+            @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType) {
 
         String completeWorkflowPath = workflowPath;
         // Check that no duplicate workflow (same WorkflowPath) exists
         if (!workflowName.equals("")) {
             completeWorkflowPath += "/" + workflowName;
+        }
+
+        if (!defaultWorkflowPath.endsWith(descriptorType)) {
+            throw new CustomWebApplicationException("Please ensure that the given workflow path '" + defaultWorkflowPath + "' is of type " + descriptorType + " and has the file extension " + descriptorType, HttpStatus.SC_BAD_REQUEST);
         }
 
         Workflow duplicate = workflowDAO.findByPath(completeWorkflowPath);
@@ -554,6 +619,7 @@ public class WorkflowResource {
         newWorkflow.setDefaultWorkflowPath(defaultWorkflowPath);
         newWorkflow.setWorkflowName(workflowName);
         newWorkflow.setPath(completeWorkflowPath);
+        newWorkflow.setDescriptorType(descriptorType);
 
         if (newWorkflow != null) {
             final long workflowID = workflowDAO.create(newWorkflow);

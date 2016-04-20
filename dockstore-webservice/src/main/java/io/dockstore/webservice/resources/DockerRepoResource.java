@@ -615,4 +615,26 @@ public class DockerRepoResource {
         return entryVersionHelper.getSourceFile(containerId, tag, FileType.DOCKSTORE_WDL);
     }
 
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}/secondaryCwl")
+    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
+    public List<SourceFile> secondaryCwl(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
+            @QueryParam("tag") String tag) {
+
+        return entryVersionHelper.getSourceFiles(containerId, tag, FileType.DOCKSTORE_CWL);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}/secondaryWdl")
+    @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
+    public List<SourceFile> secondaryWdl(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
+            @QueryParam("tag") String tag) {
+
+        return entryVersionHelper.getSourceFiles(containerId, tag, FileType.DOCKSTORE_WDL);
+    }
+
 }

@@ -472,9 +472,16 @@ public final class Helper {
                 SourceFile dockstoreFile = new SourceFile();
                 dockstoreFile.setType(f);
                 dockstoreFile.setContent(fileResponse.getContent());
-
+                if (f == FileType.DOCKERFILE) {
+                    dockstoreFile.setPath(tag.getDockerfilePath());
+                } else if (f == FileType.DOCKSTORE_CWL) {
+                    dockstoreFile.setPath(tag.getCwlPath());
+                } else if (f == FileType.DOCKSTORE_WDL) {
+                    dockstoreFile.setPath(tag.getWdlPath());
+                }
                 files.add(dockstoreFile);
             }
+
         }
 
         return files;
@@ -515,7 +522,6 @@ public final class Helper {
         if (quayToken == null) {
             LOG.info("WARNING: QUAY token not found!");
         }
-
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
         final List<ImageRegistryInterface> allRegistries = factory.getAllRegistries();
 
@@ -524,19 +530,16 @@ public final class Helper {
         for (ImageRegistryInterface anInterface : allRegistries) {
             namespaces.addAll(anInterface.getNamespaces());
         }
-
         List<Tool> apiTools = new ArrayList<>();
         for (ImageRegistryInterface anInterface : allRegistries) {
             apiTools.addAll(anInterface.getContainers(namespaces));
         }
-
         // TODO: when we get proper docker hub support, get this above
         // hack: read relevant containers from database
         User currentUser = userDAO.findById(userId);
         List<Tool> findByMode = toolDAO.findByMode(ToolMode.MANUAL_IMAGE_PATH);
         findByMode.removeIf(test -> !test.getUsers().contains(currentUser));
         apiTools.addAll(findByMode);
-
         // ends up with docker image path -> quay.io data structure representing builds
         final Map<String, ArrayList<?>> mapOfBuilds = new HashMap<>();
         for (final ImageRegistryInterface anInterface : allRegistries) {
@@ -685,8 +688,12 @@ public final class Helper {
     private static List<Tool> getContainers(Long userId, UserDAO userDAO) {
         final Set<Entry> entries = userDAO.findById(userId).getEntries();
         List<Tool> toolList = new ArrayList<>();
-        entries.removeIf(entry -> !(entry instanceof Tool));
-        entries.forEach(entry -> toolList.add((Tool)entry));
+        for (Entry entry : entries) {
+            if (entry instanceof Tool) {
+                toolList.add((Tool)entry);
+            }
+        }
+
         return toolList;
     }
 

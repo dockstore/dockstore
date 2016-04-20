@@ -247,7 +247,7 @@ public class GeneralET {
         public void testTool2JSONWDL() {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry", "quay.io/dockstoretestuser2/quayandgithubwdl" });
                 // need to publish before converting
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "convert", "tool2json", "--entry", "quay.io/dockstoretestuser2/quayandgithubwdl", "--descriptor", "wdl", "--script" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "convert", "entry2json", "--entry", "quay.io/dockstoretestuser2/quayandgithubwdl", "--descriptor", "wdl", "--script" });
                 // TODO: Test that output is the expected WDL file
         }
 
@@ -257,7 +257,7 @@ public class GeneralET {
         @Test
         public void testWDL2JSON() {
                 File sourceFile = new File(ResourceHelpers.resourceFilePath("wdl.wdl"));
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "convert", "wdl2json", "--wdl", sourceFile.getAbsolutePath(), "--script" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "convert", "wdl2json", "--wdl", sourceFile.getAbsolutePath(), "--script" });
                 // TODO: Test that output is the expected WDL file
         }
 

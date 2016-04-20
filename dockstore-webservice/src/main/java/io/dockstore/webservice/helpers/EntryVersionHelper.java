@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.helpers;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -26,7 +27,10 @@ import com.google.common.collect.Lists;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.jdbi.EntryDAO;
 
 /**
@@ -57,6 +61,7 @@ public class EntryVersionHelper<T extends Entry> {
         }
 
         public SourceFile getSourceFile(Long workflowId, String tag, SourceFile.FileType fileType) {
+                String path = null;
                 T entry = (T)dao.findById(workflowId);
                 Helper.checkEntry(entry);
                 this.filterContainersForHiddenTags(entry);
@@ -76,16 +81,80 @@ public class EntryVersionHelper<T extends Entry> {
                         }
                 }
 
+                if (entry instanceof Workflow) {
+                        WorkflowVersion workflowVersion = (WorkflowVersion) tagInstance;
+                        path = workflowVersion.getWorkflowPath();
+                } else {
+                        Tag tagVersion = (Tag) tagInstance;
+                        if (fileType == SourceFile.FileType.DOCKSTORE_CWL) {
+                                path = tagVersion.getCwlPath();
+                        } else if (fileType == SourceFile.FileType.DOCKSTORE_WDL) {
+                                path = tagVersion.getWdlPath();
+                        } else if (fileType == SourceFile.FileType.DOCKERFILE) {
+                                path = tagVersion.getDockerfilePath();
+                        }
+                }
+
+
                 if (tagInstance == null) {
                         throw new CustomWebApplicationException("Invalid version.", HttpStatus.SC_BAD_REQUEST);
                 } else {
                         for (Object o : tagInstance.getSourceFiles()) {
                                 SourceFile file = (SourceFile)o;
-                                if (file.getType() == fileType) {
+                                if (file.getType() == fileType && ((SourceFile) o).getPath().equals(path)) {
                                         return file;
                                 }
                         }
                 }
                 throw new CustomWebApplicationException("File not found.", HttpStatus.SC_NOT_FOUND);
+        }
+
+        public List<SourceFile> getSourceFiles(Long workflowId, String tag, SourceFile.FileType fileType) {
+                T entry = (T)dao.findById(workflowId);
+                Helper.checkEntry(entry);
+                this.filterContainersForHiddenTags(entry);
+                Version tagInstance = null;
+                ArrayList<SourceFile> sourceFiles = new ArrayList<>();
+
+                if (tag == null) {
+                        // This is an assumption made for quay tools. Workflows will not have a latest unless it is created by the user,
+                        // and would thus make more sense to use master for workflows.
+                        tag = "latest";
+                }
+
+                // todo: why the cast here?
+                for (Object o : entry.getVersions()) {
+                        Version t = (Version) o;
+                        if (t.getName().equals(tag)) {
+                                tagInstance = t;
+                        }
+                }
+
+                if (tagInstance == null) {
+                        throw new CustomWebApplicationException("Invalid version.", HttpStatus.SC_BAD_REQUEST);
+                } else {
+                        if (tagInstance instanceof WorkflowVersion) {
+                                for (Object o : tagInstance.getSourceFiles()) {
+                                        SourceFile file = (SourceFile) o;
+                                        if (file.getType() == fileType && !(((SourceFile) o).getPath().equals(((WorkflowVersion) tagInstance).getWorkflowPath()))) {
+                                                sourceFiles.add(file);
+                                        }
+                                }
+                        } else {
+                                String descPath = null;
+                                if (fileType == SourceFile.FileType.DOCKSTORE_CWL) {
+                                        descPath = ((Tag)tagInstance).getCwlPath();
+                                } else if (fileType == SourceFile.FileType.DOCKSTORE_WDL){
+                                        descPath = ((Tag)tagInstance).getWdlPath();
+                                }
+                                for (Object o : tagInstance.getSourceFiles()) {
+                                        SourceFile file = (SourceFile) o;
+                                        if (file.getType() == fileType && !(((SourceFile) o).getPath().equals(descPath))) {
+                                                sourceFiles.add(file);
+                                        }
+                                }
+                        }
+                        return sourceFiles;
+                }
         }
 }

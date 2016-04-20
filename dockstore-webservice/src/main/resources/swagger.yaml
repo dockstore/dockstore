@@ -799,6 +799,60 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/DockstoreTool"
+  /containers/{containerId}/secondaryCwl:
+    get:
+      tags:
+      - "containers"
+      summary: "Get the corresponding Dockstore.cwl file on Github."
+      description: "Does not need authentication"
+      operationId: "secondaryCwl"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "containerId"
+        in: "path"
+        description: "Tool id"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "tag"
+        in: "query"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/SourceFile"
+  /containers/{containerId}/secondaryWdl:
+    get:
+      tags:
+      - "containers"
+      summary: "Get the corresponding Dockstore.wdl file on Github."
+      description: "Does not need authentication"
+      operationId: "secondaryWdl"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "containerId"
+        in: "path"
+        description: "Tool id"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "tag"
+        in: "query"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/SourceFile"
   /containers/{containerId}/tags:
     post:
       tags:
@@ -1457,6 +1511,29 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Workflow"
+  /users/{userId}/workflows/published:
+    get:
+      tags:
+      - "users"
+      summary: "List all published workflows from a user"
+      description: "Get user's published workflows only"
+      operationId: "userPublishedWorkflows"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "userId"
+        in: "path"
+        description: "User ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Workflow"
   /users/{userId}/workflows/refresh:
     get:
       tags:
@@ -1525,6 +1602,11 @@ paths:
       - name: "workflowName"
         in: "query"
         description: "Workflow name"
+        required: true
+        type: "string"
+      - name: "descriptorType"
+        in: "query"
+        description: "Descriptor type"
         required: true
         type: "string"
       responses:
@@ -1672,7 +1754,7 @@ paths:
     put:
       tags:
       - "workflows"
-      summary: "Update the tool with the given workflow."
+      summary: "Update the workflow with the given workflow."
       description: ""
       operationId: "updateWorkflow"
       produces:
@@ -1802,6 +1884,81 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Workflow"
+  /workflows/{workflowId}/restub:
+    get:
+      tags:
+      - "workflows"
+      summary: "Restub a workflow"
+      description: "Restubs a full, unpublished workflow."
+      operationId: "restub"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "workflowId"
+        in: "path"
+        description: "workflow ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Workflow"
+  /workflows/{workflowId}/secondaryCwl:
+    get:
+      tags:
+      - "workflows"
+      summary: "Get the corresponding Dockstore.cwl file on Github."
+      description: "Does not need authentication"
+      operationId: "secondaryCwl"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "workflowId"
+        in: "path"
+        description: "Tool id"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "tag"
+        in: "query"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/SourceFile"
+  /workflows/{workflowId}/secondaryWdl:
+    get:
+      tags:
+      - "workflows"
+      summary: "Get the corresponding Dockstore.wdl file on Github."
+      description: "Does not need authentication"
+      operationId: "secondaryWdl"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "workflowId"
+        in: "path"
+        description: "Tool id"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "tag"
+        in: "query"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/SourceFile"
   /workflows/{workflowId}/users:
     get:
       tags:
@@ -1850,6 +2007,38 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/SourceFile"
+  /workflows/{workflowId}/workflowVersions:
+    put:
+      tags:
+      - "workflows"
+      summary: "Update the workflow versions linked to a workflow"
+      description: "Workflow version correspond to each row of the versions table\
+        \ listing all information for a workflow"
+      operationId: "updateWorkflowVersion"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "workflowId"
+        in: "path"
+        description: "Workflow to modify."
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "body"
+        description: "List of modified workflow versions"
+        required: true
+        schema:
+          type: "array"
+          items:
+            $ref: "#/definitions/WorkflowVersion"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/WorkflowVersion"
 definitions:
   Group:
     type: "object"
@@ -1902,20 +2091,6 @@ definitions:
         description: "String representation of the tag"
     description: "This describes a descriptive label that can be placed on an entry\
       \ in the dockstore"
-  ToolType:
-    type: "object"
-    properties:
-      id:
-        type: "string"
-        description: "The unique identifier for the type"
-      name:
-        type: "string"
-        description: "A short friendly name for the type"
-      description:
-        type: "string"
-        description: "A longer explanation of what this type is and what it can accomplish"
-    description: "Describes a type of tool allowing us to categorize workflows, the\
-      \ language of the workflow, tools, and maybe even other entities separately"
   Metadata:
     type: "object"
     required:
@@ -1932,9 +2107,24 @@ definitions:
         description: "A friendly name that can be used in addition to the hostname\
           \ to describe a registry"
     description: "Describes this registry to better allow for mirroring and indexing."
+  ToolType:
+    type: "object"
+    properties:
+      id:
+        type: "string"
+        description: "The unique identifier for the type"
+      name:
+        type: "string"
+        description: "A short friendly name for the type"
+      description:
+        type: "string"
+        description: "A longer explanation of what this type is and what it can accomplish"
+    description: "Describes a type of tool allowing us to categorize workflows, the\
+      \ language of the workflow, tools, and maybe even other entities separately"
   Workflow:
     type: "object"
     required:
+    - "descriptorType"
     - "gitUrl"
     - "mode"
     - "organization"
@@ -1999,6 +2189,10 @@ definitions:
         description: "This is a generated full workflow path including organization,\
           \ repository name, and workflow name"
         readOnly: true
+      descriptorType:
+        type: "string"
+        description: "This is a descriptor type for the workflow, either CWL or WDL\
+          \ (Defaults to CWL)"
       workflowVersions:
         type: "array"
         description: "Implementation specific tracking of valid build workflowVersions\
@@ -2283,14 +2477,10 @@ definitions:
     description: "This describes one entry in the dockstore. Logically, this currently\
       \ means one tuple of registry (either quay or docker hub), organization, image\
       \ name, and toolname which can be\n * associated with CWL and Dockerfile documents"
-  GithubComView:
-    type: "object"
-    properties:
-      parent:
-        $ref: "#/definitions/GitHubComAuthenticationResource"
   SourceFile:
     type: "object"
     required:
+    - "path"
     - "type"
     properties:
       id:
@@ -2307,6 +2497,9 @@ definitions:
       content:
         type: "string"
         description: "Cache for the contents of the target file"
+      path:
+        type: "string"
+        description: "Path to source file in git repo"
   Tag:
     type: "object"
     required:
@@ -2369,6 +2562,11 @@ definitions:
         type: "string"
         description: "Path for the WDL document"
     description: "This describes one tag associated with a container."
+  GithubComView:
+    type: "object"
+    properties:
+      parent:
+        $ref: "#/definitions/GitHubComAuthenticationResource"
   ToolVersion:
     type: "object"
     required:

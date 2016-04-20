@@ -16,6 +16,9 @@
 
 package io.dockstore.client.cli.nested;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -23,7 +26,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.io.FilenameUtils;
+import org.apache.http.HttpStatus;
+
 import com.google.common.base.Joiner;
+import com.google.common.io.Files;
 
 import io.dockstore.client.cli.Client;
 import io.swagger.client.ApiException;
@@ -38,10 +45,12 @@ import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.User;
 
+import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.DESCRIPTION_HEADER;
 import static io.dockstore.client.cli.ArgumentUtility.GIT_HEADER;
 import static io.dockstore.client.cli.ArgumentUtility.MAX_DESCRIPTION;
 import static io.dockstore.client.cli.ArgumentUtility.NAME_HEADER;
+import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.boolWord;
 import static io.dockstore.client.cli.ArgumentUtility.columnWidthsTool;
 import static io.dockstore.client.cli.ArgumentUtility.containsHelpRequest;
@@ -351,7 +360,7 @@ public class ToolClient extends AbstractEntryClient {
      */
     protected void handleDescriptor(String descriptorType, String entry) {
         try {
-            SourceFile file = client.getDescriptorFromServer(entry, descriptorType);
+            SourceFile file = getDescriptorFromServer(entry, descriptorType);
 
             if (file.getContent() != null && !file.getContent().isEmpty()) {
                 out(file.getContent());
@@ -646,6 +655,72 @@ public class ToolClient extends AbstractEntryClient {
         }
     }
 
+    protected SourceFile getDescriptorFromServer(String entry, String descriptorType) throws ApiException {
+        String[] parts = entry.split(":");
+
+        String path = parts[0];
+
+        String tag = (parts.length > 1) ? parts[1] : null;
+        SourceFile file = new SourceFile();
+        // simply getting published descriptors does not require permissions
+        DockstoreTool container = containersApi.getPublishedContainerByToolPath(path);
+        if (container.getValidTrigger()) {
+            try {
+                if (descriptorType.equals(CWL_STRING)) {
+                    file = containersApi.cwl(container.getId(), tag);
+                } else if (descriptorType.equals(WDL_STRING)) {
+                    file = containersApi.wdl(container.getId(), tag);
+                }
+            } catch (ApiException ex) {
+                if (ex.getCode() == HttpStatus.SC_BAD_REQUEST) {
+                    exceptionMessage(ex, "Invalid tag", Client.API_ERROR);
+                } else {
+                    exceptionMessage(ex, "No " + descriptorType + " file found.", Client.API_ERROR);
+                }
+            }
+        } else {
+            errorMessage("No " + descriptorType + " file found.", Client.COMMAND_ERROR);
+        }
+        return file;
+    }
+
+    protected void downloadDescriptors(String entry, String descriptor, File tempDir) {
+        // In the future, delete tmp files
+        DockstoreTool tool = null;
+        String[] parts = entry.split(":");
+        String path = parts[0];
+        String version = (parts.length > 1) ? parts[1] : "master";
+
+        try {
+            tool = containersApi.getPublishedContainerByToolPath(path);
+        } catch (ApiException e) {
+            exceptionMessage(e, "No match for entry", Client.API_ERROR);
+        }
+
+        if (tool != null) {
+            try {
+                if (descriptor.toLowerCase().equals("cwl")) {
+                    List<SourceFile> files = containersApi.secondaryCwl(tool.getId(), version);
+                    for (SourceFile sourceFile : files) {
+                        File tempDescriptor = new File(tempDir.getAbsolutePath() + sourceFile.getPath());
+                        Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
+                    }
+                } else {
+                    List<SourceFile> files = containersApi.secondaryWdl(tool.getId(), version);
+                    for (SourceFile sourceFile : files) {
+                        File tempDescriptor = File.createTempFile(FilenameUtils.removeExtension(sourceFile.getPath()), FilenameUtils.getExtension(sourceFile.getPath()), tempDir);
+                        Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
+                    }
+                }
+            } catch (ApiException e) {
+                exceptionMessage(e, "Error getting file(s) from server", Client.API_ERROR);
+            } catch (IOException e) {
+                exceptionMessage(e, "Error writing to File", Client.IO_ERROR);
+            }
+        }
+    }
+
+    // Help Commands
     protected void printClientSpecificHelp() {
         out("  version_tag      :  updates version tags for an individual tool");
         out("");
@@ -773,6 +848,7 @@ public class ToolClient extends AbstractEntryClient {
         out("  --version-name <version>     Version tag name for Dockerhub containers only, defaults to latest");
         printHelpFooter();
     }
+
 
     // This should be linked to common, but we won't do this now because we don't want dependencies changing during testing
     public enum Registry {

@@ -24,6 +24,6 @@ script: mvn -B clean install -DskipITs=false -Pconfidential-tests
 # after_success:
 # - mvn -B clean -DskipITs=false cobertura:cobertura cobertura:cobertura-integration-test coveralls:report
 before_install:
-- openssl aes-256-cbc -K $encrypted_525deabe4c94_key -iv $encrypted_525deabe4c94_iv
+- openssl aes-256-cbc -K $encrypted_b6cd6518e9f3_key -iv $encrypted_b6cd6518e9f3_iv
   -in dockstore-integration-testing/src/test/resources/secrets.tar.enc -out dockstore-integration-testing/src/test/resources/secrets.tar -d
 - tar xvf dockstore-integration-testing/src/test/resources/secrets.tar

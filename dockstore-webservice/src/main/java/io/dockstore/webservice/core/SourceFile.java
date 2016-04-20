@@ -57,6 +57,10 @@ public class SourceFile {
     @ApiModelProperty("Cache for the contents of the target file")
     private String content;
 
+    @Column
+    @ApiModelProperty(value = "Path to source file in git repo", required = true)
+    private String path;
+
     public void update(SourceFile file) {
         content = file.content;
     }
@@ -83,6 +87,14 @@ public class SourceFile {
 
     public void setContent(String content) {
         this.content = content;
+    }
+
+    public String getPath() {
+        return this.path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
     }
 
     @Override

@@ -16,9 +16,15 @@
 
 package io.dockstore.webservice.helpers;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Optional;
+import com.google.common.io.Files;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -40,7 +47,6 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.resources.ResourceUtilities;
-import wdl4s.NamespaceWithWorkflow;
 
 /**
  * @author dyuen
@@ -252,7 +258,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         workflow.setPath(workflow.getPath());
 
         if (!existingWorkflow.isPresent()){
-            // when there is no existing workflow at all, just return a stub workflow
+            // when there is no existing workflow at all, just return a stub workflow. Also set descriptor type to default cwl.
+            workflow.setDescriptorType("cwl");
             return workflow;
         }
         if (existingWorkflow.get().getMode() == WorkflowMode.STUB){
@@ -277,6 +284,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             workflow.setOrganization(existingWorkflow.get().getOrganization());
             workflow.setRepository(existingWorkflow.get().getRepository());
             workflow.setGitUrl(existingWorkflow.get().getGitUrl());
+            workflow.setDescriptorType(existingWorkflow.get().getDescriptorType());
         }
 
         // Look at each version, check for valid workflows
@@ -308,13 +316,39 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                     String calculatedPath = existingDefaults.getOrDefault(branchName, existingWorkflow.get().getDefaultWorkflowPath());
                     version.setWorkflowPath(calculatedPath);
 
+                    // Get relative path of main workflow descriptor to find relative paths
+                    String[] path = calculatedPath.split("/");
+                    String basepath = "";
+                    for (int i = 0; i < path.length - 1; i++) {
+                        basepath += path[i] + "/";
+                    }
+
                     // Now grab source files
                     SourceFile sourceFile;
+                    Set<SourceFile> sourceFileSet = new HashSet<>();
+                    ArrayList<String> importPaths;
+
                     if (calculatedPath.toLowerCase().endsWith(".cwl")) {
-                        // check if workflow exists
                         sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, "cwl");
                     } else {
                         sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, "wdl");
+                    }
+
+                    // Find all import files
+                    if (sourceFile.getContent() != null) {
+                        try {
+                            final File tempDesc = File.createTempFile("temp", ".descriptor", Files.createTempDir());
+                            Files.write(sourceFile.getContent(), tempDesc, StandardCharsets.UTF_8);
+                            importPaths = calculatedPath.toLowerCase().endsWith(".cwl") ? getCwlImports(tempDesc) : getWdlImports(tempDesc);
+                            for (String importPath : importPaths) {
+                                LOG.info("Grabbing file " + basepath + importPath);
+                                sourceFileSet.add(getSourceFile(basepath + importPath, repositoryId, branchName,
+                                        importPath.toLowerCase().endsWith(".cwl") ? "cwl" : "wdl"));
+                            }
+                        } catch (IOException e) {
+                            LOG.info("Error writing descriptor file to temp file.");
+                            e.printStackTrace();
+                        }
                     }
 
                     if (sourceFile.getContent() != null) {
@@ -323,6 +357,11 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
                     if (version.getSourceFiles().size() > 0) {
                         version.setValid(true);
+                    }
+
+                    // add extra source files here
+                    if (sourceFileSet.size() > 0) {
+                        version.getSourceFiles().addAll(sourceFileSet);
                     }
 
                     workflow.addWorkflowVersion(version);
@@ -352,15 +391,13 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         if (asString.isPresent()) {
             String content = asString.get();
             if (content != null) {
-                if (type.equals("cwl") && content.contains("class: Workflow")) {
+                if (type.equals("cwl")) {
                     file.setType(SourceFile.FileType.DOCKSTORE_CWL);
                 } else {
-                    final NamespaceWithWorkflow nameSpaceWithWorkflow = NamespaceWithWorkflow.load(content);
-                    if (nameSpaceWithWorkflow != null) {
-                        file.setType(SourceFile.FileType.DOCKSTORE_WDL);
-                    }
+                    file.setType(SourceFile.FileType.DOCKSTORE_WDL);
                 }
                 file.setContent(content);
+                file.setPath(path);
             }
         }
         return file;

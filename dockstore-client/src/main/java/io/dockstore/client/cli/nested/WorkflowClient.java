@@ -16,12 +16,18 @@
 
 package io.dockstore.client.cli.nested;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.http.HttpStatus;
+
 import com.google.common.base.Joiner;
+import com.google.common.io.Files;
 
 import io.dockstore.client.cli.Client;
 import io.swagger.client.ApiException;
@@ -34,10 +40,13 @@ import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.WorkflowVersion;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.PublishRequest;
+
+import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.DESCRIPTION_HEADER;
 import static io.dockstore.client.cli.ArgumentUtility.GIT_HEADER;
 import static io.dockstore.client.cli.ArgumentUtility.MAX_DESCRIPTION;
 import static io.dockstore.client.cli.ArgumentUtility.NAME_HEADER;
+import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.ArgumentUtility.out;
@@ -108,6 +117,8 @@ public class WorkflowClient extends AbstractEntryClient {
         out("  " + UPDATE_WORKFLOW + "  :   updates certain fields of a workflow");
         out("");
         out("  version_tag      :  updates an existing version tag of a workflow");
+        out("");
+        out("  restub           :  converts a full, unpublished workflow back to a stub");
         out("");
     }
 
@@ -202,7 +213,7 @@ public class WorkflowClient extends AbstractEntryClient {
     @Override
     protected void handleDescriptor(String descriptorType, String entry) {
         try {
-            SourceFile file = client.getWorkflowDescriptorFromServer(entry, descriptorType);
+            SourceFile file = getDescriptorFromServer(entry, descriptorType);
 
             if (file.getContent() != null && !file.getContent().isEmpty()) {
                 out(file.getContent());
@@ -246,7 +257,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
                     registry = getGitRegistry(workflow.getGitUrl());
 
-                    newWorkflow = workflowsApi.manualRegister(registry, workflow.getPath(), workflow.getWorkflowPath(), newWorkflow.getWorkflowName());
+                    newWorkflow = workflowsApi.manualRegister(registry, workflow.getPath(), workflow.getWorkflowPath(), newWorkflow.getWorkflowName(), workflow.getDescriptorType());
 
                     if (newWorkflow != null) {
                         out("Successfully registered " + entryPath + "/" + newName);
@@ -341,6 +352,9 @@ public class WorkflowClient extends AbstractEntryClient {
             case "version_tag":
                 versionTag(args);
                 break;
+            case "restub":
+                restub(args);
+                break;
             default:
                 return false;
             }
@@ -359,6 +373,17 @@ public class WorkflowClient extends AbstractEntryClient {
             final String gitVersionControl = reqVal(args, "--git-version-control");
 
             final String workflowPath = optVal(args, "--workflow-path", "/Dockstore.cwl");
+            final String descriptorType = optVal(args, "--descriptor-type", "cwl");
+
+            // Check if valid input
+            if (!descriptorType.toLowerCase().equals("cwl") && !descriptorType.toLowerCase().equals("wdl")) {
+                errorMessage("Please ensure that the descriptor type is either cwl or wdl.", Client.CLIENT_ERROR);
+            }
+
+            if (!workflowPath.endsWith(descriptorType)) {
+                errorMessage("Please ensure that the given workflow path '" + workflowPath + "' is of type " + descriptorType + " and has the file extension " + descriptorType, Client.CLIENT_ERROR);
+            }
+
             String workflowname = optVal(args, "--workflow-name", null);
 
             // Make new workflow object
@@ -372,7 +397,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
             // Try and register
             try {
-                workflow = workflowsApi.manualRegister(gitVersionControl, organization + "/" + repository, workflowPath, workflowname);
+                workflow = workflowsApi.manualRegister(gitVersionControl, organization + "/" + repository, workflowPath, workflowname, descriptorType);
                 if (workflow != null) {
                     workflow = workflowsApi.refresh(workflow.getId());
                 } else {
@@ -457,6 +482,7 @@ public class WorkflowClient extends AbstractEntryClient {
         out("Optional parameters:");
         out("  --workflow-path <workflow-path>     Path for the descriptor file, defaults to /Dockstore.cwl");
         out("  --workflow-name <workflow-name>     Workflow name, defaults to null");
+        out("  --descriptor-type <workflow-name>   Descriptor type, defaults to cwl");
 
         printHelpFooter();
     }
@@ -471,12 +497,27 @@ public class WorkflowClient extends AbstractEntryClient {
                 long workflowId = workflow.getId();
 
                 String workflowName = optVal(args, "--workflow-name", workflow.getWorkflowName());
+                String descriptorType = optVal(args, "--descriptor-type", workflow.getDescriptorType());
+                String workflowDescriptorPath = optVal(args, "--workflow-path", workflow.getWorkflowPath());
+
+                if (workflow.getMode() == io.swagger.client.model.Workflow.ModeEnum.STUB) {
+
+                    // Check if valid input
+                    if (!descriptorType.toLowerCase().equals("cwl") && !descriptorType.toLowerCase().equals("wdl")) {
+                        errorMessage("Please ensure that the descriptor type is either cwl or wdl.", Client.CLIENT_ERROR);
+                    }
+
+                    workflow.setDescriptorType(descriptorType);
+                } else if (!descriptorType.equals(workflow.getDescriptorType())) {
+                    errorMessage("You cannot change the descriptor type of a FULL workflow. Revert it to a STUB if you wish to change descriptor type.", Client.CLIENT_ERROR);
+                }
 
                 if (workflowName != null && workflowName.equals("")) {
                     workflowName = null;
                 }
 
                 workflow.setWorkflowName(workflowName);
+                workflow.setWorkflowPath(workflowDescriptorPath);
 
                 String path = Joiner.on("/").skipNulls().join(workflow.getOrganization(), workflow.getRepository(), workflow.getWorkflowName());
                 workflow.setPath(path);
@@ -502,6 +543,8 @@ public class WorkflowClient extends AbstractEntryClient {
         out("");
         out("Optional Parameters");
         out("  --workflow-name <workflow-name>              Name for the given workflow");
+        out("  --descriptor-type <descriptor-type>          Descriptor type of the given workflow.  Can only be altered if workflow is a STUB.");
+        out("  --workflow-path <workflow-path>              Path to default workflow location");
         printHelpFooter();
     }
 
@@ -520,6 +563,11 @@ public class WorkflowClient extends AbstractEntryClient {
                     if (workflowVersion.getName().equals(name)) {
                         final Boolean hidden = Boolean.valueOf(optVal(args, "--hidden", workflowVersion.getHidden().toString()));
                         final String workflowPath = optVal(args, "--workflow-path", workflowVersion.getWorkflowPath());
+
+                        // Check that workflow path matches with the workflow descriptor type
+                        if (!workflowPath.toLowerCase().endsWith(workflow.getDescriptorType())) {
+                            errorMessage("Please ensure that the workflow path uses the file extension " + workflow.getDescriptorType(), Client.CLIENT_ERROR);
+                        }
 
                         workflowVersion.setHidden(hidden);
                         workflowVersion.setWorkflowPath(workflowPath);
@@ -557,4 +605,118 @@ public class WorkflowClient extends AbstractEntryClient {
         out("  --hidden <true/false>                 Hide the tag from public viewing, default false");
         printHelpFooter();
     }
+
+    private void restub(List<String> args) {
+        if (args.isEmpty() || args.contains("--help") || args.contains("-h")) {
+            restubHelp();
+        } else {
+            try {
+                final String entry = reqVal(args, "--entry");
+                Workflow workflow = workflowsApi.getWorkflowByPath(entry);
+
+                if (workflow.getIsPublished()) {
+                    errorMessage("Cannot restub a published workflow. Please unpublish if you wish to restub.", Client.CLIENT_ERROR);
+                }
+
+                if (workflow.getMode() == io.swagger.client.model.Workflow.ModeEnum.STUB) {
+                    errorMessage("The given workflow is already a stub.", Client.CLIENT_ERROR);
+                }
+
+                workflowsApi.restub(workflow.getId());
+                out("The workflow " + workflow.getPath() + " has been converted back to a stub.");
+            } catch (ApiException ex) {
+                exceptionMessage(ex, "", Client.API_ERROR);
+            }
+        }
+    }
+
+    public void restubHelp() {
+        printHelpHeader();
+        out("Usage: dockstore workflow restub --help");
+        out("       dockstore workflow restub [parameters]");
+        out("");
+        out("Description:");
+        out("  Converts a full, unpublished workflow back to a stub.");
+        out("");
+        out("Required Parameters:");
+        out("  --entry <entry>                       Complete workflow path in the Dockstore");
+        out("");
+        printHelpFooter();
+    }
+
+    protected SourceFile getDescriptorFromServer(String entry, String descriptorType) throws ApiException {
+        String[] parts = entry.split(":");
+
+        String path = parts[0];
+
+        // Workflows are git repositories, so a master is likely to exist (if null passed then dockstore will look for latest tag, which is special to quay tools)
+        String version = (parts.length > 1) ? parts[1] : "master";
+        SourceFile file = new SourceFile();
+        // simply getting published descriptors does not require permissions
+        Workflow workflow = workflowsApi.getPublishedWorkflowByPath(path);
+
+        boolean valid = false;
+        for (WorkflowVersion workflowVersion : workflow.getWorkflowVersions()) {
+            if (workflowVersion.getValid()) {
+                valid = true;
+                break;
+            }
+        }
+
+        if (valid) {
+            try {
+                if (descriptorType.equals(CWL_STRING)) {
+                    file = workflowsApi.cwl(workflow.getId(), version);
+                } else if (descriptorType.equals(WDL_STRING)) {
+                    file = workflowsApi.wdl(workflow.getId(), version);
+                }
+            } catch (ApiException ex) {
+                if (ex.getCode() == HttpStatus.SC_BAD_REQUEST) {
+                    exceptionMessage(ex, "Invalid version", Client.API_ERROR);
+                } else {
+                    exceptionMessage(ex, "No " + descriptorType + " file found.", Client.API_ERROR);
+                }
+            }
+        } else {
+            errorMessage("No " + descriptorType + " file found.", Client.COMMAND_ERROR);
+        }
+        return file;
+    }
+
+    protected void downloadDescriptors(String entry, String descriptor, File tempDir) {
+        // In the future, delete tmp files
+        Workflow workflow = null;
+        String[] parts = entry.split(":");
+        String path = parts[0];
+        String version = (parts.length > 1) ? parts[1] : "master";
+
+        try {
+            workflow = workflowsApi.getPublishedWorkflowByPath(path);
+        } catch (ApiException e) {
+            exceptionMessage(e, "No match for entry", Client.API_ERROR);
+        }
+
+        if (workflow != null) {
+            try {
+                if (descriptor.toLowerCase().equals("cwl")) {
+                    List<SourceFile> files = workflowsApi.secondaryCwl(workflow.getId(), version);
+                    for (SourceFile sourceFile : files) {
+                        File tempDescriptor = new File(tempDir.getAbsolutePath() + sourceFile.getPath());
+                        Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
+                    }
+                } else {
+                    List<SourceFile> files = workflowsApi.secondaryWdl(workflow.getId(), version);
+                    for (SourceFile sourceFile : files) {
+                        File tempDescriptor = new File(tempDir.getAbsolutePath() + sourceFile.getPath());
+                        Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
+                    }
+                }
+            } catch (ApiException e) {
+                exceptionMessage(e, "Error getting file(s) from server", Client.API_ERROR);
+            } catch (IOException e) {
+                exceptionMessage(e, "Error writing to File", Client.IO_ERROR);
+            }
+        }
+    }
+
 }
