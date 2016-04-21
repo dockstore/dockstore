@@ -349,7 +349,7 @@ public class GeneralWorkflowET {
 
         /**
          * Tests that a developer can launch a CWL workflow locally, instead of getting files from Dockstore
-         * Todo: Works locally but not on Travis.  This is due the the relative position of the file paths in testArrayHttpInputLocalOutput.json
+         * Todo: Works locally but not on Travis.  This is due the the relative position of the file paths in the input JSON
          */
         @Ignore
         public void testLocalLaunchCWL() {
