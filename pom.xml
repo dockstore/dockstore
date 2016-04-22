@@ -67,7 +67,7 @@
         <repository>
             <id>seqware.sourceforge.net</id>
             <name>SeqWare Maven Repository</name>
-            <url>http://seqwaremaven.oicr.on.ca/artifactory/collab-release</url>
+            <url>https://seqwaremaven.oicr.on.ca/artifactory/collab-release</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
@@ -121,7 +121,7 @@
         <repository>
             <id>seqwaremaven.oicr.on.ca</id>
             <name>seqwaremaven.oicr.on.ca-releases</name>
-            <url>http://seqwaremaven.oicr.on.ca/artifactory/collab-release</url>
+            <url>https://seqwaremaven.oicr.on.ca/artifactory/collab-release</url>
             <uniqueVersion>false</uniqueVersion>
         </repository>
     </distributionManagement>

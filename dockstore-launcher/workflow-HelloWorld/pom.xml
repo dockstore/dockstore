@@ -59,7 +59,7 @@
         <repository>
             <id>com.github.seqware</id>
             <name>SeqWare Maven Repository</name>
-            <url>http://seqwaremaven.oicr.on.ca/artifactory/seqware-release</url>
+            <url>https://seqwaremaven.oicr.on.ca/artifactory/seqware-release</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
@@ -70,7 +70,7 @@
         <repository>
             <id>snapshot.com.github.seqware</id>
             <name>SeqWare Snapshot Maven Repository</name>
-            <url>http://seqwaremaven.oicr.on.ca/artifactory/seqware-snapshot</url>
+            <url>https://seqwaremaven.oicr.on.ca/artifactory/seqware-snapshot</url>
             <releases>
                 <enabled>false</enabled>
             </releases>
@@ -81,7 +81,7 @@
         <repository>
             <id>dependencies.com.github.seqware</id>
             <name>SeqWare Dependencies Maven Repository</name>
-            <url>http://seqwaremaven.oicr.on.ca/artifactory/seqware-dependencies</url>
+            <url>https://seqwaremaven.oicr.on.ca/artifactory/seqware-dependencies</url>
         </repository>
     </repositories>
 
