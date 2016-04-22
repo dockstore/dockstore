@@ -170,6 +170,8 @@
     </changeSet>
 
     <changeSet id="54375756377" author="agduncan" context="change-isregistered-to-ispublished">
+        <dropColumn tableName="tool" columnName="hascollab"></dropColumn>
+        <addColumn tableName="tool"><column name="ispublished" type="boolean"/></addColumn>
         <sql dbms="postgresql">
             update tool set ispublished=isregistered;
         </sql>
