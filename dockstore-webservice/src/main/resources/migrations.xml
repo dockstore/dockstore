@@ -148,7 +148,20 @@
                                  />
     </changeSet>
 
-
+    <changeSet id="453534534534" author="agduncan" context="sourcefile-add-path-column">
+        <addColumn tableName="sourcefile">
+            <column name="path" type="varchar(255)"></column>
+        </addColumn>
+        <sql dbms="PostgreSQL">
+            update sourcefile as s set path=(select tag.cwlpath from tag,version_sourcefile,sourcefile where tag.id=version_sourcefile.versionid and version_sourcefile.sourcefileid=sourcefile.id and sourcefile.type='DOCKSTORE_CWL' and s.id=sourcefile.id) where path is null;
+        </sql>
+        <sql dbms="PostgreSQL">
+            update sourcefile as s set path=(select tag.wdlpath from tag,version_sourcefile,sourcefile where tag.id=version_sourcefile.versionid and version_sourcefile.sourcefileid=sourcefile.id and sourcefile.type='DOCKSTORE_WDL' and s.id=sourcefile.id) where path is null;
+        </sql>
+        <sql dbms="PostgreSQL">
+            update sourcefile as s set path=(select tag.dockerfilepath from tag,version_sourcefile,sourcefile where tag.id=version_sourcefile.versionid and version_sourcefile.sourcefileid=sourcefile.id and sourcefile.type='DOCKERFILE' and s.id=sourcefile.id) where path is null;
+        </sql>
+    </changeSet>
 
 
 </databaseChangeLog>
