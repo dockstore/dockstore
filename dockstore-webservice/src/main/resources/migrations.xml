@@ -148,7 +148,7 @@
                                  />
     </changeSet>
 
-    <changeSet id="453534534534" author="agduncan" context="sourcefile-add-path-column">
+    <changeSet id="75426534536" author="agduncan" context="sourcefile-add-path-column">
         <addColumn tableName="sourcefile">
             <column name="path" type="varchar(255)"></column>
         </addColumn>
@@ -167,6 +167,14 @@
             tag.id=version_sourcefile.versionid and version_sourcefile.sourcefileid=sourcefile.id and sourcefile.type='DOCKERFILE' and
             s.id=sourcefile.id) where path is null
         </sql>
+    </changeSet>
+
+    <changeSet id="54375756377" author="agduncan" context="change-isregistered-to-ispublished">
+        <sql dbms="postgresql">
+            update tool set ispublished=isregistered;
+        </sql>
+        <dropColumn tableName="tool" columnName="ispublic"></dropColumn>
+        <dropColumn tableName="tool" columnName="isregistered"></dropColumn>
     </changeSet>
 
 </databaseChangeLog>
