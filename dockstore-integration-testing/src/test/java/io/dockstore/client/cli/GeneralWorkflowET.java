@@ -23,6 +23,7 @@ import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -345,4 +346,24 @@ public class GeneralWorkflowET {
                         "--descriptor", "wdl", "--script" });
 
         }
+
+        /**
+         * Tests that a developer can launch a CWL workflow locally, instead of getting files from Dockstore
+         * Todo: Works locally but not on Travis.  This is due the the relative position of the file paths in the input JSON
+         */
+        @Ignore
+        public void testLocalLaunchCWL() {
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry", ResourceHelpers.resourceFilePath("filtercount.cwl.yaml") , "--json",
+                        ResourceHelpers.resourceFilePath("filtercount-job.json"), "--script", "--local-entry" });
+        }
+
+        /**
+         * Tests that a developer can launch a WDL workflow locally, instead of getting files from Dockstore
+         */
+        @Test
+        public void testLocalLaunchWDL() {
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry", ResourceHelpers.resourceFilePath("wdl.wdl") , "--json",
+                        ResourceHelpers.resourceFilePath("wdl.json"), "--descriptor", "wdl", "--script", "--local-entry" });
+        }
+
 }

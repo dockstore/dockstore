@@ -1,0 +1,7 @@
+{
+    "pattern": "one",
+    "infile": [
+        {"path": "../../mock.txt", "class": "File"},
+        {"path": "../../mock2.txt", "class": "File"}
+    ]
+}
