@@ -27,6 +27,7 @@ import wdl4s.values.WdlString
 import wdl4s.{AstTools, _}
 import spray.json._
 
+import scala.collection.immutable.List
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
 
@@ -85,6 +86,29 @@ class Bridge {
     }
 
     return importList
+  }
+
+  def getCallsAndDocker(file: JFile): util.LinkedHashMap[String, Seq[String]] = {
+    val lines = scala.io.Source.fromFile(file).mkString
+    val ns = NamespaceWithWorkflow.load(lines)
+    val tasks = new util.LinkedHashMap[String, Seq[String]]()
+
+    // For each call (Assume ordering)
+//    ns.workflow.collectAllScatters foreach { scatter => print(scatter.collectAllCalls foreach(call => println(call.task.name)))}
+    ns.workflow.collectAllCalls foreach { call =>
+      // Find associated task (Should only be one)
+      ns.findTask(call.unqualifiedName) foreach { task =>
+        try {
+          // Get the list of docker images
+          val docker = task.runtimeAttributes.attrs.get("docker").get
+          tasks.put(task.name, docker)
+        } catch {
+          // Throws error if task has no runtime section or a runtime section but no docker
+          case e: NoSuchElementException =>
+        }
+      }
+    }
+    return tasks
   }
 
 }
