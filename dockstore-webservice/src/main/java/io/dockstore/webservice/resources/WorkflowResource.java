@@ -735,7 +735,7 @@ public class WorkflowResource {
 
             if (workflow.getDescriptorType().equals("wdl")) {
                 Bridge bridge = new Bridge();
-                // TODO : Currently evaluates scatters last, while loops don't work.  This needs to be implemented.
+                // TODO : Currently evaluates scatters last, while loops don't work.  This needs to be fixed in Bridge.scala.
                 Map<String, Seq> callToTask = (LinkedHashMap)bridge.getCallsAndDocker(tempMainDescriptor); // Should be in correct order
 
                 // Currently only grabs first from a possible list (implement multiple containers in the future)
@@ -765,10 +765,30 @@ public class WorkflowResource {
                         if (group.equals("steps")) {
                             ArrayList<Map <String, Object>> steps = (ArrayList<Map <String, Object>>) groups.get(group);
                             for (Map <String, Object> step : steps) {
-                                // read docker requirement from tmpDir.getAbsolutePath() + step.run.import.getPath()
-//                                Yaml helperYaml = new Yaml();
-//                                Map <String, Object> helperGroups = null;
-                                nodePairs.add(new MutablePair<>(step.get("id").toString().replaceFirst("#", ""), getURLFromEntry(defaultDockerEnv)));
+                                // TODO : test that if a CWL Tool defines a different docker image, this is shown in the DAG
+                                Map<String, Object> stepParams = (Map<String, Object>)step.get("run");
+                                File secondaryDescriptor = new File(tmpDir.getAbsolutePath() + File.separator + stepParams.get("import").toString());
+                                Yaml helperYaml = new Yaml();
+                                Map <String, Object> helperGroups = (Map<String, Object>) helperYaml.load(new FileInputStream(secondaryDescriptor));
+
+                                boolean defaultDocker = true;
+                                for (String helperGroup : helperGroups.keySet()) {
+                                    if (helperGroup.equals("requirements") || helperGroup.equals("hints")) {
+                                        ArrayList<Map <String, Object>> requirements = (ArrayList<Map <String, Object>>) helperGroups.get(helperGroup);
+                                        for (Map <String, Object> requirement : requirements) {
+                                            if (requirement.get("class").equals("DockerRequirement")) {
+                                                defaultDockerEnv = requirement.get("dockerPull").toString();
+                                                nodePairs.add(new MutablePair<>(step.get("id").toString().replaceFirst("#", ""), getURLFromEntry(requirement.get("dockerPull").toString())));
+                                                defaultDocker = false;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (defaultDocker) {
+                                    nodePairs.add(new MutablePair<>(step.get("id").toString().replaceFirst("#", ""), getURLFromEntry(defaultDockerEnv)));
+                                }
                             }
                         }
                     }
@@ -777,6 +797,7 @@ public class WorkflowResource {
                 }
             }
 
+            // set up JSON for DAG (edges and nodes)
             ArrayList<Object> nodes = new ArrayList<>();
             ArrayList<Object> edges = new ArrayList<>();
             int idCount = 0;
@@ -817,8 +838,8 @@ public class WorkflowResource {
     public String getURLFromEntry(String dockerEntry) {
         // For now ignore tag, later on it may be more useful
         String quayIOPath = "https://quay.io/repository/";
-        String dockerHubPathR = "https://hub.docker.com/r/";
-        String dockerHubPathUnderscore = "https://hub.docker.com/_/";
+        String dockerHubPathR = "https://hub.docker.com/r/"; // For type repo/subrepo:tag
+        String dockerHubPathUnderscore = "https://hub.docker.com/_/"; // For type repo:tag
         String dockstorePath = "https://www.dockstore.org/tools/";
 
         String url = "";
@@ -830,8 +851,9 @@ public class WorkflowResource {
             dockerEntry = m.group(1);
         }
 
+        // TODO: How to deal with multiple entries of a tool? For now just grab the first
         if (dockerEntry.startsWith("quay.io/")) {
-            Tool tool = toolDAO.findByToolPath(dockerEntry, null);
+            Tool tool = toolDAO.findByPath(dockerEntry).get(0);
             if (tool != null) {
                 url = dockstorePath + dockerEntry;
             } else {
@@ -841,7 +863,7 @@ public class WorkflowResource {
         } else {
             String[] parts = dockerEntry.split("/");
             if (parts.length == 2) {
-                Tool tool = toolDAO.findByToolPath("registry.hub.docker.com/" + dockerEntry, null);
+                Tool tool = toolDAO.findByPath("registry.hub.docker.com/" + dockerEntry).get(0);
                 if (tool != null) {
                     url = dockstorePath + "registry.hub.docker.com/" + dockerEntry;
                 } else {

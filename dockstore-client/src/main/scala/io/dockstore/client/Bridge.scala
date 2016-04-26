@@ -94,7 +94,7 @@ class Bridge {
     val tasks = new util.LinkedHashMap[String, Seq[String]]()
 
     // For each call (Assume ordering)
-//    ns.workflow.collectAllScatters foreach { scatter => print(scatter.collectAllCalls foreach(call => println(call.task.name)))}
+    //ns.workflow.collectAllScatters foreach { scatter => print(scatter.collectAllCalls foreach(call => println(call.task.name)))}
     ns.workflow.collectAllCalls foreach { call =>
       // Find associated task (Should only be one)
       ns.findTask(call.unqualifiedName) foreach { task =>
@@ -103,7 +103,7 @@ class Bridge {
           val docker = task.runtimeAttributes.attrs.get("docker").get
           tasks.put(task.name, docker)
         } catch {
-          // Throws error if task has no runtime section or a runtime section but no docker
+          // Throws error if task has no runtime section or a runtime section but no docker (we stop error from being thrown)
           case e: NoSuchElementException =>
         }
       }
