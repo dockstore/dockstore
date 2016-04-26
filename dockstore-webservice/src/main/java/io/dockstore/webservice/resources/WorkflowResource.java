@@ -53,7 +53,6 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Optional;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 import io.dockstore.client.Bridge;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -62,6 +61,7 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
+import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
@@ -75,6 +75,7 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
+import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
@@ -97,6 +98,7 @@ public class WorkflowResource {
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
     private final WorkflowDAO workflowDAO;
+    private final ToolDAO toolDAO;
     private final WorkflowVersionDAO workflowVersionDAO;
     private final LabelDAO labelDAO;
     private final FileDAO fileDAO;
@@ -110,11 +112,12 @@ public class WorkflowResource {
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
 
     @SuppressWarnings("checkstyle:parameternumber")
-    public WorkflowResource(HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, WorkflowDAO workflowDAO, WorkflowVersionDAO workflowVersionDAO,
+    public WorkflowResource(HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ToolDAO toolDAO, WorkflowDAO workflowDAO, WorkflowVersionDAO workflowVersionDAO,
             LabelDAO labelDAO, FileDAO fileDAO, String bitbucketClientID, String bitbucketClientSecret) {
         this.userDAO = userDAO;
         this.tokenDAO = tokenDAO;
         this.workflowVersionDAO = workflowVersionDAO;
+        this.toolDAO = toolDAO;
         this.labelDAO = labelDAO;
         this.fileDAO = fileDAO;
         this.client = client;
@@ -702,7 +705,6 @@ public class WorkflowResource {
         SourceFile mainDescriptor = null;
         for (SourceFile sourceFile : workflowVersion.getSourceFiles()) {
             if (sourceFile.getPath().equals(workflowVersion.getWorkflowPath())) {
-                LOG.info("Workflow Path " + workflowVersion.getWorkflowPath());
                 mainDescriptor = sourceFile;
                 break;
             }
@@ -733,12 +735,11 @@ public class WorkflowResource {
 
             if (workflow.getDescriptorType().equals("wdl")) {
                 Bridge bridge = new Bridge();
+                // TODO : Currently evaluates scatters last, while loops don't work.  This needs to be implemented.
                 Map<String, Seq> callToTask = (LinkedHashMap)bridge.getCallsAndDocker(tempMainDescriptor); // Should be in correct order
-                LOG.info("size " + callToTask.size());
 
                 // Currently only grabs first from a possible list (implement multiple containers in the future)
                 for (Map.Entry<String, Seq> entry : callToTask.entrySet()) {
-                    LOG.info(entry.getKey() + " " + entry.getValue());
                     if (entry.getValue() instanceof scala.collection.immutable.List) {
                         nodePairs.add(new MutablePair<>(entry.getKey(), getURLFromEntry(entry.getValue().head().toString())));
                     } else {
@@ -750,18 +751,13 @@ public class WorkflowResource {
                 Map <String, Object> groups = null;
                 String defaultDockerEnv = "";
                 try {
-                    LOG.info("Looking at file " + tempMainDescriptor.getAbsolutePath());
                     groups = (Map<String, Object>) yaml.load(new FileInputStream(tempMainDescriptor));
                     for (String group : groups.keySet()) {
-                        LOG.info("Looking at " + group);
                         if (group.equals("requirements") || group.equals("hints")) {
                             ArrayList<Map <String, Object>> requirements = (ArrayList<Map <String, Object>>) groups.get(group);
-                            LOG.info("in requirements " + defaultDockerEnv);
                             for (Map <String, Object> requirement : requirements) {
-                                LOG.info("requirement ");
                                 if (requirement.get("class").equals("DockerRequirement")) {
                                     defaultDockerEnv = requirement.get("dockerPull").toString();
-                                    LOG.info("defaultDockerEnv " + defaultDockerEnv);
                                 }
                             }
                         }
@@ -769,7 +765,10 @@ public class WorkflowResource {
                         if (group.equals("steps")) {
                             ArrayList<Map <String, Object>> steps = (ArrayList<Map <String, Object>>) groups.get(group);
                             for (Map <String, Object> step : steps) {
-                                nodePairs.add(new MutablePair<>(step.get("id").toString(), getURLFromEntry(defaultDockerEnv)));
+                                // read docker requirement from tmpDir.getAbsolutePath() + step.run.import.getPath()
+//                                Yaml helperYaml = new Yaml();
+//                                Map <String, Object> helperGroups = null;
+                                nodePairs.add(new MutablePair<>(step.get("id").toString().replaceFirst("#", ""), getURLFromEntry(defaultDockerEnv)));
                             }
                         }
                     }
@@ -782,7 +781,6 @@ public class WorkflowResource {
             ArrayList<Object> edges = new ArrayList<>();
             int idCount = 0;
             for (Pair<String, String> node : nodePairs) {
-                LOG.info("Node Pairs " + node.getLeft());
                 Map<String, Object> nodeEntry = new HashMap<>();
                 Map<String, String> dataEntry = new HashMap<>();
                 dataEntry.put("id", idCount + "");
@@ -805,14 +803,14 @@ public class WorkflowResource {
             dagJson.put("nodes", nodes);
             dagJson.put("edges", edges);
 
-            Gson gson = new GsonBuilder().setPrettyPrinting().create();
+            Gson gson = new Gson();
             String json = gson.toJson(dagJson);
             System.out.println(json);
-            return json;
+            return json.toString();
 
         }
 
-        return "";
+        return null;
 
     }
 
@@ -821,6 +819,7 @@ public class WorkflowResource {
         String quayIOPath = "https://quay.io/repository/";
         String dockerHubPathR = "https://hub.docker.com/r/";
         String dockerHubPathUnderscore = "https://hub.docker.com/_/";
+        String dockstorePath = "https://www.dockstore.org/tools/";
 
         String url = "";
 
@@ -832,14 +831,26 @@ public class WorkflowResource {
         }
 
         if (dockerEntry.startsWith("quay.io/")) {
-            url = dockerEntry.replaceFirst("quay\\.io/", quayIOPath);
+            Tool tool = toolDAO.findByToolPath(dockerEntry, null);
+            if (tool != null) {
+                url = dockstorePath + dockerEntry;
+            } else {
+                url = dockerEntry.replaceFirst("quay\\.io/", quayIOPath);
+            }
+
         } else {
             String[] parts = dockerEntry.split("/");
             if (parts.length == 2) {
-                url = dockerHubPathR + dockerEntry;
+                Tool tool = toolDAO.findByToolPath("registry.hub.docker.com/" + dockerEntry, null);
+                if (tool != null) {
+                    url = dockstorePath + "registry.hub.docker.com/" + dockerEntry;
+                } else {
+                    url = dockerHubPathR + dockerEntry;
+                }
             } else {
                 url = dockerHubPathUnderscore + dockerEntry;
             }
+
         }
         return url;
     }
