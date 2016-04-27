@@ -194,8 +194,7 @@ public class Tag extends Version<Tag> {
         return Objects.equals(this.getId(), other.getId());
     }
 
-    public int hashCode()
-    {
+    public int hashCode() {
         return (int)getId();
     }
 
