@@ -177,13 +177,21 @@ To regenerate:
 
 Eventually, this will be moved out as a proper Maven dependency on https://github.com/common-workflow-language/cwlavro
 
-### How to perform a Maven release for a Stable Release 
+### HubFlow Operations
+
+#### How to perform a Maven release for a Stable Release
+
+This is for pre-release versions that have not been released to production. 
 
 1. Create a release tag and iterate pom file versions `mvn release:prepare`
 2. Iterate the versions numbers in the pom.xml files `mvn versions:set -DnewVersion=<release version here>` 
 3. Finish the release branch `git hf release finish <your tag here>`
 4. Release from the tag into artifactory (you may need permissions) `mvn release:perform`
 5. Change to develop and iterate to a snapshot version `mvn versions:set -DnewVersion=<next release version here>-SNAPSHOT`
+
+### How to perform a Maven release for an Unstable Release
+
+This is for release versions that have been released to production. 
 
 
 ### Encrypted Documents for Travis-CI
