@@ -691,6 +691,8 @@ public class WorkflowResource {
     @ApiOperation(value = "Get the DAG for a given workflow version", notes = "", response = String.class)
     public String getWorkflowDag(@ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId,
             @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId)  {
+        // TODO : Make this function modular (break into separate functions for getting nodes from WDL, CWL and turning into DAG)
+        // This will make it easier in the future to add new types (also better coding practice)
         Workflow workflow = workflowDAO.findById(workflowId);
         Set<WorkflowVersion> workflowVersions = workflow.getVersions();
         WorkflowVersion workflowVersion = null;
@@ -702,6 +704,7 @@ public class WorkflowResource {
             }
         }
 
+        // Find main descriptor
         SourceFile mainDescriptor = null;
         for (SourceFile sourceFile : workflowVersion.getSourceFiles()) {
             if (sourceFile.getPath().equals(workflowVersion.getWorkflowPath())) {
@@ -714,11 +717,12 @@ public class WorkflowResource {
             File tmpDir = Files.createTempDir();
             File tempMainDescriptor = null;
             try {
+                // Write main descriptor to file
                 tempMainDescriptor = File.createTempFile("main", "descriptor", tmpDir);
                 Files.write(mainDescriptor.getContent(), tempMainDescriptor, StandardCharsets.UTF_8);
 
-                // Download helper ones too
-                File secondaryDescriptor = null;
+                // Write helper ones too
+                File secondaryDescriptor;
                 for (SourceFile secondaryFile : workflowVersion.getSourceFiles()) {
                     if (!secondaryFile.getPath().equals(workflowVersion.getWorkflowPath())) {
                         secondaryDescriptor = new File(tmpDir.getAbsolutePath() + secondaryFile.getPath());
@@ -727,6 +731,7 @@ public class WorkflowResource {
                 }
             } catch (IOException e) {
                 e.printStackTrace();
+                // TODO : Print better error
             }
 
             // Initialize dag
@@ -738,7 +743,7 @@ public class WorkflowResource {
                 // TODO : Currently evaluates scatters last, while loops don't work.  This needs to be fixed in Bridge.scala.
                 Map<String, Seq> callToTask = (LinkedHashMap)bridge.getCallsAndDocker(tempMainDescriptor); // Should be in correct order
 
-                // Currently only grabs first from a possible list (implement multiple containers in the future)
+                // TODO : Currently only grabs first from a possible list (implement multiple containers in the future)
                 for (Map.Entry<String, Seq> entry : callToTask.entrySet()) {
                     if (entry.getValue() instanceof scala.collection.immutable.List) {
                         nodePairs.add(new MutablePair<>(entry.getKey(), getURLFromEntry(entry.getValue().head().toString())));
@@ -748,13 +753,13 @@ public class WorkflowResource {
                 }
             } else {
                 Yaml yaml = new Yaml();
-                Map <String, Object> groups = null;
+                Map <String, Object> sections;
                 String defaultDockerEnv = "";
                 try {
-                    groups = (Map<String, Object>) yaml.load(new FileInputStream(tempMainDescriptor));
-                    for (String group : groups.keySet()) {
-                        if (group.equals("requirements") || group.equals("hints")) {
-                            ArrayList<Map <String, Object>> requirements = (ArrayList<Map <String, Object>>) groups.get(group);
+                    sections = (Map<String, Object>) yaml.load(new FileInputStream(tempMainDescriptor));
+                    for (String section : sections.keySet()) {
+                        if (section.equals("requirements") || section.equals("hints")) {
+                            ArrayList<Map <String, Object>> requirements = (ArrayList<Map <String, Object>>) sections.get(section);
                             for (Map <String, Object> requirement : requirements) {
                                 if (requirement.get("class").equals("DockerRequirement")) {
                                     defaultDockerEnv = requirement.get("dockerPull").toString();
@@ -762,8 +767,8 @@ public class WorkflowResource {
                             }
                         }
 
-                        if (group.equals("steps")) {
-                            ArrayList<Map <String, Object>> steps = (ArrayList<Map <String, Object>>) groups.get(group);
+                        if (section.equals("steps")) {
+                            ArrayList<Map <String, Object>> steps = (ArrayList<Map <String, Object>>) sections.get(section);
                             for (Map <String, Object> step : steps) {
                                 // TODO : test that if a CWL Tool defines a different docker image, this is shown in the DAG
                                 Map<String, Object> stepParams = (Map<String, Object>)step.get("run");
@@ -835,12 +840,17 @@ public class WorkflowResource {
 
     }
 
+    /**
+     * Given a docker entry (quay or dockerhub), return a URL to the given entry
+     * @param dockerEntry
+     * @return URL
+         */
     public String getURLFromEntry(String dockerEntry) {
         // For now ignore tag, later on it may be more useful
         String quayIOPath = "https://quay.io/repository/";
         String dockerHubPathR = "https://hub.docker.com/r/"; // For type repo/subrepo:tag
         String dockerHubPathUnderscore = "https://hub.docker.com/_/"; // For type repo:tag
-        String dockstorePath = "https://www.dockstore.org/tools/";
+        String dockstorePath = "https://www.dockstore.org/containers/"; // Update to tools once UI is updated to use /tools instead of /containers
 
         String url = "";
 
