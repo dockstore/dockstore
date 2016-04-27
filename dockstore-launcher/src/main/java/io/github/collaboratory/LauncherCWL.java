@@ -221,10 +221,10 @@ public class LauncherCWL {
         globalWorkingDir = setupDirectories();
         
         // pull input files
-        final  Map<String, FileInfo> inputsId2dockerMountMap = pullFiles(cwl, inputsAndOutputsJson);
+        final  Map<String, FileInfo> inputsId2dockerMountMap = pullFilesTool(cwl, inputsAndOutputsJson);
 
         // prep outputs, just creates output dir and records what the local output path will be
-        Map<String, List<FileInfo>> outputMap = prepUploads(cwl, inputsAndOutputsJson);
+        Map<String, List<FileInfo>> outputMap = prepUploadsTool(cwl, inputsAndOutputsJson);
 
         // create updated JSON inputs document
         String newJsonPath = createUpdatedInputsAndOutputsJson(inputsId2dockerMountMap, outputMap, inputsAndOutputsJson);
@@ -243,7 +243,7 @@ public class LauncherCWL {
      * @param inputsOutputs inputs and output from json document
      * @return a map containing all output files either singly or in arrays
      */
-    private Map<String, List<FileInfo>> prepUploads(CommandLineTool cwl, Map<String, Object> inputsOutputs) {
+    private Map<String, List<FileInfo>> prepUploadsTool(CommandLineTool cwl, Map<String, Object> inputsOutputs) {
 
         Map<String, List<FileInfo>> fileMap = new HashMap<>();
 
@@ -259,29 +259,54 @@ public class LauncherCWL {
             String cwlID = file.getId().toString().substring(1);
             LOG.info("ID: {}", cwlID);
 
-            // now that I have an input name from the CWL I can find it in the JSON parameterization for this run
-            LOG.info("JSON: {}", inputsOutputs);
-            for (Entry<String, Object> stringObjectEntry : inputsOutputs.entrySet()) {
-                final Object value = stringObjectEntry.getValue();
-                if (value instanceof Map || value instanceof List) {
-                    final String key = stringObjectEntry.getKey();
-                    if (key.equals(cwlID)) {
-                        if (value instanceof Map) {
-                            Map param = (Map<String, Object>) stringObjectEntry.getValue();
-                            handleOutputFile(fileMap, cwlID, param, key);
-                        } else {
-                            assert(value instanceof List);
-                            for(Object entry: (List)value){
-                                if (entry instanceof Map) {
-                                    handleOutputFile(fileMap, cwlID, (Map<String, Object>)entry , key);
-                                }
+            prepUploadsHelper(inputsOutputs, fileMap, cwlID);
+        }
+        return fileMap;
+    }
+
+    private Map<String, List<FileInfo>> prepUploadsWorkflow(Workflow workflow, Map<String, Object> inputsOutputs) {
+
+        Map<String, List<FileInfo>> fileMap = new HashMap<>();
+
+        LOG.info("PREPPING UPLOADS...");
+
+        final List<WorkflowOutputParameter> outputs = workflow.getOutputs();
+
+        // for each file input from the CWL
+        for (WorkflowOutputParameter file : outputs) {
+
+            // pull back the name of the input from the CWL
+            LOG.info(file.toString());
+            String cwlID = file.getId().toString().substring(1);
+            LOG.info("ID: {}", cwlID);
+
+            prepUploadsHelper(inputsOutputs, fileMap, cwlID);
+        }
+        return fileMap;
+    }
+
+    private void prepUploadsHelper(Map<String, Object> inputsOutputs, Map<String, List<FileInfo>> fileMap, String cwlID) {
+        // now that I have an input name from the CWL I can find it in the JSON parameterization for this run
+        LOG.info("JSON: {}", inputsOutputs);
+        for (Entry<String, Object> stringObjectEntry : inputsOutputs.entrySet()) {
+            final Object value = stringObjectEntry.getValue();
+            if (value instanceof Map || value instanceof List) {
+                final String key = stringObjectEntry.getKey();
+                if (key.equals(cwlID)) {
+                    if (value instanceof Map) {
+                        Map param = (Map<String, Object>) stringObjectEntry.getValue();
+                        handleOutputFile(fileMap, cwlID, param, key);
+                    } else {
+                        assert(value instanceof List);
+                        for(Object entry: (List)value){
+                            if (entry instanceof Map) {
+                                handleOutputFile(fileMap, cwlID, (Map<String, Object>)entry , key);
                             }
                         }
                     }
                 }
             }
         }
-        return fileMap;
     }
 
     /**
@@ -511,7 +536,7 @@ public class LauncherCWL {
         }
     }
     
-    private Map<String, FileInfo> pullFiles(CommandLineTool cwl, Map<String, Object> inputsOutputs) {
+    private Map<String, FileInfo> pullFilesTool(CommandLineTool cwl, Map<String, Object> inputsOutputs) {
         Map<String, FileInfo> fileMap = new HashMap<>();
 
         LOG.info("DOWNLOADING INPUT FILES...");
@@ -527,43 +552,11 @@ public class LauncherCWL {
             String cwlInputFileID = file.getId().toString().substring(1);
             LOG.info("ID: {}", cwlInputFileID);
 
-            // now that I have an input name from the CWL I can find it in the JSON parameterization for this run
-            LOG.info("JSON: {}", inputsOutputs);
-            for (Entry<String, Object> stringObjectEntry : inputsOutputs.entrySet()) {
-
-                // in this case, the input is an array and not a single instance
-                if (stringObjectEntry.getValue() instanceof ArrayList) {
-                    // need to handle case where it is an array, but not an array of files
-                    List stringObjectEntryList = (List)stringObjectEntry.getValue();
-                    for(Object entry: stringObjectEntryList) {
-                        if (entry instanceof Map) {
-                            Map lhm = (Map) entry;
-                            if (lhm.containsKey("path") && lhm.get("path") instanceof String) {
-                                String path = (String) lhm.get("path");
-                                // notice I'm putting key:path together so they are unique in the hash
-                                if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
-                                    doProcessFile(stringObjectEntry.getKey() + ":" + path, path, cwlInputFileID, fileMap);
-                                }
-                            }
-                        }
-                    }
-                // in this case the input is a single instance and not an array
-                } else if (stringObjectEntry.getValue() instanceof HashMap) {
-
-                    HashMap param = (HashMap) stringObjectEntry.getValue();
-                    String path = (String) param.get("path");
-                    if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
-                        doProcessFile(stringObjectEntry.getKey(), path, cwlInputFileID, fileMap);
-                    }
-
-                }
-            }
+            pullFilesHelper(inputsOutputs, fileMap, cwlInputFileID);
         }
         return fileMap;
     }
 
-
-    // TEST STUFF ________________________________________________________________________________________________________________________________________________________________
     private Map<String, FileInfo> pullFilesWorkflow(Workflow workflow, Map<String, Object> inputsOutputs) {
         Map<String, FileInfo> fileMap = new HashMap<>();
 
@@ -580,84 +573,45 @@ public class LauncherCWL {
             String cwlInputFileID = file.getId().toString().substring(1);
             LOG.info("ID: {}", cwlInputFileID);
 
-            // now that I have an input name from the CWL I can find it in the JSON parameterization for this run
-            LOG.info("JSON: {}", inputsOutputs);
-            for (Entry<String, Object> stringObjectEntry : inputsOutputs.entrySet()) {
-
-                // in this case, the input is an array and not a single instance
-                if (stringObjectEntry.getValue() instanceof ArrayList) {
-                    // need to handle case where it is an array, but not an array of files
-                    List stringObjectEntryList = (List)stringObjectEntry.getValue();
-                    for(Object entry: stringObjectEntryList) {
-                        if (entry instanceof Map) {
-                            Map lhm = (Map) entry;
-                            if (lhm.containsKey("path") && lhm.get("path") instanceof String) {
-                                String path = (String) lhm.get("path");
-                                // notice I'm putting key:path together so they are unique in the hash
-                                if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
-                                    doProcessFile(stringObjectEntry.getKey() + ":" + path, path, cwlInputFileID, fileMap);
-                                }
-                            }
-                        }
-                    }
-                    // in this case the input is a single instance and not an array
-                } else if (stringObjectEntry.getValue() instanceof HashMap) {
-
-                    HashMap param = (HashMap) stringObjectEntry.getValue();
-                    String path = (String) param.get("path");
-                    if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
-                        doProcessFile(stringObjectEntry.getKey(), path, cwlInputFileID, fileMap);
-                    }
-
-                }
-            }
+            pullFilesHelper(inputsOutputs, fileMap, cwlInputFileID);
         }
         return fileMap;
     }
 
+    private void pullFilesHelper(Map<String, Object> inputsOutputs, Map<String, FileInfo> fileMap, String cwlInputFileID) {
+        // now that I have an input name from the CWL I can find it in the JSON parameterization for this run
+        LOG.info("JSON: {}", inputsOutputs);
+        for (Entry<String, Object> stringObjectEntry : inputsOutputs.entrySet()) {
 
-    private Map<String, List<FileInfo>> prepUploadsWorkflow(Workflow workflow, Map<String, Object> inputsOutputs) {
-
-        Map<String, List<FileInfo>> fileMap = new HashMap<>();
-
-        LOG.info("PREPPING UPLOADS...");
-
-        final List<WorkflowOutputParameter> outputs = workflow.getOutputs();
-
-        // for each file input from the CWL
-        for (WorkflowOutputParameter file : outputs) {
-
-            // pull back the name of the input from the CWL
-            LOG.info(file.toString());
-            String cwlID = file.getId().toString().substring(1);
-            LOG.info("ID: {}", cwlID);
-
-            // now that I have an input name from the CWL I can find it in the JSON parameterization for this run
-            LOG.info("JSON: {}", inputsOutputs);
-            for (Entry<String, Object> stringObjectEntry : inputsOutputs.entrySet()) {
-                final Object value = stringObjectEntry.getValue();
-                if (value instanceof Map || value instanceof List) {
-                    final String key = stringObjectEntry.getKey();
-                    if (key.equals(cwlID)) {
-                        if (value instanceof Map) {
-                            Map param = (Map<String, Object>) stringObjectEntry.getValue();
-                            handleOutputFile(fileMap, cwlID, param, key);
-                        } else {
-                            assert(value instanceof List);
-                            for(Object entry: (List)value){
-                                if (entry instanceof Map) {
-                                    handleOutputFile(fileMap, cwlID, (Map<String, Object>)entry , key);
-                                }
+            // in this case, the input is an array and not a single instance
+            if (stringObjectEntry.getValue() instanceof ArrayList) {
+                // need to handle case where it is an array, but not an array of files
+                List stringObjectEntryList = (List)stringObjectEntry.getValue();
+                for(Object entry: stringObjectEntryList) {
+                    if (entry instanceof Map) {
+                        Map lhm = (Map) entry;
+                        if (lhm.containsKey("path") && lhm.get("path") instanceof String) {
+                            String path = (String) lhm.get("path");
+                            // notice I'm putting key:path together so they are unique in the hash
+                            if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
+                                doProcessFile(stringObjectEntry.getKey() + ":" + path, path, cwlInputFileID, fileMap);
                             }
                         }
                     }
                 }
+                // in this case the input is a single instance and not an array
+            } else if (stringObjectEntry.getValue() instanceof HashMap) {
+
+                HashMap param = (HashMap) stringObjectEntry.getValue();
+                String path = (String) param.get("path");
+                if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
+                    doProcessFile(stringObjectEntry.getKey(), path, cwlInputFileID, fileMap);
+                }
+
             }
         }
-        return fileMap;
     }
 
-    // ___________________________________________________________________________________________________________________________________________________________________________
     /**
      * Looks like this is intended to copy one file from source to a local destination
      * @param key what is this?
