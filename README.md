@@ -184,10 +184,8 @@ Eventually, this will be moved out as a proper Maven dependency on https://githu
 This is for pre-release versions that have not been released to production. 
 
 1. Create a release tag and iterate pom file versions `mvn release:prepare`
-2. Iterate the versions numbers in the pom.xml files `mvn versions:set -DnewVersion=<release version here>` 
-3. Finish the release branch `git hf release finish <your tag here>`
-4. Release from the tag into artifactory (you may need permissions) `mvn release:perform`
-5. Change to develop and iterate to a snapshot version `mvn versions:set -DnewVersion=<next release version here>-SNAPSHOT`
+2. Release from the tag into artifactory (you may need permissions) `mvn release:perform`
+3. Merge to master if this is a stable release `git checkout master; git merge <your tag here>`
 
 ### How to perform a Maven release for an Unstable Release
 
