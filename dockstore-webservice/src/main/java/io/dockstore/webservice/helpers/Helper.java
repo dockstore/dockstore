@@ -195,14 +195,17 @@ public final class Helper {
 
                 boolean allAutomated = true;
                 for (Tag tag : existingTags) {
-                    LOG.info("Updating tag {}", tag.getName());
+                    // create and add a tag if it does not already exist
+                    if (!tool.getTags().contains(tag)) {
+                        LOG.info("Updating tag {}", tag.getName());
 
-                    long id = tagDAO.create(tag);
-                    tag = tagDAO.findById(id);
-                    tool.addTag(tag);
+                        long id = tagDAO.create(tag);
+                        tag = tagDAO.findById(id);
+                        tool.addTag(tag);
 
-                    if (!tag.isAutomated()) {
-                        allAutomated = false;
+                        if (!tag.isAutomated()) {
+                            allAutomated = false;
+                        }
                     }
                 }
 
