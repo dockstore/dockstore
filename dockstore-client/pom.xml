@@ -110,7 +110,6 @@
         <dependency>
             <groupId>io.cwl</groupId>
             <artifactId>cwlavro-generated</artifactId>
-            <version>1.0</version>
         </dependency>
 
         <!-- broad - cromwell stuff -->
