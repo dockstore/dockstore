@@ -4,6 +4,6 @@
         "class": "File"
     },
     "pattern": "one",
-    "infile": [{"path": "../../mock.txt", "class": "File"},
-        {"path": "../../mock2.txt", "class": "File"}]
+    "infile": [{"path": "../../src/main/resources/mock.txt", "class": "File"},
+        {"path": "../../src/main/resources/mock2.txt", "class": "File"}]
 }
