@@ -26,6 +26,9 @@ import org.junit.rules.ExpectedException;
 
 import com.amazonaws.AmazonClientException;
 
+import io.cwl.avro.CommandLineTool;
+import io.cwl.avro.Workflow;
+
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -48,7 +51,7 @@ public class LauncherTest {
         }
         final LauncherCWL launcherCWL = new LauncherCWL(new String[] { "--config", iniFile.getAbsolutePath(), "--descriptor",
                 cwlFile.getAbsolutePath(), "--job", jobFile.getAbsolutePath() });
-        launcherCWL.run();
+        launcherCWL.run(CommandLineTool.class);
     }
         
     @Test
@@ -64,7 +67,25 @@ public class LauncherTest {
             expectedEx.expectMessage("Unable to load AWS credentials from any provider in the chain");
         }
         final LauncherCWL launcherCWL = new LauncherCWL(iniFile.getAbsolutePath(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath(), stdout, stderr);
-        launcherCWL.run();
+        launcherCWL.run(CommandLineTool.class);
+
+        assertTrue(!stdout.toString().isEmpty());
+    }
+
+    @Test
+    public void testCWLWorkflowProgrammatic() throws Exception {
+        File iniFile = FileUtils.getFile("src", "test", "resources", "launcher.ini");
+        File cwlFile = FileUtils.getFile("src", "test", "resources", "filtercount.cwl.yaml");
+        File jobFile = FileUtils.getFile("src", "test", "resources", "filtercount-job.json");
+        ByteArrayOutputStream stdout = new ByteArrayOutputStream();
+        ByteArrayOutputStream stderr = new ByteArrayOutputStream();
+
+        if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
+            expectedEx.expect(AmazonClientException.class);
+            expectedEx.expectMessage("Unable to load AWS credentials from any provider in the chain");
+        }
+        final LauncherCWL launcherCWL = new LauncherCWL(iniFile.getAbsolutePath(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath(), stdout, stderr);
+        launcherCWL.run(Workflow.class);
 
         assertTrue(!stdout.toString().isEmpty());
     }

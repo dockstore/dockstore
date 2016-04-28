@@ -1,0 +1,9 @@
+{
+    "outfile": {
+        "path": "s3://oicr.temp/testing-launcher/cwl-workflow-output.txt",
+        "class": "File"
+    },
+    "pattern": "one",
+    "infile": [{"path": "../../src/main/resources/mock.txt", "class": "File"},
+        {"path": "../../src/main/resources/mock2.txt", "class": "File"}]
+}
