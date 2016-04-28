@@ -171,6 +171,8 @@
 
     <changeSet id="54375756377" author="agduncan" context="change-isregistered-to-ispublished">
         <dropColumn tableName="tool" columnName="hascollab"></dropColumn>
+        <dropColumn tableName="tool" columnName="isstarred"></dropColumn>
+        <dropColumn tableName="workflow" columnName="name"></dropColumn>
         <addColumn tableName="tool"><column name="ispublished" type="boolean"/></addColumn>
         <sql dbms="postgresql">
             update tool set ispublished=isregistered;
@@ -178,5 +180,79 @@
         <dropColumn tableName="tool" columnName="ispublic"></dropColumn>
         <dropColumn tableName="tool" columnName="isregistered"></dropColumn>
     </changeSet>
+
+    <changeSet author="agduncan" id="dropForeignKeyConstraintEntries">
+        <dropAllForeignKeyConstraints baseTableName="user_entry"/>
+        <dropPrimaryKey tableName="user_entry"/>
+        <addPrimaryKey
+                columnNames="entryid, userid"
+                constraintName="user_entry_pkey"
+                tableName="user_entry"/>
+        <addForeignKeyConstraint baseColumnNames="userid"
+                                 baseTableName="user_entry"
+                                 constraintName="fk_userid"
+                                 referencedColumnNames="id"
+                                 referencedTableName="enduser"/>
+        <dropAllForeignKeyConstraints baseTableName="entry_label"/>
+        <dropPrimaryKey tableName="entry_label"/>
+        <addPrimaryKey
+                columnNames="entryid, labelid"
+                constraintName="entry_label_pkey"
+                tableName="entry_label"/>
+        <addForeignKeyConstraint baseColumnNames="labelid"
+                                 baseTableName="entry_label"
+                                 constraintName="fk_labelid"
+                                 referencedColumnNames="id"
+                                 referencedTableName="label"/>
+        <dropAllForeignKeyConstraints baseTableName="version_sourcefile"/>
+        <dropPrimaryKey tableName="version_sourcefile"/>
+        <addPrimaryKey
+                columnNames="versionid, sourcefileid"
+                constraintName="version_sourcefile_pkey"
+                tableName="version_sourcefile"/>
+        <addForeignKeyConstraint baseColumnNames="sourcefileid"
+                                 baseTableName="version_sourcefile"
+                                 constraintName="fk_sourcefileid"
+                                 referencedColumnNames="id"
+                                 referencedTableName="sourcefile"/>
+        <dropPrimaryKey tableName="tool_tag"/>
+        <addPrimaryKey
+                columnNames="toolid, tagid"
+                constraintName="tool_tag_pkey"
+                tableName="tool_tag"/>
+        <alterSequence
+                incrementBy="50"
+                sequenceName="label_id_seq"/>
+        <alterSequence
+                incrementBy="50"
+                sequenceName="sourcefile_id_seq"/>
+        <alterSequence
+                incrementBy="50"
+                sequenceName="enduser_id_seq"/>
+        <alterSequence
+                incrementBy="50"
+                sequenceName="token_id_seq"/>
+        <alterSequence
+                incrementBy="50"
+                sequenceName="usergroup_id_seq"/>
+        <alterSequence
+                incrementBy="50"
+                sequenceName="container_id_seq"/>
+        <alterSequence
+                incrementBy="50"
+                sequenceName="tag_id_seq"/>
+        <sql dbms="postgresql">
+            delete from token where tokensource='bitbucket.org'
+        </sql>
+        <addDefaultValue
+                columnName="id"
+                defaultValueSequenceNext="tag_id_seq"
+                tableName="workflowversion"/>
+        <addDefaultValue
+                columnName="id"
+                defaultValueSequenceNext="container_id_seq"
+                tableName="workflow"/>
+    </changeSet>
+
 
 </databaseChangeLog>
