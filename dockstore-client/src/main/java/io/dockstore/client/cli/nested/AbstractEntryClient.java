@@ -50,18 +50,20 @@ import com.google.gson.JsonParser;
 
 import cromwell.Main;
 import io.cwl.avro.CWL;
+import io.cwl.avro.CommandLineTool;
+import io.cwl.avro.Workflow;
 import io.dockstore.client.Bridge;
 import io.dockstore.client.cli.Client;
 import io.dockstore.common.WDLFileProvisioning;
 import io.github.collaboratory.LauncherCWL;
-import io.swagger.client.model.Label;
 import io.swagger.client.ApiException;
+import io.swagger.client.model.Label;
 import io.swagger.client.model.SourceFile;
 
-import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
-import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
-import static io.dockstore.client.cli.ArgumentUtility.LAUNCH;
 import static io.dockstore.client.cli.ArgumentUtility.CONVERT;
+import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
+import static io.dockstore.client.cli.ArgumentUtility.LAUNCH;
+import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.containsHelpRequest;
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
@@ -72,9 +74,9 @@ import static io.dockstore.client.cli.ArgumentUtility.out;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
 import static io.dockstore.client.cli.ArgumentUtility.reqVal;
+import static io.dockstore.client.cli.Client.API_ERROR;
 import static io.dockstore.client.cli.Client.CLIENT_ERROR;
 import static io.dockstore.client.cli.Client.IO_ERROR;
-import static io.dockstore.client.cli.Client.API_ERROR;
 
 /**
  * Handles the commands for a particular type of entry. (e.g. Workflows, Tools) Not a great abstraction, but enforces some structure for
@@ -574,17 +576,17 @@ public abstract class AbstractEntryClient {
                     final LauncherCWL cwlLauncher = new LauncherCWL(configFile, tempCWL.getAbsolutePath(), tempJson.getAbsolutePath(),
                             System.out, System.err);
                     if (this instanceof WorkflowClient) {
-                        cwlLauncher.runWorkflow();
+                        cwlLauncher.run(Workflow.class);
                     } else {
-                        cwlLauncher.run();
+                        cwlLauncher.run(CommandLineTool.class);
                     }
                 }
             } else {
                 final LauncherCWL cwlLauncher = new LauncherCWL(configFile, tempCWL.getAbsolutePath(), jsonRun, System.out, System.err);
                 if (this instanceof WorkflowClient) {
-                    cwlLauncher.runWorkflow();
+                    cwlLauncher.run(Workflow.class);
                 } else {
-                    cwlLauncher.run();
+                    cwlLauncher.run(CommandLineTool.class);
                 }
             }
         } else if (csvRuns != null) {
@@ -626,9 +628,9 @@ public abstract class AbstractEntryClient {
                     final LauncherCWL cwlLauncher = new LauncherCWL(configFile, tempCWL.getAbsolutePath(), tempJson.getAbsolutePath(),
                             System.out, System.err);
                     if (this instanceof WorkflowClient) {
-                        cwlLauncher.runWorkflow();
+                        cwlLauncher.run(Workflow.class);
                     } else {
-                        cwlLauncher.run();
+                        cwlLauncher.run(CommandLineTool.class);
                     }
                 }
             }

@@ -21,6 +21,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -65,16 +67,13 @@ import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 
 import io.cwl.avro.CWL;
-import io.cwl.avro.CommandInputParameter;
 import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.CommandOutputParameter;
-import io.cwl.avro.InputParameter;
 import io.cwl.avro.Workflow;
 import io.cwl.avro.WorkflowOutputParameter;
-import io.dockstore.common.Utilities;
 import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.FileProvisioning.PathInfo;
-
+import io.dockstore.common.Utilities;
 
 /**
  * @author boconnor 9/24/15
@@ -143,7 +142,7 @@ public class LauncherCWL {
         gson = CWL.getTypeSafeCWLToolDocument();
     }
 
-    public void runWorkflow() {
+    public void run(Class cwlClassTarget){
         // now read in the INI file
         try {
             config = new HierarchicalINIConfiguration(configFilePath);
@@ -154,9 +153,9 @@ public class LauncherCWL {
         // parse the CWL tool definition without validation
         CWL cwlUtil = new CWL();
         final String imageDescriptorContent = cwlUtil.parseCWL(imageDescriptorPath, false).getLeft();
-        final Workflow workflow = gson.fromJson(imageDescriptorContent, Workflow.class);
+        final Object cwlObject = gson.fromJson(imageDescriptorContent, cwlClassTarget);
 
-        if (workflow == null) {
+        if (cwlObject == null) {
             LOG.info("CWL Workflow was null");
             return;
         }
@@ -172,60 +171,27 @@ public class LauncherCWL {
         // setup directories
         globalWorkingDir = setupDirectories();
 
-        // pull input files
-        final  Map<String, FileInfo> inputsId2dockerMountMap = pullFilesWorkflow(workflow, inputsAndOutputsJson);
+        Map<String, FileInfo> inputsId2dockerMountMap;
+        Map<String, List<FileInfo>> outputMap;
 
-        // prep outputs, just creates output dir and records what the local output path will be
-        Map<String, List<FileInfo>> outputMap = prepUploadsWorkflow(workflow, inputsAndOutputsJson);
+        if (cwlObject instanceof Workflow){
+            Workflow workflow = (Workflow)cwlObject;
+            // pull input files
+            inputsId2dockerMountMap = pullFiles(workflow, inputsAndOutputsJson);
 
-        // create updated JSON inputs document
-        String newJsonPath = createUpdatedInputsAndOutputsJson(inputsId2dockerMountMap, outputMap, inputsAndOutputsJson);
+            // prep outputs, just creates output dir and records what the local output path will be
+            outputMap = prepUploadsWorkflow(workflow, inputsAndOutputsJson);
 
-        // run command
-        LOG.info("RUNNING COMMAND");
-        Map<String, Object> outputObj = runCWLCommand(imageDescriptorPath, newJsonPath, globalWorkingDir + "/outputs/");
+        } else if (cwlObject instanceof CommandLineTool){
+            CommandLineTool commandLineTool = (CommandLineTool)cwlObject;
+            // pull input files
+            inputsId2dockerMountMap = pullFiles(commandLineTool, inputsAndOutputsJson);
 
-        // push output files
-        pushOutputFiles(outputMap, outputObj);
-
-    }
-
-    public void run(){
-        // now read in the INI file
-        try {
-            config = new HierarchicalINIConfiguration(configFilePath);
-        } catch (ConfigurationException e) {
-            throw new RuntimeException("could not read launcher config ini", e);
+            // prep outputs, just creates output dir and records what the local output path will be
+            outputMap = prepUploadsTool(commandLineTool, inputsAndOutputsJson);
+        } else{
+            throw new UnsupportedOperationException("CWL target type not supported yet");
         }
-
-
-        // parse the CWL tool definition without validation
-        CWL cwlUtil = new CWL();
-        final String imageDescriptorContent = cwlUtil.parseCWL(imageDescriptorPath, false).getLeft();
-        final CommandLineTool cwl = gson.fromJson(imageDescriptorContent, CommandLineTool.class);
-
-        if (cwl == null) {
-            LOG.info("CWL was null");
-            return;
-        }
-
-        // this is the job parameterization, just a JSON, defines the inputs/outputs in terms or real URLs that are provisioned by the launcher
-        Map<String, Object> inputsAndOutputsJson = loadJob(runtimeDescriptorPath);
-
-        if (inputsAndOutputsJson == null) {
-            LOG.info("Cannot load job object.");
-            return;
-        }
-
-        // setup directories
-        globalWorkingDir = setupDirectories();
-        
-        // pull input files
-        final  Map<String, FileInfo> inputsId2dockerMountMap = pullFilesTool(cwl, inputsAndOutputsJson);
-
-        // prep outputs, just creates output dir and records what the local output path will be
-        Map<String, List<FileInfo>> outputMap = prepUploadsTool(cwl, inputsAndOutputsJson);
-
         // create updated JSON inputs document
         String newJsonPath = createUpdatedInputsAndOutputsJson(inputsId2dockerMountMap, outputMap, inputsAndOutputsJson);
 
@@ -536,44 +502,31 @@ public class LauncherCWL {
         }
     }
     
-    private Map<String, FileInfo> pullFilesTool(CommandLineTool cwl, Map<String, Object> inputsOutputs) {
+    private Map<String, FileInfo> pullFiles(Object cwlObject,  Map<String, Object> inputsOutputs) {
         Map<String, FileInfo> fileMap = new HashMap<>();
 
         LOG.info("DOWNLOADING INPUT FILES...");
 
-        final List<CommandInputParameter> files = cwl.getInputs();
+        final Method getInputs;
+        try {
+            getInputs = cwlObject.getClass().getDeclaredMethod("getInputs");
+        final List<?> files = (List<?>) getInputs.invoke(cwlObject);
 
         // for each file input from the CWL
-        for (CommandInputParameter file : files) {
+        for (Object file : files) {
 
             // pull back the name of the input from the CWL
             LOG.info(file.toString());
             // remove the hash from the cwlInputFileID
-            String cwlInputFileID = file.getId().toString().substring(1);
+            final Method getId = file.getClass().getDeclaredMethod("getId");
+            String cwlInputFileID = getId.invoke(file).toString().substring(1);
             LOG.info("ID: {}", cwlInputFileID);
 
             pullFilesHelper(inputsOutputs, fileMap, cwlInputFileID);
         }
-        return fileMap;
-    }
-
-    private Map<String, FileInfo> pullFilesWorkflow(Workflow workflow, Map<String, Object> inputsOutputs) {
-        Map<String, FileInfo> fileMap = new HashMap<>();
-
-        LOG.info("DOWNLOADING INPUT FILES...");
-
-        final List<InputParameter> files = workflow.getInputs();
-
-        // for each file input from the CWL
-        for (InputParameter file : files) {
-
-            // pull back the name of the input from the CWL
-            LOG.info(file.toString());
-            // remove the hash from the cwlInputFileID
-            String cwlInputFileID = file.getId().toString().substring(1);
-            LOG.info("ID: {}", cwlInputFileID);
-
-            pullFilesHelper(inputsOutputs, fileMap, cwlInputFileID);
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException  e) {
+            LOG.error("Reflection issue, this is likely a coding problem.");
+            throw new RuntimeException();
         }
         return fileMap;
     }
@@ -714,6 +667,6 @@ public class LauncherCWL {
 
     public static void main(String[] args) {
         final LauncherCWL launcherCWL = new LauncherCWL(args);
-        launcherCWL.run();
+        launcherCWL.run(CommandLineTool.class);
     }
 }
