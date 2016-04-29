@@ -244,14 +244,12 @@
         <sql dbms="postgresql">
             delete from token where tokensource='bitbucket.org'
         </sql>
-        <addDefaultValue
+        <dropDefaultValue
                 columnName="id"
-                defaultValueSequenceNext="tag_id_seq"
-                tableName="workflowversion"/>
-        <addDefaultValue
+                tableName="tag"/>
+        <dropDefaultValue
                 columnName="id"
-                defaultValueSequenceNext="container_id_seq"
-                tableName="workflow"/>
+                tableName="tool"/>
     </changeSet>
 
 
