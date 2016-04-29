@@ -701,6 +701,14 @@ public abstract class AbstractEntryClient {
             // Make new json file
             String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
 
+            // TODO : Here we will need to do WDL output file provisioning.
+            // We currently create a new Json file which replaces remote input files with local file paths (after downloading to that local path)
+            // The idea is similar for remote outputs, except we first create temp local locations for the remote output, put these new local paths
+            // in the new Json file, run with the new Json.  Once this is done, we then upload the output in the temp local locations to the actual remote
+            // locations.
+            // First use Bridge.scala to get a list of the outputs and store in an array or set and use this to create the newJson file
+            // Then reuse code from LauncherCWL.java to upload to the actual remote locations (once the workflow has run)
+
             final List<String> wdlRun = Lists.newArrayList(tmp.getAbsolutePath(), newJsonPath);
             final scala.collection.immutable.List<String> wdlRunList = scala.collection.JavaConversions.asScalaBuffer(wdlRun).toList();
 
