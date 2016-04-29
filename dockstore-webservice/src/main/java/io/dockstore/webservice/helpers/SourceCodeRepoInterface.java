@@ -165,6 +165,7 @@ public abstract class SourceCodeRepoInterface {
             if (group.equals("steps")) {
                 ArrayList<Map <String, Object>> steps = (ArrayList<Map <String, Object>>) groups.get(group);
                 for (Map <String, Object> step : steps) {
+                    // TODO : CHECKIFIMPORTMAP Check here if run maps to a String or a map<String, Object>, in order to determine the file to import
                     Map<String, Object> stepParams = (Map<String, Object>)step.get("run");
                     imports.add(stepParams.get("import").toString());
                 }

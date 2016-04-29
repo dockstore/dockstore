@@ -771,6 +771,7 @@ public class WorkflowResource {
                             ArrayList<Map <String, Object>> steps = (ArrayList<Map <String, Object>>) sections.get(section);
                             for (Map <String, Object> step : steps) {
                                 // TODO : test that if a CWL Tool defines a different docker image, this is shown in the DAG
+                                // TODO : CHECKIFIMPORTMAP Check here if run maps to a String or a map<String, Object>, in order to determine the file to import
                                 Map<String, Object> stepParams = (Map<String, Object>)step.get("run");
                                 File secondaryDescriptor = new File(tmpDir.getAbsolutePath() + File.separator + stepParams.get("import").toString());
                                 Yaml helperYaml = new Yaml();
