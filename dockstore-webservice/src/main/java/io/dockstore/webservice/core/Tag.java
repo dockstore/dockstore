@@ -16,6 +16,8 @@
 
 package io.dockstore.webservice.core;
 
+import java.util.Objects;
+
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
@@ -176,4 +178,25 @@ public class Tag extends Version<Tag> {
     public int compareTo(Tag o) {
         return Long.compare(super.getId(), o.getId());
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        if (!super.equals(obj)) {
+            return false;
+        }
+        final Tag other = (Tag) obj;
+        return Objects.equals(this.getId(), other.getId());
+    }
+
+    public int hashCode() {
+        return (int)getId();
+    }
+
+
 }
