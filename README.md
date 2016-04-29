@@ -179,7 +179,7 @@ Eventually, this will be moved out as a proper Maven dependency on https://githu
 
 ### HubFlow Operations
 
-#### How to perform a Maven release for a Stable Release
+#### How to perform a Maven release for a Unstable Release
 
 This is for pre-release versions that have not been released to production. 
 
@@ -187,7 +187,11 @@ This is for pre-release versions that have not been released to production.
 2. Release from the tag into artifactory (you may need permissions) `mvn release:perform`
 3. Merge to master if this is a stable release `git checkout master; git merge <your tag here>`
 
-### How to perform a Maven release for an Unstable Release
+Special note: If a test is failing during perform, but did not fail during prepare or Travis-CI builds, you may have a non-deterministic error. Skip tests during a release with `mvn release:perform -Darguments="-DskipTests"`
+
+After the release to Artifactory, document the release on GitHub via the Releases page. Take a look at commits since the last release and closed pull requests for information on what goes into the changelog. Also attach the newly created Dockstore script.
+
+### How to perform a Maven release for an Stable Release
 
 This is for release versions that have been released to production. 
 
