@@ -272,6 +272,9 @@ public class Client {
      * Checks for upgrade for Dockstore and install
      */
     public static void upgrade() {
+
+        System.out.println("This is another example");
+
         // Try to get version installed
         String installLocation = getInstallLocation();
         if (installLocation == null) {
@@ -324,6 +327,12 @@ public class Client {
         } catch (MalformedURLException e) {
             exceptionMessage(e, "Issue with URL : " + latestPath, IO_ERROR);
         }
+    }
+
+    public static void upgradeStable() {
+    }
+
+    public static void upgradeUnstable() {
     }
 
     /**
@@ -405,8 +414,12 @@ public class Client {
         if (Objects.equals(currentVersion,latestVersion)) {
             out("You are running the latest stable version...");
         } else {
-            out("The latest stable version is " + latestVersion + ", please upgrade with the following command:");
-            out("   dockstore --upgrade");
+            /*out("The latest stable version is " + latestVersion + ", please upgrade with the following command:");*/
+            out("The latest stable version is " + latestVersion + ", please upgrade with one of the following command:");
+            out("   dockstore --upgrade");                  // takes you to the newest stable version, unless you're already "past it"
+            out("   dockstore --upgrade --force-stable");   // takes you to the newest stable version no matter what
+            out("   dockstore --upgrade --force-unstable"); // takes you to the newest unstable version
+
         }
     }
 
