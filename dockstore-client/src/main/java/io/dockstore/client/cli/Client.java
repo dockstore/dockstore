@@ -432,7 +432,7 @@ public class Client {
         String installLocation = getInstallLocation();
         if (installLocation != null) {
             String currentVersion = getCurrentVersion(installLocation);
-            if (currentVersion != null) {:q
+            if (currentVersion != null){
                 if (checkIfTagExists(currentVersion)) {
                     URL url = null;
                     try {
