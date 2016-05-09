@@ -339,6 +339,7 @@ public class Client {
         String latestPath = "https://api.github.com/repos/ga4gh/dockstore/releases/latest";
         String allReleases = "https://api.github.com/repos/ga4gh/dockstore/releases";
         String latestVersion = null;
+        String firstElement = null;
         try {
             url = new URL(latestPath);
             urlRel = new URL(allReleases);
@@ -358,6 +359,7 @@ public class Client {
                 mapRel = mapper.readValue(urlRel, ct);
                 ArrayList<Map<String, String>> assetsList = (ArrayList<Map<String, String>>) mapRel.get(0).get("assets");
                 String upgradeURL =  assetsList.get(0).get("browser_download_url");
+                firstElement = mapRel.get(0).get("name").toString();
 
                 // Check if installed version is up to date
                 if (latestVersion.equals(currentVersion)) {
@@ -366,6 +368,7 @@ public class Client {
                         if(mapRel.get(0).get("prerelease").toString().equals("true")){
                             //the latest publish is unstable
                             downloadURL(upgradeURL,installLocation);
+                            out("Download complete. You are now on version " + firstElement + " of Dockstore.");
                         }
                     }else{
                         //user input '--upgrade' without knowing the version or the optional commands
@@ -391,9 +394,16 @@ public class Client {
                             out("Downloading version " + latestVersion + " of Dockstore.");
                             // Download update
                             downloadURL(browserDownloadUrl,installLocation);
+                            out("Download complete. You are now on version " + latestVersion + " of Dockstore.");
+                        }
+                    }else if(optVal.equals("unstable")){
+                        //user wants to upgrade to newer unstable version
+                        if(mapRel.get(0).get("prerelease").toString().equals("true")){
+                            //the latest publish is unstable
+                            downloadURL(upgradeURL,installLocation);
+                            out("Download complete. You are now on version " + firstElement + " of Dockstore.");
                         }
                     }
-                    out("Download complete. You are now on version " + latestVersion + " of Dockstore.");
                 }
             } catch (IOException e) {
                 exceptionMessage(e, "Could not connect to Github. You may have reached your rate limit.", IO_ERROR);
