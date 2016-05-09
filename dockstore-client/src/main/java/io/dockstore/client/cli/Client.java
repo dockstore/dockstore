@@ -45,7 +45,6 @@ import java.util.regex.Pattern;
 import javax.ws.rs.ProcessingException;
 
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
-import org.apache.http.HttpStatus;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
@@ -59,9 +58,7 @@ import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.GAGHApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Metadata;
-import io.swagger.client.model.SourceFile;
 
 import static io.dockstore.client.cli.ArgumentUtility.err;
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
@@ -74,8 +71,6 @@ import static io.dockstore.client.cli.ArgumentUtility.optVal;
 import static io.dockstore.client.cli.ArgumentUtility.out;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
-import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
-import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 
 /**
  * Main entrypoint for the dockstore CLI.
@@ -119,38 +114,6 @@ public class Client {
         } catch (ApiException ex) {
             exceptionMessage(ex, "", API_ERROR);
         }
-    }
-
-    /*
-    Todo: Can be removed once MockedIT is fixed
-     */
-    public SourceFile getDescriptorFromServer(String entry, String descriptorType) throws ApiException {
-        String[] parts = entry.split(":");
-
-        String path = parts[0];
-
-        String tag = (parts.length > 1) ? parts[1] : null;
-        SourceFile file = new SourceFile();
-        // simply getting published descriptors does not require permissions
-        DockstoreTool container = containersApi.getPublishedContainerByToolPath(path);
-        if (container.getValidTrigger()) {
-            try {
-                if (descriptorType.equals(CWL_STRING)) {
-                    file = containersApi.cwl(container.getId(), tag);
-                } else if (descriptorType.equals(WDL_STRING)) {
-                    file = containersApi.wdl(container.getId(), tag);
-                }
-            } catch (ApiException ex) {
-                if (ex.getCode() == HttpStatus.SC_BAD_REQUEST) {
-                    exceptionMessage(ex, "Invalid tag", Client.API_ERROR);
-                } else {
-                    exceptionMessage(ex, "No " + descriptorType + " file found.", Client.API_ERROR);
-                }
-            }
-        } else {
-            errorMessage("No " + descriptorType + " file found.", Client.COMMAND_ERROR);
-        }
-        return file;
     }
 
     /**

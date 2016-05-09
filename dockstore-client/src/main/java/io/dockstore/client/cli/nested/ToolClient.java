@@ -655,7 +655,7 @@ public class ToolClient extends AbstractEntryClient {
         }
     }
 
-    protected SourceFile getDescriptorFromServer(String entry, String descriptorType) throws ApiException {
+    public SourceFile getDescriptorFromServer(String entry, String descriptorType) throws ApiException {
         String[] parts = entry.split(":");
 
         String path = parts[0];

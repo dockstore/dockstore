@@ -19,6 +19,7 @@ package io.dockstore.client.cli;
 import java.io.File;
 import java.io.IOException;
 
+import io.dockstore.client.cli.nested.ToolClient;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -55,7 +56,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
  */
 @PowerMockIgnore("javax.management.*")
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({Client.class, UserApi.class})
+@PrepareForTest({Client.class, ToolClient.class, UserApi.class})
 public class MockedIT {
 
     @ClassRule
@@ -67,10 +68,12 @@ public class MockedIT {
     public void clearDB() throws Exception {
         clearState();
         this.client = spy(Client.class);
+        ToolClient toolClient = mock(ToolClient.class);
 
         final UsersApi userApiMock = mock(UsersApi.class);
         when(userApiMock.getUser()).thenReturn(new User());
         whenNew(UsersApi.class).withAnyArguments().thenReturn(userApiMock);
+        whenNew(ToolClient.class).withAnyArguments().thenReturn(toolClient);
         whenNew(Client.class).withAnyArguments().thenReturn(client);
 
         // mock return of a simple CWL file
@@ -78,14 +81,14 @@ public class MockedIT {
         final String sourceFileContents = FileUtils.readFileToString(sourceFile);
         SourceFile file = mock(SourceFile.class);
         when(file.getContent()).thenReturn(sourceFileContents);
-        doReturn(file).when(client).getDescriptorFromServer("quay.io/collaboratory/dockstore-tool-linux-sort", "cwl");
+        doReturn(file).when(toolClient).getDescriptorFromServer("quay.io/collaboratory/dockstore-tool-linux-sort", "cwl");
 
         // mock return of a more complicated CWL file
         File sourceFileArrays = new File(ResourceHelpers.resourceFilePath("arrays.cwl"));
         final String sourceFileArraysContents = FileUtils.readFileToString(sourceFileArrays);
         SourceFile file2 = mock(SourceFile.class);
         when(file2.getContent()).thenReturn(sourceFileArraysContents);
-        doReturn(file2).when(client).getDescriptorFromServer("quay.io/collaboratory/arrays", "cwl");
+        doReturn(file2).when(toolClient).getDescriptorFromServer("quay.io/collaboratory/arrays", "cwl");
 
         FileUtils.deleteQuietly(new File("/tmp/wc1.out"));
         FileUtils.deleteQuietly(new File("/tmp/wc2.out"));
