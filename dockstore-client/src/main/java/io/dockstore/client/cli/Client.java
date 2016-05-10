@@ -44,6 +44,7 @@ import java.util.regex.Pattern;
 
 import javax.ws.rs.ProcessingException;
 
+import io.dockstore.client.cli.nested.AbstractEntryClient;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -427,8 +428,8 @@ public class Client {
         String userHome = System.getProperty("user.home");
 
         try {
-            this.configFile = optVal(args, "--config", userHome + File.separator + ".dockstore" + File.separator + "config");
-            HierarchicalINIConfiguration config = new HierarchicalINIConfiguration(configFile);
+            this.setConfigFile(optVal(args, "--config", userHome + File.separator + ".dockstore" + File.separator + "config"));
+            HierarchicalINIConfiguration config = new HierarchicalINIConfiguration(getConfigFile());
 
             // pull out the variables from the config
             String token = config.getString("token");
@@ -471,24 +472,21 @@ public class Client {
 
                     // see if this is a tool command
                     boolean handled = false;
+                    AbstractEntryClient targetClient = null;
                     if (mode.equals("tool")) {
-                        if (args.size() == 1 && isHelpRequest(args.get(0))) {
-                            toolClient.printGeneralHelp();
-                        } else if (!args.isEmpty()) {
-                            cmd = args.remove(0);
-                            handled = toolClient.processEntryCommands(args, cmd);
-                        } else {
-                            toolClient.printGeneralHelp();
-                            return;
-                        }
+                        targetClient = toolClient;
                     } else if (mode.equals("workflow")) {
+                        targetClient = workflowClient;
+                    }
+
+                    if (targetClient != null) {
                         if (args.size() == 1 && isHelpRequest(args.get(0))) {
-                            workflowClient.printGeneralHelp();
+                            targetClient.printGeneralHelp();
                         } else if (!args.isEmpty()) {
                             cmd = args.remove(0);
-                            handled = workflowClient.processEntryCommands(args, cmd);
+                            handled = targetClient.processEntryCommands(args, cmd);
                         } else {
-                            workflowClient.printGeneralHelp();
+                            targetClient.printGeneralHelp();
                             return;
                         }
                     } else {
@@ -539,5 +537,13 @@ public class Client {
     public static void main(String[] argv) {
         Client client = new Client();
         client.run(argv);
+    }
+
+    public String getConfigFile() {
+        return configFile;
+    }
+
+    public void setConfigFile(String configFile) {
+        this.configFile = configFile;
     }
 }
