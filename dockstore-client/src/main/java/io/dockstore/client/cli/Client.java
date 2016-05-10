@@ -28,7 +28,6 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
-import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -42,14 +41,11 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import javax.ws.rs.ProcessingException;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
-import org.apache.commons.configuration.SystemConfiguration;
 import org.apache.http.HttpStatus;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -249,19 +245,12 @@ public class Client {
                 //check if currentVersion is earlier than latestVersion or not
                 //id will be bigger if newer, prerelease=true if unstable
                 //newer return true, older return false
-                if(prerelease.equals("true")) {
-                    if(idCur>idLat){
-                        return true;  //current is newer and not stable
-                    }
-                    else {
-                        return false; //current is older and not stable
-                    }
+                if(prerelease.equals("true") && (idCur>idLat)) {
+                    return true;  //current is newer and not stable
                 }
-
             } catch (IOException e) {
                 // e.printStackTrace();
             }
-
         }catch (MalformedURLException e) {
             // e.printStackTrace();
         }
