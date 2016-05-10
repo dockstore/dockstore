@@ -16,6 +16,24 @@
 
 package io.dockstore.webservice.helpers;
 
+import com.google.common.base.Optional;
+import com.google.common.io.Files;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowMode;
+import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.resources.ResourceUtilities;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.http.client.HttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -27,26 +45,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.apache.commons.io.FilenameUtils;
-import org.apache.http.client.HttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Optional;
-import com.google.common.io.Files;
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
-import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.core.WorkflowMode;
-import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.resources.ResourceUtilities;
 
 /**
  * @author dyuen
@@ -275,16 +273,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         Map<String, String> existingDefaults = new HashMap<>();
         if (existingWorkflow.isPresent()) {
             existingWorkflow.get().getWorkflowVersions().forEach(existingVersion -> existingDefaults.put(existingVersion.getReference(), existingVersion.getWorkflowPath()));
-            workflow.setPath(existingWorkflow.get().getPath());
-            workflow.setIsPublished(existingWorkflow.get().getIsPublished());
-            workflow.setWorkflowName(existingWorkflow.get().getWorkflowName());
-            workflow.setAuthor(existingWorkflow.get().getAuthor());
-            workflow.setDescription(existingWorkflow.get().getDescription());
-            workflow.setLastModified(existingWorkflow.get().getLastModified());
-            workflow.setOrganization(existingWorkflow.get().getOrganization());
-            workflow.setRepository(existingWorkflow.get().getRepository());
-            workflow.setGitUrl(existingWorkflow.get().getGitUrl());
-            workflow.setDescriptorType(existingWorkflow.get().getDescriptorType());
+            copyWorkflow(existingWorkflow.get(), workflow);
         }
 
         // Look at each version, check for valid workflows
