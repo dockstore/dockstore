@@ -250,8 +250,12 @@ public class Client {
                 //id will be bigger if newer, prerelease=true if unstable
                 //newer return true, older return false
                 if(prerelease.equals("true")) {
-                    if(idCur>idLat) return true;  //current is newer and not stable
-                    else return false;            //current is older and not stable
+                    if(idCur>idLat){
+                        return true;  //current is newer and not stable
+                    }
+                    else {
+                        return false; //current is older and not stable
+                    }
                 }
 
             } catch (IOException e) {
