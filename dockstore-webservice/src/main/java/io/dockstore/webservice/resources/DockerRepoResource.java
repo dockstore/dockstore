@@ -16,36 +16,11 @@
 
 package io.dockstore.webservice.resources;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
-
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.core.Label;
@@ -74,6 +49,28 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  *
@@ -234,7 +231,7 @@ public class DockerRepoResource {
         Tool duplicate = toolDAO.findByToolPath(tool.getPath(), tool.getToolname());
 
         if (duplicate != null && duplicate.getId() != containerId) {
-            LOG.info("duplicate tool found: {}" + tool.getToolPath());
+            LOG.info(user.getUsername() + ": duplicate tool found: {}" + tool.getToolPath());
             throw new CustomWebApplicationException("Tool " + tool.getToolPath() + " already exists.", HttpStatus.SC_BAD_REQUEST);
         }
 
@@ -306,19 +303,19 @@ public class DockerRepoResource {
         Tool duplicate = toolDAO.findByToolPath(tool.getPath(), tool.getToolname());
 
         if (duplicate != null) {
-            LOG.info("duplicate tool found: {}" + tool.getToolPath());
+            LOG.info(user.getUsername() + ": duplicate tool found: {}" + tool.getToolPath());
             throw new CustomWebApplicationException("Tool " + tool.getToolPath() + " already exists.", HttpStatus.SC_BAD_REQUEST);
         }
 
         // Check if tool has tags
         if (tool.getRegistry() == Registry.QUAY_IO && !Helper.checkQuayContainerForTags(tool, client, objectMapper, tokenDAO, user.getId())) {
-            LOG.info("tool has no tags.");
+            LOG.info(user.getUsername() + ": tool has no tags.");
             throw new CustomWebApplicationException("Tool " + tool.getToolPath() + " has no tags. Quay containers must have at least one tag.", HttpStatus.SC_BAD_REQUEST);
         }
 
         // Check if user owns repo, or if user is in the organization which owns the tool
         if (tool.getRegistry() == Registry.QUAY_IO  && !Helper.checkIfUserOwns(tool, client, objectMapper, tokenDAO, user.getId())) {
-            LOG.info("User does not own the given Quay Repo.");
+            LOG.info(user.getUsername() + ": User does not own the given Quay Repo.");
             throw new CustomWebApplicationException("User does not own the tool " + tool.getPath() + ". You can only add Quay repositories that you own or are part of the organization", HttpStatus.SC_BAD_REQUEST);
         }
 
@@ -516,7 +513,6 @@ public class DockerRepoResource {
 
         List<Token> tokens = tokenDAO.findByUserId(userId);
         StringBuilder builder = new StringBuilder();
-
         for (Token token : tokens) {
             if (token.getTokenSource().equals(TokenType.QUAY_IO.toString())) {
                 String url = TARGET_URL + "repository/" + repo + "/build/";
@@ -524,7 +520,7 @@ public class DockerRepoResource {
 
                 if (asString.isPresent()) {
                     String json = asString.get();
-                    LOG.info("RESOURCE CALL: {}", url);
+                    LOG.info(user.getUsername() + ": RESOURCE CALL: {}", url);
 
                     Gson gson = new Gson();
                     Map<String, ArrayList> map = new HashMap<>();
@@ -536,11 +532,11 @@ public class DockerRepoResource {
                         map2 = (Map<String, Map<String, String>>) map.get("builds").get(0);
 
                         String gitURL = map2.get("trigger_metadata").get("git_url");
-                        LOG.info(gitURL);
+                        LOG.info(user.getUsername() + ": " + gitURL);
 
                         ArrayList<String> tags = (ArrayList<String>) map2.get("tags");
                         for (String tag : tags) {
-                            LOG.info(tag);
+                            LOG.info(user.getUsername() + ": " + tag);
                         }
                     }
 

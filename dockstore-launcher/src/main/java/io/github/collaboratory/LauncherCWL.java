@@ -16,23 +16,22 @@
 
 package io.github.collaboratory;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.UUID;
-
+import com.amazonaws.auth.SignerFactory;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.internal.S3Signer;
+import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
+import com.google.common.collect.Lists;
+import com.google.gson.Gson;
+import io.cwl.avro.CWL;
+import io.cwl.avro.CommandLineTool;
+import io.cwl.avro.CommandOutputParameter;
+import io.cwl.avro.Workflow;
+import io.cwl.avro.WorkflowOutputParameter;
+import io.dockstore.common.FileProvisioning;
+import io.dockstore.common.FileProvisioning.PathInfo;
+import io.dockstore.common.Utilities;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -54,26 +53,22 @@ import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.SignerFactory;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.S3ClientOptions;
-import com.amazonaws.services.s3.internal.S3Signer;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
-import com.google.common.collect.Lists;
-import com.google.gson.Gson;
-
-import io.cwl.avro.CWL;
-import io.cwl.avro.CommandLineTool;
-import io.cwl.avro.CommandOutputParameter;
-import io.cwl.avro.Workflow;
-import io.cwl.avro.WorkflowOutputParameter;
-import io.dockstore.common.FileProvisioning;
-import io.dockstore.common.FileProvisioning.PathInfo;
-import io.dockstore.common.Utilities;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.UUID;
 
 /**
  * @author boconnor 9/24/15
@@ -474,13 +469,7 @@ public class LauncherCWL {
         LOG.info("NAME: {} URL: {} FILENAME: {} CWL OUTPUT PATH: {}", file.getLocalPath(), file.getUrl(), key, cwlOutputPath);
 
         if (file.getUrl().startsWith("s3://")) {
-            AmazonS3 s3Client = new AmazonS3Client(new ClientConfiguration().withSignerOverride("S3Signer"));
-            if (config.containsKey(S3_ENDPOINT)) {
-                final String endpoint = config.getString(S3_ENDPOINT);
-                LOG.info("found custom S3 endpoint, setting to {}", endpoint);
-                s3Client.setEndpoint(endpoint);
-                s3Client.setS3ClientOptions(new S3ClientOptions().withPathStyleAccess(true));
-            }
+            AmazonS3 s3Client = FileProvisioning.getAmazonS3Client(config);
             String trimmedPath = file.getUrl().replace("s3://", "");
             List<String> splitPathList = Lists.newArrayList(trimmedPath.split("/"));
             String bucketName = splitPathList.remove(0);
