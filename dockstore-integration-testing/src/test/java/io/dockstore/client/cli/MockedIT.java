@@ -19,14 +19,15 @@ package io.dockstore.client.cli;
 import java.io.File;
 import java.io.IOException;
 
+import io.dockstore.client.cli.nested.ToolClient;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -42,10 +43,11 @@ import io.swagger.client.model.User;
 import io.swagger.quay.client.api.UserApi;
 
 import static io.dockstore.common.CommonTestUtilities.clearState;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.*;
+import static org.powermock.api.mockito.PowerMockito.doNothing;
+import static org.powermock.api.mockito.PowerMockito.spy;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 /**
@@ -55,37 +57,39 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
  */
 @PowerMockIgnore("javax.management.*")
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({Client.class, UserApi.class})
+@PrepareForTest({Client.class, ToolClient.class, UserApi.class})
 public class MockedIT {
 
     @ClassRule
     public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
             DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstore.yml"));
-    private Client client;
 
     @Before
     public void clearDB() throws Exception {
         clearState();
-        this.client = spy(Client.class);
+        Client client = mock(Client.class);
+        ToolClient toolClient = spy(new ToolClient(client));
 
         final UsersApi userApiMock = mock(UsersApi.class);
+        when(client.getConfigFile()).thenReturn(ClientIT.getConfigFileLocation(true));
         when(userApiMock.getUser()).thenReturn(new User());
         whenNew(UsersApi.class).withAnyArguments().thenReturn(userApiMock);
-        whenNew(Client.class).withAnyArguments().thenReturn(client);
+        whenNew(ToolClient.class).withAnyArguments().thenReturn(toolClient);
 
         // mock return of a simple CWL file
         File sourceFile = new File(ResourceHelpers.resourceFilePath("dockstore-tool-linux-sort.cwl"));
         final String sourceFileContents = FileUtils.readFileToString(sourceFile);
         SourceFile file = mock(SourceFile.class);
         when(file.getContent()).thenReturn(sourceFileContents);
-        doReturn(file).when(client).getDescriptorFromServer("quay.io/collaboratory/dockstore-tool-linux-sort", "cwl");
+        doReturn(file).when(toolClient).getDescriptorFromServer("quay.io/collaboratory/dockstore-tool-linux-sort", "cwl");
+        doNothing().when(toolClient).downloadDescriptors(anyString(),anyString(),anyObject());
 
         // mock return of a more complicated CWL file
         File sourceFileArrays = new File(ResourceHelpers.resourceFilePath("arrays.cwl"));
         final String sourceFileArraysContents = FileUtils.readFileToString(sourceFileArrays);
         SourceFile file2 = mock(SourceFile.class);
         when(file2.getContent()).thenReturn(sourceFileArraysContents);
-        doReturn(file2).when(client).getDescriptorFromServer("quay.io/collaboratory/arrays", "cwl");
+        doReturn(file2).when(toolClient).getDescriptorFromServer("quay.io/collaboratory/arrays", "cwl");
 
         FileUtils.deleteQuietly(new File("/tmp/wc1.out"));
         FileUtils.deleteQuietly(new File("/tmp/wc2.out"));
@@ -105,19 +109,19 @@ public class MockedIT {
         FileUtils.deleteQuietly(new File("/tmp/example.bedGraph"));
     }
 
-    @Ignore
+    @Test
     public void runLaunchOneJson() throws IOException, ApiException {
         Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "tool", "launch", "--entry",
             "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testOneRun.json"), "--debug" });
     }
 
-    @Ignore
+    @Test
     public void runLaunchNJson() throws IOException {
         Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "tool", "launch", "--entry",
                 "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testMultipleRun.json") });
     }
 
-    @Ignore
+    @Test
     public void runLaunchTSV() throws IOException {
         Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "tool", "launch", "--entry",
                 "quay.io/collaboratory/dockstore-tool-linux-sort", "--tsv", ResourceHelpers.resourceFilePath("testMultipleRun.tsv") });
@@ -128,7 +132,7 @@ public class MockedIT {
      * @throws IOException
      * @throws ApiException
      */
-    @Ignore
+    @Test
     public void runLaunchOneLocalArrayedJson() throws IOException, ApiException {
         Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "tool", "launch", "--entry",
             "quay.io/collaboratory/arrays", "--json", ResourceHelpers.resourceFilePath("testArrayLocalInputLocalOutput.json") });
@@ -141,7 +145,7 @@ public class MockedIT {
      * @throws IOException
      * @throws ApiException
      */
-    @Ignore
+    @Test
     public void runLaunchOneHTTPArrayedJson() throws IOException, ApiException {
         System.out.println(ClientIT.getConfigFileLocation(true));
         Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "tool", "launch", "--entry",
@@ -150,16 +154,5 @@ public class MockedIT {
         Assert.assertTrue(new File("/tmp/wc1.out").exists());
         Assert.assertTrue(new File("/tmp/wc2.out").exists());
         Assert.assertTrue(new File("/tmp/example.bedGraph").exists());
-    }
-
-    /**
-     * This test exists because there is an issue with the other tests in this class, and they are being ignored for now until the cause can be figured out
-     * @throws IOException
-     * @throws ApiException
-         */
-    @Test
-    public void testRun() throws IOException, ApiException {
-        System.out.println(ClientIT.getConfigFileLocation(true));
-        Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "tool", "list" });
     }
 }

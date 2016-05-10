@@ -44,8 +44,8 @@ import java.util.regex.Pattern;
 
 import javax.ws.rs.ProcessingException;
 
+import io.dockstore.client.cli.nested.AbstractEntryClient;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
-import org.apache.http.HttpStatus;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
@@ -59,9 +59,7 @@ import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.GAGHApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Metadata;
-import io.swagger.client.model.SourceFile;
 
 import static io.dockstore.client.cli.ArgumentUtility.err;
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
@@ -74,8 +72,6 @@ import static io.dockstore.client.cli.ArgumentUtility.optVal;
 import static io.dockstore.client.cli.ArgumentUtility.out;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
-import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
-import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 
 /**
  * Main entrypoint for the dockstore CLI.
@@ -119,38 +115,6 @@ public class Client {
         } catch (ApiException ex) {
             exceptionMessage(ex, "", API_ERROR);
         }
-    }
-
-    /*
-    Todo: Can be removed once MockedIT is fixed
-     */
-    public SourceFile getDescriptorFromServer(String entry, String descriptorType) throws ApiException {
-        String[] parts = entry.split(":");
-
-        String path = parts[0];
-
-        String tag = (parts.length > 1) ? parts[1] : null;
-        SourceFile file = new SourceFile();
-        // simply getting published descriptors does not require permissions
-        DockstoreTool container = containersApi.getPublishedContainerByToolPath(path);
-        if (container.getValidTrigger()) {
-            try {
-                if (descriptorType.equals(CWL_STRING)) {
-                    file = containersApi.cwl(container.getId(), tag);
-                } else if (descriptorType.equals(WDL_STRING)) {
-                    file = containersApi.wdl(container.getId(), tag);
-                }
-            } catch (ApiException ex) {
-                if (ex.getCode() == HttpStatus.SC_BAD_REQUEST) {
-                    exceptionMessage(ex, "Invalid tag", Client.API_ERROR);
-                } else {
-                    exceptionMessage(ex, "No " + descriptorType + " file found.", Client.API_ERROR);
-                }
-            }
-        } else {
-            errorMessage("No " + descriptorType + " file found.", Client.COMMAND_ERROR);
-        }
-        return file;
     }
 
     /**
@@ -464,8 +428,8 @@ public class Client {
         String userHome = System.getProperty("user.home");
 
         try {
-            this.configFile = optVal(args, "--config", userHome + File.separator + ".dockstore" + File.separator + "config");
-            HierarchicalINIConfiguration config = new HierarchicalINIConfiguration(configFile);
+            this.setConfigFile(optVal(args, "--config", userHome + File.separator + ".dockstore" + File.separator + "config"));
+            HierarchicalINIConfiguration config = new HierarchicalINIConfiguration(getConfigFile());
 
             // pull out the variables from the config
             String token = config.getString("token");
@@ -508,24 +472,21 @@ public class Client {
 
                     // see if this is a tool command
                     boolean handled = false;
+                    AbstractEntryClient targetClient = null;
                     if (mode.equals("tool")) {
-                        if (args.size() == 1 && isHelpRequest(args.get(0))) {
-                            toolClient.printGeneralHelp();
-                        } else if (!args.isEmpty()) {
-                            cmd = args.remove(0);
-                            handled = toolClient.processEntryCommands(args, cmd);
-                        } else {
-                            toolClient.printGeneralHelp();
-                            return;
-                        }
+                        targetClient = toolClient;
                     } else if (mode.equals("workflow")) {
+                        targetClient = workflowClient;
+                    }
+
+                    if (targetClient != null) {
                         if (args.size() == 1 && isHelpRequest(args.get(0))) {
-                            workflowClient.printGeneralHelp();
+                            targetClient.printGeneralHelp();
                         } else if (!args.isEmpty()) {
                             cmd = args.remove(0);
-                            handled = workflowClient.processEntryCommands(args, cmd);
+                            handled = targetClient.processEntryCommands(args, cmd);
                         } else {
-                            workflowClient.printGeneralHelp();
+                            targetClient.printGeneralHelp();
                             return;
                         }
                     } else {
@@ -576,5 +537,13 @@ public class Client {
     public static void main(String[] argv) {
         Client client = new Client();
         client.run(argv);
+    }
+
+    public String getConfigFile() {
+        return configFile;
+    }
+
+    public void setConfigFile(String configFile) {
+        this.configFile = configFile;
     }
 }
