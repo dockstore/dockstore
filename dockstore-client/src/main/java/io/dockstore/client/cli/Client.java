@@ -212,6 +212,7 @@ public class Client {
         // Pull Dockstore version from matched line
         Pattern p = Pattern.compile("\"([^\"]*)\"");
         Matcher m = p.matcher(line);
+
         if (m.find()) {
             currentVersion = m.group(1);
         }
@@ -228,7 +229,7 @@ public class Client {
     public static Boolean compareVersion(String current, String latest){
         URL urlCurrent, urlLatest;
         try{
-            urlCurrent = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/tags/0.4-alpha.1");  //for testing, change to current later on
+            urlCurrent = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/tags/"+current);  //for testing, change to current later on
             urlLatest = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/tags/"+latest);
 
             ObjectMapper mapper = new ObjectMapper();
@@ -318,6 +319,27 @@ public class Client {
     }
 
     /**
+     * for downloading content for upgrade
+     */
+    public static void downloadURL(String browserDownloadUrl, String installLocation){
+        try{
+            URL dockstoreExecutable = new URL(browserDownloadUrl);
+            ReadableByteChannel rbc = Channels.newChannel(dockstoreExecutable.openStream());
+
+            FileOutputStream fos = new FileOutputStream(installLocation);
+            fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+
+            // Set file permissions
+            File file = new File(installLocation);
+            Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rwxrwxr-x");
+            java.nio.file.Files.setPosixFilePermissions(file.toPath(), perms);
+        }catch (IOException e){
+            exceptionMessage(e, "Could not connect to Github. You may have reached your rate limit.", IO_ERROR);
+        }
+
+    }
+
+    /**
      * Checks for upgrade for Dockstore and install
      */
     public static void upgrade(String optVal) {
@@ -346,6 +368,7 @@ public class Client {
             ObjectMapper mapper = new ObjectMapper();
             Map<String, Object> map = null;
             List<Map<String, Object>> mapRel = null;
+
             try {
                 // Read JSON from Github
                 map = mapper.readValue(url, Map.class);
@@ -361,6 +384,7 @@ public class Client {
                 String upgradeURL =  assetsList.get(0).get("browser_download_url");
                 firstElement = mapRel.get(0).get("name").toString();
 
+                out("Current Dockstore version: " + currentVersion);
                 // Check if installed version is up to date
                 if (latestVersion.equals(currentVersion)) {
                     if(optVal.equals("unstable")){
@@ -382,6 +406,7 @@ public class Client {
                         out("Downloading version " + latestVersion + " of Dockstore.");
                         // Download update
                         downloadURL(browserDownloadUrl,installLocation);
+                        out("Download complete. You are now on version " + latestVersion + " of Dockstore.");
                     }else if(optVal.equals("none")){
                         if(compareVersion(currentVersion,latestVersion)){
                             // current version is the newer unstable version
@@ -397,11 +422,17 @@ public class Client {
                             out("Download complete. You are now on version " + latestVersion + " of Dockstore.");
                         }
                     }else if(optVal.equals("unstable")){
-                        //user wants to upgrade to newer unstable version
-                        if(mapRel.get(0).get("prerelease").toString().equals("true")){
-                            //the latest publish is unstable
-                            downloadURL(upgradeURL,installLocation);
-                            out("Download complete. You are now on version " + firstElement + " of Dockstore.");
+                        if(currentVersion.equals(mapRel.get(0).get("name").toString())){
+                            // current version is the newer unstable version
+                            out("You are currently on the newer unstable version. If you wish to upgrade to the latest stable version, please use the following command:");
+                            out("   dockstore --upgrade-stable");
+                        }else{
+                            //user wants to upgrade to newer unstable version
+                            if(mapRel.get(0).get("prerelease").toString().equals("true")){
+                                //the latest publish is unstable
+                                downloadURL(upgradeURL,installLocation);
+                                out("Download complete. You are now on version " + firstElement + " of Dockstore.");
+                            }
                         }
                     }
                 }
@@ -411,27 +442,6 @@ public class Client {
         } catch (MalformedURLException e) {
             exceptionMessage(e, "Issue with URL : " + latestPath, IO_ERROR);
         }
-    }
-
-    /**
-     * for downloading content for upgrade
-     */
-    public static void downloadURL(String browserDownloadUrl, String installLocation){
-        try{
-            URL dockstoreExecutable = new URL(browserDownloadUrl);
-            ReadableByteChannel rbc = Channels.newChannel(dockstoreExecutable.openStream());
-
-            FileOutputStream fos = new FileOutputStream(installLocation);
-            fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-
-            // Set file permissions
-            File file = new File(installLocation);
-            Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rwxrwxr-x");
-            java.nio.file.Files.setPosixFilePermissions(file.toPath(), perms);
-        }catch (IOException e){
-            exceptionMessage(e, "Could not connect to Github. You may have reached your rate limit.", IO_ERROR);
-        }
-
     }
 
     /**
