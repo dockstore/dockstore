@@ -93,7 +93,8 @@ import static io.dockstore.client.cli.Client.IO_ERROR;
  */
 public abstract class AbstractEntryClient {
     protected final CWL cwlUtil = new CWL();
-    private String configFile = null;
+
+    public abstract String getConfigFile();
 
     /**
      * Print help for this group of commands.
@@ -521,9 +522,6 @@ public abstract class AbstractEntryClient {
         } else {
             final String descriptor = optVal(args, "--descriptor", CWL_STRING);
 
-            String userHome = System.getProperty("user.home");
-            this.configFile = optVal(args, "--config", userHome + File.separator + ".dockstore" + File.separator + "config");
-
             if (descriptor.equals(CWL_STRING)) {
                 try {
                     launchCwl(args);
@@ -573,7 +571,7 @@ public abstract class AbstractEntryClient {
                     final String finalString = gson.toJson(element);
                     final File tempJson = File.createTempFile("parameter", ".json", Files.createTempDir());
                     FileUtils.write(tempJson, finalString);
-                    final LauncherCWL cwlLauncher = new LauncherCWL(configFile, tempCWL.getAbsolutePath(), tempJson.getAbsolutePath(),
+                    final LauncherCWL cwlLauncher = new LauncherCWL(getConfigFile(), tempCWL.getAbsolutePath(), tempJson.getAbsolutePath(),
                             System.out, System.err);
                     if (this instanceof WorkflowClient) {
                         cwlLauncher.run(Workflow.class);
@@ -582,7 +580,7 @@ public abstract class AbstractEntryClient {
                     }
                 }
             } else {
-                final LauncherCWL cwlLauncher = new LauncherCWL(configFile, tempCWL.getAbsolutePath(), jsonRun, System.out, System.err);
+                final LauncherCWL cwlLauncher = new LauncherCWL(getConfigFile(), tempCWL.getAbsolutePath(), jsonRun, System.out, System.err);
                 if (this instanceof WorkflowClient) {
                     cwlLauncher.run(Workflow.class);
                 } else {
@@ -625,7 +623,7 @@ public abstract class AbstractEntryClient {
 
                     // final String stringMapAsString = gson.toJson(stringMap);
                     // Files.write(stringMapAsString, tempJson, StandardCharsets.UTF_8);
-                    final LauncherCWL cwlLauncher = new LauncherCWL(configFile, tempCWL.getAbsolutePath(), tempJson.getAbsolutePath(),
+                    final LauncherCWL cwlLauncher = new LauncherCWL(this.getConfigFile(), tempCWL.getAbsolutePath(), tempJson.getAbsolutePath(),
                             System.out, System.err);
                     if (this instanceof WorkflowClient) {
                         cwlLauncher.run(Workflow.class);
@@ -688,7 +686,7 @@ public abstract class AbstractEntryClient {
             Map<String, String> wdlInputs = bridge.getInputFiles(tmp);
 
             // Convert parameter JSON to a map
-            WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning(configFile);
+            WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning(this.getConfigFile());
             Gson gson = new Gson();
             String jsonString = FileUtils.readFileToString(parameterFile);
             Map<String, Object> map = new HashMap<>();

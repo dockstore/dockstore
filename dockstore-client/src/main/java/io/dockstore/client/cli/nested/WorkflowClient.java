@@ -111,6 +111,11 @@ public class WorkflowClient extends AbstractEntryClient {
     }
 
     @Override
+    public String getConfigFile() {
+        return client.getConfigFile();
+    }
+
+    @Override
     protected void printClientSpecificHelp() {
         out("  manual_publish   :  registers a Github or Bitbucket workflow in the dockstore and then attempts to publish");
         out("");
