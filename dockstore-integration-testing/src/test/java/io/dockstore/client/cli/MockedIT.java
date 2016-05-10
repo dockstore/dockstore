@@ -25,7 +25,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
@@ -108,19 +107,19 @@ public class MockedIT {
         FileUtils.deleteQuietly(new File("/tmp/example.bedGraph"));
     }
 
-    @Ignore
+    @Test
     public void runLaunchOneJson() throws IOException, ApiException {
         Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "tool", "launch", "--entry",
             "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testOneRun.json"), "--debug" });
     }
 
-    @Ignore
+    @Test
     public void runLaunchNJson() throws IOException {
         Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "tool", "launch", "--entry",
                 "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testMultipleRun.json") });
     }
 
-    @Ignore
+    @Test
     public void runLaunchTSV() throws IOException {
         Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "tool", "launch", "--entry",
                 "quay.io/collaboratory/dockstore-tool-linux-sort", "--tsv", ResourceHelpers.resourceFilePath("testMultipleRun.tsv") });
@@ -131,7 +130,7 @@ public class MockedIT {
      * @throws IOException
      * @throws ApiException
      */
-    @Ignore
+    @Test
     public void runLaunchOneLocalArrayedJson() throws IOException, ApiException {
         Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "tool", "launch", "--entry",
             "quay.io/collaboratory/arrays", "--json", ResourceHelpers.resourceFilePath("testArrayLocalInputLocalOutput.json") });
@@ -144,7 +143,7 @@ public class MockedIT {
      * @throws IOException
      * @throws ApiException
      */
-    @Ignore
+    @Test
     public void runLaunchOneHTTPArrayedJson() throws IOException, ApiException {
         System.out.println(ClientIT.getConfigFileLocation(true));
         Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "tool", "launch", "--entry",
@@ -153,16 +152,5 @@ public class MockedIT {
         Assert.assertTrue(new File("/tmp/wc1.out").exists());
         Assert.assertTrue(new File("/tmp/wc2.out").exists());
         Assert.assertTrue(new File("/tmp/example.bedGraph").exists());
-    }
-
-    /**
-     * This test exists because there is an issue with the other tests in this class, and they are being ignored for now until the cause can be figured out
-     * @throws IOException
-     * @throws ApiException
-         */
-    @Test
-    public void testRun() throws IOException, ApiException {
-        System.out.println(ClientIT.getConfigFileLocation(true));
-        Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "tool", "list" });
     }
 }
