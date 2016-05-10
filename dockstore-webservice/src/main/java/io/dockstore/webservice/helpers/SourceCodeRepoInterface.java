@@ -16,25 +16,23 @@
 
 package io.dockstore.webservice.helpers;
 
+import com.esotericsoftware.yamlbeans.YamlReader;
+import com.google.common.base.Optional;
+import io.dockstore.client.Bridge;
+import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Workflow;
+import org.apache.commons.io.FilenameUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
+import wdl4s.parser.WdlParser;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
-
-import org.apache.commons.io.FilenameUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.Yaml;
-
-import com.esotericsoftware.yamlbeans.YamlReader;
-import com.google.common.base.Optional;
-
-import io.dockstore.client.Bridge;
-import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.Workflow;
-import wdl4s.parser.WdlParser;
 
 /**
  * This defines the set of operations that is needed to interact with a particular
@@ -68,6 +66,24 @@ public abstract class SourceCodeRepoInterface {
      * @return email for the logged in user
      */
     public abstract String getOrganizationEmail();
+
+    /**
+     *
+     * @param sourceWorkflow
+     * @param targetWorkflow
+         */
+    protected void copyWorkflow(Workflow sourceWorkflow, Workflow targetWorkflow) {
+        targetWorkflow.setPath(sourceWorkflow.getPath());
+        targetWorkflow.setIsPublished(sourceWorkflow.getIsPublished());
+        targetWorkflow.setWorkflowName(sourceWorkflow.getWorkflowName());
+        targetWorkflow.setAuthor(sourceWorkflow.getAuthor());
+        targetWorkflow.setDescription(sourceWorkflow.getDescription());
+        targetWorkflow.setLastModified(sourceWorkflow.getLastModified());
+        targetWorkflow.setOrganization(sourceWorkflow.getOrganization());
+        targetWorkflow.setRepository(sourceWorkflow.getRepository());
+        targetWorkflow.setGitUrl(sourceWorkflow.getGitUrl());
+        targetWorkflow.setDescriptorType(sourceWorkflow.getDescriptorType());
+    }
 
     /**
      * Parses the cwl content to get the author and description. Updates the tool with the author, description, and hasCollab fields.

@@ -273,16 +273,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         Map<String, String> existingDefaults = new HashMap<>();
         if (existingWorkflow.isPresent()) {
             existingWorkflow.get().getWorkflowVersions().forEach(existingVersion -> existingDefaults.put(existingVersion.getReference(), existingVersion.getWorkflowPath()));
-            workflow.setPath(existingWorkflow.get().getPath());
-            workflow.setIsPublished(existingWorkflow.get().getIsPublished());
-            workflow.setWorkflowName(existingWorkflow.get().getWorkflowName());
-            workflow.setAuthor(existingWorkflow.get().getAuthor());
-            workflow.setDescription(existingWorkflow.get().getDescription());
-            workflow.setLastModified(existingWorkflow.get().getLastModified());
-            workflow.setOrganization(existingWorkflow.get().getOrganization());
-            workflow.setRepository(existingWorkflow.get().getRepository());
-            workflow.setGitUrl(existingWorkflow.get().getGitUrl());
-            workflow.setDescriptorType(existingWorkflow.get().getDescriptorType());
+            copyWorkflow(existingWorkflow.get(), workflow);
         }
 
         // Look at each version, check for valid workflows

@@ -16,18 +16,13 @@
 
 package io.dockstore.webservice.helpers;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import com.google.common.base.Optional;
+import com.google.common.io.Files;
+import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowMode;
+import io.dockstore.webservice.core.WorkflowVersion;
 import org.apache.commons.io.FilenameUtils;
 import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.RepositoryContents;
@@ -39,16 +34,19 @@ import org.eclipse.egit.github.core.service.OrganizationService;
 import org.eclipse.egit.github.core.service.RepositoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Optional;
-import com.google.common.io.Files;
-
-import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.core.WorkflowMode;
-import io.dockstore.webservice.core.WorkflowVersion;
 import wdl4s.NamespaceWithWorkflow;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -207,16 +205,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             Map<String, String> existingDefaults = new HashMap<>();
             if (existingWorkflow.isPresent()){
                 existingWorkflow.get().getWorkflowVersions().forEach(existingVersion -> existingDefaults.put(existingVersion.getReference(), existingVersion.getWorkflowPath()));
-                workflow.setPath(existingWorkflow.get().getPath());
-                workflow.setIsPublished(existingWorkflow.get().getIsPublished());
-                workflow.setWorkflowName(existingWorkflow.get().getWorkflowName());
-                workflow.setAuthor(existingWorkflow.get().getAuthor());
-                workflow.setDescription(existingWorkflow.get().getDescription());
-                workflow.setLastModified(existingWorkflow.get().getLastModified());
-                workflow.setOrganization(existingWorkflow.get().getOrganization());
-                workflow.setRepository(existingWorkflow.get().getRepository());
-                workflow.setGitUrl(existingWorkflow.get().getGitUrl());
-                workflow.setDescriptorType(existingWorkflow.get().getDescriptorType());
+                copyWorkflow(existingWorkflow.get(), workflow);
             }
 
             // when getting a full workflow, look for versions and check each version for valid workflows
