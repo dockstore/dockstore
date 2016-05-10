@@ -16,12 +16,7 @@
 
 package io.dockstore.common;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
-
+import com.google.common.base.Optional;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.exec.CommandLine;
@@ -35,7 +30,11 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Optional;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 /**
  *
@@ -63,7 +62,8 @@ public class Utilities {
      * @param command the command to execute
      * @return the stdout and stderr
      */
-    public static ImmutablePair<String, String> executeCommand(String command, final boolean dumpOutput, Optional<OutputStream> stdoutStream, Optional<OutputStream> stderrStream) {
+    private static ImmutablePair<String, String> executeCommand(String command, final boolean dumpOutput,
+            Optional<OutputStream> stdoutStream, Optional<OutputStream> stderrStream) {
         // TODO: limit our output in case the called program goes crazy
 
         // these are for returning the output for use by this
@@ -102,10 +102,10 @@ public class Utilities {
                 throw new RuntimeException("problems running command: " + command, e);
             } finally {
                 if (dumpOutput) {
-                    System.out.println("exit code: " + resultHandler.getExitValue());
+                    LOG.info("exit code: " + resultHandler.getExitValue());
                     try {
-                        System.err.println("stderr was: " + localStdErrStream.toString(utf8));
-                        System.out.println("stdout was: " + localStdoutStream.toString(utf8));
+                        LOG.debug("stderr was: " + localStdErrStream.toString(utf8));
+                        LOG.debug("stdout was: " + localStdoutStream.toString(utf8));
                     } catch (UnsupportedEncodingException e) {
                         throw new RuntimeException("utf-8 does not exist?", e);
                     }

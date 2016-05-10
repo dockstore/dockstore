@@ -138,6 +138,16 @@
             <version>2.11.7</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+        </dependency>
+
+
     </dependencies>
 
 
@@ -156,6 +166,12 @@
                                 <exclude>META-INF/*.SF</exclude>
                                 <exclude>META-INF/*.DSA</exclude>
                                 <exclude>META-INF/*.RSA</exclude>
+                            </excludes>
+                        </filter>
+                        <filter>
+                            <artifact>org.broadinstitute:*</artifact>
+                            <excludes>
+                                <exclude>logback.xml</exclude>
                             </excludes>
                         </filter>
                     </filters>
@@ -259,6 +275,9 @@
                 <targetPath>${basedir}/target</targetPath>
                 <directory>bin</directory>
                 <filtering>true</filtering>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
             </resource>
         </resources>
     </build>
