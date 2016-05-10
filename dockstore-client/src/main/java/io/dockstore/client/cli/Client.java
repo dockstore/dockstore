@@ -19,13 +19,10 @@ package io.dockstore.client.cli;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.text.ParseException;
@@ -77,6 +74,7 @@ import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
 import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
+import static org.apache.commons.io.FileUtils.copyURLToFile;
 
 /**
  * Main entrypoint for the dockstore CLI.
@@ -248,11 +246,12 @@ public class Client {
                 if(prerelease.equals("true") && (idCur>idLat)) {
                     return true;  //current is newer and not stable
                 }
+                return false;
             } catch (IOException e) {
-                // e.printStackTrace();
+                exceptionMessage(e, "Could not connect to Github. You may have reached your rate limit.", IO_ERROR);
             }
         }catch (MalformedURLException e) {
-            // e.printStackTrace();
+            exceptionMessage(e,"Failed to open URL",CLIENT_ERROR);
         }
         return false;
     }
@@ -317,13 +316,8 @@ public class Client {
     public static void downloadURL(String browserDownloadUrl, String installLocation){
         try{
             URL dockstoreExecutable = new URL(browserDownloadUrl);
-            ReadableByteChannel rbc = Channels.newChannel(dockstoreExecutable.openStream());
-
-            FileOutputStream fos = new FileOutputStream(installLocation);
-            fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-
-            // Set file permissions
             File file = new File(installLocation);
+            copyURLToFile(dockstoreExecutable,file);
             Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rwxrwxr-x");
             java.nio.file.Files.setPosixFilePermissions(file.toPath(), perms);
         }catch (IOException e){
