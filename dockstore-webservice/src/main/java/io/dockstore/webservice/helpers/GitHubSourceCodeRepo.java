@@ -16,18 +16,13 @@
 
 package io.dockstore.webservice.helpers;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import com.google.common.base.Optional;
+import com.google.common.io.Files;
+import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowMode;
+import io.dockstore.webservice.core.WorkflowVersion;
 import org.apache.commons.io.FilenameUtils;
 import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.RepositoryContents;
@@ -39,16 +34,19 @@ import org.eclipse.egit.github.core.service.OrganizationService;
 import org.eclipse.egit.github.core.service.RepositoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Optional;
-import com.google.common.io.Files;
-
-import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.core.WorkflowMode;
-import io.dockstore.webservice.core.WorkflowVersion;
 import wdl4s.NamespaceWithWorkflow;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -103,7 +101,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         } catch (IOException e) {
             // e.printStackTrace();
-            LOG.error(e.getMessage());
+            LOG.error(gitUsername + ": " + e.getMessage());
             return null;
         }
         return cwl;
@@ -116,12 +114,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             repository = service.getRepository(gitUsername, gitRepository);
         } catch (IOException e) {
-            LOG.error("Repo: {} could not be retrieved", c.getGitUrl());
+            LOG.error(gitUsername + ": Repo: {} could not be retrieved", c.getGitUrl());
         }
         if (repository == null) {
-            LOG.info("Github repository not found for {}", c.getPath());
+            LOG.info(gitUsername + ": Github repository not found for {}", c.getPath());
         } else {
-            LOG.info("Github found for: {}", repository.getName());
+            LOG.info(gitUsername + ": Github found for: {}", repository.getName());
             try {
                 List<RepositoryContents> contents;
                 contents = cService.getContents(repository, fileName);
@@ -141,7 +139,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     // Add this later, should call parseWDLContent and use the existing Broad WDL parser
                 }
             } catch (IOException ex) {
-                LOG.info("Repo: {} has no descriptor file ", repository.getName());
+                LOG.info(gitUsername + ": Repo: {} has no descriptor file ", repository.getName());
             }
         }
         return c;
@@ -156,7 +154,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             // ie, it does not work if it is just a user
             organization = oService.getOrganization(gitUsername);
         } catch (IOException ex) {
-            LOG.info("Cannot find Organization {}", gitUsername);
+            LOG.info(gitUsername + ": Cannot find Organization {}", gitUsername);
             return "";
         }
 
@@ -173,7 +171,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             }
             return reposByGitURl;
         } catch (IOException e) {
-            LOG.info("Cannot getWorkflowGitUrl2RepositoryId workflows {}", gitUsername);
+            LOG.info(gitUsername + ": Cannot getWorkflowGitUrl2RepositoryId workflows {}", gitUsername);
             return null;
         }
     }
@@ -184,7 +182,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         RepositoryId id = RepositoryId.createFromId(repositoryId);
         try {
             final Repository repository = service.getRepository(id);
-            LOG.info("Looking at repo: " + repository.getGitUrl());
+            LOG.info(gitUsername + ": Looking at repo: " + repository.getGitUrl());
             Workflow workflow = new Workflow();
             workflow.setOrganization(repository.getOwner().getLogin());
             workflow.setRepository(repository.getName());
@@ -207,16 +205,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             Map<String, String> existingDefaults = new HashMap<>();
             if (existingWorkflow.isPresent()){
                 existingWorkflow.get().getWorkflowVersions().forEach(existingVersion -> existingDefaults.put(existingVersion.getReference(), existingVersion.getWorkflowPath()));
-                workflow.setPath(existingWorkflow.get().getPath());
-                workflow.setIsPublished(existingWorkflow.get().getIsPublished());
-                workflow.setWorkflowName(existingWorkflow.get().getWorkflowName());
-                workflow.setAuthor(existingWorkflow.get().getAuthor());
-                workflow.setDescription(existingWorkflow.get().getDescription());
-                workflow.setLastModified(existingWorkflow.get().getLastModified());
-                workflow.setOrganization(existingWorkflow.get().getOrganization());
-                workflow.setRepository(existingWorkflow.get().getRepository());
-                workflow.setGitUrl(existingWorkflow.get().getGitUrl());
-                workflow.setDescriptorType(existingWorkflow.get().getDescriptorType());
+                copyWorkflow(existingWorkflow.get(), workflow);
             }
 
             // when getting a full workflow, look for versions and check each version for valid workflows
@@ -224,7 +213,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             service.getBranches(id).forEach(branch -> references.add(branch.getName()));
             service.getTags(id).forEach(tag -> references.add(tag.getName()));
             for (String ref : references) {
-                LOG.info("Looking at reference: " + ref);
+                LOG.info(gitUsername + ": Looking at reference: " + ref);
                 WorkflowVersion version = new WorkflowVersion();
                 version.setName(ref);
                 version.setReference(ref);
@@ -263,7 +252,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                                 Files.write(content, tempDesc, StandardCharsets.UTF_8);
                                 importPaths = getCwlImports(tempDesc);
                                 for (String importPath : importPaths) {
-                                    LOG.info("Grabbing file " + basepath + importPath);
+                                    LOG.info(gitUsername + ": Grabbing file " + basepath + importPath);
                                     SourceFile importFile = new SourceFile();
                                     importFile.setContent(extractGitHubContents(cService.getContents(id, basepath + importPath, ref)));
                                     importFile.setPath(basepath + importPath);
@@ -274,9 +263,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                         }
 
                     } catch (IOException ex) {
-                        LOG.info("Error getting contents of file.");
+                        LOG.info(gitUsername + ": Error getting contents of file.");
                     } catch (Exception ex) {
-                        LOG.info(workflow.getDefaultWorkflowPath() + " on " + ref + " was not valid CWL workflow");
+                        LOG.info(gitUsername + ": " + workflow.getDefaultWorkflowPath() + " on " + ref + " was not valid CWL workflow");
                     }
                 } else {
                     try {
@@ -296,7 +285,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                                 Files.write(content, tempDesc, StandardCharsets.UTF_8);
                                 importPaths = getWdlImports(tempDesc);
                                 for (String importPath : importPaths) {
-                                    LOG.info("Grabbing file " + importPath);
+                                    LOG.info(gitUsername + ": Grabbing file " + importPath);
                                     SourceFile importFile = new SourceFile();
                                     importFile.setContent(extractGitHubContents(cService.getContents(id, basepath + importPath, ref)));
                                     importFile.setPath(basepath + importPath);
@@ -306,7 +295,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                             }
                         }
                     } catch (Exception ex) {
-                        LOG.info(calculatedPath + " on " + ref + " was not valid WDL workflow");
+                        LOG.info(gitUsername + ": " + calculatedPath + " on " + ref + " was not valid WDL workflow");
                     }
                 }
 
@@ -323,7 +312,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             }
             return workflow;
         } catch (IOException e) {
-            LOG.info("Cannot getNewWorkflow {}", gitUsername);
+            LOG.info(gitUsername + ": Cannot getNewWorkflow {}");
             return null;
         }
     }

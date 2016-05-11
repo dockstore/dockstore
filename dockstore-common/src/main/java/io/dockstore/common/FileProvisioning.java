@@ -16,21 +16,6 @@
 
 package io.dockstore.common;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.URI;
-import java.util.List;
-
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.vfs2.FileSystemManager;
-import org.apache.commons.vfs2.Selectors;
-import org.apache.commons.vfs2.VFS;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.SignerFactory;
 import com.amazonaws.services.s3.AmazonS3;
@@ -43,6 +28,20 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.vfs2.FileSystemManager;
+import org.apache.commons.vfs2.Selectors;
+import org.apache.commons.vfs2.VFS;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.URI;
+import java.util.List;
 
 /**
  * The purpose of this class is to provide general functions to deal with workflow file provisioning.
@@ -56,8 +55,8 @@ public class FileProvisioning {
 
         private static final Logger LOG = LoggerFactory.getLogger(FileProvisioning.class);
 
-        public static final String S3_ENDPOINT = "s3.endpoint";
-        public static final String DCC_CLIENT_KEY = "dcc_storage.client";
+        private static final String S3_ENDPOINT = "s3.endpoint";
+        private static final String DCC_CLIENT_KEY = "dcc_storage.client";
 
         private HierarchicalINIConfiguration config;
         private final Optional<OutputStream> stdoutStream;
@@ -79,7 +78,7 @@ public class FileProvisioning {
         }
 
         // Which functions to move here? DCC and apache commons ones?
-        public String getStorageClient() {
+        private String getStorageClient() {
                 return config.getString(DCC_CLIENT_KEY, "/icgc/dcc-storage/bin/dcc-storage-client");
         }
 
@@ -87,7 +86,8 @@ public class FileProvisioning {
                 // default layout saves to original_file_name/object_id
                 // file name is the directory and object id is actual file name
                 String client = getStorageClient();
-                String bob = new StringBuilder().append(client).append(" --quiet").append(" download").append(" --object-id ").append(objectId).append(" --output-dir ").append(downloadDir).append(" --output-layout id").toString();
+                String bob = client + " --quiet" + " download" + " --object-id " + objectId + " --output-dir " + downloadDir
+                        + " --output-layout id";
                 Utilities.executeCommand(bob, stdoutStream, stderrStream);
 
                 // downloaded file
@@ -104,13 +104,7 @@ public class FileProvisioning {
         }
 
         public void downloadFromS3(String path, String targetFilePath) {
-                AmazonS3 s3Client = new AmazonS3Client(new ClientConfiguration().withSignerOverride("S3Signer"));
-                if (config.containsKey(S3_ENDPOINT)) {
-                        final String endpoint = config.getString(S3_ENDPOINT);
-                        LOG.info("found custom S3 endpoint, setting to {}", endpoint);
-                        s3Client.setEndpoint(endpoint);
-                        s3Client.setS3ClientOptions(new S3ClientOptions().withPathStyleAccess(true));
-                }
+                AmazonS3 s3Client = getAmazonS3Client(config);
                 String trimmedPath = path.replace("s3://", "");
                 List<String> splitPathList = Lists.newArrayList(trimmedPath.split("/"));
                 String bucketName = splitPathList.remove(0);
@@ -122,6 +116,17 @@ public class FileProvisioning {
                         LOG.error(e.getMessage());
                         throw new RuntimeException("Could not provision input files from S3", e);
                 }
+        }
+
+        public static AmazonS3 getAmazonS3Client(HierarchicalINIConfiguration config) {
+                AmazonS3 s3Client = new AmazonS3Client(new ClientConfiguration().withSignerOverride("S3Signer"));
+                if (config.containsKey(S3_ENDPOINT)) {
+                        final String endpoint = config.getString(S3_ENDPOINT);
+                        LOG.info("found custom S3 endpoint, setting to {}", endpoint);
+                        s3Client.setEndpoint(endpoint);
+                        s3Client.setS3ClientOptions(new S3ClientOptions().withPathStyleAccess(true));
+                }
+                return s3Client;
         }
 
         public void downloadFromHttp(String path, String targetFilePath) {

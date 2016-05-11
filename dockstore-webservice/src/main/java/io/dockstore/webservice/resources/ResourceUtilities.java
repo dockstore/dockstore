@@ -17,21 +17,22 @@
 package io.dockstore.webservice.resources;
 
 import com.google.common.base.Optional;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 /**
  *
@@ -50,7 +51,7 @@ public class ResourceUtilities {
         return getResponseAsString(buildHttpPost(input, token, client_id, secret, payload), client);
     }
 
-    public static HttpGet buildHttpGet(String input, String token) {
+    private static HttpGet buildHttpGet(String input, String token) {
         HttpGet httpGet = new HttpGet(input);
         if (token != null) {
             httpGet.addHeader("Authorization", "Bearer " + token);
@@ -58,7 +59,7 @@ public class ResourceUtilities {
         return httpGet;
     }
 
-    public static HttpPost buildHttpPost(String input, String token, String client_id, String secret, String payload)
+    private static HttpPost buildHttpPost(String input, String token, String client_id, String secret, String payload)
             throws UnsupportedEncodingException {
         HttpPost httpPost = new HttpPost(input);
         if (token == null) {
@@ -76,44 +77,21 @@ public class ResourceUtilities {
     }
 
     // Todo: Implement a backoff algorithm for below HTTP calls
-
-    public static Optional<String> getResponseAsString(HttpGet httpGet, HttpClient client) {
-        Optional<String> result = Optional.absent();
-        final int waitTime = 60000;
-        try {
-            ResponseHandler<String> responseHandler = new BasicResponseHandler();
-            // Give Bitbucket calls longer timeouts
-//            if (httpGet.getURI().toString().contains("bitbucket.org")) {
-                RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(waitTime).setConnectTimeout(waitTime).setConnectionRequestTimeout(waitTime).build();
-                httpGet.setConfig(requestConfig);
-//            }
-            result = Optional.of(client.execute(httpGet, responseHandler));
-        } catch (HttpResponseException httpResponseException) {
-            LOG.error("getResponseAsString(): caught 'HttpResponseException' while processing request <{}> :=> <{}>", httpGet,
-                    httpResponseException.getMessage());
-        } catch (IOException ioe) {
-            LOG.error("getResponseAsString(): caught 'IOException' while processing request <{}> :=> <{}>", httpGet, ioe.getMessage());
-        } finally {
-            httpGet.releaseConnection();
-        }
-        return result;
-    }
-
-    public static Optional<String> getResponseAsString(HttpPost httpPost, HttpClient client) {
+    public static Optional<String> getResponseAsString(HttpRequestBase httpRequest, HttpClient client) {
         Optional<String> result = Optional.absent();
         final int waitTime = 60000;
         try {
             ResponseHandler<String> responseHandler = new BasicResponseHandler();
             RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(waitTime).setConnectTimeout(waitTime).setConnectionRequestTimeout(waitTime).build();
-            httpPost.setConfig(requestConfig);
-            result = Optional.of(client.execute(httpPost, responseHandler));
+            httpRequest.setConfig(requestConfig);
+            result = Optional.of(client.execute(httpRequest, responseHandler));
         } catch (HttpResponseException httpResponseException) {
-            LOG.error("getResponseAsString(): caught 'HttpResponseException' while processing request <{}> :=> <{}>", httpPost,
+            LOG.error("getResponseAsString(): caught 'HttpResponseException' while processing request <{}> :=> <{}>", httpRequest,
                     httpResponseException.getMessage());
         } catch (IOException ioe) {
-            LOG.error("getResponseAsString(): caught 'IOException' while processing request <{}> :=> <{}>", httpPost, ioe.getMessage());
+            LOG.error("getResponseAsString(): caught 'IOException' while processing request <{}> :=> <{}>", httpRequest, ioe.getMessage());
         } finally {
-            httpPost.releaseConnection();
+            httpRequest.releaseConnection();
         }
         return result;
     }

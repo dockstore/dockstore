@@ -16,6 +16,33 @@
 
 package io.dockstore.client.cli.nested;
 
+import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
+import com.google.common.io.Files;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import cromwell.Main;
+import io.cwl.avro.CWL;
+import io.cwl.avro.CommandLineTool;
+import io.cwl.avro.Workflow;
+import io.dockstore.client.Bridge;
+import io.dockstore.client.cli.Client;
+import io.dockstore.common.WDLFileProvisioning;
+import io.github.collaboratory.LauncherCWL;
+import io.swagger.client.ApiException;
+import io.swagger.client.model.Label;
+import io.swagger.client.model.SourceFile;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.csv.QuoteMode;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -30,35 +57,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVPrinter;
-import org.apache.commons.csv.CSVRecord;
-import org.apache.commons.csv.QuoteMode;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-
-import com.google.common.base.Joiner;
-import com.google.common.collect.Lists;
-import com.google.common.io.Files;
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
-import cromwell.Main;
-import io.cwl.avro.CWL;
-import io.cwl.avro.CommandLineTool;
-import io.cwl.avro.Workflow;
-import io.dockstore.client.Bridge;
-import io.dockstore.client.cli.Client;
-import io.dockstore.common.WDLFileProvisioning;
-import io.github.collaboratory.LauncherCWL;
-import io.swagger.client.ApiException;
-import io.swagger.client.model.Label;
-import io.swagger.client.model.SourceFile;
 
 import static io.dockstore.client.cli.ArgumentUtility.CONVERT;
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
@@ -92,7 +90,7 @@ import static io.dockstore.client.cli.Client.IO_ERROR;
  * @author dyuen
  */
 public abstract class AbstractEntryClient {
-    protected final CWL cwlUtil = new CWL();
+    private final CWL cwlUtil = new CWL();
 
     public abstract String getConfigFile();
 
@@ -133,12 +131,6 @@ public abstract class AbstractEntryClient {
         out("  --help               Print help information");
         out("                       Default: false");
         out("  --debug              Print debugging information");
-        out("                       Default: false");
-        out("  --version            Print dockstore's version");
-        out("                       Default: false");
-        out("  --server-metadata    Print metdata describing the dockstore webservice");
-        out("                       Default: false");
-        out("  --upgrade            Upgrades to the latest stable release of Dockstore");
         out("                       Default: false");
         out("  --config <file>      Override config file");
         out("                       Default: ~/.dockstore/config");

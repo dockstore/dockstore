@@ -16,31 +16,8 @@
 
 package io.dockstore.webservice.resources;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
-
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Optional;
-
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.core.SourceFile;
@@ -68,6 +45,26 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  *
@@ -190,7 +187,7 @@ public class WorkflowResource {
             }
             // when 3) no data is found for a workflow in the db, we may want to create a warning, note, or label
         } catch (WebApplicationException ex) {
-            LOG.info("Failed to refresh user {}", user.getId());
+            LOG.info(user.getUsername() + ": " + "Failed to refresh user {}", user.getId());
         }
     }
 
@@ -378,7 +375,7 @@ public class WorkflowResource {
         Workflow duplicate = workflowDAO.findByPath(workflow.getPath());
 
         if (duplicate != null && duplicate.getId() != workflowId) {
-            LOG.info("duplicate workflow found: {}" + workflow.getPath());
+            LOG.info(user.getUsername() + ": " + "duplicate workflow found: {}" + workflow.getPath());
             throw new CustomWebApplicationException("Workflow " + workflow.getPath() + " already exists.", HttpStatus.SC_BAD_REQUEST);
         }
 
