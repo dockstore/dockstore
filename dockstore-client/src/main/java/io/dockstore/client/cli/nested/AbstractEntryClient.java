@@ -563,8 +563,7 @@ public abstract class AbstractEntryClient {
                     final String finalString = gson.toJson(element);
                     final File tempJson = File.createTempFile("parameter", ".json", Files.createTempDir());
                     FileUtils.write(tempJson, finalString);
-                    final LauncherCWL cwlLauncher = new LauncherCWL(getConfigFile(), tempCWL.getAbsolutePath(), tempJson.getAbsolutePath(),
-                            System.out, System.err);
+                    final LauncherCWL cwlLauncher = new LauncherCWL(getConfigFile(), tempCWL.getAbsolutePath(), tempJson.getAbsolutePath());
                     if (this instanceof WorkflowClient) {
                         cwlLauncher.run(Workflow.class);
                     } else {
@@ -572,7 +571,7 @@ public abstract class AbstractEntryClient {
                     }
                 }
             } else {
-                final LauncherCWL cwlLauncher = new LauncherCWL(getConfigFile(), tempCWL.getAbsolutePath(), jsonRun, System.out, System.err);
+                final LauncherCWL cwlLauncher = new LauncherCWL(getConfigFile(), tempCWL.getAbsolutePath(), jsonRun);
                 if (this instanceof WorkflowClient) {
                     cwlLauncher.run(Workflow.class);
                 } else {
@@ -615,8 +614,7 @@ public abstract class AbstractEntryClient {
 
                     // final String stringMapAsString = gson.toJson(stringMap);
                     // Files.write(stringMapAsString, tempJson, StandardCharsets.UTF_8);
-                    final LauncherCWL cwlLauncher = new LauncherCWL(this.getConfigFile(), tempCWL.getAbsolutePath(), tempJson.getAbsolutePath(),
-                            System.out, System.err);
+                    final LauncherCWL cwlLauncher = new LauncherCWL(this.getConfigFile(), tempCWL.getAbsolutePath(), tempJson.getAbsolutePath());
                     if (this instanceof WorkflowClient) {
                         cwlLauncher.run(Workflow.class);
                     } else {

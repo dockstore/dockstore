@@ -17,6 +17,7 @@
 package io.dockstore.common;
 
 import com.google.common.base.Optional;
+import com.google.common.io.ByteStreams;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.exec.CommandLine;
@@ -53,8 +54,12 @@ public class Utilities {
         }
     }
 
-    public static ImmutablePair<String, String> executeCommand(String command, Optional<OutputStream> stdoutStream, Optional<OutputStream> stderrStream) {
-        return executeCommand(command, true, stdoutStream, stderrStream);
+    public static ImmutablePair<String, String> executeCommand(String command) {
+        return executeCommand(command, true, Optional.of(ByteStreams.nullOutputStream()) , Optional.of(ByteStreams.nullOutputStream()));
+    }
+
+    public static ImmutablePair<String, String> executeCommand(String command, OutputStream stdoutStream, OutputStream stderrStream) {
+        return executeCommand(command, true, Optional.of(stdoutStream), Optional.of(stderrStream));
     }
 
     /**
@@ -86,7 +91,7 @@ public class Utilities {
                 Executor executor = new DefaultExecutor();
                 executor.setExitValue(0);
                 if (dumpOutput) {
-                    System.out.println("CMD: " + command);
+                    LOG.info("CMD: " + command);
                 }
                 // get stdout and stderr
                 executor.setStreamHandler(new PumpStreamHandler(stdout, stderr));
