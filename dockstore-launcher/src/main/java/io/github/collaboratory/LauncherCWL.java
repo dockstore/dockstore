@@ -16,23 +16,6 @@
 
 package io.github.collaboratory;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.UUID;
-
 import com.amazonaws.auth.SignerFactory;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.internal.S3Signer;
@@ -47,8 +30,6 @@ import io.cwl.avro.CommandOutputParameter;
 import io.cwl.avro.Workflow;
 import io.cwl.avro.WorkflowOutputParameter;
 import io.dockstore.common.FileProvisioning;
-import io.dockstore.common.FileProvisioning.PathInfo;
-import io.dockstore.common.Utilities;
 import io.dockstore.common.FileProvisioning.PathInfo;
 import io.dockstore.common.Utilities;
 import org.apache.commons.cli.CommandLine;
@@ -429,6 +410,7 @@ public class LauncherCWL {
         UUID uuid = UUID.randomUUID();
         // setup directories
         globalWorkingDir = workingDir + "/launcher-" + uuid;
+        System.out.println("Creating directories for run of Dockstore launcher with uuid: " + uuid);
         Utilities.executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid, stdoutStream, stderrStream);
         Utilities.executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid + "/configs", stdoutStream, stderrStream);
         Utilities.executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid + "/working", stdoutStream, stderrStream);
@@ -521,14 +503,12 @@ public class LauncherCWL {
 
         // for each file input from the CWL
         for (Object file : files) {
-
             // pull back the name of the input from the CWL
             LOG.info(file.toString());
             // remove the hash from the cwlInputFileID
             final Method getId = file.getClass().getDeclaredMethod("getId");
             String cwlInputFileID = getId.invoke(file).toString().substring(1);
             LOG.info("ID: {}", cwlInputFileID);
-
             pullFilesHelper(inputsOutputs, fileMap, cwlInputFileID);
         }
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException  e) {
@@ -587,6 +567,7 @@ public class LauncherCWL {
 
         // set up output paths
         String downloadDirectory = globalWorkingDir + "/inputs/" + UUID.randomUUID();
+        System.out.println("Downloading: " + cwlInputFileID + " from " + path + " into directory: " + downloadDirectory);
         Utilities.executeCommand("mkdir -p " + downloadDirectory, stdoutStream, stderrStream);
         File downloadDirFileObj = new File(downloadDirectory);
 
