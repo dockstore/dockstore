@@ -248,7 +248,7 @@ public class FileProvisioning {
             }
 
             builder.append("] ");
-            builder.append(percentage.toPlainString()).append("%");
+            builder.append(percentage.setScale(0,BigDecimal.ROUND_HALF_EVEN).toPlainString()).append("%");
 
             System.out.print(builder);
             // track progress
