@@ -20,10 +20,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.io.Resources;
+import io.dockstore.common.TestUtility;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 
 import java.io.IOException;
 import java.net.URL;
@@ -38,9 +37,6 @@ import static org.mockito.Mockito.when;
 
 public class UpgradeTestIT {
     private ObjectMapper objectMapper;
-
-    @Rule
-    public final ExpectedSystemExit exit = ExpectedSystemExit.none();
 
     @Before
     public void setup() throws IOException{
@@ -86,29 +82,26 @@ public class UpgradeTestIT {
 
     @Test
     public void upgradeTest() throws IOException {
-        exit.expectSystemExit();
         //if the current is newer and unstable, output "--upgrade-stable" command option
         //else if current is the latest stable version, output "you are currently running the most stable version"
         //         and option to "--upgrade-unstable"
         //else(current is older), upgrade to the most stable version right away
-        Client.main(new String[] {"--debug", "--upgrade"});
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "--debug", "--upgrade"});
 
     }
 
     @Test
-    public void upgradeStable(){
-        exit.expectSystemExit();
+    public void upgradeStable() throws IOException {
         //if the current is unstable, upgrade to the latest stable version
         //else, output "you are currently running the most stable version" and option to "--upgrade-unstable"
-        Client.main(new String[] {"--debug", "--upgrade-stable"});
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "--debug", "--upgrade-stable"});
     }
 
     @Test
-    public void upgradeUnstable(){
-        exit.expectSystemExit();
+    public void upgradeUnstable() throws IOException {
         //if the current is stable, upgrade to the most unstable version
         //else, output "you are currently running on the latest unstable version" and option to "--upgrade-stable"
-        Client.main(new String[] {"--debug", "--upgrade-unstable"});
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "--debug", "--upgrade-unstable"});
     }
 
 }
