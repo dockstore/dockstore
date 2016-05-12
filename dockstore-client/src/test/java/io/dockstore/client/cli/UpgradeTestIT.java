@@ -91,7 +91,7 @@ public class UpgradeTestIT {
         //else if current is the latest stable version, output "you are currently running the most stable version"
         //         and option to "--upgrade-unstable"
         //else(current is older), upgrade to the most stable version right away
-        Client.main(new String[] {"--upgrade"});
+        Client.main(new String[] {"--debug", "--upgrade"});
 
     }
 
@@ -100,7 +100,7 @@ public class UpgradeTestIT {
         exit.expectSystemExit();
         //if the current is unstable, upgrade to the latest stable version
         //else, output "you are currently running the most stable version" and option to "--upgrade-unstable"
-        Client.main(new String[] {"--upgrade-stable"});
+        Client.main(new String[] {"--debug", "--upgrade-stable"});
     }
 
     @Test
@@ -108,7 +108,7 @@ public class UpgradeTestIT {
         exit.expectSystemExit();
         //if the current is stable, upgrade to the most unstable version
         //else, output "you are currently running on the latest unstable version" and option to "--upgrade-stable"
-        Client.main(new String[] {"--upgrade-unstable"});
+        Client.main(new String[] {"--debug", "--upgrade-unstable"});
     }
 
 }
