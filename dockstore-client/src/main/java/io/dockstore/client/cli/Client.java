@@ -16,64 +16,36 @@
 
 package io.dockstore.client.cli;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import javax.ws.rs.ProcessingException;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
-import org.apache.http.HttpStatus;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.client.cli.nested.WorkflowClient;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;
-import io.swagger.client.api.ContainersApi;
-import io.swagger.client.api.ContainertagsApi;
-import io.swagger.client.api.GAGHApi;
-import io.swagger.client.api.UsersApi;
-import io.swagger.client.api.WorkflowsApi;
+import io.swagger.client.api.*;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Metadata;
 import io.swagger.client.model.SourceFile;
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.http.HttpStatus;
 
-import static io.dockstore.client.cli.ArgumentUtility.err;
-import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
-import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
-import static io.dockstore.client.cli.ArgumentUtility.flag;
-import static io.dockstore.client.cli.ArgumentUtility.invalid;
-import static io.dockstore.client.cli.ArgumentUtility.Kill;
-import static io.dockstore.client.cli.ArgumentUtility.isHelpRequest;
-import static io.dockstore.client.cli.ArgumentUtility.optVal;
-import static io.dockstore.client.cli.ArgumentUtility.out;
-import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
-import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
-import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
-import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
+import javax.ws.rs.ProcessingException;
+import java.io.*;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static io.dockstore.client.cli.ArgumentUtility.*;
 import static org.apache.commons.io.FileUtils.copyURLToFile;
 
 /**
@@ -100,6 +72,7 @@ public class Client {
 
     public static final AtomicBoolean DEBUG = new AtomicBoolean(false);
     public static final AtomicBoolean SCRIPT = new AtomicBoolean(false);
+    private static ObjectMapper objectMapper;
 
     /*
      * Dockstore Client Functions for CLI
@@ -223,10 +196,10 @@ public class Client {
     public static Boolean compareVersion(String current, String latest){
         URL urlCurrent, urlLatest;
         try{
-            urlCurrent = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/tags/"+current);  //for testing, change to current later on
-            urlLatest = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/tags/"+latest);
+            urlCurrent = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/tags/"+current);
+            urlLatest = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/latest");
 
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = getObjectMapper();
             Map<String, Object> mapCur, mapLat;
             int idCur,idLat;
             String prerelease;
@@ -266,7 +239,7 @@ public class Client {
         URL url;
         try {
             url = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/latest");
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = getObjectMapper();
             Map<String, Object> map;
             try {
                 map = mapper.readValue(url, Map.class);
@@ -290,7 +263,7 @@ public class Client {
     public static Boolean checkIfTagExists(String tag) {
         try {
             URL url = new URL("https://api.github.com/repos/ga4gh/dockstore/releases");
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = getObjectMapper();
             try {
                 ArrayList<Map<String, String>> arrayMap = mapper.readValue(url, ArrayList.class);
                 for (Map<String, String> map : arrayMap) {
@@ -352,7 +325,7 @@ public class Client {
         try {
             url = new URL(latestPath);
             urlRel = new URL(allReleases);
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = getObjectMapper();
             Map<String, Object> map = null;
             List<Map<String, Object>> mapRel = null;
 
@@ -378,6 +351,7 @@ public class Client {
                         //user wants to upgrade to newer unstable version
                         if(mapRel.get(0).get("prerelease").toString().equals("true")){
                             //the latest publish is unstable
+                            out("Downloading version " + firstElement + " of Dockstore.");
                             downloadURL(upgradeURL,installLocation);
                             out("Download complete. You are now on version " + firstElement + " of Dockstore.");
                         }
@@ -390,8 +364,6 @@ public class Client {
                 } else {
                     if(optVal.equals("stable")){
                         out("Upgrading to most recent stable release (" + currentVersion + " -> " + latestVersion + ")");
-                        out("Downloading version " + latestVersion + " of Dockstore.");
-                        // Download update
                         downloadURL(browserDownloadUrl,installLocation);
                         out("Download complete. You are now on version " + latestVersion + " of Dockstore.");
                     }else if(optVal.equals("none")){
@@ -403,8 +375,6 @@ public class Client {
                             // current version is the older unstable version
                             // upgrade to newer stable version
                             out("Upgrading to most recent stable release (" + currentVersion + " -> " + latestVersion + ")");
-                            out("Downloading version " + latestVersion + " of Dockstore.");
-                            // Download update
                             downloadURL(browserDownloadUrl,installLocation);
                             out("Download complete. You are now on version " + latestVersion + " of Dockstore.");
                         }
@@ -417,6 +387,7 @@ public class Client {
                             //user wants to upgrade to newer unstable version
                             if(mapRel.get(0).get("prerelease").toString().equals("true")){
                                 //the latest publish is unstable
+                                out("Downloading version " + firstElement + " of Dockstore.");
                                 downloadURL(upgradeURL,installLocation);
                                 out("Download complete. You are now on version " + firstElement + " of Dockstore.");
                             }
@@ -448,7 +419,7 @@ public class Client {
                         // e.printStackTrace();
                     }
 
-                    ObjectMapper mapper = new ObjectMapper();
+                    ObjectMapper mapper = getObjectMapper();
                     try {
                         // Determine when current version was published
                         Map<String, Object> map = mapper.readValue(url, Map.class);
@@ -497,6 +468,18 @@ public class Client {
                     }
                 }
             }
+        }
+    }
+
+    public static void setObjectMapper(ObjectMapper objectMapper){
+        Client.objectMapper = objectMapper;
+    }
+
+    private static ObjectMapper getObjectMapper() {
+        if (objectMapper == null){
+            return new ObjectMapper();
+        } else {
+            return objectMapper;
         }
     }
 
