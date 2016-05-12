@@ -16,6 +16,26 @@
 
 package io.dockstore.client.cli;
 
+import ch.qos.logback.classic.Level;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+import io.dockstore.client.cli.nested.AbstractEntryClient;
+import io.dockstore.client.cli.nested.ToolClient;
+import io.dockstore.client.cli.nested.WorkflowClient;
+import io.swagger.client.ApiClient;
+import io.swagger.client.ApiException;
+import io.swagger.client.Configuration;
+import io.swagger.client.api.ContainersApi;
+import io.swagger.client.api.ContainertagsApi;
+import io.swagger.client.api.GAGHApi;
+import io.swagger.client.api.UsersApi;
+import io.swagger.client.api.WorkflowsApi;
+import io.swagger.client.model.Metadata;
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.ws.rs.ProcessingException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -42,31 +62,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.ws.rs.ProcessingException;
-
-import io.dockstore.client.cli.nested.AbstractEntryClient;
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
-import io.dockstore.client.cli.nested.ToolClient;
-import io.dockstore.client.cli.nested.WorkflowClient;
-import io.swagger.client.ApiClient;
-import io.swagger.client.ApiException;
-import io.swagger.client.Configuration;
-import io.swagger.client.api.ContainersApi;
-import io.swagger.client.api.ContainertagsApi;
-import io.swagger.client.api.GAGHApi;
-import io.swagger.client.api.UsersApi;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.Metadata;
-
+import static io.dockstore.client.cli.ArgumentUtility.Kill;
 import static io.dockstore.client.cli.ArgumentUtility.err;
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.ArgumentUtility.flag;
 import static io.dockstore.client.cli.ArgumentUtility.invalid;
-import static io.dockstore.client.cli.ArgumentUtility.Kill;
 import static io.dockstore.client.cli.ArgumentUtility.isHelpRequest;
 import static io.dockstore.client.cli.ArgumentUtility.optVal;
 import static io.dockstore.client.cli.ArgumentUtility.out;
@@ -80,6 +81,8 @@ import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
  *
  */
 public class Client {
+
+    private static final Logger LOG = LoggerFactory.getLogger(Client.class);
 
     private String configFile = null;
     private ContainersApi containersApi;
@@ -419,6 +422,9 @@ public class Client {
 
         if (flag(args, "--debug") || flag(args, "--d")) {
             DEBUG.set(true);
+            // turn on logback
+            ch.qos.logback.classic.Logger root = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME);
+            root.setLevel(Level.DEBUG);
         }
         if (flag(args, "--script") || flag(args, "--s")) {
             SCRIPT.set(true);

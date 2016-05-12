@@ -16,22 +16,7 @@
 
 package io.dockstore.client.cli;
 
-import java.io.File;
-import java.io.IOException;
-
 import io.dockstore.client.cli.nested.ToolClient;
-import org.apache.commons.io.FileUtils;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.ResourceHelpers;
@@ -41,11 +26,26 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.User;
 import io.swagger.quay.client.api.UserApi;
+import org.apache.commons.io.FileUtils;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+import java.io.File;
+import java.io.IOException;
 
 import static io.dockstore.common.CommonTestUtilities.clearState;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.doNothing;
 import static org.powermock.api.mockito.PowerMockito.spy;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
@@ -112,7 +112,7 @@ public class MockedIT {
     @Test
     public void runLaunchOneJson() throws IOException, ApiException {
         Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "tool", "launch", "--entry",
-            "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testOneRun.json"), "--debug" });
+            "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testOneRun.json") });
     }
 
     @Test

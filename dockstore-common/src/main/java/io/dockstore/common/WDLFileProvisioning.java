@@ -16,23 +16,20 @@
 
 package io.dockstore.common;
 
+import com.amazonaws.util.json.JSONException;
+import com.amazonaws.util.json.JSONObject;
+import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
-import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.amazonaws.util.json.JSONException;
-import com.amazonaws.util.json.JSONObject;
-import com.google.common.base.Optional;
 
 /**
  * This class deals with file provisioning for WDL
@@ -41,16 +38,9 @@ import com.google.common.base.Optional;
 public class WDLFileProvisioning {
         private static final Logger LOG = LoggerFactory.getLogger(WDLFileProvisioning.class);
 
-        private final Optional<OutputStream> stdoutStream;
-        private final Optional<OutputStream> stderrStream;
         private final FileProvisioning fileProvisioning;
-        private String configFile;
 
         public WDLFileProvisioning(String configFile) {
-                // do not forward stdout and stderr
-                stdoutStream = Optional.absent();
-                stderrStream = Optional.absent();
-                this.configFile = configFile;
                 fileProvisioning = new FileProvisioning(configFile);
         }
 
@@ -116,18 +106,11 @@ public class WDLFileProvisioning {
 
                         // Setup local paths
                         String downloadDir = "cromwell-input/" + UUID.randomUUID();
-                        Utilities.executeCommand("mkdir -p " + downloadDir, stdoutStream, stderrStream);
+                        Utilities.executeCommand("mkdir -p " + downloadDir);
                         File downloadDirFileObject = new File(downloadDir);
                         String targetFilePath = downloadDirFileObject.getAbsolutePath() + "/" + key;
 
-                        if (pathInfo.isObjectIdType()) {
-                                String objectId = pathInfo.getObjectId();
-                                fileProvisioning.downloadFromDccStorage(objectId, downloadDir, downloadDirFileObject, targetFilePath);
-                        } else if (path.startsWith("s3://")) {
-                                fileProvisioning.downloadFromS3(path, targetFilePath);
-                        } else if (!pathInfo.isLocalFileType()) {
-                                fileProvisioning.downloadFromHttp(path, targetFilePath);
-                        }
+                        fileProvisioning.provisionInputFile(path, downloadDir, downloadDirFileObject, targetFilePath, pathInfo);
 
                         jsonEntry.put(key, targetFilePath);
                         LOG.info("DOWNLOADED FILE: LOCAL: {} URL: {} => {}", key, path, targetFilePath);
