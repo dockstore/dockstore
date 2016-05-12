@@ -16,9 +16,16 @@
 
 package io.dockstore.client.cli;
 
-import java.io.File;
-import java.io.IOException;
-
+import io.dockstore.common.TestUtility;
+import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dropwizard.testing.ResourceHelpers;
+import io.dropwizard.testing.junit.DropwizardAppRule;
+import io.swagger.client.ApiException;
+import io.swagger.client.api.UsersApi;
+import io.swagger.client.model.SourceFile;
+import io.swagger.client.model.User;
+import io.swagger.quay.client.api.UserApi;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -31,15 +38,8 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import io.dockstore.webservice.DockstoreWebserviceApplication;
-import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dropwizard.testing.ResourceHelpers;
-import io.dropwizard.testing.junit.DropwizardAppRule;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.UsersApi;
-import io.swagger.client.model.SourceFile;
-import io.swagger.client.model.User;
-import io.swagger.quay.client.api.UserApi;
+import java.io.File;
+import java.io.IOException;
 
 import static io.dockstore.common.CommonTestUtilities.clearState;
 import static org.mockito.Mockito.doReturn;
