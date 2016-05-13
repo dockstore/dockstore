@@ -25,3 +25,7 @@ To make the above possible I think we need:
 ## Issues
 
 * https://github.com/ga4gh/dockstore/issues/232
+
+## Schema
+
+* http://editor.swagger.io/#/?import=https://raw.githubusercontent.com/ga4gh/tool-registry-schemas/develop/src/main/resources/swagger/ga4gh-tool-discovery.yaml
