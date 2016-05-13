@@ -216,7 +216,7 @@ public class Client {
 
     public static String openCurrentVersion(URL link, String info){
         ObjectMapper mapper = getObjectMapper();
-        Map mapCur;
+        Map<String,Object> mapCur;
         try{
             mapCur = mapper.readValue(link,Map.class);
             return mapCur.get(info).toString();

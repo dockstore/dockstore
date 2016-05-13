@@ -22,7 +22,6 @@ import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.io.Resources;
 import io.dockstore.common.TestUtility;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -58,11 +57,13 @@ public class UpgradeTestIT {
         Map map2 = localObjectMapper.readValue(Resources.getResource("current-stable.json"),Map.class);
         Map map3 = localObjectMapper.readValue(Resources.getResource("stable-old.json"),Map.class);
         Map map4 = localObjectMapper.readValue(Resources.getResource("unstable-old.json"),Map.class);
+        Map map5 = localObjectMapper.readValue(Resources.getResource("dummy-unstable.json"),Map.class);
         URL latest = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/latest");
         URL current = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/tags/0.4-beta.0");
         URL curstable = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/tags/0.3-beta.1");
         URL stableOld = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/tags/0.3-beta.0");
         URL unstableOld = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/tags/0.3-alpha.0");
+        URL unstableDummy = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/tags/0.4-beta.1-SNAPSHOT");
         URL all = new URL("https://api.github.com/repos/ga4gh/dockstore/releases");
 
         ArrayList list = localObjectMapper.readValue(Resources.getResource("all-releases.json"), ArrayList.class);
@@ -71,6 +72,7 @@ public class UpgradeTestIT {
         when(objectMapper.readValue(eq(curstable),eq(Map.class))).thenReturn(map2);
         when(objectMapper.readValue(eq(stableOld),eq(Map.class))).thenReturn(map3);
         when(objectMapper.readValue(eq(unstableOld),eq(Map.class))).thenReturn(map4);
+        when(objectMapper.readValue(eq(unstableDummy),eq(Map.class))).thenReturn(map5);
         when(objectMapper.readValue(eq(all),eq(ArrayList.class))).thenReturn(list);
         when(objectMapper.getTypeFactory()).thenReturn(localObjectMapper.getTypeFactory());
 
@@ -81,15 +83,11 @@ public class UpgradeTestIT {
 
     }
 
-    @Ignore
     @Test
-    public void upgradeTest() throws IOException {
-        //if the current is newer and unstable, output "--upgrade-stable" command option
-        //else if current is the latest stable version, output "you are currently running the most stable version"
-        //         and option to "--upgrade-unstable"
-        //else(current is older), upgrade to the most stable version right away
-        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "--debug", "--upgrade"});
-
+    public void upgradeUnstable() throws IOException {
+        //if the current is stable, upgrade to the most unstable version
+        //else, output "you are currently running on the latest unstable version" and option to "--upgrade-stable"
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "--debug", "--upgrade-unstable"});
     }
 
     @Test
@@ -100,10 +98,12 @@ public class UpgradeTestIT {
     }
 
     @Test
-    public void upgradeUnstable() throws IOException {
-        //if the current is stable, upgrade to the most unstable version
-        //else, output "you are currently running on the latest unstable version" and option to "--upgrade-stable"
-        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "--debug", "--upgrade-unstable"});
+    public void upgradeTest() throws IOException {
+        //if the current is newer and unstable, output "--upgrade-stable" command option
+        //else if current is the latest stable version, output "you are currently running the most stable version"
+        //         and option to "--upgrade-unstable"
+        //else(current is older), upgrade to the most stable version right away
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "--debug", "--upgrade"});
     }
 
 }
