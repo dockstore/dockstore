@@ -1,4 +1,4 @@
-# Mirroring - Functional Specification
+# Mirroring - Specification
 
 ## Overview
 
