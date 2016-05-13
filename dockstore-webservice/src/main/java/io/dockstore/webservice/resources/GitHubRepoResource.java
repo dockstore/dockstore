@@ -16,18 +16,15 @@
 
 package io.dockstore.webservice.resources;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.List;
-
-import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.GET;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-
+import com.codahale.metrics.annotation.Timed;
+import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenType;
+import io.dockstore.webservice.jdbi.TokenDAO;
+import io.dropwizard.auth.Auth;
+import io.dropwizard.hibernate.UnitOfWork;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.RepositoryContents;
 import org.eclipse.egit.github.core.User;
@@ -39,16 +36,16 @@ import org.eclipse.egit.github.core.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.codahale.metrics.annotation.Timed;
-
-import io.dockstore.webservice.core.Token;
-import io.dockstore.webservice.core.TokenType;
-import io.dockstore.webservice.jdbi.TokenDAO;
-import io.dropwizard.auth.Auth;
-import io.dropwizard.hibernate.UnitOfWork;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.List;
 
 /**
  *
@@ -112,36 +109,14 @@ public class GitHubRepoResource {
                     builder.append("Token: ").append(token.getId()).append(" is ").append(user.getName()).append(" login is ")
                             .append(user.getLogin()).append('\n');
                     for (Repository repo : service.getRepositories(user.getLogin())) {
-                        try {
-                            List<RepositoryContents> contents = cService.getContents(repo, "collab.json");
-                            // odd, throws exceptions if file does not exist
-                            if (!(contents == null || contents.isEmpty())) {
-                                builder.append("\tRepo: ").append(repo.getName()).append(" has a collab.json \n");
-                                String encoded = contents.get(0).getContent().replace("\n", "");
-                                byte[] decode = Base64.getDecoder().decode(encoded);
-                                builder.append(new String(decode, StandardCharsets.UTF_8));
-                            }
-                        } catch (IOException ex) {
-                            builder.append("\tRepo: ").append(repo.getName()).append(" has no collab.json \n");
-                        }
+                        checkAndAddRepoToBuilder(builder, cService, repo);
                     }
 
                     List<User> organizations = oService.getOrganizations();
                     for (User org : organizations) {
                         builder.append("Organization: ").append(org.getLogin());
                         for (Repository repo : service.getRepositories(org.getLogin())) {
-                            try {
-                                List<RepositoryContents> contents = cService.getContents(repo, "collab.json");
-                                // odd, throws exceptions if file does not exist
-                                if (!(contents == null || contents.isEmpty())) {
-                                    builder.append("\tRepo: ").append(repo.getName()).append(" has a collab.json \n");
-                                    String encoded = contents.get(0).getContent().replace("\n", "");
-                                    byte[] decode = Base64.getDecoder().decode(encoded);
-                                    builder.append(new String(decode, StandardCharsets.UTF_8));
-                                }
-                            } catch (IOException ex) {
-                                builder.append("\tRepo: ").append(repo.getName()).append(" has no collab.json \n");
-                            }
+                            checkAndAddRepoToBuilder(builder, cService, repo);
                         }
                     }
 
@@ -156,5 +131,27 @@ public class GitHubRepoResource {
         String ret = builder.toString();
         // System.out.println(ret);
         return ret;
+    }
+
+    /**
+     * Check whether the repo has valid contents, if so, list it.
+     * @deprecated this looks like it looks at invalid collab.json
+     * @param builder
+     * @param cService
+     * @param repo
+    */
+    private void checkAndAddRepoToBuilder(StringBuilder builder, ContentsService cService, Repository repo) {
+        try {
+            List<RepositoryContents> contents = cService.getContents(repo, "collab.json");
+            // odd, throws exceptions if file does not exist
+            if (!(contents == null || contents.isEmpty())) {
+                builder.append("\tRepo: ").append(repo.getName()).append(" has a collab.json \n");
+                String encoded = contents.get(0).getContent().replace("\n", "");
+                byte[] decode = Base64.getDecoder().decode(encoded);
+                builder.append(new String(decode, StandardCharsets.UTF_8));
+            }
+        } catch (IOException ex) {
+            builder.append("\tRepo: ").append(repo.getName()).append(" has no collab.json \n");
+        }
     }
 }

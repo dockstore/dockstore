@@ -148,6 +148,16 @@
         </dependency>
 
 
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+        </dependency>
+
+
     </dependencies>
 
 
@@ -166,6 +176,12 @@
                                 <exclude>META-INF/*.SF</exclude>
                                 <exclude>META-INF/*.DSA</exclude>
                                 <exclude>META-INF/*.RSA</exclude>
+                            </excludes>
+                        </filter>
+                        <filter>
+                            <artifact>org.broadinstitute:*</artifact>
+                            <excludes>
+                                <exclude>logback.xml</exclude>
                             </excludes>
                         </filter>
                     </filters>
@@ -262,6 +278,20 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <!-- some tests can alter resources on OICR development hosts -->
+                    <execution>
+                        <id>reset_after_tests</id>
+                        <goals>
+                            <goal>resources</goal>
+                        </goals>
+                        <phase>install</phase>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
         
         <resources>
@@ -269,6 +299,9 @@
                 <targetPath>${basedir}/target</targetPath>
                 <directory>bin</directory>
                 <filtering>true</filtering>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
             </resource>
         </resources>
     </build>

@@ -16,30 +16,6 @@
 
 package io.dockstore.webservice.resources;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-
-import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
@@ -49,7 +25,6 @@ import com.google.common.collect.Lists;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
 import com.google.gson.Gson;
-
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.core.Token;
@@ -68,6 +43,28 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 /**
  *
@@ -309,7 +306,7 @@ public class UserResource {
         if (user != null && group != null) {
             user.addGroup(group);
         } else {
-            LOG.info("user or group is null");
+            LOG.info(user.getUsername() + ": " + "user or group is null");
             throw new CustomWebApplicationException("Group and/or user not found.", HttpStatus.SC_BAD_REQUEST);
         }
 
@@ -333,7 +330,7 @@ public class UserResource {
         if (user != null && group != null) {
             user.removeGroup(group);
         } else {
-            LOG.info("user or group is null");
+            LOG.info(user.getUsername() + ": " + "user or group is null");
             throw new CustomWebApplicationException("Group and/or user not found.", HttpStatus.SC_BAD_REQUEST);
         }
         return user;
@@ -475,14 +472,14 @@ public class UserResource {
         Optional<String> asString = ResourceUtilities.asString(url, token.getContent(), client);
         if (asString.isPresent()) {
             String response = asString.get();
-            LOG.info("RESOURCE CALL: {}", url);
+            LOG.info(authUser.getUsername() + ": " + "RESOURCE CALL: {}", url);
 
             Gson gson = new Gson();
             // Map<String, String> map = new HashMap<>();
             // map = (Map<String, String>) gson.fromJson(response, map.getClass());
             //
             // String username = map.get("username");
-            // LOG.info(username);
+            // LOG.info(user.getUsername() + ": " + (username);
 
             Map<String, ArrayList> map2 = new HashMap<>();
             map2 = (Map<String, ArrayList>) gson.fromJson(response, map2.getClass());

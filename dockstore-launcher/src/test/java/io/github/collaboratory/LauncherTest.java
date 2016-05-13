@@ -16,18 +16,16 @@
 
 package io.github.collaboratory;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-
+import com.amazonaws.AmazonClientException;
+import io.cwl.avro.CommandLineTool;
+import io.cwl.avro.Workflow;
 import org.apache.commons.io.FileUtils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import com.amazonaws.AmazonClientException;
-
-import io.cwl.avro.CommandLineTool;
-import io.cwl.avro.Workflow;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 
 import static org.junit.Assert.assertTrue;
 
@@ -66,7 +64,7 @@ public class LauncherTest {
             expectedEx.expect(AmazonClientException.class);
             expectedEx.expectMessage("Unable to load AWS credentials from any provider in the chain");
         }
-        final LauncherCWL launcherCWL = new LauncherCWL(iniFile.getAbsolutePath(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath(), stdout, stderr);
+        final LauncherCWL launcherCWL = new LauncherCWL(iniFile.getAbsolutePath(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath());
         launcherCWL.run(CommandLineTool.class);
 
         assertTrue(!stdout.toString().isEmpty());
@@ -84,7 +82,7 @@ public class LauncherTest {
             expectedEx.expect(AmazonClientException.class);
             expectedEx.expectMessage("Unable to load AWS credentials from any provider in the chain");
         }
-        final LauncherCWL launcherCWL = new LauncherCWL(iniFile.getAbsolutePath(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath(), stdout, stderr);
+        final LauncherCWL launcherCWL = new LauncherCWL(iniFile.getAbsolutePath(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath());
         launcherCWL.run(Workflow.class);
 
         assertTrue(!stdout.toString().isEmpty());

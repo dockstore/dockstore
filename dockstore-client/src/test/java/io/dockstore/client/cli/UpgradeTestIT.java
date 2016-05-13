@@ -80,7 +80,6 @@ public class UpgradeTestIT {
         CollectionType ct = typeFactory.constructCollectionType(List.class, Map.class);
         Object mapRel = localObjectMapper.readValue(Resources.getResource("all-releases.json"), ct);
         when(objectMapper.readValue(eq(all),any(CollectionType.class))).thenReturn(mapRel);
-
     }
 
     @Test
