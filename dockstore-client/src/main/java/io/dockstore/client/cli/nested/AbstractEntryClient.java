@@ -114,7 +114,7 @@ public abstract class AbstractEntryClient {
         out("  " + CWL_STRING + "              :  returns the Common Workflow Language " + getEntryType() + " definition for this entry");
         out("                      which enables integration with Global Alliance compliant systems");
         out("");
-        out("  " + WDL_STRING + "              :  returns the Workflow Descriptor Langauge definition for this Docker image.");
+        out("  " + WDL_STRING + "              :  returns the Workflow Descriptor Language definition for this Docker image.");
         out("");
         out("  refresh          :  updates your list of " + getEntryType() + "s stored on Dockstore or an individual " + getEntryType());
         out("");

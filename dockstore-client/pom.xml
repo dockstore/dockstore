@@ -137,6 +137,16 @@
             <artifactId>scala-library</artifactId>
             <version>2.11.7</version>
         </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
+
 
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -265,6 +275,20 @@
                         <goals>
                             <goal>compile</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <!-- some tests can alter resources on OICR development hosts -->
+                    <execution>
+                        <id>reset_after_tests</id>
+                        <goals>
+                            <goal>resources</goal>
+                        </goals>
+                        <phase>install</phase>
                     </execution>
                 </executions>
             </plugin>

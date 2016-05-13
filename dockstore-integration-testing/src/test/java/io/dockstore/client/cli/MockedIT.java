@@ -17,6 +17,7 @@
 package io.dockstore.client.cli;
 
 import io.dockstore.client.cli.nested.ToolClient;
+import io.dockstore.common.TestUtility;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.ResourceHelpers;
@@ -71,7 +72,7 @@ public class MockedIT {
         ToolClient toolClient = spy(new ToolClient(client));
 
         final UsersApi userApiMock = mock(UsersApi.class);
-        when(client.getConfigFile()).thenReturn(ClientIT.getConfigFileLocation(true));
+        when(client.getConfigFile()).thenReturn(TestUtility.getConfigFileLocation(true));
         when(userApiMock.getUser()).thenReturn(new User());
         whenNew(UsersApi.class).withAnyArguments().thenReturn(userApiMock);
         whenNew(ToolClient.class).withAnyArguments().thenReturn(toolClient);
@@ -111,19 +112,19 @@ public class MockedIT {
 
     @Test
     public void runLaunchOneJson() throws IOException, ApiException {
-        Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "tool", "launch", "--entry",
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--entry",
             "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testOneRun.json") });
     }
 
     @Test
     public void runLaunchNJson() throws IOException {
-        Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "tool", "launch", "--entry",
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--entry",
                 "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testMultipleRun.json") });
     }
 
     @Test
     public void runLaunchTSV() throws IOException {
-        Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "tool", "launch", "--entry",
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--entry",
                 "quay.io/collaboratory/dockstore-tool-linux-sort", "--tsv", ResourceHelpers.resourceFilePath("testMultipleRun.tsv") });
     }
 
@@ -134,7 +135,7 @@ public class MockedIT {
      */
     @Test
     public void runLaunchOneLocalArrayedJson() throws IOException, ApiException {
-        Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "tool", "launch", "--entry",
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--entry",
             "quay.io/collaboratory/arrays", "--json", ResourceHelpers.resourceFilePath("testArrayLocalInputLocalOutput.json") });
 
         Assert.assertTrue(new File("/tmp/example.bedGraph").exists());
@@ -147,8 +148,8 @@ public class MockedIT {
      */
     @Test
     public void runLaunchOneHTTPArrayedJson() throws IOException, ApiException {
-        System.out.println(ClientIT.getConfigFileLocation(true));
-        Client.main(new String[] { "--config", ClientIT.getConfigFileLocation(true), "tool", "launch", "--entry",
+        System.out.println(TestUtility.getConfigFileLocation(true));
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--entry",
             "quay.io/collaboratory/arrays", "--json", ResourceHelpers.resourceFilePath("testArrayHttpInputLocalOutput.json") });
 
         Assert.assertTrue(new File("/tmp/wc1.out").exists());
