@@ -214,6 +214,19 @@ public class Client {
         return currentVersion;
     }
 
+    public static String openCurrentVersion(URL link, String info){
+        ObjectMapper mapper = getObjectMapper();
+        Map mapCur;
+        try{
+            mapCur = mapper.readValue(link,Map.class);
+            return mapCur.get(info).toString();
+
+        } catch(IOException e){
+            exceptionMessage(e,"cannot find "+info+" in "+link,IO_ERROR);
+        }
+        return "null";
+    }
+
     /**
      * Check if the date of the current is later or earlier than latest version
      * @param current
@@ -235,10 +248,13 @@ public class Client {
                 //id of latest version
                 mapLat = mapper.readValue(urlLatest, Map.class);
                 idLat = Integer.parseInt(mapLat.get("id").toString());
+
                 //id and prerelease of current version
-                mapCur = mapper.readValue(urlCurrent, Map.class);
-                idCur = Integer.parseInt(mapCur.get("id").toString());
-                prerelease = mapCur.get("prerelease").toString();
+//                mapCur = mapper.readValue(urlCurrent, Map.class);
+//                idCur = Integer.parseInt(mapCur.get("id").toString());
+//                prerelease = mapCur.get("prerelease").toString();
+                idCur = Integer.parseInt(openCurrentVersion(urlCurrent,"id"));
+                prerelease = openCurrentVersion(urlCurrent,"prerelease");
 
                 //check if currentVersion is earlier than latestVersion or not
                 //id will be bigger if newer, prerelease=true if unstable
@@ -323,8 +339,8 @@ public class Client {
         }catch (IOException e){
             exceptionMessage(e, "Could not connect to Github. You may have reached your rate limit.", IO_ERROR);
         }
-
     }
+
 
     /**
      * Checks for upgrade for Dockstore and install
@@ -345,6 +361,7 @@ public class Client {
         // Update if necessary
         URL url = null;
         URL urlRel = null;
+
         String latestPath = "https://api.github.com/repos/ga4gh/dockstore/releases/latest";
         String allReleases = "https://api.github.com/repos/ga4gh/dockstore/releases";
         String latestVersion = null;

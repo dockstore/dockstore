@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.io.Resources;
 import io.dockstore.common.TestUtility;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -80,6 +81,7 @@ public class UpgradeTestIT {
 
     }
 
+    @Ignore
     @Test
     public void upgradeTest() throws IOException {
         //if the current is newer and unstable, output "--upgrade-stable" command option
