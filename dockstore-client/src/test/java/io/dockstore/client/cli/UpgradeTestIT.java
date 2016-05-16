@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.io.Resources;
 import io.dockstore.common.TestUtility;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -83,6 +84,7 @@ public class UpgradeTestIT {
     }
 
     @Test
+    @Ignore
     public void upgradeUnstable() throws IOException {
         //if the current is stable, upgrade to the most unstable version
         //else, output "you are currently running on the latest unstable version" and option to "--upgrade-stable"
@@ -90,6 +92,7 @@ public class UpgradeTestIT {
     }
 
     @Test
+    @Ignore
     public void upgradeStable() throws IOException {
         //if the current is unstable, upgrade to the latest stable version
         //else, output "you are currently running the most stable version" and option to "--upgrade-unstable"
@@ -97,6 +100,7 @@ public class UpgradeTestIT {
     }
 
     @Test
+    @Ignore
     public void upgradeTest() throws IOException {
         //if the current is newer and unstable, output "--upgrade-stable" command option
         //else if current is the latest stable version, output "you are currently running the most stable version"
