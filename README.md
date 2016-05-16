@@ -16,6 +16,10 @@ For the related web UI see the [dockstore-ui](https://github.com/ga4gh/dockstore
 
 ### Dependencies
 
+The dependency environment for Dockstore is described by our [Travis-CI config](https://github.com/ga4gh/dockstore/blob/develop/.travis.yml). Specifically, note the setup instructions for postgres. Specifically, you will need to have postgres installed and setup with the database user specified in .travis.yml. 
+
+Other notable dependencies to note are:  
+
 * Java (1.8.0\_66 or similar)
 * Maven (3.3.9)
 * cwltool (to run CWL workflows locally)
@@ -34,14 +38,14 @@ If you have access to our confidential data package for extended testing, you ca
 
     mvn clean install -Pconfidential-tests
 
-As a pre-requisite, you will need to have postgres installed and setup with the database user specified in .travis.yml. 
-
 ### Running Locally
 
 You can also run it on your local computer but will need to setup postgres separately.
 
 1. Fill in the template dockstore.yml and stash it somewhere outside the git repo (like ~/.dockstore)
-2. Start with `java -jar dockstore-webservice/target/dockstore-webservice-*.jar   server ~/.dockstore/dockstore.yml`
+2. The dockstore.yml is mostly a standard [Dropwizard configuration file](http://www.dropwizard.io/0.9.2/docs/manual/configuration.html). Refer to the linked document to setup httpClient and database. 
+3. Start with `java -jar dockstore-webservice/target/dockstore-webservice-*.jar   server ~/.dockstore/dockstore.yml`
+4. If you need integration with GitHub.com, Quay.io. or Bitbucket for your work, you will need to follow the appropriate sections below and then fill out the corresponding fields in your [dockstore.yml](https://github.com/ga4gh/dockstore/blob/develop/dockstore.yml#L2). 
 
 ### View Swagger UI
 
@@ -66,6 +70,11 @@ Setup your copy of Dockstore as a third-party application able to communicate wi
 2. Browse to [http://localhost:8080/integration.quay.io](http://localhost:8080/integration.quay.io)
 3. Authorize via quay.io using the provided link
 4. Browse to [http://localhost:8080/container](http://localhost:8080/container) to list repos that we have tokens for at quay.io
+
+### Demo Integration with Bitbucket
+ 
+1. Setup a new application as described in [Integrate another application through OAuth](https://confluence.atlassian.com/bitbucket/integrate-another-application-through-oauth-372605388.html). 
+2. Use the dockstore-ui to authorize Bitbucket access for your current logged in user. Use the UI refresh controls to refresh your tools. 
 
 ### Webservice Demo
 
