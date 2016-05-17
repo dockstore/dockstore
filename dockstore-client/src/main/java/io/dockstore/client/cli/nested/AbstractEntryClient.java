@@ -41,13 +41,16 @@ import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.csv.QuoteMode;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -680,6 +683,8 @@ public abstract class AbstractEntryClient {
 
             // Download files and change to local location
             // Make a new map of the inputs with updated locations
+            final String workingDir = Paths.get(".").toAbsolutePath().normalize().toString();
+            System.out.println("Creating directories for run of Dockstore launcher in current working directory: " + workingDir);
             Map<String, Object> fileMap = wdlFileProvisioning.pullFiles(inputJson, wdlInputs);
 
             // Make new json file
@@ -697,7 +702,31 @@ public abstract class AbstractEntryClient {
             final scala.collection.immutable.List<String> wdlRunList = scala.collection.JavaConversions.asScalaBuffer(wdlRun).toList();
 
             // run a workflow
+            System.out.println("Calling out to Cromwell to run your workflow");
+
+            // save the output stream
+            PrintStream savedOut = System.out;
+            PrintStream savedErr = System.err;
+
+            // capture system.out and system.err
+            ByteArrayOutputStream stdoutCapture = new ByteArrayOutputStream();
+            System.setOut(new PrintStream(stdoutCapture));
+            ByteArrayOutputStream stderrCapture = new ByteArrayOutputStream();
+            System.setErr(new PrintStream(stderrCapture));
+
             final int run = main.run(wdlRunList);
+
+            System.out.flush();
+            System.err.flush();
+            String stdout = stdoutCapture.toString();
+            String stderr = stderrCapture.toString();
+
+            System.setOut(savedOut);
+            System.setErr(savedErr);
+            System.out.println("Cromwell exit code: " + run);
+
+            LauncherCWL.outputIntegrationOutput(workingDir, ImmutablePair.of(stdout, stderr), stdout.replaceAll("\n", "\t"), stderr.replaceAll("\n", "\t"), "Cromwell");
+
 
         } catch (ApiException ex) {
             exceptionMessage(ex, "", API_ERROR);
