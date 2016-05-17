@@ -16,6 +16,25 @@
 
 package io.dockstore.webservice.helpers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Optional;
+import com.google.gson.Gson;
+import io.dockstore.webservice.core.Registry;
+import io.dockstore.webservice.core.Tag;
+import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.ToolMode;
+import io.dockstore.webservice.helpers.Helper.RepoList;
+import io.dockstore.webservice.resources.ResourceUtilities;
+import io.swagger.quay.client.ApiClient;
+import io.swagger.quay.client.ApiException;
+import io.swagger.quay.client.Configuration;
+import io.swagger.quay.client.api.UserApi;
+import io.swagger.quay.client.model.UserView;
+import org.apache.http.client.HttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -25,28 +44,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import org.apache.http.client.HttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Optional;
-import com.google.gson.Gson;
-
-import io.dockstore.webservice.Helper;
-import io.dockstore.webservice.Helper.RepoList;
-import io.dockstore.webservice.core.Container;
-import io.dockstore.webservice.core.ContainerMode;
-import io.dockstore.webservice.core.Registry;
-import io.dockstore.webservice.core.Tag;
-import io.dockstore.webservice.core.Token;
-import io.dockstore.webservice.resources.ResourceUtilities;
-import io.swagger.quay.client.ApiClient;
-import io.swagger.quay.client.ApiException;
-import io.swagger.quay.client.Configuration;
-import io.swagger.quay.client.api.UserApi;
-import io.swagger.quay.client.model.UserView;
 
 /**
  * @author dyuen
@@ -73,9 +70,9 @@ public class QuayImageRegistry implements ImageRegistryInterface {
     }
 
     @Override
-    public List<Tag> getTags(Container container) {
-        LOG.info("======================= Getting tags for: {}================================", container.getPath());
-        final String repo = container.getNamespace() + '/' + container.getName();
+    public List<Tag> getTags(Tool tool) {
+        LOG.info(quayToken.getUsername() + " ======================= Getting tags for: {}================================", tool.getPath());
+        final String repo = tool.getNamespace() + '/' + tool.getName();
         final String repoUrl = QUAY_URL + "repository/" + repo;
         final Optional<String> asStringBuilds = ResourceUtilities.asString(repoUrl, quayToken.getContent(), client);
 
@@ -98,7 +95,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
                     tags.add(tag);
                     // LOG.info(gson.toJson(tag));
                 } catch (IOException ex) {
-                    LOG.info("Exception: {}", ex);
+                    LOG.info(quayToken.getUsername() + " Exception: {}", ex);
                 }
             }
 
@@ -119,7 +116,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
                 namespaces.add(organizationMap.get("name"));
             }
         } catch (ApiException e) {
-            LOG.info("Exception: {}", e);
+            LOG.info(quayToken.getUsername() + " Exception: {}", e);
         }
 
         namespaces.add(quayToken.getUsername());
@@ -127,60 +124,62 @@ public class QuayImageRegistry implements ImageRegistryInterface {
     }
 
     @Override
-    public List<Container> getContainers(List<String> namespaces) {
-        List<Container> containerList = new ArrayList<>(0);
+    public List<Tool> getContainers(List<String> namespaces) {
+        List<Tool> toolList = new ArrayList<>(0);
 
         for (String namespace : namespaces) {
             String url = QUAY_URL + "repository?namespace=" + namespace;
             Optional<String> asString = ResourceUtilities.asString(url, quayToken.getContent(), client);
-            LOG.info("RESOURCE CALL: {}", url);
+            LOG.info(quayToken.getUsername() + " : RESOURCE CALL: {}", url);
 
             if (asString.isPresent()) {
                 RepoList repos;
                 try {
                     // interesting, this relies upon our container object having the same fields
                     // as quay.io's repositories
+
+                    // PLEASE NOTE : is_public is from quay.  It has NO connection to our is_published!
                     repos = objectMapper.readValue(asString.get(), RepoList.class);
 
-                    List<Container> containers = repos.getRepositories();
+                    List<Tool> tools = repos.getRepositories();
                     // tag all of these with where they came from
-                    containers.stream().forEach(container -> container.setRegistry(Registry.QUAY_IO));
+                    tools.stream().forEach(container -> container.setRegistry(Registry.QUAY_IO));
                     // not quite correct, they could be mixed but how can we tell from quay?
-                    containers.stream().forEach(container -> container.setMode(ContainerMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS));
-                    containerList.addAll(containers);
+                    tools.stream().forEach(container -> container.setMode(ToolMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS));
+                    toolList.addAll(tools);
                 } catch (IOException ex) {
-                    LOG.info("Exception: {}", ex);
+                    LOG.info(quayToken.getUsername() + " Exception: {}", ex);
                 }
             }
         }
 
-        return containerList;
+        return toolList;
     }
 
     @Override
-    public Map<String, ArrayList<?>> getBuildMap(List<Container> allRepos) {
+    public Map<String, ArrayList<?>> getBuildMap(List<Tool> allRepos) {
         final SimpleDateFormat formatter = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
 
         final Map<String, ArrayList<?>> mapOfBuilds = new HashMap<>();
 
         // Go through each container for each namespace
         final Gson gson = new Gson();
-        for (final Container container : allRepos) {
+        for (final Tool tool : allRepos) {
 
-            if (container.getRegistry() != Registry.QUAY_IO) {
+            if (tool.getRegistry() != Registry.QUAY_IO) {
                 continue;
             }
 
-            final String repo = container.getNamespace() + '/' + container.getName();
+            final String repo = tool.getNamespace() + '/' + tool.getName();
             final String path = quayToken.getTokenSource() + '/' + repo;
-            container.setPath(path);
+            tool.setPath(path);
 
-            LOG.info("========== Configuring {} ==========", path);
-            // if (container.getMode() != ContainerMode.MANUAL_IMAGE_PATH) {
-            // checkTriggers(container);
-            // if (container.hasValidTrigger()) {
+            LOG.info(quayToken.getUsername() + " : ========== Configuring {} ==========", path);
+            // if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
+            // checkTriggers(tool);
+            // if (tool.hasValidTrigger()) {
 
-            updateContainersWithBuildInfo(formatter, mapOfBuilds, gson, container, repo, path);
+            updateContainersWithBuildInfo(formatter, mapOfBuilds, gson, tool, repo, path);
             // }
             // }
         }
@@ -188,22 +187,23 @@ public class QuayImageRegistry implements ImageRegistryInterface {
     }
 
     /**
-     * For a given container, update its registry, git, and build information with information from quay.io
+     * For a given tool, update its registry, git, and build information with information from quay.io
      * 
      * @param formatter
      * @param mapOfBuilds
      * @param gson
-     * @param container
+     * @param tool
      * @param repo
      * @param path
      */
     private void updateContainersWithBuildInfo(SimpleDateFormat formatter, Map<String, ArrayList<?>> mapOfBuilds, Gson gson,
-            Container container, String repo, String path) {
-        // Get the list of builds from the container.
+            Tool tool, String repo, String path) {
+        // Get the list of builds from the tool.
         // Builds contain information such as the Git URL and tags
-        String urlBuilds = QUAY_URL + "repository/" + repo + "/build/";
+        // TODO: work with quay.io to get a better approach such as only the last build for each tag or at the very least paging
+        String urlBuilds = QUAY_URL + "repository/" + repo + "/build/?limit=2147483647";
         Optional<String> asStringBuilds = ResourceUtilities.asString(urlBuilds, quayToken.getContent(), client);
-        LOG.info("RESOURCE CALL: {}", urlBuilds);
+        LOG.info(quayToken.getUsername() + " RESOURCE CALL: {}", urlBuilds);
 
         String gitURL = "";
 
@@ -221,7 +221,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
                 if (!builds.isEmpty()) {
                     Map<String, Map<String, String>> map2 = (Map<String, Map<String, String>>) builds.get(0);
 
-                    Map<String, String> triggerMetadata = (Map<String, String>) map2.get("trigger_metadata");
+                    Map<String, String> triggerMetadata = map2.get("trigger_metadata");
 
                     if (triggerMetadata != null) {
                         gitURL = triggerMetadata.get("git_url");
@@ -229,72 +229,32 @@ public class QuayImageRegistry implements ImageRegistryInterface {
 
                     Map<String, String> map3 = (Map<String, String>) builds.get(0);
                     String lastBuild = map3.get("started");
-                    LOG.info("LAST BUILD: {}", lastBuild);
+                    LOG.info(quayToken.getUsername() + " : LAST BUILD: {}", lastBuild);
 
                     Date date;
                     try {
                         date = formatter.parse(lastBuild);
-                        container.setLastBuild(date);
+                        tool.setLastBuild(date);
                     } catch (ParseException ex) {
-                        LOG.info("Build date did not match format 'EEE, d MMM yyyy HH:mm:ss Z'");
+                        LOG.info(quayToken.getUsername() + ": "  + quayToken.getUsername() + " Build date did not match format 'EEE, d MMM yyyy HH:mm:ss Z'");
                     }
                 }
-                if (container.getMode() != ContainerMode.MANUAL_IMAGE_PATH) {
-                    container.setRegistry(Registry.QUAY_IO);
-                    container.setGitUrl(gitURL);
+                if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
+                    tool.setRegistry(Registry.QUAY_IO);
+                    tool.setGitUrl(gitURL);
                 }
             }
-        }
-    }
-
-    // TODO: This method may have some use later. It uses /api/v1/repository/{repository}/trigger/ to get the git URL for a container, and
-    // checks if it has only one trigger from one source (bitbucket/github).
-    private void checkTriggers(Container container) {
-        final String repo = container.getNamespace() + "/" + container.getName();
-
-        String urlBuilds = QUAY_URL + "repository/" + repo + "/trigger/";
-        Optional<String> asStringBuilds = ResourceUtilities.asString(urlBuilds, quayToken.getContent(), client);
-        LOG.info("RESOURCE CALL: " + urlBuilds);
-
-        if (asStringBuilds.isPresent()) {
-            String json = asStringBuilds.get();
-
-            final Gson gson = new Gson();
-
-            Map<String, ArrayList> map = new HashMap<>();
-            map = (Map<String, ArrayList>) gson.fromJson(json, map.getClass());
-            ArrayList triggers = map.get("triggers");
-
-            boolean validTrigger = false;
-
-            // TODO: for now, we only allow user to have only 1 trigger from either github or bitbucket
-            if (triggers != null && triggers.size() == 1) {
-                Map<String, String> triggerMap = (Map<String, String>) triggers.get(0);
-
-                String service = triggerMap.get("service");
-
-                if (service.equals("github") || service.equals("bitbucket")) {
-
-                    String gitURL = Helper.convertHttpsToSsh(triggerMap.get("repository_url"));
-
-                    container.setRegistry(Registry.QUAY_IO);
-                    container.setGitUrl(gitURL);
-                    validTrigger = true;
-                }
-            }
-
-            container.setValidTrigger(validTrigger);
         }
     }
 
     /**
-     * Get the map of the given Quay container
+     * Get the map of the given Quay tool
      * Todo: this should be implemented with the Quay API, but they currently don't have a return model for this call
-     * @param container
+     * @param tool
      * @return
          */
-    public Map<String, Object> getQuayInfo(final Container container){
-        final String repo = container.getNamespace() + '/' + container.getName();
+    public Map<String, Object> getQuayInfo(final Tool tool){
+        final String repo = tool.getNamespace() + '/' + tool.getName();
         final String repoUrl = QUAY_URL + "repository/" + repo;
         final Optional<String> asStringBuilds = ResourceUtilities.asString(repoUrl, quayToken.getContent(), client);
 

@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
-        <version>0.3-beta.0</version>
+        <version>0.4-beta.1</version>
     </parent>
 
     <artifactId>dockstore-launcher</artifactId>
@@ -33,7 +33,7 @@
 	 <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>0.3-beta.0</version>
+            <version>0.4-beta.1</version>
         </dependency>
 		<dependency>
 			<groupId>commons-cli</groupId>
@@ -44,11 +44,6 @@
             <groupId>com.googlecode.json-simple</groupId>
             <artifactId>json-simple</artifactId>
             <version>1.1.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-vfs2</artifactId>
-            <version>2.0</version>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>

@@ -20,7 +20,7 @@
     <parent>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
-        <version>0.3-beta.0</version>
+        <version>0.4-beta.1</version>
     </parent>
     <artifactId>dockstore-client</artifactId>
     <packaging>jar</packaging>
@@ -37,18 +37,17 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-client</artifactId>
-            <version>0.3-beta.0</version>
+            <version>0.4-beta.1</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-launcher</artifactId>
-            <version>0.3-beta.0</version>
+            <version>0.4-beta.1</version>
         </dependency>
-        
         <dependency>
-            <groupId>com.esotericsoftware.yamlbeans</groupId>
-            <artifactId>yamlbeans</artifactId>
-            <version>1.09</version>
+            <groupId>io.dockstore</groupId>
+            <artifactId>dockstore-common</artifactId>
+            <version>0.4-beta.1</version>
         </dependency>
         
         <dependency>
@@ -61,7 +60,6 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore</artifactId>
-            <version>4.4.1</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -84,7 +82,6 @@
         <dependency>
             <groupId>com.github.stefanbirkner</groupId>
             <artifactId>system-rules</artifactId>
-            <version>1.14.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -97,6 +94,11 @@
             <artifactId>commons-io</artifactId>
         </dependency>
         <dependency>
+            <groupId>commons-configuration</groupId>
+            <artifactId>commons-configuration</artifactId>
+            <version>1.10</version>
+        </dependency>
+        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson.version}</version>
@@ -105,6 +107,12 @@
             <groupId>io.cwl</groupId>
             <artifactId>cwlavro-tools</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.cwl</groupId>
+            <artifactId>cwlavro-generated</artifactId>
+        </dependency>
+
+        <!-- broad - cromwell stuff -->
         <dependency>
             <groupId>org.broadinstitute</groupId>
             <artifactId>cromwell_2.11</artifactId>
@@ -129,6 +137,26 @@
             <artifactId>scala-library</artifactId>
             <version>2.11.7</version>
         </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
+
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+        </dependency>
+
 
     </dependencies>
 
@@ -148,6 +176,12 @@
                                 <exclude>META-INF/*.SF</exclude>
                                 <exclude>META-INF/*.DSA</exclude>
                                 <exclude>META-INF/*.RSA</exclude>
+                            </excludes>
+                        </filter>
+                        <filter>
+                            <artifact>org.broadinstitute:*</artifact>
+                            <excludes>
+                                <exclude>logback.xml</exclude>
                             </excludes>
                         </filter>
                     </filters>
@@ -244,6 +278,20 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <!-- some tests can alter resources on OICR development hosts -->
+                    <execution>
+                        <id>reset_after_tests</id>
+                        <goals>
+                            <goal>resources</goal>
+                        </goals>
+                        <phase>install</phase>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
         
         <resources>
@@ -251,6 +299,9 @@
                 <targetPath>${basedir}/target</targetPath>
                 <directory>bin</directory>
                 <filtering>true</filtering>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
             </resource>
         </resources>
     </build>

@@ -13,6 +13,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+
 package io.dockstore.webservice;
 
 import org.slf4j.Logger;
@@ -21,28 +22,34 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Optional;
 
 import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.TokenDAO;
+import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.auth.AuthenticationException;
 import io.dropwizard.auth.Authenticator;
+import io.dropwizard.hibernate.UnitOfWork;
 
 /**
  *
  * @author xliu
  */
-public class SimpleAuthenticator implements Authenticator<String, Token> {
+public class SimpleAuthenticator implements Authenticator<String, User> {
     private final TokenDAO dao;
     private static final Logger LOG = LoggerFactory.getLogger(SimpleAuthenticator.class);
+    private final UserDAO userDAO;
 
-    public SimpleAuthenticator(TokenDAO dao) {
+    public SimpleAuthenticator(TokenDAO dao, UserDAO userDAO) {
         this.dao = dao;
+        this.userDAO = userDAO;
     }
 
+    @UnitOfWork
     @Override
-    public Optional<Token> authenticate(String credentials) throws AuthenticationException {
+    public Optional<User> authenticate(String credentials) throws AuthenticationException {
         LOG.info("SimpleAuthenticator called with {}", credentials);
         final Token token = dao.findByContent(credentials);
         if (token != null) {
-            return Optional.of(token);
+            return Optional.of(userDAO.findById(token.getUserId()));
         }
         return Optional.absent();
     }

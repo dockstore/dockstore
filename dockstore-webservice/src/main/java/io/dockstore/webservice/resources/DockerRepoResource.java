@@ -13,46 +13,16 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+
 package io.dockstore.webservice.resources;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
-
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.Helper;
-import io.dockstore.webservice.api.RegisterRequest;
-import io.dockstore.webservice.core.Container;
-import io.dockstore.webservice.core.ContainerMode;
+import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Registry;
 import io.dockstore.webservice.core.SourceFile;
@@ -60,12 +30,17 @@ import io.dockstore.webservice.core.SourceFile.FileType;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
+import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.jdbi.ContainerDAO;
+import io.dockstore.webservice.helpers.EntryLabelHelper;
+import io.dockstore.webservice.helpers.EntryVersionHelper;
+import io.dockstore.webservice.helpers.Helper;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
+import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
@@ -74,6 +49,28 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  *
@@ -86,7 +83,7 @@ public class DockerRepoResource {
 
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
-    private final ContainerDAO containerDAO;
+    private final ToolDAO toolDAO;
     private final TagDAO tagDAO;
     private final LabelDAO labelDAO;
     private final FileDAO fileDAO;
@@ -95,6 +92,9 @@ public class DockerRepoResource {
     private final String bitbucketClientID;
     private final String bitbucketClientSecret;
 
+    private final EntryVersionHelper<Tool> entryVersionHelper;
+
+
     public static final String TARGET_URL = "https://quay.io/api/v1/";
 
     private final ObjectMapper objectMapper;
@@ -102,7 +102,7 @@ public class DockerRepoResource {
     private static final Logger LOG = LoggerFactory.getLogger(DockerRepoResource.class);
 
     @SuppressWarnings("checkstyle:parameternumber")
-    public DockerRepoResource(ObjectMapper mapper, HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ContainerDAO containerDAO,
+    public DockerRepoResource(ObjectMapper mapper, HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ToolDAO toolDAO,
             TagDAO tagDAO, LabelDAO labelDAO, FileDAO fileDAO, String bitbucketClientID, String bitbucketClientSecret) {
         objectMapper = mapper;
         this.userDAO = userDAO;
@@ -115,53 +115,50 @@ public class DockerRepoResource {
         this.bitbucketClientID = bitbucketClientID;
         this.bitbucketClientSecret = bitbucketClientSecret;
 
-        this.containerDAO = containerDAO;
+        this.toolDAO = toolDAO;
+        entryVersionHelper = new EntryVersionHelper<>(toolDAO);
     }
 
     @GET
     @Path("/refresh")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "Refresh all repos", notes = "Updates some metadata. ADMIN ONLY", response = Container.class, responseContainer = "List")
-    // @SuppressWarnings("checkstyle:methodlength")
-    public List<Container> refreshAll(@ApiParam(hidden = true) @Auth Token authToken) {
-        User authUser = userDAO.findById(authToken.getUserId());
-        Helper.checkUser(authUser);
+    @RolesAllowed("admin")
+    @ApiOperation(value = "Refresh all repos", notes = "Updates some metadata. ADMIN ONLY", response = Tool.class, responseContainer = "List")
+    public List<Tool> refreshAll(@ApiParam(hidden = true) @Auth User authUser) {
 
-        List<Container> containers;
+        List<Tool> tools;
         List<User> users = userDAO.findAll();
         for (User user : users) {
-            try {
-                List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
-
-                if (!tokens.isEmpty()) {
-                    Token bitbucketToken = tokens.get(0);
-                    Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
-                }
-
-                Helper.refresh(user.getId(), client, objectMapper, userDAO, containerDAO, tokenDAO, tagDAO, fileDAO);
-                // containers.addAll(userDAO.findById(user.getId()).getContainers());
-            } catch (WebApplicationException ex) {
-                LOG.info("Failed to refresh user {}", user.getId());
-            }
+            refreshToolsForUser(user.getId());
         }
 
-        containers = containerDAO.findAll();
+        tools = toolDAO.findAll();
 
-        return containers;
+        return tools;
+    }
+
+    public List<Tool> refreshToolsForUser(Long userId) {
+        List<Token> tokens = tokenDAO.findBitbucketByUserId(userId);
+
+        if (!tokens.isEmpty()) {
+            Token bitbucketToken = tokens.get(0);
+            Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
+        }
+
+        return Helper.refresh(userId, client, objectMapper, userDAO, toolDAO, tokenDAO, tagDAO, fileDAO);
     }
 
     @GET
     @Path("/{containerId}/refresh")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "Refresh one particular repo", response = Container.class)
-    public Container refresh(@ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "Container ID", required = true) @PathParam("containerId") Long containerId) {
-        Container c = containerDAO.findById(containerId);
-        Helper.checkContainer(c);
+    @ApiOperation(value = "Refresh one particular repo", response = Tool.class)
+    public Tool refresh(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
+        Tool c = toolDAO.findById(containerId);
+        Helper.checkEntry(c);
 
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
 
         List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
@@ -171,34 +168,32 @@ public class DockerRepoResource {
             Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
         }
 
-        Container container = Helper.refreshContainer(containerId, authToken.getUserId(), client, objectMapper, userDAO, containerDAO,
+        Tool tool = Helper.refreshContainer(containerId, user.getId(), client, objectMapper, userDAO, toolDAO,
                 tokenDAO, tagDAO, fileDAO);
 
-        return container;
+
+        return tool;
     }
 
     @GET
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "List all docker containers cached in database", notes = "List docker container repos currently known. Admin Only", response = Container.class, responseContainer = "List")
-    public List<Container> allContainers(@ApiParam(hidden = true) @Auth Token authToken) {
-        User user = userDAO.findById(authToken.getUserId());
-        Helper.checkUser(user);
-
-        return containerDAO.findAll();
+    @RolesAllowed("admin")
+    @ApiOperation(value = "List all docker containers cached in database", notes = "List docker container repos currently known. Admin Only", response = Tool.class, responseContainer = "List")
+    public List<Tool> allContainers(@ApiParam(hidden = true) @Auth User user) {
+        return toolDAO.findAll();
     }
 
     @GET
     @Timed
     @UnitOfWork
     @Path("/{containerId}")
-    @ApiOperation(value = "Get a cached repo", response = Container.class)
-    public Container getContainer(@ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "Container ID", required = true) @PathParam("containerId") Long containerId) {
-        Container c = containerDAO.findById(containerId);
-        Helper.checkContainer(c);
+    @ApiOperation(value = "Get a registered repo", response = Tool.class)
+    public Tool getContainer(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
+        Tool c = toolDAO.findById(containerId);
+        Helper.checkEntry(c);
 
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
 
         return c;
@@ -208,70 +203,42 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/labels")
-    @ApiOperation(value = "Update the labels linked to a container.", notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Container.class)
-    public Container updateLabels(@ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "Container to modify.", required = true) @PathParam("containerId") Long containerId,
+    @ApiOperation(value = "Update the labels linked to a container.", notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Tool.class)
+    public Tool updateLabels(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings,
             @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", defaultValue = "") String emptyBody) {
-        Container c = containerDAO.findById(containerId);
-        Helper.checkContainer(c);
+        Tool c = toolDAO.findById(containerId);
+        Helper.checkEntry(c);
 
-        if (labelStrings.length() == 0) {
-            c.setLabels(new TreeSet<>());
-        } else {
-            Set<String> labelStringSet = new HashSet<String>(Arrays.asList(labelStrings.toLowerCase().split("\\s*,\\s*")));
-            final String labelStringPattern = "^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$";
-
-            // This matches the restriction on labels to 255 characters
-            // if this is changed then the java object/mapped db schema needs to be changed
-            final int labelMaxLength = 255;
-            SortedSet<Label> labels = new TreeSet<>();
-            for (final String labelString : labelStringSet) {
-                if (labelString.length() <= labelMaxLength && labelString.matches(labelStringPattern)) {
-                    Label label = labelDAO.findByLabelValue(labelString);
-                    if (label != null) {
-                        labels.add(label);
-                    } else {
-                        label = new Label();
-                        label.setValue(labelString);
-                        long id = labelDAO.create(label);
-                        labels.add(labelDAO.findById(id));
-                    }
-                } else {
-                    throw new CustomWebApplicationException("Invalid label format", HttpStatus.SC_BAD_REQUEST);
-                }
-            }
-            c.setLabels(labels);
-        }
-
-        return c;
+        EntryLabelHelper<Tool> labeller = new EntryLabelHelper<>(labelDAO);
+        return labeller.updateLabels(c, labelStrings);
     }
 
     @PUT
     @Timed
     @UnitOfWork
     @Path("/{containerId}")
-    @ApiOperation(value = "Update the container with the given container.", response = Container.class)
-    public Container updateContainer(@ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "Container to modify.", required = true) @PathParam("containerId") Long containerId,
-            @ApiParam(value = "Container with updated information", required = true) Container container) {
-        Container c = containerDAO.findById(containerId);
-        Helper.checkContainer(c);
+    @ApiOperation(value = "Update the tool with the given tool.", response = Tool.class)
+    public Tool updateContainer(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
+            @ApiParam(value = "Tool with updated information", required = true) Tool tool) {
+        Tool c = toolDAO.findById(containerId);
+        Helper.checkEntry(c);
 
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
 
-        Container duplicate = containerDAO.findByToolPath(container.getPath(), container.getToolname());
+        Tool duplicate = toolDAO.findByToolPath(tool.getPath(), tool.getToolname());
 
         if (duplicate != null && duplicate.getId() != containerId) {
-            LOG.info("duplicate container found: {}" + container.getToolPath());
-            throw new CustomWebApplicationException("Container " + container.getToolPath() + " already exists.", HttpStatus.SC_BAD_REQUEST);
+            LOG.info(user.getUsername() + ": duplicate tool found: {}" + tool.getToolPath());
+            throw new CustomWebApplicationException("Tool " + tool.getToolPath() + " already exists.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        c.updateInfo(container);
+        c.updateInfo(tool);
 
-        Container result = containerDAO.findById(containerId);
-        Helper.checkContainer(result);
+        Tool result = toolDAO.findById(containerId);
+        Helper.checkEntry(result);
 
         return result;
 
@@ -282,12 +249,11 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/{containerId}/users")
     @ApiOperation(value = "Get users of a container", response = User.class, responseContainer = "List")
-    public List<User> getUsers(@ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "Container ID", required = true) @PathParam("containerId") Long containerId) {
-        Container c = containerDAO.findById(containerId);
-        Helper.checkContainer(c);
+    public List<User> getUsers(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
+        Tool c = toolDAO.findById(containerId);
+        Helper.checkEntry(c);
 
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
 
         return new ArrayList(c.getUsers());
@@ -296,81 +262,67 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/registered/{containerId}")
-    @ApiOperation(value = "Get a registered container", notes = "NO authentication", response = Container.class)
-    public Container getRegisteredContainer(@ApiParam(value = "Container ID", required = true) @PathParam("containerId") Long containerId) {
-        Container c = containerDAO.findRegisteredById(containerId);
-        Helper.checkContainer(c);
-
-        // need to have this evict so that hibernate does not actually delete the tags
-        containerDAO.evict(c);
-
-        List<Tag> tags = new ArrayList<>();
-        tags.addAll(c.getTags());
-
-        for (Tag t : tags) {
-            if (t.isHidden()) {
-                c.removeTag(t);
-            }
-        }
-
-        return c;
+    @Path("/published/{containerId}")
+    @ApiOperation(value = "Get a published container", notes = "NO authentication", response = Tool.class)
+    public Tool getPublishedContainer(@ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
+        Tool c = toolDAO.findPublishedById(containerId);
+        Helper.checkEntry(c);
+        return entryVersionHelper.filterContainersForHiddenTags(c);
     }
 
     @POST
     @Timed
     @UnitOfWork
     @Path("/registerManual")
-    @ApiOperation(value = "Register an image manually, along with tags", notes = "Register/publish an image manually.", response = Container.class)
-    public Container registerManual(@ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "Container to be registered", required = true) Container container) {
-        User user = userDAO.findById(authToken.getUserId());
-        // populate user in container
-        container.addUser(user);
-        // create dependent Tags before creating container
+    @ApiOperation(value = "Register an image manually, along with tags", notes = "Register an image manually.", response = Tool.class)
+    public Tool registerManual(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Tool to be registered", required = true) Tool tool) {
+        // populate user in tool
+        tool.addUser(user);
+        // create dependent Tags before creating tool
         Set<Tag> createdTags = new HashSet<>();
-        for (Tag tag : container.getTags()) {
+        for (Tag tag : tool.getTags()) {
             final long l = tagDAO.create(tag);
             createdTags.add(tagDAO.findById(l));
         }
-        container.getTags().clear();
-        container.getTags().addAll(createdTags);
-        // create dependent Labels before creating container
+        tool.getTags().clear();
+        tool.getTags().addAll(createdTags);
+        // create dependent Labels before creating tool
         Set<Label> createdLabels = new HashSet<>();
-        for (Label label : container.getLabels()) {
+        for (Label label : tool.getLabels()) {
             final long l = labelDAO.create(label);
             createdLabels.add(labelDAO.findById(l));
         }
-        container.getLabels().clear();
-        container.getLabels().addAll(createdLabels);
+        tool.getLabels().clear();
+        tool.getLabels().addAll(createdLabels);
 
-        if (!Helper.isGit(container.getGitUrl())) {
-            container.setGitUrl(Helper.convertHttpsToSsh(container.getGitUrl()));
+        if (!Helper.isGit(tool.getGitUrl())) {
+            tool.setGitUrl(Helper.convertHttpsToSsh(tool.getGitUrl()));
         }
-        container.setPath(container.getPath());
-        Container duplicate = containerDAO.findByToolPath(container.getPath(), container.getToolname());
+        tool.setPath(tool.getPath());
+        Tool duplicate = toolDAO.findByToolPath(tool.getPath(), tool.getToolname());
 
         if (duplicate != null) {
-            LOG.info("duplicate container found: {}" + container.getToolPath());
-            throw new CustomWebApplicationException("Container " + container.getToolPath() + " already exists.", HttpStatus.SC_BAD_REQUEST);
+            LOG.info(user.getUsername() + ": duplicate tool found: {}" + tool.getToolPath());
+            throw new CustomWebApplicationException("Tool " + tool.getToolPath() + " already exists.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        // Check if container has tags
-        if (container.getRegistry() == Registry.QUAY_IO && !Helper.checkQuayContainerForTags(container, client, objectMapper, tokenDAO, user.getId())) {
-            LOG.info("container has no tags.");
-            throw new CustomWebApplicationException("Container " + container.getToolPath() + " has no tags. Quay containers must have at least one tag.", HttpStatus.SC_BAD_REQUEST);
+        // Check if tool has tags
+        if (tool.getRegistry() == Registry.QUAY_IO && !Helper.checkQuayContainerForTags(tool, client, objectMapper, tokenDAO, user.getId())) {
+            LOG.info(user.getUsername() + ": tool has no tags.");
+            throw new CustomWebApplicationException("Tool " + tool.getToolPath() + " has no tags. Quay containers must have at least one tag.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        // Check if user owns repo, or if user is in the organization which owns the container
-        if (container.getRegistry() == Registry.QUAY_IO  && !Helper.checkIfUserOwns(container, client, objectMapper, tokenDAO, user.getId())) {
-            LOG.info("User does not own the given Quay Repo.");
-            throw new CustomWebApplicationException("User does not own the container " + container.getPath() + ". You can only add Quay repositories that you own or are part of the organization", HttpStatus.SC_BAD_REQUEST);
+        // Check if user owns repo, or if user is in the organization which owns the tool
+        if (tool.getRegistry() == Registry.QUAY_IO  && !Helper.checkIfUserOwns(tool, client, objectMapper, tokenDAO, user.getId())) {
+            LOG.info(user.getUsername() + ": User does not own the given Quay Repo.");
+            throw new CustomWebApplicationException("User does not own the tool " + tool.getPath() + ". You can only add Quay repositories that you own or are part of the organization", HttpStatus.SC_BAD_REQUEST);
         }
 
-        long id = containerDAO.create(container);
-        Container created = containerDAO.findById(id);
+        long id = toolDAO.create(tool);
+        Tool created = toolDAO.findById(id);
 
-        // Helper.refreshContainer(id, authToken.getUserId(), client, objectMapper, userDAO, containerDAO, tokenDAO, tagDAO, fileDAO);
+        // Helper.refreshContainer(id, authToken.getUserId(), client, objectMapper, userDAO, toolDAO, tokenDAO, tagDAO, fileDAO);
         return created;
     }
 
@@ -380,19 +332,18 @@ public class DockerRepoResource {
     @Path("/{containerId}")
     @ApiOperation(value = "Delete manually registered image")
     @ApiResponses(@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid "))
-    public Response deleteContainer(@ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "Container id to delete", required = true) @PathParam("containerId") Long containerId) {
-        User user = userDAO.findById(authToken.getUserId());
-        Container container = containerDAO.findById(containerId);
-        Helper.checkUser(user, container);
+    public Response deleteContainer(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Tool id to delete", required = true) @PathParam("containerId") Long containerId) {
+        Tool tool = toolDAO.findById(containerId);
+        Helper.checkUser(user, tool);
 
         // only allow users to delete manually added images
-        if (container.getMode() == ContainerMode.MANUAL_IMAGE_PATH) {
-            container.getTags().clear();
-            containerDAO.delete(container);
+        if (tool.getMode() == ToolMode.MANUAL_IMAGE_PATH) {
+            tool.getTags().clear();
+            toolDAO.delete(tool);
 
-            container = containerDAO.findById(containerId);
-            if (container == null) {
+            tool = toolDAO.findById(containerId);
+            if (tool == null) {
                 return Response.ok().build();
             } else {
                 return Response.serverError().build();
@@ -405,21 +356,20 @@ public class DockerRepoResource {
     @POST
     @Timed
     @UnitOfWork
-    @Path("/{containerId}/register")
-    @ApiOperation(value = "Register or unregister a container", notes = "Register/publish a container (public or private). Assumes that user is using quay.io and github.", response = Container.class)
-    public Container register(@ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "Container id to register/publish", required = true) @PathParam("containerId") Long containerId,
-            @ApiParam(value = "RegisterRequest to refresh the list of repos for a user", required = true) RegisterRequest request) {
-        Container c = containerDAO.findById(containerId);
-        Helper.checkContainer(c);
+    @Path("/{containerId}/publish")
+    @ApiOperation(value = "Publish or unpublish a container", notes = "publish a container (public or private). Assumes that user is using quay.io and github.", response = Tool.class)
+    public Tool publish(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Tool id to publish", required = true) @PathParam("containerId") Long containerId,
+            @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) PublishRequest request) {
+        Tool c = toolDAO.findById(containerId);
+        Helper.checkEntry(c);
 
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
 
-        if (request.getRegister()) {
+        if (request.getPublish()) {
             boolean validTag = false;
 
-            if (c.getMode() == ContainerMode.MANUAL_IMAGE_PATH) {
+            if (c.getMode() == ToolMode.MANUAL_IMAGE_PATH) {
                 validTag = true;
             } else {
                 Set<Tag> tags = c.getTags();
@@ -434,79 +384,67 @@ public class DockerRepoResource {
             // TODO: for now, validTrigger signals if the user has a cwl file in their git repository's default branch. Don't need to check
             // this if we check the cwl in the tags.
             // if (validTag && c.getValidTrigger() && !c.getGitUrl().isEmpty()) {
-            if (validTag && !c.getGitUrl().isEmpty()) {
-                c.setIsRegistered(true);
+            if (validTag && !c.getGitUrl().isEmpty() && c.getValidTrigger()) {
+                c.setIsPublished(true);
             } else {
                 throw new CustomWebApplicationException("Repository does not meet requirements to publish.", HttpStatus.SC_BAD_REQUEST);
             }
         } else {
-            c.setIsRegistered(false);
+            c.setIsPublished(false);
         }
 
-        long id = containerDAO.create(c);
-        c = containerDAO.findById(id);
+        long id = toolDAO.create(c);
+        c = toolDAO.findById(id);
         return c;
     }
 
     @GET
     @Timed
     @UnitOfWork
-    @Path("registered")
-    @ApiOperation(value = "List all registered containers.", tags = { "containers" }, notes = "NO authentication", response = Container.class, responseContainer = "List")
-    public List<Container> allRegisteredContainers() {
-        List<Container> containers = containerDAO.findAllRegistered();
+    @Path("published")
+    @ApiOperation(value = "List all published containers.", tags = { "containers" }, notes = "NO authentication", response = Tool.class, responseContainer = "List")
+    public List<Tool> allPublishedContainers() {
+        List<Tool> tools = toolDAO.findAllPublished();
+        entryVersionHelper.filterContainersForHiddenTags(tools);
+        return tools;
+    }
 
-        for (Container c : containers) {
-            containerDAO.evict(c);
 
-            List<Tag> tags = new ArrayList<>();
-            tags.addAll(c.getTags());
-
-            for (Tag t : tags) {
-                if (t.isHidden()) {
-                    c.removeTag(t);
-                }
-            }
-        }
-
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/path/{repository}/published")
+    @ApiOperation(value = "Get a published container by path", notes = "NO authentication", response = Tool.class, responseContainer = "List")
+    public List<Tool> getPublishedContainerByPath(
+            @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
+        List<Tool> containers = toolDAO.findPublishedByPath(path);
+        entryVersionHelper.filterContainersForHiddenTags(containers);
+        Helper.checkEntry(containers);
         return containers;
     }
 
     @GET
     @Timed
     @UnitOfWork
-    @Path("/path/{repository}/registered")
-    @ApiOperation(value = "Get a registered container by path", notes = "NO authentication", response = Container.class, responseContainer = "List")
-    public List<Container> getRegisteredContainerByPath(
-            @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
-        List<Container> container = containerDAO.findRegisteredByPath(path);
-        Helper.checkContainer(container);
-        return container;
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork
     @Path("/path/{repository}")
-    @ApiOperation(value = "Get a list of containers by path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Container.class, responseContainer = "List")
-    public List<Container> getContainerByPath(@ApiParam(hidden = true) @Auth Token authToken,
+    @ApiOperation(value = "Get a list of containers by path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Tool.class, responseContainer = "List")
+    public List<Tool> getContainerByPath(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
-        List<Container> container = containerDAO.findByPath(path);
+        List<Tool> tool = toolDAO.findByPath(path);
 
-        Helper.checkContainer(container);
+        Helper.checkEntry(tool);
 
-        User user = userDAO.findById(authToken.getUserId());
-        Helper.checkUser(user, container);
+        Helper.checkUser(user, tool);
 
-        return container;
+        return tool;
     }
 
     @GET
     @Timed
     @UnitOfWork
     @Path("/path/tool/{repository}")
-    @ApiOperation(value = "Get a container by tool path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Container.class)
-    public Container getContainerByToolPath(@ApiParam(hidden = true) @Auth Token authToken,
+    @ApiOperation(value = "Get a container by tool path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Tool.class)
+    public Tool getContainerByToolPath(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         final String[] split = path.split("/");
         // check that this is a tool path
@@ -516,22 +454,21 @@ public class DockerRepoResource {
             toolname = split[toolPathLength - 1];
         }
 
-        Container container = containerDAO.findByToolPath(Joiner.on("/").join(split[0], split[1], split[2]), toolname);
+        Tool tool = toolDAO.findByToolPath(Joiner.on("/").join(split[0], split[1], split[2]), toolname);
 
-        Helper.checkContainer(container);
+        Helper.checkEntry(tool);
 
-        User user = userDAO.findById(authToken.getUserId());
-        Helper.checkUser(user, container);
+        Helper.checkUser(user, tool);
 
-        return container;
+        return tool;
     }
 
     @GET
     @Timed
     @UnitOfWork
-    @Path("/path/tool/{repository}/registered")
-    @ApiOperation(value = "Get a container by tool path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Container.class)
-    public Container getRegisteredContainerByToolPath(
+    @Path("/path/tool/{repository}/published")
+    @ApiOperation(value = "Get a published container by tool path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Tool.class)
+    public Tool getPublishedContainerByToolPath(
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         final String[] split = path.split("/");
         // check that this is a tool path
@@ -541,10 +478,10 @@ public class DockerRepoResource {
             toolname = split[toolPathLength - 1];
         }
 
-        Container container = containerDAO.findRegisteredByToolPath(Joiner.on("/").join(split[0], split[1], split[2]), toolname);
-        Helper.checkContainer(container);
+        Tool tool = toolDAO.findPublishedByToolPath(Joiner.on("/").join(split[0], split[1], split[2]), toolname);
+        Helper.checkEntry(tool);
 
-        return container;
+        return tool;
     }
 
     @PUT
@@ -570,14 +507,12 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/builds")
     @ApiOperation(value = "Get the list of repository builds.", notes = "For TESTING purposes. Also useful for getting more information about the repository.\n Enter full path without quay.io", response = String.class, hidden = true)
-    public String builds(@ApiParam(hidden = true) @Auth Token authToken, @QueryParam("repository") String repo,
+    public String builds(@ApiParam(hidden = true) @Auth User user, @QueryParam("repository") String repo,
             @QueryParam("userId") long userId) {
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, userId);
 
         List<Token> tokens = tokenDAO.findByUserId(userId);
         StringBuilder builder = new StringBuilder();
-
         for (Token token : tokens) {
             if (token.getTokenSource().equals(TokenType.QUAY_IO.toString())) {
                 String url = TARGET_URL + "repository/" + repo + "/build/";
@@ -585,7 +520,7 @@ public class DockerRepoResource {
 
                 if (asString.isPresent()) {
                     String json = asString.get();
-                    LOG.info("RESOURCE CALL: {}", url);
+                    LOG.info(user.getUsername() + ": RESOURCE CALL: {}", url);
 
                     Gson gson = new Gson();
                     Map<String, ArrayList> map = new HashMap<>();
@@ -597,11 +532,11 @@ public class DockerRepoResource {
                         map2 = (Map<String, Map<String, String>>) map.get("builds").get(0);
 
                         String gitURL = map2.get("trigger_metadata").get("git_url");
-                        LOG.info(gitURL);
+                        LOG.info(user.getUsername() + ": " + gitURL);
 
                         ArrayList<String> tags = (ArrayList<String>) map2.get("tags");
                         for (String tag : tags) {
-                            LOG.info(tag);
+                            LOG.info(user.getUsername() + ": " + tag);
                         }
                     }
 
@@ -619,10 +554,10 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/search")
     @ApiOperation(value = "Search for matching registered containers."
-            , notes = "Search on the name (full path name) and description. NO authentication", response = Container.class, responseContainer = "List", tags = {
+            , notes = "Search on the name (full path name) and description. NO authentication", response = Tool.class, responseContainer = "List", tags = {
             "containers" })
-    public List<Container> search(@QueryParam("pattern") String word) {
-        return containerDAO.searchPattern(word);
+    public List<Tool> search(@QueryParam("pattern") String word) {
+        return toolDAO.searchPattern(word);
     }
 
     @GET
@@ -630,57 +565,28 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/tags")
     @ApiOperation(value = "List the tags for a registered container", response = Tag.class, responseContainer = "List", hidden = true)
-    public List<Tag> tags(@ApiParam(hidden = true) @Auth Token authToken, @QueryParam("containerId") long containerId) {
-        Container repository = containerDAO.findById(containerId);
-        Helper.checkContainer(repository);
+    public List<Tag> tags(@ApiParam(hidden = true) @Auth User user, @QueryParam("containerId") long containerId) {
+        Tool repository = toolDAO.findById(containerId);
+        Helper.checkEntry(repository);
 
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, repository);
 
         List<Tag> tags = new ArrayList<>();
         tags.addAll(repository.getTags());
-        return (List) tags;
+        return tags;
     }
 
-    // TODO: this method is very repetative with the method below, need to refactor
     @GET
     @Timed
     @UnitOfWork
     @Path("/{containerId}/dockerfile")
     @ApiOperation(value = "Get the corresponding Dockerfile on Github.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class)
-    public SourceFile dockerfile(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
+    public SourceFile dockerfile(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag) {
 
-        return getSourceFile(containerId, tag, FileType.DOCKERFILE);
+        return entryVersionHelper.getSourceFile(containerId, tag, FileType.DOCKERFILE);
     }
 
-    private SourceFile getSourceFile(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
-            @QueryParam("tag") String tag, FileType fileType) {
-        Container container = containerDAO.findById(containerId);
-        Helper.checkContainer(container);
-        Tag tagInstance = null;
-
-        if (tag == null) {
-            tag = "latest";
-        }
-
-        for (Tag t : container.getTags()) {
-            if (t.getName().equals(tag)) {
-                tagInstance = t;
-            }
-        }
-
-        if (tagInstance == null) {
-            throw new CustomWebApplicationException("Invalid tag.", HttpStatus.SC_BAD_REQUEST);
-        } else {
-            for (SourceFile file : tagInstance.getSourceFiles()) {
-                if (file.getType() == fileType) {
-                    return file;
-                }
-            }
-        }
-        throw new CustomWebApplicationException("File not found.", HttpStatus.SC_NOT_FOUND);
-    }
 
     // Add for new descriptor types
     @GET
@@ -688,10 +594,10 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/{containerId}/cwl")
     @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class)
-    public SourceFile cwl(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
+    public SourceFile cwl(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag) {
 
-        return getSourceFile(containerId, tag, FileType.DOCKSTORE_CWL);
+        return entryVersionHelper.getSourceFile(containerId, tag, FileType.DOCKSTORE_CWL);
     }
 
     @GET
@@ -699,10 +605,32 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/{containerId}/wdl")
     @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class)
-    public SourceFile wdl(@ApiParam(value = "Container id", required = true) @PathParam("containerId") Long containerId,
+    public SourceFile wdl(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag) {
 
-        return getSourceFile(containerId, tag, FileType.DOCKSTORE_WDL);
+        return entryVersionHelper.getSourceFile(containerId, tag, FileType.DOCKSTORE_WDL);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}/secondaryCwl")
+    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
+    public List<SourceFile> secondaryCwl(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
+            @QueryParam("tag") String tag) {
+
+        return entryVersionHelper.getSourceFiles(containerId, tag, FileType.DOCKSTORE_CWL);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}/secondaryWdl")
+    @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
+    public List<SourceFile> secondaryWdl(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
+            @QueryParam("tag") String tag) {
+
+        return entryVersionHelper.getSourceFiles(containerId, tag, FileType.DOCKSTORE_WDL);
     }
 
 }

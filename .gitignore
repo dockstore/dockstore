@@ -2,6 +2,11 @@
 .idea
 *.class
 *.swp
+*.sql
+
+*.gradle
+gradle.properties
+AndroidManifest.xml
 
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
@@ -23,15 +28,19 @@ dockstore-launcher/foo.json
 swagger-java-client/build.gradle
 swagger-java-client/gradle.properties
 swagger-java-client/settings.gradle
-/swagger-java-client/target/
-/swagger-java-quay-client/target/
+swagger-java-client/target/
+swagger-java-quay-client/target/
 dockstore-webservice/nbactions.xml
-/dockstore-common/target/
-/dockstore-integration-testing/target/
+dockstore-common/target/
+dockstore-integration-testing/target/
+dockstore-integration-testing/cromwell-executions/
+dockstore-integration-testing/cromwell-input/
+dockstore-integration-testing/datastore/
 
 # confidential testing files
 # The dockstore CLI config file for testing confidential data
 dockstore-integration-testing/src/test/resources/config_file.txt
+dockstore-integration-testing/src/test/resources/config_file2.txt
 
 # Contains SQL statements to initialize testing DB with a confidential user and tokens
 dockstore-integration-testing/src/test/resources/db_confidential_dump.sql

@@ -13,7 +13,10 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+
 package io.dockstore.webservice.core;
+
+import java.util.Objects;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -54,6 +57,10 @@ public class SourceFile {
     @ApiModelProperty("Cache for the contents of the target file")
     private String content;
 
+    @Column
+    @ApiModelProperty(value = "Path to source file in git repo", required = true)
+    private String path;
+
     public void update(SourceFile file) {
         content = file.content;
     }
@@ -80,5 +87,30 @@ public class SourceFile {
 
     public void setContent(String content) {
         this.content = content;
+    }
+
+    public String getPath() {
+        return this.path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, type, content);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        final SourceFile other = (SourceFile) obj;
+        return Objects.equals(this.id, other.id) && Objects.equals(this.type, other.type) && Objects.equals(this.content, other.content);
     }
 }

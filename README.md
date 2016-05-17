@@ -16,13 +16,17 @@ For the related web UI see the [dockstore-ui](https://github.com/ga4gh/dockstore
 
 ### Dependencies
 
-* Java (1.8.0_66 or similar)
+The dependency environment for Dockstore is described by our [Travis-CI config](https://github.com/ga4gh/dockstore/blob/develop/.travis.yml). Specifically, note the setup instructions for postgres. Specifically, you will need to have postgres installed and setup with the database user specified in .travis.yml. 
+
+Other notable dependencies to note are:  
+
+* Java (1.8.0\_66 or similar)
 * Maven (3.3.9)
-* cwltool
+* cwltool (to run CWL workflows locally)
 
 To install CWL tool:
 
-    pip install cwl-runner  cwltool==1.0.20160108200940 schema-salad==1.4.20160108200836 avro==1.7.7
+    pip install cwl-runner  cwltool==1.0.20160316150250 schema-salad==1.7.20160316150109 avro==1.7.7
 
 ### Building
 
@@ -34,36 +38,24 @@ If you have access to our confidential data package for extended testing, you ca
 
     mvn clean install -Pconfidential-tests
 
-As a pre-requisite, you will need to have postgres installed and setup with the database user specified in .travis.yml. 
-
-### Build Docker Version
-
-    docker build -t dockstore:1.0.0 .
-
-### Running Via Docker
-
-Probably the best way to run this since it includes a bundled postgres.  Keep in mind once you terminate the Docker container
-any state in the DB is lost.
-
-1. Fill in the template dockstore.yml and stash it somewhere outside the git repo (like ~/.dockstore)
-2. Start with `docker run -it -v ~/.dockstore/dockstore.yml:/dockstore.yml -e POSTGRES_PASSWORD=iAMs00perSecrEET -e POSTGRES_USER=webservice -p 8080:8080 dockstore:1.0.0`
-
-You can also run with defaults using
-
-1. `docker run -P -ti --rm dockstore`
-
 ### Running Locally
 
 You can also run it on your local computer but will need to setup postgres separately.
 
 1. Fill in the template dockstore.yml and stash it somewhere outside the git repo (like ~/.dockstore)
-2. Start with `java -jar dockstore-webservice/target/dockstore-webservice-*.jar   server ~/.dockstore/dockstore.yml`
+2. The dockstore.yml is mostly a standard [Dropwizard configuration file](http://www.dropwizard.io/0.9.2/docs/manual/configuration.html). Refer to the linked document to setup httpClient and database. 
+3. Start with `java -jar dockstore-webservice/target/dockstore-webservice-*.jar   server ~/.dockstore/dockstore.yml`
+4. If you need integration with GitHub.com, Quay.io. or Bitbucket for your work, you will need to follow the appropriate sections below and then fill out the corresponding fields in your [dockstore.yml](https://github.com/ga4gh/dockstore/blob/develop/dockstore.yml#L2). 
 
 ### View Swagger UI
+
+The Swagger UI is reachable while the Dockstore webservice is running. This allows you to explore available web resources.
 
 1. Browse to [http://localhost:8080/static/swagger-ui/index.html](http://localhost:8080/static/swagger-ui/index.html)
 
 ### Demo Integration with Github.com
+
+Setup your copy of Dockstore as a third-party application able to communicate with GitHub on behalf of a GitHub user. 
 
 1. Setup a new OAuth application at [Register a new OAuth application](https://github.com/settings/applications/new)
 2. Browse to [http://localhost:8080/integration.github.com](http://localhost:8080/integration.github.com)
@@ -72,12 +64,21 @@ You can also run it on your local computer but will need to setup postgres separ
 
 ### Demo Integration with Quay.io
 
+Setup your copy of Dockstore as a third-party application able to communicate with quay.io on behalf of a quay.io user. 
+
 1. Setup an application as described in [Creating a new Application](http://docs.quay.io/api/)
 2. Browse to [http://localhost:8080/integration.quay.io](http://localhost:8080/integration.quay.io)
 3. Authorize via quay.io using the provided link
 4. Browse to [http://localhost:8080/container](http://localhost:8080/container) to list repos that we have tokens for at quay.io
 
+### Demo Integration with Bitbucket
+ 
+1. Setup a new application as described in [Integrate another application through OAuth](https://confluence.atlassian.com/bitbucket/integrate-another-application-through-oauth-372605388.html). 
+2. Use the dockstore-ui to authorize Bitbucket access for your current logged in user. Use the UI refresh controls to refresh your tools. 
+
 ### Webservice Demo
+
+Demo the webservice and test communication with GitHub and quay.io
 
 1. Build the project and run the webservice. NOTE: The webservice will grab and use the IP of the server running the API. For example, if running on a docker container with IP 172.17.0.24, the API will use this for the curl commands and request URLs.
 2. Add your Github token. Follow the the steps above to get your Github token. This will create a user with the same username.
@@ -85,18 +86,20 @@ You can also run it on your local computer but will need to setup postgres separ
 4. To load all your containers from Quay, use /container/refresh to load them in the database for viewing. This needs to be done automatically once the Quay token is set.
 5. Now you can see and list your containers. Note that listing Github repos do not return anything because it does not return a valid json.
 
-## Coding Standards
+## Development
+
+### Coding Standards
 
 Please refer to SeqWare's [Coding Standards](https://seqware.github.io/docs/100-coding-standards/). 
 
-## Dockstore Java Client
+### Dockstore Java Client
 
 Some background on the client:
 
 * https://sdngeeks.wordpress.com/2014/08/01/swagger-example-with-java-spring-apache-cxf-jackson/
 * http://developers-blog.helloreverb.com/enabling-oauth-with-swagger/
 
-## Dockstore Command Line
+### Dockstore Command Line
 
 The dockstore command line should be installed in a location in your path.
 
@@ -111,7 +114,12 @@ server-url: http://www.dockstore.org:8080
 
 If you are working with a custom-built or updated dockstore client you will need to update the jar in: `~/.dockstore/config/self-installs`.
 
-## Swagger Java Client for Dockstore
+### Swagger Java Client for Dockstore
+
+This will no longer be necessary to do manually and is now done as part of the Maven build process.
+Just remember to commit a new `dockstore-webservice/src/main/resources/swagger.yaml` when the dockstore API changes. 
+Content is left here for reference purposes. 
+
 Background:
 
  * Client library generated by the [swagger code generator](https://github.com/swagger-api/swagger-codegen)
@@ -124,11 +132,12 @@ To regenerate the swagger client:
 1. Have the dockstore webservice running
 2. Pull the code from their repo and cd to the directory. We are using v2.1.4. Build using `mvn clean install`
 3. Run `java -jar modules/swagger-codegen-cli/target/swagger-codegen-cli.jar generate -i http://localhost:8080/swagger.json -l java -o <output directory> --library jersey2`. The output directory is where you have dockstore/swagger-java-client/.
-4. NOTE: Rengenerating the swagger client will probably generate an incorrect pom file. Use git checkout on the pom file to undo the changes to it.
+4. NOTE: Re-generating the swagger client will probably generate an incorrect pom file. Use git checkout on the pom file to undo the changes to it.
 
- * v2.1.5 is a major update for swagger, and should be explored in the future
- 
-## Swagger Java Client for quay.io
+### Swagger Java Client for quay.io
+
+This will no longer be necessary to do manually and is now done as part of the Maven build process.
+Content is left here for reference purposes. 
 
 Background:
 
@@ -140,10 +149,10 @@ Background:
  To regenerate the swagger client:
  
 1. Run `echo "{\"library\":\"jersey2\",\"invokerPackage\":\"io.swagger.quay.client\",\"modelPackage\":\"io.swagger.quay.client.model\",\"apiPackage\":\"io.swagger.quay.client.api\"}" > config.json`
-2. Run `java -jar modules/swagger-codegen-cli/target/swagger-codegen-cli.jar generate -i https://quay.io/api/v1/discovery -l java -o <output directory> --library jersey2`. The output directory is where you have dockstore/swagger-java-client/.
+2. Run `java -jar modules/swagger-codegen-cli/target/swagger-codegen-cli.jar generate -i https://quay.io/api/v1/discovery -l java -o <output directory> --library jersey2 --config config.json`. The output directory is where you have dockstore/swagger-java-client/.
 3. NOTE: Rengenerating the swagger client will probably generate an incorrect pom file. Use git checkout on the pom file to undo the changes to it.
 
-## Swagger Web Service Components for GA4GH Tool Registry Schema
+### Swagger Web Service Components for GA4GH Tool Registry Schema
 
 Background:
 
@@ -157,10 +166,10 @@ Background:
 1. Open up the yaml document for the specification in the editor.swagger.io
 2. Hit Generate Server and select JAX-RS
 3. Replace the appropriate classes in dockstore-webservice
-4. Unlike the client classes, we cannot separate quite as cleanly. Classes to watch out for are io.swagger.api.ToolsApi (includes DropWizard specific UnitOfWork annotations) and io.swagger.api.impl.ToolsApiServiceImpl (includes our implementation).
+4. Unlike the client classes, we cannot separate quite as cleanly. Classes to watch out for are io.swagger.api.ToolsApi (includes DropWizard specific UnitOfWork annotations and a custom path) and io.swagger.api.impl.ToolsApiServiceImpl (includes our implementation).
 
 
-## CWL Avro documents
+### CWL Avro documents
 
 Background:
 * The CWL specification is defined in something similar to but not entirely like Avro
@@ -177,24 +186,63 @@ To regenerate:
 
 Eventually, this will be moved out as a proper Maven dependency on https://github.com/common-workflow-language/cwlavro
 
-## How to perform a Maven release 
+### HubFlow Operations
 
-Where 0.2.2 should be modified to the version number of your next release
+#### How to perform a Maven release for a Unstable Release
 
-1. Start a release branch `git hf release start 0.2.2`
-2. Iterate the verion numbers for your Maven pom files `mvn versions:set -DnewVersion=0.2.2`
-3. Check that everything still builds and tests properly `mvn clean install -DskipITs=false`
-4. Finish the release (which creates a tag) `git hf release finish 0.2.2`. Accept proposed merges to develop and master if they look reasonable. 
-5. Use the maven release plugin to perform the release (due to a bug, use maven-release-plugin 2.3.2) or failing that upload manually to artifactory `mvn release:perform -DconnectionUrl=scm:git:git@github.com:ga4gh/dockstore.git -Dtag=0.2.2 `
-7. Remember to iterate the version numbers on the develop branch to the snapshot version of your next release `mvn versions:set -DnewVersion=0.2.3-SNAPSHOT ; git add pom.xml \*/pom.xml ; git push`
-8. Fiddle with github releases and update docs
+This is for pre-release versions that have not been released to production. 
 
-## Encrypted Documents for Travis-CI
+1. Create a release tag and iterate pom file versions `mvn release:prepare`
+2. Release from the tag into artifactory (you may need permissions) `mvn release:perform`
+3. Merge to master if this is a stable release `git checkout master; git merge <your tag here>`
+
+Special note: If a test is failing during perform, but did not fail during prepare or Travis-CI builds, you may have a non-deterministic error. Skip tests during a release with `mvn release:perform -Darguments="-DskipTests"`
+
+After the release to Artifactory, document the release on GitHub via the Releases page. Take a look at commits since the last release and closed pull requests for information on what goes into the changelog. Also attach the newly created Dockstore script.
+
+### How to perform a Maven release for an Stable Release
+
+This is for release versions that have been released to production. 
+
+
+### Encrypted Documents for Travis-CI
 
 Encrypted documents necessary for confidential testing are handled as indicated in the documents at Travis-CI for  
 [files](https://docs.travis-ci.com/user/encrypting-files/#Encrypting-multiple-files) and [environment variables](https://docs.travis-ci.com/user/encryption-keys).
 
 A convenience script is provided as encrypt.sh which will compress confidential files, encrypt them, and then update an encrypted archive on GitHub. Confidential files should also be added to .gitignore to prevent accidental check-in. The unencrypted secrets.tar should be privately distributed among members of the team that need to work with confidential data. 
+
+To dump a new copy of the encrypted database from one that you have setup, use the following (or similar):
+
+    pg_dump --data-only --column-inserts   webservice_test &> dockstore-integration-testing/src/test/resources/db_confidential_dump_full.sql
+
+
+## Adding Copyright header to all files with IntelliJ
+
+To add copyright headers to all files with IntelliJ
+
+1. Ensure the Copyright plugin is installed (Settings -> Plugins)
+2. Create a new copyright profile matching existing copyright header found on all files, name it Dockstore (Settings -> Copyright -> Copyright Profiles -> Add New)
+3. Set the default project copyright to Dockstore (Settings -> Copyright)
+
+## Work-In-Progress
+
+### Build Docker Version
+
+This is still a work in progress. However, it is possible to setup and run Dockstore itself in a container.
+
+    docker build -t dockstore:1.0.0 .
+
+### Running Via Docker
+
+Probably the best way to run this since it includes a bundled postgres.  Keep in mind once you terminate the Docker container any state in the DB is lost.
+
+1. Fill in the template dockstore.yml and stash it somewhere outside the git repo (like ~/.dockstore)
+2. Start with `docker run -it -v ~/.dockstore/dockstore.yml:/dockstore.yml -e POSTGRES_PASSWORD=iAMs00perSecrEET -e POSTGRES_USER=webservice -p 8080:8080 dockstore:1.0.0`
+
+You can also run with defaults using
+
+1. `docker run -P -ti --rm dockstore`
 
 
 ## TODO

@@ -18,7 +18,6 @@ package io.swagger.model;
 
 import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonValue;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
@@ -26,7 +25,7 @@ import io.swagger.annotations.ApiModelProperty;
 
 
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JaxRSServerCodegen", date = "2016-01-29T22:00:17.650Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-03-11T20:14:17.098Z")
 public class Error   {
   
   private Integer code = 500;
@@ -35,8 +34,13 @@ public class Error   {
   
   /**
    **/
+  public Error code(Integer code) {
+    this.code = code;
+    return this;
+  }
+
   
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(required = true, value = "")
   @JsonProperty("code")
   public Integer getCode() {
     return code;
@@ -48,6 +52,11 @@ public class Error   {
   
   /**
    **/
+  public Error message(String message) {
+    this.message = message;
+    return this;
+  }
+
   
   @ApiModelProperty(value = "")
   @JsonProperty("message")

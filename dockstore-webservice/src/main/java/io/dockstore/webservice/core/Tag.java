@@ -13,23 +13,14 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+
 package io.dockstore.webservice.core;
 
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Objects;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
+import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -45,16 +36,10 @@ import io.swagger.annotations.ApiModelProperty;
  */
 @ApiModel(value = "Tag", description = "This describes one tag associated with a container.")
 @Entity
-@Table(name = "tag")
-public class Tag implements Comparable<Tag> {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @ApiModelProperty("Implementation specific ID for the tag in this web service")
-    private long id;
+@DiscriminatorValue("tool")
+public class Tag extends Version<Tag> {
 
-    @Column
-    @ApiModelProperty(value = "a quay.io or docker hub tag name", required = true)
-    private String name;
+
 
     @Column
     @JsonProperty("image_id")
@@ -62,17 +47,8 @@ public class Tag implements Comparable<Tag> {
     private String imageId;
 
     @Column
-    @JsonProperty("last_modified")
-    @ApiModelProperty("The last time this image was modified in the image registry")
-    private Date lastModified;
-
-    @Column
     @ApiModelProperty("Size of the image")
     private long size;
-
-    @Column
-    @ApiModelProperty(value = "git commit/tag/branch", required = true)
-    private String reference;
 
     @Column(columnDefinition = "text")
     @JsonProperty("dockerfile_path")
@@ -91,32 +67,18 @@ public class Tag implements Comparable<Tag> {
     private String wdlPath = "/Dockstore.wdl";
 
 
-    @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
-    @JoinTable(name = "tagsourcefile", joinColumns = @JoinColumn(name = "tagid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "sourcefileid", referencedColumnName = "id"))
-    @ApiModelProperty("Cached files for each tag. Includes Dockerfile and Descriptor files")
-    private final Set<SourceFile> sourceFiles;
-
     public Tag() {
-        sourceFiles = new HashSet<>(0);
+        super();
     }
-
-    @Column
-    @ApiModelProperty("Implementation specific, whether this row is visible to other users aside from the owner")
-    private boolean hidden;
-
-    @Column
-    @ApiModelProperty("Implementation specific, whether this tag has valid files from source code repo")
-    private boolean valid;
 
     @Column
     @ApiModelProperty("Implementation specific, indicates whether this is an automated build on quay.io")
     private boolean automated;
 
     public void updateByUser(final Tag tag) {
-        reference = tag.reference;
+        super.updateByUser(tag);
         // this.setName(tag.getName());
         imageId = tag.imageId;
-        hidden = tag.hidden;
 
         // Add for new descriptor types
         cwlPath = tag.cwlPath;
@@ -126,28 +88,26 @@ public class Tag implements Comparable<Tag> {
     }
 
     public void update(Tag tag) {
+        super.update(tag);
         // If the tag has an automated build, the reference will be overwritten (whether or not the user has edited it).
         if (tag.automated) {
-            reference = tag.reference;
+            super.setReference(tag.getReference());
         }
 
-        name = tag.name;
         automated = tag.automated;
         imageId = tag.imageId;
-        lastModified = tag.lastModified;
         size = tag.size;
     }
 
     public void clone(Tag tag) {
+        super.clone(tag);
         // If the tag has an automated build, the reference will be overwritten (whether or not the user has edited it).
         if (tag.automated) {
-            reference = tag.reference;
+            super.setReference(tag.getReference());
         }
 
-        name = tag.name;
         automated = tag.automated;
         imageId = tag.imageId;
-        lastModified = tag.lastModified;
         size = tag.size;
 
         // Add here for new descriptor types
@@ -157,19 +117,7 @@ public class Tag implements Comparable<Tag> {
         dockerfilePath = tag.dockerfilePath;
     }
 
-    @JsonProperty
-    public long getId() {
-        return id;
-    }
 
-    @JsonProperty
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
 
     @JsonProperty
     public String getImageId() {
@@ -178,15 +126,6 @@ public class Tag implements Comparable<Tag> {
 
     public void setImageId(String imageId) {
         this.imageId = imageId;
-    }
-
-    @JsonProperty
-    public Date getLastModified() {
-        return lastModified;
-    }
-
-    public void setLastModified(Date lastModified) {
-        this.lastModified = lastModified;
     }
 
     @JsonProperty
@@ -199,29 +138,12 @@ public class Tag implements Comparable<Tag> {
     }
 
     @JsonProperty
-    public String getReference() {
-        return reference;
-    }
-
-    public void setReference(String reference) {
-        this.reference = reference;
-    }
-
-    @JsonProperty
     public String getDockerfilePath() {
         return dockerfilePath;
     }
 
     public void setDockerfilePath(String dockerfilePath) {
         this.dockerfilePath = dockerfilePath;
-    }
-
-    public Set<SourceFile> getSourceFiles() {
-        return sourceFiles;
-    }
-
-    public void addSourceFile(SourceFile file) {
-        sourceFiles.add(file);
     }
 
     // Add for new descriptor types
@@ -243,25 +165,6 @@ public class Tag implements Comparable<Tag> {
         this.wdlPath = wdlPath;
     }
 
-
-    @JsonProperty
-    public boolean isHidden() {
-        return hidden;
-    }
-
-    public void setHidden(boolean hidden) {
-        this.hidden = hidden;
-    }
-
-    @JsonProperty
-    public boolean isValid() {
-        return valid;
-    }
-
-    public void setValid(boolean valid) {
-        this.valid = valid;
-    }
-
     @JsonProperty
     public boolean isAutomated() {
         return automated;
@@ -273,6 +176,27 @@ public class Tag implements Comparable<Tag> {
 
     @Override
     public int compareTo(Tag o) {
-        return Long.compare(id, o.id);
+        return Long.compare(super.getId(), o.getId());
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        if (!super.equals(obj)) {
+            return false;
+        }
+        final Tag other = (Tag) obj;
+        return Objects.equals(this.getId(), other.getId());
+    }
+
+    public int hashCode() {
+        return (int)getId();
+    }
+
+
 }

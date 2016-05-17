@@ -13,12 +13,25 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+
 package io.dockstore.webservice.resources;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import com.codahale.metrics.annotation.Timed;
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Tag;
+import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.helpers.Helper;
+import io.dockstore.webservice.jdbi.TagDAO;
+import io.dockstore.webservice.jdbi.ToolDAO;
+import io.dropwizard.auth.Auth;
+import io.dropwizard.hibernate.UnitOfWork;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import org.apache.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -29,27 +42,10 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
-import org.apache.http.HttpStatus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.codahale.metrics.annotation.Timed;
-
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.Helper;
-import io.dockstore.webservice.core.Container;
-import io.dockstore.webservice.core.Tag;
-import io.dockstore.webservice.core.Token;
-import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.jdbi.ContainerDAO;
-import io.dockstore.webservice.jdbi.TagDAO;
-import io.dockstore.webservice.jdbi.UserDAO;
-import io.dropwizard.auth.Auth;
-import io.dropwizard.hibernate.UnitOfWork;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  *
@@ -60,17 +56,15 @@ import io.swagger.annotations.ApiParam;
 @Produces(MediaType.APPLICATION_JSON)
 public class DockerRepoTagResource {
 
-    private final UserDAO userDAO;
-    private final ContainerDAO containerDAO;
+    private final ToolDAO toolDAO;
     private final TagDAO tagDAO;
 
     private static final Logger LOG = LoggerFactory.getLogger(DockerRepoTagResource.class);
 
-    public DockerRepoTagResource(UserDAO userDAO, ContainerDAO containerDAO, TagDAO tagDAO) {
-        this.userDAO = userDAO;
+    public DockerRepoTagResource(ToolDAO toolDAO, TagDAO tagDAO) {
         this.tagDAO = tagDAO;
 
-        this.containerDAO = containerDAO;
+        this.toolDAO = toolDAO;
     }
 
     @GET
@@ -78,12 +72,11 @@ public class DockerRepoTagResource {
     @UnitOfWork
     @Path("/path/{containerId}/tags")
     @ApiOperation(value = "Get tags  for a container by id", notes = "Lists tags for a container. Enter full path (include quay.io in path).", response = Tag.class, responseContainer = "Set")
-    public Set<Tag> getTagsByPath(@ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "Container to modify.", required = true) @PathParam("containerId") Long containerId) {
-        Container c = containerDAO.findById(containerId);
-        Helper.checkContainer(c);
+    public Set<Tag> getTagsByPath(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId) {
+        Tool c = toolDAO.findById(containerId);
+        Helper.checkEntry(c);
 
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
 
         return c.getTags();
@@ -94,14 +87,13 @@ public class DockerRepoTagResource {
     @UnitOfWork
     @Path("/{containerId}/tags")
     @ApiOperation(value = "Update the tags linked to a container", notes = "Tag correspond to each row of the versions table listing all information for a docker repo tag", response = Tag.class, responseContainer = "List")
-    public Set<Tag> updateTags(@ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "Container to modify.", required = true) @PathParam("containerId") Long containerId,
+    public Set<Tag> updateTags(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "List of modified tags", required = true) List<Tag> tags) {
 
-        Container c = containerDAO.findById(containerId);
-        Helper.checkContainer(c);
+        Tool c = toolDAO.findById(containerId);
+        Helper.checkEntry(c);
 
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
 
         // create a map for quick lookup
@@ -117,8 +109,8 @@ public class DockerRepoTagResource {
                 existingTag.updateByUser(tag);
             }
         }
-        Container result = containerDAO.findById(containerId);
-        Helper.checkContainer(result);
+        Tool result = toolDAO.findById(containerId);
+        Helper.checkEntry(result);
         return result.getTags();
     }
 
@@ -127,14 +119,13 @@ public class DockerRepoTagResource {
     @UnitOfWork
     @Path("/{containerId}/tags")
     @ApiOperation(value = "Add new tags linked to a container", notes = "Tag correspond to each row of the versions table listing all information for a docker repo tag", response = Tag.class, responseContainer = "List")
-    public Set<Tag> addTags(@ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "Container to modify.", required = true) @PathParam("containerId") Long containerId,
+    public Set<Tag> addTags(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "List of new tags", required = true) List<Tag> tags) {
 
-        Container c = containerDAO.findById(containerId);
-        Helper.checkContainer(c);
+        Tool c = toolDAO.findById(containerId);
+        Helper.checkEntry(c);
 
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
 
         for (Tag tag : tags) {
@@ -143,8 +134,8 @@ public class DockerRepoTagResource {
             c.addTag(byId);
         }
 
-        Container result = containerDAO.findById(containerId);
-        Helper.checkContainer(result);
+        Tool result = toolDAO.findById(containerId);
+        Helper.checkEntry(result);
         return result.getTags();
     }
 
@@ -153,18 +144,18 @@ public class DockerRepoTagResource {
     @UnitOfWork
     @Path("/{containerId}/tags/{tagId}")
     @ApiOperation(value = "Delete tag linked to a container", notes = "Tag correspond to each row of the versions table listing all information for a docker repo tag")
-    public Response deleteTags(@ApiParam(hidden = true) @Auth Token authToken,
-            @ApiParam(value = "Container to modify.", required = true) @PathParam("containerId") Long containerId,
+    public Response deleteTags(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "Tag to delete", required = true) @PathParam("tagId") Long tagId) {
 
-        Container c = containerDAO.findById(containerId);
-        Helper.checkContainer(c);
+        Tool c = toolDAO.findById(containerId);
+        Helper.checkEntry(c);
 
-        User user = userDAO.findById(authToken.getUserId());
         Helper.checkUser(user, c);
 
         Tag tag = tagDAO.findById(tagId);
         if (tag == null) {
+            LOG.error(user.getUsername() + ": could not find tag: " + c.getToolPath());
             throw new CustomWebApplicationException("Tag not found.", HttpStatus.SC_BAD_REQUEST);
         }
 
@@ -179,6 +170,7 @@ public class DockerRepoTagResource {
                 return Response.serverError().build();
             }
         } else {
+            LOG.error(user.getUsername() + ": could not find tag: " + tagId + " in " + c.getToolPath());
             throw new CustomWebApplicationException("Tag not found.", HttpStatus.SC_BAD_REQUEST);
         }
     }

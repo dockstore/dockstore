@@ -12,7 +12,7 @@ jdk:
 - oraclejdk8
 install:
 - docker version
-- pip2.7 install --user cwl-runner cwltool==1.0.20160108200940 schema-salad==1.4.20160108200836 avro==1.7.7
+- pip2.7 install --user cwl-runner cwltool==1.0.20160323212343 schema-salad==1.7.20160316203940 avro==1.7.7
 - docker pull commonworkflowlanguage/nodejs-engine
 before_script:
 - psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
@@ -20,10 +20,10 @@ before_script:
 - psql -c 'create database webservice_test with owner = dockstore;' -U postgres
 - export PATH=$PATH:$PWD/dockstore-client/target
 script: mvn -B clean install -DskipITs=false -Pconfidential-tests
-after_success:
-- mvn -B clean -DskipITs=false cobertura:cobertura cobertura:cobertura-integration-test
-  coveralls:report
+# cobertura does not seem to properly work with multiple module projects or java 8 at the moment
+# after_success:
+# - mvn -B clean -DskipITs=false cobertura:cobertura cobertura:cobertura-integration-test coveralls:report
 before_install:
-- openssl aes-256-cbc -K $encrypted_8c393341f536_key -iv $encrypted_8c393341f536_iv
+- openssl aes-256-cbc -K $encrypted_b6cd6518e9f3_key -iv $encrypted_b6cd6518e9f3_iv
   -in dockstore-integration-testing/src/test/resources/secrets.tar.enc -out dockstore-integration-testing/src/test/resources/secrets.tar -d
 - tar xvf dockstore-integration-testing/src/test/resources/secrets.tar

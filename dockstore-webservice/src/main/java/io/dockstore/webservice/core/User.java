@@ -13,8 +13,10 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+
 package io.dockstore.webservice.core;
 
+import java.security.Principal;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -33,6 +35,7 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.swagger.annotations.ApiModel;
@@ -48,7 +51,7 @@ import io.swagger.annotations.ApiModelProperty;
 @Table(name = "enduser")
 @NamedQueries({ @NamedQuery(name = "io.dockstore.webservice.core.User.findAll", query = "SELECT t FROM User t"),
         @NamedQuery(name = "io.dockstore.webservice.core.User.findByUsername", query = "SELECT t FROM User t WHERE t.username = :username") })
-public class User {
+public class User implements Principal {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", unique = true, nullable = false)
@@ -66,16 +69,18 @@ public class User {
     @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinTable(name = "endusergroup", joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "groupid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty("Groups that this user belongs to")
+    @JsonIgnore
     private final Set<Group> groups;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
-    @JoinTable(name = "usercontainer", inverseJoinColumns = @JoinColumn(name = "containerid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
+    @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty("Entries in the dockstore that this user manages")
-    private final Set<Container> containers;
+    @JsonIgnore
+    private final Set<Entry> entries;
 
     public User() {
         groups = new HashSet<>(0);
-        containers = new HashSet<>(0);
+        entries = new HashSet<>(0);
     }
 
     @JsonProperty
@@ -113,21 +118,26 @@ public class User {
         return groups.remove(group);
     }
 
-    public Set<Container> getContainers() {
-        return containers;
+    public Set<Entry> getEntries() {
+        return entries;
     }
 
-    public void addContainer(Container container) {
-        containers.add(container);
+    public void addEntry(Entry entry) {
+        entries.add(entry);
     }
 
-    public boolean removeContainer(Container container) {
-        return containers.remove(container);
+    public boolean removeEntry(Entry entry) {
+        return entries.remove(entry);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(id, username);
+    }
+
+    @Override
+    public String getName() {
+        return getUsername();
     }
 
     @Override
@@ -145,10 +155,8 @@ public class User {
         if (!Objects.equals(username, other.username)) {
             return false;
         }
-        if (isAdmin != other.isAdmin) {
-            return false;
-        }
-        return Objects.equals(groups, other.groups);
+        // do not depend on lazily loaded collections for equality
+        return Objects.equals(isAdmin, other.isAdmin);
     }
 
 }

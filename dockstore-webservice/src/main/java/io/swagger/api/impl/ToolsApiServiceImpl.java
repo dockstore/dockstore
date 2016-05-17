@@ -35,14 +35,13 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Splitter;
 
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dockstore.webservice.core.Container;
+import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
-import io.dockstore.webservice.jdbi.ContainerDAO;
+import io.dockstore.webservice.jdbi.ToolDAO;
 import io.swagger.api.NotFoundException;
 import io.swagger.api.ToolsApiService;
 import io.swagger.model.Metadata;
-import io.swagger.model.Tool;
 import io.swagger.model.ToolDescriptor;
 import io.swagger.model.ToolDockerfile;
 import io.swagger.model.ToolType;
@@ -52,11 +51,11 @@ public class ToolsApiServiceImpl extends ToolsApiService {
 
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiServiceImpl.class);
 
-    private static ContainerDAO containerDAO = null;
+    private static ToolDAO toolDAO = null;
     private static DockstoreWebserviceConfiguration config = null;
 
-    public static void setContainerDAO(ContainerDAO containerDAO) {
-        ToolsApiServiceImpl.containerDAO = containerDAO;
+    public static void setToolDAO(ToolDAO toolDAO) {
+        ToolsApiServiceImpl.toolDAO = toolDAO;
     }
 
     public static void setConfig(DockstoreWebserviceConfiguration config) {
@@ -66,20 +65,20 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     @Override
     public Response toolsRegistryIdGet(String id, SecurityContext securityContext) throws NotFoundException {
         ParsedRegistryID parsedID = new ParsedRegistryID(id);
-        Container container = containerDAO.findRegisteredByToolPath(parsedID.getPath(),parsedID.getToolName());
-        return buildToolResponse(container, null);
+        Tool tool = toolDAO.findPublishedByToolPath(parsedID.getPath(),parsedID.getToolName());
+        return buildToolResponse(tool, null);
     }
 
-    private Response buildToolResponse(Container container, String version) {
+    private Response buildToolResponse(Tool container, String version) {
         Response response;
         if (container == null) {
             response = Response.status(Response.Status.NOT_FOUND).build();
         }
-        else if (!container.getIsRegistered()){
+        else if (!container.getIsPublished()){
             // check whether this is registered
             response = Response.status(Response.Status.UNAUTHORIZED).build();
         } else {
-            Tool tool = convertContainer2Tool(container);
+            io.swagger.model.Tool tool = convertContainer2Tool(container);
             assert (tool != null);
             // filter out other versions if we're narrowing to a specific version
             if (version != null) {
@@ -105,8 +104,8 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
-        Container container = containerDAO.findRegisteredByToolPath(parsedID.getPath(),parsedID.getToolName());
-        return buildToolResponse(container, versionId);
+        Tool tool = toolDAO.findPublishedByToolPath(parsedID.getPath(),parsedID.getToolName());
+        return buildToolResponse(tool, versionId);
     }
 
     @Override
@@ -129,9 +128,9 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     @Override
     public Response toolsGet(String registryId, String registry, String organization, String name, String toolname, String description,
             String author, SecurityContext securityContext) throws NotFoundException {
-        final List<Container> all = containerDAO.findAllRegistered();
-        List<Tool> results = new ArrayList<>();
-        for (Container c : all) {
+        final List<Tool> all = toolDAO.findAllPublished();
+        List<io.swagger.model.Tool> results = new ArrayList<>();
+        for (Tool c : all) {
             // check each criteria. This sucks. Can we do this better with reflection? Or should we pre-convert?
             if (registryId != null) {
                 if (!registryId.contains(c.getToolPath())) {
@@ -169,7 +168,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                 }
             }
             // if passing, for each container that matches the criteria, convert to standardised format and return
-            Tool tool = convertContainer2Tool(c);
+            io.swagger.model.Tool tool = convertContainer2Tool(c);
             results.add(tool);
         }
 
@@ -186,12 +185,12 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     }
 
     /**
-     * Convert our Container object to a standard Tool format
+     * Convert our Tool object to a standard Tool format
      * 
      * @param container our data object
      * @return standardised data object
      */
-    private static Tool convertContainer2Tool(Container container) {
+    private static io.swagger.model.Tool convertContainer2Tool(Tool container) {
         String globalId;
         // TODO: properly pass this information
         String newID;
@@ -211,14 +210,14 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         type.setId("0");
         type.setDescription("CWL described CommandLineTool");
 
-        Tool tool = new Tool();
+        io.swagger.model.Tool tool = new io.swagger.model.Tool();
         tool.setToolname(container.getToolname());
         tool.setAuthor(container.getAuthor());
         tool.setDescription(container.getDescription());
-        tool.setMetaVersion(String.valueOf(container.getLastUpdated()));
+        tool.setMetaVersion(container.getLastUpdated() != null ? container.getLastUpdated().toString() : "");
         tool.setOrganization(container.getNamespace());
         tool.setName(container.getName());
-        tool.setRegistry(container.getRegistry().toString());
+        tool.setRegistry(container.getRegistry().name());
         tool.setTooltype(type);
         tool.setRegistryId(newID);
         tool.setGlobalId(globalId);
@@ -226,8 +225,9 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         // setup versions as well
         for (Tag tag : container.getTags()) {
 
-            if (tag.getName() == null || tag.getImageId() == null){
+            if (tag.getName() == null || tag.getImageId() == null || tag.isHidden()){
                 // tags with no names make no sense here
+                // also hide hidden tags
                 continue;
             }
 
@@ -242,24 +242,69 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             }
             version.setGlobalId(globalVersionId);
 
-            version.setName(tag.getReference());
+            version.setName(tag.getName());
+
+            String urlBuilt;
+            final String githubPrefix = "git@github.com:";
+            final String bitbucketPrefix = "git@bitbucket.org:";
+            if (container.getGitUrl().startsWith(githubPrefix)){
+                urlBuilt = extractHTTPPrefix(container.getGitUrl(), tag.getReference(), githubPrefix, "https://raw.githubusercontent.com/");
+            } else if (container.getGitUrl().startsWith(bitbucketPrefix)){
+                urlBuilt = extractHTTPPrefix(container.getGitUrl(), tag.getReference(), bitbucketPrefix, "https://bitbucket.org/");
+            } else{
+                LOG.error("Found a git url neither from bitbucket or github " + container.getGitUrl());
+                urlBuilt = null;
+            }
+
             for (SourceFile file : tag.getSourceFiles()) {
                 switch (file.getType()) {
                 case DOCKERFILE:
-                    version.setDockerfile(file.getContent());
+                    ToolDockerfile dockerfile = new ToolDockerfile();
+                    dockerfile.setDockerfile(file.getContent());
+                    dockerfile.setUrl(urlBuilt + tag.getDockerfilePath());
+                    version.setDockerfile(dockerfile);
                     break;
                 case DOCKSTORE_CWL:
-                    ToolDescriptor descriptor = new ToolDescriptor();
-                    descriptor.setDescriptor(file.getContent());
-                    version.setDescriptor(descriptor);
+                    version.setDescriptor(buildSourceFile(urlBuilt + tag.getCwlPath(), file));
+                    break;
+                case DOCKSTORE_WDL:
+                    version.setDescriptor(buildSourceFile(urlBuilt + tag.getWdlPath(), file));
                     break;
                 }
             }
-            version.setImage(tag.getName());
+            version.setImage(container.getPath() + ":" + tag.getName());
             tool.getVersions().add(version);
             version.setMetaVersion(String.valueOf(tag.getLastModified()));
         }
         return tool;
+    }
+
+    /**
+     * Build a descriptor and attach it to a version
+     * @param url url to set for the descriptor
+     * @param file a file with content for the descriptor
+     */
+    private static ToolDescriptor buildSourceFile(String url, SourceFile file) {
+        ToolDescriptor wdlDescriptor = new ToolDescriptor();
+        wdlDescriptor.setDescriptor(file.getContent());
+        wdlDescriptor.setUrl(url);
+        return wdlDescriptor;
+    }
+
+    /**
+     *
+     * @param gitUrl The git formatted url for the repo
+     * @param reference the git tag or branch
+     * @param githubPrefix the prefix for the git formatted url to strip out
+     * @param builtPrefix the prefix to use to start the extracted prefix
+     * @return the prefix to access these files
+     */
+    private static String extractHTTPPrefix(String gitUrl, String reference, String githubPrefix, String builtPrefix) {
+        StringBuilder urlBuilder = new StringBuilder();
+        urlBuilder.append(builtPrefix);
+        final String substring = gitUrl.substring(githubPrefix.length(), gitUrl.lastIndexOf(".git"));
+        urlBuilder.append(substring).append('/').append(reference);
+        return urlBuilder.toString();
     }
 
     private Response getFileByToolVersionID(String registryId, String versionId, SourceFile.FileType type) {
@@ -270,13 +315,13 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
-        Container container = containerDAO.findRegisteredByToolPath(parsedID.getPath(),parsedID.getToolName());
+        Tool tool = toolDAO.findPublishedByToolPath(parsedID.getPath(),parsedID.getToolName());
         // check whether this is registered
-        if (!container.getIsRegistered()){
+        if (!tool.getIsPublished()){
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
         // convert our toolName model to that expected
-        for (Tag tag : container.getTags()) {
+        for (Tag tag : tool.getTags()) {
                 if (tag.getName().equals(versionId)) {
                     for (SourceFile file : tag.getSourceFiles()) {
                         if (file.getType() == type) {

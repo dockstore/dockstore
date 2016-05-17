@@ -23,7 +23,7 @@ import java.util.Map;
 
 import org.apache.http.client.HttpClient;
 
-import io.dockstore.webservice.core.Container;
+import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Tag;
 
 /**
@@ -41,7 +41,7 @@ public class DockerHubRegistry implements ImageRegistryInterface {
     }
 
     @Override
-    public List<Tag> getTags(Container container) {
+    public List<Tag> getTags(Tool tool) {
         return new ArrayList<>();
     }
 
@@ -51,12 +51,12 @@ public class DockerHubRegistry implements ImageRegistryInterface {
     }
 
     @Override
-    public List<Container> getContainers(List<String> namespaces) {
+    public List<Tool> getContainers(List<String> namespaces) {
         return new ArrayList<>();
     }
 
     @Override
-    public Map<String, ArrayList<?>> getBuildMap(List<Container> allRepos) {
+    public Map<String, ArrayList<?>> getBuildMap(List<Tool> allRepos) {
         return new HashMap<>();
     }
 }
