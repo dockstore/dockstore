@@ -51,7 +51,6 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -435,11 +434,11 @@ public class LauncherCWL {
         System.out.println(cwltool + " stdout:\n" + stdout);
         System.out.println(cwltool + " stderr:\n"+ stderr);
         try {
-            Path txt = Files.createFile(Paths.get(workingDir +  "."+cwltool+".stdout.txt"));
-            Files.write(txt, execute.getLeft().getBytes(StandardCharsets.UTF_8));
-            System.out.println("Saving copy of "+ cwltool +" stdout to: " + txt.toAbsolutePath().toString());
-            Path txt2 = Files.createFile(Paths.get(workingDir +  "."+cwltool+".stderr.txt"));
-            Files.write(txt2, execute.getRight().getBytes(StandardCharsets.UTF_8));
+            final Path path = Paths.get(workingDir + File.separator + cwltool + ".stdout.txt");
+            FileUtils.writeStringToFile(path.toFile(), execute.getLeft(), StandardCharsets.UTF_8, false);
+            System.out.println("Saving copy of "+ cwltool +" stdout to: " + path.toAbsolutePath().toString());
+            final Path txt2 = Paths.get(workingDir + File.separator + cwltool+".stderr.txt");
+            FileUtils.writeStringToFile(txt2.toFile(), execute.getRight(), StandardCharsets.UTF_8, false);
             System.out.println("Saving copy of "+ cwltool +" stderr to: " + txt2.toAbsolutePath().toString());
         } catch (IOException e) {
             throw new RuntimeException("unable to save "+cwltool+" output", e);

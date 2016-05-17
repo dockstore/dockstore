@@ -710,9 +710,9 @@ public abstract class AbstractEntryClient {
 
             // capture system.out and system.err
             ByteArrayOutputStream stdoutCapture = new ByteArrayOutputStream();
-            System.setOut(new PrintStream(stdoutCapture));
+            System.setOut(new PrintStream(stdoutCapture, true, StandardCharsets.UTF_8.toString()));
             ByteArrayOutputStream stderrCapture = new ByteArrayOutputStream();
-            System.setErr(new PrintStream(stderrCapture));
+            System.setErr(new PrintStream(stderrCapture, true, StandardCharsets.UTF_8.toString()));
 
             final int run = main.run(wdlRunList);
 
