@@ -74,6 +74,11 @@ public class ToolClient extends AbstractEntryClient {
     private ContainertagsApi containerTagsApi;
     private UsersApi usersApi;
 
+    public ToolClient(Client client){
+        /** for testing */
+        this.client = client;
+    }
+
     public ToolClient(ContainersApi containersApi, ContainertagsApi containerTagsApi, UsersApi usersApi, Client client) {
         this.containersApi = containersApi;
         this.containerTagsApi = containerTagsApi;
@@ -655,7 +660,7 @@ public class ToolClient extends AbstractEntryClient {
         }
     }
 
-    protected SourceFile getDescriptorFromServer(String entry, String descriptorType) throws ApiException {
+    public SourceFile getDescriptorFromServer(String entry, String descriptorType) throws ApiException {
         String[] parts = entry.split(":");
 
         String path = parts[0];
@@ -684,7 +689,7 @@ public class ToolClient extends AbstractEntryClient {
         return file;
     }
 
-    protected void downloadDescriptors(String entry, String descriptor, File tempDir) {
+    public void downloadDescriptors(String entry, String descriptor, File tempDir) {
         // In the future, delete tmp files
         DockstoreTool tool = null;
         String[] parts = entry.split(":");
@@ -718,6 +723,11 @@ public class ToolClient extends AbstractEntryClient {
                 exceptionMessage(e, "Error writing to File", Client.IO_ERROR);
             }
         }
+    }
+
+    @Override
+    public String getConfigFile() {
+        return client.getConfigFile();
     }
 
     // Help Commands

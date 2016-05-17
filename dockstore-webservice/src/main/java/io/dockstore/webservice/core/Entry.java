@@ -16,11 +16,9 @@
 
 package io.dockstore.webservice.core;
 
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.annotations.ApiModelProperty;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -36,11 +34,11 @@ import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.SequenceGenerator;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import io.swagger.annotations.ApiModelProperty;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * Base class for all entries in the dockstore
@@ -226,7 +224,8 @@ public abstract class Entry<S extends Entry, T extends Version> {
      */
     public void update(S entry) {
         this.setDescription(entry.getDescription());
-        isPublished = entry.getIsPublished();
+        // this causes an issue when newly refreshed tools wthat are not published overwrite publish settings for existing containers
+        // isPublished = entry.getIsPublished();
         lastModified = entry.getLastModified();
         this.setAuthor(entry.getAuthor());
 
