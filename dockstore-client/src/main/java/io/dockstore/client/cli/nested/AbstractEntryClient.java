@@ -262,7 +262,19 @@ public abstract class AbstractEntryClient {
      *            a unique identifier for an entry, called a path for workflows and tools ex:
      *            quay.io/collaboratory/seqware-bwa-workflow:develop for a tool
      */
-    protected abstract void handleDescriptor(String descriptorType, String entry);
+    private void handleDescriptor(String descriptorType, String entry){
+        try {
+            SourceFile file = getDescriptorFromServer(entry, descriptorType);
+
+            if (file.getContent() != null && !file.getContent().isEmpty()) {
+                out(file.getContent());
+            } else {
+                errorMessage("No " + descriptorType + " file found", Client.COMMAND_ERROR);
+            }
+        } catch (ApiException | IOException ex) {
+            exceptionMessage(ex, "", Client.API_ERROR);
+        }
+    }
 
     /**
      *
@@ -294,7 +306,7 @@ public abstract class AbstractEntryClient {
     /**
      * Manually publish a given entry
      *
-     * @param args
+     * @param args user's command-line arguments
      */
     protected abstract void manualPublish(final List<String> args);
 
@@ -397,7 +409,7 @@ public abstract class AbstractEntryClient {
     /*
     Generate label string given add set, remove set, and existing labels
       */
-    public String generateLabelString(Set<String> addsSet, Set<String> removesSet, List<Label> existingLabels) {
+    String generateLabelString(Set<String> addsSet, Set<String> removesSet, List<Label> existingLabels) {
         Set<String> newLabelSet = new HashSet<String>();
 
         // Get existing labels and store in a List
@@ -646,27 +658,11 @@ public abstract class AbstractEntryClient {
             File tmp;
             if (!isLocalEntry) {
                 wdlFromServer = getDescriptorFromServer(entry, "wdl");
-                File tempWdl = File.createTempFile("temp", ".wdl", tempDir);
-                Files.write(wdlFromServer.getContent(), tempWdl, StandardCharsets.UTF_8);
+                File tempDescriptor = File.createTempFile("temp", ".wdl", tempDir);
+                Files.write(wdlFromServer.getContent(), tempDescriptor, StandardCharsets.UTF_8);
                 downloadDescriptors(entry, "wdl", tempDir);
 
-                Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"(.*)");
-                File file = new File(tempWdl.getAbsolutePath());
-                List<String> lines = FileUtils.readLines(file);
-                tmp = new File(tempDir + File.separator + "overwrittenImports.wdl");
-
-                // Replace relative imports with absolute (to temp dir)
-                for (String line : lines) {
-                    Matcher m = p.matcher(line);
-                    if (!m.find()) {
-                        FileUtils.writeStringToFile(tmp, line + "\n", true);
-                    } else {
-                        if (!m.group(1).startsWith(File.separator)) {
-                            String newImportLine = "import \"" + tempDir + File.separator + m.group(1) + "\"" + m.group(2) + "\n";
-                            FileUtils.writeStringToFile(tmp, newImportLine, true);
-                        }
-                    }
-                }
+                tmp = resolveImportsForDescriptor(tempDir, tempDescriptor);
             } else {
                 tmp = new File(entry);
             }
@@ -710,9 +706,38 @@ public abstract class AbstractEntryClient {
         }
     }
 
+    /**
+     *
+     * @param tempDir
+     * @param tempDescriptor
+     * @return
+     * @throws IOException
+     */
+    private File resolveImportsForDescriptor(File tempDir, File tempDescriptor) throws IOException {
+        File tmp;
+        Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"(.*)");
+        File file = new File(tempDescriptor.getAbsolutePath());
+        List<String> lines = FileUtils.readLines(file);
+        tmp = new File(tempDir + File.separator + "overwrittenImports.wdl");
+
+        // Replace relative imports with absolute (to temp dir)
+        for (String line : lines) {
+            Matcher m = p.matcher(line);
+            if (!m.find()) {
+                FileUtils.writeStringToFile(tmp, line + "\n", true);
+            } else {
+                if (!m.group(1).startsWith(File.separator)) {
+                    String newImportLine = "import \"" + tempDir + File.separator + m.group(1) + "\"" + m.group(2) + "\n";
+                    FileUtils.writeStringToFile(tmp, newImportLine, true);
+                }
+            }
+        }
+        return tmp;
+    }
+
     protected abstract void downloadDescriptors(String entry, String descriptor, File tempDir);
 
-    protected String runString(List<String> args, final boolean json) throws
+    private String runString(List<String> args, final boolean json) throws
             ApiException, IOException {
         final String entry = reqVal(args, "--entry");
         final String descriptor = optVal(args, "--descriptor", CWL_STRING);
@@ -762,25 +787,10 @@ public abstract class AbstractEntryClient {
                 return buffer.toString();
             }
         } else if (descriptor.equals(WDL_STRING)) {
+            File tmp;
             if (json) {
 
-                Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"(.*)");
-                File file = new File(tempDescriptor.getAbsolutePath());
-                List<String> lines = FileUtils.readLines(file);
-                File tmp = new File(tempDir + File.separator + "overwrittenImports.wdl");
-
-                // Replace relative imports with absolute (to temp dir)
-                for (String line : lines) {
-                    Matcher m = p.matcher(line);
-                    if (!m.find()) {
-                        FileUtils.writeStringToFile(tmp, line + "\n", true);
-                    } else {
-                        if (!m.group(1).startsWith(File.separator)) {
-                            String newImportLine = "import \"" + tempDir + File.separator + m.group(1) + "\"" + m.group(2) + "\n";
-                            FileUtils.writeStringToFile(tmp, newImportLine, true);
-                        }
-                    }
-                }
+                tmp = resolveImportsForDescriptor(tempDir, tempDescriptor);
 
                 final List<String> wdlDocuments = Lists.newArrayList(tmp.getAbsolutePath());
                 final scala.collection.immutable.List<String> wdlList = scala.collection.JavaConversions.asScalaBuffer(wdlDocuments)
@@ -974,7 +984,7 @@ public abstract class AbstractEntryClient {
         out("  --json <json file>                  Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs");
         out("  --tsv <tsv file>                    One row corresponds to parameters for one run in the dockstore (Only for CWL)");
         out("  --descriptor <descriptor type>      Descriptor type used to launch workflow. Defaults to " + CWL_STRING);
-        out("  --local-entry                       Full path to local descriptor");
+        out("  --local-entry                       Allows you to specify a full path to a local descriptor for --entry instead of an entry path");
         printHelpFooter();
     }
 
