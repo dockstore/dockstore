@@ -30,6 +30,7 @@ import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.Workflow;
 import io.dockstore.client.Bridge;
 import io.dockstore.client.cli.Client;
+import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.WDLFileProvisioning;
 import io.github.collaboratory.LauncherCWL;
 import io.swagger.client.ApiException;
@@ -727,7 +728,27 @@ public abstract class AbstractEntryClient {
 
             LauncherCWL.outputIntegrationOutput(workingDir, ImmutablePair.of(stdout, stderr), stdout.replaceAll("\n", "\t"), stderr.replaceAll("\n", "\t"), "Cromwell");
 
+            // capture the output and provision it
+            final String wdlOutputTarget = optVal(args, "--wdl-output-target", null);
+            if (wdlOutputTarget != null) {
+                // grab values from output JSON
+                Map<String, String> outputJson = gson.fromJson(stdout, map.getClass());
+                System.out.println("Provisioning your output files to their final destinations");
+                final List<String> outputFiles = bridge.getOutputFiles(tmp);
+                for (String outFile : outputFiles) {
+                    // find file path from output
+                    final File resultFile = new File(outputJson.get(outFile));
+                    FileProvisioning.FileInfo new1 = new FileProvisioning.FileInfo();
 
+                    new1.setUrl(wdlOutputTarget + "/" + resultFile.getParentFile().getName() + "/" + resultFile.getName());
+                    new1.setLocalPath(resultFile.getAbsolutePath());
+                    System.out.println("Uploading: " + outFile + " from " + resultFile + " to : " + new1.getUrl());
+                    FileProvisioning fileProvisioning = new FileProvisioning(this.getConfigFile());
+                    fileProvisioning.provisionOutputFile(new1, resultFile.getAbsolutePath());
+                }
+            } else{
+                System.out.println("Output files left in place");
+            }
         } catch (ApiException ex) {
             exceptionMessage(ex, "", API_ERROR);
         } catch (IOException ex) {
@@ -1014,6 +1035,7 @@ public abstract class AbstractEntryClient {
         out("  --tsv <tsv file>                    One row corresponds to parameters for one run in the dockstore (Only for CWL)");
         out("  --descriptor <descriptor type>      Descriptor type used to launch workflow. Defaults to " + CWL_STRING);
         out("  --local-entry                       Allows you to specify a full path to a local descriptor for --entry instead of an entry path");
+        out("  --wdl-output-target                 Allows you to specify a remote path to provision output files to ex: s3://oicr.temp/testing-launcher/");
         printHelpFooter();
     }
 
