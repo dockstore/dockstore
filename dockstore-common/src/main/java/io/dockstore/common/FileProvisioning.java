@@ -172,14 +172,13 @@ public class FileProvisioning {
         // check cache for cached files
         final String cacheDirectory = getCacheDirectory(config);
         // create cache directory
-        try {
-            final Path cachePath = Paths.get(cacheDirectory);
-            if (Files.notExists(cachePath)) {
-                Files.createDirectory(cachePath);
+        final Path cachePath = Paths.get(cacheDirectory);
+        if (Files.notExists(cachePath)) {
+            if (!cachePath.toFile().mkdirs()) {
+                throw new RuntimeException("Could not create dockstore cache: " + cacheDirectory);
             }
-        } catch (IOException e) {
-            throw new RuntimeException("Could not create dockstore cache: " + cacheDirectory, e);
         }
+
         final String sha1 = DigestUtils.sha1Hex(targetPath);
         final String sha1Prefix = sha1.substring(0, 2);
         final String sha1Suffix = sha1.substring(2);
