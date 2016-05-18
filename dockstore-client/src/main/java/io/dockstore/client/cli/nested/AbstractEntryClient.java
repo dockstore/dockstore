@@ -30,6 +30,7 @@ import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.Workflow;
 import io.dockstore.client.Bridge;
 import io.dockstore.client.cli.Client;
+import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.WDLFileProvisioning;
 import io.github.collaboratory.LauncherCWL;
 import io.swagger.client.ApiException;
@@ -41,13 +42,16 @@ import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.csv.QuoteMode;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -262,7 +266,19 @@ public abstract class AbstractEntryClient {
      *            a unique identifier for an entry, called a path for workflows and tools ex:
      *            quay.io/collaboratory/seqware-bwa-workflow:develop for a tool
      */
-    protected abstract void handleDescriptor(String descriptorType, String entry);
+    private void handleDescriptor(String descriptorType, String entry){
+        try {
+            SourceFile file = getDescriptorFromServer(entry, descriptorType);
+
+            if (file.getContent() != null && !file.getContent().isEmpty()) {
+                out(file.getContent());
+            } else {
+                errorMessage("No " + descriptorType + " file found", Client.COMMAND_ERROR);
+            }
+        } catch (ApiException | IOException ex) {
+            exceptionMessage(ex, "", Client.API_ERROR);
+        }
+    }
 
     /**
      *
@@ -294,7 +310,7 @@ public abstract class AbstractEntryClient {
     /**
      * Manually publish a given entry
      *
-     * @param args
+     * @param args user's command-line arguments
      */
     protected abstract void manualPublish(final List<String> args);
 
@@ -397,7 +413,7 @@ public abstract class AbstractEntryClient {
     /*
     Generate label string given add set, remove set, and existing labels
       */
-    public String generateLabelString(Set<String> addsSet, Set<String> removesSet, List<Label> existingLabels) {
+    String generateLabelString(Set<String> addsSet, Set<String> removesSet, List<Label> existingLabels) {
         Set<String> newLabelSet = new HashSet<String>();
 
         // Get existing labels and store in a List
@@ -646,27 +662,11 @@ public abstract class AbstractEntryClient {
             File tmp;
             if (!isLocalEntry) {
                 wdlFromServer = getDescriptorFromServer(entry, "wdl");
-                File tempWdl = File.createTempFile("temp", ".wdl", tempDir);
-                Files.write(wdlFromServer.getContent(), tempWdl, StandardCharsets.UTF_8);
+                File tempDescriptor = File.createTempFile("temp", ".wdl", tempDir);
+                Files.write(wdlFromServer.getContent(), tempDescriptor, StandardCharsets.UTF_8);
                 downloadDescriptors(entry, "wdl", tempDir);
 
-                Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"(.*)");
-                File file = new File(tempWdl.getAbsolutePath());
-                List<String> lines = FileUtils.readLines(file);
-                tmp = new File(tempDir + File.separator + "overwrittenImports.wdl");
-
-                // Replace relative imports with absolute (to temp dir)
-                for (String line : lines) {
-                    Matcher m = p.matcher(line);
-                    if (!m.find()) {
-                        FileUtils.writeStringToFile(tmp, line + "\n", true);
-                    } else {
-                        if (!m.group(1).startsWith(File.separator)) {
-                            String newImportLine = "import \"" + tempDir + File.separator + m.group(1) + "\"" + m.group(2) + "\n";
-                            FileUtils.writeStringToFile(tmp, newImportLine, true);
-                        }
-                    }
-                }
+                tmp = resolveImportsForDescriptor(tempDir, tempDescriptor);
             } else {
                 tmp = new File(entry);
             }
@@ -684,6 +684,8 @@ public abstract class AbstractEntryClient {
 
             // Download files and change to local location
             // Make a new map of the inputs with updated locations
+            final String workingDir = Paths.get(".").toAbsolutePath().normalize().toString();
+            System.out.println("Creating directories for run of Dockstore launcher in current working directory: " + workingDir);
             Map<String, Object> fileMap = wdlFileProvisioning.pullFiles(inputJson, wdlInputs);
 
             // Make new json file
@@ -693,8 +695,52 @@ public abstract class AbstractEntryClient {
             final scala.collection.immutable.List<String> wdlRunList = scala.collection.JavaConversions.asScalaBuffer(wdlRun).toList();
 
             // run a workflow
+            System.out.println("Calling out to Cromwell to run your workflow");
+
+            // save the output stream
+            PrintStream savedOut = System.out;
+            PrintStream savedErr = System.err;
+
+            // capture system.out and system.err
+            ByteArrayOutputStream stdoutCapture = new ByteArrayOutputStream();
+            System.setOut(new PrintStream(stdoutCapture, true, StandardCharsets.UTF_8.toString()));
+            ByteArrayOutputStream stderrCapture = new ByteArrayOutputStream();
+            System.setErr(new PrintStream(stderrCapture, true, StandardCharsets.UTF_8.toString()));
+
             final int run = main.run(wdlRunList);
 
+            System.out.flush();
+            System.err.flush();
+            String stdout = stdoutCapture.toString();
+            String stderr = stderrCapture.toString();
+
+            System.setOut(savedOut);
+            System.setErr(savedErr);
+            System.out.println("Cromwell exit code: " + run);
+
+            LauncherCWL.outputIntegrationOutput(workingDir, ImmutablePair.of(stdout, stderr), stdout.replaceAll("\n", "\t"), stderr.replaceAll("\n", "\t"), "Cromwell");
+
+            // capture the output and provision it
+            final String wdlOutputTarget = optVal(args, "--wdl-output-target", null);
+            if (wdlOutputTarget != null) {
+                // grab values from output JSON
+                Map<String, String> outputJson = gson.fromJson(stdout, map.getClass());
+                System.out.println("Provisioning your output files to their final destinations");
+                final List<String> outputFiles = bridge.getOutputFiles(tmp);
+                for (String outFile : outputFiles) {
+                    // find file path from output
+                    final File resultFile = new File(outputJson.get(outFile));
+                    FileProvisioning.FileInfo new1 = new FileProvisioning.FileInfo();
+
+                    new1.setUrl(wdlOutputTarget + "/" + resultFile.getParentFile().getName() + "/" + resultFile.getName());
+                    new1.setLocalPath(resultFile.getAbsolutePath());
+                    System.out.println("Uploading: " + outFile + " from " + resultFile + " to : " + new1.getUrl());
+                    FileProvisioning fileProvisioning = new FileProvisioning(this.getConfigFile());
+                    fileProvisioning.provisionOutputFile(new1, resultFile.getAbsolutePath());
+                }
+            } else{
+                System.out.println("Output files left in place");
+            }
         } catch (ApiException ex) {
             exceptionMessage(ex, "", API_ERROR);
         } catch (IOException ex) {
@@ -702,9 +748,38 @@ public abstract class AbstractEntryClient {
         }
     }
 
+    /**
+     *
+     * @param tempDir
+     * @param tempDescriptor
+     * @return
+     * @throws IOException
+     */
+    private File resolveImportsForDescriptor(File tempDir, File tempDescriptor) throws IOException {
+        File tmp;
+        Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"(.*)");
+        File file = new File(tempDescriptor.getAbsolutePath());
+        List<String> lines = FileUtils.readLines(file);
+        tmp = new File(tempDir + File.separator + "overwrittenImports.wdl");
+
+        // Replace relative imports with absolute (to temp dir)
+        for (String line : lines) {
+            Matcher m = p.matcher(line);
+            if (!m.find()) {
+                FileUtils.writeStringToFile(tmp, line + "\n", true);
+            } else {
+                if (!m.group(1).startsWith(File.separator)) {
+                    String newImportLine = "import \"" + tempDir + File.separator + m.group(1) + "\"" + m.group(2) + "\n";
+                    FileUtils.writeStringToFile(tmp, newImportLine, true);
+                }
+            }
+        }
+        return tmp;
+    }
+
     protected abstract void downloadDescriptors(String entry, String descriptor, File tempDir);
 
-    protected String runString(List<String> args, final boolean json) throws
+    private String runString(List<String> args, final boolean json) throws
             ApiException, IOException {
         final String entry = reqVal(args, "--entry");
         final String descriptor = optVal(args, "--descriptor", CWL_STRING);
@@ -754,25 +829,10 @@ public abstract class AbstractEntryClient {
                 return buffer.toString();
             }
         } else if (descriptor.equals(WDL_STRING)) {
+            File tmp;
             if (json) {
 
-                Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"(.*)");
-                File file = new File(tempDescriptor.getAbsolutePath());
-                List<String> lines = FileUtils.readLines(file);
-                File tmp = new File(tempDir + File.separator + "overwrittenImports.wdl");
-
-                // Replace relative imports with absolute (to temp dir)
-                for (String line : lines) {
-                    Matcher m = p.matcher(line);
-                    if (!m.find()) {
-                        FileUtils.writeStringToFile(tmp, line + "\n", true);
-                    } else {
-                        if (!m.group(1).startsWith(File.separator)) {
-                            String newImportLine = "import \"" + tempDir + File.separator + m.group(1) + "\"" + m.group(2) + "\n";
-                            FileUtils.writeStringToFile(tmp, newImportLine, true);
-                        }
-                    }
-                }
+                tmp = resolveImportsForDescriptor(tempDir, tempDescriptor);
 
                 final List<String> wdlDocuments = Lists.newArrayList(tmp.getAbsolutePath());
                 final scala.collection.immutable.List<String> wdlList = scala.collection.JavaConversions.asScalaBuffer(wdlDocuments)
@@ -966,7 +1026,8 @@ public abstract class AbstractEntryClient {
         out("  --json <json file>                  Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs");
         out("  --tsv <tsv file>                    One row corresponds to parameters for one run in the dockstore (Only for CWL)");
         out("  --descriptor <descriptor type>      Descriptor type used to launch workflow. Defaults to " + CWL_STRING);
-        out("  --local-entry                       Full path to local descriptor");
+        out("  --local-entry                       Allows you to specify a full path to a local descriptor for --entry instead of an entry path");
+        out("  --wdl-output-target                 Allows you to specify a remote path to provision output files to ex: s3://oicr.temp/testing-launcher/");
         printHelpFooter();
     }
 

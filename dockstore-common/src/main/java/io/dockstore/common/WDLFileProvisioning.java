@@ -55,7 +55,7 @@ public class WDLFileProvisioning {
                 // Download remote files into specific local locations
                 Map<String, Object> fileMap = new HashMap<>();
 
-                LOG.info("DOWNLOADING INPUT FILES...");
+                System.out.println("Provisioning your input files to your local machine");
 
                 // Go through input file fully qualified names
                 for (Map.Entry<String, String> originalInputJsonEntry : originalInputJson.entrySet()) {
@@ -110,6 +110,7 @@ public class WDLFileProvisioning {
                         File downloadDirFileObject = new File(downloadDir);
                         String targetFilePath = downloadDirFileObject.getAbsolutePath() + "/" + key;
 
+                        System.out.println("Downloading: " + key + " from " + path + " to: " + targetFilePath);
                         fileProvisioning.provisionInputFile(path, downloadDir, downloadDirFileObject, targetFilePath, pathInfo);
 
                         jsonEntry.put(key, targetFilePath);
