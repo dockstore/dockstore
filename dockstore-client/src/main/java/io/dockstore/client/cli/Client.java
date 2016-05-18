@@ -33,6 +33,7 @@ import io.swagger.client.api.GAGHApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Metadata;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -73,6 +74,7 @@ import static io.dockstore.client.cli.ArgumentUtility.optVal;
 import static io.dockstore.client.cli.ArgumentUtility.out;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
+import static io.dockstore.common.FileProvisioning.getCacheDirectory;
 
 /**
  * Main entrypoint for the dockstore CLI.
@@ -298,7 +300,7 @@ public class Client {
     /**
      * for downloading content for upgrade
      */
-    public static void downloadURL(String browserDownloadUrl, String installLocation){
+    private static void downloadURL(String browserDownloadUrl, String installLocation){
         try{
             URL dockstoreExecutable = new URL(browserDownloadUrl);
             File file = new File(installLocation);
@@ -310,11 +312,15 @@ public class Client {
         }
     }
 
+    private void clean() throws ConfigurationException, IOException {
+        final String cacheDirectory = getCacheDirectory(new HierarchicalINIConfiguration(getConfigFile()));
+        FileUtils.deleteDirectory(new File(cacheDirectory));
+    }
 
     /**
      * Checks for upgrade for Dockstore and install
      */
-    public static void upgrade(String optVal) {
+    private static void upgrade(String optVal) {
 
         // Try to get version installed
         String installLocation = getInstallLocation();
@@ -460,16 +466,7 @@ public class Client {
                                     //not the latest stable version, could be on the newest unstable or older unstable/stable version
                                     out("Latest version : " + latestVersion);
                                     out("You do not have the most recent stable release of Dockstore.");
-                                    if(compareVersion(currentVersion,latestVersion)){
-                                        //current version is newer than latest stable
-                                        out("You are currently on the newer unstable version. If you wish to upgrade to the latest stable version, please use the following command:");
-                                        out("   dockstore --upgrade-stable"); //takes you to the newest stable version no matter what
-
-                                    }else{
-                                        //current version is older than latest stable
-                                        out("Please upgrade with the following command:");
-                                        out("   dockstore --upgrade");  // takes you to the newest stable version, unless you're already "past it"
-                                    }
+                                    displayUpgradeMessage(currentVersion, latestVersion);
                                 }
                             }
                         } catch (ParseException e) {
@@ -481,6 +478,18 @@ public class Client {
                     }
                 }
             }
+        }
+    }
+
+    public static void displayUpgradeMessage(String currentVersion, String latestVersion) {
+        if(compareVersion(currentVersion,latestVersion)){
+            //current version is newer than latest stable
+            out("You are currently on the newer unstable version. If you wish to upgrade to the latest stable version, please use the following command:");
+            out("   dockstore --upgrade-stable"); //takes you to the newest stable version no matter what
+        }else{
+            //current version is older than latest stable
+            out("Please upgrade with the following command:");
+            out("   dockstore --upgrade");  // takes you to the newest stable version, unless you're already "past it"
         }
     }
 
@@ -524,17 +533,7 @@ public class Client {
         } else {
             //not the latest stable version, could be on the newest unstable or older unstable/stable version
             out("The latest stable version is " + latestVersion);
-            if(compareVersion(currentVersion,latestVersion)){
-                //current version is newer than latest stable
-                out("You are currently on the newer unstable version. If you wish to upgrade to the latest stable version, please use the following command:");
-                out("   dockstore --upgrade-stable"); //takes you to the newest stable version no matter what
-
-            }else{
-                //current version is older than latest stable
-                out("Please upgrade with the following command:");
-                out("   dockstore --upgrade");  // takes you to the newest stable version, unless you're already "past it"
-            }
-
+            displayUpgradeMessage(currentVersion, latestVersion);
         }
     }
 
@@ -573,6 +572,7 @@ public class Client {
         out("                       Default: ~/.dockstore/config");
         out("  --script             Will not check Github for newer versions of Dockstore");
         out("                       Default: false");
+        out("  --clean-cache        Delete the Dockstore launcher cache to save space");
         printHelpFooter();
     }
 
@@ -691,6 +691,9 @@ public class Client {
                             break;
                         case "--upgrade-unstable":
                             upgrade("unstable");
+                            break;
+                        case "--clean-cache":
+                            clean();
                             break;
                         default:
                             invalid(cmd);
