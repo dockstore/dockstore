@@ -1,20 +1,20 @@
 {
    "arrayed_input":[
       {
-         "path":"../example.bedGraph",
+         "path":"src/test/resources/example.bedGraph",
          "class":"File"
       },
       {
-         "path":"../example.bedGraph",
+         "path":"src/test/resources/example.bedGraph",
          "class":"File"
       },
       {
-         "path":"../example.bedGraph",
+         "path":"src/test/resources/example.bedGraph",
          "class":"File"
       }
    ],
    "hello_input":{
-      "path":"../example.bedGraph",
+      "path":"src/test/resources/example.bedGraph",
       "class":"File"
    },
    "hello_output":{
@@ -22,11 +22,11 @@
       "class":"File"
    },
    "ref_file_1":{
-      "path":"../example.bedGraph",
+      "path":"src/test/resources/example.bedGraph",
       "class":"File"
    },
    "ref_file_2":{
-      "path":"../example.bedGraph",
+      "path":"src/test/resources/example.bedGraph",
       "class":"File"
    }
 }
