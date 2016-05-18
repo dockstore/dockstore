@@ -19,10 +19,7 @@ package io.dockstore.client.cli;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
-import com.google.common.io.Resources;
-import io.dockstore.common.TestUtility;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -39,75 +36,160 @@ import static org.mockito.Mockito.when;
 public class UpgradeTestIT {
     private ObjectMapper objectMapper;
 
+    /**
+     * This method will decide which version to upgrade to depending on the command "stable","unstable", and "none"
+     * for testing 'UpgradeTestIT'
+     * @param upCommand
+     * @param current
+     * @param latestStable
+     * @param latestUnstable
+     * @return
+     */
+
+    public static String decideOutput(String upCommand, String current, String latestStable, String latestUnstable){
+        //upCommand = the command being used (i.e --upgrade-stable or --upgrade or --upgrade-unstable)
+
+        if (current.equals(latestStable)) {   //current is the latest stable version
+            if(upCommand.equals("unstable")){   // downgrade or upgrade to latest unstable version
+                return latestUnstable;
+            }else{
+                return "upgrade-unstable";
+            }
+        } else {    //current is not the latest stable version
+            if(upCommand.equals("stable")){
+                //upgrade to latest stable
+                return latestStable;
+            }else if(upCommand.equals("none")){
+                if(current.equals(latestUnstable)){
+                    //current version is latest unstable version
+                    return "upgrade-stable";
+                }else{
+                    // current version is not the latest unstable version
+                    // upgrade to latest stable version
+                    return latestStable;
+                }
+            }else if(upCommand.equals("unstable")){
+                if(current.equals(latestUnstable)){
+                    // current version is the latest unstable version
+                    return "upgrade-stable";
+                }else{
+                    //user wants to upgrade to latest unstable version
+                    //upgrade to latest unstable
+                    return latestUnstable;
+                }
+            }
+        }
+        return null;
+    }
+
     @Before
     public void setup() throws IOException{
-        /* One problem with using any(URL.class): because it's catching "any(URL.class)",
-           the current version will read the latest-release.json.
-         * It can be changed by changing the 'URL.class' to be a specific URL needed to be tested,
-           also need to change the file according to the current version
-         * For testing purposes of upgrading right away from OLD unstable/stable version by inputting
-           the command '--upgrade', change the variable of the 'currentVersion' in Client.java to be
-           '0.3-beta.1' for stable or '0.3-beta.0' for unstable */
 
         this.objectMapper = mock(ObjectMapper.class);
         Client.setObjectMapper(objectMapper);
 
         ObjectMapper localObjectMapper = new ObjectMapper();
-        Map map = localObjectMapper.readValue(Resources.getResource("latest-release.json"), Map.class);
-        Map map1 = localObjectMapper.readValue(Resources.getResource("current-version.json"), Map.class);
-        Map map2 = localObjectMapper.readValue(Resources.getResource("current-stable.json"),Map.class);
-        Map map3 = localObjectMapper.readValue(Resources.getResource("stable-old.json"),Map.class);
-        Map map4 = localObjectMapper.readValue(Resources.getResource("unstable-old.json"),Map.class);
-        Map map5 = localObjectMapper.readValue(Resources.getResource("dummy-unstable.json"),Map.class);
+
         URL latest = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/latest");
-        URL current = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/tags/0.4-beta.0");
-        URL curstable = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/tags/0.3-beta.1");
-        URL stableOld = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/tags/0.3-beta.0");
-        URL unstableOld = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/tags/0.3-alpha.0");
-        URL unstableDummy = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/tags/0.4-beta.1-SNAPSHOT");
         URL all = new URL("https://api.github.com/repos/ga4gh/dockstore/releases");
 
-        ArrayList list = localObjectMapper.readValue(Resources.getResource("all-releases.json"), ArrayList.class);
+        Map map = localObjectMapper.readValue(latest,Map.class);
+
+        ArrayList list = localObjectMapper.readValue(all, ArrayList.class);
         when(objectMapper.readValue(eq(latest),eq(Map.class))).thenReturn(map);
-        when(objectMapper.readValue(eq(current),eq(Map.class))).thenReturn(map1);
-        when(objectMapper.readValue(eq(curstable),eq(Map.class))).thenReturn(map2);
-        when(objectMapper.readValue(eq(stableOld),eq(Map.class))).thenReturn(map3);
-        when(objectMapper.readValue(eq(unstableOld),eq(Map.class))).thenReturn(map4);
-        when(objectMapper.readValue(eq(unstableDummy),eq(Map.class))).thenReturn(map5);
         when(objectMapper.readValue(eq(all),eq(ArrayList.class))).thenReturn(list);
         when(objectMapper.getTypeFactory()).thenReturn(localObjectMapper.getTypeFactory());
 
         TypeFactory typeFactory = localObjectMapper.getTypeFactory();
         CollectionType ct = typeFactory.constructCollectionType(List.class, Map.class);
-        Object mapRel = localObjectMapper.readValue(Resources.getResource("all-releases.json"), ct);
+        Object mapRel = localObjectMapper.readValue(all, ct);
         when(objectMapper.readValue(eq(all),any(CollectionType.class))).thenReturn(mapRel);
+
     }
 
     @Test
-    @Ignore
-    public void upgradeUnstable() throws IOException {
-        //if the current is stable, upgrade to the most unstable version
-        //else, output "you are currently running on the latest unstable version" and option to "--upgrade-stable"
-        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "--debug", "--upgrade-unstable"});
-    }
-
-    @Test
-    @Ignore
-    public void upgradeStable() throws IOException {
-        //if the current is unstable, upgrade to the latest stable version
-        //else, output "you are currently running the most stable version" and option to "--upgrade-unstable"
-        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "--debug", "--upgrade-stable"});
-    }
-
-    @Test
-    @Ignore
     public void upgradeTest() throws IOException {
+        //if current is older, upgrade to the most stable version right away
+        Client client = new Client();
+        String detectedVersion = "0.4-beta.1";
+        String currentVersion = "0.3-beta.1";
+        String unstable = "0.4-beta.0";
+        // assert that the value matches the mocking
+        String desiredVersion = decideOutput("none", currentVersion,detectedVersion, unstable);
+        assert(desiredVersion.equals("0.4-beta.1"));
+    }
+
+    @Test
+    public void upTestStableOption() throws IOException{
         //if the current is newer and unstable, output "--upgrade-stable" command option
+        Client client = new Client();
+        String detectedVersion ="0.3-beta.1";  //detectedVersion is the latest stable
+        String currentVersion = "0.4-beta.0";   //current is newer and unstable
+        String unstable = "0.4-beta.0";
+        // assert that the value matches the mocking
+        String optCommand = decideOutput("none", currentVersion, detectedVersion, unstable);
+        assert(optCommand.equals("upgrade-stable"));
+    }
+
+    @Test
+    public void upTestUnstableOption() throws IOException{
         //else if current is the latest stable version, output "you are currently running the most stable version"
         //         and option to "--upgrade-unstable"
-        //else(current is older), upgrade to the most stable version right away
-        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "--debug", "--upgrade"});
+        Client client = new Client();
+        String detectedVersion = "0.4-beta.1";
+        String currentVersion = "0.4-beta.1";
+        String unstable = "0.4-beta.0";
+        // assert that the value matches the mocking
+        String optCommand = decideOutput("none", currentVersion,detectedVersion, unstable);
+        assert(optCommand.equals("upgrade-unstable"));
     }
 
+    @Test
+    public void upgradeStable() throws IOException {
+        //if the current is not latest stable, upgrade to the latest stable version
+        Client client = new Client();
+        String detectedVersion = "0.4-beta.1";
+        String currentVersion = "0.4-beta.0";  //can also be 0.3-beta.1 , as long as it's not latest stable
+        String unstable = "0.4-beta.0";
+        // assert that the value matches the mocking
+        String desiredVersion = decideOutput("stable",currentVersion, detectedVersion, unstable);
+        assert(desiredVersion.equals("0.4-beta.1"));
+    }
+
+    @Test
+    public void upgradeStableOption() throws IOException {
+        //if the current is latest stable, output option to "--upgrade-unstable"
+        Client client = new Client();
+        String detectedVersion = "0.4-beta.1";
+        String currentVersion = "0.4-beta.1";
+        String unstable = "0.4-beta.0";
+        // assert that the value matches the mocking
+        String optCommand = decideOutput("stable",currentVersion, detectedVersion, unstable);
+        assert(optCommand.equals("upgrade-unstable"));
+    }
+
+    @Test
+    public void upgradeUnstable() throws IOException {
+        //if the current is not latest unstable, upgrade to the most unstable version
+        Client client = new Client();
+        String detectedVersion = "0.4-beta.1";
+        String currentVersion = "0.3-beta.0";
+        String unstable = "0.4-beta.0";
+        // assert that the value matches the mocking
+        String desiredVersion = decideOutput("unstable",currentVersion, detectedVersion, unstable);
+        assert(desiredVersion.equals("0.4-beta.0"));
+    }
+
+    @Test
+    public void upgradeUnstableOption() throws IOException {
+        //if the current is latest unstable, output option to "--upgrade-stable"'
+        Client client = new Client();
+        String detectedVersion = "0.4-beta.1";
+        String currentVersion = "0.4-beta.0";
+        String unstable = "0.4-beta.0";
+        // assert that the value matches the mocking
+        String optCommand = decideOutput("unstable",currentVersion, detectedVersion, unstable);
+        assert(optCommand.equals("upgrade-stable"));
+    }
 }
 
