@@ -51,7 +51,6 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -412,21 +411,38 @@ public class LauncherCWL {
         String[] s = {"cwltool","--non-strict","--enable-net","--outdir", workingDir, cwlFile, jsonSettings};
         final ImmutablePair<String, String> execute = Utilities.executeCommand(Joiner.on(" ").join(Arrays.asList(s)));
         // mutate stderr and stdout into format for output
-        System.out.println("cwltool stdout:\n"+execute.getLeft().replaceAll("(?m)^", "\t"));
-        System.out.println("cwltool stderr:\n"+execute.getRight().replaceAll("(?m)^", "\t"));
-        Path path = Paths.get(workingDir);
-        try {
-            Path txt = Files.createFile(Paths.get(workingDir +  ".cwltool.stdout.txt"));
-            Files.write(txt, execute.getLeft().getBytes(StandardCharsets.UTF_8));
-            System.out.println("Saving copy of cwltool stdout to: " + txt.toAbsolutePath().toString());
-            Path txt2 = Files.createFile(Paths.get(workingDir +  ".cwltool.stderr.txt"));
-            Files.write(txt2, execute.getRight().getBytes(StandardCharsets.UTF_8));
-            System.out.println("Saving copy of cwltool stderr to: " + txt2.toAbsolutePath().toString());
-        } catch (IOException e) {
-            throw new RuntimeException("unable to save cwltool output", e);
-        }
+
+        String stdout = execute.getLeft().replaceAll("(?m)^", "\t");
+        String stderr = execute.getRight().replaceAll("(?m)^", "\t");
+
+        final String cwltool = "cwltool";
+        outputIntegrationOutput(workingDir, execute, stdout, stderr, cwltool);
         Map<String, Object> obj = (Map<String, Object>)yaml.load(execute.getLeft());
         return obj;
+    }
+
+    /**
+     *
+     * @param workingDir where to save stderr and stdout
+     * @param execute a pair holding the unformatted stderr and stderr
+     * @param stdout formatted stdout for outpuit
+     * @param stderr formatted stderr for output
+     * @param cwltool help text explaining name of integration
+     */
+    public static void outputIntegrationOutput(String workingDir, ImmutablePair<String, String> execute, String stdout, String stderr,
+            String cwltool) {
+        System.out.println(cwltool + " stdout:\n" + stdout);
+        System.out.println(cwltool + " stderr:\n"+ stderr);
+        try {
+            final Path path = Paths.get(workingDir + File.separator + cwltool + ".stdout.txt");
+            FileUtils.writeStringToFile(path.toFile(), execute.getLeft(), StandardCharsets.UTF_8, false);
+            System.out.println("Saving copy of "+ cwltool +" stdout to: " + path.toAbsolutePath().toString());
+            final Path txt2 = Paths.get(workingDir + File.separator + cwltool+".stderr.txt");
+            FileUtils.writeStringToFile(txt2.toFile(), execute.getRight(), StandardCharsets.UTF_8, false);
+            System.out.println("Saving copy of "+ cwltool +" stderr to: " + txt2.toAbsolutePath().toString());
+        } catch (IOException e) {
+            throw new RuntimeException("unable to save "+cwltool+" output", e);
+        }
     }
 
     private void pushOutputFiles(Map<String, List<FileProvisioning.FileInfo>> fileMap, Map<String, Object> outputObject) {
