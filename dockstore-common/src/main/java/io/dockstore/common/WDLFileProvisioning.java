@@ -25,6 +25,8 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -108,10 +110,10 @@ public class WDLFileProvisioning {
                         String downloadDir = "cromwell-input/" + UUID.randomUUID();
                         Utilities.executeCommand("mkdir -p " + downloadDir);
                         File downloadDirFileObject = new File(downloadDir);
-                        String targetFilePath = downloadDirFileObject.getAbsolutePath() + "/" + key;
+                        final Path targetFilePath = Paths.get(downloadDirFileObject.getAbsolutePath(), key);
 
                         System.out.println("Downloading: " + key + " from " + path + " to: " + targetFilePath);
-                        fileProvisioning.provisionInputFile(path, downloadDir, downloadDirFileObject, targetFilePath, pathInfo);
+                        fileProvisioning.provisionInputFile(path, targetFilePath, pathInfo);
 
                         jsonEntry.put(key, targetFilePath);
                         LOG.info("DOWNLOADED FILE: LOCAL: {} URL: {} => {}", key, path, targetFilePath);

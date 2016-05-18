@@ -30,7 +30,6 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import org.apache.commons.configuration.ConfigurationException;
@@ -54,6 +53,7 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.List;
 
 /**
@@ -72,17 +72,11 @@ public class FileProvisioning {
     private static final String DCC_CLIENT_KEY = "dcc_storage.client";
 
     private HierarchicalINIConfiguration config;
-    private final Optional<OutputStream> stdoutStream;
-    private final Optional<OutputStream> stderrStream;
 
     /**
      * Constructor
      */
     public FileProvisioning(String configFile) {
-        // do not forward stdout and stderr
-        stdoutStream = Optional.absent();
-        stderrStream = Optional.absent();
-
         try {
             this.config = new HierarchicalINIConfiguration(configFile);
         } catch (ConfigurationException e) {
@@ -95,7 +89,7 @@ public class FileProvisioning {
         return config.getString(DCC_CLIENT_KEY, "/icgc/dcc-storage/bin/dcc-storage-client");
     }
 
-    private void downloadFromDccStorage(String objectId, String downloadDir, File downloadDirFileObj, String targetFilePath) {
+    private void downloadFromDccStorage(String objectId, String downloadDir, String targetFilePath) {
         // default layout saves to original_file_name/object_id
         // file name is the directory and object id is actual file name
         String client = getStorageClient();
@@ -104,7 +98,7 @@ public class FileProvisioning {
         Utilities.executeCommand(bob);
 
         // downloaded file
-        String downloadPath = downloadDirFileObj.getAbsolutePath() + "/" + objectId;
+        String downloadPath = new File(downloadDir).getAbsolutePath() + "/" + objectId;
         System.out.println("download path: " + downloadPath);
         File downloadedFileFileObj = new File(downloadPath);
         File targetPathFileObj = new File(targetFilePath);
@@ -164,15 +158,21 @@ public class FileProvisioning {
         }
     }
 
-    public void provisionInputFile(String path, String downloadDirectory, File downloadDirFileObj, String targetFilePath,
+    /**
+     * This method downloads both local and remote files into the working directory
+     * @param targetPath path for target file
+     * @param targetFilePath the absolute path where we will download files to
+     * @param pathInfo additional information on the type of file
+     */
+    public void provisionInputFile(String targetPath, Path targetFilePath,
             PathInfo pathInfo) {
         if (pathInfo.isObjectIdType()) {
             String objectId = pathInfo.getObjectId();
-            this.downloadFromDccStorage(objectId, downloadDirectory, downloadDirFileObj, targetFilePath);
-        } else if (path.startsWith("s3://")) {
-            this.downloadFromS3(path, targetFilePath);
+            this.downloadFromDccStorage(objectId, targetFilePath.getParent().toFile().getAbsolutePath(), targetFilePath.toFile().getAbsolutePath());
+        } else if (targetPath.startsWith("s3://")) {
+            this.downloadFromS3(targetPath, targetFilePath.toFile().getAbsolutePath());
         } else if (!pathInfo.isLocalFileType()) {
-            this.downloadFromHttp(path, targetFilePath);
+            this.downloadFromHttp(targetPath, targetFilePath.toFile().getAbsolutePath());
         }
     }
 
