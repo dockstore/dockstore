@@ -242,52 +242,6 @@ public class Client {
     }
 
     /**
-     * This method will decide which version to upgrade to depending on the command "stable","unstable", and "none"
-     * for testing 'UpgradeTestIT'
-     * @param upCommand
-     * @param current
-     * @param latestStable
-     * @param latestUnstable
-     * @return
-     */
-
-    public static String decideOutput(String upCommand, String current, String latestStable, String latestUnstable){
-        //upCommand = the command being used (i.e --upgrade-stable or --upgrade or --upgrade-unstable)
-
-        if (current.equals(latestStable)) {   //current is the latest stable version
-            if(upCommand.equals("unstable")){   // downgrade or upgrade to latest unstable version
-                return latestUnstable;
-            }else{
-                return "upgrade-unstable";
-            }
-        } else {    //current is not the latest stable version
-            if(upCommand.equals("stable")){
-                //upgrade to latest stable
-                return latestStable;
-            }else if(upCommand.equals("none")){
-                if(current.equals(latestUnstable)){
-                    //current version is latest unstable version
-                    return "upgrade-stable";
-                }else{
-                    // current version is not the latest unstable version
-                    // upgrade to latest stable version
-                    return latestStable;
-                }
-            }else if(upCommand.equals("unstable")){
-                if(current.equals(latestUnstable)){
-                    // current version is the latest unstable version
-                    return "upgrade-stable";
-                }else{
-                    //user wants to upgrade to latest unstable version
-                    //upgrade to latest unstable
-                    return latestUnstable;
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
      * Check if the ID of the current is bigger or smaller than latest version
      * @param current
      * @param latest
