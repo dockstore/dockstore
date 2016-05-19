@@ -30,9 +30,8 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
-import com.google.common.io.Files;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.IOUtils;
@@ -54,6 +53,9 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 /**
@@ -72,17 +74,11 @@ public class FileProvisioning {
     private static final String DCC_CLIENT_KEY = "dcc_storage.client";
 
     private HierarchicalINIConfiguration config;
-    private final Optional<OutputStream> stdoutStream;
-    private final Optional<OutputStream> stderrStream;
 
     /**
      * Constructor
      */
     public FileProvisioning(String configFile) {
-        // do not forward stdout and stderr
-        stdoutStream = Optional.absent();
-        stderrStream = Optional.absent();
-
         try {
             this.config = new HierarchicalINIConfiguration(configFile);
         } catch (ConfigurationException e) {
@@ -95,7 +91,7 @@ public class FileProvisioning {
         return config.getString(DCC_CLIENT_KEY, "/icgc/dcc-storage/bin/dcc-storage-client");
     }
 
-    private void downloadFromDccStorage(String objectId, String downloadDir, File downloadDirFileObj, String targetFilePath) {
+    private void downloadFromDccStorage(String objectId, String downloadDir, String targetFilePath) {
         // default layout saves to original_file_name/object_id
         // file name is the directory and object id is actual file name
         String client = getStorageClient();
@@ -104,10 +100,10 @@ public class FileProvisioning {
         Utilities.executeCommand(bob);
 
         // downloaded file
-        String downloadPath = downloadDirFileObj.getAbsolutePath() + "/" + objectId;
+        String downloadPath = new File(downloadDir).getAbsolutePath() + "/" + objectId;
         System.out.println("download path: " + downloadPath);
-        File downloadedFileFileObj = new File(downloadPath);
-        File targetPathFileObj = new File(targetFilePath);
+        Path downloadedFileFileObj = Paths.get(downloadPath);
+        Path targetPathFileObj = Paths.get(targetFilePath);
         try {
             Files.move(downloadedFileFileObj, targetPathFileObj);
         } catch (IOException ioe) {
@@ -164,16 +160,96 @@ public class FileProvisioning {
         }
     }
 
-    public void provisionInputFile(String path, String downloadDirectory, File downloadDirFileObj, String targetFilePath,
+    /**
+     * This method downloads both local and remote files into the working directory
+     * @param targetPath path for target file
+     * @param localPath the absolute path where we will download files to
+     * @param pathInfo additional information on the type of file
+     */
+    public void provisionInputFile(String targetPath, Path localPath,
             PathInfo pathInfo) {
+
+        // check cache for cached files
+        final String cacheDirectory = getCacheDirectory(config);
+        // create cache directory
+        final Path cachePath = Paths.get(cacheDirectory);
+        if (Files.notExists(cachePath)) {
+            if (!cachePath.toFile().mkdirs()) {
+                throw new RuntimeException("Could not create dockstore cache: " + cacheDirectory);
+            }
+        }
+
+        final String sha1 = DigestUtils.sha1Hex(targetPath);
+        final String sha1Prefix = sha1.substring(0, 2);
+        final String sha1Suffix = sha1.substring(2);
+        final Path potentialCachedFile = Paths.get(cacheDirectory, sha1Prefix, sha1Suffix);
+        if (Files.exists(potentialCachedFile)){
+            System.out.println("Found file " + targetPath + " in cache, hard-linking");
+            boolean linked = false;
+            try {
+                Files.createLink(localPath, potentialCachedFile);
+                linked = true;
+            } catch (IOException e) {
+                LOG.error("Cannot create hard link to cached file, you may want to move your cache", e.getMessage());
+            }
+            if (linked) {
+                return;
+            }
+        }
+
         if (pathInfo.isObjectIdType()) {
             String objectId = pathInfo.getObjectId();
-            this.downloadFromDccStorage(objectId, downloadDirectory, downloadDirFileObj, targetFilePath);
-        } else if (path.startsWith("s3://")) {
-            this.downloadFromS3(path, targetFilePath);
+            this.downloadFromDccStorage(objectId, localPath.getParent().toFile().getAbsolutePath(), localPath.toFile().getAbsolutePath());
+        } else if (targetPath.startsWith("s3://")) {
+            this.downloadFromS3(targetPath, localPath.toFile().getAbsolutePath());
         } else if (!pathInfo.isLocalFileType()) {
-            this.downloadFromHttp(path, targetFilePath);
+            this.downloadFromHttp(targetPath, localPath.toFile().getAbsolutePath());
+        } else {
+            assert(pathInfo.isLocalFileType());
+            // hard link into target location
+            Path actualTargetPath = null;
+            try {
+                String workingDir = System.getProperty("user.dir");
+                if (targetPath.startsWith("/")){
+                    // absolute path
+                    actualTargetPath = Paths.get(targetPath);
+                } else{
+                    // relative path
+                    actualTargetPath =  Paths.get(workingDir, targetPath);
+                }
+                // create needed directories
+                localPath.toFile().getParentFile().mkdirs();
+                // create link
+                Files.createLink(localPath, actualTargetPath);
+            } catch (IOException e) {
+                LOG.error("Could not link " + targetPath + " to " + localPath + " , copying instead", e);
+                try {
+                    Files.copy(actualTargetPath, localPath);
+                } catch (IOException e1) {
+                    throw new RuntimeException("Could not copy " + targetPath + " to " + localPath, e);
+                }
+            }
         }
+
+        // populate cache
+        if (Files.notExists(potentialCachedFile)){
+            System.out.println("Caching file " + localPath + " in cache, hard-linking");
+            try {
+                // create parent directory
+                final Path parentPath = potentialCachedFile.getParent();
+                if (Files.notExists(parentPath)) {
+                    Files.createDirectory(parentPath);
+                }
+                Files.createLink(potentialCachedFile, localPath);
+            } catch (IOException e) {
+                LOG.error("Cannot create hard link for local file, skipping", e);
+            }
+        }
+    }
+
+    public static String getCacheDirectory(HierarchicalINIConfiguration config) {
+        return config
+                .getString("cache-dir", System.getProperty("user.home") + File.separator + ".dockstore" + File.separator + "cache");
     }
 
     public void provisionOutputFile(FileInfo file, String cwlOutputPath) {
@@ -279,7 +355,7 @@ public class FileProvisioning {
             }
         };
         try (OutputStream outputStream = outputSteam) {
-            Util.copyStream(inputStream, outputStream, Util.DEFAULT_COPY_BUFFER_SIZE, inputSize, listener);
+            final long l = Util.copyStream(inputStream, outputStream, Util.DEFAULT_COPY_BUFFER_SIZE, inputSize, listener);
         } catch (IOException e) {
             throw new RuntimeException("Could not provision input files", e);
         } finally {
