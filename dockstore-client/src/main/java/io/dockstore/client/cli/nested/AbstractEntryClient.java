@@ -653,9 +653,9 @@ public abstract class AbstractEntryClient {
                 out("Launching entry file as a WDL file..");
                 launchWdl(argsList);
             }
-//             else{
-//                errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
-//            }
+             else{
+                errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
+            }
         }else if(ext.equals("wdl")){
             if(content.equals("wdl")){
                 launchWdl(argsList);
@@ -675,9 +675,9 @@ public abstract class AbstractEntryClient {
                     exceptionMessage(e, "io error launching workflow", IO_ERROR);
                 }
             }
-//            else{
-//                errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
-//            }
+            else{
+                errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
+            }
         }else if(ext.equals("")){
             //no extension given
             if(content.equals("cwl")){
@@ -695,9 +695,9 @@ public abstract class AbstractEntryClient {
                 out("Launching entry file as a WDL file..");
                 launchWdl(argsList);
             }
-//            else{
-//                errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
-//            }
+            else{
+                errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
+            }
         }
     }
 
@@ -710,12 +710,29 @@ public abstract class AbstractEntryClient {
         if (args.isEmpty() || containsHelpRequest(args)) {
             launchHelp();
         } else {
-            final String descriptor = optVal(args, "--descriptor", "");
-            List<String> argsList = new ArrayList<>();
-            argsList.addAll(args);
-            final String entry = reqVal(args, "--entry");
-            File temp = new File(entry);
-            checkEntryFile(temp,argsList, descriptor);
+            if (args.contains("--local-entry")) {
+                final String descriptor = optVal(args, "--descriptor", "");
+                List<String> argsList = new ArrayList<>();
+                argsList.addAll(args);
+                final String entry = reqVal(args, "--entry");
+                File temp = new File(entry);
+                checkEntryFile(temp,argsList, descriptor);
+            }else{
+                final String descriptor = optVal(args, "--descriptor", CWL_STRING);
+
+                if (descriptor.equals(CWL_STRING)) {
+                    try {
+                        launchCwl(args);
+                    } catch (ApiException e) {
+                        exceptionMessage(e, "api error launching workflow", Client.API_ERROR);
+                    } catch (IOException e) {
+                        exceptionMessage(e, "io error launching workflow", IO_ERROR);
+                    }
+                } else if (descriptor.equals(WDL_STRING)) {
+                    launchWdl(args);
+                }
+            }
+
         }
     }
 
