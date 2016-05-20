@@ -48,7 +48,6 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
@@ -535,8 +534,8 @@ public abstract class AbstractEntryClient {
         Boolean versionFound = false;
 
         try{
-            FileReader fileReader = new FileReader(content);
-            BufferedReader bufferedReader = new BufferedReader(fileReader);
+            InputStreamReader is = new InputStreamReader(new FileInputStream(content.getPath()),StandardCharsets.UTF_8);
+            BufferedReader bufferedReader = new BufferedReader(is);
             while((line = bufferedReader.readLine()) != null) {
                 Matcher matchWf = classWfPattern.matcher(line);
                 Matcher matchTool = classToolPattern.matcher(line);
@@ -572,8 +571,8 @@ public abstract class AbstractEntryClient {
         String line;
         Integer counter = 0;
         try{
-            FileReader fileReader = new FileReader(content);
-            BufferedReader bufferedReader = new BufferedReader(fileReader);
+            InputStreamReader is = new InputStreamReader(new FileInputStream(content.getPath()),StandardCharsets.UTF_8);
+            BufferedReader bufferedReader = new BufferedReader(is);
             ArrayList<String> lines = new ArrayList<>();
             while((line = bufferedReader.readLine()) != null) {
                 Matcher m = taskPattern.matcher(line);
