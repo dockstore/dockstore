@@ -648,13 +648,14 @@ public abstract class AbstractEntryClient {
                 out("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end");
             }else if(!content.equals("cwl") && descriptor.equals(CWL_STRING)){
                 errorMessage("Entry file is not a valid CWL file.", CLIENT_ERROR);
-            }else if(content.equals("wdl") && descriptor.equals(WDL_STRING)){
+            }else if(content.equals("wdl") && descriptor.equals(WDL_STRING)) {
                 out("This is a WDL file.. Please put the correct extension to the entry file name.");
                 out("Launching entry file as a WDL file..");
                 launchWdl(argsList);
-            }else{
-                errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
             }
+//             else{
+//                errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
+//            }
         }else if(ext.equals("wdl")){
             if(content.equals("wdl")){
                 launchWdl(argsList);
@@ -673,9 +674,10 @@ public abstract class AbstractEntryClient {
                 } catch (IOException e) {
                     exceptionMessage(e, "io error launching workflow", IO_ERROR);
                 }
-            }else{
-                errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
             }
+//            else{
+//                errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
+//            }
         }else if(ext.equals("")){
             //no extension given
             if(content.equals("cwl")){
@@ -692,9 +694,10 @@ public abstract class AbstractEntryClient {
                 out("This is a WDL file.. Please put an extension to the entry file name.");
                 out("Launching entry file as a WDL file..");
                 launchWdl(argsList);
-            }else{
-                errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
             }
+//            else{
+//                errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
+//            }
         }
     }
 
