@@ -652,8 +652,7 @@ public abstract class AbstractEntryClient {
                 out("This is a WDL file.. Please put the correct extension to the entry file name.");
                 out("Launching entry file as a WDL file..");
                 launchWdl(argsList);
-            }
-             else{
+            } else{
                 errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
             }
         }else if(ext.equals("wdl")){
@@ -674,8 +673,7 @@ public abstract class AbstractEntryClient {
                 } catch (IOException e) {
                     exceptionMessage(e, "io error launching workflow", IO_ERROR);
                 }
-            }
-            else{
+            } else{
                 errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
             }
         }else if(ext.equals("")){
@@ -694,8 +692,7 @@ public abstract class AbstractEntryClient {
                 out("This is a WDL file.. Please put an extension to the entry file name.");
                 out("Launching entry file as a WDL file..");
                 launchWdl(argsList);
-            }
-            else{
+            } else{
                 errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
             }
         }
