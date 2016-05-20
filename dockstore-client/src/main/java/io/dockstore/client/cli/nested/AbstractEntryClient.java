@@ -48,7 +48,6 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -527,7 +526,7 @@ public abstract class AbstractEntryClient {
      * @param content
      * @return
      */
-    public Boolean checkCWL(File content){
+    private Boolean checkCWL(File content){
         /* CWL: check for 'class:Workflow OR CommandLineTool', 'inputs: ','outputs: ', and 'steps' */
         Pattern cwlVersion = Pattern.compile("(.*)(cwlVersion)(.*)(:)(.*)");
         Pattern classWfPattern = Pattern.compile("(.*)(class)(.*)(:)(\\sWorkflow)");
@@ -538,12 +537,10 @@ public abstract class AbstractEntryClient {
         try{
             FileReader fileReader = new FileReader(content);
             BufferedReader bufferedReader = new BufferedReader(fileReader);
-            ArrayList <String> lines = new ArrayList<>();
             while((line = bufferedReader.readLine()) != null) {
                 Matcher matchWf = classWfPattern.matcher(line);
                 Matcher matchTool = classToolPattern.matcher(line);
                 Matcher matchVersion = cwlVersion.matcher(line);
-                lines.add(line);
                 if(matchVersion.find() && !versionFound){
                     versionFound = true;
                 } else {
@@ -556,8 +553,6 @@ public abstract class AbstractEntryClient {
                 }
             }
             bufferedReader.close();
-        } catch(FileNotFoundException e){
-            //e.printStackTrace();
         } catch (IOException e){
             //e.printStackTrace();
         }
@@ -569,7 +564,7 @@ public abstract class AbstractEntryClient {
      * @param content
      * @return
      */
-    public Boolean checkWDL(File content){
+    private Boolean checkWDL(File content){
         /* WDL: check for 'task' (can be >=1) and 'workflow', cause on the description it says that you can construct workflow from tasks
                 and wdl describes tasks and workflows */
         Pattern taskPattern = Pattern.compile("(.*)(task)(\\s)(.*)(\\{)");
@@ -590,16 +585,14 @@ public abstract class AbstractEntryClient {
             bufferedReader.close();
             //check if 'workflow' exist in the file or not
             if(counter>0){
-                for(int i=0;i<lines.size();i++) {
-                    Matcher m = wfPattern.matcher(lines.get(i));
+                for(String l : lines) {
+                    Matcher m = wfPattern.matcher(l);
                     if(m.find()){
                         return true;
                     }
                 }
                 return false; // 'workflow' does not exist, file is invalid
             }
-        } catch(FileNotFoundException e){
-            //e.printStackTrace();
         } catch (IOException e){
             //e.printStackTrace();
         }
