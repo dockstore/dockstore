@@ -627,8 +627,7 @@ public abstract class AbstractEntryClient {
     public String checkFileExtension(String filename){
         if(filename.substring(filename.indexOf(".")+1,filename.length()).equals("cwl")){
             return "cwl";
-        }
-        else if(filename.substring(filename.indexOf(".")+1,filename.length()).equals("wdl")){
+        } else if(filename.substring(filename.indexOf(".")+1,filename.length()).equals("wdl")){
             return "wdl";
         }
         return "";
