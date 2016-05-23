@@ -24,8 +24,6 @@ def main(argv):
         elif opt == '-p':
             databasePasswordArg = arg
 
-    print databaseArg, databaseUserArg, databasePasswordArg
-
 
     # configure and connect database
     conn_string = "host='localhost' dbname='" + databaseArg + "' user='" + databaseUserArg + \
