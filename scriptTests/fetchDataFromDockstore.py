@@ -3,10 +3,33 @@ import sys
 import urllib
 import urllib2
 import json
+import getopt
 
-def main():
+def main(argv):
+    # set the configuration from command line for database
+    databaseArg = ''
+    databaseUserArg = ''
+    databasePasswordArg = ''
+    try:
+        opts, args = getopt.getopt(argv, "d:u:p:")
+    except getopt.GetoptError:
+        print 'usage'
+        sys.exit(2)
+
+    for opt, arg in opts:
+        if opt == '-d':
+            databaseArg = arg
+        elif opt == '-u':
+            databaseUserArg = arg
+        elif opt == '-p':
+            databasePasswordArg = arg
+
+    print databaseArg, databaseUserArg, databasePasswordArg
+
+
     # configure and connect database
-    conn_string = "host='localhost' dbname='dockstore' user='ulim' password='3233173'"
+    conn_string = "host='localhost' dbname='" + databaseArg + "' user='" + databaseUserArg + \
+                  "' password='"+ databasePasswordArg +"'"
     conn = psycopg2.connect(conn_string)
     cur = conn.cursor()
 
@@ -44,4 +67,4 @@ def main():
     conn.close()
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])
