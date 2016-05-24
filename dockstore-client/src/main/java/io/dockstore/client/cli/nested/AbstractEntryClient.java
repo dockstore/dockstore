@@ -609,7 +609,7 @@ public abstract class AbstractEntryClient {
         }else if(checkCWL(content)){
             return "cwl";
         }
-        return "";
+        return null;
     }
 
     /**
@@ -622,7 +622,7 @@ public abstract class AbstractEntryClient {
         } else if(filename.substring(filename.indexOf(".")+1,filename.length()).equals("wdl")){
             return "wdl";
         }
-        return "";
+        return null;
     }
 
     /**
@@ -658,7 +658,7 @@ public abstract class AbstractEntryClient {
         }else if(ext.equals("wdl")){
             if(content.equals("wdl")){
                 launchWdl(argsList);
-            }else if(!content.equals("wdl") && descriptor.equals("")){
+            }else if(!content.equals("wdl") && descriptor.equals(null)){
                 //extension is wdl but the content is not wdl
                 out("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end");
             }else if(!content.equals("wdl") && descriptor.equals(WDL_STRING)){
@@ -676,7 +676,7 @@ public abstract class AbstractEntryClient {
             } else{
                 errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
             }
-        }else if(ext.equals("")){
+        }else if(ext.equals(null)){
             //no extension given
             if(content.equals("cwl")){
                 out("This is a CWL file.. Please put an extension to the entry file name.");
@@ -708,7 +708,7 @@ public abstract class AbstractEntryClient {
             launchHelp();
         } else {
             if (args.contains("--local-entry")) {
-                final String descriptor = optVal(args, "--descriptor", "");
+                final String descriptor = optVal(args, "--descriptor", null);
                 List<String> argsList = new ArrayList<>();
                 argsList.addAll(args);
                 final String entry = reqVal(args, "--entry");
