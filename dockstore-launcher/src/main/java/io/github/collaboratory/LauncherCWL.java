@@ -409,7 +409,9 @@ public class LauncherCWL {
 
     private Map<String, Object> runCWLCommand(String cwlFile, String jsonSettings, String workingDir) {
         String[] s = {"cwltool","--non-strict","--enable-net","--outdir", workingDir, cwlFile, jsonSettings};
-        final ImmutablePair<String, String> execute = Utilities.executeCommand(Joiner.on(" ").join(Arrays.asList(s)));
+        final String joined = Joiner.on(" ").join(Arrays.asList(s));
+        System.out.println("Executing: " + joined);
+        final ImmutablePair<String, String> execute = Utilities.executeCommand(joined);
         // mutate stderr and stdout into format for output
 
         String stdout = execute.getLeft().replaceAll("(?m)^", "\t");
