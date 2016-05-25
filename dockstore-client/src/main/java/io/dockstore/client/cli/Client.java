@@ -101,7 +101,7 @@ public class Client {
     public static final int COMMAND_ERROR = 10; // Command is not successful, but not due to errors
 
     public static final AtomicBoolean DEBUG = new AtomicBoolean(false);
-    public static final AtomicBoolean SCRIPT = new AtomicBoolean(false);
+    private static final AtomicBoolean SCRIPT = new AtomicBoolean(false);
     private static ObjectMapper objectMapper;
 
     /*
@@ -192,7 +192,7 @@ public class Client {
      * @param info
      * @return
      */
-    public static String getFromJSON(URL link, String info){
+    private static String getFromJSON(URL link, String info){
         ObjectMapper mapper = getObjectMapper();
         Map<String,Object> mapCur;
         try{
@@ -208,7 +208,7 @@ public class Client {
      * This method will return a map consists of all the releases
      * @return
      */
-    public static List<Map<String, Object>> getAllReleases(){
+    private static List<Map<String, Object>> getAllReleases(){
         URL url;
         try {
             ObjectMapper mapper = getObjectMapper();
@@ -231,12 +231,12 @@ public class Client {
      * This method will return the latest unstable version
      * @return
      */
-    public static String getLatestUnstableVersion(){
+    private static String getLatestUnstableVersion(){
         List<Map<String,Object>> allReleases = getAllReleases();
         Map<String, Object> map;
-        for(int i=0;i<allReleases.size();i++){
-            map = allReleases.get(i);
-            if(map.get("prerelease").toString().equals("true")){
+        for (Map<String, Object> allRelease : allReleases) {
+            map = allRelease;
+            if (map.get("prerelease").toString().equals("true")) {
                 return map.get("name").toString();
             }
         }
@@ -246,10 +246,9 @@ public class Client {
     /**
      * Check if the ID of the current is bigger or smaller than latest version
      * @param current
-     * @param latest
      * @return
      */
-    public static Boolean compareVersion(String current, String latest){
+    private static Boolean compareVersion(String current){
         URL urlCurrent, urlLatest;
         try{
             urlCurrent = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/tags/"+current);
@@ -265,10 +264,7 @@ public class Client {
             //check if currentVersion is earlier than latestVersion or not
             //id will be bigger if newer, prerelease=true if unstable
             //newer return true, older return false
-            if(prerelease.equals("true") && (idCurrent>idLatest)) {
-                return true;  //current is newer and not stable
-            }
-            return false;
+            return prerelease.equals("true") && (idCurrent > idLatest);
         }catch (MalformedURLException e) {
             exceptionMessage(e,"Failed to open URL",CLIENT_ERROR);
         }
@@ -304,7 +300,7 @@ public class Client {
      * @param tag
      * @return
      */
-    public static Boolean checkIfTagExists(String tag) {
+    private static Boolean checkIfTagExists(String tag) {
         try {
             URL url = new URL("https://api.github.com/repos/ga4gh/dockstore/releases");
             ObjectMapper mapper = getObjectMapper();
@@ -331,7 +327,7 @@ public class Client {
      * @param version
      * @return
      */
-    public static String getUnstableURL(String version, List<Map<String, Object>> allReleases){
+    private static String getUnstableURL(String version, List<Map<String, Object>> allReleases){
         Map<String, Object> map;
         for(int i=0;i<allReleases.size();i++){
             map = allReleases.get(i);
@@ -422,7 +418,7 @@ public class Client {
                         downloadURL(browserDownloadUrl,installLocation);
                         out("Download complete. You are now on version " + latestVersion + " of Dockstore.");
                     }else if(optVal.equals("none")){
-                        if(compareVersion(currentVersion,latestVersion)){
+                        if(compareVersion(currentVersion)){
                             // current version is the latest unstable version
                             out("You are currently on the latest unstable version. If you wish to upgrade to the latest stable version, please use the following command:");
                             out("   dockstore --upgrade-stable");
@@ -434,7 +430,7 @@ public class Client {
                             out("Download complete. You are now on version " + latestVersion + " of Dockstore.");
                         }
                     }else if(optVal.equals("unstable")){
-                        if(currentVersion.equals(latestUnstable)){
+                        if(Objects.equals(currentVersion, latestUnstable)){
                             // current version is the latest unstable version
                             out("You are currently on the latest unstable version. If you wish to upgrade to the latest stable version, please use the following command:");
                             out("   dockstore --upgrade-stable");
@@ -458,7 +454,7 @@ public class Client {
     /**
      * Will check for updates if three months have gone by since the last update
      */
-    public static void checkForUpdates() {
+    private static void checkForUpdates() {
         final int monthsBeforeCheck = 3;
         String installLocation = getInstallLocation();
         if (installLocation != null) {
@@ -500,7 +496,7 @@ public class Client {
                                     //not the latest stable version, could be on the newest unstable or older unstable/stable version
                                     out("Latest version : " + latestVersion);
                                     out("You do not have the most recent stable release of Dockstore.");
-                                    displayUpgradeMessage(currentVersion, latestVersion);
+                                    displayUpgradeMessage(currentVersion);
                                 }
                             }
                         } catch (ParseException e) {
@@ -515,8 +511,8 @@ public class Client {
         }
     }
 
-    public static void displayUpgradeMessage(String currentVersion, String latestVersion) {
-        if(compareVersion(currentVersion,latestVersion)){
+    private static void displayUpgradeMessage(String currentVersion) {
+        if(compareVersion(currentVersion)){
             //current version is latest than latest stable
             out("You are currently on the latest unstable version. If you wish to upgrade to the latest stable version, please use the following command:");
             out("   dockstore --upgrade-stable"); //takes you to the newest stable version no matter what
@@ -542,7 +538,7 @@ public class Client {
     /**
      * Prints out version information for the Dockstore CLI
      */
-    public static void version() {
+    private static void version() {
         String installLocation = getInstallLocation();
         if (installLocation == null) {
             errorMessage("Can't find location of Dockstore executable. Is it on the PATH?", CLIENT_ERROR);
@@ -559,6 +555,10 @@ public class Client {
         }
 
         out("Dockstore version " + currentVersion);
+        // skip upgrade check for development versions
+        if (currentVersion.endsWith("SNAPSHOT")){
+            return;
+        }
         //check if the current version is the latest stable version or not
         if (Objects.equals(currentVersion,latestVersion)) {
             out("You are running the latest stable version...");
@@ -567,7 +567,7 @@ public class Client {
         } else {
             //not the latest stable version, could be on the newest unstable or older unstable/stable version
             out("The latest stable version is " + latestVersion);
-            displayUpgradeMessage(currentVersion, latestVersion);
+            displayUpgradeMessage(currentVersion);
         }
     }
 
@@ -616,7 +616,7 @@ public class Client {
      * --------------
      */
 
-    public void run(String[] argv){
+    private void run(String[] argv){
         List<String> args = new ArrayList<>(Arrays.asList(argv));
 
         if (flag(args, "--debug") || flag(args, "--d")) {
@@ -757,7 +757,7 @@ public class Client {
         return configFile;
     }
 
-    public void setConfigFile(String configFile) {
+    private void setConfigFile(String configFile) {
         this.configFile = configFile;
     }
 }

@@ -16,9 +16,13 @@
 
 package io.dockstore.client.cli;
 
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
-
+import io.dockstore.client.cli.nested.ToolClient;
+import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.Registry;
+import io.dropwizard.testing.ResourceHelpers;
+import io.dropwizard.testing.junit.DropwizardAppRule;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.junit.Assert;
 import org.junit.Before;
@@ -28,13 +32,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 
-import io.dockstore.client.cli.nested.ToolClient;
-import io.dockstore.common.CommonTestUtilities;
-import io.dockstore.webservice.DockstoreWebserviceApplication;
-import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dockstore.webservice.core.Registry;
-import io.dropwizard.testing.ResourceHelpers;
-import io.dropwizard.testing.junit.DropwizardAppRule;
+import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 import static io.dockstore.common.CommonTestUtilities.clearStateMakePrivate;
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
@@ -338,7 +337,6 @@ public class BasicET {
 
                 final long count2 = testingPostgres.runSelectStatement("select count(*) from tool, tag, tool_tag where tool.path = 'quay.io/dockstoretestuser/quayandgithubwdl' and tool.id = tool_tag.toolid and tool_tag.tagid = tag.id", new ScalarHandler<>());
                 Assert.assertTrue("the given entry should have two valid tags, found " + count2, count2 == 2);
-                System.out.println();
         }
 
         /*

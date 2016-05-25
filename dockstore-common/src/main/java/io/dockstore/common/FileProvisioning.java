@@ -41,6 +41,8 @@ import org.apache.commons.net.io.Util;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemManager;
 import org.apache.commons.vfs2.VFS;
+import org.sagebionetworks.client.SynapseClient;
+import org.sagebionetworks.client.SynapseClientImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -130,6 +132,21 @@ public class FileProvisioning {
         }
     }
 
+    private void downloadFromSynapse(String path, String targetFilePath) {
+        SynapseClient synapseClient = new SynapseClientImpl();
+
+        try {
+            String synapseKey = config.getString("synapse-api-key");
+            String synapseUserName = config.getString("synapse-user-name");
+            synapseClient.setApiKey(synapseKey);
+            synapseClient.setUserName(synapseUserName);
+            synapseClient.downloadFromFileEntityCurrentVersion(path, new File(targetFilePath));
+        } catch (Exception e) {
+            LOG.error(e.getMessage());
+            throw new RuntimeException("Could not provision input files from Synapse", e);
+        }
+    }
+
     private static AmazonS3 getAmazonS3Client(HierarchicalINIConfiguration config) {
         AmazonS3 s3Client = new AmazonS3Client(new ClientConfiguration().withSignerOverride("S3Signer"));
         if (config.containsKey(S3_ENDPOINT)) {
@@ -200,6 +217,8 @@ public class FileProvisioning {
         if (pathInfo.isObjectIdType()) {
             String objectId = pathInfo.getObjectId();
             this.downloadFromDccStorage(objectId, localPath.getParent().toFile().getAbsolutePath(), localPath.toFile().getAbsolutePath());
+        } else if (targetPath.startsWith("syn")){
+            this.downloadFromSynapse(targetPath, localPath.toFile().getAbsolutePath());
         } else if (targetPath.startsWith("s3://")) {
             this.downloadFromS3(targetPath, localPath.toFile().getAbsolutePath());
         } else if (!pathInfo.isLocalFileType()) {
