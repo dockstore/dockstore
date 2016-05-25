@@ -102,7 +102,6 @@ public class UpgradeTestIT {
     @Test
     public void upgradeTest() throws IOException {
         //if current is older, upgrade to the most stable version right away
-        Client client = new Client();
         String detectedVersion = "0.4-beta.1";
         String currentVersion = "0.3-beta.1";
         String unstable = "0.4-beta.0";
@@ -114,7 +113,6 @@ public class UpgradeTestIT {
     @Test
     public void upTestStableOption() throws IOException{
         //if the current is newer and unstable, output "--upgrade-stable" command option
-        Client client = new Client();
         String detectedVersion ="0.3-beta.1";  //detectedVersion is the latest stable
         String currentVersion = "0.4-beta.0";   //current is newer and unstable
         String unstable = "0.4-beta.0";
@@ -127,7 +125,6 @@ public class UpgradeTestIT {
     public void upTestUnstableOption() throws IOException{
         //else if current is the latest stable version, output "you are currently running the most stable version"
         //         and option to "--upgrade-unstable"
-        Client client = new Client();
         String detectedVersion = "0.4-beta.1";
         String currentVersion = "0.4-beta.1";
         String unstable = "0.4-beta.0";
@@ -139,7 +136,6 @@ public class UpgradeTestIT {
     @Test
     public void upgradeStable() throws IOException {
         //if the current is not latest stable, upgrade to the latest stable version
-        Client client = new Client();
         String detectedVersion = "0.4-beta.1";
         String currentVersion = "0.4-beta.0";  //can also be 0.3-beta.1 , as long as it's not latest stable
         String unstable = "0.4-beta.0";
@@ -151,7 +147,6 @@ public class UpgradeTestIT {
     @Test
     public void upgradeStableOption() throws IOException {
         //if the current is latest stable, output option to "--upgrade-unstable"
-        Client client = new Client();
         String detectedVersion = "0.4-beta.1";
         String currentVersion = "0.4-beta.1";
         String unstable = "0.4-beta.0";
@@ -163,7 +158,6 @@ public class UpgradeTestIT {
     @Test
     public void upgradeUnstable() throws IOException {
         //if the current is not latest unstable, upgrade to the most unstable version
-        Client client = new Client();
         String detectedVersion = "0.4-beta.1";
         String currentVersion = "0.3-beta.0";
         String unstable = "0.4-beta.0";
@@ -175,7 +169,6 @@ public class UpgradeTestIT {
     @Test
     public void upgradeUnstableOption() throws IOException {
         //if the current is latest unstable, output option to "--upgrade-stable"'
-        Client client = new Client();
         String detectedVersion = "0.4-beta.1";
         String currentVersion = "0.4-beta.0";
         String unstable = "0.4-beta.0";

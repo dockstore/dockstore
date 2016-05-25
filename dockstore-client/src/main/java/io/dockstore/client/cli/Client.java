@@ -757,7 +757,7 @@ public class Client {
         return configFile;
     }
 
-    private void setConfigFile(String configFile) {
+    public void setConfigFile(String configFile) {
         this.configFile = configFile;
     }
 }
