@@ -1,6 +1,6 @@
 {
     "input": [{
-        "path" : "../example.bedGraph",
+        "path" : "src/test/resources/example.bedGraph",
         "class": "File"
     }],
     "allocatedResources": {

@@ -19,14 +19,19 @@ package io.github.collaboratory;
 import com.amazonaws.AmazonClientException;
 import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.Workflow;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 
+import static io.dockstore.common.FileProvisioning.getCacheDirectory;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -36,6 +41,15 @@ public class LauncherTest {
 
     @Rule
     public ExpectedException expectedEx = ExpectedException.none();
+
+    @Before
+    public void cleanCache() throws ConfigurationException, IOException {
+        // need to clean cache to make tests predictable
+        File iniFile = FileUtils.getFile("src", "test", "resources", "launcher.ini");
+        HierarchicalINIConfiguration config = new HierarchicalINIConfiguration(iniFile);
+        final String cacheDirectory = getCacheDirectory(config);
+        FileUtils.deleteDirectory(new File(cacheDirectory));
+    }
 
     @Test
     public void testCWL() throws Exception {

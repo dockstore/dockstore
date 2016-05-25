@@ -556,7 +556,8 @@ public class LauncherCWL {
      * @param cwlInputFileID looks like the descriptor for a particular path+class pair in the parameter json file, starts with a hash in the CWL file
      * @param fileMap store information on each added file as a return type
      */
-    private void doProcessFile(final String key, final String path, final String cwlInputFileID, Map<String, FileProvisioning.FileInfo> fileMap) {
+    private void doProcessFile(final String key, final String path, final String cwlInputFileID,
+            Map<String, FileProvisioning.FileInfo> fileMap) {
 
         // key is unique for that key:download URL, cwlInputFileID is just the key
 
@@ -568,21 +569,18 @@ public class LauncherCWL {
         Utilities.executeCommand("mkdir -p " + downloadDirectory);
         File downloadDirFileObj = new File(downloadDirectory);
 
-        String targetFilePath = downloadDirFileObj.getAbsolutePath() + "/" + cwlInputFileID;
+        final Path targetFilePath = Paths.get(downloadDirFileObj.getAbsolutePath(), cwlInputFileID);
 
         // expects URI in "path": "icgc:eef47481-670d-4139-ab5b-1dad808a92d9"
         PathInfo pathInfo = new PathInfo(path);
-        fileProvisioning.provisionInputFile(path, downloadDirectory, downloadDirFileObj, targetFilePath, pathInfo);
-        if (!pathInfo.isLocalFileType()) {
-            // now add this info to a hash so I can later reconstruct a docker -v command
-            FileProvisioning.FileInfo info = new FileProvisioning.FileInfo();
-            info.setLocalPath(targetFilePath);
-            info.setLocalPath(targetFilePath);
-            info.setUrl(path);
-            // key may contain either key:download_URL for array inputs or just cwlInputFileID for scalar input
-            fileMap.put(key, info);
-            LOG.info("DOWNLOADED FILE: LOCAL: {} URL: {}", cwlInputFileID, path);
-        }
+        fileProvisioning.provisionInputFile(path, targetFilePath, pathInfo);
+        // now add this info to a hash so I can later reconstruct a docker -v command
+        FileProvisioning.FileInfo info = new FileProvisioning.FileInfo();
+        info.setLocalPath(targetFilePath.toFile().getAbsolutePath());
+        info.setUrl(path);
+        // key may contain either key:download_URL for array inputs or just cwlInputFileID for scalar input
+        fileMap.put(key, info);
+        LOG.info("DOWNLOADED FILE: LOCAL: {} URL: {}", cwlInputFileID, path);
     }
 
 
