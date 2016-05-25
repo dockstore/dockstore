@@ -536,7 +536,7 @@ public abstract class AbstractEntryClient {
         Pattern classWfPattern = Pattern.compile("(.*)(class)(.*)(:)(\\sWorkflow)");
         Pattern classToolPattern = Pattern.compile("(.*)(class)(.*)(:)(\\sCommandLineTool)");
         //String line;
-        Boolean versionFound = false;
+        Boolean versionFound = false, classFound = false;
         Path p = Paths.get(content.getPath());
         try{
             List<String> fileContent = java.nio.file.Files.readAllLines(p, StandardCharsets.UTF_8);
@@ -546,14 +546,18 @@ public abstract class AbstractEntryClient {
                 Matcher matchVersion = cwlVersion.matcher(line);
                 if(matchVersion.find() && !versionFound){
                     versionFound = true;
-                } else if(versionFound){
+                } else {
                     if(getEntryType().toLowerCase().equals("workflow") && matchWf.find()){
-                        return true;
+                        classFound = true;
                     } else if(getEntryType().toLowerCase().equals("tool") && matchTool.find()){
-                        return true;
+                        classFound = true;
+                    } else if((getEntryType().toLowerCase().equals("tool") && matchWf.find()) || (getEntryType().toLowerCase().equals("workflow") && matchTool.find())){
+                        errorMessage("Entry type does not match the class specified in CWL file.",CLIENT_ERROR);
                     }
-                    errorMessage("Entry type does not match the class specified in CWL file.",CLIENT_ERROR);
                 }
+            }
+            if(versionFound && classFound){
+                return true;
             }
         } catch(IOException e){
             throw new RuntimeException("Failed to get content of entry file.", e);
