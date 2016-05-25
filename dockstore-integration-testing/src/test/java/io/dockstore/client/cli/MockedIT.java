@@ -32,7 +32,9 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -60,6 +62,9 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({Client.class, ToolClient.class, UserApi.class})
 public class MockedIT {
+
+    @Rule
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
 
     @ClassRule
     public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
@@ -114,6 +119,8 @@ public class MockedIT {
     public void runLaunchOneJson() throws IOException, ApiException {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--entry",
             "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testOneRun.json") });
+
+        Assert.assertTrue("output should contain cwltool command",systemOutRule.getLog().contains("Executing: cwltool"));
     }
 
     @Test
@@ -139,6 +146,7 @@ public class MockedIT {
             "quay.io/collaboratory/arrays", "--json", ResourceHelpers.resourceFilePath("testArrayLocalInputLocalOutput.json") });
 
         Assert.assertTrue(new File("/tmp/example.bedGraph").exists());
+        Assert.assertTrue("output should contain cwltool command",systemOutRule.getLog().contains("Executing: cwltool"));
     }
 
     /**
@@ -148,12 +156,13 @@ public class MockedIT {
      */
     @Test
     public void runLaunchOneHTTPArrayedJson() throws IOException, ApiException {
-        System.out.println(TestUtility.getConfigFileLocation(true));
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--entry",
             "quay.io/collaboratory/arrays", "--json", ResourceHelpers.resourceFilePath("testArrayHttpInputLocalOutput.json") });
 
         Assert.assertTrue(new File("/tmp/wc1.out").exists());
         Assert.assertTrue(new File("/tmp/wc2.out").exists());
         Assert.assertTrue(new File("/tmp/example.bedGraph").exists());
+
+        Assert.assertTrue("output should contain cwltool command",systemOutRule.getLog().contains("Executing: cwltool"));
     }
 }

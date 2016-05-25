@@ -17,21 +17,12 @@
 package io.dockstore.client.cli;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.type.CollectionType;
-import com.fasterxml.jackson.databind.type.TypeFactory;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class UpgradeTestIT {
     private ObjectMapper objectMapper;
@@ -90,6 +81,7 @@ public class UpgradeTestIT {
 
         ObjectMapper localObjectMapper = new ObjectMapper();
 
+        /**
         URL latest = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/latest");
         URL all = new URL("https://api.github.com/repos/ga4gh/dockstore/releases");
 
@@ -104,7 +96,7 @@ public class UpgradeTestIT {
         CollectionType ct = typeFactory.constructCollectionType(List.class, Map.class);
         Object mapRel = localObjectMapper.readValue(all, ct);
         when(objectMapper.readValue(eq(all),any(CollectionType.class))).thenReturn(mapRel);
-
+         */
     }
 
     @Test

@@ -18,6 +18,7 @@ package io.github.collaboratory;
 
 import com.amazonaws.auth.SignerFactory;
 import com.amazonaws.services.s3.internal.S3Signer;
+import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.gson.Gson;
 import io.cwl.avro.CWL;
@@ -409,7 +410,9 @@ public class LauncherCWL {
 
     private Map<String, Object> runCWLCommand(String cwlFile, String jsonSettings, String workingDir) {
         String[] s = {"cwltool","--non-strict","--enable-net","--outdir", workingDir, cwlFile, jsonSettings};
-        final ImmutablePair<String, String> execute = Utilities.executeCommand(Joiner.on(" ").join(Arrays.asList(s)));
+        final String joined = Joiner.on(" ").join(Arrays.asList(s));
+        System.out.println("Executing: " + joined);
+        final ImmutablePair<String, String> execute = Utilities.executeCommand(joined);
         // mutate stderr and stdout into format for output
 
         String stdout = execute.getLeft().replaceAll("(?m)^", "\t");
@@ -504,7 +507,9 @@ public class LauncherCWL {
             LOG.info(file.toString());
             // remove the hash from the cwlInputFileID
             final Method getId = file.getClass().getDeclaredMethod("getId");
-            String cwlInputFileID = getId.invoke(file).toString().substring(1);
+            String cwlInputFileID = getId.invoke(file).toString();
+            // trim quotes or starting '#' if necessary
+            cwlInputFileID = CharMatcher.is('#').trimLeadingFrom(cwlInputFileID);
             LOG.info("ID: {}", cwlInputFileID);
             pullFilesHelper(inputsOutputs, fileMap, cwlInputFileID);
         }
