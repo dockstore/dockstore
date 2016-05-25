@@ -649,15 +649,13 @@ public abstract class AbstractEntryClient {
                 //extension is cwl but the content is not cwl
                 out("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end");
             }else if(!content.equals(CWL_STRING) && descriptor.equals(CWL_STRING)){
-                out("Entry file is not a valid CWL file.");
-                System.exit(4);
+                errorMessage("Entry file is not a valid CWL file.", CLIENT_ERROR);
             }else if(content.equals(WDL_STRING) && descriptor.equals(WDL_STRING)) {
                 out("This is a WDL file.. Please put the correct extension to the entry file name.");
                 out("Launching entry file as a WDL file..");
                 launchWdl(argsList);
             } else{
-                out("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.");
-                System.exit(4);
+                errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
             }
         }else if(ext.equals(WDL_STRING)){
             if(content.equals(WDL_STRING)){
@@ -678,8 +676,7 @@ public abstract class AbstractEntryClient {
                     exceptionMessage(e, "io error launching workflow", IO_ERROR);
                 }
             } else{
-                out("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
-                System.exit(4);
+                errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
             }
         }else{
             //no extension given
