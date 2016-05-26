@@ -506,6 +506,12 @@
                 <configuration>
                     <filters>
                         <filter>
+                            <artifact>io.dockstore:dockstore-client</artifact>
+                            <includes>
+                                <include>io/dockstore/**</include>
+                            </includes>
+                        </filter>
+                        <filter>
                             <artifact>*:*</artifact>
                             <excludes>
                                 <exclude>META-INF/*.SF</exclude>
