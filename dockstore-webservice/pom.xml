@@ -425,6 +425,7 @@
             <artifactId>dockstore-common</artifactId>
             <version>0.4-beta.2-SNAPSHOT</version>
             <scope>test</scope>
+            <type>test-jar</type>
         </dependency>
         <dependency>
             <groupId>com.github.stefanbirkner</groupId>
