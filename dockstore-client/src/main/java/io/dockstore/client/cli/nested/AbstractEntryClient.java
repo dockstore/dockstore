@@ -42,6 +42,7 @@ import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.csv.QuoteMode;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
@@ -51,6 +52,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -95,6 +97,10 @@ import static io.dockstore.client.cli.Client.IO_ERROR;
  */
 public abstract class AbstractEntryClient {
     private final CWL cwlUtil = new CWL();
+
+    public enum Type {
+        CWL, WDL, NONE
+    }
 
     public abstract String getConfigFile();
 
@@ -520,6 +526,185 @@ public abstract class AbstractEntryClient {
     }
 
     /**
+     * this function will check if the content of the file is CWL or not
+     * @param content
+     * @return
+     */
+    public Boolean checkCWL(File content){
+        /* CWL: check for 'class:Workflow OR CommandLineTool', 'inputs: ','outputs: ', and 'steps' */
+        Pattern cwlVersion = Pattern.compile("(.*)(cwlVersion)(.*)(:)(.*)");
+        Pattern classWfPattern = Pattern.compile("(.*)(class)(.*)(:)(\\sWorkflow)");
+        Pattern classToolPattern = Pattern.compile("(.*)(class)(.*)(:)(\\sCommandLineTool)");
+        //String line;
+        Boolean versionFound = false, classFound = false;
+        Path p = Paths.get(content.getPath());
+        try{
+            List<String> fileContent = java.nio.file.Files.readAllLines(p, StandardCharsets.UTF_8);
+            for(String line: fileContent){
+                Matcher matchWf = classWfPattern.matcher(line);
+                Matcher matchTool = classToolPattern.matcher(line);
+                Matcher matchVersion = cwlVersion.matcher(line);
+                if(matchVersion.find() && !versionFound){
+                    versionFound = true;
+                } else {
+                    if(getEntryType().toLowerCase().equals("workflow") && matchWf.find()){
+                        classFound = true;
+                    } else if(getEntryType().toLowerCase().equals("tool") && matchTool.find()){
+                        classFound = true;
+                    } else if((getEntryType().toLowerCase().equals("tool") && matchWf.find()) || (getEntryType().toLowerCase().equals("workflow") && matchTool.find())){
+                        errorMessage("Entry type does not match the class specified in CWL file.",CLIENT_ERROR);
+                    }
+                }
+            }
+            if(versionFound && classFound){
+                return true;
+            }
+        } catch(IOException e){
+            throw new RuntimeException("Failed to get content of entry file.", e);
+        }
+        return false;
+    }
+
+    /**
+     * this function will check if the content of the file is WDL or not
+     * @param content
+     * @return
+     */
+    public Boolean checkWDL(File content){
+        /* WDL: check for 'task' (can be >=1) and 'workflow', cause on the description it says that you can construct workflow from tasks
+                and wdl describes tasks and workflows */
+        Pattern taskPattern = Pattern.compile("(.*)(task)(\\s)(.*)(\\{)");
+        Pattern wfPattern = Pattern.compile("(.*)(workflow)(\\s)(.*)(\\{)");
+        Integer counter = 0;
+        Path p = Paths.get(content.getPath());
+        try{
+            List<String> fileContent = java.nio.file.Files.readAllLines(p, StandardCharsets.UTF_8);
+            for(String line: fileContent){
+                Matcher m = taskPattern.matcher(line);
+                if (m.find()) {
+                    counter++;
+                }
+            }
+            //check if 'workflow' exist in the file or not
+            if(counter>0){
+                for(String l : fileContent) {
+                    Matcher m = wfPattern.matcher(l);
+                    if(m.find()){
+                        return true;
+                    }
+                }
+                return false; // 'workflow' does not exist, file is invalid
+            }
+        } catch (IOException e){
+            throw new RuntimeException("Failed to get content of entry file.", e);
+        }
+        return false;
+    }
+
+
+    /**
+     * this function will check the content of the entry file if it's a valid cwl/wdl file
+     * TO DO : get the pattern of a cwl/wdl file to determine the file content
+     */
+    public Type checkFileContent(File content){
+        if(checkWDL(content)){
+            return Type.WDL;
+        }else if(checkCWL(content)){
+            return Type.CWL;
+        }
+        return Type.NONE;
+    }
+
+    /**
+     * this function will check the extension of the entry file (cwl/wdl)
+     * @return String
+     */
+    public Type checkFileExtension(String path){
+        if(FilenameUtils.getExtension(path).toLowerCase().equals(CWL_STRING)){
+            return Type.CWL;
+        } else if(FilenameUtils.getExtension(path).toLowerCase().equals(WDL_STRING)){
+            return Type.WDL;
+        }
+        return Type.NONE;
+    }
+
+    /**
+     * this function will check for the content and the extension of entry file
+     * for launch simplification, trying to reduce the use '--descriptor' when launching
+     * @param entry relative path to local descriptor for either WDL/CWL tools or workflows
+     * @return
+     */
+    public String checkEntryFile(String entry,List<String> argsList, String descriptor){
+        File file = new File(entry);
+        Type ext = checkFileExtension(file.getPath());     //file extension could be cwl,wdl or ""
+        Type content = checkFileContent(file);             //check the file content (wdl,cwl or "")
+
+        if(ext.equals(Type.CWL)){
+            if(content.equals(Type.CWL)) {
+                try {
+                    launchCwl(entry, argsList);
+                } catch (ApiException e) {
+                    exceptionMessage(e, "api error launching workflow", Client.API_ERROR);
+                } catch (IOException e) {
+                    exceptionMessage(e, "io error launching workflow", IO_ERROR);
+                }
+            }else if(!content.equals(Type.CWL) && descriptor==null){
+                //extension is cwl but the content is not cwl
+                out("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end");
+            }else if(!content.equals(Type.CWL) && descriptor.equals(CWL_STRING)){
+                errorMessage("Entry file is not a valid CWL file.", CLIENT_ERROR);
+            }else if(content.equals(Type.WDL) && descriptor.equals(WDL_STRING)) {
+                out("This is a WDL file.. Please put the correct extension to the entry file name.");
+                out("Launching entry file as a WDL file..");
+                launchWdl(argsList);
+            } else{
+                errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
+            }
+        }else if(ext.equals(Type.WDL)){
+            if(content.equals(Type.WDL)){
+                launchWdl(entry, argsList);
+            }else if(!content.equals(Type.WDL) && descriptor==null){
+                //extension is wdl but the content is not wdl
+                out("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end");
+            }else if(!content.equals(Type.WDL) && descriptor.equals(WDL_STRING)){
+                errorMessage("Entry file is not a valid WDL file.", CLIENT_ERROR);
+            }else if(content.equals(Type.CWL) && descriptor.equals(CWL_STRING)){
+                out("This is a CWL file.. Please put the correct extension to the entry file name.");
+                out("Launching entry file as a CWL file..");
+                try {
+                    launchCwl(entry, argsList);
+                } catch (ApiException e) {
+                    exceptionMessage(e, "api error launching workflow", Client.API_ERROR);
+                } catch (IOException e) {
+                    exceptionMessage(e, "io error launching workflow", IO_ERROR);
+                }
+            } else{
+                errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
+            }
+        }else{
+            //no extension given
+            if(content.equals(Type.CWL)){
+                out("This is a CWL file.. Please put an extension to the entry file name.");
+                out("Launching entry file as a CWL file..");
+                try {
+                    launchCwl(entry, argsList);
+                } catch (ApiException e) {
+                    exceptionMessage(e, "api error launching workflow", Client.API_ERROR);
+                } catch (IOException e) {
+                    exceptionMessage(e, "io error launching workflow", IO_ERROR);
+                }
+            }else if(content.equals(Type.WDL)){
+                out("This is a WDL file.. Please put an extension to the entry file name.");
+                out("Launching entry file as a WDL file..");
+                launchWdl(entry, argsList);
+            } else{
+                errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
+            }
+        }
+        return null;
+    }
+
+    /**
      * TODO: this may need to be moved to ToolClient depending on whether we can re-use
      * this for workflows.
      * @param args
@@ -528,25 +713,35 @@ public abstract class AbstractEntryClient {
         if (args.isEmpty() || containsHelpRequest(args)) {
             launchHelp();
         } else {
-            final String descriptor = optVal(args, "--descriptor", CWL_STRING);
-
-            if (descriptor.equals(CWL_STRING)) {
-                try {
-                    launchCwl(args);
-                } catch (ApiException e) {
-                    exceptionMessage(e, "api error launching workflow", Client.API_ERROR);
-                } catch (IOException e) {
-                    exceptionMessage(e, "io error launching workflow", IO_ERROR);
+            if (args.contains("--local-entry")) {
+                final String descriptor = optVal(args, "--descriptor", null);
+                final String entry = reqVal(args, "--entry");
+                checkEntryFile(entry,args, descriptor);
+            }else{
+                final String descriptor = optVal(args, "--descriptor", CWL_STRING);
+                if (descriptor.equals(CWL_STRING)) {
+                    try {
+                        launchCwl(args);
+                    } catch (ApiException e) {
+                        exceptionMessage(e, "api error launching workflow", Client.API_ERROR);
+                    } catch (IOException e) {
+                        exceptionMessage(e, "io error launching workflow", IO_ERROR);
+                    }
+                } else if (descriptor.equals(WDL_STRING)) {
+                    launchWdl(args);
                 }
-            } else if (descriptor.equals(WDL_STRING)) {
-                launchWdl(args);
             }
+
         }
     }
 
     private void launchCwl(final List<String> args) throws ApiException, IOException {
-        boolean isLocalEntry = false;
         String entry = reqVal(args, "--entry");
+        launchCwl(entry, args);
+    }
+
+    private void launchCwl(String entry, final List<String> args) throws ApiException, IOException {
+        boolean isLocalEntry = false;
         if (args.contains("--local-entry")) {
             isLocalEntry = true;
         }
@@ -645,8 +840,12 @@ public abstract class AbstractEntryClient {
     }
 
     private void launchWdl(final List<String> args) {
-        boolean isLocalEntry = false;
         final String entry = reqVal(args, "--entry");
+        launchWdl(entry, args);
+    }
+
+    private void launchWdl(String entry, final List<String> args) {
+        boolean isLocalEntry = false;
         if (args.contains("--local-entry")) {
             isLocalEntry = true;
         }

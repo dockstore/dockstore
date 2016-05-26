@@ -36,7 +36,16 @@
             <artifactId>dockstore-webservice</artifactId>
             <version>0.4-beta.2-SNAPSHOT</version>
         </dependency>
-        
+
+        <!-- testing -->
+        <dependency>
+            <groupId>io.dockstore</groupId>
+            <artifactId>dockstore-common</artifactId>
+            <version>0.4-beta.2-SNAPSHOT</version>
+            <scope>test</scope>
+            <type>test-jar</type>
+        </dependency>
+
         <dependency>
             <groupId>io.dropwizard</groupId>
             <artifactId>dropwizard-testing</artifactId>
@@ -114,6 +123,23 @@
     
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>datastore</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>cromwell-executions</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>cromwell-input</directory>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

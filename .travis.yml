@@ -20,10 +20,10 @@ before_script:
 - psql -c 'create database webservice_test with owner = dockstore;' -U postgres
 - export PATH=$PATH:$PWD/dockstore-client/target
 script: mvn -B clean install -DskipITs=false -Pconfidential-tests
-# cobertura does not seem to properly work with multiple module projects or java 8 at the moment
-# after_success:
-# - mvn -B clean -DskipITs=false cobertura:cobertura cobertura:cobertura-integration-test coveralls:report
 before_install:
 - openssl aes-256-cbc -K $encrypted_b6cd6518e9f3_key -iv $encrypted_b6cd6518e9f3_iv
   -in dockstore-integration-testing/src/test/resources/secrets.tar.enc -out dockstore-integration-testing/src/test/resources/secrets.tar -d
 - tar xvf dockstore-integration-testing/src/test/resources/secrets.tar
+
+after_success:
+- mvn -B clean test -DskipITs=false -Pconfidential-tests jacoco:report coveralls:report 

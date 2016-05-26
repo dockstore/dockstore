@@ -115,6 +115,17 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>datastore</directory>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <source>1.8</source>
@@ -177,64 +188,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-                <configuration>
-                    <enableFilesSummary>true</enableFilesSummary>
-                    <enableRulesSummary>true</enableRulesSummary>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>
-                            compile
-                        </phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                        <configuration>
-                            <consoleOutput>true</consoleOutput>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <xmlOutput>true</xmlOutput>
-                    <threshold>High</threshold>
-                    <excludeFilterFile>
-                        ${project.basedir}/findbugs-exclude.xml
-                    </excludeFilterFile>
-                </configuration>
-            </plugin>
-		    <plugin>
-	        	<groupId>org.eluder.coveralls</groupId>
-	            <artifactId>coveralls-maven-plugin</artifactId>
-	        </plugin>
-		    <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>cobertura-maven-plugin</artifactId>
-                <configuration>
-                    <check>
-
-                    </check>
-                    <formats>
-                        <format>xml</format>
-                        <format>html</format>
-                    </formats>
-                    <attach>true</attach>
-                    <aggregate>true</aggregate>
-                </configuration>
             </plugin>
         </plugins>
     </build>
