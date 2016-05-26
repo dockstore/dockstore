@@ -425,6 +425,7 @@
             <artifactId>dockstore-common</artifactId>
             <version>0.4-beta.2-SNAPSHOT</version>
             <scope>test</scope>
+            <type>test-jar</type>
         </dependency>
         <dependency>
             <groupId>com.github.stefanbirkner</groupId>
@@ -505,6 +506,12 @@
                 <artifactId>maven-shade-plugin</artifactId>
                 <configuration>
                     <filters>
+                        <filter>
+                            <artifact>io.dockstore:dockstore-client</artifact>
+                            <includes>
+                                <include>io/dockstore/**</include>
+                            </includes>
+                        </filter>
                         <filter>
                             <artifact>*:*</artifact>
                             <excludes>

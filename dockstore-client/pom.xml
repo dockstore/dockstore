@@ -166,6 +166,23 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>datastore</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>cromwell-executions</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>cromwell-input</directory>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
                 <configuration>
                     <createDependencyReducedPom>false</createDependencyReducedPom>
