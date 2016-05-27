@@ -35,15 +35,31 @@ def main(argv):
     if bool(cur.rowcount):
         cur.execute("DROP TABLE gmod_tools");
 
+    cur.execute("SELECT * FROM information_schema.tables WHERE table_name='gmod_tools_versions_table'")
+    if bool(cur.rowcount):
+        cur.execute("DROP TABLE gmod_tools_versions_table");
+
     cur.execute("CREATE TABLE gmod_tools (id serial PRIMARY KEY, \
                                           globalId varchar, \
                                           registryId varchar, \
                                           registry varchar, \
+                                          tooltype json, \
                                           name varchar, \
                                           organization varchar, \
                                           description varchar, \
                                           author varchar, \
                                           metaVersion varchar);")
+
+    cur.execute("CREATE TABLE gmod_tools_versions_table (id serial PRIMARY KEY, \
+                                          name varchar, \
+                                          globalId varchar, \
+                                          registryId varchar, \
+                                          image varchar, \
+                                          descriptor json, \
+                                          dockerfile json, \
+                                          metaVersion varchar);")
+
+
 
 
     request = urllib2.Request('https://www.dockstore.org:8443/api/v1/tools')
@@ -51,13 +67,20 @@ def main(argv):
     reveieve_json = json.loads(response.read())
 
     for item in reveieve_json:
-        cur.execute("INSERT INTO gmod_tools (globalId, registryId, registry, \
+        cur.execute("INSERT INTO gmod_tools (globalId, registryId, registry, tooltype, \
                      name, organization, description, author, metaVersion) VALUES \
-                     (%s, %s, %s, %s, %s, %s, %s, %s);", (item["global-id"], \
-                     item["registry-id"], item["registry"], \
+                     (%s, %s, %s, %s, %s, %s, %s, %s, %s);", (item["global-id"], \
+                     item["registry-id"], item["registry"], json.dumps(item["tooltype"]), \
                      item["name"], item["organization"], \
                      item["description"], item["author"], \
                      item["meta-version"]))
+
+        for version in item["versions"]:
+            cur.execute("INSERT INTO gmod_tools_versions_table (name, globalId, registryId, \
+                         image, descriptor, dockerfile, metaVersion) VALUES \
+                         (%s, %s, %s, %s, %s, %s, %s);", (version["name"], version["global-id"], \
+                         version["registry-id"], version["image"], json.dumps(version["descriptor"]), \
+                         json.dumps(version["dockerfile"]), version["meta-version"]))
 
     # update the database
     conn.commit();
