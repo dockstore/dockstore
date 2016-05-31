@@ -18,17 +18,20 @@ package io.dockstore.webservice.helpers;
 
 import com.google.common.base.Optional;
 import com.google.common.io.Files;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.http.HttpStatus;
 import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.RepositoryContents;
 import org.eclipse.egit.github.core.RepositoryId;
 import org.eclipse.egit.github.core.User;
 import org.eclipse.egit.github.core.client.GitHubClient;
+import org.eclipse.egit.github.core.client.RequestException;
 import org.eclipse.egit.github.core.service.ContentsService;
 import org.eclipse.egit.github.core.service.OrganizationService;
 import org.eclipse.egit.github.core.service.RepositoryService;
@@ -99,10 +102,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 return null;
             }
 
-        } catch (IOException e) {
-            // e.printStackTrace();
-            LOG.error(gitUsername + ": " + e.getMessage());
+        } catch (RequestException e){
+            if (e.getStatus() == HttpStatus.SC_UNAUTHORIZED){
+                // we have bad credentials which should not be ignored
+                throw new CustomWebApplicationException("Error reading from "+gitUrl+", please re-create your git token", HttpStatus.SC_BAD_REQUEST);
+            }
             return null;
+        } catch (IOException e) {
+            LOG.error(gitUsername + ": IOException on readFile" + e.getMessage());
         }
         return cwl;
     }

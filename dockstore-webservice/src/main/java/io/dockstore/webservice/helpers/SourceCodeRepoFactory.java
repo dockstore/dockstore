@@ -16,17 +16,16 @@
 
 package io.dockstore.webservice.helpers;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
+import io.dockstore.webservice.CustomWebApplicationException;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.dockstore.webservice.CustomWebApplicationException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author dyuen
@@ -86,9 +85,9 @@ public class SourceCodeRepoFactory {
         String source = m.group(sourceIndex);
         String gitUsername = m.group(usernameIndex);
         String gitRepository = m.group(reponameIndex);
-         LOG.info("Source: " + source);
-         LOG.info("Username: " + gitUsername);
-         LOG.info("Repository: " + gitRepository);
+        LOG.debug("Source: " + source);
+        LOG.debug("Username: " + gitUsername);
+        LOG.debug("Repository: " + gitRepository);
 
         Map<String, String> map = new HashMap<>();
         map.put("Source", source);
