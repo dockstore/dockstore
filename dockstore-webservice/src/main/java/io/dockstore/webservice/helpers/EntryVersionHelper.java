@@ -16,14 +16,7 @@
 
 package io.dockstore.webservice.helpers;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
-import org.apache.http.HttpStatus;
-
 import com.google.common.collect.Lists;
-
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -32,6 +25,12 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.jdbi.EntryDAO;
+import org.apache.http.HttpStatus;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * This class contains code for interacting with versions for all types of entries.
@@ -101,7 +100,7 @@ public class EntryVersionHelper<T extends Entry> {
                 } else {
                         for (Object o : tagInstance.getSourceFiles()) {
                                 SourceFile file = (SourceFile)o;
-                                if (file.getType() == fileType && ((SourceFile) o).getPath().equals(path)) {
+                                if (file.getType() == fileType && Objects.equals(((SourceFile) o).getPath(),path)){
                                         return file;
                                 }
                         }

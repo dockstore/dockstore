@@ -107,6 +107,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 // we have bad credentials which should not be ignored
                 throw new CustomWebApplicationException("Error reading from "+gitUrl+", please re-create your git token", HttpStatus.SC_BAD_REQUEST);
             }
+            return null;
         } catch (IOException e) {
             LOG.error(gitUsername + ": IOException on readFile" + e.getMessage());
         }
