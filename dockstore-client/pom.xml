@@ -196,6 +196,18 @@
                             </excludes>
                         </filter>
                         <filter>
+                            <artifact>io.dockstore:dockstore-launcher</artifact>
+                            <excludes>
+                                <exclude>logback.xml</exclude>
+                            </excludes>
+                        </filter>
+                        <filter>
+                            <artifact>io.dockstore:dockstore-common</artifact>
+                            <excludes>
+                                <exclude>logback.xml</exclude>
+                            </excludes>
+                        </filter>
+                        <filter>
                             <artifact>org.broadinstitute:*</artifact>
                             <excludes>
                                 <exclude>logback.xml</exclude>
