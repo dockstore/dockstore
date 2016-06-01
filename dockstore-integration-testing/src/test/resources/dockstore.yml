@@ -55,3 +55,12 @@ database:
 
   # whether or not idle connections should be validated
   checkConnectionWhileIdle: false
+
+logging:
+  level: ERROR
+  appenders:
+    - type: console
+      threshold: ERROR
+      timeZone: UTC
+      target: stdout
+      logFormat: # TODO
