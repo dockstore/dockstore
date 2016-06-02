@@ -2076,20 +2076,6 @@ definitions:
       name:
         type: "string"
     description: "End users for the dockstore"
-  ToolType:
-    type: "object"
-    properties:
-      id:
-        type: "string"
-        description: "The unique identifier for the type"
-      name:
-        type: "string"
-        description: "A short friendly name for the type"
-      description:
-        type: "string"
-        description: "A longer explanation of what this type is and what it can accomplish"
-    description: "Describes a type of tool allowing us to categorize workflows, the\
-      \ language of the workflow, tools, and maybe even other entities separately"
   Metadata:
     type: "object"
     required:
@@ -2106,6 +2092,20 @@ definitions:
         description: "A friendly name that can be used in addition to the hostname\
           \ to describe a registry"
     description: "Describes this registry to better allow for mirroring and indexing."
+  ToolType:
+    type: "object"
+    properties:
+      id:
+        type: "string"
+        description: "The unique identifier for the type"
+      name:
+        type: "string"
+        description: "A short friendly name for the type"
+      description:
+        type: "string"
+        description: "A longer explanation of what this type is and what it can accomplish"
+    description: "Describes a type of tool allowing us to categorize workflows, the\
+      \ language of the workflow, tools, and maybe even other entities separately"
   Label:
     type: "object"
     required:
@@ -2254,13 +2254,6 @@ definitions:
         format: "int64"
     description: "Access tokens for this web service and integrated services like\
       \ quay.io and github"
-  PublishRequest:
-    type: "object"
-    properties:
-      publish:
-        type: "boolean"
-        readOnly: true
-        default: false
   WorkflowVersion:
     type: "object"
     required:
@@ -2304,6 +2297,13 @@ definitions:
         type: "string"
         description: "Path for the workflow"
     description: "This describes one workflow version associated with a workflow."
+  PublishRequest:
+    type: "object"
+    properties:
+      publish:
+        type: "boolean"
+        readOnly: true
+        default: false
   QuayIOAuthenticationResource:
     type: "object"
     properties:
@@ -2516,11 +2516,6 @@ definitions:
           \ fields like the description, author, etc. are updated."
     description: "A tool version describes a particular iteration of a tool as described\
       \ by a reference to a specific image and dockerfile."
-  GithubComView:
-    type: "object"
-    properties:
-      parent:
-        $ref: "#/definitions/GitHubComAuthenticationResource"
   SourceFile:
     type: "object"
     required:
@@ -2606,6 +2601,11 @@ definitions:
         type: "string"
         description: "Path for the WDL document"
     description: "This describes one tag associated with a container."
+  GithubComView:
+    type: "object"
+    properties:
+      parent:
+        $ref: "#/definitions/GitHubComAuthenticationResource"
   QuayIOView:
     type: "object"
     properties:
