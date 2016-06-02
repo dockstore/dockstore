@@ -618,16 +618,13 @@ public class WorkflowResource {
         newWorkflow.setPath(completeWorkflowPath);
         newWorkflow.setDescriptorType(descriptorType);
 
-        if (newWorkflow != null) {
-            final long workflowID = workflowDAO.create(newWorkflow);
-            // need to create nested data models
-            final Workflow workflowFromDB = workflowDAO.findById(workflowID);
-            workflowFromDB.getUsers().add(user);
-            updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow);
-            return workflowDAO.findById(workflowID);
-        } else {
-            throw new CustomWebApplicationException("Error registering the given workflow.", HttpStatus.SC_BAD_REQUEST);
-        }
+        final long workflowID = workflowDAO.create(newWorkflow);
+        // need to create nested data models
+        final Workflow workflowFromDB = workflowDAO.findById(workflowID);
+        workflowFromDB.getUsers().add(user);
+        updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow);
+        return workflowDAO.findById(workflowID);
+
     }
 
     @PUT
