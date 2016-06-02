@@ -844,12 +844,13 @@
                 <configuration>
                     <formats>
                         <format>xml</format>
+                        <format>html</format>
                     </formats>
                     <aggregate>true</aggregate>
                     <instrumentation>
-                        <ignores>
-                            <ignore>**/Bridge*</ignore>
-                        </ignores>
+                        <excludes>
+                            <exclude>io/dockstore/client/Bridge.class</exclude>
+                        </excludes>
                     </instrumentation>
                 </configuration>
                 <dependencies>
@@ -892,6 +893,12 @@
                         <id>prepare-agent</id>
                         <goals>
                             <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>prepare-agent-integration</id>
+                        <goals>
+                            <goal>prepare-agent-integration</goal>
                         </goals>
                     </execution>
                 </executions>
