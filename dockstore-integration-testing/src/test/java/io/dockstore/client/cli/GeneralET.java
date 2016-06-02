@@ -243,7 +243,6 @@ public class GeneralET {
          * Tests that tool2JSON works for entries on Dockstore
          */
         @Test
-        @Ignore
         public void testTool2JSONWDL() {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry", "quay.io/dockstoretestuser2/quayandgithubwdl" });
                 // need to publish before converting
@@ -420,7 +419,6 @@ public class GeneralET {
          * Tests that WDL and CWL files can be grabbed from the command line
          */
         @Test
-        @Ignore
         public void testGetWdlAndCwl(){
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry", "quay.io/dockstoretestuser2/quayandgithubwdl" });
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "wdl", "--entry", "quay.io/dockstoretestuser2/quayandgithubwdl", "--script" });
