@@ -26,4 +26,4 @@ before_install:
 - tar xvf dockstore-integration-testing/src/test/resources/secrets.tar
 
 after_success:
-        - mvn -B clean test -DskipITs=false -Pconfidential-tests jacoco:report jacoco:report-integration jacoco:report-aggregate cobertura:cobertura cobertura:cobertura-integration-test coveralls:report
+- mvn -B clean test -DskipITs=false -Pconfidential-tests jacoco:report jacoco:report-integration jacoco:report-aggregate cobertura:cobertura cobertura:cobertura-integration-test coveralls:report
