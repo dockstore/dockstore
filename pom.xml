@@ -846,6 +846,11 @@
                         <format>xml</format>
                     </formats>
                     <aggregate>true</aggregate>
+                    <instrumentation>
+                        <ignores>
+                            <ignore>**/Bridge*</ignore>
+                        </ignores>
+                    </instrumentation>
                 </configuration>
                 <dependencies>
                     <dependency>
