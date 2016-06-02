@@ -23,7 +23,6 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.UsersApi;
-import io.swagger.client.model.Body;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.PublishRequest;
@@ -223,7 +222,8 @@ public class ToolClient extends AbstractEntryClient {
                     newContainer.setDefaultWdlPath(container.getDefaultWdlPath());
                     newContainer.setIsPublished(false);
                     newContainer.setGitUrl(container.getGitUrl());
-                    newContainer.setPath(container.getPath());
+                    // #162 - update to swagger properly enforces that this is generated server side
+                    // newContainer.setPath(container.getPath());
                     newContainer.setToolname(newName);
 
                     newContainer = containersApi.registerManual(newContainer);
@@ -309,7 +309,8 @@ public class ToolClient extends AbstractEntryClient {
             container.setIsPublished(false);
             container.setGitUrl(gitURL);
             container.setToolname(toolname);
-            container.setPath(Joiner.on("/").skipNulls().join(registry, namespace, name));
+            // #162 - update to swagger properly enforces that this is generated server side
+            //container.setPath(Joiner.on("/").skipNulls().join(registry, namespace, name));
 
             if (!Registry.QUAY_IO.toString().equals(registry)) {
                 final String versionName = optVal(args, "--version-name", "latest");
@@ -397,7 +398,7 @@ public class ToolClient extends AbstractEntryClient {
 
             String combinedLabelString = generateLabelString(addsSet, removesSet, existingLabels);
 
-            DockstoreTool updatedContainer = containersApi.updateLabels(containerId, combinedLabelString, new Body());
+            DockstoreTool updatedContainer = containersApi.updateLabels(containerId, combinedLabelString, "");
 
             List<Label> newLabels = updatedContainer.getLabels();
             if (!newLabels.isEmpty()) {

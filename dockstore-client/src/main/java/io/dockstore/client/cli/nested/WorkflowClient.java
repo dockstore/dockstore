@@ -22,7 +22,6 @@ import io.dockstore.client.cli.Client;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.Body1;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
@@ -91,7 +90,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
             String combinedLabelString = generateLabelString(addsSet, removesSet, existingLabels);
 
-            Workflow updatedWorkflow = workflowsApi.updateLabels(workflowId, combinedLabelString, new Body1());
+            Workflow updatedWorkflow = workflowsApi.updateLabels(workflowId, combinedLabelString, "");
 
             List<Label> newLabels = updatedWorkflow.getLabels();
             if (!newLabels.isEmpty()) {
@@ -506,8 +505,9 @@ public class WorkflowClient extends AbstractEntryClient {
                 workflow.setWorkflowName(workflowName);
                 workflow.setWorkflowPath(workflowDescriptorPath);
 
-                String path = Joiner.on("/").skipNulls().join(workflow.getOrganization(), workflow.getRepository(), workflow.getWorkflowName());
-                workflow.setPath(path);
+                // path should be automatically generated
+                //String path = Joiner.on("/").skipNulls().join(workflow.getOrganization(), workflow.getRepository(), workflow.getWorkflowName());
+                //workflow.setPath(path);
 
                 workflowsApi.updateWorkflow(workflowId, workflow);
                 out("The workflow has been updated.");

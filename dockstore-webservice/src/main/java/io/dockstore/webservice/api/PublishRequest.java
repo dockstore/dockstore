@@ -32,12 +32,12 @@ public class PublishRequest {
     public PublishRequest() {
     }
 
-    public PublishRequest(boolean publish) {
-        this.publish = publish;
-    }
-
     @JsonProperty
     public boolean getPublish() {
         return publish;
+    }
+
+    public void setPublish(boolean publish) {
+        this.publish = publish;
     }
 }

@@ -16,22 +16,7 @@
 
 package io.dockstore.client.cli;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.charset.Charset;
-import java.util.List;
-import java.util.concurrent.TimeoutException;
-
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
-import org.apache.commons.io.FileUtils;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import com.google.common.io.Resources;
-
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.Constants;
 import io.dockstore.common.Utilities;
@@ -55,6 +40,19 @@ import io.swagger.client.model.Tool;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.ToolDockerfile;
 import io.swagger.client.model.User;
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.io.FileUtils;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.util.List;
+import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -182,7 +180,8 @@ public class SystemClientIT {
         c.setValidTrigger(true);
         c.setNamespace("seqware");
         c.setToolname("test5");
-        c.setPath("registry.hub.docker.com/seqware/seqware");
+        // #162 - update to swagger properly enforces that this is generated server side
+        // c.setPath("registry.hub.docker.com/seqware/seqware");
         //c.setToolPath("registry.hub.docker.com/seqware/seqware/test5");
         Tag tag = new Tag();
         tag.setName("master");

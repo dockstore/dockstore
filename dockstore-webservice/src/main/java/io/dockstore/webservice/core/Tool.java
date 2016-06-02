@@ -276,7 +276,7 @@ public class Tool extends Entry<Tool, Tag> {
         return defaultWdlPath;
     }
 
-    public void setDefaultWdlPath() {
+    public void setDefaultWdlPath(String defaultWdlPath) {
         this.defaultWdlPath = defaultWdlPath;
     }
 
