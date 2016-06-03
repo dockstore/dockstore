@@ -2076,6 +2076,21 @@ definitions:
       name:
         type: "string"
     description: "End users for the dockstore"
+  Label:
+    type: "object"
+    required:
+    - "value"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the container in this web service"
+        readOnly: true
+      value:
+        type: "string"
+        description: "String representation of the tag"
+    description: "This describes a descriptive label that can be placed on an entry\
+      \ in the dockstore"
   Metadata:
     type: "object"
     required:
@@ -2106,37 +2121,6 @@ definitions:
         description: "A longer explanation of what this type is and what it can accomplish"
     description: "Describes a type of tool allowing us to categorize workflows, the\
       \ language of the workflow, tools, and maybe even other entities separately"
-  Label:
-    type: "object"
-    required:
-    - "value"
-    properties:
-      id:
-        type: "integer"
-        format: "int64"
-        description: "Implementation specific ID for the container in this web service"
-        readOnly: true
-      value:
-        type: "string"
-        description: "String representation of the tag"
-    description: "This describes a descriptive label that can be placed on an entry\
-      \ in the dockstore"
-  ToolDescriptor:
-    type: "object"
-    required:
-    - "descriptor"
-    properties:
-      descriptor:
-        type: "string"
-        description: "The descriptor that represents this version of the tool. (CWL\
-          \ or WDL)"
-      url:
-        type: "string"
-        description: "Optional url to the tool descriptor used to build this image,\
-          \ should include version information, and can include a git hash (e.g. https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/ea2a5db69bd20a42976838790bc29294df3af02b/delly_docker/Delly.cwl\
-          \ )"
-    description: "A tool descriptor is a metadata document that describes one or more\
-      \ tools."
   Workflow:
     type: "object"
     required:
@@ -2229,6 +2213,22 @@ definitions:
         description: "This indicates for the associated git repository, the default\
           \ path to the CWL document"
     description: "This describes one workflow in the dockstore"
+  ToolDescriptor:
+    type: "object"
+    required:
+    - "descriptor"
+    properties:
+      descriptor:
+        type: "string"
+        description: "The descriptor that represents this version of the tool. (CWL\
+          \ or WDL)"
+      url:
+        type: "string"
+        description: "Optional url to the tool descriptor used to build this image,\
+          \ should include version information, and can include a git hash (e.g. https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/ea2a5db69bd20a42976838790bc29294df3af02b/delly_docker/Delly.cwl\
+          \ )"
+    description: "A tool descriptor is a metadata document that describes one or more\
+      \ tools."
   Token:
     type: "object"
     properties:
@@ -2477,45 +2477,6 @@ definitions:
     description: "This describes one entry in the dockstore. Logically, this currently\
       \ means one tuple of registry (either quay or docker hub), organization, image\
       \ name, and toolname which can be\n * associated with CWL and Dockerfile documents"
-  ToolVersion:
-    type: "object"
-    required:
-    - "descriptor"
-    - "global-id"
-    - "image"
-    - "meta-version"
-    - "registry-id"
-    properties:
-      name:
-        type: "string"
-        description: "The name of the version."
-      global-id:
-        type: "string"
-        description: "The unique identifier for this version of a tool. (Proposed\
-          \ - This id should be globally unique across systems and should also identify\
-          \ the system that it comes from for example This id should be globally unique\
-          \ across systems, should also identify the system that it comes from, and\
-          \ be a URL that resolves for example `http://agora.broadinstitute.org/tools/123456/v1`\
-          \ This can be the same as the registry-id depending on the structure of\
-          \ your registry)"
-      registry-id:
-        type: "string"
-        description: "An identifier of the version of this tool for this particular\
-          \ tool registry, for example `v1`"
-      image:
-        type: "string"
-        description: "The docker path to the image (and version) for this tool. (e.g.\
-          \ quay.io/seqware/seqware_full/1.1)"
-      descriptor:
-        $ref: "#/definitions/ToolDescriptor"
-      dockerfile:
-        $ref: "#/definitions/ToolDockerfile"
-      meta-version:
-        type: "string"
-        description: "The version of this tool version in the registry. Iterates when\
-          \ fields like the description, author, etc. are updated."
-    description: "A tool version describes a particular iteration of a tool as described\
-      \ by a reference to a specific image and dockerfile."
   SourceFile:
     type: "object"
     required:
@@ -2601,6 +2562,45 @@ definitions:
         type: "string"
         description: "Path for the WDL document"
     description: "This describes one tag associated with a container."
+  ToolVersion:
+    type: "object"
+    required:
+    - "descriptor"
+    - "global-id"
+    - "image"
+    - "meta-version"
+    - "registry-id"
+    properties:
+      name:
+        type: "string"
+        description: "The name of the version."
+      global-id:
+        type: "string"
+        description: "The unique identifier for this version of a tool. (Proposed\
+          \ - This id should be globally unique across systems and should also identify\
+          \ the system that it comes from for example This id should be globally unique\
+          \ across systems, should also identify the system that it comes from, and\
+          \ be a URL that resolves for example `http://agora.broadinstitute.org/tools/123456/v1`\
+          \ This can be the same as the registry-id depending on the structure of\
+          \ your registry)"
+      registry-id:
+        type: "string"
+        description: "An identifier of the version of this tool for this particular\
+          \ tool registry, for example `v1`"
+      image:
+        type: "string"
+        description: "The docker path to the image (and version) for this tool. (e.g.\
+          \ quay.io/seqware/seqware_full/1.1)"
+      descriptor:
+        $ref: "#/definitions/ToolDescriptor"
+      dockerfile:
+        $ref: "#/definitions/ToolDockerfile"
+      meta-version:
+        type: "string"
+        description: "The version of this tool version in the registry. Iterates when\
+          \ fields like the description, author, etc. are updated."
+    description: "A tool version describes a particular iteration of a tool as described\
+      \ by a reference to a specific image and dockerfile."
   GithubComView:
     type: "object"
     properties:

@@ -704,7 +704,7 @@
                 <plugin>
                     <groupId>org.eluder.coveralls</groupId>
                     <artifactId>coveralls-maven-plugin</artifactId>
-                    <version>4.1.0</version>
+                    <version>4.2.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -840,16 +840,33 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>cobertura-maven-plugin</artifactId>
-                <version>2.7</version>
                 <configuration>
-                    <attach>true</attach>
-                    <check />
+                    <check></check>
                     <formats>
                         <format>xml</format>
                         <format>html</format>
                     </formats>
                     <aggregate>true</aggregate>
+                    <instrumentation>
+                        <excludes>
+                            <exclude>io/dockstore/client/Bridge.class</exclude>
+                            <exclude>io/dockstore/client/Bridge.*</exclude>
+                            <exclude>io/swagger/client/**/*.class</exclude>
+                            <exclude>io/swagger/quay/client/**/*.class</exclude>
+                            <exclude>**/*$*</exclude>
+                        </excludes>
+                        <ignores>
+                            <ignore>io.dockstore.client.Bridge</ignore>
+                        </ignores>
+                    </instrumentation>
                 </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>net.sourceforge.cobertura</groupId>
+                        <artifactId>cobertura</artifactId>
+                        <version>2.1.1</version>
+                    </dependency>
+                </dependencies>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -885,6 +902,12 @@
                             <goal>prepare-agent</goal>
                         </goals>
                     </execution>
+                    <execution>
+                        <id>prepare-agent-integration</id>
+                        <goals>
+                            <goal>prepare-agent-integration</goal>
+                        </goals>
+                    </execution>
                 </executions>
                 <configuration>
                     <excludes>
@@ -894,6 +917,35 @@
             </plugin>
         </plugins>
     </build>
+
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>cobertura-maven-plugin</artifactId>
+                <configuration>
+                    <check></check>
+                    <formats>
+                        <format>xml</format>
+                        <format>html</format>
+                    </formats>
+                    <aggregate>true</aggregate>
+                    <instrumentation>
+                        <excludes>
+                            <exclude>io/dockstore/client/Bridge.class</exclude>
+                            <exclude>io/dockstore/client/Bridge.*</exclude>
+                            <exclude>io/swagger/client/**/*.class</exclude>
+                            <exclude>io/swagger/quay/client/**/*.class</exclude>
+                            <exclude>**/*$*</exclude>
+                        </excludes>
+                        <ignores>
+                            <ignore>io.dockstore.client.Bridge</ignore>
+                        </ignores>
+                    </instrumentation>
+                </configuration>
+            </plugin>
+        </plugins>
+    </reporting>
 
     <profiles>
         <!-- Jenkins by default defines a property BUILD_NUMBER which is used to

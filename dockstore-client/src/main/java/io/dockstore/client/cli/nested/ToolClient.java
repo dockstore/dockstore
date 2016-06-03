@@ -182,7 +182,6 @@ public class ToolClient extends AbstractEntryClient {
             if (user == null) {
                 errorMessage("User not found", Client.CLIENT_ERROR);
             }
-            assert user != null;
             List<DockstoreTool> containers = usersApi.userPublishedContainers(user.getId());
             printPublishedList(containers);
         } catch (ApiException ex) {
@@ -249,7 +248,6 @@ public class ToolClient extends AbstractEntryClient {
             if (user == null) {
                 errorMessage("User not found", Client.CLIENT_ERROR);
             }
-            assert user != null;
             List<DockstoreTool> containers = usersApi.userContainers(user.getId());
 
             out("YOUR AVAILABLE CONTAINERS");

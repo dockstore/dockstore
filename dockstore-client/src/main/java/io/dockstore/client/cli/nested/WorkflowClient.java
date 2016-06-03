@@ -267,7 +267,6 @@ public class WorkflowClient extends AbstractEntryClient {
             if (user == null) {
                 errorMessage("User not found", Client.CLIENT_ERROR);
             }
-            assert user != null;
             List<Workflow> workflows = usersApi.userWorkflows(user.getId());
 
             out("YOUR AVAILABLE WORKFLOWS");
@@ -321,7 +320,6 @@ public class WorkflowClient extends AbstractEntryClient {
             if (user == null) {
                 errorMessage("User not found", Client.CLIENT_ERROR);
             }
-            assert user != null;
             List<Workflow> workflows = usersApi.userPublishedWorkflows(user.getId());
             printWorkflowList(workflows);
         } catch (ApiException ex) {
