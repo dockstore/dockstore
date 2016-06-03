@@ -561,7 +561,9 @@ public abstract class AbstractEntryClient {
             }
             if(inputFound && outputFound && classFound){
                 return true;
-            } else if(!outputFound) {
+            } else if(!inputFound && !outputFound && !classFound){
+                return false;
+            }else if(!outputFound) {
                 errorMessage("Missing 'outputs' in CWL file.",CLIENT_ERROR);
             } else if(!inputFound) {
                 errorMessage("Missing 'inputs' in CWL file.",CLIENT_ERROR);
