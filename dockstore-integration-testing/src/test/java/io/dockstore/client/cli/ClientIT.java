@@ -55,6 +55,7 @@ public class ClientIT {
     @Before
     public void clearDB() throws IOException, TimeoutException {
         clearState();
+        Client.DEBUG.set(false);
     }
 
     @Test

@@ -7,6 +7,11 @@ notifications:
 sudo: required
 services:
 - docker
+
+cache:
+  directories:
+  - $HOME/.m2
+
 language: java
 jdk:
 - oraclejdk8
@@ -21,9 +26,11 @@ before_script:
 - export PATH=$PATH:$PWD/dockstore-client/target
 script: mvn -B clean install -DskipITs=false -Pconfidential-tests
 before_install:
+- mvn dependency:get -Dartifact=org.eluder.coveralls:coveralls-maven-plugin:4.2.0
 - openssl aes-256-cbc -K $encrypted_b6cd6518e9f3_key -iv $encrypted_b6cd6518e9f3_iv
   -in dockstore-integration-testing/src/test/resources/secrets.tar.enc -out dockstore-integration-testing/src/test/resources/secrets.tar -d
 - tar xvf dockstore-integration-testing/src/test/resources/secrets.tar
 
 after_success:
-- mvn -B clean test -DskipITs=false -Pconfidential-tests jacoco:report coveralls:report 
+- mvn -B clean install -DskipITs=false -Pconfidential-tests cobertura:cobertura-integration-test
+- mvn -B coveralls:report

@@ -445,6 +445,10 @@ public final class Helper {
             final ObjectMapper objectMapper, final TokenDAO tokenDAO, final long userId) {
         List<Token> tokens = tokenDAO.findByUserId(userId);
         Token quayToken = extractToken(tokens, TokenType.QUAY_IO.toString());
+        if (quayToken == null){
+            // no quay token extracted
+            throw new CustomWebApplicationException("no quay token found", HttpStatus.SC_NOT_FOUND);
+        }
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
 
         final ImageRegistryInterface imageRegistry = factory.createImageRegistry(tool.getRegistry());

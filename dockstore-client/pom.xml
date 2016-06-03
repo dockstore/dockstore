@@ -196,6 +196,18 @@
                             </excludes>
                         </filter>
                         <filter>
+                            <artifact>io.dockstore:dockstore-launcher</artifact>
+                            <excludes>
+                                <exclude>logback.xml</exclude>
+                            </excludes>
+                        </filter>
+                        <filter>
+                            <artifact>io.dockstore:dockstore-common</artifact>
+                            <excludes>
+                                <exclude>logback.xml</exclude>
+                            </excludes>
+                        </filter>
+                        <filter>
                             <artifact>org.broadinstitute:*</artifact>
                             <excludes>
                                 <exclude>logback.xml</exclude>
@@ -275,6 +287,10 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>cobertura-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
             </plugin>
             <plugin>
                 <groupId>net.alchim31.maven</groupId>
