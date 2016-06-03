@@ -31,4 +31,4 @@ before_install:
 - tar xvf dockstore-integration-testing/src/test/resources/secrets.tar
 
 after_success:
-- mvn -X -B clean install -DskipITs=false -Pconfidential-tests cobertura:cobertura-integration-test coveralls:report
+- mvn -B clean install -DskipITs=false -Pconfidential-tests cobertura:cobertura-integration-test
