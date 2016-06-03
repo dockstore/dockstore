@@ -177,7 +177,7 @@ public class LauncherCWL {
 
         // run command
         System.out.println("Calling out to cwltool to run your " + (cwlObject instanceof Workflow ? "workflow" : "tool"));
-        Map<String, Object> outputObj = runCWLCommand(imageDescriptorPath, newJsonPath, globalWorkingDir + "/outputs/");
+        Map<String, Object> outputObj = runCWLCommand(imageDescriptorPath, newJsonPath, globalWorkingDir + "/outputs/", globalWorkingDir + "/working/");
         System.out.println();
 
         // push output files
@@ -408,8 +408,8 @@ public class LauncherCWL {
         return new File(workingDir + "/launcher-" + uuid).getAbsolutePath();
     }
 
-    private Map<String, Object> runCWLCommand(String cwlFile, String jsonSettings, String workingDir) {
-        String[] s = {"cwltool","--non-strict","--enable-net","--outdir", workingDir, cwlFile, jsonSettings};
+    private Map<String, Object> runCWLCommand(String cwlFile, String jsonSettings, String outputDir, String workingDir) {
+        String[] s = {"cwltool","--non-strict","--enable-net","--outdir", outputDir, "--tmpdir-prefix", workingDir, cwlFile, jsonSettings};
         final String joined = Joiner.on(" ").join(Arrays.asList(s));
         System.out.println("Executing: " + joined);
         final ImmutablePair<String, String> execute = Utilities.executeCommand(joined);
@@ -419,7 +419,7 @@ public class LauncherCWL {
         String stderr = execute.getRight().replaceAll("(?m)^", "\t");
 
         final String cwltool = "cwltool";
-        outputIntegrationOutput(workingDir, execute, stdout, stderr, cwltool);
+        outputIntegrationOutput(outputDir, execute, stdout, stderr, cwltool);
         Map<String, Object> obj = (Map<String, Object>)yaml.load(execute.getLeft());
         return obj;
     }
