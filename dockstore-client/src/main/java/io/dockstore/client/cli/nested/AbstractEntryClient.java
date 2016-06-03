@@ -532,21 +532,24 @@ public abstract class AbstractEntryClient {
      */
     public Boolean checkCWL(File content){
         /* CWL: check for 'class:Workflow OR CommandLineTool', 'inputs: ','outputs: ', and 'steps' */
-        Pattern cwlVersion = Pattern.compile("(.*)(cwlVersion)(.*)(:)(.*)");
+        Pattern inputPattern = Pattern.compile("(.*)(inputs)(.*)(:)(.*)");
+        Pattern outputPattern = Pattern.compile("(.*)(outputs)(.*)(:)(.*)");
         Pattern classWfPattern = Pattern.compile("(.*)(class)(.*)(:)(\\sWorkflow)");
         Pattern classToolPattern = Pattern.compile("(.*)(class)(.*)(:)(\\sCommandLineTool)");
-        //String line;
-        Boolean versionFound = false, classFound = false;
+        Boolean inputFound = false, classFound = false, outputFound = false;
         Path p = Paths.get(content.getPath());
         try{
             List<String> fileContent = java.nio.file.Files.readAllLines(p, StandardCharsets.UTF_8);
             for(String line: fileContent){
                 Matcher matchWf = classWfPattern.matcher(line);
                 Matcher matchTool = classToolPattern.matcher(line);
-                Matcher matchVersion = cwlVersion.matcher(line);
-                if(matchVersion.find() && !versionFound){
-                    versionFound = true;
-                } else {
+                Matcher matchInput = inputPattern.matcher(line);
+                Matcher matchOutput = outputPattern.matcher(line);
+                if(matchInput.find()){
+                    inputFound = true;
+                } else if(matchOutput.find()){
+                    outputFound = true;
+                } else{
                     if(getEntryType().toLowerCase().equals("workflow") && matchWf.find()){
                         classFound = true;
                     } else if(getEntryType().toLowerCase().equals("tool") && matchTool.find()){
@@ -556,8 +559,14 @@ public abstract class AbstractEntryClient {
                     }
                 }
             }
-            if(versionFound && classFound){
+            if(inputFound && outputFound && classFound){
                 return true;
+            } else if(!outputFound) {
+                errorMessage("Missing 'outputs' in CWL file.",CLIENT_ERROR);
+            } else if(!inputFound) {
+                errorMessage("Missing 'inputs' in CWL file.",CLIENT_ERROR);
+            } else if(!classFound) {
+                errorMessage("Missing 'class' in CWL file.",CLIENT_ERROR);
             }
         } catch(IOException e){
             throw new RuntimeException("Failed to get content of entry file.", e);
@@ -607,10 +616,10 @@ public abstract class AbstractEntryClient {
      * TO DO : get the pattern of a cwl/wdl file to determine the file content
      */
     public Type checkFileContent(File content){
-        if(checkWDL(content)){
-            return Type.WDL;
-        }else if(checkCWL(content)){
+        if(checkCWL(content)){
             return Type.CWL;
+        }else if(checkWDL(content)){
+            return Type.WDL;
         }
         return Type.NONE;
     }
