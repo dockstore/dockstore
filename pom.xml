@@ -835,7 +835,6 @@
                     <excludeFilterFile>
                         ${project.basedir}/findbugs-exclude.xml
                     </excludeFilterFile>
-                    <skip>true</skip>
                 </configuration>
             </plugin>
             <plugin>
