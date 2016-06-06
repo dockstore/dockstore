@@ -5,6 +5,7 @@ import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -50,7 +51,7 @@ public class LaunchTestIT {
     }
 
     //This test will be ignored for now because of cwltool and cwl file provisioning problem
-   // @Ignore
+    @Ignore
     @Test
     public void cwlCorrect() throws IOException{
         //Test when content and extension are cwl  --> no need descriptor
@@ -100,7 +101,7 @@ public class LaunchTestIT {
     }
 
     //This test will be ignored for now because of cwltool and cwl file provisioning problem
-    //@Ignore
+    @Ignore
     @Test
     public void cwlWrongExtForce() throws IOException{
         //Test when content = cwl but ext = wdl, descriptor provided --> CWL
@@ -284,7 +285,7 @@ public class LaunchTestIT {
     }
 
     //This test will be ignored for now because of cwltool and cwl file provisioning problem
-   // @Ignore
+    @Ignore
     @Test
     public void cwlNoExt() throws IOException{
     //Test when content = cwl but no ext
