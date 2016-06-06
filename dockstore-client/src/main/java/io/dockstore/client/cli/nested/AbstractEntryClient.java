@@ -563,6 +563,9 @@ public abstract class AbstractEntryClient {
                     }
                 }
             }
+            if(!commandFound){
+                out("Warning: File is missing 'baseCommand' field in the entry file.");
+            }
             if(inputFound && outputFound && classFound){
                 return true;
             } else if(!inputFound && !outputFound && !classFound){
@@ -573,8 +576,6 @@ public abstract class AbstractEntryClient {
                 errorMessage("Missing 'inputs' in CWL file.",CLIENT_ERROR);
             } else if(!classFound) {
                 errorMessage("Missing 'class' in CWL file.",CLIENT_ERROR);
-            } else if(!commandFound){
-                out("Warning: File is missing 'baseCommand' field in the entry file.");
             }
         } catch(IOException e){
             throw new RuntimeException("Failed to get content of entry file.", e);
