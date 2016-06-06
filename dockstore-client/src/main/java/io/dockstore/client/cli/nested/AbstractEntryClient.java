@@ -537,7 +537,8 @@ public abstract class AbstractEntryClient {
         Pattern classWfPattern = Pattern.compile("(.*)(class)(.*)(:)(\\sWorkflow)");
         Pattern classToolPattern = Pattern.compile("(.*)(class)(.*)(:)(\\sCommandLineTool)");
         Pattern commandPattern = Pattern.compile("(.*)(baseCommand)(.*)(:)(.*)");
-        Boolean inputFound = false, classFound = false, outputFound = false, commandFound = false;
+        Pattern versionPattern = Pattern.compile("(.*)(cwlVersion)(.*)(:)(.*)");
+        Boolean inputFound = false, classFound = false, outputFound = false, commandFound = false, versionFound = false;
         Path p = Paths.get(content.getPath());
         try{
             List<String> fileContent = java.nio.file.Files.readAllLines(p, StandardCharsets.UTF_8);
@@ -547,13 +548,16 @@ public abstract class AbstractEntryClient {
                 Matcher matchInput = inputPattern.matcher(line);
                 Matcher matchOutput = outputPattern.matcher(line);
                 Matcher matchCommand = commandPattern.matcher(line);
+                Matcher matchVersion = versionPattern.matcher(line);
                 if(matchInput.find()){
                     inputFound = true;
                 } else if(matchOutput.find()){
                     outputFound = true;
                 } else if(matchCommand.find()){
                     commandFound = true;
-                }else{
+                }else if(matchVersion.find()){
+                    versionFound = true;
+                } else{
                     if(getEntryType().toLowerCase().equals("workflow") && matchWf.find()){
                         classFound = true;
                     } else if(getEntryType().toLowerCase().equals("tool") && matchTool.find()){
@@ -563,10 +567,13 @@ public abstract class AbstractEntryClient {
                     }
                 }
             }
-            if(!commandFound){
-                out("Warning: File is missing 'baseCommand' field in the entry file.");
-            }
             if(inputFound && outputFound && classFound){
+                if(!commandFound){
+                    out("Warning: 'baseCommand' field is missing in the entry file.");
+                }
+                if(!versionFound){
+                    out("Warning: 'cwlVersion' field is missing in the entry file.");
+                }
                 return true;
             } else if(!inputFound && !outputFound && !classFound){
                 return false;
