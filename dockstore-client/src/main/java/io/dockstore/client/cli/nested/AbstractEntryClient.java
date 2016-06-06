@@ -536,7 +536,8 @@ public abstract class AbstractEntryClient {
         Pattern outputPattern = Pattern.compile("(.*)(outputs)(.*)(:)(.*)");
         Pattern classWfPattern = Pattern.compile("(.*)(class)(.*)(:)(\\sWorkflow)");
         Pattern classToolPattern = Pattern.compile("(.*)(class)(.*)(:)(\\sCommandLineTool)");
-        Boolean inputFound = false, classFound = false, outputFound = false;
+        Pattern commandPattern = Pattern.compile("(.*)(baseCommand)(.*)(:)(.*)");
+        Boolean inputFound = false, classFound = false, outputFound = false, commandFound = false;
         Path p = Paths.get(content.getPath());
         try{
             List<String> fileContent = java.nio.file.Files.readAllLines(p, StandardCharsets.UTF_8);
@@ -545,11 +546,14 @@ public abstract class AbstractEntryClient {
                 Matcher matchTool = classToolPattern.matcher(line);
                 Matcher matchInput = inputPattern.matcher(line);
                 Matcher matchOutput = outputPattern.matcher(line);
+                Matcher matchCommand = commandPattern.matcher(line);
                 if(matchInput.find()){
                     inputFound = true;
                 } else if(matchOutput.find()){
                     outputFound = true;
-                } else{
+                } else if(matchCommand.find()){
+                    commandFound = true;
+                }else{
                     if(getEntryType().toLowerCase().equals("workflow") && matchWf.find()){
                         classFound = true;
                     } else if(getEntryType().toLowerCase().equals("tool") && matchTool.find()){
@@ -563,12 +567,14 @@ public abstract class AbstractEntryClient {
                 return true;
             } else if(!inputFound && !outputFound && !classFound){
                 return false;
-            }else if(!outputFound) {
+            } else if(!outputFound) {
                 errorMessage("Missing 'outputs' in CWL file.",CLIENT_ERROR);
             } else if(!inputFound) {
                 errorMessage("Missing 'inputs' in CWL file.",CLIENT_ERROR);
             } else if(!classFound) {
                 errorMessage("Missing 'class' in CWL file.",CLIENT_ERROR);
+            } else if(!commandFound){
+                out("Warning: File is missing 'baseCommand' field in the entry file.");
             }
         } catch(IOException e){
             throw new RuntimeException("Failed to get content of entry file.", e);
