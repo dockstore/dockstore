@@ -531,7 +531,7 @@ public abstract class AbstractEntryClient {
      * @return
      */
     public Boolean checkCWL(File content){
-        /* CWL: check for 'class:Workflow OR CommandLineTool', 'inputs: ','outputs: ', and 'steps' */
+        /* CWL: check for 'class:Workflow OR CommandLineTool', 'inputs: ','outputs: ', and 'baseCommand'. Optional: 'cwlVersion' */
         Pattern inputPattern = Pattern.compile("(.*)(inputs)(.*)(:)(.*)");
         Pattern outputPattern = Pattern.compile("(.*)(outputs)(.*)(:)(.*)");
         Pattern classWfPattern = Pattern.compile("(.*)(class)(.*)(:)(\\sWorkflow)");
@@ -596,29 +596,55 @@ public abstract class AbstractEntryClient {
      * @return
      */
     public Boolean checkWDL(File content){
-        /* WDL: check for 'task' (can be >=1) and 'workflow', cause on the description it says that you can construct workflow from tasks
-                and wdl describes tasks and workflows */
+        /* WDL: check for 'task' (can be >=1) ,'call', 'command', 'output' and 'workflow' */
         Pattern taskPattern = Pattern.compile("(.*)(task)(\\s)(.*)(\\{)");
         Pattern wfPattern = Pattern.compile("(.*)(workflow)(\\s)(.*)(\\{)");
+        Pattern commandPattern = Pattern.compile("(.*)(command)(.*)");
+        Pattern callPattern = Pattern.compile("(.*)(call)(.*)");
+        Pattern outputPattern = Pattern.compile("(.*)(output)(.*)");
+        Boolean wfFound = false, commandFound = false, outputFound = false, callFound = false;
         Integer counter = 0;
         Path p = Paths.get(content.getPath());
         try{
             List<String> fileContent = java.nio.file.Files.readAllLines(p, StandardCharsets.UTF_8);
             for(String line: fileContent){
-                Matcher m = taskPattern.matcher(line);
-                if (m.find()) {
+                Matcher matchTask = taskPattern.matcher(line);
+                Matcher matchWorkflow = wfPattern.matcher(line);
+                Matcher matchCommand = commandPattern.matcher(line);
+                Matcher matchCall = callPattern.matcher(line);
+                Matcher matchOutput = outputPattern.matcher(line);
+                if (matchTask.find()) {
                     counter++;
+                } else if(matchWorkflow.find()){
+                    wfFound = true;
+                } else if(matchCommand.find()){
+                    commandFound = true;
+                } else if(matchCall.find()){
+                    callFound = true;
+                } else if(matchOutput.find()){
+                    outputFound = true;
                 }
             }
-            //check if 'workflow' exist in the file or not
             if(counter>0){
-                for(String l : fileContent) {
-                    Matcher m = wfPattern.matcher(l);
-                    if(m.find()){
-                        return true;
+                if(wfFound && commandFound && callFound && outputFound){
+                    return true;
+                } else if(!wfFound && !commandFound && !callFound && !outputFound){
+                    return false;
+                } else {
+                    if(!wfFound){
+                        errorMessage("Missing 'workflow' in WDL file.", CLIENT_ERROR);
+                    }if(!commandFound){
+                        errorMessage("Missing 'command' in WDL file.", CLIENT_ERROR);
+                    }if(!callFound){
+                        errorMessage("Missing 'call' in WDL file.", CLIENT_ERROR);
+                    }if(!outputFound){
+                        errorMessage("Missing 'output' in WDL file.", CLIENT_ERROR);
                     }
                 }
-                return false; // 'workflow' does not exist, file is invalid
+            } else{
+                if(wfFound || commandFound || outputFound || callFound){
+                    errorMessage("Missing 'task' in WDL file.", CLIENT_ERROR);
+                }
             }
         } catch (IOException e){
             throw new RuntimeException("Failed to get content of entry file.", e);
