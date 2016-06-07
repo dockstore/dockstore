@@ -17,11 +17,11 @@
 package io.swagger.model;
 
 import java.util.Objects;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.model.ToolDescriptor;
+import io.swagger.model.ToolDockerfile;
 
 
 
@@ -30,18 +30,17 @@ import io.swagger.annotations.ApiModelProperty;
  **/
 
 @ApiModel(description = "A tool version describes a particular iteration of a tool as described by a reference to a specific image and dockerfile.")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-03-11T20:14:17.098Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-06-07T18:19:37.276Z")
 public class ToolVersion   {
   
   private String name = null;
-  private String globalId = null;
-  private String registryId = null;
+  private String url = null;
+  private String id = null;
   private String image = null;
   private ToolDescriptor descriptor = null;
   private ToolDockerfile dockerfile = null;
   private String metaVersion = null;
 
-  
   /**
    * The name of the version.
    **/
@@ -60,45 +59,42 @@ public class ToolVersion   {
     this.name = name;
   }
 
-  
   /**
-   * The unique identifier for this version of a tool. (Proposed - This id should be globally unique across systems and should also identify the system that it comes from for example This id should be globally unique across systems, should also identify the system that it comes from, and be a URL that resolves for example `http://agora.broadinstitute.org/tools/123456/v1` This can be the same as the registry-id depending on the structure of your registry)
+   * The URL for this tool in this registry, for example `http://agora.broadinstitute.org/tools/123456/1`
    **/
-  public ToolVersion globalId(String globalId) {
-    this.globalId = globalId;
+  public ToolVersion url(String url) {
+    this.url = url;
     return this;
   }
 
   
-  @ApiModelProperty(required = true, value = "The unique identifier for this version of a tool. (Proposed - This id should be globally unique across systems and should also identify the system that it comes from for example This id should be globally unique across systems, should also identify the system that it comes from, and be a URL that resolves for example `http://agora.broadinstitute.org/tools/123456/v1` This can be the same as the registry-id depending on the structure of your registry)")
-  @JsonProperty("global-id")
-  public String getGlobalId() {
-    return globalId;
+  @ApiModelProperty(required = true, value = "The URL for this tool in this registry, for example `http://agora.broadinstitute.org/tools/123456/1`")
+  @JsonProperty("url")
+  public String getUrl() {
+    return url;
   }
-  public void setGlobalId(String globalId) {
-    this.globalId = globalId;
+  public void setUrl(String url) {
+    this.url = url;
   }
 
-  
   /**
    * An identifier of the version of this tool for this particular tool registry, for example `v1`
    **/
-  public ToolVersion registryId(String registryId) {
-    this.registryId = registryId;
+  public ToolVersion id(String id) {
+    this.id = id;
     return this;
   }
 
   
   @ApiModelProperty(required = true, value = "An identifier of the version of this tool for this particular tool registry, for example `v1`")
-  @JsonProperty("registry-id")
-  public String getRegistryId() {
-    return registryId;
+  @JsonProperty("id")
+  public String getId() {
+    return id;
   }
-  public void setRegistryId(String registryId) {
-    this.registryId = registryId;
+  public void setId(String id) {
+    this.id = id;
   }
 
-  
   /**
    * The docker path to the image (and version) for this tool. (e.g. quay.io/seqware/seqware_full/1.1)
    **/
@@ -117,7 +113,6 @@ public class ToolVersion   {
     this.image = image;
   }
 
-  
   /**
    **/
   public ToolVersion descriptor(ToolDescriptor descriptor) {
@@ -135,7 +130,6 @@ public class ToolVersion   {
     this.descriptor = descriptor;
   }
 
-  
   /**
    **/
   public ToolVersion dockerfile(ToolDockerfile dockerfile) {
@@ -153,7 +147,6 @@ public class ToolVersion   {
     this.dockerfile = dockerfile;
   }
 
-  
   /**
    * The version of this tool version in the registry. Iterates when fields like the description, author, etc. are updated.
    **/
@@ -172,7 +165,6 @@ public class ToolVersion   {
     this.metaVersion = metaVersion;
   }
 
-  
 
   @Override
   public boolean equals(Object o) {
@@ -184,8 +176,8 @@ public class ToolVersion   {
     }
     ToolVersion toolVersion = (ToolVersion) o;
     return Objects.equals(name, toolVersion.name) &&
-        Objects.equals(globalId, toolVersion.globalId) &&
-        Objects.equals(registryId, toolVersion.registryId) &&
+        Objects.equals(url, toolVersion.url) &&
+        Objects.equals(id, toolVersion.id) &&
         Objects.equals(image, toolVersion.image) &&
         Objects.equals(descriptor, toolVersion.descriptor) &&
         Objects.equals(dockerfile, toolVersion.dockerfile) &&
@@ -194,7 +186,7 @@ public class ToolVersion   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(name, globalId, registryId, image, descriptor, dockerfile, metaVersion);
+    return Objects.hash(name, url, id, image, descriptor, dockerfile, metaVersion);
   }
 
   @Override
@@ -203,8 +195,8 @@ public class ToolVersion   {
     sb.append("class ToolVersion {\n");
     
     sb.append("    name: ").append(toIndentedString(name)).append("\n");
-    sb.append("    globalId: ").append(toIndentedString(globalId)).append("\n");
-    sb.append("    registryId: ").append(toIndentedString(registryId)).append("\n");
+    sb.append("    url: ").append(toIndentedString(url)).append("\n");
+    sb.append("    id: ").append(toIndentedString(id)).append("\n");
     sb.append("    image: ").append(toIndentedString(image)).append("\n");
     sb.append("    descriptor: ").append(toIndentedString(descriptor)).append("\n");
     sb.append("    dockerfile: ").append(toIndentedString(dockerfile)).append("\n");

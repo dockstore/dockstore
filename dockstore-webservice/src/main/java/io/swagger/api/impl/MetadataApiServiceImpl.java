@@ -14,13 +14,24 @@
  *    limitations under the License.
  */
 
-package io.swagger.api;
+package io.swagger.api.impl;
+
+import io.swagger.api.MetadataApiService;
+import io.swagger.api.NotFoundException;
+import io.swagger.model.Metadata;
+
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
 
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-06-07T18:19:37.276Z")
-public class ApiException extends Exception{
-	private int code;
-	public ApiException (int code, String msg) {
-		super(msg);
-		this.code = code;
-	}
+public class MetadataApiServiceImpl extends MetadataApiService {
+    @Override
+    public Response metadataGet(SecurityContext securityContext)
+    throws NotFoundException {
+        Metadata metadata = new Metadata();
+        metadata.setCountry("CAN");
+        metadata.setFriendlyName("Your friendly neighbourhood docker store");
+        metadata.setVersion(ToolsApiServiceImpl.class.getPackage().getImplementationVersion());
+        return Response.ok(metadata).build();
+    }
 }

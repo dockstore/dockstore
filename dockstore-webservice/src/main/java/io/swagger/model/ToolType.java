@@ -24,18 +24,17 @@ import io.swagger.annotations.ApiModelProperty;
 
 
 /**
- * Describes a type of tool allowing us to categorize workflows, the language of the workflow, tools, and maybe even other entities separately
+ * Describes a type of tool allowing us to categorize workflows, tools, and maybe even other entities (such as services) separately
  **/
 
-@ApiModel(description = "Describes a type of tool allowing us to categorize workflows, the language of the workflow, tools, and maybe even other entities separately")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-03-11T20:14:17.098Z")
+@ApiModel(description = "Describes a type of tool allowing us to categorize workflows, tools, and maybe even other entities (such as services) separately")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-06-07T18:19:37.276Z")
 public class ToolType   {
   
   private String id = null;
   private String name = null;
   private String description = null;
 
-  
   /**
    * The unique identifier for the type
    **/
@@ -54,7 +53,6 @@ public class ToolType   {
     this.id = id;
   }
 
-  
   /**
    * A short friendly name for the type
    **/
@@ -73,7 +71,6 @@ public class ToolType   {
     this.name = name;
   }
 
-  
   /**
    * A longer explanation of what this type is and what it can accomplish
    **/
@@ -92,7 +89,6 @@ public class ToolType   {
     this.description = description;
   }
 
-  
 
   @Override
   public boolean equals(Object o) {

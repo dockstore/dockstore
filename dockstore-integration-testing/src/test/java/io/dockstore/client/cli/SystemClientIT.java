@@ -16,23 +16,7 @@
 
 package io.dockstore.client.cli;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.charset.Charset;
-import java.util.List;
-import java.util.concurrent.TimeoutException;
-
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
-import org.apache.commons.io.FileUtils;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import com.google.common.io.Resources;
-
-import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.Constants;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -55,7 +39,21 @@ import io.swagger.client.model.Tool;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.ToolDockerfile;
 import io.swagger.client.model.User;
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.io.FileUtils;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Ignore;
+import org.junit.Test;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.util.List;
+import java.util.concurrent.TimeoutException;
+
+import static io.dockstore.common.CommonTestUtilities.clearState;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -65,23 +63,28 @@ import static org.junit.Assert.assertTrue;
  */
 public class SystemClientIT {
 
+    @Before
+    public void clearDBandSetup() throws IOException, TimeoutException {
+        clearState();
+    }
+
     @ClassRule
     public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
             DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstore.yml"));
 
-    public static ApiClient getWebClient() throws IOException, TimeoutException {
+    private static ApiClient getWebClient() throws IOException, TimeoutException {
         return getWebClient(true, false);
     }
 
-    public static ApiClient getAdminWebClient() throws IOException, TimeoutException {
+    private static ApiClient getAdminWebClient() throws IOException, TimeoutException {
         return getWebClient(true, true);
     }
 
-    public static ApiClient getAdminWebClient(boolean correctUser) throws IOException, TimeoutException {
+    private static ApiClient getAdminWebClient(boolean correctUser) throws IOException, TimeoutException {
         return getWebClient(correctUser, true);
     }
 
-    public static ApiClient getWebClient(boolean correctUser, boolean admin) throws IOException, TimeoutException {
+    private static ApiClient getWebClient(boolean correctUser, boolean admin) throws IOException, TimeoutException {
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
         HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         ApiClient client = new ApiClient();
@@ -96,7 +99,7 @@ public class SystemClientIT {
 
     @Before
     public void cleanState(){
-        CommonTestUtilities.clearState();
+        clearState();
     }
 
     @Test(expected = ApiException.class)
@@ -267,9 +270,9 @@ public class SystemClientIT {
         DockstoreTool c = getContainer();
         containersApi.registerManual(c);
 
-        final ToolDockerfile toolDockerfile = toolApi.toolsRegistryIdVersionVersionIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5","master");
+        final ToolDockerfile toolDockerfile = toolApi.toolsIdVersionsVersionIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5","master");
         assertTrue(toolDockerfile.getDockerfile().contains("dockerstuff"));
-        final ToolDescriptor cwl = toolApi.toolsRegistryIdVersionVersionIdDescriptorGet("registry.hub.docker.com/seqware/seqware/test5", "master", "CWL");
+        final ToolDescriptor cwl = toolApi.toolsIdVersionsVersionIdDescriptorGet("registry.hub.docker.com/seqware/seqware/test5", "master", "CWL");
         assertTrue(cwl.getDescriptor().contains("cwlstuff"));
     }
 
