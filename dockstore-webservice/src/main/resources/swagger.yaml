@@ -795,9 +795,7 @@ paths:
         200:
           description: "successful operation"
           schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/SourceFile"
+            $ref: "#/definitions/SourceFile"
   /containers/{containerId}/dockerfile:
     get:
       tags:
@@ -1125,9 +1123,7 @@ paths:
         200:
           description: "successful operation"
           schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/SourceFile"
+            $ref: "#/definitions/SourceFile"
   /github.repo:
     get:
       tags:
@@ -1968,9 +1964,7 @@ paths:
         200:
           description: "successful operation"
           schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/SourceFile"
+            $ref: "#/definitions/SourceFile"
   /workflows/{workflowId}/labels:
     put:
       tags:
@@ -2204,9 +2198,7 @@ paths:
         200:
           description: "successful operation"
           schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/SourceFile"
+            $ref: "#/definitions/SourceFile"
   /workflows/{workflowId}/workflowVersions:
     put:
       tags:
@@ -2276,6 +2268,21 @@ definitions:
       name:
         type: "string"
     description: "End users for the dockstore"
+  Label:
+    type: "object"
+    required:
+    - "value"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the container in this web service"
+        readOnly: true
+      value:
+        type: "string"
+        description: "String representation of the tag"
+    description: "This describes a descriptive label that can be placed on an entry\
+      \ in the dockstore"
   Metadata:
     type: "object"
     required:
@@ -2292,21 +2299,6 @@ definitions:
         description: "A friendly name that can be used in addition to the hostname\
           \ to describe a registry"
     description: "Describes this registry to better allow for mirroring and indexing."
-  Label:
-    type: "object"
-    required:
-    - "value"
-    properties:
-      id:
-        type: "integer"
-        format: "int64"
-        description: "Implementation specific ID for the container in this web service"
-        readOnly: true
-      value:
-        type: "string"
-        description: "String representation of the tag"
-    description: "This describes a descriptive label that can be placed on an entry\
-      \ in the dockstore"
   ToolType:
     type: "object"
     properties:
@@ -2321,34 +2313,6 @@ definitions:
         description: "A longer explanation of what this type is and what it can accomplish"
     description: "Describes a type of tool allowing us to categorize workflows, tools,\
       \ and maybe even other entities (such as services) separately"
-  ToolDescriptor:
-    type: "object"
-    required:
-    - "descriptor"
-    - "type"
-    properties:
-      type:
-        type: "string"
-        enum:
-        - "CWL"
-        - "WDL"
-      descriptor:
-        type: "string"
-        description: "The descriptor that represents this version of the tool. (CWL\
-          \ or WDL)"
-      format:
-        type: "string"
-        description: "The output type of the descriptor."
-        enum:
-        - "CWL"
-        - "WDL"
-      url:
-        type: "string"
-        description: "Optional url to the tool descriptor used to build this image,\
-          \ should include version information, and can include a git hash (e.g. https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/ea2a5db69bd20a42976838790bc29294df3af02b/delly_docker/Delly.cwl\
-          \ )"
-    description: "A tool descriptor is a metadata document that describes one or more\
-      \ tools."
   Workflow:
     type: "object"
     required:
@@ -2441,6 +2405,34 @@ definitions:
         description: "This indicates for the associated git repository, the default\
           \ path to the CWL document"
     description: "This describes one workflow in the dockstore"
+  ToolDescriptor:
+    type: "object"
+    required:
+    - "descriptor"
+    - "type"
+    properties:
+      type:
+        type: "string"
+        enum:
+        - "CWL"
+        - "WDL"
+      descriptor:
+        type: "string"
+        description: "The descriptor that represents this version of the tool. (CWL\
+          \ or WDL)"
+      format:
+        type: "string"
+        description: "The output type of the descriptor."
+        enum:
+        - "CWL"
+        - "WDL"
+      url:
+        type: "string"
+        description: "Optional url to the tool descriptor used to build this image,\
+          \ should include version information, and can include a git hash (e.g. https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/ea2a5db69bd20a42976838790bc29294df3af02b/delly_docker/Delly.cwl\
+          \ )"
+    description: "A tool descriptor is a metadata document that describes one or more\
+      \ tools."
   Token:
     type: "object"
     properties:
@@ -2466,13 +2458,6 @@ definitions:
         format: "int64"
     description: "Access tokens for this web service and integrated services like\
       \ quay.io and github"
-  PublishRequest:
-    type: "object"
-    properties:
-      publish:
-        type: "boolean"
-        readOnly: true
-        default: false
   WorkflowVersion:
     type: "object"
     required:
@@ -2516,6 +2501,13 @@ definitions:
         type: "string"
         description: "Path for the workflow"
     description: "This describes one workflow version associated with a workflow."
+  PublishRequest:
+    type: "object"
+    properties:
+      publish:
+        type: "boolean"
+        readOnly: true
+        default: false
   QuayIOAuthenticationResource:
     type: "object"
     properties:
@@ -2774,6 +2766,11 @@ definitions:
         type: "string"
         description: "Path for the WDL document"
     description: "This describes one tag associated with a container."
+  GithubComView:
+    type: "object"
+    properties:
+      parent:
+        $ref: "#/definitions/GitHubComAuthenticationResource"
   ToolVersion:
     type: "object"
     required:
@@ -2807,11 +2804,6 @@ definitions:
           \ fields like the description, author, etc. are updated."
     description: "A tool version describes a particular iteration of a tool as described\
       \ by a reference to a specific image and dockerfile."
-  GithubComView:
-    type: "object"
-    properties:
-      parent:
-        $ref: "#/definitions/GitHubComAuthenticationResource"
   QuayIOView:
     type: "object"
     properties:

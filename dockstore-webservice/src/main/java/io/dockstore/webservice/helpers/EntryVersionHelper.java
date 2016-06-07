@@ -84,14 +84,27 @@ public class EntryVersionHelper<T extends Entry> {
         final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(entryId, tag, fileType);
         for(Map.Entry<String, ImmutablePair<SourceFile, FileDescription>> entry : sourceFiles.entrySet()){
             if (path != null) {
-                if (entry.getKey().equals(path)) {
+                //db stored paths are absolute, convert relative to absolute
+                String relativePath = "/" + path;
+                if (entry.getKey().equals(relativePath)) {
                     return entry.getValue().getLeft();
                 }
-            } else if (entry.getValue().getRight().primaryDescriptor || fileType.equals(entry.getValue().getLeft().getType())){
+            } else if (entry.getValue().getRight().primaryDescriptor){
                 return entry.getValue().getLeft();
             }
         }
         throw new CustomWebApplicationException("No descriptor found", HttpStatus.SC_BAD_REQUEST);
+    }
+
+    public List<SourceFile> getAllSecondaryFiles(long workflowId, String tag, SourceFile.FileType fileType) {
+        final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(workflowId, tag, fileType);
+        List<SourceFile> files = Lists.newArrayList();
+        for(Map.Entry<String, ImmutablePair<SourceFile, FileDescription>> entry : sourceFiles.entrySet()){
+            if (entry.getValue().getLeft().getType().equals(fileType) && !entry.getValue().right.primaryDescriptor){
+                files.add(entry.getValue().getLeft());
+            }
+        }
+        return files;
     }
 
     public List<SourceFile> getAllSourceFiles(long workflowId, String tag, SourceFile.FileType fileType) {
