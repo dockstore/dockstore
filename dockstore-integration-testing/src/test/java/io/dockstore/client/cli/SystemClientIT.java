@@ -31,6 +31,7 @@ import io.swagger.client.api.GAGHApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Group;
+import io.swagger.client.model.Metadata;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
@@ -223,6 +224,19 @@ public class SystemClientIT {
         URL url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools");
         final List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
         assertTrue(strings.size() == 1 && strings.get(0).contains("CommandLineTool"));
+
+        url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/metadata");
+        final List<String> metadataStrings = Resources.readLines(url, Charset.forName("UTF-8"));
+        assertTrue(strings.size() == 1 && strings.get(0).contains("CommandLineTool"));
+        assertTrue(metadataStrings.stream().anyMatch(s -> s.contains("friendly-name")));
+    }
+
+    @Test
+    public void testGA4GHMetadata() throws IOException, TimeoutException, ApiException {
+        ApiClient client = getAdminWebClient();
+        GAGHApi toolApi = new GAGHApi(client);
+        final Metadata metadata = toolApi.metadataGet();
+        assertTrue(metadata.getFriendlyName().contains("docker"));
     }
 
     @Test

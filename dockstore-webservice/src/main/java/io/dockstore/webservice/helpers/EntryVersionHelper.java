@@ -173,9 +173,11 @@ public class EntryVersionHelper<T extends Entry> {
                     }
 
                     final String actualPath =
-                            workflowVersionPath == null || workflowVersionPath.isEmpty() ? workflowPath : workflowVersionPath;
+                            (workflowVersionPath == null || workflowVersionPath.isEmpty()) ? workflowPath : workflowVersionPath;
                     boolean isPrimary = file.getType() == fileType && actualPath.equalsIgnoreCase(file.getPath());
-                    resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(isPrimary)));
+                    if (fileType == file.getType()) {
+                        resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(isPrimary)));
+                    }
                 }
             }
             return resultMap;
