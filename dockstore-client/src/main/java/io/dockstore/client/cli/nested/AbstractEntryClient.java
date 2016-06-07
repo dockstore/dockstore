@@ -633,11 +633,14 @@ public abstract class AbstractEntryClient {
                 } else {
                     if(!wfFound){
                         errorMessage("Missing 'workflow' in WDL file.", CLIENT_ERROR);
-                    }if(!commandFound){
+                    }
+                    if(!commandFound){
                         errorMessage("Missing 'command' in WDL file.", CLIENT_ERROR);
-                    }if(!callFound){
+                    }
+                    if(!callFound){
                         errorMessage("Missing 'call' in WDL file.", CLIENT_ERROR);
-                    }if(!outputFound){
+                    }
+                    if(!outputFound){
                         errorMessage("Missing 'output' in WDL file.", CLIENT_ERROR);
                     }
                 }
