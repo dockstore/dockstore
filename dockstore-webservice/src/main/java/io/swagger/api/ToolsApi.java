@@ -16,6 +16,15 @@
 
 package io.swagger.api;
 
+import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dropwizard.hibernate.UnitOfWork;
+import io.swagger.annotations.ApiParam;
+import io.swagger.api.factories.ToolsApiServiceFactory;
+import io.swagger.model.Tool;
+import io.swagger.model.ToolDescriptor;
+import io.swagger.model.ToolDockerfile;
+import io.swagger.model.ToolVersion;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -25,97 +34,118 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 
-import io.dockstore.webservice.DockstoreWebserviceApplication;
-import io.dropwizard.hibernate.UnitOfWork;
-import io.swagger.annotations.ApiParam;
-import io.swagger.api.factories.ToolsApiServiceFactory;
-import io.swagger.model.Metadata;
-import io.swagger.model.Tool;
-import io.swagger.model.ToolDescriptor;
-import io.swagger.model.ToolDockerfile;
-import io.swagger.model.ToolVersion;
-
 @Path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools")
 
 @Produces({ "application/json", "text/plain" })
 @io.swagger.annotations.Api(description = "the tools API")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JaxRSServerCodegen", date = "2016-01-29T22:00:17.650Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-06-07T18:19:37.276Z")
 public class ToolsApi  {
    private final ToolsApiService delegate = ToolsApiServiceFactory.getToolsApi();
 
     @GET
     @UnitOfWork
     @Produces({ "application/json", "text/plain" })
-    @io.swagger.annotations.ApiOperation(value = "List all tools", notes = "This endpoint returns all tools available or a filtered subset using metadata query parameters.", response = Tool.class, responseContainer = "List", tags={ "GA4GH",  })
+    @io.swagger.annotations.ApiOperation(value = "List all tools", notes = "This endpoint returns all tools available or a filtered subset using metadata query parameters. ", response = Tool.class, responseContainer = "List", tags={ "GA4GH",  })
     @io.swagger.annotations.ApiResponses(value = { 
         @io.swagger.annotations.ApiResponse(code = 200, message = "An array of methods that match the filter.", response = Tool.class, responseContainer = "List") })
-
-    public Response toolsGet(@ApiParam(value = "A unique identifier of the tool for this particular tool registry, for example `123456`") @QueryParam("registry-id") String registryId,@ApiParam(value = "The image registry that contains the image.") @QueryParam("registry") String registry,@ApiParam(value = "The organization in the registry that published the image.") @QueryParam("organization") String organization,@ApiParam(value = "The name of the image.") @QueryParam("name") String name,@ApiParam(value = "The name of the tool.") @QueryParam("toolname") String toolname,@ApiParam(value = "The description of the tool.") @QueryParam("description") String description,@ApiParam(value = "The author of the tool (TODO a thought occurs, are we assuming that the author of the CWL and the image are the same?).") @QueryParam("author") String author,@Context SecurityContext securityContext)
+    public Response toolsGet(
+        @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`") @QueryParam("id") String id,
+        @ApiParam(value = "The image registry that contains the image.") @QueryParam("registry") String registry,
+        @ApiParam(value = "The organization in the registry that published the image.") @QueryParam("organization") String organization,
+        @ApiParam(value = "The name of the image.") @QueryParam("name") String name,
+        @ApiParam(value = "The name of the tool.") @QueryParam("toolname") String toolname,
+        @ApiParam(value = "The description of the tool.") @QueryParam("description") String description,
+        @ApiParam(value = "The author of the tool (TODO a thought occurs, are we assuming that the author of the CWL and the image are the same?).") @QueryParam("author") String author,
+        @Context SecurityContext securityContext)
     throws NotFoundException {
-        return delegate.toolsGet(registryId,registry,organization,name,toolname,description,author,securityContext);
+        return delegate.toolsGet(id,registry,organization,name,toolname,description,author,securityContext);
     }
     @GET
-    @Path("/metadata")
+    @Path("/{id}")
     @UnitOfWork
     @Produces({ "application/json", "text/plain" })
-    @io.swagger.annotations.ApiOperation(value = "Return some metadata that is useful for describing this registry", notes = "Return some metadata that is useful for describing this registry", response = Metadata.class, tags={ "GA4GH",  })
+    @io.swagger.annotations.ApiOperation(value = "List one specific tool, acts as an anchor for self references", notes = "This endpoint returns one specific tool (which has ToolVersions nested inside it)", response = Tool.class, tags={ "GA4GH",  })
     @io.swagger.annotations.ApiResponses(value = { 
-        @io.swagger.annotations.ApiResponse(code = 200, message = "A Metadata object describing this service.", response = Metadata.class) })
-
-    public Response toolsMetadataGet(@Context SecurityContext securityContext)
+        @io.swagger.annotations.ApiResponse(code = 200, message = "A tool.", response = Tool.class) })
+    public Response toolsIdGet(
+        @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`",required=true) @PathParam("id") String id,
+        @Context SecurityContext securityContext)
     throws NotFoundException {
-        return delegate.toolsMetadataGet(securityContext);
+        return delegate.toolsIdGet(id,securityContext);
     }
     @GET
-    @Path("/{registry-id}")
+    @Path("/{id}/versions")
     @UnitOfWork
     @Produces({ "application/json", "text/plain" })
-    @io.swagger.annotations.ApiOperation(value = "List one specific tool, acts as an anchor for self references", notes = "This endpoint returns one specific tool (which has ToolVersions nested inside it)", response = Void.class, tags={ "GA4GH",  })
+    @io.swagger.annotations.ApiOperation(value = "List versions of a tool", notes = "Returns all versions of the specified tool", response = ToolVersion.class, responseContainer = "List", tags={ "GA4GH",  })
     @io.swagger.annotations.ApiResponses(value = { 
-        @io.swagger.annotations.ApiResponse(code = 200, message = "A tool.", response = Void.class) })
-
-    public Response toolsRegistryIdGet(@ApiParam(value = "A unique identifier of the tool for this particular tool registry, for example `123456`",required=true) @PathParam("registry-id") String registryId,@Context SecurityContext securityContext)
+        @io.swagger.annotations.ApiResponse(code = 200, message = "An array of tool versions", response = ToolVersion.class, responseContainer = "List") })
+    public Response toolsIdVersionsGet(
+        @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`",required=true) @PathParam("id") String id,
+        @Context SecurityContext securityContext)
     throws NotFoundException {
-        return delegate.toolsRegistryIdGet(registryId,securityContext);
+        return delegate.toolsIdVersionsGet(id,securityContext);
     }
     @GET
-    @Path("/{registry-id}/version/{version-id}")
-    @UnitOfWork
-    @Produces({ "application/json", "text/plain" })
-    @io.swagger.annotations.ApiOperation(value = "List one specific tool version, acts as an anchor for self references", notes = "This endpoint returns one specific tool version", response = ToolVersion.class, tags={ "GA4GH",  })
-    @io.swagger.annotations.ApiResponses(value = { 
-        @io.swagger.annotations.ApiResponse(code = 200, message = "A tool version.", response = ToolVersion.class) })
-
-    public Response toolsRegistryIdVersionVersionIdGet(@ApiParam(value = "A unique identifier of the tool for this particular tool registry, for example `123456`",required=true) @PathParam("registry-id") String registryId,@ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`",required=true) @PathParam("version-id") String versionId,@Context SecurityContext securityContext)
-    throws NotFoundException {
-        return delegate.toolsRegistryIdVersionVersionIdGet(registryId,versionId,securityContext);
-    }
-    @GET
-    @Path("/{registry-id}/version/{version-id}/descriptor")
+    @Path("/{id}/versions/{version-id}/descriptor")
     @UnitOfWork
     @Produces({ "application/json", "text/plain" })
     @io.swagger.annotations.ApiOperation(value = "Get the tool descriptor (CWL/WDL) for the specified tool.", notes = "Returns the CWL or WDL descriptor for the specified tool.", response = ToolDescriptor.class, tags={ "GA4GH",  })
-    @io.swagger.annotations.ApiResponses(value = {
+    @io.swagger.annotations.ApiResponses(value = { 
         @io.swagger.annotations.ApiResponse(code = 200, message = "The tool descriptor.", response = ToolDescriptor.class),
-        
         @io.swagger.annotations.ApiResponse(code = 404, message = "The tool can not be output in the specified format.", response = ToolDescriptor.class) })
-
-    public Response toolsRegistryIdVersionVersionIdDescriptorGet(@ApiParam(value = "A unique identifier of the tool for this particular tool registry, for example `123456`",required=true) @PathParam("registry-id") String registryId,@ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`",required=true) @PathParam("version-id") String versionId,@ApiParam(value = "The output type of the descriptor. If not specified it is up to the underlying implementation to determine which output format to return.", allowableValues="CWL, WDL") @QueryParam("format") String format,@Context SecurityContext securityContext)
+    public Response toolsIdVersionsVersionIdDescriptorGet(
+        @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`",required=true) @PathParam("id") String id,
+        @ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`",required=true) @PathParam("version-id") String versionId,
+        @ApiParam(value = "The output type of the descriptor. If not specified it is up to the underlying implementation to determine which output format to return.", allowableValues="CWL, WDL") @QueryParam("format") String format,
+        @Context SecurityContext securityContext)
     throws NotFoundException {
-        return delegate.toolsRegistryIdVersionVersionIdDescriptorGet(registryId,versionId,format,securityContext);
+        return delegate.toolsIdVersionsVersionIdDescriptorGet(id,versionId,format,securityContext);
     }
     @GET
-    @Path("/{registry-id}/version/{version-id}/dockerfile")
+    @Path("/{id}/versions/{version-id}/descriptor/{relative-path}")
     @UnitOfWork
     @Produces({ "application/json", "text/plain" })
-    @io.swagger.annotations.ApiOperation(value = "Get the dockerfile for the specified image.", notes = "Returns the dockerfile for the specified image.", response = ToolDockerfile.class, tags={ "GA4GH" })
+    @io.swagger.annotations.ApiOperation(value = "Get additional tool descriptor files (CWL/WDL) relative to the main file", notes = "Returns additional CWL or WDL descriptors for the specified tool in the same or subdirectories", response = ToolDescriptor.class, tags={ "GA4GH",  })
+    @io.swagger.annotations.ApiResponses(value = { 
+        @io.swagger.annotations.ApiResponse(code = 200, message = "The tool descriptor.", response = ToolDescriptor.class),
+        @io.swagger.annotations.ApiResponse(code = 404, message = "The tool can not be output in the specified format.", response = ToolDescriptor.class) })
+    public Response toolsIdVersionsVersionIdDescriptorRelativePathGet(
+        @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`",required=true) @PathParam("id") String id,
+        @ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`",required=true) @PathParam("version-id") String versionId,
+        @ApiParam(value = "A relative path to the additional file (same directory or subdirectories), for example 'foo.cwl' would return a 'foo.cwl' from the same directory as the main descriptor",required=true) @PathParam("relative-path") String relativePath,
+        @ApiParam(value = "The output type of the descriptor. If not specified it is up to the underlying implementation to determine which output format to return.", allowableValues="CWL, WDL") @QueryParam("format") String format,
+        @Context SecurityContext securityContext)
+    throws NotFoundException {
+        return delegate.toolsIdVersionsVersionIdDescriptorRelativePathGet(id,versionId,relativePath,format,securityContext);
+    }
+    @GET
+    @Path("/{id}/versions/{version-id}/dockerfile")
+    @UnitOfWork
+    @Produces({ "application/json", "text/plain" })
+    @io.swagger.annotations.ApiOperation(value = "Get the dockerfile for the specified image.", notes = "Returns the dockerfile for the specified image.", response = ToolDockerfile.class, tags={ "GA4GH",  })
     @io.swagger.annotations.ApiResponses(value = { 
         @io.swagger.annotations.ApiResponse(code = 200, message = "The tool payload.", response = ToolDockerfile.class),
-        
         @io.swagger.annotations.ApiResponse(code = 404, message = "The tool payload is not present in the service.", response = ToolDockerfile.class) })
-
-    public Response toolsRegistryIdVersionVersionIdDockerfileGet(@ApiParam(value = "A unique identifier of the tool for this particular tool registry, for example `123456`",required=true) @PathParam("registry-id") String registryId,@ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`",required=true) @PathParam("version-id") String versionId,@Context SecurityContext securityContext)
+    public Response toolsIdVersionsVersionIdDockerfileGet(
+        @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`",required=true) @PathParam("id") String id,
+        @ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`",required=true) @PathParam("version-id") String versionId,
+        @Context SecurityContext securityContext)
     throws NotFoundException {
-        return delegate.toolsRegistryIdVersionVersionIdDockerfileGet(registryId,versionId,securityContext);
+        return delegate.toolsIdVersionsVersionIdDockerfileGet(id,versionId,securityContext);
+    }
+    @GET
+    @Path("/{id}/versions/{version-id}")
+    @UnitOfWork
+    @Produces({ "application/json", "text/plain" })
+    @io.swagger.annotations.ApiOperation(value = "List one specific tool version, acts as an anchor for self references", notes = "This endpoint returns one specific tool version", response = ToolVersion.class, tags={ "GA4GH" })
+    @io.swagger.annotations.ApiResponses(value = { 
+        @io.swagger.annotations.ApiResponse(code = 200, message = "A tool version.", response = ToolVersion.class) })
+    public Response toolsIdVersionsVersionIdGet(
+        @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`",required=true) @PathParam("id") String id,
+        @ApiParam(value = "An identifier of the tool version, scoped to this registry, for example `v1`",required=true) @PathParam("version-id") String versionId,
+        @Context SecurityContext securityContext)
+    throws NotFoundException {
+        return delegate.toolsIdVersionsVersionIdGet(id,versionId,securityContext);
     }
 }

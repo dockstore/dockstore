@@ -442,6 +442,11 @@
             <artifactId>okhttp-urlconnection</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.4</version>
+        </dependency>
 
     </dependencies>
 
@@ -561,6 +566,7 @@
                                 <usedDependency>javax.ws.rs:jsr311-api</usedDependency>
                                 <usedDependency>io.swagger:swagger-jersey2-jaxrs</usedDependency>
                                 <usedDependency>io.dropwizard:dropwizard-views-freemarker</usedDependency>
+                                <usedDependency>org.apache.commons:commons-lang3</usedDependency>
                             </usedDependencies>
 
                         </configuration>

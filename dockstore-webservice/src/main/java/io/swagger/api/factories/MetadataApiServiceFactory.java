@@ -14,13 +14,18 @@
  *    limitations under the License.
  */
 
-package io.swagger.api;
+package io.swagger.api.factories;
+
+import io.swagger.api.MetadataApiService;
+import io.swagger.api.impl.MetadataApiServiceImpl;
 
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-06-07T18:19:37.276Z")
-public class ApiException extends Exception{
-	private int code;
-	public ApiException (int code, String msg) {
-		super(msg);
-		this.code = code;
-	}
+public class MetadataApiServiceFactory {
+
+   private final static MetadataApiService service = new MetadataApiServiceImpl();
+
+   public static MetadataApiService getMetadataApi()
+   {
+      return service;
+   }
 }

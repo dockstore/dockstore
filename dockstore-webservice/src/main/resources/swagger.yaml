@@ -45,22 +45,38 @@ consumes:
 produces:
 - "application/json"
 paths:
+  /api/v1/metadata:
+    get:
+      tags:
+      - "GA4GH"
+      summary: "Return some metadata that is useful for describing this registry"
+      description: "Return some metadata that is useful for describing this registry"
+      operationId: "metadataGet"
+      produces:
+      - "application/json"
+      - "text/plain"
+      parameters: []
+      responses:
+        200:
+          description: "A Metadata object describing this service."
+          schema:
+            $ref: "#/definitions/Metadata"
   /api/v1/tools:
     get:
       tags:
       - "GA4GH"
       summary: "List all tools"
       description: "This endpoint returns all tools available or a filtered subset\
-        \ using metadata query parameters."
+        \ using metadata query parameters. "
       operationId: "toolsGet"
       produces:
       - "application/json"
       - "text/plain"
       parameters:
-      - name: "registry-id"
+      - name: "id"
         in: "query"
-        description: "A unique identifier of the tool for this particular tool registry,\
-          \ for example `123456`"
+        description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
         required: false
         type: "string"
       - name: "registry"
@@ -101,63 +117,73 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Tool"
-  /api/v1/tools/metadata:
-    get:
-      tags:
-      - "GA4GH"
-      summary: "Return some metadata that is useful for describing this registry"
-      description: "Return some metadata that is useful for describing this registry"
-      operationId: "toolsMetadataGet"
-      produces:
-      - "application/json"
-      - "text/plain"
-      parameters: []
-      responses:
-        200:
-          description: "A Metadata object describing this service."
-          schema:
-            $ref: "#/definitions/Metadata"
-  /api/v1/tools/{registry-id}:
+  /api/v1/tools/{id}:
     get:
       tags:
       - "GA4GH"
       summary: "List one specific tool, acts as an anchor for self references"
       description: "This endpoint returns one specific tool (which has ToolVersions\
         \ nested inside it)"
-      operationId: "toolsRegistryIdGet"
+      operationId: "toolsIdGet"
       produces:
       - "application/json"
       - "text/plain"
       parameters:
-      - name: "registry-id"
+      - name: "id"
         in: "path"
-        description: "A unique identifier of the tool for this particular tool registry,\
-          \ for example `123456`"
+        description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
         required: true
         type: "string"
       responses:
         200:
           description: "A tool."
-  /api/v1/tools/{registry-id}/version/{version-id}:
+          schema:
+            $ref: "#/definitions/Tool"
+  /api/v1/tools/{id}/versions:
+    get:
+      tags:
+      - "GA4GH"
+      summary: "List versions of a tool"
+      description: "Returns all versions of the specified tool"
+      operationId: "toolsIdVersionsGet"
+      produces:
+      - "application/json"
+      - "text/plain"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "An array of tool versions"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/ToolVersion"
+  /api/v1/tools/{id}/versions/{version-id}:
     get:
       tags:
       - "GA4GH"
       summary: "List one specific tool version, acts as an anchor for self references"
       description: "This endpoint returns one specific tool version"
-      operationId: "toolsRegistryIdVersionVersionIdGet"
+      operationId: "toolsIdVersionsVersionIdGet"
       produces:
       - "application/json"
       - "text/plain"
       parameters:
-      - name: "registry-id"
+      - name: "id"
         in: "path"
-        description: "A unique identifier of the tool for this particular tool registry,\
-          \ for example `123456`"
+        description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
         required: true
         type: "string"
       - name: "version-id"
         in: "path"
-        description: "An identifier of the tool version for this particular tool registry,\
+        description: "An identifier of the tool version, scoped to this registry,\
           \ for example `v1`"
         required: true
         type: "string"
@@ -166,21 +192,21 @@ paths:
           description: "A tool version."
           schema:
             $ref: "#/definitions/ToolVersion"
-  /api/v1/tools/{registry-id}/version/{version-id}/descriptor:
+  /api/v1/tools/{id}/versions/{version-id}/descriptor:
     get:
       tags:
       - "GA4GH"
       summary: "Get the tool descriptor (CWL/WDL) for the specified tool."
       description: "Returns the CWL or WDL descriptor for the specified tool."
-      operationId: "toolsRegistryIdVersionVersionIdDescriptorGet"
+      operationId: "toolsIdVersionsVersionIdDescriptorGet"
       produces:
       - "application/json"
       - "text/plain"
       parameters:
-      - name: "registry-id"
+      - name: "id"
         in: "path"
-        description: "A unique identifier of the tool for this particular tool registry,\
-          \ for example `123456`"
+        description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
         required: true
         type: "string"
       - name: "version-id"
@@ -207,21 +233,71 @@ paths:
           description: "The tool can not be output in the specified format."
           schema:
             $ref: "#/definitions/ToolDescriptor"
-  /api/v1/tools/{registry-id}/version/{version-id}/dockerfile:
+  /api/v1/tools/{id}/versions/{version-id}/descriptor/{relative-path}:
+    get:
+      tags:
+      - "GA4GH"
+      summary: "Get additional tool descriptor files (CWL/WDL) relative to the main\
+        \ file"
+      description: "Returns additional CWL or WDL descriptors for the specified tool\
+        \ in the same or subdirectories"
+      operationId: "toolsIdVersionsVersionIdDescriptorRelativePathGet"
+      produces:
+      - "application/json"
+      - "text/plain"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        required: true
+        type: "string"
+      - name: "version-id"
+        in: "path"
+        description: "An identifier of the tool version for this particular tool registry,\
+          \ for example `v1`"
+        required: true
+        type: "string"
+      - name: "relative-path"
+        in: "path"
+        description: "A relative path to the additional file (same directory or subdirectories),\
+          \ for example 'foo.cwl' would return a 'foo.cwl' from the same directory\
+          \ as the main descriptor"
+        required: true
+        type: "string"
+      - name: "format"
+        in: "query"
+        description: "The output type of the descriptor. If not specified it is up\
+          \ to the underlying implementation to determine which output format to return."
+        required: false
+        type: "string"
+        enum:
+        - "CWL"
+        - "WDL"
+      responses:
+        200:
+          description: "The tool descriptor."
+          schema:
+            $ref: "#/definitions/ToolDescriptor"
+        404:
+          description: "The tool can not be output in the specified format."
+          schema:
+            $ref: "#/definitions/ToolDescriptor"
+  /api/v1/tools/{id}/versions/{version-id}/dockerfile:
     get:
       tags:
       - "GA4GH"
       summary: "Get the dockerfile for the specified image."
       description: "Returns the dockerfile for the specified image."
-      operationId: "toolsRegistryIdVersionVersionIdDockerfileGet"
+      operationId: "toolsIdVersionsVersionIdDockerfileGet"
       produces:
       - "application/json"
       - "text/plain"
       parameters:
-      - name: "registry-id"
+      - name: "id"
         in: "path"
-        description: "A unique identifier of the tool for this particular tool registry,\
-          \ for example `123456`"
+        description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
         required: true
         type: "string"
       - name: "version-id"
@@ -691,6 +767,35 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/SourceFile"
+  /containers/{containerId}/cwl/{relative-path}:
+    get:
+      tags:
+      - "containers"
+      summary: "Get the corresponding Dockstore.cwl file on Github."
+      description: "Does not need authentication"
+      operationId: "secondaryCwlPath"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "containerId"
+        in: "path"
+        description: "Tool id"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "tag"
+        in: "query"
+        required: false
+        type: "string"
+      - name: "relative-path"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/SourceFile"
   /containers/{containerId}/dockerfile:
     get:
       tags:
@@ -803,7 +908,7 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Get the corresponding Dockstore.cwl file on Github."
+      summary: "Get a list of secondary CWL files from Git."
       description: "Does not need authentication"
       operationId: "secondaryCwl"
       produces:
@@ -830,7 +935,7 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Get the corresponding Dockstore.wdl file on Github."
+      summary: "Get a list of secondary WDL files from Git."
       description: "Does not need authentication"
       operationId: "secondaryWdl"
       produces:
@@ -984,6 +1089,35 @@ paths:
       - name: "tag"
         in: "query"
         required: false
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/SourceFile"
+  /containers/{containerId}/wdl/{relative-path}:
+    get:
+      tags:
+      - "containers"
+      summary: "Get the corresponding Dockstore.wdl file on Github."
+      description: "Does not need authentication"
+      operationId: "secondaryWdlPath"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "containerId"
+        in: "path"
+        description: "Tool id"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "tag"
+        in: "query"
+        required: false
+        type: "string"
+      - name: "relative-path"
+        in: "path"
+        required: true
         type: "string"
       responses:
         200:
@@ -1802,6 +1936,35 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/SourceFile"
+  /workflows/{workflowId}/cwl/{relative-path}:
+    get:
+      tags:
+      - "workflows"
+      summary: "Get the corresponding Dockstore.cwl file on Github."
+      description: "Does not need authentication"
+      operationId: "secondaryCwlPath"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "workflowId"
+        in: "path"
+        description: "Tool id"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "tag"
+        in: "query"
+        required: false
+        type: "string"
+      - name: "relative-path"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/SourceFile"
   /workflows/{workflowId}/labels:
     put:
       tags:
@@ -2007,6 +2170,35 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/SourceFile"
+  /workflows/{workflowId}/wdl/{relative-path}:
+    get:
+      tags:
+      - "workflows"
+      summary: "Get the corresponding Dockstore.wdl file on Github."
+      description: "Does not need authentication"
+      operationId: "secondaryWdlPath"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "workflowId"
+        in: "path"
+        description: "Tool id"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "tag"
+        in: "query"
+        required: false
+        type: "string"
+      - name: "relative-path"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/SourceFile"
   /workflows/{workflowId}/workflowVersions:
     put:
       tags:
@@ -2119,8 +2311,8 @@ definitions:
       description:
         type: "string"
         description: "A longer explanation of what this type is and what it can accomplish"
-    description: "Describes a type of tool allowing us to categorize workflows, the\
-      \ language of the workflow, tools, and maybe even other entities separately"
+    description: "Describes a type of tool allowing us to categorize workflows, tools,\
+      \ and maybe even other entities (such as services) separately"
   Workflow:
     type: "object"
     required:
@@ -2217,11 +2409,23 @@ definitions:
     type: "object"
     required:
     - "descriptor"
+    - "type"
     properties:
+      type:
+        type: "string"
+        enum:
+        - "CWL"
+        - "WDL"
       descriptor:
         type: "string"
         description: "The descriptor that represents this version of the tool. (CWL\
           \ or WDL)"
+      format:
+        type: "string"
+        description: "The output type of the descriptor."
+        enum:
+        - "CWL"
+        - "WDL"
       url:
         type: "string"
         description: "Optional url to the tool descriptor used to build this image,\
@@ -2562,28 +2766,27 @@ definitions:
         type: "string"
         description: "Path for the WDL document"
     description: "This describes one tag associated with a container."
+  GithubComView:
+    type: "object"
+    properties:
+      parent:
+        $ref: "#/definitions/GitHubComAuthenticationResource"
   ToolVersion:
     type: "object"
     required:
     - "descriptor"
-    - "global-id"
+    - "id"
     - "image"
     - "meta-version"
-    - "registry-id"
+    - "url"
     properties:
       name:
         type: "string"
         description: "The name of the version."
-      global-id:
+      url:
         type: "string"
-        description: "The unique identifier for this version of a tool. (Proposed\
-          \ - This id should be globally unique across systems and should also identify\
-          \ the system that it comes from for example This id should be globally unique\
-          \ across systems, should also identify the system that it comes from, and\
-          \ be a URL that resolves for example `http://agora.broadinstitute.org/tools/123456/v1`\
-          \ This can be the same as the registry-id depending on the structure of\
-          \ your registry)"
-      registry-id:
+        description: "The URL for this tool in this registry, for example `http://agora.broadinstitute.org/tools/123456/1`"
+      id:
         type: "string"
         description: "An identifier of the version of this tool for this particular\
           \ tool registry, for example `v1`"
@@ -2601,11 +2804,6 @@ definitions:
           \ fields like the description, author, etc. are updated."
     description: "A tool version describes a particular iteration of a tool as described\
       \ by a reference to a specific image and dockerfile."
-  GithubComView:
-    type: "object"
-    properties:
-      parent:
-        $ref: "#/definitions/GitHubComAuthenticationResource"
   QuayIOView:
     type: "object"
     properties:
@@ -2615,34 +2813,23 @@ definitions:
     type: "object"
     required:
     - "author"
-    - "global-id"
+    - "id"
     - "meta-version"
-    - "name"
     - "organization"
-    - "registry"
-    - "registry-id"
     - "tooltype"
+    - "url"
+    - "versions"
     properties:
-      global-id:
+      url:
         type: "string"
-        description: "The unique identifier for the image. (Proposed - This id should\
-          \ be globally unique across systems and should also identify the system\
-          \ that it comes from for example This id should be globally unique across\
-          \ systems, should also identify the system that it comes from, and be a\
-          \ URL that resolves for example `http://agora.broadinstitute.org/tools/123456`)"
-      registry-id:
+        description: "The URL for this tool in this registry, for example `http://agora.broadinstitute.org/tools/123456`"
+      id:
         type: "string"
-        description: "A unique identifier of the tool for this particular tool registry,\
-          \ for example `123456` or `123456_v1`"
-      registry:
-        type: "string"
-        description: "The registry that contains the image."
+        description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456` or `123456_v1`"
       organization:
         type: "string"
         description: "The organization that published the image."
-      name:
-        type: "string"
-        description: "The name of the image."
       toolname:
         type: "string"
         description: "The name of the tool."
@@ -2667,6 +2854,7 @@ definitions:
           type: "string"
       versions:
         type: "array"
+        description: "A list of versions for this tool"
         items:
           $ref: "#/definitions/ToolVersion"
     description: "A tool (or described tool) describes one pairing of a tool as described\

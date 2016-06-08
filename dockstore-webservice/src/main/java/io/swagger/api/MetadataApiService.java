@@ -16,11 +16,11 @@
 
 package io.swagger.api;
 
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
+
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-06-07T18:19:37.276Z")
-public class ApiException extends Exception{
-	private int code;
-	public ApiException (int code, String msg) {
-		super(msg);
-		this.code = code;
-	}
+public abstract class MetadataApiService {
+      public abstract Response metadataGet(SecurityContext securityContext)
+      throws NotFoundException;
 }
