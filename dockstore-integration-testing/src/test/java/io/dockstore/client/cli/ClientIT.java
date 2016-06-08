@@ -32,6 +32,7 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
+import org.junit.contrib.java.lang.system.SystemOutRule;
 
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
@@ -49,6 +50,8 @@ public class ClientIT {
     public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
             DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstore.yml"));
 
+    @Rule
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
 
@@ -166,6 +169,47 @@ public class ClientIT {
                 "--entry", firstWorkflowCWL,  "--local-entry",  "--json",  firstWorkflowJSON });
     }
 
+    @Test
+    public void touchOnAllHelpMessages(){
+        checkCommandForHelp(new String[] {});
+        checkCommandForHelp(new String[] {"tool"});
+        checkCommandForHelp(new String[] { "tool", "list", "--help"});
+        checkCommandForHelp(new String[] { "tool", "search", "--help"});
+        checkCommandForHelp(new String[] { "tool", "publish", "--help"});
+        checkCommandForHelp(new String[] { "tool", "info", "--help"});
+        checkCommandForHelp(new String[] { "tool", "cwl", "--help"});
+        checkCommandForHelp(new String[] { "tool", "wdl", "--help"});
+        checkCommandForHelp(new String[] { "tool", "refresh", "--help"});
+        checkCommandForHelp(new String[] { "tool", "label", "--help"});
+        checkCommandForHelp(new String[] { "tool", "convert", "--help"});
+        checkCommandForHelp(new String[] { "tool", "launch", "--help"});
+        checkCommandForHelp(new String[] { "tool", "version_tag", "--help"});
+        checkCommandForHelp(new String[] { "tool", "update_tool", "--help"});
+        checkCommandForHelp(new String[] { "tool", "manual_publish", "--help"});
 
+        checkCommandForHelp(new String[] {"workflow"});
+        checkCommandForHelp(new String[] { "workflow", "list", "--help"});
+        checkCommandForHelp(new String[] { "workflow", "search", "--help"});
+        checkCommandForHelp(new String[] { "workflow", "publish", "--help"});
+        checkCommandForHelp(new String[] { "workflow", "info", "--help"});
+        checkCommandForHelp(new String[] { "workflow", "cwl", "--help"});
+        checkCommandForHelp(new String[] { "workflow", "wdl", "--help"});
+        checkCommandForHelp(new String[] { "workflow", "refresh", "--help"});
+        checkCommandForHelp(new String[] { "workflow", "label", "--help"});
+        checkCommandForHelp(new String[] { "workflow", "convert", "--help"});
+        checkCommandForHelp(new String[] { "workflow", "launch", "--help"});
+        checkCommandForHelp(new String[] { "workflow", "version_tag", "--help"});
+        checkCommandForHelp(new String[] { "workflow", "update_workflow", "--help"});
+        checkCommandForHelp(new String[] { "workflow", "manual_publish", "--help"});
+        checkCommandForHelp(new String[] { "workflow", "restub", "--help"});
+
+        checkCommandForHelp(new String[] {"workflow"});
+    }
+
+    public void checkCommandForHelp(String[] argv) {
+        Client.main(argv);
+        Assert.assertTrue(systemOutRule.getLog().contains("HELP FOR DOCKSTORE"));
+        systemOutRule.clearLog();
+    }
 
 }
