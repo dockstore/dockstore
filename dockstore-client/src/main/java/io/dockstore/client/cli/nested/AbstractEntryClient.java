@@ -538,7 +538,8 @@ public abstract class AbstractEntryClient {
         Pattern classToolPattern = Pattern.compile("(.*)(class)(.*)(:)(\\sCommandLineTool)");
         Pattern commandPattern = Pattern.compile("(.*)(baseCommand)(.*)(:)(.*)");
         Pattern versionPattern = Pattern.compile("(.*)(cwlVersion)(.*)(:)(.*)");
-        Boolean inputFound = false, classFound = false, outputFound = false, commandFound = false, versionFound = false;
+        Pattern stepsPattern = Pattern.compile("(.*)(steps)(.*)(:)(.*)");
+        Boolean inputFound = false, classFound = false, outputFound = false, commandFound = false, versionFound = false, stepsFound = false;
         Path p = Paths.get(content.getPath());
         try{
             List<String> fileContent = java.nio.file.Files.readAllLines(p, StandardCharsets.UTF_8);
@@ -549,7 +550,8 @@ public abstract class AbstractEntryClient {
                 Matcher matchOutput = outputPattern.matcher(line);
                 Matcher matchCommand = commandPattern.matcher(line);
                 Matcher matchVersion = versionPattern.matcher(line);
-                if(matchInput.find()){
+                Matcher matchSteps = stepsPattern.matcher(line);
+                if(matchInput.find() && !stepsFound){
                     inputFound = true;
                 } else if(matchOutput.find()){
                     outputFound = true;
@@ -557,6 +559,8 @@ public abstract class AbstractEntryClient {
                     commandFound = true;
                 }else if(matchVersion.find()){
                     versionFound = true;
+                }else if(matchSteps.find()){
+                    stepsFound = true;
                 } else{
                     if(getEntryType().toLowerCase().equals("workflow") && matchWf.find()){
                         classFound = true;
