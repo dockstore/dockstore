@@ -39,9 +39,11 @@ import io.swagger.client.model.Token;
 import io.swagger.client.model.Tool;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.ToolDockerfile;
+import io.swagger.client.model.ToolVersion;
 import io.swagger.client.model.User;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
+import org.apache.http.HttpStatus;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Ignore;
@@ -63,6 +65,9 @@ import static org.junit.Assert.assertTrue;
  * @author xliu
  */
 public class SystemClientIT {
+
+    public static final String QUAY_IO_TEST_ORG_TEST6 = "quay.io/test_org/test6";
+    public static final String REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE = "registry.hub.docker.com/seqware/seqware/test5";
 
     @Before
     public void clearDBandSetup() throws IOException, TimeoutException {
@@ -192,6 +197,7 @@ public class SystemClientIT {
         tag.setName("master");
         tag.setReference("refs/heads/master");
         tag.setValid(true);
+        tag.setImageId("123456");
         // construct source files
         SourceFile fileCWL = new SourceFile();
         fileCWL.setContent("cwlstuff");
@@ -254,28 +260,39 @@ public class SystemClientIT {
         assertTrue(tools.size() == 2);
 
         // test a few constraints
-        tools = toolApi.toolsGet("quay.io/test_org/test6", null, null, null, null, null, null);
+        tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, null, null, null, null, null, null);
         assertTrue(tools.size() == 1);
-        tools = toolApi.toolsGet("quay.io/test_org/test6", Registry.QUAY_IO.toString(), null, null, null, null, null);
+        tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, Registry.QUAY_IO.toString(), null, null, null, null, null);
         assertTrue(tools.size() == 1);
-        tools = toolApi.toolsGet("quay.io/test_org/test6", Registry.DOCKER_HUB.toString(), null, null, null, null, null);
+        tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, Registry.DOCKER_HUB.toString(), null, null, null, null, null);
         assertTrue(tools.size() == 0);
     }
 
-    // This test is commented out for now because it expects a newer version of the GAGH API.  It will be uncommented once the API is updated
-//    @Test
-//    public void testGetSpecificTool() throws IOException, TimeoutException, ApiException {
-//        ApiClient client = getAdminWebClient();
-//        GAGHApi toolApi = new GAGHApi(client);
-//        ContainersApi containersApi = new ContainersApi(client);
-//        // register one more to give us something to look at
-//        Tool c = getContainer();
-//        containersApi.registerManual(c);
-//
-//        final Tool tool = toolApi.toolsRegistryIdGet("quay.io/test_org/test6");
-//        assertTrue(tool != null);
-//        assertTrue(tool.getRegistryId().equals("quay.io/test_org/test6"));
-//    }
+    @Test
+    public void testGetSpecificTool() throws IOException, TimeoutException, ApiException {
+        ApiClient client = getAdminWebClient();
+        GAGHApi toolApi = new GAGHApi(client);
+        ContainersApi containersApi = new ContainersApi(client);
+        // register one more to give us something to look at
+        DockstoreTool c = getContainer();
+        containersApi.registerManual(c);
+
+        final Tool tool = toolApi.toolsIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
+        assertTrue(tool != null);
+        assertTrue(tool.getId().equals(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE));
+        // get versions
+        final List<ToolVersion> toolVersions = toolApi.toolsIdVersionsGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
+        assertTrue(toolVersions.size() == 1);
+
+        final ToolVersion master = toolApi.toolsIdVersionsVersionIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, "master");
+        assertTrue(master != null);
+        try {
+            final ToolVersion foobar = toolApi.toolsIdVersionsVersionIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, "foobar");
+            assertTrue(foobar != null); // this should be unreachable
+        } catch(ApiException e){
+            assertTrue(e.getCode() == HttpStatus.SC_NOT_FOUND);
+        }
+    }
 
     @Test
     public void testGetFiles() throws IOException, TimeoutException, ApiException {
@@ -334,7 +351,7 @@ public class SystemClientIT {
 
         List<DockstoreTool> containers = containersApi.search("test6");
         assertTrue(containers.size() == 1);
-        assertTrue(containers.get(0).getPath().equals("quay.io/test_org/test6"));
+        assertTrue(containers.get(0).getPath().equals(QUAY_IO_TEST_ORG_TEST6));
 
         containers = containersApi.search("test5");
         assertTrue(containers.isEmpty());

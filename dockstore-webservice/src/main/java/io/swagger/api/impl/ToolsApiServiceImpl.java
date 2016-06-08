@@ -85,9 +85,9 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             assert (tool != null);
             // filter out other versions if we're narrowing to a specific version
             if (version != null) {
-                tool.getVersions().removeIf(v -> !v.getImage().equals(version));
+                tool.getVersions().removeIf(v -> !v.getName().equals(version));
                 if (tool.getVersions().size() != 1) {
-                    response = Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+                    response = Response.status(Response.Status.NOT_FOUND).build();
                 } else {
                     response = Response.ok(tool.getVersions().get(0)).build();
                 }
