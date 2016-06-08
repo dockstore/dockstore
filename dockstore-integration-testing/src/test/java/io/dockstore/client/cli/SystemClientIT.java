@@ -196,10 +196,12 @@ public class SystemClientIT {
         SourceFile fileCWL = new SourceFile();
         fileCWL.setContent("cwlstuff");
         fileCWL.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+        fileCWL.setPath("/Dockstore.cwl");
         tag.getSourceFiles().add(fileCWL);
         SourceFile fileDockerFile = new SourceFile();
         fileDockerFile.setContent("dockerstuff");
         fileDockerFile.setType(SourceFile.TypeEnum.DOCKERFILE);
+        fileDockerFile.setPath("/Dockerfile");
         tag.getSourceFiles().add(fileDockerFile);
         c.getTags().add(tag);
         return c;
