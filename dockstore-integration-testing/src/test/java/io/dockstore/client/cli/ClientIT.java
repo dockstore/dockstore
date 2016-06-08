@@ -16,6 +16,7 @@
 
 package io.dockstore.client.cli;
 
+import com.google.common.collect.Lists;
 import io.dockstore.common.CommonTestUtilities.TestingPostgres;
 import io.dockstore.common.TestUtility;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -35,6 +36,7 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.concurrent.TimeoutException;
 
 import static io.dockstore.common.CommonTestUtilities.clearState;
@@ -170,7 +172,7 @@ public class ClientIT {
     }
 
     @Test
-    public void touchOnAllHelpMessages(){
+    public void touchOnAllHelpMessages() throws IOException {
         checkCommandForHelp(new String[] {});
         checkCommandForHelp(new String[] {"tool"});
         checkCommandForHelp(new String[] { "tool", "list", "--help"});
@@ -206,8 +208,12 @@ public class ClientIT {
         checkCommandForHelp(new String[] {"workflow"});
     }
 
-    public void checkCommandForHelp(String[] argv) {
-        Client.main(argv);
+    private void checkCommandForHelp(String[] argv) throws IOException {
+        final ArrayList<String> strings = Lists.newArrayList(argv);
+        strings.add("--config");
+        strings.add(TestUtility.getConfigFileLocation(true));
+
+        Client.main(strings.toArray(new String[strings.size()]));
         Assert.assertTrue(systemOutRule.getLog().contains("HELP FOR DOCKSTORE"));
         systemOutRule.clearLog();
     }
