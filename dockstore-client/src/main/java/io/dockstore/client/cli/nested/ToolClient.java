@@ -54,7 +54,6 @@ import static io.dockstore.client.cli.ArgumentUtility.columnWidthsTool;
 import static io.dockstore.client.cli.ArgumentUtility.containsHelpRequest;
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
-import static io.dockstore.client.cli.ArgumentUtility.kill;
 import static io.dockstore.client.cli.ArgumentUtility.optVal;
 import static io.dockstore.client.cli.ArgumentUtility.out;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
@@ -475,20 +474,17 @@ public class ToolClient extends AbstractEntryClient {
             versionTagHelp();
         } else {
             String subcommand = args.remove(0);
-            if (args.isEmpty()) {
+            if (containsHelpRequest(args)) {
                 switch (subcommand) {
                 case "add":
                     versionTagAddHelp();
-                    kill("");
-                    break;
+                    return;
                 case "remove":
                     versionTagRemoveHelp();
-                    kill("");
-                    break;
+                    return;
                 case "update":
                     versionTagUpdateHelp();
-                    kill("");
-                    break;
+                    return;
                 default:
                     errorMessage("Please provide a correct subcommand", Client.CLIENT_ERROR);
                     break;

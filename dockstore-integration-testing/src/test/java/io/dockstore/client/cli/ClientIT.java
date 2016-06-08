@@ -172,6 +172,22 @@ public class ClientIT {
     }
 
     @Test
+    public void testMetadataMethods() throws IOException {
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "--version"});
+        Assert.assertTrue(systemOutRule.getLog().contains("Dockstore version"));
+        systemOutRule.clearLog();
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "--server-metadata"});
+        Assert.assertTrue(systemOutRule.getLog().contains("version"));
+        systemOutRule.clearLog();
+    }
+
+    @Test
+    public void testCacheCleaning() throws IOException {
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "--clean-cache"});
+        systemOutRule.clearLog();
+    }
+
+    @Test
     public void touchOnAllHelpMessages() throws IOException {
         checkCommandForHelp(new String[] {});
         checkCommandForHelp(new String[] {"tool"});
@@ -186,6 +202,9 @@ public class ClientIT {
         checkCommandForHelp(new String[] { "tool", "convert", "--help"});
         checkCommandForHelp(new String[] { "tool", "launch", "--help"});
         checkCommandForHelp(new String[] { "tool", "version_tag", "--help"});
+        checkCommandForHelp(new String[] { "tool", "version_tag", "remove", "--help"});
+        checkCommandForHelp(new String[] { "tool", "version_tag", "update", "--help"});
+        checkCommandForHelp(new String[] { "tool", "version_tag", "add", "--help"});
         checkCommandForHelp(new String[] { "tool", "update_tool", "--help"});
         checkCommandForHelp(new String[] { "tool", "manual_publish", "--help"});
 

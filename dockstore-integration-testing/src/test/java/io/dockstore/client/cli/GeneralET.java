@@ -251,6 +251,27 @@ public class GeneralET {
         }
 
         /**
+         * @throws IOException
+         */
+        @Test
+        public void registerUnregisterAndCopy() throws IOException {
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry", "quay.io/dockstoretestuser2/quayandgithubwdl" });
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+                boolean published = testingPostgres.runSelectStatement("select ispublished from tool where path = 'quay.io/dockstoretestuser2/quayandgithubwdl';", new ScalarHandler<>());
+                Assert.assertTrue("tool not published", published);
+
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry", "quay.io/dockstoretestuser2/quayandgithubwdl", "--entryname", "foo" });
+
+                long count = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser2/quayandgithubwdl';", new ScalarHandler<>());
+                Assert.assertTrue("should be two after republishing", count == 2);
+
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--unpub", "--entry", "quay.io/dockstoretestuser2/quayandgithubwdl" });
+
+                published = testingPostgres.runSelectStatement("select ispublished from tool where path = 'quay.io/dockstoretestuser2/quayandgithubwdl' and toolname = '';", new ScalarHandler<>());
+                Assert.assertTrue("tool not unpublished", !published);
+        }
+
+        /**
          * Tests that WDL2JSON works for local file
          */
         @Test
