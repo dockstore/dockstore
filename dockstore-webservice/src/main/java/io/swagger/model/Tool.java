@@ -16,14 +16,14 @@
 
 package io.swagger.model;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.model.ToolType;
+import io.swagger.model.ToolVersion;
+import java.util.ArrayList;
+import java.util.List;
 
 
 
@@ -32,14 +32,12 @@ import io.swagger.annotations.ApiModelProperty;
  **/
 
 @ApiModel(description = "A tool (or described tool) describes one pairing of a tool as described in a descriptor file (which potentially describes multiple tools) and a Docker image.")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-03-11T20:14:17.098Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-06-07T18:19:37.276Z")
 public class Tool   {
   
-  private String globalId = null;
-  private String registryId = null;
-  private String registry = null;
+  private String url = null;
+  private String id = null;
   private String organization = null;
-  private String name = null;
   private String toolname = null;
   private ToolType tooltype = null;
   private String description = null;
@@ -48,64 +46,42 @@ public class Tool   {
   private List<String> contains = new ArrayList<String>();
   private List<ToolVersion> versions = new ArrayList<ToolVersion>();
 
-  
   /**
-   * The unique identifier for the image. (Proposed - This id should be globally unique across systems and should also identify the system that it comes from for example This id should be globally unique across systems, should also identify the system that it comes from, and be a URL that resolves for example `http://agora.broadinstitute.org/tools/123456`)
+   * The URL for this tool in this registry, for example `http://agora.broadinstitute.org/tools/123456`
    **/
-  public Tool globalId(String globalId) {
-    this.globalId = globalId;
+  public Tool url(String url) {
+    this.url = url;
     return this;
   }
 
   
-  @ApiModelProperty(required = true, value = "The unique identifier for the image. (Proposed - This id should be globally unique across systems and should also identify the system that it comes from for example This id should be globally unique across systems, should also identify the system that it comes from, and be a URL that resolves for example `http://agora.broadinstitute.org/tools/123456`)")
-  @JsonProperty("global-id")
-  public String getGlobalId() {
-    return globalId;
+  @ApiModelProperty(required = true, value = "The URL for this tool in this registry, for example `http://agora.broadinstitute.org/tools/123456`")
+  @JsonProperty("url")
+  public String getUrl() {
+    return url;
   }
-  public void setGlobalId(String globalId) {
-    this.globalId = globalId;
+  public void setUrl(String url) {
+    this.url = url;
   }
 
-  
   /**
-   * A unique identifier of the tool for this particular tool registry, for example `123456` or `123456_v1`
+   * A unique identifier of the tool, scoped to this registry, for example `123456` or `123456_v1`
    **/
-  public Tool registryId(String registryId) {
-    this.registryId = registryId;
+  public Tool id(String id) {
+    this.id = id;
     return this;
   }
 
   
-  @ApiModelProperty(required = true, value = "A unique identifier of the tool for this particular tool registry, for example `123456` or `123456_v1`")
-  @JsonProperty("registry-id")
-  public String getRegistryId() {
-    return registryId;
+  @ApiModelProperty(required = true, value = "A unique identifier of the tool, scoped to this registry, for example `123456` or `123456_v1`")
+  @JsonProperty("id")
+  public String getId() {
+    return id;
   }
-  public void setRegistryId(String registryId) {
-    this.registryId = registryId;
-  }
-
-  
-  /**
-   * The registry that contains the image.
-   **/
-  public Tool registry(String registry) {
-    this.registry = registry;
-    return this;
+  public void setId(String id) {
+    this.id = id;
   }
 
-  
-  @ApiModelProperty(required = true, value = "The registry that contains the image.")
-  @JsonProperty("registry")
-  public String getRegistry() {
-    return registry;
-  }
-  public void setRegistry(String registry) {
-    this.registry = registry;
-  }
-
-  
   /**
    * The organization that published the image.
    **/
@@ -124,26 +100,6 @@ public class Tool   {
     this.organization = organization;
   }
 
-  
-  /**
-   * The name of the image.
-   **/
-  public Tool name(String name) {
-    this.name = name;
-    return this;
-  }
-
-  
-  @ApiModelProperty(required = true, value = "The name of the image.")
-  @JsonProperty("name")
-  public String getName() {
-    return name;
-  }
-  public void setName(String name) {
-    this.name = name;
-  }
-
-  
   /**
    * The name of the tool.
    **/
@@ -162,7 +118,6 @@ public class Tool   {
     this.toolname = toolname;
   }
 
-  
   /**
    **/
   public Tool tooltype(ToolType tooltype) {
@@ -180,7 +135,6 @@ public class Tool   {
     this.tooltype = tooltype;
   }
 
-  
   /**
    * The description of the tool.
    **/
@@ -199,7 +153,6 @@ public class Tool   {
     this.description = description;
   }
 
-  
   /**
    * Contact information for the author of this tool entry in the registry. (More complex authorship information is handled by the descriptor)
    **/
@@ -218,7 +171,6 @@ public class Tool   {
     this.author = author;
   }
 
-  
   /**
    * The version of this tool in the registry. Iterates when fields like the description, author, etc. are updated.
    **/
@@ -237,7 +189,6 @@ public class Tool   {
     this.metaVersion = metaVersion;
   }
 
-  
   /**
    * An array of IDs for the applications that are stored inside this tool (for example `https://bio.tools/tool/mytum.de/SNAP2/1`)
    **/
@@ -256,8 +207,8 @@ public class Tool   {
     this.contains = contains;
   }
 
-  
   /**
+   * A list of versions for this tool
    **/
   public Tool versions(List<ToolVersion> versions) {
     this.versions = versions;
@@ -265,7 +216,7 @@ public class Tool   {
   }
 
   
-  @ApiModelProperty(value = "")
+  @ApiModelProperty(required = true, value = "A list of versions for this tool")
   @JsonProperty("versions")
   public List<ToolVersion> getVersions() {
     return versions;
@@ -274,7 +225,6 @@ public class Tool   {
     this.versions = versions;
   }
 
-  
 
   @Override
   public boolean equals(Object o) {
@@ -285,11 +235,9 @@ public class Tool   {
       return false;
     }
     Tool tool = (Tool) o;
-    return Objects.equals(globalId, tool.globalId) &&
-        Objects.equals(registryId, tool.registryId) &&
-        Objects.equals(registry, tool.registry) &&
+    return Objects.equals(url, tool.url) &&
+        Objects.equals(id, tool.id) &&
         Objects.equals(organization, tool.organization) &&
-        Objects.equals(name, tool.name) &&
         Objects.equals(toolname, tool.toolname) &&
         Objects.equals(tooltype, tool.tooltype) &&
         Objects.equals(description, tool.description) &&
@@ -301,7 +249,7 @@ public class Tool   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(globalId, registryId, registry, organization, name, toolname, tooltype, description, author, metaVersion, contains, versions);
+    return Objects.hash(url, id, organization, toolname, tooltype, description, author, metaVersion, contains, versions);
   }
 
   @Override
@@ -309,11 +257,9 @@ public class Tool   {
     StringBuilder sb = new StringBuilder();
     sb.append("class Tool {\n");
     
-    sb.append("    globalId: ").append(toIndentedString(globalId)).append("\n");
-    sb.append("    registryId: ").append(toIndentedString(registryId)).append("\n");
-    sb.append("    registry: ").append(toIndentedString(registry)).append("\n");
+    sb.append("    url: ").append(toIndentedString(url)).append("\n");
+    sb.append("    id: ").append(toIndentedString(id)).append("\n");
     sb.append("    organization: ").append(toIndentedString(organization)).append("\n");
-    sb.append("    name: ").append(toIndentedString(name)).append("\n");
     sb.append("    toolname: ").append(toIndentedString(toolname)).append("\n");
     sb.append("    tooltype: ").append(toIndentedString(tooltype)).append("\n");
     sb.append("    description: ").append(toIndentedString(description)).append("\n");

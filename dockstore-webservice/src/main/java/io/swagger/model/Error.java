@@ -25,13 +25,12 @@ import io.swagger.annotations.ApiModelProperty;
 
 
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-03-11T20:14:17.098Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-06-07T18:19:37.276Z")
 public class Error   {
   
   private Integer code = 500;
   private String message = "Internal Server Error";
 
-  
   /**
    **/
   public Error code(Integer code) {
@@ -49,7 +48,6 @@ public class Error   {
     this.code = code;
   }
 
-  
   /**
    **/
   public Error message(String message) {
@@ -67,7 +65,6 @@ public class Error   {
     this.message = message;
   }
 
-  
 
   @Override
   public boolean equals(Object o) {

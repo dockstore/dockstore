@@ -28,13 +28,12 @@ import io.swagger.annotations.ApiModelProperty;
  **/
 
 @ApiModel(description = "A tool dockerfile is a document that describes how to build a particular Docker image.")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-03-11T20:14:17.098Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-06-07T18:19:37.276Z")
 public class ToolDockerfile   {
   
   private String dockerfile = null;
   private String url = null;
 
-  
   /**
    * The dockerfile content for this tool.
    **/
@@ -53,7 +52,6 @@ public class ToolDockerfile   {
     this.dockerfile = dockerfile;
   }
 
-  
   /**
    * Optional url to the dockerfile used to build this image, should include version information, and can include a git hash  (e.g. https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/c83478829802b4d36374870843821abe1b625a71/delly_docker/Dockerfile )
    **/
@@ -72,7 +70,6 @@ public class ToolDockerfile   {
     this.url = url;
   }
 
-  
 
   @Override
   public boolean equals(Object o) {

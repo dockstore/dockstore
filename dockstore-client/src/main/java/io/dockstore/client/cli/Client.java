@@ -115,7 +115,7 @@ public class Client {
      */
     private void serverMetadata() {
         try {
-            final Metadata metadata = ga4ghApi.toolsMetadataGet();
+            final Metadata metadata = ga4ghApi.metadataGet();
             final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
             out(gson.toJson(metadata));
         } catch (ApiException ex) {

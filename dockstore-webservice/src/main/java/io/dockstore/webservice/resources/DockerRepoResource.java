@@ -95,7 +95,7 @@ public class DockerRepoResource {
     private final EntryVersionHelper<Tool> entryVersionHelper;
 
 
-    public static final String TARGET_URL = "https://quay.io/api/v1/";
+    private static final String TARGET_URL = "https://quay.io/api/v1/";
 
     private final ObjectMapper objectMapper;
 
@@ -138,7 +138,7 @@ public class DockerRepoResource {
         return tools;
     }
 
-    public List<Tool> refreshToolsForUser(Long userId) {
+    List<Tool> refreshToolsForUser(Long userId) {
         List<Token> tokens = tokenDAO.findBitbucketByUserId(userId);
 
         if (!tokens.isEmpty()) {
@@ -168,11 +168,8 @@ public class DockerRepoResource {
             Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
         }
 
-        Tool tool = Helper.refreshContainer(containerId, user.getId(), client, objectMapper, userDAO, toolDAO,
+        return Helper.refreshContainer(containerId, user.getId(), client, objectMapper, userDAO, toolDAO,
                 tokenDAO, tagDAO, fileDAO);
-
-
-        return tool;
     }
 
     @GET
@@ -320,10 +317,9 @@ public class DockerRepoResource {
         }
 
         long id = toolDAO.create(tool);
-        Tool created = toolDAO.findById(id);
 
         // Helper.refreshContainer(id, authToken.getUserId(), client, objectMapper, userDAO, toolDAO, tokenDAO, tagDAO, fileDAO);
-        return created;
+        return toolDAO.findById(id);
     }
 
     @DELETE
@@ -614,23 +610,47 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
+    @Path("/{containerId}/cwl/{relative-path}")
+    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class)
+    public SourceFile secondaryCwlPath(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
+            @QueryParam("tag") String tag, @PathParam("relative-path") String path){
+
+        return entryVersionHelper.getSourceFileByPath(containerId, tag, FileType.DOCKSTORE_CWL, path);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}/wdl/{relative-path}")
+    @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class)
+    public SourceFile secondaryWdlPath(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
+            @QueryParam("tag") String tag, @PathParam("relative-path") String path){
+
+        return entryVersionHelper.getSourceFileByPath(containerId, tag, FileType.DOCKSTORE_WDL, path);
+    }
+
+
+
+    @GET
+    @Timed
+    @UnitOfWork
     @Path("/{containerId}/secondaryCwl")
-    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
+    @ApiOperation(value = "Get a list of secondary CWL files from Git.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
     public List<SourceFile> secondaryCwl(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag) {
 
-        return entryVersionHelper.getSourceFiles(containerId, tag, FileType.DOCKSTORE_CWL);
+        return entryVersionHelper.getAllSecondaryFiles(containerId, tag, FileType.DOCKSTORE_CWL);
     }
 
     @GET
     @Timed
     @UnitOfWork
     @Path("/{containerId}/secondaryWdl")
-    @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
+    @ApiOperation(value = "Get a list of secondary WDL files from Git.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
     public List<SourceFile> secondaryWdl(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag) {
 
-        return entryVersionHelper.getSourceFiles(containerId, tag, FileType.DOCKSTORE_WDL);
+        return entryVersionHelper.getAllSecondaryFiles(containerId, tag, FileType.DOCKSTORE_WDL);
     }
 
 }
