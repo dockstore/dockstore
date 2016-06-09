@@ -16,17 +16,15 @@
 
 package io.dockstore.webservice.core;
 
-import java.util.Objects;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
-
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import java.util.Objects;
 
 /**
  * This implements version for a Workflow.
@@ -37,7 +35,7 @@ import io.swagger.annotations.ApiModelProperty;
 @Entity
 public class WorkflowVersion extends Version<WorkflowVersion> implements Comparable<WorkflowVersion> {
 
-    @Column(columnDefinition = "text")
+    @Column(columnDefinition = "text", nullable = false)
     @JsonProperty("workflow_path")
     @ApiModelProperty("Path for the workflow")
     private String workflowPath;

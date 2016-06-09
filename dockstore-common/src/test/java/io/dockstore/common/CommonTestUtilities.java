@@ -16,20 +16,15 @@
 
 package io.dockstore.common;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-
+import io.dropwizard.testing.ResourceHelpers;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.dbutils.ResultSetHandler;
 import org.apache.commons.dbutils.handlers.KeyedHandler;
-import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.commons.io.FileUtils;
 
-import io.dropwizard.testing.ResourceHelpers;
+import java.io.File;
+import java.io.IOException;
 
 
 /**
@@ -112,7 +107,7 @@ public class CommonTestUtilities {
         public void clearDatabaseMakePrivate() throws IOException {
             super.clearDatabase();
 
-            runInsertDump(ResourceHelpers.resourceFilePath("db_confidential_dump_full.sql"));
+            loadDatabaseDump(ResourceHelpers.resourceFilePath("db_confidential_dump_full.sql"));
 
 
             /*
@@ -138,24 +133,10 @@ public class CommonTestUtilities {
 
         }
 
-        private void runInsertDump(String sqlDumpPath) throws IOException {
-            BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(sqlDumpPath), "utf-8"));
-            String line = null;
-
-            while ((line = br.readLine()) != null) {
-                if (line.startsWith("INSERT")) {
-                    runUpdateStatementConfidential(line);
-                } else if (line.startsWith("SELECT")){
-                    this.runSelectStatement(line, new ScalarHandler<>(), null);
-                }
-            }
-            br.close();
-        }
-
         public void clearDatabaseMakePrivate2() throws IOException {
             super.clearDatabase();
 
-            runInsertDump(ResourceHelpers.resourceFilePath("db_confidential_dump_full_2.sql"));
+            loadDatabaseDump(ResourceHelpers.resourceFilePath("db_confidential_dump_full_2.sql"));
 
             // need to increment past manually entered ids above
             runUpdateStatementConfidential("alter sequence container_id_seq restart with 1000;");
