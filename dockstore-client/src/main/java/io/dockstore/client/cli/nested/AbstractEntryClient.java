@@ -539,6 +539,8 @@ public abstract class AbstractEntryClient {
         Pattern commandPattern = Pattern.compile("(.*)(baseCommand)(.*)(:)(.*)");
         Pattern versionPattern = Pattern.compile("(.*)(cwlVersion)(.*)(:)(.*)");
         Pattern stepsPattern = Pattern.compile("(.*)(steps)(.*)(:)(.*)");
+        String missing = "Required fields that are missing from CWL file :";
+        String warnMissing = "Warning:";
         Boolean inputFound = false, classFound = false, outputFound = false, commandFound = false, versionFound = false, stepsFound = false;
         Path p = Paths.get(content.getPath());
         try{
@@ -573,20 +575,26 @@ public abstract class AbstractEntryClient {
             }
             if(inputFound && outputFound && classFound){
                 if(!commandFound){
-                    out("Warning: 'baseCommand' field is missing in the entry file.");
+                    warnMissing += " 'baseCommand'";
                 }
                 if(!versionFound){
-                    out("Warning: 'cwlVersion' field is missing in the entry file.");
+                    warnMissing += " 'cwlVersion";
                 }
+                out(warnMissing+" fields are missing in the CWL file.");
                 return true;
             } else if(!inputFound && !outputFound && !classFound){
                 return false;
-            } else if(!outputFound) {
-                errorMessage("Missing 'outputs' in CWL file.",CLIENT_ERROR);
-            } else if(!inputFound) {
-                errorMessage("Missing 'inputs' in CWL file.",CLIENT_ERROR);
-            } else if(!classFound) {
-                errorMessage("Missing 'class' in CWL file.",CLIENT_ERROR);
+            } else{
+                if(!outputFound) {
+                    missing += " 'outputs'";
+                }
+                if(!inputFound) {
+                    missing += " 'inputs'";
+                }
+                if(!classFound) {
+                    missing += " 'class'";
+                }
+                errorMessage(missing, CLIENT_ERROR);
             }
         } catch(IOException e){
             throw new RuntimeException("Failed to get content of entry file.", e);
@@ -608,6 +616,7 @@ public abstract class AbstractEntryClient {
         Pattern outputPattern = Pattern.compile("(.*)(output)(.*)");
         Boolean wfFound = false, commandFound = false, outputFound = false, callFound = false;
         Integer counter = 0;
+        String missing = "Required fields that are missing from WDL file :";
         Path p = Paths.get(content.getPath());
         try{
             List<String> fileContent = java.nio.file.Files.readAllLines(p, StandardCharsets.UTF_8);
@@ -636,23 +645,26 @@ public abstract class AbstractEntryClient {
                     return false;
                 } else {
                     if(!wfFound){
-                        errorMessage("Missing 'workflow' in WDL file.", CLIENT_ERROR);
+                        missing+=" 'workflow'";
                     }
                     if(!commandFound){
-                        errorMessage("Missing 'command' in WDL file.", CLIENT_ERROR);
+                        missing+=" 'command'";
                     }
                     if(!callFound){
-                        errorMessage("Missing 'call' in WDL file.", CLIENT_ERROR);
+                        missing+=" 'call'";
                     }
-                    if(!outputFound){
-                        errorMessage("Missing 'output' in WDL file.", CLIENT_ERROR);
+                    if(!outputFound) {
+                        missing += " 'output'";
                     }
+                    errorMessage(missing, CLIENT_ERROR);
                 }
             } else{
                 if(wfFound || commandFound || outputFound || callFound){
-                    errorMessage("Missing 'task' in WDL file.", CLIENT_ERROR);
+                    missing += " 'task'";
+                    errorMessage(missing, CLIENT_ERROR);
                 }
             }
+
         } catch (IOException e){
             throw new RuntimeException("Failed to get content of entry file.", e);
         }
