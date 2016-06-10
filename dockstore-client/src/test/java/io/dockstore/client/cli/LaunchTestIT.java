@@ -380,6 +380,7 @@ public class LaunchTestIT {
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
+        Assert.assertTrue("output should include an error message of invalid file",systemOutRule.getLog().contains("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name."));
 
     }
 
@@ -408,7 +409,123 @@ public class LaunchTestIT {
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
-        //error invalid "Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name."
+        Assert.assertTrue("output should include an error message of invalid file",systemOutRule.getLog().contains("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name."));
+
+    }
+
+    @Test
+    public void wdlNoTask() throws IOException{
+        //Test when content is missing 'task'
+
+        File file = new File(ResourceHelpers.resourceFilePath("noTask.wdl"));
+        File json = new File(ResourceHelpers.resourceFilePath("hello.json"));
+
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("--entry");
+            add(file.getAbsolutePath());
+            add("--local-entry");
+            add("--json");
+            add(json.getAbsolutePath());
+        }};
+
+        WorkflowsApi api = mock(WorkflowsApi.class);
+        UsersApi usersApi = mock(UsersApi.class);
+        Client client = new Client();
+        client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
+
+        exit.expectSystemExit();
+
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
+        workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
+
+        Assert.assertTrue("output should include an error message and exit",systemOutRule.getLog().contains("Required fields that are missing from WDL file : 'task'"));
+
+    }
+
+    @Test
+    public void wdlNoCommand() throws IOException{
+        //Test when content is missing 'command'
+
+        File file = new File(ResourceHelpers.resourceFilePath("noCommand.wdl"));
+        File json = new File(ResourceHelpers.resourceFilePath("hello.json"));
+
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("--entry");
+            add(file.getAbsolutePath());
+            add("--local-entry");
+            add("--json");
+            add(json.getAbsolutePath());
+        }};
+
+        WorkflowsApi api = mock(WorkflowsApi.class);
+        UsersApi usersApi = mock(UsersApi.class);
+        Client client = new Client();
+        client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
+
+        exit.expectSystemExit();
+
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
+        workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
+
+        Assert.assertTrue("output should include an error message and exit",systemOutRule.getLog().contains("Required fields that are missing from WDL file : 'command'"));
+
+    }
+
+    @Test
+    public void wdlNoWfCall() throws IOException{
+        //Test when content is missing 'workflow' and 'call'
+
+        File file = new File(ResourceHelpers.resourceFilePath("noWfCall.wdl"));
+        File json = new File(ResourceHelpers.resourceFilePath("hello.json"));
+
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("--entry");
+            add(file.getAbsolutePath());
+            add("--local-entry");
+            add("--json");
+            add(json.getAbsolutePath());
+        }};
+
+        WorkflowsApi api = mock(WorkflowsApi.class);
+        UsersApi usersApi = mock(UsersApi.class);
+        Client client = new Client();
+        client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
+
+        exit.expectSystemExit();
+
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
+        workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
+
+        Assert.assertTrue("output should include an error message and exit",systemOutRule.getLog().contains("Required fields that are missing from WDL file : 'workflow' 'call'"));
+
+    }
+
+    @Test
+    public void cwlNoInput() throws IOException{
+        //Test when content is missing 'input'
+
+        File file = new File(ResourceHelpers.resourceFilePath("noInput.cwl"));
+        File json = new File(ResourceHelpers.resourceFilePath("1st-workflow-job.json"));
+
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("--entry");
+            add(file.getAbsolutePath());
+            add("--local-entry");
+            add("--json");
+            add(json.getAbsolutePath());
+        }};
+
+        WorkflowsApi api = mock(WorkflowsApi.class);
+        UsersApi usersApi = mock(UsersApi.class);
+        Client client = new Client();
+        client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
+
+        exit.expectSystemExit();
+
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
+        workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
+
+        Assert.assertTrue("output should include an error message and exit",systemOutRule.getLog().contains("Required fields that are missing from CWL file : 'inputs'"));
 
     }
 
