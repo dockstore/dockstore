@@ -527,11 +527,15 @@ public abstract class AbstractEntryClient {
 
     /**
      * this function will check if the content of the file is CWL or not
+     * it will get the content of the file and try to find/match the required fields
+     * Required fields in CWL: 'inputs' 'outputs' 'class' (CommandLineTool: 'baseCommand' , Workflow:'steps'
+     * Optional field, but good practice: 'cwlVersion'
      * @param content
      * @return
      */
     public Boolean checkCWL(File content){
-        /* CWL: check for 'class:Workflow OR CommandLineTool', 'inputs: ','outputs: ', and 'baseCommand'. Optional: 'cwlVersion' */
+        /* CWL: check for 'class:CommandLineTool', 'inputs: ','outputs: ', and 'baseCommand'. Optional: 'cwlVersion'
+         CWL: check for 'class:Workflow', 'inputs: ','outputs: ', and 'steps'. Optional: 'cwlVersion'*/
         Pattern inputPattern = Pattern.compile("(.*)(inputs)(.*)(:)(.*)");
         Pattern outputPattern = Pattern.compile("(.*)(outputs)(.*)(:)(.*)");
         Pattern classWfPattern = Pattern.compile("(.*)(class)(.*)(:)(\\sWorkflow)");
@@ -540,9 +544,10 @@ public abstract class AbstractEntryClient {
         Pattern versionPattern = Pattern.compile("(.*)(cwlVersion)(.*)(:)(.*)");
         Pattern stepsPattern = Pattern.compile("(.*)(steps)(.*)(:)(.*)");
         String missing = "Required fields that are missing from CWL file :";
-        String warnMissing = "Warning:";
-        Boolean inputFound = false, classFound = false, outputFound = false, commandFound = false, versionFound = false, stepsFound = false;
+        Boolean inputFound = false, classWfFound = false, classToolFound = false, outputFound = false,
+                commandFound = false, versionFound = false, stepsFound = false;
         Path p = Paths.get(content.getPath());
+        //go through each line of the file content and find the word patterns as described above
         try{
             List<String> fileContent = java.nio.file.Files.readAllLines(p, StandardCharsets.UTF_8);
             for(String line: fileContent){
@@ -565,33 +570,42 @@ public abstract class AbstractEntryClient {
                     stepsFound = true;
                 } else{
                     if(getEntryType().toLowerCase().equals("workflow") && matchWf.find()){
-                        classFound = true;
+                        classWfFound = true;
                     } else if(getEntryType().toLowerCase().equals("tool") && matchTool.find()){
-                        classFound = true;
+                        classToolFound = true;
                     } else if((getEntryType().toLowerCase().equals("tool") && matchWf.find()) || (getEntryType().toLowerCase().equals("workflow") && matchTool.find())){
                         errorMessage("Entry type does not match the class specified in CWL file.",CLIENT_ERROR);
                     }
                 }
             }
-            if(inputFound && outputFound && classFound){
-                if(!commandFound){
-                    warnMissing += " 'baseCommand'";
+            //check if the required fields are found, if not, give warning for the optional ones or error for the required ones
+            if(inputFound && outputFound && classWfFound && stepsFound){
+                //this is a valid cwl workflow file
+                if(!versionFound) {
+                    out("Warning: 'cwlVersion' field is missing in the CWL file.");
                 }
-                if(!versionFound){
-                    warnMissing += " 'cwlVersion";
-                }
-                out(warnMissing+" fields are missing in the CWL file.");
                 return true;
-            } else if(!inputFound && !outputFound && !classFound){
+            } else if(inputFound && outputFound && classToolFound && commandFound){
+                //this is a valid cwl tool file
+                if(!versionFound){
+                    out("Warning: 'cwlVersion' field is missing in the CWL file.");
+                }
+                return true;
+            } else if((!inputFound && !outputFound && !classToolFound && !commandFound)|| (!inputFound && !outputFound && !classWfFound)){
+                //not a CWL file, could be WDL or something else
                 return false;
             } else{
+                //CWL but some required fields are missing
                 if(!outputFound) {
                     missing += " 'outputs'";
                 }
                 if(!inputFound) {
                     missing += " 'inputs'";
                 }
-                if(!classFound) {
+                if(classWfFound && !stepsFound) {
+                    missing += " 'steps'";
+                }
+                if(!classToolFound && !classWfFound) {
                     missing += " 'class'";
                 }
                 errorMessage(missing, CLIENT_ERROR);
@@ -604,11 +618,13 @@ public abstract class AbstractEntryClient {
 
     /**
      * this function will check if the content of the file is WDL or not
+     * it will get the content of the file and try to find/match the required fields
+     * Required fields in WDL: 'task' 'workflow 'command' 'call' 'output'
      * @param content
      * @return
      */
     public Boolean checkWDL(File content){
-        /* WDL: check for 'task' (can be >=1) ,'call', 'command', 'output' and 'workflow' */
+        /* WDL: check for 'task' (must be >=1) ,'call', 'command', 'output' and 'workflow' */
         Pattern taskPattern = Pattern.compile("(.*)(task)(\\s)(.*)(\\{)");
         Pattern wfPattern = Pattern.compile("(.*)(workflow)(\\s)(.*)(\\{)");
         Pattern commandPattern = Pattern.compile("(.*)(command)(.*)");
@@ -618,6 +634,7 @@ public abstract class AbstractEntryClient {
         Integer counter = 0;
         String missing = "Required fields that are missing from WDL file :";
         Path p = Paths.get(content.getPath());
+        //go through each line of the file content and find the word patterns as described above
         try{
             List<String> fileContent = java.nio.file.Files.readAllLines(p, StandardCharsets.UTF_8);
             for(String line: fileContent){
@@ -638,31 +655,29 @@ public abstract class AbstractEntryClient {
                     outputFound = true;
                 }
             }
-            if(counter>0){
-                if(wfFound && commandFound && callFound && outputFound){
-                    return true;
-                } else if(!wfFound && !commandFound && !callFound && !outputFound){
-                    return false;
-                } else {
-                    if(!wfFound){
-                        missing+=" 'workflow'";
-                    }
-                    if(!commandFound){
-                        missing+=" 'command'";
-                    }
-                    if(!callFound){
-                        missing+=" 'call'";
-                    }
-                    if(!outputFound) {
-                        missing += " 'output'";
-                    }
-                    errorMessage(missing, CLIENT_ERROR);
-                }
-            } else{
-                if(wfFound || commandFound || outputFound || callFound){
+            //check all the required fields and give error message if it's missing
+            if(counter>0 && wfFound && commandFound && callFound && outputFound){
+                return true;    //this is a valid WDL file
+            } else if(counter==0 && !wfFound && !commandFound && !callFound && !outputFound){
+                return false;   //not a WDL file, maybe a CWL file or something else
+            } else {
+                //WDL file but some required fields are missing
+                if(counter==0){
                     missing += " 'task'";
-                    errorMessage(missing, CLIENT_ERROR);
                 }
+                if(!wfFound){
+                    missing+=" 'workflow'";
+                }
+                if(!commandFound){
+                    missing+=" 'command'";
+                }
+                if(!callFound){
+                    missing+=" 'call'";
+                }
+                if(!outputFound) {
+                    missing += " 'output'";
+                }
+                errorMessage(missing, CLIENT_ERROR);
             }
 
         } catch (IOException e){

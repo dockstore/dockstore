@@ -380,7 +380,7 @@ public class LaunchTestIT {
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
-        Assert.assertTrue("output should include a successful cromwell run",systemOutRule.getLog().contains("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name."));
+        Assert.assertTrue("output should include an error message of invalid file",systemOutRule.getLog().contains("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name."));
 
     }
 
@@ -409,7 +409,7 @@ public class LaunchTestIT {
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
-        Assert.assertTrue("output should include a successful cromwell run",systemOutRule.getLog().contains("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name."));
+        Assert.assertTrue("output should include an error message of invalid file",systemOutRule.getLog().contains("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name."));
 
     }
 
@@ -438,7 +438,7 @@ public class LaunchTestIT {
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
-        Assert.assertTrue("output should include a successful cromwell run",systemOutRule.getLog().contains("Required fields that are missing from WDL file : 'task'"));
+        Assert.assertTrue("output should include an error message and exit",systemOutRule.getLog().contains("Required fields that are missing from WDL file : 'task'"));
 
     }
 
@@ -467,7 +467,7 @@ public class LaunchTestIT {
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
-        Assert.assertTrue("output should include a successful cromwell run",systemOutRule.getLog().contains("Required fields that are missing from WDL file : 'command'"));
+        Assert.assertTrue("output should include an error message and exit",systemOutRule.getLog().contains("Required fields that are missing from WDL file : 'command'"));
 
     }
 
@@ -496,7 +496,7 @@ public class LaunchTestIT {
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
-        Assert.assertTrue("output should include a successful cromwell run",systemOutRule.getLog().contains("Required fields that are missing from WDL file : 'workflow' 'call'"));
+        Assert.assertTrue("output should include an error message and exit",systemOutRule.getLog().contains("Required fields that are missing from WDL file : 'workflow' 'call'"));
 
     }
 
@@ -525,7 +525,7 @@ public class LaunchTestIT {
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
-        Assert.assertTrue("output should include a successful cromwell run",systemOutRule.getLog().contains("Required fields that are missing from CWL file : 'inputs'"));
+        Assert.assertTrue("output should include an error message and exit",systemOutRule.getLog().contains("Required fields that are missing from CWL file : 'inputs'"));
 
     }
 
