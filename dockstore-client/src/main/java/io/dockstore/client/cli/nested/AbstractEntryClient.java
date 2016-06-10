@@ -530,8 +530,10 @@ public abstract class AbstractEntryClient {
      * it will get the content of the file and try to find/match the required fields
      * Required fields in CWL: 'inputs' 'outputs' 'class' (CommandLineTool: 'baseCommand' , Workflow:'steps'
      * Optional field, but good practice: 'cwlVersion'
-     * @param content
-     * @return
+     * @param content : the entry file content, type File
+     * @return true if the file is CWL (warning will be added here if cwlVersion is not found but will still return true)
+     * false if it's not a CWL file (could be WDL or something else)
+     * errormsg & exit if >=1 required field not found in the file
      */
     public Boolean checkCWL(File content){
         /* CWL: check for 'class:CommandLineTool', 'inputs: ','outputs: ', and 'baseCommand'. Optional: 'cwlVersion'
@@ -544,7 +546,7 @@ public abstract class AbstractEntryClient {
         Pattern versionPattern = Pattern.compile("(.*)(cwlVersion)(.*)(:)(.*)");
         Pattern stepsPattern = Pattern.compile("(.*)(steps)(.*)(:)(.*)");
         String missing = "Required fields that are missing from CWL file :";
-        Boolean inputFound = false, classWfFound = false, classToolFound = false, outputFound = false,
+        boolean inputFound = false, classWfFound = false, classToolFound = false, outputFound = false,
                 commandFound = false, versionFound = false, stepsFound = false;
         Path p = Paths.get(content.getPath());
         //go through each line of the file content and find the word patterns as described above
@@ -620,8 +622,10 @@ public abstract class AbstractEntryClient {
      * this function will check if the content of the file is WDL or not
      * it will get the content of the file and try to find/match the required fields
      * Required fields in WDL: 'task' 'workflow 'command' 'call' 'output'
-     * @param content
-     * @return
+     * @param content : the entry file content, File Type
+     * @return true if it is a valid WDL file
+     * false if it's not a WDL file (could be CWL or something else)
+     * errormsg and exit if >=1 required field not found in the file
      */
     public Boolean checkWDL(File content){
         /* WDL: check for 'task' (must be >=1) ,'call', 'command', 'output' and 'workflow' */
@@ -630,7 +634,7 @@ public abstract class AbstractEntryClient {
         Pattern commandPattern = Pattern.compile("(.*)(command)(.*)");
         Pattern callPattern = Pattern.compile("(.*)(call)(.*)");
         Pattern outputPattern = Pattern.compile("(.*)(output)(.*)");
-        Boolean wfFound = false, commandFound = false, outputFound = false, callFound = false;
+        boolean wfFound = false, commandFound = false, outputFound = false, callFound = false;
         Integer counter = 0;
         String missing = "Required fields that are missing from WDL file :";
         Path p = Paths.get(content.getPath());
@@ -689,7 +693,10 @@ public abstract class AbstractEntryClient {
 
     /**
      * this function will check the content of the entry file if it's a valid cwl/wdl file
-     * TO DO : get the pattern of a cwl/wdl file to determine the file content
+     * @param content: the file content, Type File
+     * @return Type -> Type.CWL if file content is CWL
+     * Type.WDL if file content is WDL
+     * Type.NONE if file content is neither WDL nor CWL
      */
     public Type checkFileContent(File content){
         if(checkCWL(content)){
@@ -702,7 +709,10 @@ public abstract class AbstractEntryClient {
 
     /**
      * this function will check the extension of the entry file (cwl/wdl)
-     * @return String
+     * @param path: the file path, Type String
+     * @return Type -> Type.CWL if file extension is CWL
+     * Type.WDL if file extension is WDL
+     * Type.NONE if file extension is neither WDL nor CWL, could be no extension or some other random extension(e.g .txt)
      */
     public Type checkFileExtension(String path){
         if(FilenameUtils.getExtension(path).toLowerCase().equals(CWL_STRING)){
@@ -717,9 +727,10 @@ public abstract class AbstractEntryClient {
      * this function will check for the content and the extension of entry file
      * for launch simplification, trying to reduce the use '--descriptor' when launching
      * @param entry relative path to local descriptor for either WDL/CWL tools or workflows
-     * @return
+     * this will either give back exceptionMessage and exit (if the content/extension/descriptor is invalid)
+     * OR proceed with launching the entry file (if it's valid)
      */
-    public String checkEntryFile(String entry,List<String> argsList, String descriptor){
+    public void checkEntryFile(String entry,List<String> argsList, String descriptor){
         File file = new File(entry);
         Type ext = checkFileExtension(file.getPath());     //file extension could be cwl,wdl or ""
         Type content = checkFileContent(file);             //check the file content (wdl,cwl or "")
@@ -786,7 +797,6 @@ public abstract class AbstractEntryClient {
                 errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
             }
         }
-        return null;
     }
 
     /**
