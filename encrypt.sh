@@ -10,8 +10,8 @@ tar cvf dockstore-integration-testing/src/test/resources/secrets.tar dockstore-i
 GIT_DIR=`pwd`
 # execute always in the same place to keep generated variable names consistent (sigh)
 # go to a nested dir for the new db testing to maintain a consistent variable name
-mkdir -p /tmp/multiple_source_files
-cd /tmp/multiple_source_files
+mkdir -p /tmp/add_constraint_1
+cd /tmp/add_constraint_1
 travis encrypt-file $GIT_DIR/dockstore-integration-testing/src/test/resources/secrets.tar -r ga4gh/dockstore
 # copy the new file
 cp secrets.tar.enc $GIT_DIR/dockstore-integration-testing/src/test/resources
@@ -19,4 +19,3 @@ cd -
 
 git add dockstore-integration-testing/src/test/resources/secrets.tar.enc
 git commit -m 'update secret archive'
-git push

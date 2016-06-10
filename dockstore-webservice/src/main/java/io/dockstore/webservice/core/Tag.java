@@ -16,16 +16,14 @@
 
 package io.dockstore.webservice.core;
 
-import java.util.Objects;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import java.util.Objects;
 
 /**
  * This describes one tag associated with a container. For our implementation, this means one tag on quay.io or Docker Hub which is
@@ -50,18 +48,18 @@ public class Tag extends Version<Tag> {
     @ApiModelProperty("Size of the image")
     private long size;
 
-    @Column(columnDefinition = "text")
+    @Column(columnDefinition = "text", nullable = false)
     @JsonProperty("dockerfile_path")
     @ApiModelProperty("Path for the Dockerfile")
     private String dockerfilePath = "/Dockerfile";
 
     // Add for new descriptor types
-    @Column(columnDefinition = "text")
+    @Column(columnDefinition = "text", nullable = false)
     @JsonProperty("cwl_path")
     @ApiModelProperty("Path for the CWL document")
     private String cwlPath = "/Dockstore.cwl";
 
-    @Column(columnDefinition = "text")
+    @Column(columnDefinition = "text", nullable = false)
     @JsonProperty("wdl_path")
     @ApiModelProperty("Path for the WDL document")
     private String wdlPath = "/Dockstore.wdl";
