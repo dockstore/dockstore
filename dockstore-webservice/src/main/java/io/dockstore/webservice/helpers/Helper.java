@@ -447,7 +447,7 @@ public final class Helper {
         Token quayToken = extractToken(tokens, TokenType.QUAY_IO.toString());
         if (quayToken == null){
             // no quay token extracted
-            throw new CustomWebApplicationException("no quay token found", HttpStatus.SC_NOT_FOUND);
+            throw new CustomWebApplicationException("no quay token found, please link your quay.io account to read from quay.io", HttpStatus.SC_NOT_FOUND);
         }
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
 
