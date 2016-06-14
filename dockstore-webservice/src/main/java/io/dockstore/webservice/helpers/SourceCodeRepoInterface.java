@@ -49,9 +49,9 @@ public abstract class SourceCodeRepoInterface {
      * @param fileName the name of the file (full path) to retrieve
      * @param reference the tag/branch to get the file from
      * @param gitUrl the git url for the git repository
-     * @return a wrapper for the file
+     * @return content of the file
      */
-    public abstract FileResponse readFile(String fileName, String reference, String gitUrl);
+    public abstract String readFile(String fileName, String reference, String gitUrl);
 
     /**
      * Update a container with the contents of the descriptor file from a source code repo
@@ -133,13 +133,12 @@ public abstract class SourceCodeRepoInterface {
      * @param content the actual wdl content
      * @return the tool that was given
      */
-    protected Tool parseWDLContent(Tool tool, String content) {
+    Tool parseWDLContent(Tool tool, String content) {
         // Use Broad WDL parser to grab data
         // Todo: Currently just checks validity of file.  In the future pull data such as author from the WDL file
         try {
-            String wdlSource = content;
             WdlParser parser = new WdlParser();
-            WdlParser.TokenStream tokens = new WdlParser.TokenStream(parser.lex(wdlSource, FilenameUtils.getName(tool.getDefaultWdlPath())));
+            WdlParser.TokenStream tokens = new WdlParser.TokenStream(parser.lex(content, FilenameUtils.getName(tool.getDefaultWdlPath())));
             WdlParser.Ast ast = (WdlParser.Ast) parser.parse(tokens).toAst();
 
             if (ast == null) {
@@ -190,22 +189,9 @@ public abstract class SourceCodeRepoInterface {
         return imports;
     }
 
-    public ArrayList<String> getWdlImports(File workflowFile) {
+    ArrayList<String> getWdlImports(File workflowFile) {
         Bridge bridge = new Bridge();
-        ArrayList<String> imports = bridge.getImportFiles(workflowFile);
-
-        return imports;
+        return bridge.getImportFiles(workflowFile);
     }
 
-    public static class FileResponse {
-        private String content;
-
-        public void setContent(String content) {
-            this.content = content;
-        }
-
-        public String getContent() {
-            return content;
-        }
-    }
 }

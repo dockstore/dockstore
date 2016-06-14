@@ -2328,12 +2328,6 @@ definitions:
         type: "string"
         description: "The descriptor that represents this version of the tool. (CWL\
           \ or WDL)"
-      format:
-        type: "string"
-        description: "The output type of the descriptor."
-        enum:
-        - "CWL"
-        - "WDL"
       url:
         type: "string"
         description: "Optional url to the tool descriptor used to build this image,\

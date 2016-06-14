@@ -68,13 +68,11 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public FileResponse readFile(String fileName, String reference, String gitUrl) {
+    public String readFile(String fileName, String reference, String gitUrl) {
         String repositoryId = this.getRepositoryId(gitUrl);
         if (fileName.startsWith("/")) {
             fileName = fileName.substring(1);
         }
-
-        FileResponse fileResponse = new FileResponse();
 
         String content;
         String branch = null;
@@ -117,12 +115,10 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         }
 
         if (content != null && !content.isEmpty()) {
-            fileResponse.setContent(content);
+            return content;
         } else {
             return null;
         }
-
-        return fileResponse;
     }
 
     @Override

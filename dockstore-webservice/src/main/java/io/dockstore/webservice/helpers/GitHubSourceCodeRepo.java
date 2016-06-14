@@ -82,8 +82,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public FileResponse readFile(String fileName, String reference, String gitUrl) {
-        FileResponse cwl = new FileResponse();
+    public String readFile(String fileName, String reference, String gitUrl) {
         checkNotNull(fileName, "The fileName given is null.");
         try {
             Repository repo = service.getRepository(gitUsername, gitRepository); // may need to pass owner from git url, as this may differ from the git username
@@ -95,9 +94,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             }
 
             if (!(contents == null || contents.isEmpty())) {
-                String content = extractGitHubContents(contents);
-                // builder.append(content);
-                cwl.setContent(content);
+                return extractGitHubContents(contents);
             } else {
                 return null;
             }
@@ -111,7 +108,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         } catch (IOException e) {
             LOG.error(gitUsername + ": IOException on readFile" + e.getMessage());
         }
-        return cwl;
+        return null;
     }
 
     @Override
