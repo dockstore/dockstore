@@ -252,17 +252,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                                 file.setContent(content);
                                 file.setPath(calculatedPath);
                                 version.getSourceFiles().add(file);
-                                final File tempDesc = File.createTempFile("temp", ".cwl", Files.createTempDir());
-                                Files.write(content, tempDesc, StandardCharsets.UTF_8);
-                                importPaths = getCwlImports(tempDesc);
-                                for (String importPath : importPaths) {
-                                    LOG.info(gitUsername + ": Grabbing file " + basepath + importPath);
-                                    SourceFile importFile = new SourceFile();
-                                    importFile.setContent(extractGitHubContents(cService.getContents(id, basepath + importPath, ref)));
-                                    importFile.setPath(basepath + importPath);
-                                    importFile.setType(SourceFile.FileType.DOCKSTORE_CWL);
-                                    sourceFileSet.add(importFile);
-                                }
+
+                                // try to use the FileImporter to re-use code for handling imports
+                                FileImporter importer = new FileImporter(this);
+                                final Map<String, SourceFile> stringSourceFileMap = importer
+                                        .resolveImports(content, workflow, SourceFile.FileType.DOCKSTORE_CWL, version);
+                                sourceFileSet.addAll(stringSourceFileMap.values());
                             }
                         }
 

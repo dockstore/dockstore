@@ -18,9 +18,11 @@ package io.dockstore.webservice.helpers;
 
 import com.esotericsoftware.yamlbeans.YamlException;
 import com.esotericsoftware.yamlbeans.YamlReader;
+import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
-import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.WorkflowVersion;
 
 import java.util.HashMap;
 import java.util.List;
@@ -40,14 +42,14 @@ public class FileImporter {
     /**
      * Read a file from the tool's git repository.
      *
-     * @param tool
+     * @param entry
      * @param fileType
-     * @param tag
+     * @param version
      * @return a FileResponse instance
      */
-    public String readGitRepositoryFile(Tool tool, SourceFile.FileType fileType, Tag tag, String specificPath) {
+    public String readGitRepositoryFile(Entry entry, SourceFile.FileType fileType, Version version, String specificPath) {
 
-        if (tool.getGitUrl() == null || tool.getGitUrl().isEmpty()) {
+        if (entry.getGitUrl() == null || entry.getGitUrl().isEmpty()) {
             return null;
         }
 
@@ -55,7 +57,7 @@ public class FileImporter {
             return null;
         }
 
-        final String reference = tag.getReference();// sourceCodeRepo.getReference(tool.getGitUrl(), tag.getReference());
+        final String reference = version.getReference();// sourceCodeRepo.getReference(tool.getGitUrl(), tag.getReference());
 
         // Do not try to get file if the reference is not available
         if (reference == null) {
@@ -65,7 +67,8 @@ public class FileImporter {
         String fileName = "";
         if (specificPath != null){
             fileName = specificPath;
-        } else {
+        } else if (version instanceof Tag) {
+            Tag tag = (Tag)version;
             // Add for new descriptor types
             if (fileType == SourceFile.FileType.DOCKERFILE) {
                 fileName = tag.getDockerfilePath();
@@ -74,58 +77,67 @@ public class FileImporter {
             } else if (fileType == SourceFile.FileType.DOCKSTORE_WDL) {
                 fileName = tag.getWdlPath();
             }
+        } else if (version instanceof WorkflowVersion){
+            WorkflowVersion workflowVersion = (WorkflowVersion)version;
+            fileName = workflowVersion.getWorkflowPath();
         }
 
-        return sourceCodeRepo.readFile(fileName, reference, tool.getGitUrl());
+        return sourceCodeRepo.readFile(fileName, reference, entry.getGitUrl());
     }
 
-    public Map<String, SourceFile> resolveImports(String content, Tool tool, SourceFile.FileType fileType, Tag tag) {
+    public Map<String, SourceFile> resolveImports(String content, Entry entry, SourceFile.FileType fileType, Version version) {
         Map<String, SourceFile> imports = new HashMap<>();
 
         YamlReader reader = new YamlReader(content);
         try {
             Map<String, ?> map = reader.read(Map.class);
-            handleMap(tool, fileType, tag, imports, map);
+            handleMap(entry, fileType, version, imports, map);
 
         } catch (YamlException e) {
-            SourceCodeRepoInterface.LOG.error("Could not process content from "+tool.getToolPath()+" as yaml");
+            SourceCodeRepoInterface.LOG.error("Could not process content from "+entry.getId()+" as yaml");
         }
 
         Map<String, SourceFile> recursiveImports = new HashMap<>();
         for(SourceFile file : imports.values()){
-            final Map<String, SourceFile> sourceFiles = resolveImports(file.getContent(), tool, fileType, tag);
+            final Map<String, SourceFile> sourceFiles = resolveImports(file.getContent(), entry, fileType, version);
             recursiveImports.putAll(sourceFiles);
         }
         recursiveImports.putAll(imports);
         return recursiveImports;
     }
 
-    private void handleMap(Tool tool, SourceFile.FileType fileType, Tag tag, Map<String, SourceFile> imports, Map<String, ?> map) {
+    private void handleMap(Entry entry, SourceFile.FileType fileType, Version version, Map<String, SourceFile> imports, Map<String, ?> map) {
         for(Map.Entry<String, ?> e : map.entrySet()){
             final Object mapValue = e.getValue();
-            if (e.getKey().equalsIgnoreCase("$import")){
+            if (e.getKey().equalsIgnoreCase("$import") || e.getKey().equalsIgnoreCase("$include")){
+                // handle imports and includes
                 if (mapValue instanceof String) {
-                    handleImport(tool, fileType, tag, imports, (String) mapValue);
+                    handleImport(entry, fileType, version, imports, (String) mapValue);
+                }
+            } else if (e.getKey().equalsIgnoreCase("run")){
+                // for workflows, bare files may be referenced. See https://github.com/ga4gh/dockstore/issues/208
+                if (mapValue instanceof String){
+                    handleImport(entry, fileType, version, imports, (String) mapValue);
                 }
             } else {
-                handleMapValue(tool, fileType, tag, imports, mapValue);
+                handleMapValue(entry, fileType, version, imports, mapValue);
             }
         }
     }
 
-    private void handleMapValue(Tool tool, SourceFile.FileType fileType, Tag tag, Map<String, SourceFile> imports, Object mapValue) {
+    private void handleMapValue(Entry entry, SourceFile.FileType fileType, Version version, Map<String, SourceFile> imports, Object mapValue) {
         if(mapValue instanceof Map){
-            handleMap(tool, fileType, tag, imports, (Map) mapValue);
+            handleMap(entry, fileType, version, imports, (Map) mapValue);
         } else if(mapValue instanceof List) {
             for(Object listMember : (List)mapValue){
-                handleMapValue(tool, fileType, tag, imports, listMember);
+                handleMapValue(entry, fileType, version, imports, listMember);
             }
         }
     }
 
-    private void handleImport(Tool tool, SourceFile.FileType fileType, Tag tag, Map<String, SourceFile> imports, String mapValue) {
+    private void handleImport(Entry entry, SourceFile.FileType fileType, Version version, Map<String, SourceFile> imports, String mapValue) {
         // create a new source file
-        final String fileResponse = readGitRepositoryFile(tool, fileType, tag, mapValue);
+        final String fileResponse = readGitRepositoryFile(entry, fileType, version, mapValue);
         if (fileResponse == null){
             SourceCodeRepoInterface.LOG.error("Could not read: " + mapValue);
             return;

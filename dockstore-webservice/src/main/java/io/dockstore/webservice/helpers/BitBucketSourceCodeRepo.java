@@ -17,7 +17,6 @@
 package io.dockstore.webservice.helpers;
 
 import com.google.common.base.Optional;
-import com.google.common.io.Files;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -34,10 +33,6 @@ import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -311,30 +306,21 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                     // Now grab source files
                     SourceFile sourceFile;
                     Set<SourceFile> sourceFileSet = new HashSet<>();
-                    ArrayList<String> importPaths;
 
                     if (calculatedPath.toLowerCase().endsWith(".cwl")) {
                         sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, "cwl");
+                        // try to use the FileImporter to re-use code for handling imports
+                        if (sourceFile.getContent() != null) {
+                            FileImporter importer = new FileImporter(this);
+                            final Map<String, SourceFile> stringSourceFileMap = importer
+                                    .resolveImports(sourceFile.getContent(), workflow, SourceFile.FileType.DOCKSTORE_CWL, version);
+                            sourceFileSet.addAll(stringSourceFileMap.values());
+                        }
                     } else {
                         sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, "wdl");
+                        // handle WDL imports here #276
                     }
 
-                    // Find all import files
-                    if (sourceFile.getContent() != null) {
-                        try {
-                            final File tempDesc = File.createTempFile("temp", ".descriptor", Files.createTempDir());
-                            Files.write(sourceFile.getContent(), tempDesc, StandardCharsets.UTF_8);
-                            importPaths = calculatedPath.toLowerCase().endsWith(".cwl") ? getCwlImports(tempDesc) : getWdlImports(tempDesc);
-                            for (String importPath : importPaths) {
-                                LOG.info(gitUsername + ": Grabbing file " + basepath + importPath);
-                                sourceFileSet.add(getSourceFile(basepath + importPath, repositoryId, branchName,
-                                        importPath.toLowerCase().endsWith(".cwl") ? "cwl" : "wdl"));
-                            }
-                        } catch (IOException e) {
-                            LOG.info(gitUsername + ": Error writing descriptor file to temp file.");
-                            e.printStackTrace();
-                        }
-                    }
 
                     if (sourceFile.getContent() != null) {
                         version.getSourceFiles().add(sourceFile);
