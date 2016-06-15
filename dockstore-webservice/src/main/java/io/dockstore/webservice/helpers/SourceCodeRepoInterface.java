@@ -28,7 +28,7 @@ import wdl4s.parser.WdlParser;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -167,7 +167,7 @@ public abstract class SourceCodeRepoInterface {
      */
     public abstract Workflow getNewWorkflow(String repositoryId, Optional<Workflow> existingWorkflow);
 
-    ArrayList<String> getWdlImports(File workflowFile) {
+    List<String> getWdlImports(File workflowFile) {
         Bridge bridge = new Bridge();
         return bridge.getImportFiles(workflowFile);
     }

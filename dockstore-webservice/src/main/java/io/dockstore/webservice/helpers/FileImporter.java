@@ -18,12 +18,18 @@ package io.dockstore.webservice.helpers;
 
 import com.esotericsoftware.yamlbeans.YamlException;
 import com.esotericsoftware.yamlbeans.YamlReader;
+import com.google.common.io.Files;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.WorkflowVersion;
+import org.apache.http.HttpStatus;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,24 +87,54 @@ public class FileImporter {
     }
 
     public Map<String, SourceFile> resolveImports(String content, Entry entry, SourceFile.FileType fileType, Version version) {
+
         Map<String, SourceFile> imports = new HashMap<>();
 
-        YamlReader reader = new YamlReader(content);
-        try {
-            Map<String, ?> map = reader.read(Map.class);
-            handleMap(entry, fileType, version, imports, map);
+        if (fileType == SourceFile.FileType.DOCKSTORE_CWL) {
 
-        } catch (YamlException e) {
-            SourceCodeRepoInterface.LOG.error("Could not process content from "+entry.getId()+" as yaml");
-        }
+            YamlReader reader = new YamlReader(content);
+            try {
+                Map<String, ?> map = reader.read(Map.class);
+                handleMap(entry, fileType, version, imports, map);
 
-        Map<String, SourceFile> recursiveImports = new HashMap<>();
-        for(SourceFile file : imports.values()){
-            final Map<String, SourceFile> sourceFiles = resolveImports(file.getContent(), entry, fileType, version);
-            recursiveImports.putAll(sourceFiles);
+            } catch (YamlException e) {
+                SourceCodeRepoInterface.LOG.error("Could not process content from " + entry.getId() + " as yaml");
+            }
+
+            Map<String, SourceFile> recursiveImports = new HashMap<>();
+            for (SourceFile file : imports.values()) {
+                final Map<String, SourceFile> sourceFiles = resolveImports(file.getContent(), entry, fileType, version);
+                recursiveImports.putAll(sourceFiles);
+            }
+            recursiveImports.putAll(imports);
+            return recursiveImports;
+        } else if (fileType == SourceFile.FileType.DOCKSTORE_WDL){
+            final File tempDesc;
+            try {
+                tempDesc = File.createTempFile("temp", ".wdl", Files.createTempDir());
+                Files.write(content, tempDesc, StandardCharsets.UTF_8);
+                final List<String> importPaths = sourceCodeRepo.getWdlImports(tempDesc);
+                for (String importPath : importPaths) {
+                    SourceFile importFile = new SourceFile();
+
+                    final String fileResponse = readGitRepositoryFile(fileType, version, importPath);
+                    if (fileResponse == null){
+                        SourceCodeRepoInterface.LOG.error("Could not read: " + importPath);
+                        continue;
+                    }
+                    importFile.setContent(fileResponse);
+                    importFile.setPath(importPath);
+                    importFile.setType(SourceFile.FileType.DOCKSTORE_WDL);
+                    imports.put(importFile.getPath(), importFile);
+                }
+            } catch (IOException e) {
+                throw new CustomWebApplicationException("Internal server error, out of space", HttpStatus.SC_INSUFFICIENT_SPACE_ON_RESOURCE);
+            }
+
+            return imports;
+        } else{
+            throw new CustomWebApplicationException("Invalid file type for import", HttpStatus.SC_BAD_REQUEST);
         }
-        recursiveImports.putAll(imports);
-        return recursiveImports;
     }
 
     private void handleMap(Entry entry, SourceFile.FileType fileType, Version version, Map<String, SourceFile> imports, Map<String, ?> map) {

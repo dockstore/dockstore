@@ -17,7 +17,6 @@
 package io.dockstore.webservice.helpers;
 
 import com.google.common.base.Optional;
-import com.google.common.io.Files;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
@@ -39,7 +38,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import wdl4s.NamespaceWithWorkflow;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -152,8 +150,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public String getOrganizationEmail() {
-        User organization = null;
-
+        User organization;
         try {
             // TODO: only works if the gitUsername is an actual organization on github
             // ie, it does not work if it is just a user
@@ -172,7 +169,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             final List<Repository> repositories = service.getRepositories();
             for(Repository repo : repositories){
-                reposByGitURl.put(repo.getGitUrl(), repo.generateId());
+                reposByGitURl.put(repo.getSshUrl(), repo.generateId());
             }
             return reposByGitURl;
         } catch (IOException e) {
@@ -187,7 +184,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         RepositoryId id = RepositoryId.createFromId(repositoryId);
         try {
             final Repository repository = service.getRepository(id);
-            LOG.info(gitUsername + ": Looking at repo: " + repository.getGitUrl());
+            LOG.info(gitUsername + ": Looking at repo: " + repository.getSshUrl());
             Workflow workflow = new Workflow();
             workflow.setOrganization(repository.getOwner().getLogin());
             workflow.setRepository(repository.getName());
@@ -227,18 +224,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 // determine workflow version from previous
                 String calculatedPath = existingDefaults.getOrDefault(ref, existingWorkflow.get().getDefaultWorkflowPath());
                 version.setWorkflowPath(calculatedPath);
-
-                // Get relative path of main workflow descriptor to find relative paths
-                String[] path = calculatedPath.split("/");
-                String basepath = "";
-                for (int i = 0; i < path.length - 1; i++) {
-                    basepath += path[i] + "/";
-                }
-
-                ArrayList<String> importPaths;
                 Set<SourceFile> sourceFileSet = new HashSet<>();
-
-
                 //TODO: is there a case-insensitive endsWith?
                 if (calculatedPath.endsWith(".cwl") || calculatedPath.endsWith(".CWL")) {
                     // look for workflow file
@@ -281,17 +267,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                                 file.setContent(content);
                                 file.setPath(calculatedPath);
                                 version.getSourceFiles().add(file);
-                                final File tempDesc = File.createTempFile("temp", ".wdl", Files.createTempDir());
-                                Files.write(content, tempDesc, StandardCharsets.UTF_8);
-                                importPaths = getWdlImports(tempDesc);
-                                for (String importPath : importPaths) {
-                                    LOG.info(gitUsername + ": Grabbing file " + importPath);
-                                    SourceFile importFile = new SourceFile();
-                                    importFile.setContent(extractGitHubContents(cService.getContents(id, basepath + importPath, ref)));
-                                    importFile.setPath(basepath + importPath);
-                                    importFile.setType(SourceFile.FileType.DOCKSTORE_WDL);
-                                    sourceFileSet.add(importFile);
-                                }
+
+                                // try to use the FileImporter to re-use code for handling imports
+                                FileImporter importer = new FileImporter(this);
+                                final Map<String, SourceFile> stringSourceFileMap = importer
+                                        .resolveImports(content, workflow, SourceFile.FileType.DOCKSTORE_WDL, version);
+                                sourceFileSet.addAll(stringSourceFileMap.values());
                             }
                         }
                     } catch (Exception ex) {

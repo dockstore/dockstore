@@ -22,6 +22,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
@@ -29,6 +30,7 @@ import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.resources.ResourceUtilities;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,6 +58,14 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     private final String gitRepository;
 
     // TODO: should be made protected in favour of factory
+
+    /**
+     *
+     * @param gitUsername username that owns the bitbucket token
+     * @param client
+     * @param bitbucketTokenContent bitbucket token
+     * @param gitRepository name of the repo
+     */
     public BitBucketSourceCodeRepo(String gitUsername, HttpClient client, String bitbucketTokenContent, String gitRepository) {
         this.client = client;
         this.bitbucketTokenContent = bitbucketTokenContent;
@@ -65,7 +75,6 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public String readFile(String fileName, String reference) {
-        String repositoryId = this.getRepositoryId(gitRepository);
         if (fileName.startsWith("/")) {
             fileName = fileName.substring(1);
         }
@@ -74,7 +83,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         String branch = null;
 
         if (reference == null) {
-            String mainBranchUrl = BITBUCKET_API_URL + "repositories/" + repositoryId + "/main-branch";
+            String mainBranchUrl = BITBUCKET_API_URL + "repositories/" + gitRepository + "/main-branch";
 
             Optional<String> asString = ResourceUtilities.asString(mainBranchUrl, bitbucketTokenContent, client);
             LOG.info(gitUsername + ": RESOURCE CALL: {}", mainBranchUrl);
@@ -99,7 +108,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             branch = reference;
         }
 
-        String url = BITBUCKET_API_URL + "repositories/" + repositoryId + "/raw/" + branch + '/' + fileName;
+        String url = BITBUCKET_API_URL + "repositories/" + gitUsername + "/" + gitRepository + "/raw/" + branch + '/' + fileName;
         Optional<String> asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
         LOG.info(gitUsername + ": RESOURCE CALL: {}", url);
         if (asString.isPresent()) {
@@ -308,19 +317,21 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                     // Now grab source files
                     SourceFile sourceFile;
                     Set<SourceFile> sourceFileSet = new HashSet<>();
-
+                    SourceFile.FileType identifiedType;
                     if (calculatedPath.toLowerCase().endsWith(".cwl")) {
-                        sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, "cwl");
-                        // try to use the FileImporter to re-use code for handling imports
-                        if (sourceFile.getContent() != null) {
-                            FileImporter importer = new FileImporter(this);
-                            final Map<String, SourceFile> stringSourceFileMap = importer
-                                    .resolveImports(sourceFile.getContent(), workflow, SourceFile.FileType.DOCKSTORE_CWL, version);
-                            sourceFileSet.addAll(stringSourceFileMap.values());
-                        }
-                    } else {
-                        sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, "wdl");
-                        // handle WDL imports here #276
+                        identifiedType = SourceFile.FileType.DOCKSTORE_CWL;
+                    } else if(calculatedPath.toLowerCase().endsWith(".wdl")) {
+                        identifiedType = SourceFile.FileType.DOCKSTORE_WDL;
+                    } else{
+                        throw new CustomWebApplicationException("Invalid file type for import", HttpStatus.SC_BAD_REQUEST);
+                    }
+                    sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, identifiedType);
+                    // try to use the FileImporter to re-use code for handling imports
+                    if (sourceFile.getContent() != null) {
+                        FileImporter importer = new FileImporter(this);
+                        final Map<String, SourceFile> stringSourceFileMap = importer
+                                .resolveImports(sourceFile.getContent(), workflow, identifiedType, version);
+                        sourceFileSet.addAll(stringSourceFileMap.values());
                     }
 
 
@@ -354,7 +365,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
          * @param type
          * @return source file
          */
-    private SourceFile getSourceFile(String path, String repositoryId, String branch, String type) {
+    private SourceFile getSourceFile(String path, String repositoryId, String branch, SourceFile.FileType type) {
         SourceFile file = new SourceFile();
         String url = BITBUCKET_API_URL + "repositories/" + repositoryId + "/raw/" + branch + "/" + path;
 
@@ -364,37 +375,11 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         if (asString.isPresent()) {
             String content = asString.get();
             if (content != null) {
-                if (type.equals("cwl")) {
-                    file.setType(SourceFile.FileType.DOCKSTORE_CWL);
-                } else {
-                    file.setType(SourceFile.FileType.DOCKSTORE_WDL);
-                }
+                file.setType(type);
                 file.setContent(content);
                 file.setPath(path);
             }
         }
         return file;
     }
-
-    /**
-     * Parses git url for bitbucket to get the owner/repo_name
-     * @param gitUrl
-     * @return String of the form owner/repo_name
-         */
-    private String getRepositoryId(String gitUrl) {
-        String repoId;
-
-        Pattern p = Pattern.compile("git@bitbucket\\.org:(\\S+)\\.git");
-        Matcher m = p.matcher(gitUrl);
-        int repoIdPos = 1;
-
-        if (!m.find()) {
-            LOG.info(gitUsername + ": Owner and Repository name could not be found from the giturl");
-            return null;
-        }
-
-        repoId = m.group(repoIdPos);
-        return repoId;
-    }
-
 }
