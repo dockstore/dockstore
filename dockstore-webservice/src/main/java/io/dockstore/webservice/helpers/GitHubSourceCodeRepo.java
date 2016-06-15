@@ -65,6 +65,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     private final OrganizationService oService;
     private final String gitRepository;
 
+    // TODO: should be made protected in favour of factory
     public GitHubSourceCodeRepo(String gitUsername, String githubTokenContent, String gitRepository) {
 
         GitHubClient githubClient = new GitHubClient();
@@ -82,7 +83,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public String readFile(String fileName, String reference, String gitUrl) {
+    public String readFile(String fileName, String reference) {
         checkNotNull(fileName, "The fileName given is null.");
         try {
             Repository repo = service.getRepository(gitUsername, gitRepository); // may need to pass owner from git url, as this may differ from the git username
@@ -102,7 +103,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         } catch (RequestException e){
             if (e.getStatus() == HttpStatus.SC_UNAUTHORIZED){
                 // we have bad credentials which should not be ignored
-                throw new CustomWebApplicationException("Error reading from "+gitUrl+", please re-create your git token", HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException("Error reading from "+gitRepository+", please re-create your git token", HttpStatus.SC_BAD_REQUEST);
             }
             return null;
         } catch (IOException e) {
@@ -190,7 +191,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             Workflow workflow = new Workflow();
             workflow.setOrganization(repository.getOwner().getLogin());
             workflow.setRepository(repository.getName());
-            workflow.setGitUrl(repository.getGitUrl());
+            workflow.setGitUrl(repository.getSshUrl());
             workflow.setLastUpdated(new Date());
             // make sure path is constructed
 

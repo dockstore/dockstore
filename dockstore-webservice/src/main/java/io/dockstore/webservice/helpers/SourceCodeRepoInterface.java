@@ -45,10 +45,9 @@ public abstract class SourceCodeRepoInterface {
      * file from a specific branch/tag
      * @param fileName the name of the file (full path) to retrieve
      * @param reference the tag/branch to get the file from
-     * @param gitUrl the git url for the git repository
      * @return content of the file
      */
-    public abstract String readFile(String fileName, String reference, String gitUrl);
+    public abstract String readFile(String fileName, String reference);
 
     /**
      * Update a container with the contents of the descriptor file from a source code repo

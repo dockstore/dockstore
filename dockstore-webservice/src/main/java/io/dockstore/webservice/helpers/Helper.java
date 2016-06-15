@@ -476,7 +476,7 @@ public final class Helper {
 
         // Add for new descriptor types
         for (FileType f : FileType.values()) {
-            String fileResponse = importer.readGitRepositoryFile(c, f, tag, null);
+            String fileResponse = importer.readGitRepositoryFile(f, tag, null);
             if (fileResponse != null) {
                 SourceFile dockstoreFile = new SourceFile();
                 dockstoreFile.setType(f);

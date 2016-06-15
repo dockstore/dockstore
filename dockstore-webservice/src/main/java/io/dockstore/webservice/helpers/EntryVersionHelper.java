@@ -85,8 +85,7 @@ public class EntryVersionHelper<T extends Entry> {
         for(Map.Entry<String, ImmutablePair<SourceFile, FileDescription>> entry : sourceFiles.entrySet()){
             if (path != null) {
                 //db stored paths are absolute, convert relative to absolute
-                String relativePath = "/" + path;
-                if (entry.getKey().equals(relativePath)) {
+                if (entry.getKey().equals(path)) {
                     return entry.getValue().getLeft();
                 }
             } else if (entry.getValue().getRight().primaryDescriptor){

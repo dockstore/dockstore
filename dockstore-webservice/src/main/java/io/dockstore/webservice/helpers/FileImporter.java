@@ -42,16 +42,11 @@ public class FileImporter {
     /**
      * Read a file from the tool's git repository.
      *
-     * @param entry
      * @param fileType
      * @param version
      * @return a FileResponse instance
      */
-    public String readGitRepositoryFile(Entry entry, SourceFile.FileType fileType, Version version, String specificPath) {
-
-        if (entry.getGitUrl() == null || entry.getGitUrl().isEmpty()) {
-            return null;
-        }
+    public String readGitRepositoryFile(SourceFile.FileType fileType, Version version, String specificPath) {
 
         if (sourceCodeRepo == null) {
             return null;
@@ -82,7 +77,7 @@ public class FileImporter {
             fileName = workflowVersion.getWorkflowPath();
         }
 
-        return sourceCodeRepo.readFile(fileName, reference, entry.getGitUrl());
+        return sourceCodeRepo.readFile(fileName, reference);
     }
 
     public Map<String, SourceFile> resolveImports(String content, Entry entry, SourceFile.FileType fileType, Version version) {
@@ -109,15 +104,22 @@ public class FileImporter {
     private void handleMap(Entry entry, SourceFile.FileType fileType, Version version, Map<String, SourceFile> imports, Map<String, ?> map) {
         for(Map.Entry<String, ?> e : map.entrySet()){
             final Object mapValue = e.getValue();
-            if (e.getKey().equalsIgnoreCase("$import") || e.getKey().equalsIgnoreCase("$include")){
+            if (e.getKey().equalsIgnoreCase("$import") || e.getKey().equalsIgnoreCase("$include")
+                    || e.getKey().equalsIgnoreCase("import") || e.getKey().equalsIgnoreCase("include")){
                 // handle imports and includes
                 if (mapValue instanceof String) {
-                    handleImport(entry, fileType, version, imports, (String) mapValue);
+                    handleImport(fileType, version, imports, (String) mapValue);
                 }
             } else if (e.getKey().equalsIgnoreCase("run")){
                 // for workflows, bare files may be referenced. See https://github.com/ga4gh/dockstore/issues/208
+                //ex:
+                //  run: {import: revtool.cwl}
+                //  run: revtool.cwl
                 if (mapValue instanceof String){
-                    handleImport(entry, fileType, version, imports, (String) mapValue);
+                    handleImport(fileType, version, imports, (String) mapValue);
+                } else if (mapValue instanceof Map){
+                    // this handles the case where an import is used
+                    handleMap(entry, fileType, version, imports, (Map)mapValue);
                 }
             } else {
                 handleMapValue(entry, fileType, version, imports, mapValue);
@@ -135,9 +137,9 @@ public class FileImporter {
         }
     }
 
-    private void handleImport(Entry entry, SourceFile.FileType fileType, Version version, Map<String, SourceFile> imports, String mapValue) {
+    private void handleImport(SourceFile.FileType fileType, Version version, Map<String, SourceFile> imports, String mapValue) {
         // create a new source file
-        final String fileResponse = readGitRepositoryFile(entry, fileType, version, mapValue);
+        final String fileResponse = readGitRepositoryFile(fileType, version, mapValue);
         if (fileResponse == null){
             SourceCodeRepoInterface.LOG.error("Could not read: " + mapValue);
             return;

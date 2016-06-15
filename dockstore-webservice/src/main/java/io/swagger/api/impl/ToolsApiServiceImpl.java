@@ -128,12 +128,15 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     @Override
     public Response toolsIdVersionsVersionIdDescriptorRelativePathGet(String id, String versionId, String relativePath,
             String format, SecurityContext securityContext) throws NotFoundException {
+        if (format == null){
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
         SourceFile.FileType type = getFileType(format);
         if (type == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
 
-        return getFileByToolVersionID(id, versionId, SourceFile.FileType.DOCKERFILE, relativePath);
+        return getFileByToolVersionID(id, versionId, type, relativePath);
     }
 
     private SourceFile.FileType getFileType(String format) {

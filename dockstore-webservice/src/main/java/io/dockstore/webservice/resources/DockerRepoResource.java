@@ -463,8 +463,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/path/tool/{repository}/published")
-    @ApiOperation(value = "Get a published container by tool path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Tool.class)
-    public Tool getPublishedContainerByToolPath(
+    @ApiOperation(value = "Get a published container by tool path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Tool.class) public Tool getPublishedContainerByToolPath(
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         final String[] split = path.split("/");
         // check that this is a tool path
@@ -474,10 +473,13 @@ public class DockerRepoResource {
             toolname = split[toolPathLength - 1];
         }
 
-        Tool tool = toolDAO.findPublishedByToolPath(Joiner.on("/").join(split[0], split[1], split[2]), toolname);
-        Helper.checkEntry(tool);
-
-        return tool;
+        try {
+            Tool tool = toolDAO.findPublishedByToolPath(Joiner.on("/").join(split[0], split[1], split[2]), toolname);
+            Helper.checkEntry(tool);
+            return tool;
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw new CustomWebApplicationException(path + " not found", HttpStatus.SC_NOT_FOUND);
+        }
     }
 
     @PUT

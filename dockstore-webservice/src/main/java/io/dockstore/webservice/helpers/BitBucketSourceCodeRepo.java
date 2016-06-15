@@ -55,6 +55,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     private final String bitbucketTokenContent;
     private final String gitRepository;
 
+    // TODO: should be made protected in favour of factory
     public BitBucketSourceCodeRepo(String gitUsername, HttpClient client, String bitbucketTokenContent, String gitRepository) {
         this.client = client;
         this.bitbucketTokenContent = bitbucketTokenContent;
@@ -63,8 +64,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public String readFile(String fileName, String reference, String gitUrl) {
-        String repositoryId = this.getRepositoryId(gitUrl);
+    public String readFile(String fileName, String reference) {
+        String repositoryId = this.getRepositoryId(gitRepository);
         if (fileName.startsWith("/")) {
             fileName = fileName.substring(1);
         }
@@ -241,7 +242,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
         workflow.setOrganization(owner);
         workflow.setRepository(name);
-        workflow.setGitUrl(BITBUCKET_GIT_URL_PREFIX + repositoryId + BITBUCKET_GIT_URL_SUFFIX);
+        final String gitUrl = BITBUCKET_GIT_URL_PREFIX + repositoryId + BITBUCKET_GIT_URL_SUFFIX;
+        workflow.setGitUrl(gitUrl);
         workflow.setLastUpdated(new Date());
         // make sure path is constructed
         workflow.setPath(workflow.getPath());
