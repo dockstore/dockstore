@@ -186,31 +186,35 @@ public class FileProvisioning {
     public void provisionInputFile(String targetPath, Path localPath,
             PathInfo pathInfo) {
 
-        // check cache for cached files
-        final String cacheDirectory = getCacheDirectory(config);
-        // create cache directory
-        final Path cachePath = Paths.get(cacheDirectory);
-        if (Files.notExists(cachePath)) {
-            if (!cachePath.toFile().mkdirs()) {
-                throw new RuntimeException("Could not create dockstore cache: " + cacheDirectory);
+        Path potentialCachedFile = null;
+        final boolean useCache = isCacheOn(config);
+        if (useCache) {
+            // check cache for cached files
+            final String cacheDirectory = getCacheDirectory(config);
+            // create cache directory
+            final Path cachePath = Paths.get(cacheDirectory);
+            if (Files.notExists(cachePath)) {
+                if (!cachePath.toFile().mkdirs()) {
+                    throw new RuntimeException("Could not create dockstore cache: " + cacheDirectory);
+                }
             }
-        }
 
-        final String sha1 = DigestUtils.sha1Hex(targetPath);
-        final String sha1Prefix = sha1.substring(0, 2);
-        final String sha1Suffix = sha1.substring(2);
-        final Path potentialCachedFile = Paths.get(cacheDirectory, sha1Prefix, sha1Suffix);
-        if (Files.exists(potentialCachedFile)){
-            System.out.println("Found file " + targetPath + " in cache, hard-linking");
-            boolean linked = false;
-            try {
-                Files.createLink(localPath, potentialCachedFile);
-                linked = true;
-            } catch (IOException e) {
-                LOG.error("Cannot create hard link to cached file, you may want to move your cache", e.getMessage());
-            }
-            if (linked) {
-                return;
+            final String sha1 = DigestUtils.sha1Hex(targetPath);
+            final String sha1Prefix = sha1.substring(0, 2);
+            final String sha1Suffix = sha1.substring(2);
+            potentialCachedFile = Paths.get(cacheDirectory, sha1Prefix, sha1Suffix);
+            if (Files.exists(potentialCachedFile)) {
+                System.out.println("Found file " + targetPath + " in cache, hard-linking");
+                boolean linked = false;
+                try {
+                    Files.createLink(localPath, potentialCachedFile);
+                    linked = true;
+                } catch (IOException e) {
+                    LOG.error("Cannot create hard link to cached file, you may want to move your cache", e.getMessage());
+                }
+                if (linked) {
+                    return;
+                }
             }
         }
 
@@ -250,18 +254,20 @@ public class FileProvisioning {
             }
         }
 
-        // populate cache
-        if (Files.notExists(potentialCachedFile)){
-            System.out.println("Caching file " + localPath + " in cache, hard-linking");
-            try {
-                // create parent directory
-                final Path parentPath = potentialCachedFile.getParent();
-                if (Files.notExists(parentPath)) {
-                    Files.createDirectory(parentPath);
+        if (useCache) {
+            // populate cache
+            if (Files.notExists(potentialCachedFile)) {
+                System.out.println("Caching file " + localPath + " in cache, hard-linking");
+                try {
+                    // create parent directory
+                    final Path parentPath = potentialCachedFile.getParent();
+                    if (Files.notExists(parentPath)) {
+                        Files.createDirectory(parentPath);
+                    }
+                    Files.createLink(potentialCachedFile, localPath);
+                } catch (IOException e) {
+                    LOG.error("Cannot create hard link for local file, skipping", e);
                 }
-                Files.createLink(potentialCachedFile, localPath);
-            } catch (IOException e) {
-                LOG.error("Cannot create hard link for local file, skipping", e);
             }
         }
     }
@@ -269,6 +275,11 @@ public class FileProvisioning {
     public static String getCacheDirectory(HierarchicalINIConfiguration config) {
         return config
                 .getString("cache-dir", System.getProperty("user.home") + File.separator + ".dockstore" + File.separator + "cache");
+    }
+
+    public static boolean isCacheOn(HierarchicalINIConfiguration config){
+        final String useCache = config.getString("use-cache", "false");
+        return useCache.equalsIgnoreCase("true") || useCache.equalsIgnoreCase("use") || useCache.equalsIgnoreCase("T");
     }
 
     public void provisionOutputFile(FileInfo file, String cwlOutputPath) {
