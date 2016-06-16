@@ -138,19 +138,7 @@ public class TokenResource {
 
         String url = QUAY_URL + "user/";
         Optional<String> asString = ResourceUtilities.asString(url, accessToken, client);
-
-        String username = null;
-        if (asString.isPresent()) {
-            LOG.info("RESOURCE CALL: {}", url);
-
-            String response = asString.get();
-            Gson gson = new Gson();
-            Map<String, String> map = new HashMap<>();
-            map = (Map<String, String>) gson.fromJson(response, map.getClass());
-
-            username = map.get("username");
-            LOG.info("Username: {}", username);
-        }
+        String username = getUserName(url, asString);
 
         if (user != null) {
             List<Token> tokens = tokenDAO.findQuayByUserId(user.getId());
@@ -263,20 +251,7 @@ public class TokenResource {
             userID = userDAO.create(user);
 
             // CREATE DOCKSTORE TOKEN
-            final Random random = new Random();
-            final int bufferLength = 1024;
-            final byte[] buffer = new byte[bufferLength];
-            random.nextBytes(buffer);
-            String randomString = BaseEncoding.base64Url().omitPadding().encode(buffer);
-            final String dockstoreAccessToken = Hashing.sha256().hashString(githubLogin + randomString, Charsets.UTF_8).toString();
-
-            dockstoreToken = new Token();
-            dockstoreToken.setTokenSource(TokenType.DOCKSTORE.toString());
-            dockstoreToken.setContent(dockstoreAccessToken);
-            dockstoreToken.setUserId(userID);
-            dockstoreToken.setUsername(githubLogin);
-            long dockstoreTokenId = tokenDAO.create(dockstoreToken);
-            dockstoreToken = tokenDAO.findById(dockstoreTokenId);
+            dockstoreToken = createDockstoreToken(userID, githubLogin);
 
         } else {
             userID = user.getId();
@@ -293,20 +268,7 @@ public class TokenResource {
 
         if (dockstoreToken == null) {
             LOG.info("Could not find user's dockstore token. Making new one...");
-            final Random random = new Random();
-            final int bufferLength = 1024;
-            final byte[] buffer = new byte[bufferLength];
-            random.nextBytes(buffer);
-            String randomString = BaseEncoding.base64Url().omitPadding().encode(buffer);
-            final String dockstoreAccessToken = Hashing.sha256().hashString(githubLogin + randomString, Charsets.UTF_8).toString();
-
-            dockstoreToken = new Token();
-            dockstoreToken.setTokenSource(TokenType.DOCKSTORE.toString());
-            dockstoreToken.setContent(dockstoreAccessToken);
-            dockstoreToken.setUserId(userID);
-            dockstoreToken.setUsername(githubLogin);
-            long dockstoreTokenId = tokenDAO.create(dockstoreToken);
-            dockstoreToken = tokenDAO.findById(dockstoreTokenId);
+            dockstoreToken = createDockstoreToken(userID, githubLogin);
         }
 
         if (githubToken == null) {
@@ -321,6 +283,25 @@ public class TokenResource {
             LOG.info("Github token created for {}", githubLogin);
         }
 
+        return dockstoreToken;
+    }
+
+    private Token createDockstoreToken(long userID, String githubLogin) {
+        Token dockstoreToken;
+        final Random random = new Random();
+        final int bufferLength = 1024;
+        final byte[] buffer = new byte[bufferLength];
+        random.nextBytes(buffer);
+        String randomString = BaseEncoding.base64Url().omitPadding().encode(buffer);
+        final String dockstoreAccessToken = Hashing.sha256().hashString(githubLogin + randomString, Charsets.UTF_8).toString();
+
+        dockstoreToken = new Token();
+        dockstoreToken.setTokenSource(TokenType.DOCKSTORE.toString());
+        dockstoreToken.setContent(dockstoreAccessToken);
+        dockstoreToken.setUserId(userID);
+        dockstoreToken.setUsername(githubLogin);
+        long dockstoreTokenId = tokenDAO.create(dockstoreToken);
+        dockstoreToken = tokenDAO.findById(dockstoreTokenId);
         return dockstoreToken;
     }
 
@@ -358,22 +339,9 @@ public class TokenResource {
             throw new CustomWebApplicationException("Could not retrieve bitbucket.org token based on code", HttpStatus.SC_BAD_REQUEST);
         }
 
-        String username = null;
-
         url = BITBUCKET_URL + "api/2.0/user";
         Optional<String> asString2 = ResourceUtilities.asString(url, accessToken, client);
-
-        if (asString2.isPresent()) {
-            LOG.info("RESOURCE CALL: {}", url);
-
-            String response = asString2.get();
-            Gson gson = new Gson();
-            Map<String, String> map = new HashMap<>();
-            map = (Map<String, String>) gson.fromJson(response, map.getClass());
-
-            username = map.get("username");
-            LOG.info("Username: {}", username);
-        }
+        String username = getUserName(url, asString2);
 
         if (user != null) {
             List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
@@ -401,6 +369,23 @@ public class TokenResource {
             LOG.info("Could not find user");
             throw new CustomWebApplicationException("User not found", HttpStatus.SC_CONFLICT);
         }
+    }
+
+    private String getUserName(String url, Optional<String> asString2) {
+        String username;
+        if (asString2.isPresent()) {
+            LOG.info("RESOURCE CALL: {}", url);
+
+            String response = asString2.get();
+            Gson gson = new Gson();
+            Map<String, String> map = new HashMap<>();
+            map = (Map<String, String>) gson.fromJson(response, map.getClass());
+
+            username = map.get("username");
+            LOG.info("Username: {}", username);
+            return username;
+        }
+        throw new CustomWebApplicationException("User not found", HttpStatus.SC_INTERNAL_SERVER_ERROR);
     }
 
     @GET
