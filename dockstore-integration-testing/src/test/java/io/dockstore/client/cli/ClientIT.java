@@ -200,6 +200,10 @@ public class ClientIT {
         checkCommandForHelp(new String[] { "tool", "refresh", "--help"});
         checkCommandForHelp(new String[] { "tool", "label", "--help"});
         checkCommandForHelp(new String[] { "tool", "convert", "--help"});
+        checkCommandForHelp(new String[] { "tool", "convert", "cwl2json", "--help"});
+        checkCommandForHelp(new String[] { "tool", "convert", "wd2json", "--help"});
+        checkCommandForHelp(new String[] { "tool", "convert", "entry2json", "--help"});
+        checkCommandForHelp(new String[] { "tool", "convert", "entry2tsv", "--help"});
         checkCommandForHelp(new String[] { "tool", "launch", "--help"});
         checkCommandForHelp(new String[] { "tool", "version_tag", "--help"});
         checkCommandForHelp(new String[] { "tool", "version_tag", "remove", "--help"});
@@ -218,6 +222,10 @@ public class ClientIT {
         checkCommandForHelp(new String[] { "workflow", "refresh", "--help"});
         checkCommandForHelp(new String[] { "workflow", "label", "--help"});
         checkCommandForHelp(new String[] { "workflow", "convert", "--help"});
+        checkCommandForHelp(new String[] { "workflow", "convert", "cwl2json", "--help"});
+        checkCommandForHelp(new String[] { "workflow", "convert", "wd2json", "--help"});
+        checkCommandForHelp(new String[] { "workflow", "convert", "entry2json", "--help"});
+        checkCommandForHelp(new String[] { "workflow", "convert", "entry2tsv", "--help"});
         checkCommandForHelp(new String[] { "workflow", "launch", "--help"});
         checkCommandForHelp(new String[] { "workflow", "version_tag", "--help"});
         checkCommandForHelp(new String[] { "workflow", "update_workflow", "--help"});
