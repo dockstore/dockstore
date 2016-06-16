@@ -2268,22 +2268,6 @@ definitions:
       name:
         type: "string"
     description: "End users for the dockstore"
-  Metadata:
-    type: "object"
-    required:
-    - "version"
-    properties:
-      version:
-        type: "string"
-        description: "The version of this registry"
-      country:
-        type: "string"
-        description: "A country code for the registry (ISO 3166-1 alpha-3)"
-      friendly-name:
-        type: "string"
-        description: "A friendly name that can be used in addition to the hostname\
-          \ to describe a registry"
-    description: "Describes this registry to better allow for mirroring and indexing."
   Label:
     type: "object"
     required:
@@ -2313,34 +2297,22 @@ definitions:
         description: "A longer explanation of what this type is and what it can accomplish"
     description: "Describes a type of tool allowing us to categorize workflows, tools,\
       \ and maybe even other entities (such as services) separately"
-  ToolDescriptor:
+  Metadata:
     type: "object"
     required:
-    - "descriptor"
-    - "type"
+    - "version"
     properties:
-      type:
+      version:
         type: "string"
-        enum:
-        - "CWL"
-        - "WDL"
-      descriptor:
+        description: "The version of this registry"
+      country:
         type: "string"
-        description: "The descriptor that represents this version of the tool. (CWL\
-          \ or WDL)"
-      format:
+        description: "A country code for the registry (ISO 3166-1 alpha-3)"
+      friendly-name:
         type: "string"
-        description: "The output type of the descriptor."
-        enum:
-        - "CWL"
-        - "WDL"
-      url:
-        type: "string"
-        description: "Optional url to the tool descriptor used to build this image,\
-          \ should include version information, and can include a git hash (e.g. https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/ea2a5db69bd20a42976838790bc29294df3af02b/delly_docker/Delly.cwl\
-          \ )"
-    description: "A tool descriptor is a metadata document that describes one or more\
-      \ tools."
+        description: "A friendly name that can be used in addition to the hostname\
+          \ to describe a registry"
+    description: "Describes this registry to better allow for mirroring and indexing."
   Workflow:
     type: "object"
     required:
@@ -2433,6 +2405,28 @@ definitions:
         description: "This indicates for the associated git repository, the default\
           \ path to the CWL document"
     description: "This describes one workflow in the dockstore"
+  ToolDescriptor:
+    type: "object"
+    required:
+    - "descriptor"
+    - "type"
+    properties:
+      type:
+        type: "string"
+        enum:
+        - "CWL"
+        - "WDL"
+      descriptor:
+        type: "string"
+        description: "The descriptor that represents this version of the tool. (CWL\
+          \ or WDL)"
+      url:
+        type: "string"
+        description: "Optional url to the tool descriptor used to build this image,\
+          \ should include version information, and can include a git hash (e.g. https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/ea2a5db69bd20a42976838790bc29294df3af02b/delly_docker/Delly.cwl\
+          \ )"
+    description: "A tool descriptor is a metadata document that describes one or more\
+      \ tools."
   Token:
     type: "object"
     properties:

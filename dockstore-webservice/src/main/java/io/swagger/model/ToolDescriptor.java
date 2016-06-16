@@ -16,11 +16,12 @@
 
 package io.swagger.model;
 
-import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+
+import java.util.Objects;
 
 
 
@@ -29,7 +30,7 @@ import io.swagger.annotations.ApiModelProperty;
  **/
 
 @ApiModel(description = "A tool descriptor is a metadata document that describes one or more tools.")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-06-07T18:19:37.276Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-06-14T14:46:23.838Z")
 public class ToolDescriptor   {
   
 
@@ -55,28 +56,6 @@ public class ToolDescriptor   {
 
   private TypeEnum type = null;
   private String descriptor = null;
-
-  /**
-   * The output type of the descriptor.
-   */
-  public enum FormatEnum {
-    CWL("CWL"),
-
-        WDL("WDL");
-    private String value;
-
-    FormatEnum(String value) {
-      this.value = value;
-    }
-
-    @Override
-    @JsonValue
-    public String toString() {
-      return String.valueOf(value);
-    }
-  }
-
-  private FormatEnum format = null;
   private String url = null;
 
   /**
@@ -115,24 +94,6 @@ public class ToolDescriptor   {
   }
 
   /**
-   * The output type of the descriptor.
-   **/
-  public ToolDescriptor format(FormatEnum format) {
-    this.format = format;
-    return this;
-  }
-
-  
-  @ApiModelProperty(value = "The output type of the descriptor.")
-  @JsonProperty("format")
-  public FormatEnum getFormat() {
-    return format;
-  }
-  public void setFormat(FormatEnum format) {
-    this.format = format;
-  }
-
-  /**
    * Optional url to the tool descriptor used to build this image, should include version information, and can include a git hash (e.g. https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/ea2a5db69bd20a42976838790bc29294df3af02b/delly_docker/Delly.cwl )
    **/
   public ToolDescriptor url(String url) {
@@ -162,13 +123,12 @@ public class ToolDescriptor   {
     ToolDescriptor toolDescriptor = (ToolDescriptor) o;
     return Objects.equals(type, toolDescriptor.type) &&
         Objects.equals(descriptor, toolDescriptor.descriptor) &&
-        Objects.equals(format, toolDescriptor.format) &&
         Objects.equals(url, toolDescriptor.url);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(type, descriptor, format, url);
+    return Objects.hash(type, descriptor, url);
   }
 
   @Override
@@ -178,7 +138,6 @@ public class ToolDescriptor   {
     
     sb.append("    type: ").append(toIndentedString(type)).append("\n");
     sb.append("    descriptor: ").append(toIndentedString(descriptor)).append("\n");
-    sb.append("    format: ").append(toIndentedString(format)).append("\n");
     sb.append("    url: ").append(toIndentedString(url)).append("\n");
     sb.append("}");
     return sb.toString();

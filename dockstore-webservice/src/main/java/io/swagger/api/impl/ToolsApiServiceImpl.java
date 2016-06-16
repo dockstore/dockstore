@@ -21,7 +21,6 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.swagger.api.NotFoundException;
 import io.swagger.api.ToolsApiService;
@@ -43,6 +42,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class ToolsApiServiceImpl extends ToolsApiService {
 
@@ -128,12 +128,15 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     @Override
     public Response toolsIdVersionsVersionIdDescriptorRelativePathGet(String id, String versionId, String relativePath,
             String format, SecurityContext securityContext) throws NotFoundException {
+        if (format == null){
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
         SourceFile.FileType type = getFileType(format);
         if (type == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
 
-        return getFileByToolVersionID(id, versionId, SourceFile.FileType.DOCKERFILE, relativePath);
+        return getFileByToolVersionID(id, versionId, type, relativePath);
     }
 
     private SourceFile.FileType getFileType(String format) {
@@ -308,6 +311,11 @@ public class ToolsApiServiceImpl extends ToolsApiService {
      */
     private static ToolDescriptor buildSourceFile(String url, SourceFile file) {
         ToolDescriptor wdlDescriptor = new ToolDescriptor();
+        if (file.getType() == SourceFile.FileType.DOCKSTORE_CWL){
+            wdlDescriptor.setType(ToolDescriptor.TypeEnum.CWL);
+        } else if (file.getType() == SourceFile.FileType.DOCKSTORE_WDL){
+            wdlDescriptor.setType(ToolDescriptor.TypeEnum.WDL);
+        }
         wdlDescriptor.setDescriptor(file.getContent());
         wdlDescriptor.setUrl(url);
         return wdlDescriptor;
@@ -348,23 +356,34 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         if (!tool.getIsPublished()) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
-        // grab the source files that we want
-        EntryVersionHelper<Tool> helper = new EntryVersionHelper<>(toolDAO);
-        final SourceFile file = helper.getSourceFileByPath(tool.getId(), versionId, type, relativePath);
 
-        // convert our toolName model to the expected output type
-        if (type == SourceFile.FileType.DOCKERFILE) {
-            ToolDockerfile dockerfile = new ToolDockerfile();
-            dockerfile.setDockerfile(file.getContent());
-            return Response.ok(dockerfile).build();
-        } else if (type == SourceFile.FileType.DOCKSTORE_CWL) {
-            ToolDescriptor descriptor = new ToolDescriptor();
-            descriptor.setDescriptor(file.getContent());
-            return Response.ok(descriptor).build();
-        } else if (type == SourceFile.FileType.DOCKSTORE_WDL) {
-            ToolDescriptor descriptor = new ToolDescriptor();
-            descriptor.setDescriptor(file.getContent());
-            return Response.ok(descriptor).build();
+        final io.swagger.model.Tool convertedTool = convertContainer2Tool(tool);
+        String finalVersionId = versionId;
+        if (convertedTool == null || convertedTool.getVersions() == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        final Optional<ToolVersion> first = convertedTool.getVersions().stream()
+                .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
+        final Optional<Tag> oldFirst = tool.getVersions().stream()
+                .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
+
+        if (first.isPresent() && oldFirst.isPresent()){
+            final ToolVersion toolVersion = first.get();
+            if (type == SourceFile.FileType.DOCKERFILE) {
+                return Response.status(Response.Status.OK).entity(toolVersion.getDockerfile()).build();
+            } else {
+                if (relativePath == null) {
+                    if (type == SourceFile.FileType.DOCKSTORE_WDL || type == SourceFile.FileType.DOCKSTORE_CWL) {
+                        return Response.status(Response.Status.OK).entity(toolVersion.getDescriptor()).build();
+                    }
+                } else{
+                    final Optional<SourceFile> first1 = oldFirst.get().getSourceFiles().stream()
+                            .filter(file -> file.getPath().equalsIgnoreCase(relativePath)).findFirst();
+                    if (first1.isPresent()){
+                        return Response.status(Response.Status.OK).entity(first1.get()).build();
+                    }
+                }
+            }
         }
 
         return Response.status(Response.Status.NOT_FOUND).build();
