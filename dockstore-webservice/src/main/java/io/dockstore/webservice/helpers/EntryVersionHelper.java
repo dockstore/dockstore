@@ -92,7 +92,7 @@ public class EntryVersionHelper<T extends Entry> {
                 return entry.getValue().getLeft();
             }
         }
-        throw new CustomWebApplicationException("No descriptor found", HttpStatus.SC_BAD_REQUEST);
+        throw new CustomWebApplicationException("No descriptor found", HttpStatus.SC_NO_CONTENT);
     }
 
     public List<SourceFile> getAllSecondaryFiles(long workflowId, String tag, SourceFile.FileType fileType) {

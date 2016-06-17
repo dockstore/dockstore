@@ -740,10 +740,12 @@ public class Client {
                 }
             }
         } catch (IOException | ApiException ex) {
+            ex.printStackTrace();
             exceptionMessage(ex, "", GENERIC_ERROR);
         } catch (ProcessingException ex) {
             exceptionMessage(ex, "Could not connect to Dockstore web service", CONNECTION_ERROR);
         } catch (Exception ex) {
+            ex.printStackTrace();
             exceptionMessage(ex, "", GENERIC_ERROR);
         }
     }
