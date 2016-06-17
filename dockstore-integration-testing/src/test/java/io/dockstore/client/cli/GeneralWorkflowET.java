@@ -16,9 +16,11 @@
 
 package io.dockstore.client.cli;
 
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
-
+import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dropwizard.testing.ResourceHelpers;
+import io.dropwizard.testing.junit.DropwizardAppRule;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.junit.Assert;
 import org.junit.Before;
@@ -28,11 +30,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 
-import io.dockstore.common.CommonTestUtilities;
-import io.dockstore.webservice.DockstoreWebserviceApplication;
-import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dropwizard.testing.ResourceHelpers;
-import io.dropwizard.testing.junit.DropwizardAppRule;
+import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 import static io.dockstore.common.CommonTestUtilities.clearStateMakePrivate2;
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
@@ -187,7 +186,7 @@ public class GeneralWorkflowET {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish", "--repository", "hello-dockstore-workflow", "--organization", "DockstoreTestUser2",
                         "--git-version-control", "github", "--workflow-name", "testname", "--workflow-path", "/Dockstore.wdl", "--descriptor-type", "wdl", "--script" });
 
-                systemExit.expectSystemExitWithStatus(Client.API_ERROR);
+                systemExit.expectSystemExitWithStatus(Client.COMMAND_ERROR);
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "cwl", "--entry", "DockstoreTestUser2/hello-dockstore-workflow/testname:testBoth", "--script" });
         }
 

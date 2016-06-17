@@ -276,7 +276,7 @@ public abstract class AbstractEntryClient {
         try {
             SourceFile file = getDescriptorFromServer(entry, descriptorType);
 
-            if (file.getContent() != null && !file.getContent().isEmpty()) {
+            if (file != null && file.getContent() != null && !file.getContent().isEmpty()) {
                 out(file.getContent());
             } else {
                 errorMessage("No " + descriptorType + " file found", Client.COMMAND_ERROR);
