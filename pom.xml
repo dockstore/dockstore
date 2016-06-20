@@ -19,7 +19,7 @@
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>0.4-beta.2-SNAPSHOT</version>
+    <version>0.4-beta.2</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
@@ -60,7 +60,7 @@
         <connection>${github.url}</connection>
         <developerConnection>${github.url}</developerConnection>
         <url>${github.url}</url>
-        <tag>0.4-beta.1</tag>
+        <tag>0.4-beta.2</tag>
     </scm>
 
     <repositories>
@@ -852,7 +852,7 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>cobertura-maven-plugin</artifactId>
                 <configuration>
-                    <check></check>
+                    <check />
                     <formats>
                         <format>xml</format>
                         <format>html</format>
@@ -935,7 +935,7 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>cobertura-maven-plugin</artifactId>
                 <configuration>
-                    <check></check>
+                    <check />
                     <formats>
                         <format>xml</format>
                         <format>html</format>
