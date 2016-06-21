@@ -28,14 +28,13 @@ import io.swagger.annotations.ApiModelProperty;
  **/
 
 @ApiModel(description = "Describes this registry to better allow for mirroring and indexing.")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-03-11T20:14:17.098Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-06-07T18:19:37.276Z")
 public class Metadata   {
   
   private String version = null;
   private String country = null;
   private String friendlyName = null;
 
-  
   /**
    * The version of this registry
    **/
@@ -54,7 +53,6 @@ public class Metadata   {
     this.version = version;
   }
 
-  
   /**
    * A country code for the registry (ISO 3166-1 alpha-3)
    **/
@@ -73,7 +71,6 @@ public class Metadata   {
     this.country = country;
   }
 
-  
   /**
    * A friendly name that can be used in addition to the hostname to describe a registry
    **/
@@ -92,7 +89,6 @@ public class Metadata   {
     this.friendlyName = friendlyName;
   }
 
-  
 
   @Override
   public boolean equals(Object o) {

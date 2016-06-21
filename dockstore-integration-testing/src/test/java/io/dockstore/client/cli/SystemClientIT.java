@@ -16,23 +16,7 @@
 
 package io.dockstore.client.cli;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.charset.Charset;
-import java.util.List;
-import java.util.concurrent.TimeoutException;
-
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
-import org.apache.commons.io.FileUtils;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import com.google.common.io.Resources;
-
-import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.Constants;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -47,6 +31,7 @@ import io.swagger.client.api.GAGHApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Group;
+import io.swagger.client.model.Metadata;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
@@ -54,8 +39,24 @@ import io.swagger.client.model.Token;
 import io.swagger.client.model.Tool;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.ToolDockerfile;
+import io.swagger.client.model.ToolVersion;
 import io.swagger.client.model.User;
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.io.FileUtils;
+import org.apache.http.HttpStatus;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Ignore;
+import org.junit.Test;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.util.List;
+import java.util.concurrent.TimeoutException;
+
+import static io.dockstore.common.CommonTestUtilities.clearState;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -65,23 +66,31 @@ import static org.junit.Assert.assertTrue;
  */
 public class SystemClientIT {
 
+    public static final String QUAY_IO_TEST_ORG_TEST6 = "quay.io/test_org/test6";
+    public static final String REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE = "registry.hub.docker.com/seqware/seqware/test5";
+
+    @Before
+    public void clearDBandSetup() throws IOException, TimeoutException {
+        clearState();
+    }
+
     @ClassRule
     public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
             DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstore.yml"));
 
-    public static ApiClient getWebClient() throws IOException, TimeoutException {
+    private static ApiClient getWebClient() throws IOException, TimeoutException {
         return getWebClient(true, false);
     }
 
-    public static ApiClient getAdminWebClient() throws IOException, TimeoutException {
+    private static ApiClient getAdminWebClient() throws IOException, TimeoutException {
         return getWebClient(true, true);
     }
 
-    public static ApiClient getAdminWebClient(boolean correctUser) throws IOException, TimeoutException {
+    private static ApiClient getAdminWebClient(boolean correctUser) throws IOException, TimeoutException {
         return getWebClient(correctUser, true);
     }
 
-    public static ApiClient getWebClient(boolean correctUser, boolean admin) throws IOException, TimeoutException {
+    private static ApiClient getWebClient(boolean correctUser, boolean admin) throws IOException, TimeoutException {
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
         HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         ApiClient client = new ApiClient();
@@ -96,7 +105,7 @@ public class SystemClientIT {
 
     @Before
     public void cleanState(){
-        CommonTestUtilities.clearState();
+        clearState();
     }
 
     @Test(expected = ApiException.class)
@@ -188,14 +197,17 @@ public class SystemClientIT {
         tag.setName("master");
         tag.setReference("refs/heads/master");
         tag.setValid(true);
+        tag.setImageId("123456");
         // construct source files
         SourceFile fileCWL = new SourceFile();
         fileCWL.setContent("cwlstuff");
         fileCWL.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+        fileCWL.setPath("/Dockstore.cwl");
         tag.getSourceFiles().add(fileCWL);
         SourceFile fileDockerFile = new SourceFile();
         fileDockerFile.setContent("dockerstuff");
         fileDockerFile.setType(SourceFile.TypeEnum.DOCKERFILE);
+        fileDockerFile.setPath("/Dockerfile");
         tag.getSourceFiles().add(fileDockerFile);
         c.getTags().add(tag);
         return c;
@@ -220,6 +232,19 @@ public class SystemClientIT {
         URL url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools");
         final List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
         assertTrue(strings.size() == 1 && strings.get(0).contains("CommandLineTool"));
+
+        url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/metadata");
+        final List<String> metadataStrings = Resources.readLines(url, Charset.forName("UTF-8"));
+        assertTrue(strings.size() == 1 && strings.get(0).contains("CommandLineTool"));
+        assertTrue(metadataStrings.stream().anyMatch(s -> s.contains("friendly-name")));
+    }
+
+    @Test
+    public void testGA4GHMetadata() throws IOException, TimeoutException, ApiException {
+        ApiClient client = getAdminWebClient();
+        GAGHApi toolApi = new GAGHApi(client);
+        final Metadata metadata = toolApi.metadataGet();
+        assertTrue(metadata.getFriendlyName().contains("docker"));
     }
 
     @Test
@@ -235,28 +260,39 @@ public class SystemClientIT {
         assertTrue(tools.size() == 2);
 
         // test a few constraints
-        tools = toolApi.toolsGet("quay.io/test_org/test6", null, null, null, null, null, null);
+        tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, null, null, null, null, null, null);
         assertTrue(tools.size() == 1);
-        tools = toolApi.toolsGet("quay.io/test_org/test6", Registry.QUAY_IO.toString(), null, null, null, null, null);
+        tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, Registry.QUAY_IO.toString(), null, null, null, null, null);
         assertTrue(tools.size() == 1);
-        tools = toolApi.toolsGet("quay.io/test_org/test6", Registry.DOCKER_HUB.toString(), null, null, null, null, null);
+        tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, Registry.DOCKER_HUB.toString(), null, null, null, null, null);
         assertTrue(tools.size() == 0);
     }
 
-    // This test is commented out for now because it expects a newer version of the GAGH API.  It will be uncommented once the API is updated
-//    @Test
-//    public void testGetSpecificTool() throws IOException, TimeoutException, ApiException {
-//        ApiClient client = getAdminWebClient();
-//        GAGHApi toolApi = new GAGHApi(client);
-//        ContainersApi containersApi = new ContainersApi(client);
-//        // register one more to give us something to look at
-//        Tool c = getContainer();
-//        containersApi.registerManual(c);
-//
-//        final Tool tool = toolApi.toolsRegistryIdGet("quay.io/test_org/test6");
-//        assertTrue(tool != null);
-//        assertTrue(tool.getRegistryId().equals("quay.io/test_org/test6"));
-//    }
+    @Test
+    public void testGetSpecificTool() throws IOException, TimeoutException, ApiException {
+        ApiClient client = getAdminWebClient();
+        GAGHApi toolApi = new GAGHApi(client);
+        ContainersApi containersApi = new ContainersApi(client);
+        // register one more to give us something to look at
+        DockstoreTool c = getContainer();
+        containersApi.registerManual(c);
+
+        final Tool tool = toolApi.toolsIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
+        assertTrue(tool != null);
+        assertTrue(tool.getId().equals(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE));
+        // get versions
+        final List<ToolVersion> toolVersions = toolApi.toolsIdVersionsGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
+        assertTrue(toolVersions.size() == 1);
+
+        final ToolVersion master = toolApi.toolsIdVersionsVersionIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, "master");
+        assertTrue(master != null);
+        try {
+            final ToolVersion foobar = toolApi.toolsIdVersionsVersionIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, "foobar");
+            assertTrue(foobar != null); // this should be unreachable
+        } catch(ApiException e){
+            assertTrue(e.getCode() == HttpStatus.SC_NOT_FOUND);
+        }
+    }
 
     @Test
     public void testGetFiles() throws IOException, TimeoutException, ApiException {
@@ -267,9 +303,9 @@ public class SystemClientIT {
         DockstoreTool c = getContainer();
         containersApi.registerManual(c);
 
-        final ToolDockerfile toolDockerfile = toolApi.toolsRegistryIdVersionVersionIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5","master");
+        final ToolDockerfile toolDockerfile = toolApi.toolsIdVersionsVersionIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5","master");
         assertTrue(toolDockerfile.getDockerfile().contains("dockerstuff"));
-        final ToolDescriptor cwl = toolApi.toolsRegistryIdVersionVersionIdDescriptorGet("registry.hub.docker.com/seqware/seqware/test5", "master", "CWL");
+        final ToolDescriptor cwl = toolApi.toolsIdVersionsVersionIdDescriptorGet("registry.hub.docker.com/seqware/seqware/test5", "master", "CWL");
         assertTrue(cwl.getDescriptor().contains("cwlstuff"));
     }
 
@@ -315,7 +351,7 @@ public class SystemClientIT {
 
         List<DockstoreTool> containers = containersApi.search("test6");
         assertTrue(containers.size() == 1);
-        assertTrue(containers.get(0).getPath().equals("quay.io/test_org/test6"));
+        assertTrue(containers.get(0).getPath().equals(QUAY_IO_TEST_ORG_TEST6));
 
         containers = containersApi.search("test5");
         assertTrue(containers.isEmpty());

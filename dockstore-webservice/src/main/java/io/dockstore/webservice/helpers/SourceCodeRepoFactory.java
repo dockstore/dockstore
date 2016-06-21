@@ -16,24 +16,23 @@
 
 package io.dockstore.webservice.helpers;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
+import io.dockstore.webservice.CustomWebApplicationException;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.dockstore.webservice.CustomWebApplicationException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author dyuen
  */
 public class SourceCodeRepoFactory {
 
-    static final Logger LOG = LoggerFactory.getLogger(SourceCodeRepoFactory.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SourceCodeRepoFactory.class);
 
     public static SourceCodeRepoInterface createSourceCodeRepo(String gitUrl, HttpClient client, String bitbucketTokenContent,
             String githubTokenContent) {
@@ -71,30 +70,39 @@ public class SourceCodeRepoFactory {
      * @param url
      * @return a map with keys: Source, Username, Repository
      */
-    public static Map<String, String> parseGitUrl(String url) {
-        Pattern p = Pattern.compile("git\\@(\\S+):(\\S+)/(\\S+)\\.git");
-        Matcher m = p.matcher(url);
-        if (!m.find()) {
-            LOG.info("Cannot parse url: " + url);
+    static Map<String, String> parseGitUrl(String url) {
+        // format 1 git@github.com:ga4gh/dockstore-ui.git
+        Pattern p1 = Pattern.compile("git\\@(\\S+):(\\S+)/(\\S+)\\.git");
+        Matcher m1 = p1.matcher(url);
+        // format 2 git://github.com/denis-yuen/dockstore-whalesay.git (should be avoided)
+        Pattern p2 = Pattern.compile("git://(\\S+)/(\\S+)/(\\S+)\\.git");
+        Matcher m2 = p2.matcher(url);
+
+        Matcher matcherActual;
+        if (m1.find()) {
+            matcherActual = m1;
+        } else if (m2.find()) {
+            matcherActual = m2;
+        } else {
+            LOG.info("Cannot parse url using any format: " + url);
             return null;
         }
-        // These correspond to the positions of the pattern matcher
+
         final int sourceIndex = 1;
         final int usernameIndex = 2;
         final int reponameIndex = 3;
+        String source = matcherActual.group(sourceIndex);
+        String gitUsername = matcherActual.group(usernameIndex);
+        String gitRepository = matcherActual.group(reponameIndex);
 
-        String source = m.group(sourceIndex);
-        String gitUsername = m.group(usernameIndex);
-        String gitRepository = m.group(reponameIndex);
-         LOG.info("Source: " + source);
-         LOG.info("Username: " + gitUsername);
-         LOG.info("Repository: " + gitRepository);
+        LOG.debug("Source: " + source);
+        LOG.debug("Username: " + gitUsername);
+        LOG.debug("Repository: " + gitRepository);
 
         Map<String, String> map = new HashMap<>();
         map.put("Source", source);
         map.put("Username", gitUsername);
         map.put("Repository", gitRepository);
-
         return map;
     }
 }

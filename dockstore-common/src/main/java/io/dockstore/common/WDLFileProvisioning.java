@@ -16,23 +16,23 @@
 
 package io.dockstore.common;
 
+import com.amazonaws.util.json.JSONException;
+import com.amazonaws.util.json.JSONObject;
+import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
-import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.amazonaws.util.json.JSONException;
-import com.amazonaws.util.json.JSONObject;
-import com.google.common.base.Optional;
 
 /**
  * This class deals with file provisioning for WDL
@@ -41,16 +41,9 @@ import com.google.common.base.Optional;
 public class WDLFileProvisioning {
         private static final Logger LOG = LoggerFactory.getLogger(WDLFileProvisioning.class);
 
-        private final Optional<OutputStream> stdoutStream;
-        private final Optional<OutputStream> stderrStream;
         private final FileProvisioning fileProvisioning;
-        private String configFile;
 
         public WDLFileProvisioning(String configFile) {
-                // do not forward stdout and stderr
-                stdoutStream = Optional.absent();
-                stderrStream = Optional.absent();
-                this.configFile = configFile;
                 fileProvisioning = new FileProvisioning(configFile);
         }
 
@@ -65,7 +58,7 @@ public class WDLFileProvisioning {
                 // Download remote files into specific local locations
                 Map<String, Object> fileMap = new HashMap<>();
 
-                LOG.info("DOWNLOADING INPUT FILES...");
+                System.out.println("Provisioning your input files to your local machine");
 
                 // Go through input file fully qualified names
                 for (Map.Entry<String, String> originalInputJsonEntry : originalInputJson.entrySet()) {
@@ -102,38 +95,28 @@ public class WDLFileProvisioning {
 
         /**
          * Create a mapping of the input files, including newly localized files
-         * @param key Fully Qualified Name
+         *
+         * @param key  Fully Qualified Name
          * @param path Original Path
          * @return Mapping of fully qualified name to new input file string or list of new input file strings
          */
-        public Map<String, Object> doProcessFile(String key, String path) {
+        private Map<String, Object> doProcessFile(String key, String path) {
                 FileProvisioning.PathInfo pathInfo = new FileProvisioning.PathInfo(path);
                 Map<String, Object> jsonEntry = new HashMap<>();
 
-                if (!pathInfo.isLocalFileType()) {
+                LOG.info("PATH TO DOWNLOAD FROM: {} FOR {}", path, key);
 
-                        LOG.info("PATH TO DOWNLOAD FROM: {} FOR {}", path, key);
+                // Setup local paths
+                String downloadDir = "cromwell-input/" + UUID.randomUUID();
+                Utilities.executeCommand("mkdir -p " + downloadDir);
+                File downloadDirFileObject = new File(downloadDir);
+                final Path targetFilePath = Paths.get(downloadDirFileObject.getAbsolutePath(), key);
 
-                        // Setup local paths
-                        String downloadDir = "cromwell-input/" + UUID.randomUUID();
-                        Utilities.executeCommand("mkdir -p " + downloadDir, stdoutStream, stderrStream);
-                        File downloadDirFileObject = new File(downloadDir);
-                        String targetFilePath = downloadDirFileObject.getAbsolutePath() + "/" + key;
+                System.out.println("Downloading: " + key + " from " + path + " to: " + targetFilePath);
+                fileProvisioning.provisionInputFile(path, targetFilePath, pathInfo);
 
-                        if (pathInfo.isObjectIdType()) {
-                                String objectId = pathInfo.getObjectId();
-                                fileProvisioning.downloadFromDccStorage(objectId, downloadDir, downloadDirFileObject, targetFilePath);
-                        } else if (path.startsWith("s3://")) {
-                                fileProvisioning.downloadFromS3(path, targetFilePath);
-                        } else if (!pathInfo.isLocalFileType()) {
-                                fileProvisioning.downloadFromHttp(path, targetFilePath);
-                        }
-
-                        jsonEntry.put(key, targetFilePath);
-                        LOG.info("DOWNLOADED FILE: LOCAL: {} URL: {} => {}", key, path, targetFilePath);
-                } else {
-                        jsonEntry.put(key, path);
-                }
+                jsonEntry.put(key, targetFilePath);
+                LOG.info("DOWNLOADED FILE: LOCAL: {} URL: {} => {}", key, path, targetFilePath);
                 return jsonEntry;
 
         }
@@ -176,22 +159,23 @@ public class WDLFileProvisioning {
                 }
 
                 // Now make a new file
-                writeJob("foo2.json", newJSON);
-                File newFile = new File("foo2.json");
-                return newFile.getAbsolutePath();
+
+                final Path path = writeJob(newJSON);
+                return path.toFile().getAbsolutePath();
 
         }
 
         /**
          * Writes a given JSON object to new file jobOutputPath
-         * @param jobOutputPath Path to output JSON to
          * @param newJson JSON object to be saved to file
          */
-        private void writeJob(String jobOutputPath, JSONObject newJson) {
+        private Path writeJob(JSONObject newJson) {
                 try {
+                        final Path tempFile = Files.createTempFile("foo", "json");
                         //TODO: investigate, why is this replacement occurring?
                         final String replace = newJson.toString().replace("\\", "");
-                        FileUtils.writeStringToFile(new File(jobOutputPath), replace, StandardCharsets.UTF_8);
+                        FileUtils.writeStringToFile(tempFile.toFile(), replace, StandardCharsets.UTF_8);
+                        return tempFile;
                 } catch (IOException e) {
                         throw new RuntimeException("Could not write job ", e);
                 }

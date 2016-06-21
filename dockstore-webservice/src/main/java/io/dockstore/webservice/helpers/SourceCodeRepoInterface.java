@@ -16,25 +16,24 @@
 
 package io.dockstore.webservice.helpers;
 
+import com.esotericsoftware.yamlbeans.YamlReader;
+import com.google.common.base.Optional;
+import io.dockstore.client.Bridge;
+import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Workflow;
+import org.apache.commons.io.FilenameUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
+import wdl4s.parser.WdlParser;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-
-import org.apache.commons.io.FilenameUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.Yaml;
-
-import com.esotericsoftware.yamlbeans.YamlReader;
-import com.google.common.base.Optional;
-
-import io.dockstore.client.Bridge;
-import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.Workflow;
-import wdl4s.parser.WdlParser;
 
 /**
  * This defines the set of operations that is needed to interact with a particular
@@ -50,10 +49,9 @@ public abstract class SourceCodeRepoInterface {
      * file from a specific branch/tag
      * @param fileName the name of the file (full path) to retrieve
      * @param reference the tag/branch to get the file from
-     * @param gitUrl the git url for the git repository
-     * @return a wrapper for the file
+     * @return content of the file
      */
-    public abstract FileResponse readFile(String fileName, String reference, String gitUrl);
+    public abstract String readFile(String fileName, String reference);
 
     /**
      * Update a container with the contents of the descriptor file from a source code repo
@@ -68,6 +66,24 @@ public abstract class SourceCodeRepoInterface {
      * @return email for the logged in user
      */
     public abstract String getOrganizationEmail();
+
+    /**
+     *
+     * @param sourceWorkflow
+     * @param targetWorkflow
+         */
+    protected void copyWorkflow(Workflow sourceWorkflow, Workflow targetWorkflow) {
+        targetWorkflow.setPath(sourceWorkflow.getPath());
+        targetWorkflow.setIsPublished(sourceWorkflow.getIsPublished());
+        targetWorkflow.setWorkflowName(sourceWorkflow.getWorkflowName());
+        targetWorkflow.setAuthor(sourceWorkflow.getAuthor());
+        targetWorkflow.setDescription(sourceWorkflow.getDescription());
+        targetWorkflow.setLastModified(sourceWorkflow.getLastModified());
+        targetWorkflow.setOrganization(sourceWorkflow.getOrganization());
+        targetWorkflow.setRepository(sourceWorkflow.getRepository());
+        targetWorkflow.setGitUrl(sourceWorkflow.getGitUrl());
+        targetWorkflow.setDescriptorType(sourceWorkflow.getDescriptorType());
+    }
 
     /**
      * Parses the cwl content to get the author and description. Updates the tool with the author, description, and hasCollab fields.
@@ -117,13 +133,12 @@ public abstract class SourceCodeRepoInterface {
      * @param content the actual wdl content
      * @return the tool that was given
      */
-    protected Tool parseWDLContent(Tool tool, String content) {
+    Tool parseWDLContent(Tool tool, String content) {
         // Use Broad WDL parser to grab data
         // Todo: Currently just checks validity of file.  In the future pull data such as author from the WDL file
         try {
-            String wdlSource = content;
             WdlParser parser = new WdlParser();
-            WdlParser.TokenStream tokens = new WdlParser.TokenStream(parser.lex(wdlSource, FilenameUtils.getName(tool.getDefaultWdlPath())));
+            WdlParser.TokenStream tokens = new WdlParser.TokenStream(parser.lex(content, FilenameUtils.getName(tool.getDefaultWdlPath())));
             WdlParser.Ast ast = (WdlParser.Ast) parser.parse(tokens).toAst();
 
             if (ast == null) {
@@ -175,22 +190,9 @@ public abstract class SourceCodeRepoInterface {
         return imports;
     }
 
-    public ArrayList<String> getWdlImports(File workflowFile) {
+    List<String> getWdlImports(File workflowFile){
         Bridge bridge = new Bridge();
-        ArrayList<String> imports = bridge.getImportFiles(workflowFile);
-
-        return imports;
+        return bridge.getImportFiles(workflowFile);
     }
 
-    public static class FileResponse {
-        private String content;
-
-        public void setContent(String content) {
-            this.content = content;
-        }
-
-        public String getContent() {
-            return content;
-        }
-    }
 }

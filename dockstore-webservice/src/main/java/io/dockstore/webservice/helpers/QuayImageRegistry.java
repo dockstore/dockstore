@@ -16,6 +16,25 @@
 
 package io.dockstore.webservice.helpers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Optional;
+import com.google.gson.Gson;
+import io.dockstore.webservice.core.Registry;
+import io.dockstore.webservice.core.Tag;
+import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.ToolMode;
+import io.dockstore.webservice.helpers.Helper.RepoList;
+import io.dockstore.webservice.resources.ResourceUtilities;
+import io.swagger.quay.client.ApiClient;
+import io.swagger.quay.client.ApiException;
+import io.swagger.quay.client.Configuration;
+import io.swagger.quay.client.api.UserApi;
+import io.swagger.quay.client.model.UserView;
+import org.apache.http.client.HttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -25,27 +44,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import org.apache.http.client.HttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Optional;
-import com.google.gson.Gson;
-
-import io.dockstore.webservice.core.ToolMode;
-import io.dockstore.webservice.helpers.Helper.RepoList;
-import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.Registry;
-import io.dockstore.webservice.core.Tag;
-import io.dockstore.webservice.core.Token;
-import io.dockstore.webservice.resources.ResourceUtilities;
-import io.swagger.quay.client.ApiClient;
-import io.swagger.quay.client.ApiException;
-import io.swagger.quay.client.Configuration;
-import io.swagger.quay.client.api.UserApi;
-import io.swagger.quay.client.model.UserView;
 
 /**
  * @author dyuen
@@ -73,7 +71,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
 
     @Override
     public List<Tag> getTags(Tool tool) {
-        LOG.info("======================= Getting tags for: {}================================", tool.getPath());
+        LOG.info(quayToken.getUsername() + " ======================= Getting tags for: {}================================", tool.getPath());
         final String repo = tool.getNamespace() + '/' + tool.getName();
         final String repoUrl = QUAY_URL + "repository/" + repo;
         final Optional<String> asStringBuilds = ResourceUtilities.asString(repoUrl, quayToken.getContent(), client);
@@ -97,7 +95,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
                     tags.add(tag);
                     // LOG.info(gson.toJson(tag));
                 } catch (IOException ex) {
-                    LOG.info("Exception: {}", ex);
+                    LOG.info(quayToken.getUsername() + " Exception: {}", ex);
                 }
             }
 
@@ -118,7 +116,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
                 namespaces.add(organizationMap.get("name"));
             }
         } catch (ApiException e) {
-            LOG.info("Exception: {}", e);
+            LOG.info(quayToken.getUsername() + " Exception: {}", e);
         }
 
         namespaces.add(quayToken.getUsername());
@@ -132,7 +130,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
         for (String namespace : namespaces) {
             String url = QUAY_URL + "repository?namespace=" + namespace;
             Optional<String> asString = ResourceUtilities.asString(url, quayToken.getContent(), client);
-            LOG.info("RESOURCE CALL: {}", url);
+            LOG.info(quayToken.getUsername() + " : RESOURCE CALL: {}", url);
 
             if (asString.isPresent()) {
                 RepoList repos;
@@ -150,7 +148,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
                     tools.stream().forEach(container -> container.setMode(ToolMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS));
                     toolList.addAll(tools);
                 } catch (IOException ex) {
-                    LOG.info("Exception: {}", ex);
+                    LOG.info(quayToken.getUsername() + " Exception: {}", ex);
                 }
             }
         }
@@ -176,7 +174,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
             final String path = quayToken.getTokenSource() + '/' + repo;
             tool.setPath(path);
 
-            LOG.info("========== Configuring {} ==========", path);
+            LOG.info(quayToken.getUsername() + " : ========== Configuring {} ==========", path);
             // if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
             // checkTriggers(tool);
             // if (tool.hasValidTrigger()) {
@@ -205,7 +203,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
         // TODO: work with quay.io to get a better approach such as only the last build for each tag or at the very least paging
         String urlBuilds = QUAY_URL + "repository/" + repo + "/build/?limit=2147483647";
         Optional<String> asStringBuilds = ResourceUtilities.asString(urlBuilds, quayToken.getContent(), client);
-        LOG.info("RESOURCE CALL: {}", urlBuilds);
+        LOG.info(quayToken.getUsername() + " RESOURCE CALL: {}", urlBuilds);
 
         String gitURL = "";
 
@@ -231,14 +229,14 @@ public class QuayImageRegistry implements ImageRegistryInterface {
 
                     Map<String, String> map3 = (Map<String, String>) builds.get(0);
                     String lastBuild = map3.get("started");
-                    LOG.info("LAST BUILD: {}", lastBuild);
+                    LOG.info(quayToken.getUsername() + " : LAST BUILD: {}", lastBuild);
 
                     Date date;
                     try {
                         date = formatter.parse(lastBuild);
                         tool.setLastBuild(date);
                     } catch (ParseException ex) {
-                        LOG.info("Build date did not match format 'EEE, d MMM yyyy HH:mm:ss Z'");
+                        LOG.info(quayToken.getUsername() + ": "  + quayToken.getUsername() + " Build date did not match format 'EEE, d MMM yyyy HH:mm:ss Z'");
                     }
                 }
                 if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
@@ -246,46 +244,6 @@ public class QuayImageRegistry implements ImageRegistryInterface {
                     tool.setGitUrl(gitURL);
                 }
             }
-        }
-    }
-
-    // TODO: This method may have some use later. It uses /api/v1/repository/{repository}/trigger/ to get the git URL for a tool, and
-    // checks if it has only one trigger from one source (bitbucket/github).
-    private void checkTriggers(Tool tool) {
-        final String repo = tool.getNamespace() + "/" + tool.getName();
-
-        String urlBuilds = QUAY_URL + "repository/" + repo + "/trigger/";
-        Optional<String> asStringBuilds = ResourceUtilities.asString(urlBuilds, quayToken.getContent(), client);
-        LOG.info("RESOURCE CALL: " + urlBuilds);
-
-        if (asStringBuilds.isPresent()) {
-            String json = asStringBuilds.get();
-
-            final Gson gson = new Gson();
-
-            Map<String, ArrayList> map = new HashMap<>();
-            map = (Map<String, ArrayList>) gson.fromJson(json, map.getClass());
-            ArrayList triggers = map.get("triggers");
-
-            boolean validTrigger = false;
-
-            // TODO: for now, we only allow user to have only 1 trigger from either github or bitbucket
-            if (triggers != null && triggers.size() == 1) {
-                Map<String, String> triggerMap = (Map<String, String>) triggers.get(0);
-
-                String service = triggerMap.get("service");
-
-                if (service.equals("github") || service.equals("bitbucket")) {
-
-                    String gitURL = Helper.convertHttpsToSsh(triggerMap.get("repository_url"));
-
-                    tool.setRegistry(Registry.QUAY_IO);
-                    tool.setGitUrl(gitURL);
-                    validTrigger = true;
-                }
-            }
-
-            tool.setValidTrigger(validTrigger);
         }
     }
 

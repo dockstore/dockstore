@@ -16,23 +16,8 @@
 
 package io.dockstore.webservice;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.util.EnumSet;
-import java.util.concurrent.TimeUnit;
-
-import org.apache.http.client.HttpClient;
-import org.eclipse.jetty.servlet.FilterHolder;
-import org.eclipse.jetty.servlets.CrossOriginFilter;
-import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.SourceFile;
@@ -75,6 +60,7 @@ import io.dropwizard.migrations.MigrationsBundle;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.views.ViewBundle;
+import io.swagger.api.MetadataApi;
 import io.swagger.api.ToolsApi;
 import io.swagger.api.impl.ToolsApiServiceImpl;
 import io.swagger.jaxrs.config.BeanConfig;
@@ -83,6 +69,19 @@ import io.swagger.jaxrs.listing.SwaggerSerializers;
 import okhttp3.Cache;
 import okhttp3.OkHttpClient;
 import okhttp3.OkUrlFactory;
+import org.apache.http.client.HttpClient;
+import org.eclipse.jetty.servlet.FilterHolder;
+import org.eclipse.jetty.servlets.CrossOriginFilter;
+import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.util.EnumSet;
+import java.util.concurrent.TimeUnit;
 
 import static javax.servlet.DispatcherType.REQUEST;
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ACCESS_CONTROL_ALLOW_METHODS_HEADER;
@@ -237,6 +236,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         ToolsApiServiceImpl.setToolDAO(toolDAO);
         ToolsApiServiceImpl.setConfig(configuration);
         environment.jersey().register(new ToolsApi());
+        environment.jersey().register(new MetadataApi());
 
         // swagger stuff
 

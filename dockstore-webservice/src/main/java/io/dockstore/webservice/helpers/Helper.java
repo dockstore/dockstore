@@ -16,6 +16,31 @@
 
 package io.dockstore.webservice.helpers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Optional;
+import com.google.gson.Gson;
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Registry;
+import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.SourceFile.FileType;
+import io.dockstore.webservice.core.Tag;
+import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenType;
+import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.ToolMode;
+import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.jdbi.FileDAO;
+import io.dockstore.webservice.jdbi.TagDAO;
+import io.dockstore.webservice.jdbi.TokenDAO;
+import io.dockstore.webservice.jdbi.ToolDAO;
+import io.dockstore.webservice.jdbi.UserDAO;
+import io.dockstore.webservice.resources.ResourceUtilities;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -26,34 +51,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Optional;
-import com.google.gson.Gson;
-
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.ToolMode;
-import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.Registry;
-import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.core.SourceFile.FileType;
-import io.dockstore.webservice.core.Tag;
-import io.dockstore.webservice.core.Token;
-import io.dockstore.webservice.core.TokenType;
-import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.helpers.SourceCodeRepoInterface.FileResponse;
-import io.dockstore.webservice.jdbi.FileDAO;
-import io.dockstore.webservice.jdbi.TagDAO;
-import io.dockstore.webservice.jdbi.TokenDAO;
-import io.dockstore.webservice.jdbi.ToolDAO;
-import io.dockstore.webservice.jdbi.UserDAO;
-import io.dockstore.webservice.resources.ResourceUtilities;
 
 /**
  *
@@ -83,7 +80,7 @@ public final class Helper {
         Set<Tag> tags = tool.getTags();
 
         for (Tag tag : tags) {
-            LOG.info("Updating files for tag {}", tag.getName());
+            LOG.info(githubToken.getUsername() + " : Updating files for tag {}", tag.getName());
 
             List<SourceFile> newFiles = loadFiles(client, bitbucketToken, githubToken, tool, tag);
             tag.getSourceFiles().clear();
@@ -102,16 +99,16 @@ public final class Helper {
                 // }
                 if (file.getType() == FileType.DOCKERFILE) {
                     hasDockerfile = true;
-                    LOG.info("HAS Dockerfile");
+                    LOG.info(githubToken.getUsername() + " : HAS Dockerfile");
                 }
                 // Add for new descriptor types
                 if (file.getType() == FileType.DOCKSTORE_CWL) {
                     hasCwl = true;
-                    LOG.info("HAS Dockstore.cwl");
+                    LOG.info(githubToken.getUsername() + " : HAS Dockstore.cwl");
                 }
                 if (file.getType() == FileType.DOCKSTORE_WDL) {
                     hasWdl = true;
-                    LOG.info("HAS Dockstore.wdl");
+                    LOG.info(githubToken.getUsername() + " : HAS Dockstore.wdl");
                 }
             }
 
@@ -138,7 +135,7 @@ public final class Helper {
             final TagDAO tagDAO, final FileDAO fileDAO, final Token githubToken, final Token bitbucketToken,
             final Map<String, List<Tag>> tagMap) {
         for (final Tool tool : containers) {
-            LOG.info("--------------- Updating tags for {} ---------------", tool.getToolPath());
+            LOG.info(githubToken.getUsername() + " : --------------- Updating tags for {} ---------------", tool.getToolPath());
             List<Tag> existingTags = new ArrayList(tool.getTags());
 
             // TODO: For a manually added tool with a Quay.io registry, auto-populate its tags if it does not have any.
@@ -149,7 +146,7 @@ public final class Helper {
                 List<Tag> newTags = tagMap.get(tool.getPath());
 
                 if (newTags == null) {
-                    LOG.info("Tags for tool {} did not get updated because new tags were not found", tool.getPath());
+                    LOG.info(githubToken.getUsername() + " : Tags for tool {} did not get updated because new tags were not found", tool.getPath());
                     return;
                 }
 
@@ -195,20 +192,23 @@ public final class Helper {
 
                 boolean allAutomated = true;
                 for (Tag tag : existingTags) {
-                    LOG.info("Updating tag {}", tag.getName());
+                    // create and add a tag if it does not already exist
+                    if (!tool.getTags().contains(tag)) {
+                        LOG.info(githubToken.getUsername() + " : Updating tag {}", tag.getName());
 
-                    long id = tagDAO.create(tag);
-                    tag = tagDAO.findById(id);
-                    tool.addTag(tag);
+                        long id = tagDAO.create(tag);
+                        tag = tagDAO.findById(id);
+                        tool.addTag(tag);
 
-                    if (!tag.isAutomated()) {
-                        allAutomated = false;
+                        if (!tag.isAutomated()) {
+                            allAutomated = false;
+                        }
                     }
                 }
 
                 // delete tool if it has no users
                 for (Tag t : toDelete) {
-                    LOG.info("DELETING tag: {}", t.getName());
+                    LOG.info(githubToken.getUsername() + " : DELETING tag: {}", t.getName());
                     t.getSourceFiles().clear();
                     // tagDAO.delete(t);
                     tool.getTags().remove(t);
@@ -234,12 +234,12 @@ public final class Helper {
                 tool.setValidTrigger(false);  // Default is false since we must first check to see if descriptors are valid
 
                 if (tool.getDefaultCwlPath() != null) {
-                    LOG.info("Parsing CWL...");
+                    LOG.info(githubToken.getUsername() + " : Parsing CWL...");
                     sourceCodeRepo.findDescriptor(tool, tool.getDefaultCwlPath());
                 }
 
                 if (tool.getDefaultWdlPath() != null) {
-                    LOG.info("Parsing WDL...");
+                    LOG.info(githubToken.getUsername() + " : Parsing WDL...");
                     sourceCodeRepo.findDescriptor(tool, tool.getDefaultWdlPath());
                 }
 
@@ -329,15 +329,15 @@ public final class Helper {
 
             // do not re-create tags with manual mode
             // with other types, you can re-create the tags on refresh
-            LOG.info("UPDATED Tool: {}", tool.getPath());
+            LOG.info(user.getUsername() + ": UPDATED Tool: {}", tool.getPath());
         }
 
         // delete container if it has no users
         for (Tool c : toDelete) {
-            LOG.info("{} {}", c.getPath(), c.getUsers().size());
+            LOG.info(user.getUsername() + ": {} {}", c.getPath(), c.getUsers().size());
 
             if (c.getUsers().isEmpty()) {
-                LOG.info("DELETING: {}", c.getPath());
+                LOG.info(user.getUsername() + ": DELETING: {}", c.getPath());
                 c.getTags().clear();
                 toolDAO.delete(c);
             }
@@ -380,20 +380,20 @@ public final class Helper {
 
                 if (builds != null && !builds.isEmpty()) {
                     for (Tag tag : tags) {
-                        LOG.info("TAG: {}", tag.getName());
+                        LOG.info(quayToken.getUsername() + " : TAG: {}", tag.getName());
 
                         for (final Object build : builds) {
                             Map<String, String> idMap = (Map<String, String>) build;
                             String buildId = idMap.get("id");
 
-                            LOG.info("Build ID: {}", buildId);
+                            LOG.info(quayToken.getUsername() + " : Build ID: {}", buildId);
 
                             Map<String, ArrayList<String>> tagsMap = (Map<String, ArrayList<String>>) build;
 
                             List<String> buildTags = tagsMap.get("tags");
 
                             if (buildTags.contains(tag.getName())) {
-                                LOG.info("Build found with tag: {}", tag.getName());
+                                LOG.info(quayToken.getUsername() + " : Build found with tag: {}", tag.getName());
 
                                 Map<String, Map<String, String>> triggerMetadataMap = (Map<String, Map<String, String>>) build;
 
@@ -409,7 +409,7 @@ public final class Helper {
                                         tag.setAutomated(true);
                                     }
                                 } else {
-                                    LOG.error("WARNING: trigger_metadata is NULL. Could not parse to get reference!");
+                                    LOG.error(quayToken.getUsername() + " : WARNING: trigger_metadata is NULL. Could not parse to get reference!");
                                 }
 
                                 break;
@@ -444,6 +444,10 @@ public final class Helper {
             final ObjectMapper objectMapper, final TokenDAO tokenDAO, final long userId) {
         List<Token> tokens = tokenDAO.findByUserId(userId);
         Token quayToken = extractToken(tokens, TokenType.QUAY_IO.toString());
+        if (quayToken == null){
+            // no quay token extracted
+            throw new CustomWebApplicationException("no quay token found, please link your quay.io account to read from quay.io", HttpStatus.SC_NOT_FOUND);
+        }
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
 
         final ImageRegistryInterface imageRegistry = factory.createImageRegistry(tool.getRegistry());
@@ -465,17 +469,26 @@ public final class Helper {
     private static List<SourceFile> loadFiles(HttpClient client, Token bitbucketToken, Token githubToken, Tool c, Tag tag) {
         List<SourceFile> files = new ArrayList<>();
 
+        final String bitbucketTokenContent = bitbucketToken == null ? null : bitbucketToken.getContent();
+        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(c.getGitUrl(), client,
+                bitbucketTokenContent, githubToken.getContent());
+        FileImporter importer = new FileImporter(sourceCodeRepo);
+
         // Add for new descriptor types
         for (FileType f : FileType.values()) {
-            FileResponse fileResponse = readGitRepositoryFile(c, f, client, tag, bitbucketToken, githubToken);
+            String fileResponse = importer.readGitRepositoryFile(f, tag, null);
             if (fileResponse != null) {
                 SourceFile dockstoreFile = new SourceFile();
                 dockstoreFile.setType(f);
-                dockstoreFile.setContent(fileResponse.getContent());
+                dockstoreFile.setContent(fileResponse);
                 if (f == FileType.DOCKERFILE) {
                     dockstoreFile.setPath(tag.getDockerfilePath());
                 } else if (f == FileType.DOCKSTORE_CWL) {
                     dockstoreFile.setPath(tag.getCwlPath());
+                    // see if there are imported files and resolve them
+                    Map<String, SourceFile> importedFiles = importer
+                            .resolveImports(fileResponse, c, f, tag);
+                    files.addAll(importedFiles.values());
                 } else if (f == FileType.DOCKSTORE_WDL) {
                     dockstoreFile.setPath(tag.getWdlPath());
                 }
@@ -698,56 +711,11 @@ public final class Helper {
     }
 
     /**
-     * Read a file from the tool's git repository.
-     *
-     * @param tool
-     * @param fileType
-     * @param client
-     * @param tag
-     * @param bitbucketToken
-     * @return a FileResponse instance
-     */
-    public static FileResponse readGitRepositoryFile(Tool tool, FileType fileType, HttpClient client, Tag tag,
-            Token bitbucketToken, Token githubToken) {
-        final String bitbucketTokenContent = bitbucketToken == null ? null : bitbucketToken.getContent();
-
-        if (tool.getGitUrl() == null || tool.getGitUrl().isEmpty()) {
-            return null;
-        }
-        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(tool.getGitUrl(), client,
-                bitbucketTokenContent, githubToken.getContent());
-
-        if (sourceCodeRepo == null) {
-            return null;
-        }
-
-        final String reference = tag.getReference();// sourceCodeRepo.getReference(tool.getGitUrl(), tag.getReference());
-
-        // Do not try to get file if the reference is not available
-        if (reference == null) {
-            return null;
-        }
-
-        String fileName = "";
-
-        // Add for new descriptor types
-        if (fileType == FileType.DOCKERFILE) {
-            fileName = tag.getDockerfilePath();
-        } else if (fileType == FileType.DOCKSTORE_CWL) {
-            fileName = tag.getCwlPath();
-        } else if (fileType == FileType.DOCKSTORE_WDL) {
-            fileName = tag.getWdlPath();
-        }
-
-        return sourceCodeRepo.readFile(fileName, reference, tool.getGitUrl());
-    }
-
-    /**
      * @param reference
      *            a raw reference from git like "refs/heads/master"
      * @return the last segment like master
      */
-    public static String parseReference(String reference) {
+    private static String parseReference(String reference) {
         if (reference != null) {
             Pattern p = Pattern.compile("([\\S][^/\\s]+)?/([\\S][^/\\s]+)?/(\\S+)");
             Matcher m = p.matcher(reference);
@@ -787,7 +755,7 @@ public final class Helper {
             if (asString.isPresent()) {
                 String accessToken;
                 String refreshToken;
-                LOG.info("RESOURCE CALL: {}", url);
+                LOG.info(token.getUsername() + ": RESOURCE CALL: {}", url);
                 String json = asString.get();
 
                 Gson gson = new Gson();
@@ -807,7 +775,7 @@ public final class Helper {
                         HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
         } catch (UnsupportedEncodingException ex) {
-            LOG.info(ex.toString());
+            LOG.info(token.getUsername() + ": " + ex.toString());
             throw new CustomWebApplicationException(ex.toString(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }

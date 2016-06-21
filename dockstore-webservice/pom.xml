@@ -27,7 +27,7 @@
     </properties>
     
     <parent>
-        <version>0.4-alpha.2-SNAPSHOT</version>
+        <version>0.4-beta.3-SNAPSHOT</version>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
         <relativePath>../pom.xml</relativePath>
@@ -37,7 +37,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-quay-client</artifactId>
-            <version>0.4-alpha.2-SNAPSHOT</version>
+            <version>0.4-beta.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.swagger</groupId>
@@ -413,23 +413,20 @@
             <artifactId>commons-io</artifactId>
             <version>2.4</version>
         </dependency>
-        <dependency>
-            <groupId>org.yaml</groupId>
-            <artifactId>snakeyaml</artifactId>
-            <version>1.15</version>
-        </dependency>
+
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-client</artifactId>
-            <version>0.4-alpha.2-SNAPSHOT</version>
+            <version>0.4-beta.3-SNAPSHOT</version>
         </dependency>
 
         <!-- testing -->
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>0.4-alpha.2-SNAPSHOT</version>
+            <version>0.4-beta.3-SNAPSHOT</version>
             <scope>test</scope>
+            <type>test-jar</type>
         </dependency>
         <dependency>
             <groupId>com.github.stefanbirkner</groupId>
@@ -446,6 +443,11 @@
             <artifactId>okhttp-urlconnection</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.4</version>
+        </dependency>
 
     </dependencies>
 
@@ -511,6 +513,12 @@
                 <configuration>
                     <filters>
                         <filter>
+                            <artifact>io.dockstore:dockstore-client</artifact>
+                            <includes>
+                                <include>io/dockstore/**</include>
+                            </includes>
+                        </filter>
+                        <filter>
                             <artifact>*:*</artifact>
                             <excludes>
                                 <exclude>META-INF/*.SF</exclude>
@@ -559,6 +567,7 @@
                                 <usedDependency>javax.ws.rs:jsr311-api</usedDependency>
                                 <usedDependency>io.swagger:swagger-jersey2-jaxrs</usedDependency>
                                 <usedDependency>io.dropwizard:dropwizard-views-freemarker</usedDependency>
+                                <usedDependency>org.apache.commons:commons-lang3</usedDependency>
                             </usedDependencies>
 
                         </configuration>
@@ -591,6 +600,10 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>cobertura-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>

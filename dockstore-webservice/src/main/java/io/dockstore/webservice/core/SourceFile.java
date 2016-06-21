@@ -16,7 +16,8 @@
 
 package io.dockstore.webservice.core;
 
-import java.util.Objects;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -26,9 +27,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import java.util.Objects;
 
 /**
  * This describes a cached copy of a remotely accessible file. Implementation specific.
@@ -57,7 +56,7 @@ public class SourceFile {
     @ApiModelProperty("Cache for the contents of the target file")
     private String content;
 
-    @Column
+    @Column(nullable = false)
     @ApiModelProperty(value = "Path to source file in git repo", required = true)
     private String path;
 

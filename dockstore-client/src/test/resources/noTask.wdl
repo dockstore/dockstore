@@ -1,0 +1,3 @@
+workflow test {
+  call hello
+}

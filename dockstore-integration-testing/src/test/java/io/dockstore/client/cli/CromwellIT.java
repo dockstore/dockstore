@@ -16,25 +16,22 @@
 
 package io.dockstore.client.cli;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-
-import org.apache.commons.io.FileUtils;
-import org.junit.Assert;
-import org.junit.Test;
-
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
-
 import cromwell.Main;
 import io.dockstore.client.Bridge;
 import io.dockstore.common.WDLFileProvisioning;
 import io.dropwizard.testing.ResourceHelpers;
+import org.apache.commons.io.FileUtils;
+import org.junit.Assert;
+import org.junit.Test;
 import scala.collection.JavaConversions;
 import scala.collection.immutable.List;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 
 /**

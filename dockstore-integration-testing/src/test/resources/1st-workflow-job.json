@@ -1,0 +1,7 @@
+{
+  "inp": {
+    "class": "File",
+    "path": "src/test/resources/hello.tar"
+  },
+  "ex": "Hello.java"
+}

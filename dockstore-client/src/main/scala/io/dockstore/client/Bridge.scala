@@ -71,7 +71,7 @@ class Bridge {
         inputList.put(value.fqn, value.wdlType.toWdlString)
       }
     }
-    return inputList
+    inputList
   }
 
   def getImportFiles(file: JFile): util.ArrayList[String] = {
@@ -85,7 +85,21 @@ class Bridge {
       importList.add(imported.uri)
     }
 
-    return importList
+    importList
+  }
+
+  def getOutputFiles(file: JFile): util.List[String] = {
+    val lines = scala.io.Source.fromFile(file).mkString
+    val ns = NamespaceWithWorkflow.load(lines)
+
+    val outputList = new util.ArrayList[String]()
+
+    ns.workflow.outputs.seq foreach{value =>
+      if (value.wdlType == WdlFileType || value.wdlType == WdlArrayType(WdlFileType)) {
+        outputList.add(value.fullyQualifiedName)
+      }
+    }
+    outputList
   }
 
   def getCallsAndDocker(file: JFile): util.LinkedHashMap[String, Seq[String]] = {

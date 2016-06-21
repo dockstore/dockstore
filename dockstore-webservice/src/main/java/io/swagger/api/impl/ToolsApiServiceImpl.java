@@ -16,6 +16,23 @@
 
 package io.swagger.api.impl;
 
+import com.google.common.base.Splitter;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Tag;
+import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.jdbi.ToolDAO;
+import io.swagger.api.NotFoundException;
+import io.swagger.api.ToolsApiService;
+import io.swagger.model.ToolDescriptor;
+import io.swagger.model.ToolDockerfile;
+import io.swagger.model.ToolType;
+import io.swagger.model.ToolVersion;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -25,27 +42,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Splitter;
-
-import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.core.Tag;
-import io.dockstore.webservice.jdbi.ToolDAO;
-import io.swagger.api.NotFoundException;
-import io.swagger.api.ToolsApiService;
-import io.swagger.model.Metadata;
-import io.swagger.model.ToolDescriptor;
-import io.swagger.model.ToolDockerfile;
-import io.swagger.model.ToolType;
-import io.swagger.model.ToolVersion;
+import java.util.Optional;
 
 public class ToolsApiServiceImpl extends ToolsApiService {
 
@@ -63,18 +60,24 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     }
 
     @Override
-    public Response toolsRegistryIdGet(String id, SecurityContext securityContext) throws NotFoundException {
+    public Response toolsIdGet(String id, SecurityContext securityContext) throws NotFoundException {
         ParsedRegistryID parsedID = new ParsedRegistryID(id);
-        Tool tool = toolDAO.findPublishedByToolPath(parsedID.getPath(),parsedID.getToolName());
-        return buildToolResponse(tool, null);
+        Tool tool = toolDAO.findPublishedByToolPath(parsedID.getPath(), parsedID.getToolName());
+        return buildToolResponse(tool, null, false);
     }
 
-    private Response buildToolResponse(Tool container, String version) {
+    @Override
+    public Response toolsIdVersionsGet(String id, SecurityContext securityContext) throws NotFoundException {
+        ParsedRegistryID parsedID = new ParsedRegistryID(id);
+        Tool tool = toolDAO.findPublishedByToolPath(parsedID.getPath(), parsedID.getToolName());
+        return buildToolResponse(tool, null, true);
+    }
+
+    private Response buildToolResponse(Tool container, String version, boolean returnJustVersions) {
         Response response;
         if (container == null) {
             response = Response.status(Response.Status.NOT_FOUND).build();
-        }
-        else if (!container.getIsPublished()){
+        } else if (!container.getIsPublished()) {
             // check whether this is registered
             response = Response.status(Response.Status.UNAUTHORIZED).build();
         } else {
@@ -82,52 +85,82 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             assert (tool != null);
             // filter out other versions if we're narrowing to a specific version
             if (version != null) {
-                tool.getVersions().removeIf(v -> !v.getImage().equals(version));
-                if (tool.getVersions().size() != 1){
-                    response = Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
-                } else{
+                tool.getVersions().removeIf(v -> !v.getName().equals(version));
+                if (tool.getVersions().size() != 1) {
+                    response = Response.status(Response.Status.NOT_FOUND).build();
+                } else {
                     response = Response.ok(tool.getVersions().get(0)).build();
                 }
-            }else {
-                response = Response.ok(tool).build();
+            } else {
+                if (returnJustVersions) {
+                    response = Response.ok(tool.getVersions()).build();
+                } else {
+                    response = Response.ok(tool).build();
+                }
             }
         }
         return response;
     }
 
     @Override
-    public Response toolsRegistryIdVersionVersionIdGet(String registryId, String versionId, SecurityContext securityContext)
-        throws NotFoundException {
-        ParsedRegistryID parsedID = new ParsedRegistryID(registryId);
+    public Response toolsIdVersionsVersionIdGet(String id, String versionId, SecurityContext securityContext)
+            throws NotFoundException {
+        ParsedRegistryID parsedID = new ParsedRegistryID(id);
         try {
             versionId = URLDecoder.decode(versionId, StandardCharsets.UTF_8.displayName());
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
-        Tool tool = toolDAO.findPublishedByToolPath(parsedID.getPath(),parsedID.getToolName());
-        return buildToolResponse(tool, versionId);
+        Tool tool = toolDAO.findPublishedByToolPath(parsedID.getPath(), parsedID.getToolName());
+        return buildToolResponse(tool, versionId, false);
     }
 
     @Override
-    public Response toolsRegistryIdVersionVersionIdDescriptorGet(String registryId, String versionId, String format,
-                                                                              SecurityContext securityContext) throws NotFoundException {
-        if (format.equalsIgnoreCase("CWL")) {
-            return getFileByToolVersionID(registryId, versionId, SourceFile.FileType.DOCKSTORE_CWL);
-        } else {
-            // TODO: no other descriptor formats implemented for now
+    public Response toolsIdVersionsVersionIdDescriptorGet(String id, String versionId, String format,
+            SecurityContext securityContext) throws NotFoundException {
+        SourceFile.FileType type = getFileType(format);
+        if (type == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
+        return getFileByToolVersionID(id, versionId, type, null);
     }
 
     @Override
-    public Response toolsRegistryIdVersionVersionIdDockerfileGet(String registryId, String versionId,
-                                                                              SecurityContext securityContext) throws NotFoundException {
-        return getFileByToolVersionID(registryId, versionId, SourceFile.FileType.DOCKERFILE);
+    public Response toolsIdVersionsVersionIdDescriptorRelativePathGet(String id, String versionId, String relativePath,
+            String format, SecurityContext securityContext) throws NotFoundException {
+        if (format == null){
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
+        SourceFile.FileType type = getFileType(format);
+        if (type == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+
+        return getFileByToolVersionID(id, versionId, type, relativePath);
+    }
+
+    private SourceFile.FileType getFileType(String format) {
+        SourceFile.FileType type;
+        if (format.equalsIgnoreCase("CWL")){
+            type = SourceFile.FileType.DOCKSTORE_CWL;
+        } else if (format.equalsIgnoreCase("WDL")){
+            type = SourceFile.FileType.DOCKSTORE_WDL;
+        } else{
+            // TODO: no other descriptor formats implemented for now
+            type = null;
+        }
+        return type;
     }
 
     @Override
-    public Response toolsGet(String registryId, String registry, String organization, String name, String toolname, String description,
-            String author, SecurityContext securityContext) throws NotFoundException {
+    public Response toolsIdVersionsVersionIdDockerfileGet(String id, String versionId, SecurityContext securityContext)
+            throws NotFoundException {
+        return getFileByToolVersionID(id, versionId, SourceFile.FileType.DOCKERFILE, null);
+    }
+
+    @Override
+    public Response toolsGet(String registryId, String registry, String organization, String name, String toolname,
+            String description, String author, SecurityContext securityContext) throws NotFoundException {
         final List<Tool> all = toolDAO.findAllPublished();
         List<io.swagger.model.Tool> results = new ArrayList<>();
         for (Tool c : all) {
@@ -175,18 +208,9 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         return Response.ok(results).build();
     }
 
-    @Override
-    public Response toolsMetadataGet(SecurityContext securityContext) throws NotFoundException {
-        Metadata metadata = new Metadata();
-        metadata.setCountry("CAN");
-        metadata.setFriendlyName("Your friendly neighbourhood docker store");
-        metadata.setVersion(ToolsApiServiceImpl.class.getPackage().getImplementationVersion());
-        return Response.ok(metadata).build();
-    }
-
     /**
      * Convert our Tool object to a standard Tool format
-     * 
+     *
      * @param container our data object
      * @return standardised data object
      */
@@ -198,7 +222,8 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             // construct escaped ID
             newID = container.getToolPath();
             String escapedID = URLEncoder.encode(newID, StandardCharsets.UTF_8.displayName());
-            URI uri = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()), "/tools/" + escapedID, null, null);
+            URI uri = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()), "/tools/" + escapedID,
+                    null, null);
             globalId = uri.toURL().toString();
         } catch (URISyntaxException | MalformedURLException | UnsupportedEncodingException e) {
             LOG.error("Could not construct URL for our container with id: " + container.getId());
@@ -216,16 +241,15 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         tool.setDescription(container.getDescription());
         tool.setMetaVersion(container.getLastUpdated() != null ? container.getLastUpdated().toString() : "");
         tool.setOrganization(container.getNamespace());
-        tool.setName(container.getName());
-        tool.setRegistry(container.getRegistry().name());
+        tool.setToolname(container.getName());
         tool.setTooltype(type);
-        tool.setRegistryId(newID);
-        tool.setGlobalId(globalId);
+        tool.setId(newID);
+        tool.setUrl(globalId);
         // TODO: contains has no counterpart in our DB
         // setup versions as well
         for (Tag tag : container.getTags()) {
 
-            if (tag.getName() == null || tag.getImageId() == null || tag.isHidden()){
+            if (tag.getName() == null || tag.getImageId() == null || tag.isHidden()) {
                 // tags with no names make no sense here
                 // also hide hidden tags
                 continue;
@@ -235,23 +259,23 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             // version id
             String globalVersionId;
             try {
-                globalVersionId = globalId + "/version/" +  URLEncoder.encode(tag.getName(), StandardCharsets.UTF_8.displayName());
+                globalVersionId = globalId + "/version/" + URLEncoder.encode(tag.getName(), StandardCharsets.UTF_8.displayName());
             } catch (UnsupportedEncodingException e) {
                 LOG.error("Could not construct URL for our container with id: " + container.getId());
                 return null;
             }
-            version.setGlobalId(globalVersionId);
+            version.setUrl(globalVersionId);
 
             version.setName(tag.getName());
 
             String urlBuilt;
             final String githubPrefix = "git@github.com:";
             final String bitbucketPrefix = "git@bitbucket.org:";
-            if (container.getGitUrl().startsWith(githubPrefix)){
+            if (container.getGitUrl().startsWith(githubPrefix)) {
                 urlBuilt = extractHTTPPrefix(container.getGitUrl(), tag.getReference(), githubPrefix, "https://raw.githubusercontent.com/");
-            } else if (container.getGitUrl().startsWith(bitbucketPrefix)){
+            } else if (container.getGitUrl().startsWith(bitbucketPrefix)) {
                 urlBuilt = extractHTTPPrefix(container.getGitUrl(), tag.getReference(), bitbucketPrefix, "https://bitbucket.org/");
-            } else{
+            } else {
                 LOG.error("Found a git url neither from bitbucket or github " + container.getGitUrl());
                 urlBuilt = null;
             }
@@ -281,22 +305,27 @@ public class ToolsApiServiceImpl extends ToolsApiService {
 
     /**
      * Build a descriptor and attach it to a version
-     * @param url url to set for the descriptor
+     *
+     * @param url  url to set for the descriptor
      * @param file a file with content for the descriptor
      */
     private static ToolDescriptor buildSourceFile(String url, SourceFile file) {
         ToolDescriptor wdlDescriptor = new ToolDescriptor();
+        if (file.getType() == SourceFile.FileType.DOCKSTORE_CWL){
+            wdlDescriptor.setType(ToolDescriptor.TypeEnum.CWL);
+        } else if (file.getType() == SourceFile.FileType.DOCKSTORE_WDL){
+            wdlDescriptor.setType(ToolDescriptor.TypeEnum.WDL);
+        }
         wdlDescriptor.setDescriptor(file.getContent());
         wdlDescriptor.setUrl(url);
         return wdlDescriptor;
     }
 
     /**
-     *
-     * @param gitUrl The git formatted url for the repo
-     * @param reference the git tag or branch
+     * @param gitUrl       The git formatted url for the repo
+     * @param reference    the git tag or branch
      * @param githubPrefix the prefix for the git formatted url to strip out
-     * @param builtPrefix the prefix to use to start the extracted prefix
+     * @param builtPrefix  the prefix to use to start the extracted prefix
      * @return the prefix to access these files
      */
     private static String extractHTTPPrefix(String gitUrl, String reference, String githubPrefix, String builtPrefix) {
@@ -307,7 +336,14 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         return urlBuilder.toString();
     }
 
-    private Response getFileByToolVersionID(String registryId, String versionId, SourceFile.FileType type) {
+    /**
+     * @param registryId   registry id
+     * @param versionId    git reference
+     * @param type         type of file
+     * @param relativePath if null, return the primary descriptor, if not null, return a specific file
+     * @return a specific file wrapped in a response
+     */
+    private Response getFileByToolVersionID(String registryId, String versionId, SourceFile.FileType type, String relativePath) {
         // if a version is provided, get that version, otherwise return the newest
         ParsedRegistryID parsedID = new ParsedRegistryID(registryId);
         try {
@@ -315,29 +351,41 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
-        Tool tool = toolDAO.findPublishedByToolPath(parsedID.getPath(),parsedID.getToolName());
+        Tool tool = toolDAO.findPublishedByToolPath(parsedID.getPath(), parsedID.getToolName());
         // check whether this is registered
-        if (!tool.getIsPublished()){
+        if (!tool.getIsPublished()) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
-        // convert our toolName model to that expected
-        for (Tag tag : tool.getTags()) {
-                if (tag.getName().equals(versionId)) {
-                    for (SourceFile file : tag.getSourceFiles()) {
-                        if (file.getType() == type) {
-                                if(type == SourceFile.FileType.DOCKERFILE) {
-                                    ToolDockerfile dockerfile = new ToolDockerfile();
-                                    dockerfile.setDockerfile(file.getContent());
-                                    return Response.ok(dockerfile).build();
-                                } else if (type == SourceFile.FileType.DOCKSTORE_CWL){
-                                    ToolDescriptor descriptor = new ToolDescriptor();
-                                    descriptor.setDescriptor(file.getContent());
-                                    return Response.ok(descriptor).build();
-                                }
-                        }
+
+        final io.swagger.model.Tool convertedTool = convertContainer2Tool(tool);
+        String finalVersionId = versionId;
+        if (convertedTool == null || convertedTool.getVersions() == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        final Optional<ToolVersion> first = convertedTool.getVersions().stream()
+                .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
+        final Optional<Tag> oldFirst = tool.getVersions().stream()
+                .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
+
+        if (first.isPresent() && oldFirst.isPresent()){
+            final ToolVersion toolVersion = first.get();
+            if (type == SourceFile.FileType.DOCKERFILE) {
+                return Response.status(Response.Status.OK).entity(toolVersion.getDockerfile()).build();
+            } else {
+                if (relativePath == null) {
+                    if (type == SourceFile.FileType.DOCKSTORE_WDL || type == SourceFile.FileType.DOCKSTORE_CWL) {
+                        return Response.status(Response.Status.OK).entity(toolVersion.getDescriptor()).build();
+                    }
+                } else{
+                    final Optional<SourceFile> first1 = oldFirst.get().getSourceFiles().stream()
+                            .filter(file -> file.getPath().equalsIgnoreCase(relativePath)).findFirst();
+                    if (first1.isPresent()){
+                        return Response.status(Response.Status.OK).entity(first1.get()).build();
                     }
                 }
+            }
         }
+
         return Response.status(Response.Status.NOT_FOUND).build();
     }
 
@@ -362,11 +410,11 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             return name;
         }
 
-        public String getToolName() {
+        String getToolName() {
             return toolName;
         }
 
-        public ParsedRegistryID(String id) {
+        ParsedRegistryID(String id) {
             try {
                 id = URLDecoder.decode(id, StandardCharsets.UTF_8.displayName());
             } catch (UnsupportedEncodingException e) {
@@ -379,7 +427,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             toolName = textSegments.size() > 3 ? textSegments.get(3) : "";
         }
 
-        public String getPath(){
+        public String getPath() {
             return registry + "/" + organization + "/" + name;
         }
     }

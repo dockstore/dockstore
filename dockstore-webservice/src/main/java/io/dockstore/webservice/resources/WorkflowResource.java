@@ -55,6 +55,7 @@ import com.google.common.io.Files;
 import com.google.gson.Gson;
 
 import io.dockstore.client.Bridge;
+
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.core.SourceFile;
@@ -71,6 +72,7 @@ import io.dockstore.webservice.helpers.EntryLabelHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.Helper;
+import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
@@ -84,7 +86,9 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+
 import scala.collection.immutable.Seq;
+
 
 /**
  *
@@ -209,7 +213,7 @@ public class WorkflowResource {
             }
             // when 3) no data is found for a workflow in the db, we may want to create a warning, note, or label
         } catch (WebApplicationException ex) {
-            LOG.info("Failed to refresh user {}", user.getId());
+            LOG.info(user.getUsername() + ": " + "Failed to refresh user {}", user.getId());
         }
     }
 
@@ -269,30 +273,8 @@ public class WorkflowResource {
 
         // get a live user for the following
         user = userDAO.findById(user.getId());
-        List<Token> tokens = checkOnBitbucketToken(user);
-
-        SourceCodeRepoInterface sourceCodeRepo = null;
-
-        // Workflow is either from bitbucket or github
-        if (workflow.getGitUrl().contains("bitbucket")) {
-            Token bitbucketToken = Helper.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
-            if (bitbucketToken == null || bitbucketToken.getContent() == null) {
-                throw new CustomWebApplicationException("No bitbucket token for this user.", HttpStatus.SC_BAD_REQUEST);
-            }
-
-            sourceCodeRepo = new BitBucketSourceCodeRepo(bitbucketToken.getUsername(), client, bitbucketToken.getContent(), null);
-
-        } else if (workflow.getGitUrl().contains("github")) {
-            Token githubToken = Helper.extractToken(tokens, TokenType.GITHUB_COM.toString());
-            if (githubToken == null || githubToken.getContent() == null) {
-                throw new CustomWebApplicationException("No github token for this user.", HttpStatus.SC_BAD_REQUEST);
-            }
-
-            sourceCodeRepo = new GitHubSourceCodeRepo(user.getUsername(), githubToken.getContent(), null);
-
-        } else {
-            throw new CustomWebApplicationException("Registries are limited to Github and Bitbucket.", HttpStatus.SC_BAD_REQUEST);
-        }
+        // Set up source code interface and ensure token is set up
+        final SourceCodeRepoInterface sourceCodeRepo = getSourceCodeRepoInterface(workflow.getGitUrl(), user);
 
         // do a full refresh when targeted like this
         workflow.setMode(WorkflowMode.FULL);
@@ -397,7 +379,7 @@ public class WorkflowResource {
         Workflow duplicate = workflowDAO.findByPath(workflow.getPath());
 
         if (duplicate != null && duplicate.getId() != workflowId) {
-            LOG.info("duplicate workflow found: {}" + workflow.getPath());
+            LOG.info(user.getUsername() + ": " + "duplicate workflow found: {}" + workflow.getPath());
             throw new CustomWebApplicationException("Workflow " + workflow.getPath() + " already exists.", HttpStatus.SC_BAD_REQUEST);
         }
 
@@ -558,6 +540,30 @@ public class WorkflowResource {
             @QueryParam("tag") String tag) {
         return entryVersionHelper.getSourceFile(workflowId, tag, FileType.DOCKSTORE_WDL);
     }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{workflowId}/cwl/{relative-path}")
+    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
+    public SourceFile secondaryCwlPath(@ApiParam(value = "Tool id", required = true) @PathParam("workflowId") Long workflowId,
+            @QueryParam("tag") String tag, @PathParam("relative-path") String path){
+
+        return entryVersionHelper.getSourceFileByPath(workflowId, tag, FileType.DOCKSTORE_CWL, path);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{workflowId}/wdl/{relative-path}")
+    @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
+    public SourceFile secondaryWdlPath(@ApiParam(value = "Tool id", required = true) @PathParam("workflowId") Long workflowId,
+            @QueryParam("tag") String tag, @PathParam("relative-path") String path){
+
+        return entryVersionHelper.getSourceFileByPath(workflowId, tag, FileType.DOCKSTORE_WDL, path);
+    }
+
+
     @GET
     @Timed
     @UnitOfWork
@@ -565,7 +571,7 @@ public class WorkflowResource {
     @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
     public List<SourceFile> secondaryCwl(@ApiParam(value = "Tool id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag)  {
-        return entryVersionHelper.getSourceFiles(workflowId, tag, FileType.DOCKSTORE_CWL);
+        return entryVersionHelper.getAllSecondaryFiles(workflowId, tag, FileType.DOCKSTORE_CWL);
     }
 
     @GET
@@ -575,8 +581,11 @@ public class WorkflowResource {
     @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
     public List<SourceFile> secondaryWdl(@ApiParam(value = "Tool id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag) {
-        return entryVersionHelper.getSourceFiles(workflowId, tag, FileType.DOCKSTORE_WDL);
+        return entryVersionHelper.getAllSecondaryFiles(workflowId, tag, FileType.DOCKSTORE_WDL);
     }
+
+
+
 
 
     @POST
@@ -607,30 +616,20 @@ public class WorkflowResource {
         }
 
         // Set up source code interface and ensure token is set up
-        List<Token> tokens = checkOnBitbucketToken(user);
-        Token token;
-        SourceCodeRepoInterface sourceCodeRepoInterface;
-
+        // construct git url like git@github.com:ga4gh/dockstore-ui.git
+        String registryURLPrefix;
         if (workflowRegistry.toLowerCase().equals("bitbucket")) {
-            token = Helper.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
-            if (token != null && token.getContent() != null) {
-                sourceCodeRepoInterface = new BitBucketSourceCodeRepo(token.getUsername(), client, token.getContent(), null);
-            } else {
-                throw new CustomWebApplicationException("No bitbucket token for this user.", HttpStatus.SC_BAD_REQUEST);
-            }
-        } else if (workflowRegistry.toLowerCase().equals("github")){
-            token = Helper.extractToken(tokens, TokenType.GITHUB_COM.toString());
-            if (token != null && token.getContent() != null) {
-                sourceCodeRepoInterface = new GitHubSourceCodeRepo(user.getUsername(), token.getContent(), null);
-            } else {
-                throw new CustomWebApplicationException("No github token for this user.", HttpStatus.SC_BAD_REQUEST);
-            }
+            registryURLPrefix = TokenType.BITBUCKET_ORG.toString();
+        } else if (workflowRegistry.toLowerCase().equals("github")) {
+            registryURLPrefix = TokenType.GITHUB_COM.toString();
         } else {
             throw new CustomWebApplicationException("The given git registry is not supported.", HttpStatus.SC_BAD_REQUEST);
         }
+        String gitURL = "git@" + registryURLPrefix + ":" + workflowPath + ".git";
+        final SourceCodeRepoInterface sourceCodeRepo = getSourceCodeRepoInterface(gitURL, user);
 
         // Create workflow
-        Workflow newWorkflow = sourceCodeRepoInterface.getNewWorkflow(completeWorkflowPath, Optional.absent());
+        Workflow newWorkflow = sourceCodeRepo.getNewWorkflow(completeWorkflowPath, Optional.absent());
 
         if (newWorkflow == null) {
             throw new CustomWebApplicationException("Please enter a valid repository.", HttpStatus.SC_BAD_REQUEST);
@@ -640,16 +639,27 @@ public class WorkflowResource {
         newWorkflow.setPath(completeWorkflowPath);
         newWorkflow.setDescriptorType(descriptorType);
 
-        if (newWorkflow != null) {
-            final long workflowID = workflowDAO.create(newWorkflow);
-            // need to create nested data models
-            final Workflow workflowFromDB = workflowDAO.findById(workflowID);
-            workflowFromDB.getUsers().add(user);
-            updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow);
-            return workflowDAO.findById(workflowID);
-        } else {
-            throw new CustomWebApplicationException("Error registering the given workflow.", HttpStatus.SC_BAD_REQUEST);
+        final long workflowID = workflowDAO.create(newWorkflow);
+        // need to create nested data models
+        final Workflow workflowFromDB = workflowDAO.findById(workflowID);
+        workflowFromDB.getUsers().add(user);
+        updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow);
+        return workflowDAO.findById(workflowID);
+
+    }
+
+    private SourceCodeRepoInterface getSourceCodeRepoInterface(String gitUrl, User user) {
+        List<Token> tokens = checkOnBitbucketToken(user);
+        Token bitbucketToken = Helper.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
+        Token githubToken = Helper.extractToken(tokens, TokenType.GITHUB_COM.toString());
+        final String bitbucketTokenContent = bitbucketToken == null ? null : bitbucketToken.getContent();
+        final String gitHubTokenContent = githubToken == null ? null : githubToken.getContent();
+        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(gitUrl, client,
+                bitbucketTokenContent, gitHubTokenContent);
+        if (sourceCodeRepo == null) {
+            throw new CustomWebApplicationException("Git tokens invalid, please re-link your git accounts.", HttpStatus.SC_BAD_REQUEST);
         }
+        return sourceCodeRepo;
     }
 
     @PUT

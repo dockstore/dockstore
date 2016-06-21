@@ -20,7 +20,7 @@
     <parent>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
-        <version>0.4-alpha.2-SNAPSHOT</version>
+        <version>0.4-beta.3-SNAPSHOT</version>
     </parent>
     <artifactId>dockstore-client</artifactId>
     <packaging>jar</packaging>
@@ -37,17 +37,17 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-client</artifactId>
-            <version>0.4-alpha.2-SNAPSHOT</version>
+            <version>0.4-beta.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-launcher</artifactId>
-            <version>0.4-alpha.2-SNAPSHOT</version>
+            <version>0.4-beta.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>0.4-alpha.2-SNAPSHOT</version>
+            <version>0.4-beta.3-SNAPSHOT</version>
         </dependency>
         
         <dependency>
@@ -107,6 +107,10 @@
             <groupId>io.cwl</groupId>
             <artifactId>cwlavro-tools</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.cwl</groupId>
+            <artifactId>cwlavro-generated</artifactId>
+        </dependency>
 
         <!-- broad - cromwell stuff -->
         <dependency>
@@ -133,6 +137,26 @@
             <artifactId>scala-library</artifactId>
             <version>2.11.7</version>
         </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
+
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+        </dependency>
+
 
     </dependencies>
 
@@ -140,6 +164,23 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>datastore</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>cromwell-executions</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>cromwell-input</directory>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -152,6 +193,24 @@
                                 <exclude>META-INF/*.SF</exclude>
                                 <exclude>META-INF/*.DSA</exclude>
                                 <exclude>META-INF/*.RSA</exclude>
+                            </excludes>
+                        </filter>
+                        <filter>
+                            <artifact>io.dockstore:dockstore-launcher</artifact>
+                            <excludes>
+                                <exclude>logback.xml</exclude>
+                            </excludes>
+                        </filter>
+                        <filter>
+                            <artifact>io.dockstore:dockstore-common</artifact>
+                            <excludes>
+                                <exclude>logback.xml</exclude>
+                            </excludes>
+                        </filter>
+                        <filter>
+                            <artifact>org.broadinstitute:*</artifact>
+                            <excludes>
+                                <exclude>logback.xml</exclude>
                             </excludes>
                         </filter>
                     </filters>
@@ -230,6 +289,10 @@
                 <artifactId>cobertura-maven-plugin</artifactId>
             </plugin>
             <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
                 <groupId>net.alchim31.maven</groupId>
                 <artifactId>scala-maven-plugin</artifactId>
                 <executions>
@@ -248,6 +311,20 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <!-- some tests can alter resources on OICR development hosts -->
+                    <execution>
+                        <id>reset_after_tests</id>
+                        <goals>
+                            <goal>resources</goal>
+                        </goals>
+                        <phase>install</phase>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
         
         <resources>
@@ -255,6 +332,9 @@
                 <targetPath>${basedir}/target</targetPath>
                 <directory>bin</directory>
                 <filtering>true</filtering>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
             </resource>
         </resources>
     </build>
