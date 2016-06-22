@@ -60,11 +60,24 @@ public class BasicET {
          General-ish tests
          */
         /**
-         * Tests that refresh all works
+         * Tests that refresh all works, also that refreshing without a quay.io token should not destroy tools
          */
         @Test
         public void testRefresh() {
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+                final long startToolCount = testingPostgres.runSelectStatement("select count(*) from tool", new ScalarHandler<>());
+                // should have 0 tools to start with
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--script" });
+                // should have a certain number of tools based on github contents
+                final long secondToolCount = testingPostgres.runSelectStatement("select count(*) from tool", new ScalarHandler<>());
+                // delete quay.io token
+                testingPostgres.runUpdateStatement("delete from token where tokensource = 'quay.io'");
+                // refresh
+                systemExit.expectSystemExitWithStatus(Client.API_ERROR);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--script" });
+                // should not delete tools
+                final long thirdToolCount = testingPostgres.runSelectStatement("select count(*) from tool", new ScalarHandler<>());
+                Assert.assertTrue("there should be no change in count of tools", secondToolCount == thirdToolCount);
         }
 
         /**

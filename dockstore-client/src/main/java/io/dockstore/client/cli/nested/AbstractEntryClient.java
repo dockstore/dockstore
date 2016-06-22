@@ -16,6 +16,7 @@
 
 package io.dockstore.client.cli.nested;
 
+import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
@@ -67,6 +68,7 @@ import java.util.regex.Pattern;
 import static io.dockstore.client.cli.ArgumentUtility.CONVERT;
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.LAUNCH;
+import static io.dockstore.client.cli.ArgumentUtility.MAX_DESCRIPTION;
 import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.containsHelpRequest;
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
@@ -1325,4 +1327,14 @@ public abstract class AbstractEntryClient {
         printHelpFooter();
     }
 
+    protected static String getCleanedDescription(String description) {
+        if (description != null) {
+            // strip control characters
+            description = CharMatcher.JAVA_ISO_CONTROL.removeFrom(description);
+            if (description.length() > MAX_DESCRIPTION) {
+                description = description.substring(0, MAX_DESCRIPTION - Client.PADDING) + "...";
+            }
+        }
+        return description;
+    }
 }
