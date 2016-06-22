@@ -42,7 +42,6 @@ import java.util.Set;
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.DESCRIPTION_HEADER;
 import static io.dockstore.client.cli.ArgumentUtility.GIT_HEADER;
-import static io.dockstore.client.cli.ArgumentUtility.MAX_DESCRIPTION;
 import static io.dockstore.client.cli.ArgumentUtility.NAME_HEADER;
 import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.boolWord;
@@ -440,12 +439,7 @@ public class WorkflowClient extends AbstractEntryClient {
                 gitUrl = workflow.getGitUrl();
             }
 
-            if (workflow.getDescription() != null) {
-                description = workflow.getDescription();
-                if (description.length() > MAX_DESCRIPTION) {
-                    description = description.substring(0, MAX_DESCRIPTION - Client.PADDING) + "...";
-                }
-            }
+            description = getCleanedDescription(workflow.getDescription());
 
             out(format, workflow.getPath(), description, gitUrl, boolWord(workflow.getIsPublished()));
         }

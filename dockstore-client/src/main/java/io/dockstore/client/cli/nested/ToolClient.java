@@ -163,12 +163,7 @@ public class ToolClient extends AbstractEntryClient {
                 gitUrl = container.getGitUrl();
             }
 
-            if (container.getDescription() != null) {
-                description = container.getDescription();
-                if (description.length() > MAX_DESCRIPTION) {
-                    description = description.substring(0, MAX_DESCRIPTION - Client.PADDING) + "...";
-                }
-            }
+            description = getCleanedDescription(container.getDescription());
 
             out(format, container.getToolPath(), description, gitUrl);
         }
