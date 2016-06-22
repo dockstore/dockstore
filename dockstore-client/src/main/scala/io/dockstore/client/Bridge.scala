@@ -19,15 +19,10 @@ package io.dockstore.client
 import java.io.{File => JFile}
 import java.util
 
-import wdl4s.formatter.{AnsiSyntaxHighlighter, HtmlSyntaxHighlighter, SyntaxFormatter}
-import wdl4s.parser.WdlParser
-import wdl4s.parser.WdlParser.AstNode
-import wdl4s.types.{WdlArrayType, WdlFileType}
-import wdl4s.values.WdlString
-import wdl4s.{AstTools, _}
 import spray.json._
+import wdl4s._
+import wdl4s.types.{WdlArrayType, WdlFileType}
 
-import scala.collection.immutable.List
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
 
@@ -114,8 +109,8 @@ class Bridge {
       ns.findTask(call.unqualifiedName) foreach { task =>
         try {
           // Get the list of docker images
-          val docker = task.runtimeAttributes.attrs.get("docker").get
-          tasks.put(task.name, docker)
+          val dockerAttributes = task.runtimeAttributes.attrs.get("docker")
+          tasks.put(task.name, if (dockerAttributes.isDefined) dockerAttributes.get else null)
         } catch {
           // Throws error if task has no runtime section or a runtime section but no docker (we stop error from being thrown)
           case e: NoSuchElementException =>

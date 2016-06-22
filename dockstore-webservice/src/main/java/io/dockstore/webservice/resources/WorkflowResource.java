@@ -747,13 +747,12 @@ public class WorkflowResource {
                 Bridge bridge = new Bridge();
                 // TODO : Currently evaluates scatters last, while loops don't work.  This needs to be fixed in Bridge.scala.
                 Map<String, Seq> callToTask = (LinkedHashMap)bridge.getCallsAndDocker(tempMainDescriptor); // Should be in correct order
-
                 // TODO : Currently only grabs first from a possible list (implement multiple containers in the future)
                 for (Map.Entry<String, Seq> entry : callToTask.entrySet()) {
-                    if (entry.getValue() instanceof scala.collection.immutable.List) {
+                    if (entry.getValue() != null){
                         nodePairs.add(new MutablePair<>(entry.getKey(), getURLFromEntry(entry.getValue().head().toString())));
-                    } else {
-                        nodePairs.add(new MutablePair<>(entry.getKey(), getURLFromEntry(entry.getValue().head().toString())));
+                    } else{
+                        nodePairs.add(new MutablePair<>(entry.getKey(), ""));
                     }
                 }
             } else {
@@ -843,9 +842,7 @@ public class WorkflowResource {
             return json.toString();
 
         }
-
         return null;
-
     }
 
     /**
