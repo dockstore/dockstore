@@ -534,6 +534,9 @@ public final class Helper {
         }
         if (quayToken == null) {
             LOG.info("WARNING: QUAY token not found!");
+            if (dbTools.stream().filter(tool -> tool.getRegistry().equals(Registry.QUAY_IO)).count() > 0){
+                throw new CustomWebApplicationException("quay.io tools found, but quay.io token not found. Please link your quay.io account before refreshing.", HttpStatus.SC_BAD_REQUEST);
+            }
         }
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
         final List<ImageRegistryInterface> allRegistries = factory.getAllRegistries();
