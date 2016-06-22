@@ -16,46 +16,11 @@
 
 package io.dockstore.webservice.resources;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
-
-import org.apache.commons.lang3.tuple.MutablePair;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.Yaml;
-
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Optional;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
-
 import io.dockstore.client.Bridge;
-
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.core.SourceFile;
@@ -86,8 +51,38 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-
+import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
 import scala.collection.immutable.Seq;
+
+import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 /**
@@ -735,7 +730,7 @@ public class WorkflowResource {
                 File secondaryDescriptor;
                 for (SourceFile secondaryFile : workflowVersion.getSourceFiles()) {
                     if (!secondaryFile.getPath().equals(workflowVersion.getWorkflowPath())) {
-                        secondaryDescriptor = new File(tmpDir.getAbsolutePath() + secondaryFile.getPath());
+                        secondaryDescriptor = new File(tmpDir.getAbsolutePath(), secondaryFile.getPath());
                         Files.write(secondaryFile.getContent(), secondaryDescriptor, StandardCharsets.UTF_8);
                     }
                 }
@@ -782,16 +777,18 @@ public class WorkflowResource {
                             for (Map <String, Object> step : steps) {
                                 // TODO : test that if a CWL Tool defines a different docker image, this is shown in the DAG
                                 // TODO : CHECKIFIMPORTMAP Check here if run maps to a String or a map<String, Object>, in order to determine the file to import
-                                Map<String, Object> stepParams = (Map<String, Object>)step.get("run");
-                                File secondaryDescriptor = new File(tmpDir.getAbsolutePath() + File.separator + stepParams.get("import").toString());
+
+                                String fileName = (String) step.get("run");
+                                File secondaryDescriptor = new File(tmpDir.getAbsolutePath() + File.separator + fileName);
                                 Yaml helperYaml = new Yaml();
-                                Map <String, Object> helperGroups = (Map<String, Object>) helperYaml.load(new FileInputStream(secondaryDescriptor));
+
+                                Map<String, Object> helperGroups = (Map<String, Object>) helperYaml.load(new FileInputStream(secondaryDescriptor));
 
                                 boolean defaultDocker = true;
                                 for (String helperGroup : helperGroups.keySet()) {
                                     if (helperGroup.equals("requirements") || helperGroup.equals("hints")) {
-                                        ArrayList<Map <String, Object>> requirements = (ArrayList<Map <String, Object>>) helperGroups.get(helperGroup);
-                                        for (Map <String, Object> requirement : requirements) {
+                                        ArrayList<Map<String, Object>> requirements = (ArrayList<Map<String, Object>>) helperGroups.get(helperGroup);
+                                        for (Map<String, Object> requirement : requirements) {
                                             if (requirement.get("class").equals("DockerRequirement")) {
                                                 defaultDockerEnv = requirement.get("dockerPull").toString();
                                                 nodePairs.add(new MutablePair<>(step.get("id").toString().replaceFirst("#", ""), getURLFromEntry(requirement.get("dockerPull").toString())));
