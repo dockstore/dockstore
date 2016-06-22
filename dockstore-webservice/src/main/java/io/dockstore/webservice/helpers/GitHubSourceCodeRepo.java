@@ -25,6 +25,7 @@ import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.http.HttpStatus;
+import org.codehaus.plexus.util.FileUtils;
 import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.RepositoryContents;
 import org.eclipse.egit.github.core.RepositoryId;
@@ -226,7 +227,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 version.setWorkflowPath(calculatedPath);
                 Set<SourceFile> sourceFileSet = new HashSet<>();
                 //TODO: is there a case-insensitive endsWith?
-                if (calculatedPath.endsWith(".cwl") || calculatedPath.endsWith(".CWL")) {
+                String calculatedExtension = FileUtils.getExtension(calculatedPath);
+
+                if (calculatedExtension.equalsIgnoreCase("cwl") || calculatedExtension.equalsIgnoreCase("yml") || calculatedExtension.equalsIgnoreCase("yaml")) {
                     // look for workflow file
                     try {
                         final List<RepositoryContents> cwlContents = cService.getContents(id, calculatedPath, ref);
