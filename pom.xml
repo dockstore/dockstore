@@ -934,6 +934,9 @@
                 <groupId>com.versioneye</groupId>
                 <artifactId>versioneye-maven-plugin</artifactId>
                 <version>3.9.2</version>
+                <configuration>
+                    <projectId>576bfc12f04578000a6809a1</projectId>
+                </configuration>
             </plugin>
         </plugins>
     </build>
