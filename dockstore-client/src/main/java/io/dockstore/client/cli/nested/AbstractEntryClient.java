@@ -975,8 +975,7 @@ public abstract class AbstractEntryClient {
             WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning(this.getConfigFile());
             Gson gson = new Gson();
             String jsonString = FileUtils.readFileToString(parameterFile);
-            Map<String, Object> map = new HashMap<>();
-            Map<String, Object> inputJson = gson.fromJson(jsonString, map.getClass());
+            Map<String, Object> inputJson = gson.fromJson(jsonString, HashMap.class);
 
             // Download files and change to local location
             // Make a new map of the inputs with updated locations
@@ -1020,7 +1019,7 @@ public abstract class AbstractEntryClient {
             final String wdlOutputTarget = optVal(args, "--wdl-output-target", null);
             if (wdlOutputTarget != null) {
                 // grab values from output JSON
-                Map<String, String> outputJson = gson.fromJson(stdout, map.getClass());
+                Map<String, String> outputJson = gson.fromJson(stdout, HashMap.class);
                 System.out.println("Provisioning your output files to their final destinations");
                 final List<String> outputFiles = bridge.getOutputFiles(tmp);
                 for (String outFile : outputFiles) {

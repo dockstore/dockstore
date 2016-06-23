@@ -859,6 +859,10 @@
                     </formats>
                     <aggregate>true</aggregate>
                     <instrumentation>
+                        <ignoreMethodAnnotations>
+                            <ignoreMethodAnnotation>javax.annotation.Generated</ignoreMethodAnnotation>
+                        </ignoreMethodAnnotations>
+                        <ignoreTrivial>true</ignoreTrivial>
                         <excludes>
                             <exclude>io/dockstore/client/Bridge.class</exclude>
                             <exclude>io/dockstore/client/Bridge.*</exclude>

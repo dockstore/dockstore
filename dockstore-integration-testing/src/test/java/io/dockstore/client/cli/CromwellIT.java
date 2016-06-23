@@ -74,8 +74,7 @@ public class CromwellIT {
         String jsonString = null;
         try {
             jsonString = FileUtils.readFileToString(parameterFile);
-            Map<String, Object> map = new HashMap<>();
-            Map<String, Object> inputJson = gson.fromJson(jsonString, map.getClass());
+            Map<String, Object> inputJson = gson.fromJson(jsonString, HashMap.class);
 
             Map<String,Object> fileMap = wdlFileProvisioning.pullFiles(inputJson, wdlInputs);
 
