@@ -265,8 +265,10 @@ public class Client {
             //id will be bigger if newer, prerelease=true if unstable
             //newer return true, older return false
             return prerelease.equals("true") && (idCurrent > idLatest);
-        }catch (MalformedURLException e) {
+        } catch (MalformedURLException e) {
             exceptionMessage(e,"Failed to open URL",CLIENT_ERROR);
+        } catch(NumberFormatException e){
+           return true;
         }
         return false;
     }
