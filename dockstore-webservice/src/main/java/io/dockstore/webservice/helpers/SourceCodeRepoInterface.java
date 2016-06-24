@@ -24,14 +24,10 @@ import io.dockstore.webservice.core.Workflow;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.Yaml;
 import wdl4s.parser.WdlParser;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -170,25 +166,6 @@ public abstract class SourceCodeRepoInterface {
      * @return a fully realized workflow
      */
     public abstract Workflow getNewWorkflow(String repositoryId, Optional<Workflow> existingWorkflow);
-
-    public ArrayList<String> getCwlImports(File workflowFile) throws FileNotFoundException {
-        ArrayList<String> imports = new ArrayList<>();
-        Yaml yaml = new Yaml();
-        Map <String, Object> groups = (Map<String, Object>) yaml.load(new FileInputStream(workflowFile));
-
-        for (String group : groups.keySet()) {
-            if (group.equals("steps")) {
-                ArrayList<Map <String, Object>> steps = (ArrayList<Map <String, Object>>) groups.get(group);
-                for (Map <String, Object> step : steps) {
-                    // TODO : CHECKIFIMPORTMAP Check here if run maps to a String or a map<String, Object>, in order to determine the file to import
-                    Map<String, Object> stepParams = (Map<String, Object>)step.get("run");
-                    imports.add(stepParams.get("import").toString());
-                }
-            }
-        }
-
-        return imports;
-    }
 
     List<String> getWdlImports(File workflowFile){
         Bridge bridge = new Bridge();

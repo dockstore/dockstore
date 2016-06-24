@@ -723,6 +723,7 @@ public class WorkflowResource {
             File tempMainDescriptor = null;
             try {
                 // Write main descriptor to file
+                // The use of temporary files is not needed here and might cause new problems
                 tempMainDescriptor = File.createTempFile("main", "descriptor", tmpDir);
                 Files.write(mainDescriptor.getContent(), tempMainDescriptor, StandardCharsets.UTF_8);
 
