@@ -36,3 +36,4 @@ before_install:
 after_success:
 - mvn -B clean install -DskipITs=false -Pconfidential-tests cobertura:cobertura-integration-test
 - mvn -B coveralls:report
+- mvn -B versioneye:update
