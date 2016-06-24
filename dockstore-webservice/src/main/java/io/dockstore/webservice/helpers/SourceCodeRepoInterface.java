@@ -167,7 +167,7 @@ public abstract class SourceCodeRepoInterface {
      */
     public abstract Workflow getNewWorkflow(String repositoryId, Optional<Workflow> existingWorkflow);
 
-    List<String> getWdlImports(File workflowFile) {
+    List<String> getWdlImports(File workflowFile){
         Bridge bridge = new Bridge();
         return bridge.getImportFiles(workflowFile);
     }

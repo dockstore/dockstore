@@ -19,13 +19,9 @@ package io.dockstore.client
 import java.io.{File => JFile}
 import java.util
 
-import wdl4s.formatter.{AnsiSyntaxHighlighter, HtmlSyntaxHighlighter, SyntaxFormatter}
-import wdl4s.parser.WdlParser
-import wdl4s.parser.WdlParser.AstNode
-import wdl4s.types.{WdlArrayType, WdlFileType}
-import wdl4s.values.WdlString
-import wdl4s.{AstTools, _}
 import spray.json._
+import wdl4s._
+import wdl4s.types.{WdlArrayType, WdlFileType}
 
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
@@ -99,6 +95,29 @@ class Bridge {
       }
     }
     outputList
+  }
+
+  def getCallsAndDocker(file: JFile): util.LinkedHashMap[String, Seq[String]] = {
+    val lines = scala.io.Source.fromFile(file).mkString
+    val ns = NamespaceWithWorkflow.load(lines)
+    val tasks = new util.LinkedHashMap[String, Seq[String]]()
+
+    // For each call (Assume ordering)
+    //ns.workflow.collectAllScatters foreach { scatter => print(scatter.collectAllCalls foreach(call => println(call.task.name)))}
+    ns.workflow.collectAllCalls foreach { call =>
+      // Find associated task (Should only be one)
+      ns.findTask(call.unqualifiedName) foreach { task =>
+        try {
+          // Get the list of docker images
+          val dockerAttributes = task.runtimeAttributes.attrs.get("docker")
+          tasks.put(task.name, if (dockerAttributes.isDefined) dockerAttributes.get else null)
+        } catch {
+          // Throws error if task has no runtime section or a runtime section but no docker (we stop error from being thrown)
+          case e: NoSuchElementException =>
+        }
+      }
+    }
+    return tasks
   }
 
 }

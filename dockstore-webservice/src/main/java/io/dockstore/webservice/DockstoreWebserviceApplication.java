@@ -225,7 +225,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 new TokenResource(tokenDAO, userDAO, configuration.getGithubClientID(), configuration.getGithubClientSecret(),
                         configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), httpClient, cachingAuthenticator));
 
-        final WorkflowResource workflowResource = new WorkflowResource(httpClient, userDAO, tokenDAO, workflowDAO, workflowVersionDAO,
+        final WorkflowResource workflowResource = new WorkflowResource(httpClient, userDAO, tokenDAO, toolDAO, workflowDAO, workflowVersionDAO,
                 labelDAO, fileDAO, configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret());
         environment.jersey().register(workflowResource);
 

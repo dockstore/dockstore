@@ -18,12 +18,16 @@ package io.dockstore.webservice.resources;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Optional;
+import com.google.common.io.Files;
+import com.google.gson.Gson;
+import io.dockstore.client.Bridge;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
+import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
@@ -38,6 +42,7 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
+import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
@@ -46,10 +51,14 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
+import scala.collection.immutable.Seq;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.GET;
@@ -61,11 +70,20 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 
 /**
  *
@@ -79,6 +97,7 @@ public class WorkflowResource {
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
     private final WorkflowDAO workflowDAO;
+    private final ToolDAO toolDAO;
     private final WorkflowVersionDAO workflowVersionDAO;
     private final LabelDAO labelDAO;
     private final FileDAO fileDAO;
@@ -92,11 +111,12 @@ public class WorkflowResource {
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
 
     @SuppressWarnings("checkstyle:parameternumber")
-    public WorkflowResource(HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, WorkflowDAO workflowDAO, WorkflowVersionDAO workflowVersionDAO,
+    public WorkflowResource(HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ToolDAO toolDAO, WorkflowDAO workflowDAO, WorkflowVersionDAO workflowVersionDAO,
             LabelDAO labelDAO, FileDAO fileDAO, String bitbucketClientID, String bitbucketClientSecret) {
         this.userDAO = userDAO;
         this.tokenDAO = tokenDAO;
         this.workflowVersionDAO = workflowVersionDAO;
+        this.toolDAO = toolDAO;
         this.labelDAO = labelDAO;
         this.fileDAO = fileDAO;
         this.client = client;
@@ -667,5 +687,209 @@ public class WorkflowResource {
         Workflow result = workflowDAO.findById(workflowId);
         Helper.checkEntry(result);
         return result.getVersions();
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{workflowId}/dag/{workflowVersionId}")
+    @ApiOperation(value = "Get the DAG for a given workflow version", notes = "", response = String.class)
+    public String getWorkflowDag(@ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId,
+            @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId)  {
+        // TODO : Make this function modular (break into separate functions for getting nodes from WDL, CWL and turning into DAG)
+        // This will make it easier in the future to add new types (also better coding practice)
+        Workflow workflow = workflowDAO.findById(workflowId);
+        Set<WorkflowVersion> workflowVersions = workflow.getVersions();
+        WorkflowVersion workflowVersion = null;
+
+        for (WorkflowVersion wv : workflowVersions) {
+            if (wv.getId() == workflowVersionId) {
+                workflowVersion = wv;
+                break;
+            }
+        }
+
+        // Find main descriptor
+        SourceFile mainDescriptor = null;
+        for (SourceFile sourceFile : workflowVersion.getSourceFiles()) {
+            if (sourceFile.getPath().equals(workflowVersion.getWorkflowPath())) {
+                mainDescriptor = sourceFile;
+                break;
+            }
+        }
+
+        if (mainDescriptor != null) {
+            File tmpDir = Files.createTempDir();
+            File tempMainDescriptor = null;
+            try {
+                // Write main descriptor to file
+                // The use of temporary files is not needed here and might cause new problems
+                tempMainDescriptor = File.createTempFile("main", "descriptor", tmpDir);
+                Files.write(mainDescriptor.getContent(), tempMainDescriptor, StandardCharsets.UTF_8);
+
+                // Write helper ones too
+                File secondaryDescriptor;
+                for (SourceFile secondaryFile : workflowVersion.getSourceFiles()) {
+                    if (!secondaryFile.getPath().equals(workflowVersion.getWorkflowPath())) {
+                        secondaryDescriptor = new File(tmpDir.getAbsolutePath(), secondaryFile.getPath());
+                        Files.write(secondaryFile.getContent(), secondaryDescriptor, StandardCharsets.UTF_8);
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                // TODO : Print better error
+            }
+
+            // Initialize dag
+            Map<String, ArrayList<Object>> dagJson = new LinkedHashMap<>();
+            ArrayList<Pair<String, String>> nodePairs = new ArrayList<>();
+
+            if (workflow.getDescriptorType().equals("wdl")) {
+                Bridge bridge = new Bridge();
+                // TODO : Currently evaluates scatters last, while loops don't work.  This needs to be fixed in Bridge.scala.
+                Map<String, Seq> callToTask = (LinkedHashMap)bridge.getCallsAndDocker(tempMainDescriptor); // Should be in correct order
+                // TODO : Currently only grabs first from a possible list (implement multiple containers in the future)
+                for (Map.Entry<String, Seq> entry : callToTask.entrySet()) {
+                    if (entry.getValue() != null){
+                        nodePairs.add(new MutablePair<>(entry.getKey(), getURLFromEntry(entry.getValue().head().toString())));
+                    } else{
+                        nodePairs.add(new MutablePair<>(entry.getKey(), ""));
+                    }
+                }
+            } else {
+                Yaml yaml = new Yaml();
+                Map <String, Object> sections;
+                String defaultDockerEnv = "";
+                try {
+                    sections = (Map<String, Object>) yaml.load(new FileInputStream(tempMainDescriptor));
+                    for (String section : sections.keySet()) {
+                        if (section.equals("requirements") || section.equals("hints")) {
+                            ArrayList<Map <String, Object>> requirements = (ArrayList<Map <String, Object>>) sections.get(section);
+                            for (Map <String, Object> requirement : requirements) {
+                                if (requirement.get("class").equals("DockerRequirement")) {
+                                    defaultDockerEnv = requirement.get("dockerPull").toString();
+                                }
+                            }
+                        }
+
+                        if (section.equals("steps")) {
+                            ArrayList<Map <String, Object>> steps = (ArrayList<Map <String, Object>>) sections.get(section);
+                            for (Map <String, Object> step : steps) {
+                                // TODO : test that if a CWL Tool defines a different docker image, this is shown in the DAG
+                                // TODO : CHECKIFIMPORTMAP Check here if run maps to a String or a map<String, Object>, in order to determine the file to import
+
+                                String fileName = (String) step.get("run");
+                                File secondaryDescriptor = new File(tmpDir.getAbsolutePath() + File.separator + fileName);
+                                Yaml helperYaml = new Yaml();
+
+                                Map<String, Object> helperGroups = (Map<String, Object>) helperYaml.load(new FileInputStream(secondaryDescriptor));
+
+                                boolean defaultDocker = true;
+                                for (String helperGroup : helperGroups.keySet()) {
+                                    if (helperGroup.equals("requirements") || helperGroup.equals("hints")) {
+                                        ArrayList<Map<String, Object>> requirements = (ArrayList<Map<String, Object>>) helperGroups.get(helperGroup);
+                                        for (Map<String, Object> requirement : requirements) {
+                                            if (requirement.get("class").equals("DockerRequirement")) {
+                                                defaultDockerEnv = requirement.get("dockerPull").toString();
+                                                nodePairs.add(new MutablePair<>(step.get("id").toString().replaceFirst("#", ""), getURLFromEntry(requirement.get("dockerPull").toString())));
+                                                defaultDocker = false;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (defaultDocker) {
+                                    nodePairs.add(new MutablePair<>(step.get("id").toString().replaceFirst("#", ""), getURLFromEntry(defaultDockerEnv)));
+                                }
+                            }
+                        }
+                    }
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            // set up JSON for DAG (edges and nodes)
+            ArrayList<Object> nodes = new ArrayList<>();
+            ArrayList<Object> edges = new ArrayList<>();
+            int idCount = 0;
+            for (Pair<String, String> node : nodePairs) {
+                Map<String, Object> nodeEntry = new HashMap<>();
+                Map<String, String> dataEntry = new HashMap<>();
+                dataEntry.put("id", idCount + "");
+                dataEntry.put("tool", node.getRight());
+                dataEntry.put("name", node.getLeft());
+                nodeEntry.put("data", dataEntry);
+                nodes.add(nodeEntry);
+
+                if (idCount > 0) {
+                    Map<String, Object> edgeEntry = new HashMap<>();
+                    Map<String, String> sourceTarget = new HashMap<>();
+                    sourceTarget.put("source", (idCount - 1) + "");
+                    sourceTarget.put("target", (idCount) + "");
+                    edgeEntry.put("data", sourceTarget);
+                    edges.add(edgeEntry);
+                }
+                idCount++;
+            }
+
+            dagJson.put("nodes", nodes);
+            dagJson.put("edges", edges);
+
+            Gson gson = new Gson();
+            String json = gson.toJson(dagJson);
+            System.out.println(json);
+            return json.toString();
+
+        }
+        return null;
+    }
+
+    /**
+     * Given a docker entry (quay or dockerhub), return a URL to the given entry
+     * @param dockerEntry
+     * @return URL
+         */
+    public String getURLFromEntry(String dockerEntry) {
+        // For now ignore tag, later on it may be more useful
+        String quayIOPath = "https://quay.io/repository/";
+        String dockerHubPathR = "https://hub.docker.com/r/"; // For type repo/subrepo:tag
+        String dockerHubPathUnderscore = "https://hub.docker.com/_/"; // For type repo:tag
+        String dockstorePath = "https://www.dockstore.org/containers/"; // Update to tools once UI is updated to use /tools instead of /containers
+
+        String url = "";
+
+        // Remove tag if exists
+        Pattern p = Pattern.compile("([^:]+):?(\\S+)?");
+        Matcher m = p.matcher(dockerEntry);
+        if (m.matches()) {
+            dockerEntry = m.group(1);
+        }
+
+        // TODO: How to deal with multiple entries of a tool? For now just grab the first
+        if (dockerEntry.startsWith("quay.io/")) {
+            Tool tool = toolDAO.findByPath(dockerEntry).get(0);
+            if (tool != null) {
+                url = dockstorePath + dockerEntry;
+            } else {
+                url = dockerEntry.replaceFirst("quay\\.io/", quayIOPath);
+            }
+
+        } else {
+            String[] parts = dockerEntry.split("/");
+            if (parts.length == 2) {
+                Tool tool = toolDAO.findByPath("registry.hub.docker.com/" + dockerEntry).get(0);
+                if (tool != null) {
+                    url = dockstorePath + "registry.hub.docker.com/" + dockerEntry;
+                } else {
+                    url = dockerHubPathR + dockerEntry;
+                }
+            } else {
+                url = dockerHubPathUnderscore + dockerEntry;
+            }
+
+        }
+        return url;
     }
 }
