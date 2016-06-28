@@ -71,7 +71,7 @@ public class WorkflowET {
         clearStateMakePrivate2();
     }
 
-    private static ApiClient getWebClient() throws IOException, TimeoutException {
+    protected static ApiClient getWebClient() throws IOException, TimeoutException {
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         File configFile = FileUtils.getFile("src", "test", "resources", "config2");
         HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
