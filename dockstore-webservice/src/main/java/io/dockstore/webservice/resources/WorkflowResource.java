@@ -737,7 +737,6 @@ public class WorkflowResource {
                 }
             } catch (IOException e) {
                 e.printStackTrace();
-                // TODO : Print better error
             }
 
             // Initialize dag
@@ -776,15 +775,12 @@ public class WorkflowResource {
                             ArrayList<Map <String, Object>> steps = (ArrayList<Map <String, Object>>) sections.get(section);
                             for (Map <String, Object> step : steps) {
                                 // TODO : test that if a CWL Tool defines a different docker image, this is shown in the DAG
-                                // TODO : CHECKIFIMPORTMAP Check here if run maps to a String or a map<String, Object>, in order to determine the file to import
 
-                                //String fileName = (String) step.get("run");
                                 Object file = step.get("run");
                                 String fileName;
                                 if(file instanceof  String) {
                                     fileName = file.toString();
                                 }else{
-                                    //file is not a string, it is in form of {import: file.cwl}
                                     Map<String,Object> fileMap = (Map<String, Object>) file;
                                     fileName = fileMap.get("import").toString();
                                 }
