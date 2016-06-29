@@ -843,7 +843,7 @@ public class WorkflowResource {
      * @param nodePairs
      * @return String
      */
-    public String setupJSON (ArrayList<Pair<String, String>> nodePairs){
+    public String setupJSON(ArrayList<Pair<String, String>> nodePairs){
         ArrayList<Object> nodes = new ArrayList<>();
         ArrayList<Object> edges = new ArrayList<>();
         Map<String, ArrayList<Object>> dagJson = new LinkedHashMap<>();
