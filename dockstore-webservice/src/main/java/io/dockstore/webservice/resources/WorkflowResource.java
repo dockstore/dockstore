@@ -701,14 +701,12 @@ public class WorkflowResource {
         Workflow workflow = workflowDAO.findById(workflowId);
         Set<WorkflowVersion> workflowVersions = workflow.getVersions();
         WorkflowVersion workflowVersion = null;
-
         for (WorkflowVersion wv : workflowVersions) {
             if (wv.getId() == workflowVersionId) {
                 workflowVersion = wv;
                 break;
             }
         }
-
         // Find main descriptor
         SourceFile mainDescriptor = null;
         for (SourceFile sourceFile : workflowVersion.getSourceFiles()) {
@@ -717,7 +715,6 @@ public class WorkflowResource {
                 break;
             }
         }
-
         if (mainDescriptor != null) {
             File tmpDir = Files.createTempDir();
             File tempMainDescriptor = null;
@@ -738,11 +735,9 @@ public class WorkflowResource {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
             // Initialize dag
             Map<String, ArrayList<Object>> dagJson = new LinkedHashMap<>();
             ArrayList<Pair<String, String>> nodePairs = new ArrayList<>();
-
             if (workflow.getDescriptorType().equals("wdl")) {
                 Bridge bridge = new Bridge();
                 // TODO : Currently evaluates scatters last, while loops don't work.  This needs to be fixed in Bridge.scala.
@@ -770,12 +765,10 @@ public class WorkflowResource {
                                 }
                             }
                         }
-
                         if (section.equals("steps")) {
                             ArrayList<Map <String, Object>> steps = (ArrayList<Map <String, Object>>) sections.get(section);
                             for (Map <String, Object> step : steps) {
                                 // TODO : test that if a CWL Tool defines a different docker image, this is shown in the DAG
-
                                 Object file = step.get("run");
                                 String fileName;
                                 if(file instanceof  String) {
@@ -786,9 +779,7 @@ public class WorkflowResource {
                                 }
                                 File secondaryDescriptor = new File(tmpDir.getAbsolutePath() + File.separator + fileName);
                                 Yaml helperYaml = new Yaml();
-
                                 Map<String, Object> helperGroups = (Map<String, Object>) helperYaml.load(new FileInputStream(secondaryDescriptor));
-
                                 boolean defaultDocker = true;
                                 for (String helperGroup : helperGroups.keySet()) {
                                     if (helperGroup.equals("requirements") || helperGroup.equals("hints")) {
@@ -803,7 +794,6 @@ public class WorkflowResource {
                                         }
                                     }
                                 }
-
                                 if (defaultDocker) {
                                     nodePairs.add(new MutablePair<>(step.get("id").toString().replaceFirst("#", ""), getURLFromEntry(defaultDockerEnv)));
                                 }
@@ -814,7 +804,6 @@ public class WorkflowResource {
                     e.printStackTrace();
                 }
             }
-
             // set up JSON for DAG (edges and nodes)
             ArrayList<Object> nodes = new ArrayList<>();
             ArrayList<Object> edges = new ArrayList<>();
@@ -838,7 +827,6 @@ public class WorkflowResource {
                 }
                 idCount++;
             }
-
             dagJson.put("nodes", nodes);
             dagJson.put("edges", edges);
 
@@ -846,7 +834,6 @@ public class WorkflowResource {
             String json = gson.toJson(dagJson);
             System.out.println(json);
             return json.toString();
-
         }
         return null;
     }
