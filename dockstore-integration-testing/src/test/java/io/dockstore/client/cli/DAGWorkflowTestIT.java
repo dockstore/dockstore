@@ -225,4 +225,56 @@ public class DAGWorkflowTestIT {
         //JSON will have no content at all
         Assert.assertEquals("JSON should be blank", strings.size(),0);
     }
+
+    @Test
+    public void testDAGImportSyntax() throws IOException, TimeoutException, ApiException {
+        //Test 'Dockstore.cwl'
+        //will return DAG with two nodes and an edge connecting it, despite there is "import" syntax in "run" field
+
+        final ApiClient webClient = WorkflowET.getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
+        UsersApi usersApi = new UsersApi(webClient);
+        final Long userId = usersApi.getUser().getId();
+
+        // Make publish request (true)
+        final PublishRequest publishRequest = new PublishRequest();
+        publishRequest.setPublish(true);
+
+        // Get workflows
+        usersApi.refreshWorkflows(userId);
+
+        // Manually register workflow github
+        Workflow githubWorkflow = workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore-whalesay-imports", "/Dockstore.cwl", "test-workflow", "cwl");
+
+        // Publish github workflow
+        Workflow refresh = workflowApi.refresh(githubWorkflow.getId());
+
+
+        Optional<WorkflowVersion> master = refresh.getWorkflowVersions().stream().filter(workflow -> workflow.getName().equals("master")).findFirst();
+
+
+        final String basePath = webClient.getBasePath();
+        URL url = new URL(basePath + "/workflows/" +githubWorkflow.getId()+"/dag/" + master.get().getId() );
+        final List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
+
+        //count the number of nodes in the DAG json
+        int countNode = 0;
+        int last = 0;
+        String node = "tool";
+        while(last !=-1){
+            last = strings.get(0).indexOf(node,last);
+
+            if(last !=-1){
+                countNode++;
+                last += node.length();
+            }
+        }
+
+        Assert.assertTrue("JSON should not be blank", strings.size() > 0);
+        Assert.assertEquals("JSON should have two nodes", countNode, 2);
+        Assert.assertTrue("node data should have rev as tool", strings.get(0).contains("rev"));
+        Assert.assertTrue("node data should have sorted as tool", strings.get(0).contains("sorted"));
+        Assert.assertTrue("edge should connect rev and sorted", strings.get(0).contains("\"source\":\"0\",\"target\":\"1\""));
+    }
 }
