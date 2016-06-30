@@ -892,4 +892,235 @@ public class WorkflowResource {
         }
         return url;
     }
+
+    /**
+     * will create a json data consisting tool and its data required in a workflow for 'Tool' tab
+     * This method is very similar with DAG method above, with slightly different data and implementation
+     * @param workflowId workflowVersionId
+     * @return String*/
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{workflowId}/tools/{workflowVersionId}")
+    @ApiOperation(value = "Get the Tools for a given workflow version", notes = "", response = String.class)
+    public String getTableToolContent(@ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId,
+                                      @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId)  {
+
+        Workflow workflow = workflowDAO.findById(workflowId);
+        WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
+        SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
+
+        if(mainDescriptor != null) {
+            File tmpDir = Files.createTempDir();
+            File tempMainDescriptor = null;
+            try {
+                // Write main descriptor to file
+                // The use of temporary files is not needed here and might cause new problems
+                tempMainDescriptor = File.createTempFile("main", "descriptor", tmpDir);
+                Files.write(mainDescriptor.getContent(), tempMainDescriptor, StandardCharsets.UTF_8);
+
+                // Write helper ones too
+                File secondaryDescriptor;
+                for (SourceFile secondaryFile : workflowVersion.getSourceFiles()) {
+                    if (!secondaryFile.getPath().equals(workflowVersion.getWorkflowPath())) {
+                        secondaryDescriptor = new File(tmpDir.getAbsolutePath(), secondaryFile.getPath());
+                        Files.write(secondaryFile.getContent(), secondaryDescriptor, StandardCharsets.UTF_8);
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            String result = null; // will have the JSON string after done calling the method
+            if(workflow.getDescriptorType().equals("wdl")) {
+                //WDL workflow
+                result = getToolContentWDL(tempMainDescriptor);
+            } else{
+                //CWL workflow
+                result = getToolContentCWL(tempMainDescriptor, tmpDir);
+            }
+            return result;
+        }
+
+        return null;
+    }
+
+    private WorkflowVersion getWorkflowVersion(Workflow workflow, Long workflowVersionId){
+        Set<WorkflowVersion> workflowVersions = workflow.getVersions();
+        WorkflowVersion workflowVersion = null;
+
+        for(WorkflowVersion wv : workflowVersions) {
+            if(wv.getId() == workflowVersionId) {
+                workflowVersion = wv;
+                break;
+            }
+        }
+
+        return workflowVersion;
+    }
+
+    private SourceFile getMainDescriptorFile(WorkflowVersion workflowVersion){
+
+        SourceFile mainDescriptor = null;
+        for (SourceFile sourceFile : workflowVersion.getSourceFiles()) {
+            if (sourceFile.getPath().equals(workflowVersion.getWorkflowPath())) {
+                mainDescriptor = sourceFile;
+                break;
+            }
+        }
+
+        return mainDescriptor;
+    }
+
+    private String getToolContentWDL(File tempMainDescriptor) {
+        Bridge bridge = new Bridge();
+        Map<String, Seq> callToTask = (LinkedHashMap)bridge.getCallsAndDocker(tempMainDescriptor);
+        Map<String, Pair<String, String>> taskContent = new HashMap<>();
+
+        for (Map.Entry<String, Seq> entry : callToTask.entrySet()) {
+            if (entry.getValue() != null){
+                taskContent.put(entry.getKey(), new MutablePair<>(entry.getValue().head().toString(), getURLFromEntry(entry.getValue().head().toString())));
+            } else{
+                taskContent.put(entry.getKey(), new MutablePair<>("", ""));
+            }
+        }
+
+        return getJSONTableToolContentWDL(taskContent);
+    }
+
+    private String getToolContentCWL(File tempMainDescriptor, File tmpDir) {
+        Yaml yaml = new Yaml();
+        Map <String, Object> sections;
+        String defaultDockerEnv = "";
+        String dockerPullURL="";
+        String classHints="";
+        Integer index = 0;
+        Map<String, Pair<String, String>> toolID = new HashMap<>();
+        Map<String, Pair<String, String>> dockerPull = new HashMap<>();
+        Map<String, Object> toolDocker = new HashMap<>();
+
+        try {
+            sections = (Map<String, Object>) yaml.load(new FileInputStream(tempMainDescriptor));
+            for (String section : sections.keySet()) {
+                if (section.equals("requirements") || section.equals("hints")) {
+                    ArrayList<Map <String, Object>> requirements = (ArrayList<Map <String, Object>>) sections.get(section);
+                    for (Map <String, Object> requirement : requirements) {
+                        if (requirement.get("class").equals("DockerRequirement")) {
+                            defaultDockerEnv = requirement.get("dockerPull").toString();
+                        }
+                    }
+                }
+
+                if (section.equals("steps")) {
+                    ArrayList<Map <String, Object>> steps = (ArrayList<Map <String, Object>>) sections.get(section);
+
+                    for (Map <String, Object> step : steps) {
+                        Object file = step.get("run");
+                        String fileName;
+                        if(file instanceof String){
+                            fileName = file.toString();
+                        } else{
+                            Map<String, Object> fileMap = (Map<String, Object>) file;
+                            fileName = fileMap.get("import").toString();
+                        }
+
+                        //get the tool file based on "run" command
+                        File secondaryDescriptor = new File(tmpDir.getAbsolutePath() + File.separator + fileName);
+                        Yaml helperYaml = new Yaml();
+
+                        Map<String, Object> helperGroups = (Map<String, Object>) helperYaml.load(new FileInputStream(secondaryDescriptor));
+
+                        boolean defaultDocker = true;
+                        for (String helperGroup : helperGroups.keySet()) {
+                            if (helperGroup.equals("requirements") || helperGroup.equals("hints")) {
+                                ArrayList<Map<String, Object>> requirements = (ArrayList<Map<String, Object>>) helperGroups.get(helperGroup);
+                                for (Map<String, Object> requirement : requirements) {
+                                    if (requirement.get("class").equals("DockerRequirement")) {
+                                        defaultDockerEnv = requirement.get("dockerPull").toString();
+                                        dockerPullURL = getURLFromEntry((String)requirement.get("dockerPull"));
+                                        classHints = (String) requirement.get("class");
+                                        toolID.put(index.toString(), new MutablePair<>(step.get("id").toString(), fileName));
+                                        dockerPull.put(classHints,new MutablePair<>(defaultDockerEnv, dockerPullURL));
+                                        toolDocker.put(index.toString(),dockerPull);
+                                        index++;
+                                        defaultDocker = false;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (defaultDocker) {
+                            toolID.put(index.toString(), new MutablePair<>(step.get("id").toString(), fileName));
+                            dockerPull.put(classHints,new MutablePair<>(defaultDockerEnv, dockerPullURL));
+                            toolDocker.put(index.toString(),dockerPull);
+                            index++;
+                        }
+                    }
+                }
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        return getJSONTableToolContentCWL(toolID, toolDocker);
+
+    }
+
+    private String getJSONTableToolContentCWL(Map<String, Pair<String, String>> toolID, Map<String,Object> toolDocker) {
+        // set up JSON for Table Tool Content CWL
+        ArrayList<Object> tools = new ArrayList<>();
+
+        //iterate through each step within workflow file
+        for(String key : toolID.keySet()){
+            //get the idName and fileName
+            String toolName = toolID.get(key).getLeft();
+            String fileName = toolID.get(key).getRight();
+
+            //get the docker requirement
+            Map<String, Pair<String, String>> dockerReq = (Map<String, Pair<String, String>>) toolDocker.get(key);
+            String classReq = (String)dockerReq.keySet().toArray()[0];
+            String dockerPullName = dockerReq.get(classReq).getLeft();
+            String dockerLink = dockerReq.get(classReq).getRight();
+
+            //put everything into a map, then arraylist
+            Map<String, String> dataToolEntry = new LinkedHashMap<>();
+            dataToolEntry.put("id", toolName);
+            dataToolEntry.put("file", fileName);
+            dataToolEntry.put("class", classReq);
+            dataToolEntry.put("docker", dockerPullName);
+            dataToolEntry.put("link",dockerLink);
+            tools.add(dataToolEntry);
+        }
+
+        return convertToJSONString(tools);
+    }
+
+    private String getJSONTableToolContentWDL(Map<String, Pair<String, String>> taskContent){
+        // set up JSON for Table Task Content WDL
+        Map<String, String> dataTaskEntry = new LinkedHashMap<>();
+        ArrayList<Object> tasks = new ArrayList<>();
+
+        //iterate through each task within workflow file
+        for(String key : taskContent.keySet()){
+            String dockerPull = taskContent.get(key).getLeft();
+            String dockerLink = taskContent.get(key).getRight();
+
+            dataTaskEntry.put("id", key);
+            dataTaskEntry.put("docker", dockerPull);
+            dataTaskEntry.put("link", dockerLink);
+            tasks.add(dataTaskEntry);
+        }
+
+        return convertToJSONString(tasks);
+    }
+
+    private String convertToJSONString(ArrayList<Object> content){
+        //create json string and return
+        Gson gson = new Gson();
+        String json = gson.toJson(content);
+        System.out.println(json);
+
+        return json;
+    }
 }
