@@ -56,16 +56,16 @@ def main(argv):
                                               dockerfile json, \
                                               metaVersion varchar);")
 
-    # request = urllib2.Request('https://www.dockstore.org:8443/api/v1/tools')
-    # response = urllib2.urlopen(request)
-    # reveieve_json = json.loads(response.read())
+    request = urllib2.Request('https://www.dockstore.org:8443/api/v1/tools')
+    response = urllib2.urlopen(request)
+    json_data = json.loads(response.read())
     # with open('./scriptTests/jsonoriginal.json', 'w') as outfile:
     #     json.dump(reveieve_json[:], outfile, indent = 4)
 
     # transfer the fetched jsonfile as array
-    json_data = None
-    with open('./scriptTests/jsonafteradd.json') as infile:
-        json_data = json.load(infile)
+    # json_data = None
+    # with open('./scriptTests/jsonafteradd.json') as infile:
+    #     json_data = json.load(infile)
 
     json_data_globalIdSet = []
     json_data_versionGlobalIdSet = []
