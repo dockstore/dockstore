@@ -695,30 +695,13 @@ public class WorkflowResource {
     @Path("/{workflowId}/dag/{workflowVersionId}")
     @ApiOperation(value = "Get the DAG for a given workflow version", notes = "", response = String.class)
     public String getWorkflowDag(@ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId,
-            @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId)  {
-        // TODO : Make this function modular (break into separate functions for getting nodes from WDL, CWL and turning into DAG)
-        // This will make it easier in the future to add new types (also better coding practice)
+                                 @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId)  {
+
         Workflow workflow = workflowDAO.findById(workflowId);
-        Set<WorkflowVersion> workflowVersions = workflow.getVersions();
-        WorkflowVersion workflowVersion = null;
+        WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
+        SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
 
-        for (WorkflowVersion wv : workflowVersions) {
-            if (wv.getId() == workflowVersionId) {
-                workflowVersion = wv;
-                break;
-            }
-        }
-
-        // Find main descriptor
-        SourceFile mainDescriptor = null;
-        for (SourceFile sourceFile : workflowVersion.getSourceFiles()) {
-            if (sourceFile.getPath().equals(workflowVersion.getWorkflowPath())) {
-                mainDescriptor = sourceFile;
-                break;
-            }
-        }
-
-        if (mainDescriptor != null) {
+        if(mainDescriptor != null) {
             File tmpDir = Files.createTempDir();
             File tempMainDescriptor = null;
             try {
@@ -737,120 +720,146 @@ public class WorkflowResource {
                 }
             } catch (IOException e) {
                 e.printStackTrace();
-                // TODO : Print better error
             }
 
-            // Initialize dag
-            Map<String, ArrayList<Object>> dagJson = new LinkedHashMap<>();
-            ArrayList<Pair<String, String>> nodePairs = new ArrayList<>();
+            ArrayList<Pair<String, String>> nodePairs;
 
             if (workflow.getDescriptorType().equals("wdl")) {
-                Bridge bridge = new Bridge();
-                // TODO : Currently evaluates scatters last, while loops don't work.  This needs to be fixed in Bridge.scala.
-                Map<String, Seq> callToTask = (LinkedHashMap)bridge.getCallsAndDocker(tempMainDescriptor); // Should be in correct order
-                // TODO : Currently only grabs first from a possible list (implement multiple containers in the future)
-                for (Map.Entry<String, Seq> entry : callToTask.entrySet()) {
-                    if (entry.getValue() != null){
-                        nodePairs.add(new MutablePair<>(entry.getKey(), getURLFromEntry(entry.getValue().head().toString())));
-                    } else{
-                        nodePairs.add(new MutablePair<>(entry.getKey(), ""));
-                    }
-                }
+                nodePairs = getWDLDAG(tempMainDescriptor);
             } else {
-                Yaml yaml = new Yaml();
-                Map <String, Object> sections;
-                String defaultDockerEnv = "";
-                try {
-                    sections = (Map<String, Object>) yaml.load(new FileInputStream(tempMainDescriptor));
-                    for (String section : sections.keySet()) {
-                        if (section.equals("requirements") || section.equals("hints")) {
-                            ArrayList<Map <String, Object>> requirements = (ArrayList<Map <String, Object>>) sections.get(section);
-                            for (Map <String, Object> requirement : requirements) {
-                                if (requirement.get("class").equals("DockerRequirement")) {
-                                    defaultDockerEnv = requirement.get("dockerPull").toString();
-                                }
-                            }
-                        }
-
-                        if (section.equals("steps")) {
-                            ArrayList<Map <String, Object>> steps = (ArrayList<Map <String, Object>>) sections.get(section);
-                            for (Map <String, Object> step : steps) {
-                                // TODO : test that if a CWL Tool defines a different docker image, this is shown in the DAG
-                                // TODO : CHECKIFIMPORTMAP Check here if run maps to a String or a map<String, Object>, in order to determine the file to import
-
-                                String fileName = (String) step.get("run");
-                                File secondaryDescriptor = new File(tmpDir.getAbsolutePath() + File.separator + fileName);
-                                Yaml helperYaml = new Yaml();
-
-                                Map<String, Object> helperGroups = (Map<String, Object>) helperYaml.load(new FileInputStream(secondaryDescriptor));
-
-                                boolean defaultDocker = true;
-                                for (String helperGroup : helperGroups.keySet()) {
-                                    if (helperGroup.equals("requirements") || helperGroup.equals("hints")) {
-                                        ArrayList<Map<String, Object>> requirements = (ArrayList<Map<String, Object>>) helperGroups.get(helperGroup);
-                                        for (Map<String, Object> requirement : requirements) {
-                                            if (requirement.get("class").equals("DockerRequirement")) {
-                                                defaultDockerEnv = requirement.get("dockerPull").toString();
-                                                nodePairs.add(new MutablePair<>(step.get("id").toString().replaceFirst("#", ""), getURLFromEntry(requirement.get("dockerPull").toString())));
-                                                defaultDocker = false;
-                                                break;
-                                            }
-                                        }
-                                    }
-                                }
-
-                                if (defaultDocker) {
-                                    nodePairs.add(new MutablePair<>(step.get("id").toString().replaceFirst("#", ""), getURLFromEntry(defaultDockerEnv)));
-                                }
-                            }
-                        }
-                    }
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                }
+                nodePairs = getCWLDAG(tempMainDescriptor, tmpDir);
             }
 
             // set up JSON for DAG (edges and nodes)
-            ArrayList<Object> nodes = new ArrayList<>();
-            ArrayList<Object> edges = new ArrayList<>();
-            int idCount = 0;
-            for (Pair<String, String> node : nodePairs) {
-                Map<String, Object> nodeEntry = new HashMap<>();
-                Map<String, String> dataEntry = new HashMap<>();
-                dataEntry.put("id", idCount + "");
-                dataEntry.put("tool", node.getRight());
-                dataEntry.put("name", node.getLeft());
-                nodeEntry.put("data", dataEntry);
-                nodes.add(nodeEntry);
-
-                if (idCount > 0) {
-                    Map<String, Object> edgeEntry = new HashMap<>();
-                    Map<String, String> sourceTarget = new HashMap<>();
-                    sourceTarget.put("source", (idCount - 1) + "");
-                    sourceTarget.put("target", (idCount) + "");
-                    edgeEntry.put("data", sourceTarget);
-                    edges.add(edgeEntry);
-                }
-                idCount++;
-            }
-
-            dagJson.put("nodes", nodes);
-            dagJson.put("edges", edges);
-
-            Gson gson = new Gson();
-            String json = gson.toJson(dagJson);
-            System.out.println(json);
-            return json.toString();
-
+            return setupJSON(nodePairs);
         }
         return null;
+    }
+
+    /**
+     * This method will process the DAG for WDL workflow and return pair of task id and dokerpull link
+     * @param tempMainDescriptor
+     * @return ArrayList
+     */
+    public ArrayList<Pair<String, String>> getWDLDAG(File tempMainDescriptor){
+        Bridge bridge = new Bridge();
+        ArrayList<Pair<String, String>> nodePairs = new ArrayList<>();
+        // TODO : Currently evaluates scatters last, while loops don't work.  This needs to be fixed in Bridge.scala.
+        Map<String, Seq> callToTask = (LinkedHashMap)bridge.getCallsAndDocker(tempMainDescriptor); // Should be in correct order
+        // TODO : Currently only grabs first from a possible list (implement multiple containers in the future)
+        for (Map.Entry<String, Seq> entry : callToTask.entrySet()) {
+            if (entry.getValue() != null){
+                nodePairs.add(new MutablePair<>(entry.getKey(), getURLFromEntry(entry.getValue().head().toString())));
+
+            } else{
+                nodePairs.add(new MutablePair<>(entry.getKey(), ""));
+            }
+        }
+        return nodePairs;
+    }
+
+    /**
+     * This method will process the DAG for CWL workflow and return pair of tool id and dokerpull link
+     * @param tempMainDescriptor
+     * @return ArrayList
+     */
+    public ArrayList<Pair<String, String>> getCWLDAG(File tempMainDescriptor, File tmpDir) {
+        Yaml yaml = new Yaml();
+        ArrayList<Pair<String, String>> nodePairs = new ArrayList<>();
+        Map <String, Object> sections;
+        String defaultDockerEnv = "";
+        try {
+            sections = (Map<String, Object>) yaml.load(new FileInputStream(tempMainDescriptor));
+            for (String section : sections.keySet()) {
+                if (section.equals("requirements") || section.equals("hints")) {
+                    ArrayList<Map <String, Object>> requirements = (ArrayList<Map <String, Object>>) sections.get(section);
+                    for (Map <String, Object> requirement : requirements) {
+                        if (requirement.get("class").equals("DockerRequirement")) {
+                            defaultDockerEnv = requirement.get("dockerPull").toString();
+                        }
+                    }
+                }
+                if (section.equals("steps")) {
+                    ArrayList<Map <String, Object>> steps = (ArrayList<Map <String, Object>>) sections.get(section);
+                    for (Map <String, Object> step : steps) {
+                        // TODO : test that if a CWL Tool defines a different docker image, this is shown in the DAG
+                        Object file = step.get("run");
+                        String fileName;
+                        if(file instanceof  String) {
+                            fileName = file.toString();
+                        }else{
+                            Map<String,Object> fileMap = (Map<String, Object>) file;
+                            fileName = fileMap.get("import").toString();
+                        }
+                        File secondaryDescriptor = new File(tmpDir.getAbsolutePath() + File.separator + fileName);
+                        Yaml helperYaml = new Yaml();
+                        Map<String, Object> helperGroups = (Map<String, Object>) helperYaml.load(new FileInputStream(secondaryDescriptor));
+                        boolean defaultDocker = true;
+                        for (String helperGroup : helperGroups.keySet()) {
+                            if (helperGroup.equals("requirements") || helperGroup.equals("hints")) {
+                                ArrayList<Map<String, Object>> requirements = (ArrayList<Map<String, Object>>) helperGroups.get(helperGroup);
+                                for (Map<String, Object> requirement : requirements) {
+                                    if (requirement.get("class").equals("DockerRequirement")) {
+                                        defaultDockerEnv = requirement.get("dockerPull").toString();
+                                        nodePairs.add(new MutablePair<>(step.get("id").toString().replaceFirst("#", ""), getURLFromEntry(requirement.get("dockerPull").toString())));
+                                        defaultDocker = false;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if (defaultDocker) {
+                            nodePairs.add(new MutablePair<>(step.get("id").toString().replaceFirst("#", ""), getURLFromEntry(defaultDockerEnv)));
+                        }
+                    }
+                }
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        return nodePairs;
+    }
+
+    /**
+     * This method will setup the JSON data from nodePairs of CWL/WDL workflow and return JSON string
+     * @param nodePairs
+     * @return String
+     */
+    public String setupJSON(ArrayList<Pair<String, String>> nodePairs){
+        ArrayList<Object> nodes = new ArrayList<>();
+        ArrayList<Object> edges = new ArrayList<>();
+        Map<String, ArrayList<Object>> dagJson = new LinkedHashMap<>();
+        int idCount = 0;
+        for (Pair<String, String> node : nodePairs) {
+            Map<String, Object> nodeEntry = new HashMap<>();
+            Map<String, String> dataEntry = new HashMap<>();
+            dataEntry.put("id", idCount + "");
+            dataEntry.put("tool", node.getRight());
+            dataEntry.put("name", node.getLeft());
+            nodeEntry.put("data", dataEntry);
+            nodes.add(nodeEntry);
+
+            if (idCount > 0) {
+                Map<String, Object> edgeEntry = new HashMap<>();
+                Map<String, String> sourceTarget = new HashMap<>();
+                sourceTarget.put("source", (idCount - 1) + "");
+                sourceTarget.put("target", (idCount) + "");
+                edgeEntry.put("data", sourceTarget);
+                edges.add(edgeEntry);
+            }
+            idCount++;
+        }
+        dagJson.put("nodes", nodes);
+        dagJson.put("edges", edges);
+
+        return convertToJSONString(dagJson);
     }
 
     /**
      * Given a docker entry (quay or dockerhub), return a URL to the given entry
      * @param dockerEntry
      * @return URL
-         */
+     */
     public String getURLFromEntry(String dockerEntry) {
         // For now ignore tag, later on it may be more useful
         String quayIOPath = "https://quay.io/repository/";
@@ -894,8 +903,7 @@ public class WorkflowResource {
     }
 
     /**
-     * will create a json data consisting tool and its data required in a workflow for 'Tool' tab
-     * This method is very similar with DAG method above, with slightly different data and implementation
+     * This method will create a json data consisting tool and its data required in a workflow for 'Tool' tab
      * @param workflowId workflowVersionId
      * @return String*/
     @GET
@@ -931,7 +939,7 @@ public class WorkflowResource {
                 e.printStackTrace();
             }
 
-            String result = null; // will have the JSON string after done calling the method
+            String result; // will have the JSON string after done calling the method
             if(workflow.getDescriptorType().equals("wdl")) {
                 //WDL workflow
                 result = getToolContentWDL(tempMainDescriptor);
@@ -945,6 +953,11 @@ public class WorkflowResource {
         return null;
     }
 
+    /**
+     * This method will find the workflowVersion based on the workflowVersionId passed in the parameter and return it
+     * @param workflow workflowVersionId
+     * @return WorkflowVersion
+     * */
     private WorkflowVersion getWorkflowVersion(Workflow workflow, Long workflowVersionId){
         Set<WorkflowVersion> workflowVersions = workflow.getVersions();
         WorkflowVersion workflowVersion = null;
@@ -959,6 +972,11 @@ public class WorkflowResource {
         return workflowVersion;
     }
 
+    /**
+     * This method will find the main descriptor file based on the workflow version passed in the parameter
+     * @param workflowVersion
+     * @return mainDescriptor
+     * */
     private SourceFile getMainDescriptorFile(WorkflowVersion workflowVersion){
 
         SourceFile mainDescriptor = null;
@@ -972,6 +990,12 @@ public class WorkflowResource {
         return mainDescriptor;
     }
 
+    /**
+     * This method will get the content for tool tab with descriptor type = WDL
+     * It will then call another method to transform the content into JSON string and return
+     * @param tempMainDescriptor
+     * @return String
+     * */
     private String getToolContentWDL(File tempMainDescriptor) {
         Bridge bridge = new Bridge();
         Map<String, Seq> callToTask = (LinkedHashMap)bridge.getCallsAndDocker(tempMainDescriptor);
@@ -988,21 +1012,28 @@ public class WorkflowResource {
         return getJSONTableToolContentWDL(taskContent);
     }
 
+    /**
+     * This method will get the content for tool tab with descriptor type = CWL
+     * It will then call another method to transform the content into JSON string and return
+     * @param tempMainDescriptor tmpDir
+     * @return String
+     * */
     private String getToolContentCWL(File tempMainDescriptor, File tmpDir) {
         Yaml yaml = new Yaml();
         Map <String, Object> sections;
         String defaultDockerEnv = "";
-        String dockerPullURL="";
-        String classHints="";
+        String dockerPullURL= "";
+        String classHints = "";
         Integer index = 0;
-        Map<String, Pair<String, String>> toolID = new HashMap<>();
-        Map<String, Pair<String, String>> dockerPull = new HashMap<>();
-        Map<String, Object> toolDocker = new HashMap<>();
+        Map<String, Pair<String, String>> toolID = new HashMap<>();     // map for toolID and toolName
+        Map<String, Pair<String, String>> dockerPull = new HashMap<>(); // this will be inserted into toolDocker
+        Map<String, Object> toolDocker = new HashMap<>();               // map for docker
 
         try {
             sections = (Map<String, Object>) yaml.load(new FileInputStream(tempMainDescriptor));
             for (String section : sections.keySet()) {
                 if (section.equals("requirements") || section.equals("hints")) {
+                    //docker requirement of the workflow
                     ArrayList<Map <String, Object>> requirements = (ArrayList<Map <String, Object>>) sections.get(section);
                     for (Map <String, Object> requirement : requirements) {
                         if (requirement.get("class").equals("DockerRequirement")) {
@@ -1012,8 +1043,8 @@ public class WorkflowResource {
                 }
 
                 if (section.equals("steps")) {
+                    // try to see each tool through "steps" command
                     ArrayList<Map <String, Object>> steps = (ArrayList<Map <String, Object>>) sections.get(section);
-
                     for (Map <String, Object> step : steps) {
                         Object file = step.get("run");
                         String fileName;
@@ -1027,18 +1058,21 @@ public class WorkflowResource {
                         //get the tool file based on "run" command
                         File secondaryDescriptor = new File(tmpDir.getAbsolutePath() + File.separator + fileName);
                         Yaml helperYaml = new Yaml();
-
                         Map<String, Object> helperGroups = (Map<String, Object>) helperYaml.load(new FileInputStream(secondaryDescriptor));
-
                         boolean defaultDocker = true;
+
                         for (String helperGroup : helperGroups.keySet()) {
+                            // find the docker requirement inside the tool file
                             if (helperGroup.equals("requirements") || helperGroup.equals("hints")) {
                                 ArrayList<Map<String, Object>> requirements = (ArrayList<Map<String, Object>>) helperGroups.get(helperGroup);
                                 for (Map<String, Object> requirement : requirements) {
                                     if (requirement.get("class").equals("DockerRequirement")) {
+                                        //get the docker file and link
                                         defaultDockerEnv = requirement.get("dockerPull").toString();
                                         dockerPullURL = getURLFromEntry((String)requirement.get("dockerPull"));
                                         classHints = (String) requirement.get("class");
+
+                                        //put the tool ID and docker information into two different maps
                                         toolID.put(index.toString(), new MutablePair<>(step.get("id").toString(), fileName));
                                         dockerPull.put(classHints,new MutablePair<>(defaultDockerEnv, dockerPullURL));
                                         toolDocker.put(index.toString(),dockerPull);
@@ -1051,6 +1085,7 @@ public class WorkflowResource {
                         }
 
                         if (defaultDocker) {
+                            // no docker requirement, put the content as blank values
                             toolID.put(index.toString(), new MutablePair<>(step.get("id").toString(), fileName));
                             dockerPull.put(classHints,new MutablePair<>(defaultDockerEnv, dockerPullURL));
                             toolDocker.put(index.toString(),dockerPull);
@@ -1063,10 +1098,17 @@ public class WorkflowResource {
             e.printStackTrace();
         }
 
+        //call and return the Json string transformer
         return getJSONTableToolContentCWL(toolID, toolDocker);
 
     }
 
+    /**
+     * This method will setup the tools of CWL workflow
+     * It will then call another method to transform it through Gson to a Json string
+     * @param toolID toolDocker
+     * @return String
+     * */
     private String getJSONTableToolContentCWL(Map<String, Pair<String, String>> toolID, Map<String,Object> toolDocker) {
         // set up JSON for Table Tool Content CWL
         ArrayList<Object> tools = new ArrayList<>();
@@ -1083,7 +1125,7 @@ public class WorkflowResource {
             String dockerPullName = dockerReq.get(classReq).getLeft();
             String dockerLink = dockerReq.get(classReq).getRight();
 
-            //put everything into a map, then arraylist
+            //put everything into a map, then ArrayList
             Map<String, String> dataToolEntry = new LinkedHashMap<>();
             dataToolEntry.put("id", toolName);
             dataToolEntry.put("file", fileName);
@@ -1093,12 +1135,18 @@ public class WorkflowResource {
             tools.add(dataToolEntry);
         }
 
+        //call the gson to string transformer
         return convertToJSONString(tools);
     }
 
+    /**
+     * This method will setup the tools of WDL workflow
+     * It will then call another method to transform it through Gson to a Json string
+     * @param taskContent
+     * @return String
+     * */
     private String getJSONTableToolContentWDL(Map<String, Pair<String, String>> taskContent){
         // set up JSON for Table Task Content WDL
-        Map<String, String> dataTaskEntry = new LinkedHashMap<>();
         ArrayList<Object> tasks = new ArrayList<>();
 
         //iterate through each task within workflow file
@@ -1106,16 +1154,24 @@ public class WorkflowResource {
             String dockerPull = taskContent.get(key).getLeft();
             String dockerLink = taskContent.get(key).getRight();
 
+            //put everything into a map, then ArrayList
+            Map<String, String> dataTaskEntry = new LinkedHashMap<>();
             dataTaskEntry.put("id", key);
             dataTaskEntry.put("docker", dockerPull);
             dataTaskEntry.put("link", dockerLink);
             tasks.add(dataTaskEntry);
         }
 
+        //call the gson to string transformer
         return convertToJSONString(tasks);
     }
 
-    private String convertToJSONString(ArrayList<Object> content){
+    /**
+     * This method will transform object containing the tools/dag of a workflow to Json string
+     * @param content
+     * @return String
+     * */
+    private String convertToJSONString(Object content){
         //create json string and return
         Gson gson = new Gson();
         String json = gson.toJson(content);
