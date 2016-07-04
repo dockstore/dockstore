@@ -458,17 +458,12 @@
             <dependency>
                 <groupId>com.google.http-client</groupId>
                 <artifactId>google-http-client</artifactId>
-                <version>1.20.0</version>
+                <version>1.22.0</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.jackson</groupId>
                 <artifactId>jackson-core-asl</artifactId>
                 <version>1.9.13</version>
-            </dependency>
-            <dependency>
-                <groupId>com.google.http-client</groupId>
-                <artifactId>google-http-client-jackson</artifactId>
-                <version>1.20.0</version>
             </dependency>
             <dependency>
                 <groupId>com.google.apis</groupId>
@@ -498,11 +493,6 @@
             <dependency>
                 <groupId>com.google.api-client</groupId>
                 <artifactId>google-api-client</artifactId>
-                <version>1.20.0</version>
-            </dependency>
-            <dependency>
-                <groupId>com.google.oauth-client</groupId>
-                <artifactId>google-oauth-client</artifactId>
                 <version>1.20.0</version>
             </dependency>
 
@@ -570,6 +560,25 @@
                 <groupId>commons-dbutils</groupId>
                 <artifactId>commons-dbutils</artifactId>
                 <version>1.6</version>
+            </dependency>
+
+            <!-- https://mvnrepository.com/artifact/com.google.oauth-client/google-oauth-client -->
+            <dependency>
+                <groupId>com.google.oauth-client</groupId>
+                <artifactId>google-oauth-client</artifactId>
+                <version>1.22.0</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/com.google.http-client/google-http-client-jackson -->
+            <dependency>
+                <groupId>com.google.http-client</groupId>
+                <artifactId>google-http-client-jackson</artifactId>
+                <version>1.22.0</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/commons-beanutils/commons-beanutils -->
+            <dependency>
+                <groupId>commons-beanutils</groupId>
+                <artifactId>commons-beanutils</artifactId>
+                <version>1.9.2</version>
             </dependency>
 
         </dependencies>
