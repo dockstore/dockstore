@@ -39,7 +39,7 @@ public class DAGWorkflowTestIT {
             DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstoreTest.yml"));
 
     @Before
-    public void clearDBandSetup() throws IOException, TimeoutException {
+    public void clearDBandSetup() throws IOException, TimeoutException, ApiException {
         clearStateMakePrivate2();
     }
 
@@ -49,13 +49,8 @@ public class DAGWorkflowTestIT {
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
 
-
-    @Test
-    public void testWorkflowDAGCWL() throws IOException, TimeoutException, ApiException {
-        //Test with '1st-workflow.cwl'
-        //will return a json with 2 nodes and an edge connecting it
-
-        final ApiClient webClient = WorkflowET.getWebClient();
+    private WorkflowsApi setupWebService() throws IOException, TimeoutException, ApiException{
+        ApiClient webClient = WorkflowET.getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         UsersApi usersApi = new UsersApi(webClient);
@@ -68,20 +63,26 @@ public class DAGWorkflowTestIT {
         // Get workflows
         usersApi.refreshWorkflows(userId);
 
-        // Manually register workflow github
-        Workflow githubWorkflow = workflowApi.manualRegister("github", "DockstoreTestUser2/test_workflow_cwl", "/1st-workflow.cwl", "test-workflow", "cwl");
+        return workflowApi;
+    }
+
+    private List<String> getJSON(String repo, String fileName, String descType, String branch) throws IOException, TimeoutException, ApiException{
+        WorkflowsApi workflowApi = setupWebService();
+        Workflow githubWorkflow = workflowApi.manualRegister("github", repo, fileName, "test-workflow", descType);
 
         // Publish github workflow
         Workflow refresh = workflowApi.refresh(githubWorkflow.getId());
+        Optional<WorkflowVersion> master = refresh.getWorkflowVersions().stream().filter(workflow -> workflow.getName().equals(branch)).findFirst();
 
-
-        Optional<WorkflowVersion> master = refresh.getWorkflowVersions().stream().filter(workflow -> workflow.getName().equals("master")).findFirst();
-
-
-        final String basePath = webClient.getBasePath();
+        //getting the dag json string
+        final String basePath = WorkflowET.getWebClient().getBasePath();
         URL url = new URL(basePath + "/workflows/" +githubWorkflow.getId()+"/dag/" + master.get().getId() );
-        final List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
+        List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
 
+        return strings;
+    }
+
+    private int countNodeInJSON(List<String> strings){
         //count the number of nodes in the DAG json
         int countNode = 0;
         int last = 0;
@@ -94,6 +95,21 @@ public class DAGWorkflowTestIT {
                 last += node.length();
             }
         }
+
+        return countNode;
+    }
+
+
+    @Test
+    public void testWorkflowDAGCWL() throws IOException, TimeoutException, ApiException {
+        // Input: 1st-workflow.cwl
+        // Repo: test_workflow_cwl
+        // Branch: master
+        // Test: normal cwl workflow DAG
+        // Return: JSON with 2 nodes and an edge connecting it (nodes:{{untar},{compile}}, edges:{unatr->compile})
+
+        final List<String> strings = getJSON("DockstoreTestUser2/test_workflow_cwl", "/1st-workflow.cwl", "cwl", "master");
+        int countNode = countNodeInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
         Assert.assertEquals("JSON should have two nodes", countNode, 2);
@@ -104,49 +120,15 @@ public class DAGWorkflowTestIT {
     }
 
     @Test
-    public void testWorkflowDAGWDL() throws IOException, TimeoutException, ApiException {
-        //Test with 'hello.wdl'
-        //will return a json with a node and no edge
+    public void testWorkflowDAGWDLSingleNode() throws IOException, TimeoutException, ApiException {
+        // Input: hello.wdl
+        // Repo: test_workflow_wdl
+        // Branch: master
+        // Test: normal wdl workflow DAG, single node
+        // Return: JSON with a node and no edge (nodes:{{hello}},edges:{}
 
-        final ApiClient webClient = WorkflowET.getWebClient();
-        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-
-        UsersApi usersApi = new UsersApi(webClient);
-        final Long userId = usersApi.getUser().getId();
-
-        // Make publish request (true)
-        final PublishRequest publishRequest = new PublishRequest();
-        publishRequest.setPublish(true);
-
-        // Get workflows
-        usersApi.refreshWorkflows(userId);
-
-        // Manually register workflow github
-        Workflow githubWorkflow = workflowApi.manualRegister("github", "DockstoreTestUser2/test_workflow_wdl", "/hello.wdl", "test-workflow", "wdl");
-
-        // Publish github workflow
-        Workflow refresh = workflowApi.refresh(githubWorkflow.getId());
-
-
-        Optional<WorkflowVersion> master = refresh.getWorkflowVersions().stream().filter(workflow -> workflow.getName().equals("master")).findFirst();
-
-
-        final String basePath = webClient.getBasePath();
-        URL url = new URL(basePath + "/workflows/" +githubWorkflow.getId()+"/dag/" + master.get().getId() );
-        final List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
-
-        //count the number of nodes in the DAG json
-        int countNode = 0;
-        int last = 0;
-        String node = "tool";
-        while(last !=-1){
-            last = strings.get(0).indexOf(node,last);
-
-            if(last !=-1){
-                countNode++;
-                last += node.length();
-            }
-        }
+        final List<String> strings = getJSON("DockstoreTestUser2/test_workflow_wdl", "/hello.wdl", "wdl", "master");
+        int countNode = countNodeInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
         Assert.assertEquals("JSON should have one node", countNode,1);
@@ -155,36 +137,34 @@ public class DAGWorkflowTestIT {
     }
 
     @Test
+    public void testWorkflowDAGWDLMultipleNodes() throws IOException, TimeoutException, ApiException {
+        // Input: hello.wdl
+        // Repo: hello-dockstore-workflow
+        // Branch: master
+        // Test: normal wdl workflow DAG, multiple nodes
+        // Return: JSON with a node and no edge (nodes:{{ps},{cgrep},{wc}},edges:{ps->cgrep, cgrep->wc}
+
+        final List<String> strings = getJSON("DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "wdl", "testWDL");
+        int countNode = countNodeInJSON(strings);
+
+        Assert.assertTrue("JSON should not be blank", strings.size() > 0);
+        Assert.assertEquals("JSON should have one node", countNode,3);
+        Assert.assertTrue("node data should have ps as tool", strings.get(0).contains("ps"));
+        Assert.assertTrue("node data should have cgrep as tool", strings.get(0).contains("cgrep"));
+        Assert.assertTrue("node data should have wc as tool", strings.get(0).contains("wc"));
+        Assert.assertTrue("should have no edge", strings.get(0).contains("\"source\":\"0\",\"target\":\"1\""));
+        Assert.assertTrue("should have no edge", strings.get(0).contains("\"source\":\"1\",\"target\":\"2\""));
+    }
+
+    @Test
     public void testWorkflowDAGCWLMissingTool() throws IOException, TimeoutException, ApiException {
-        //Test 'Dockstore.cwl'
-        //will return empty nodes and edges because it's missing required tools in the repo
+        // Input: Dockstore.cwl
+        // Repo: hello-dockstore-workflow
+        // Branch: testCWL
+        // Test: Repo does not have required tool files called by workflow file
+        // Return: JSON not blank, but it will have empty nodes and edges (nodes:{},edges:{})
 
-        final ApiClient webClient = WorkflowET.getWebClient();
-        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-
-        UsersApi usersApi = new UsersApi(webClient);
-        final Long userId = usersApi.getUser().getId();
-
-        // Make publish request (true)
-        final PublishRequest publishRequest = new PublishRequest();
-        publishRequest.setPublish(true);
-
-        // Get workflows
-        usersApi.refreshWorkflows(userId);
-
-        // Manually register workflow github
-        Workflow githubWorkflow = workflowApi.manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.cwl", "testCWL", "cwl");
-
-        // Publish github workflow
-        Workflow refresh = workflowApi.refresh(githubWorkflow.getId());
-
-
-        Optional<WorkflowVersion> master = refresh.getWorkflowVersions().stream().filter(workflow -> workflow.getName().equals("testCWL")).findFirst();
-
-
-        final String basePath = webClient.getBasePath();
-        URL url = new URL(basePath + "/workflows/" +githubWorkflow.getId()+"/dag/" + master.get().getId() );
-        final List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
+        final List<String> strings = getJSON("DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.cwl", "cwl", "testCWL");
 
         //JSON will have node:[] and edges:[]
         Assert.assertEquals("JSON should not have any data for nodes and edges", strings.size(),1);
@@ -192,37 +172,33 @@ public class DAGWorkflowTestIT {
 
     @Test
     public void testWorkflowDAGWDLMissingTask() throws IOException, TimeoutException, ApiException {
-        //Test 'hello.wdl'
-        //will return blank JSON because the task is missing in the file
+        // Input: hello.wdl
+        // Repo: test_workflow_wdl
+        // Branch: missing_docker
+        // Test: task called by workflow not found in the file
+        // Return: blank JSON
 
-        final ApiClient webClient = WorkflowET.getWebClient();
-        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-
-        UsersApi usersApi = new UsersApi(webClient);
-        final Long userId = usersApi.getUser().getId();
-
-        // Make publish request (true)
-        final PublishRequest publishRequest = new PublishRequest();
-        publishRequest.setPublish(true);
-
-        // Get workflows
-        usersApi.refreshWorkflows(userId);
-
-        // Manually register workflow github
-        Workflow githubWorkflow = workflowApi.manualRegister("github", "DockstoreTestUser2/test_workflow_wdl", "/hello.wdl", "test-workflow", "wdl");
-
-        // Publish github workflow
-        Workflow refresh = workflowApi.refresh(githubWorkflow.getId());
-
-
-        Optional<WorkflowVersion> master = refresh.getWorkflowVersions().stream().filter(workflow -> workflow.getName().equals("missing_docker")).findFirst();
-
-
-        final String basePath = webClient.getBasePath();
-        URL url = new URL(basePath + "/workflows/" +githubWorkflow.getId()+"/dag/" + master.get().getId() );
-        final List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
+        final List<String> strings = getJSON("DockstoreTestUser2/test_workflow_wdl", "/hello.wdl", "wdl", "missing_docker");
 
         //JSON will have no content at all
         Assert.assertEquals("JSON should be blank", strings.size(),0);
+    }
+
+    @Test
+    public void testDAGImportSyntax() throws IOException, TimeoutException, ApiException {
+        // Input: Dockstore.cwl
+        // Repo: dockstore-whalesay-imports
+        // Branch: master
+        // Test: "run: {import:.....}"
+        // Return: DAG with two nodes and an edge connecting it (nodes:{{rev},{sorted}}, edges:{rev->sorted})
+
+        final List<String> strings = getJSON("DockstoreTestUser2/dockstore-whalesay-imports", "/Dockstore.cwl", "cwl", "master");
+        int countNode = countNodeInJSON(strings);
+
+        Assert.assertTrue("JSON should not be blank", strings.size() > 0);
+        Assert.assertEquals("JSON should have two nodes", countNode, 2);
+        Assert.assertTrue("node data should have rev as tool", strings.get(0).contains("rev"));
+        Assert.assertTrue("node data should have sorted as tool", strings.get(0).contains("sorted"));
+        Assert.assertTrue("edge should connect rev and sorted", strings.get(0).contains("\"source\":\"0\",\"target\":\"1\""));
     }
 }

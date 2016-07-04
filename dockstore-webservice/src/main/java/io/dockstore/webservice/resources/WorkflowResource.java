@@ -695,8 +695,7 @@ public class WorkflowResource {
     @Path("/{workflowId}/dag/{workflowVersionId}")
     @ApiOperation(value = "Get the DAG for a given workflow version", notes = "", response = String.class)
     public String getWorkflowDag(@ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId,
-                                 @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId)  {
-
+            @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId)  {
         Workflow workflow = workflowDAO.findById(workflowId);
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
@@ -750,7 +749,6 @@ public class WorkflowResource {
         for (Map.Entry<String, Seq> entry : callToTask.entrySet()) {
             if (entry.getValue() != null){
                 nodePairs.add(new MutablePair<>(entry.getKey(), getURLFromEntry(entry.getValue().head().toString())));
-
             } else{
                 nodePairs.add(new MutablePair<>(entry.getKey(), ""));
             }
