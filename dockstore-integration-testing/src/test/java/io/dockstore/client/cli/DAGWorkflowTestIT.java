@@ -106,7 +106,7 @@ public class DAGWorkflowTestIT {
         // Repo: test_workflow_cwl
         // Branch: master
         // Test: normal cwl workflow DAG
-        // Return: JSON with 2 nodes and an edge connecting it (nodes:{{untar},{compile}}, edges:{unatr->compile})
+        // Return: JSON with 2 nodes and an edge connecting it (nodes:{{untar},{compile}}, edges:{untar->compile})
 
         final List<String> strings = getJSON("DockstoreTestUser2/test_workflow_cwl", "/1st-workflow.cwl", "cwl", "master");
         int countNode = countNodeInJSON(strings);
