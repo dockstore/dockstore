@@ -699,6 +699,7 @@ public class WorkflowResource {
         Workflow workflow = workflowDAO.findById(workflowId);
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
+        String result = null;
 
         if(mainDescriptor != null) {
             File tmpDir = Files.createTempDir();
@@ -722,12 +723,12 @@ public class WorkflowResource {
             }
 
             if (workflow.getDescriptorType().equals("wdl")) {
-                return getContentWDL(tempMainDescriptor,"dag");
+                result = getContentWDL(tempMainDescriptor,"dag");
             } else {
-                return getContentCWL(tempMainDescriptor, tmpDir,"dag");
+                result = getContentCWL(tempMainDescriptor, tmpDir,"dag");
             }
         }
-        return null;
+        return result;
     }
 
     /**
