@@ -235,12 +235,12 @@ public class ToolsWorkflowTestIT {
         Assert.assertEquals("JSON should have two tools", countNode, 2);
         Assert.assertTrue("tool data should have rev as id", strings.get(0).contains("rev"));
         Assert.assertTrue("tool data should have sorted as id", strings.get(0).contains("sorted"));
-        Assert.assertTrue("untar docker and link should be blank", strings.get(0).contains("\"id\":\"rev\","+
+        Assert.assertTrue("untar docker and link should use default docker req from workflow", strings.get(0).contains("\"id\":\"rev\","+
                 "\"file\":\"revtool.cwl\","+
                 "\"class\":\"DockerRequirement\","+
                 "\"docker\":\"debian:8\"," +
                 "\"link\":\"https://hub.docker.com/_/debian\""));
-        Assert.assertTrue("compile docker and link should be blank", strings.get(0).contains("\"id\":\"sorted\"," +
+        Assert.assertTrue("compile docker and link should use default docker req from workflow", strings.get(0).contains("\"id\":\"sorted\"," +
                 "\"file\":\"sorttool.cwl\","+
                 "\"class\":\"DockerRequirement\","+
                 "\"docker\":\"debian:8\"," +
