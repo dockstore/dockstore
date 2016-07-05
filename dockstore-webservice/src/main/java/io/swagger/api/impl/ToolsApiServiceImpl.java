@@ -28,6 +28,7 @@ import io.swagger.model.ToolDescriptor;
 import io.swagger.model.ToolDockerfile;
 import io.swagger.model.ToolType;
 import io.swagger.model.ToolVersion;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,6 +43,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 public class ToolsApiServiceImpl extends ToolsApiService {
@@ -116,36 +118,39 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     }
 
     @Override
-    public Response toolsIdVersionsVersionIdDescriptorGet(String id, String versionId, String format,
+    public Response toolsIdVersionsVersionIdTypeDescriptorGet(String type, String id, String versionId,
             SecurityContext securityContext) throws NotFoundException {
-        SourceFile.FileType type = getFileType(format);
-        if (type == null) {
+        SourceFile.FileType fileType = getFileType(type);
+        if (fileType == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-        return getFileByToolVersionID(id, versionId, type, null);
+        return getFileByToolVersionID(id, versionId, fileType, null, StringUtils.containsIgnoreCase(type, "plain"));
     }
 
     @Override
-    public Response toolsIdVersionsVersionIdDescriptorRelativePathGet(String id, String versionId, String relativePath,
-            String format, SecurityContext securityContext) throws NotFoundException {
-        if (format == null){
+    public Response toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(String type, String id, String versionId, String relativePath,
+            SecurityContext securityContext) throws NotFoundException {
+        if (type == null){
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
-        SourceFile.FileType type = getFileType(format);
-        if (type == null) {
+        SourceFile.FileType fileType = getFileType(type);
+        if (fileType == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
 
-        return getFileByToolVersionID(id, versionId, type, relativePath);
+        return getFileByToolVersionID(id, versionId, fileType, relativePath, StringUtils.containsIgnoreCase(type, "plain"));
     }
 
     private SourceFile.FileType getFileType(String format) {
         SourceFile.FileType type;
-        if (format.equalsIgnoreCase("CWL")){
+        if (StringUtils.containsIgnoreCase(format, "CWL")){
             type = SourceFile.FileType.DOCKSTORE_CWL;
-        } else if (format.equalsIgnoreCase("WDL")){
+        } else if (StringUtils.containsIgnoreCase(format, "WDL")){
             type = SourceFile.FileType.DOCKSTORE_WDL;
-        } else{
+        } else if(Objects.equals("JSON", format)){
+            // if JSON is specified
+            type = SourceFile.FileType.DOCKSTORE_CWL;
+        } else {
             // TODO: no other descriptor formats implemented for now
             type = null;
         }
@@ -155,7 +160,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     @Override
     public Response toolsIdVersionsVersionIdDockerfileGet(String id, String versionId, SecurityContext securityContext)
             throws NotFoundException {
-        return getFileByToolVersionID(id, versionId, SourceFile.FileType.DOCKERFILE, null);
+        return getFileByToolVersionID(id, versionId, SourceFile.FileType.DOCKERFILE, null, false);
     }
 
     @Override
@@ -245,6 +250,8 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         tool.setTooltype(type);
         tool.setId(newID);
         tool.setUrl(globalId);
+        tool.setVerified(false);
+        tool.setVerifiedSource("");
         // TODO: contains has no counterpart in our DB
         // setup versions as well
         for (Tag tag : container.getTags()) {
@@ -259,14 +266,19 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             // version id
             String globalVersionId;
             try {
-                globalVersionId = globalId + "/version/" + URLEncoder.encode(tag.getName(), StandardCharsets.UTF_8.displayName());
+                globalVersionId = globalId + "/versions/" + URLEncoder.encode(tag.getName(), StandardCharsets.UTF_8.displayName());
             } catch (UnsupportedEncodingException e) {
                 LOG.error("Could not construct URL for our container with id: " + container.getId());
                 return null;
             }
             version.setUrl(globalVersionId);
 
+            version.setId(tool.getId()+":" + tag.getName());
+
             version.setName(tag.getName());
+
+            version.setVerified(false);
+            version.setVerifiedSource("");
 
             String urlBuilt;
             final String githubPrefix = "git@github.com:";
@@ -337,13 +349,14 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     }
 
     /**
-     * @param registryId   registry id
-     * @param versionId    git reference
-     * @param type         type of file
-     * @param relativePath if null, return the primary descriptor, if not null, return a specific file
+     * @param registryId    registry id
+     * @param versionId     git reference
+     * @param type          type of file
+     * @param relativePath  if null, return the primary descriptor, if not null, return a specific file
+     * @param unwrap        unwrap the file and present the descriptor sans wrapper model
      * @return a specific file wrapped in a response
      */
-    private Response getFileByToolVersionID(String registryId, String versionId, SourceFile.FileType type, String relativePath) {
+    private Response getFileByToolVersionID(String registryId, String versionId, SourceFile.FileType type, String relativePath, boolean unwrap) {
         // if a version is provided, get that version, otherwise return the newest
         ParsedRegistryID parsedID = new ParsedRegistryID(registryId);
         try {
@@ -370,17 +383,20 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         if (first.isPresent() && oldFirst.isPresent()){
             final ToolVersion toolVersion = first.get();
             if (type == SourceFile.FileType.DOCKERFILE) {
-                return Response.status(Response.Status.OK).entity(toolVersion.getDockerfile()).build();
+                final ToolDockerfile dockerfile = toolVersion.getDockerfile();
+                return Response.status(Response.Status.OK).entity(unwrap?dockerfile.getDockerfile():dockerfile).build();
             } else {
                 if (relativePath == null) {
                     if (type == SourceFile.FileType.DOCKSTORE_WDL || type == SourceFile.FileType.DOCKSTORE_CWL) {
-                        return Response.status(Response.Status.OK).entity(toolVersion.getDescriptor()).build();
+                        final ToolDescriptor descriptor = toolVersion.getDescriptor();
+                        return Response.status(Response.Status.OK).entity(unwrap?descriptor.getDescriptor():descriptor).build();
                     }
                 } else{
                     final Optional<SourceFile> first1 = oldFirst.get().getSourceFiles().stream()
                             .filter(file -> file.getPath().equalsIgnoreCase(relativePath)).findFirst();
                     if (first1.isPresent()){
-                        return Response.status(Response.Status.OK).entity(first1.get()).build();
+                        final SourceFile entity = first1.get();
+                        return Response.status(Response.Status.OK).entity(unwrap?entity.getContent():entity).build();
                     }
                 }
             }
