@@ -135,7 +135,7 @@ public class ToolsWorkflowTestIT {
                 "\"file\":\"tar-param.cwl\","+
                 "\"class\":\"\","+
                 "\"docker\":\"\"," +
-                "\"link\":\"\""));
+                "\"link\":\"https://hub.docker.com/_/\""));
         Assert.assertTrue("compile docker and link should not be blank", strings.get(0).contains("\"id\":\"compile\"," +
                 "\"file\":\"arguments.cwl\","+
                 "\"class\":\"DockerRequirement\","+
