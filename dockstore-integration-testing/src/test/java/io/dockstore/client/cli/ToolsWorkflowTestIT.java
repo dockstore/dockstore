@@ -133,12 +133,10 @@ public class ToolsWorkflowTestIT {
         Assert.assertTrue("tool should have compile as id", strings.get(0).contains("compile"));
         Assert.assertTrue("untar docker and link should be blank", strings.get(0).contains("\"id\":\"untar\","+
                 "\"file\":\"tar-param.cwl\","+
-                "\"class\":\"\","+
-                "\"docker\":\"\"," +
-                "\"link\":\"https://hub.docker.com/_/\""));
+                "\"docker\":\"Not Specified\"," +
+                "\"link\":\"Not Specified\""));
         Assert.assertTrue("compile docker and link should not be blank", strings.get(0).contains("\"id\":\"compile\"," +
                 "\"file\":\"arguments.cwl\","+
-                "\"class\":\"DockerRequirement\","+
                 "\"docker\":\"java:7\"," +
                 "\"link\":\"https://hub.docker.com/_/java\""));
 
@@ -181,14 +179,14 @@ public class ToolsWorkflowTestIT {
         Assert.assertTrue("tool should have cgrep as id", strings.get(0).contains("cgrep"));
         Assert.assertTrue("tool should have have wc as id", strings.get(0).contains("wc"));
         Assert.assertTrue("ps docker and link should be blank", strings.get(0).contains("\"id\":\"ps\","+
-                "\"docker\":\"\","+
-                "\"link\":\"\""));
+                "\"docker\":\"Not Specified\","+
+                "\"link\":\"Not Specified\""));
         Assert.assertTrue("cgrep docker and link should be blank", strings.get(0).contains("\"id\":\"cgrep\","+
-                "\"docker\":\"\","+
-                "\"link\":\"\""));
+                "\"docker\":\"Not Specified\","+
+                "\"link\":\"Not Specified\""));
         Assert.assertTrue("wc docker and link should be blank", strings.get(0).contains("\"id\":\"wc\","+
-                "\"docker\":\"\","+
-                "\"link\":\"\""));
+                "\"docker\":\"Not Specified\","+
+                "\"link\":\"Not Specified\""));
 
     }
 
@@ -237,12 +235,10 @@ public class ToolsWorkflowTestIT {
         Assert.assertTrue("tool data should have sorted as id", strings.get(0).contains("sorted"));
         Assert.assertTrue("untar docker and link should use default docker req from workflow", strings.get(0).contains("\"id\":\"rev\","+
                 "\"file\":\"revtool.cwl\","+
-                "\"class\":\"DockerRequirement\","+
                 "\"docker\":\"debian:8\"," +
                 "\"link\":\"https://hub.docker.com/_/debian\""));
         Assert.assertTrue("compile docker and link should use default docker req from workflow", strings.get(0).contains("\"id\":\"sorted\"," +
                 "\"file\":\"sorttool.cwl\","+
-                "\"class\":\"DockerRequirement\","+
                 "\"docker\":\"debian:8\"," +
                 "\"link\":\"https://hub.docker.com/_/debian\""));
 

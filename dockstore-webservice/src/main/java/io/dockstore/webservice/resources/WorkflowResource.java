@@ -837,7 +837,7 @@ public class WorkflowResource {
                 if (entry.getValue() != null){
                     taskContent.put(entry.getKey(), new MutablePair<>(entry.getValue().head().toString(), getURLFromEntry(entry.getValue().head().toString())));
                 } else{
-                    taskContent.put(entry.getKey(), new MutablePair<>("", ""));
+                    taskContent.put(entry.getKey(), new MutablePair<>("Not Specified", "Not Specified"));
                 }
             }else{
                 if (entry.getValue() != null){
@@ -871,10 +871,9 @@ public class WorkflowResource {
         Map <String, Object> sections;
         String defaultDockerEnv = "";
         String dockerPullURL= "";
-        String classHints = "";
         Integer index = 0;
         Map<String, Pair<String, String>> toolID = new HashMap<>();     // map for toolID and toolName
-        Map<String, Object> toolDocker = new HashMap<>();               // map for docker
+        Map<String, Pair<String, String>> toolDocker = new HashMap<>();               // map for docker
         ArrayList<Pair<String, String>> nodePairs = new ArrayList<>();
         String result = null;
 
@@ -887,7 +886,6 @@ public class WorkflowResource {
                     for (Map <String, Object> requirement : requirements) {
                         if (requirement.get("class").equals("DockerRequirement")) {
                             defaultDockerEnv = requirement.get("dockerPull").toString();
-                            classHints = (String) requirement.get("class");
                         }
                     }
                 }
@@ -921,13 +919,10 @@ public class WorkflowResource {
                                         if(type.equals("tools")){
                                             //get the docker file and link
                                             dockerPullURL = getURLFromEntry((String)requirement.get("dockerPull"));
-                                            classHints = (String) requirement.get("class");
 
                                             //put the tool ID and docker information into two different maps
-                                            Map<String, Pair<String, String>> dockerPull = new HashMap<>(); // this will be inserted into toolDocker
                                             toolID.put(index.toString(), new MutablePair<>(step.get("id").toString(), fileName));
-                                            dockerPull.put(classHints,new MutablePair<>(defaultDockerEnv, dockerPullURL));
-                                            toolDocker.put(index.toString(),dockerPull);
+                                            toolDocker.put(index.toString(),new MutablePair<>(defaultDockerEnv, dockerPullURL));
                                             index++;
                                         }else{
                                             nodePairs.add(new MutablePair<>(step.get("id").toString().replaceFirst("#", ""), getURLFromEntry(requirement.get("dockerPull").toString())));
@@ -943,9 +938,16 @@ public class WorkflowResource {
                             if(type.equals("tools")) {
                                 // no docker requirement, put the content as blank values
                                 Map<String, Pair<String, String>> dockerPull = new HashMap<>(); // this will be inserted into toolDocker
+
+                                if(defaultDockerEnv.equals("")){
+                                    defaultDockerEnv = "Not Specified";
+                                    dockerPullURL = "Not Specified"; // the workflow does not specify any docker requirement too
+                                }else{
+                                    dockerPullURL = getURLFromEntry(defaultDockerEnv); //get default from workflow docker requirement
+                                }
+
                                 toolID.put(index.toString(), new MutablePair<>(step.get("id").toString(), fileName));
-                                dockerPull.put(classHints, new MutablePair<>(defaultDockerEnv, getURLFromEntry(defaultDockerEnv)));
-                                toolDocker.put(index.toString(), dockerPull);
+                                toolDocker.put(index.toString(), new MutablePair<>(defaultDockerEnv, dockerPullURL));
                                 index++;
                             }else{
                                 nodePairs.add(new MutablePair<>(step.get("id").toString().replaceFirst("#", ""), getURLFromEntry(defaultDockerEnv)));
@@ -1056,7 +1058,7 @@ public class WorkflowResource {
      * @param toolID toolDocker
      * @return String
      * */
-    private String getJSONTableToolContentCWL(Map<String, Pair<String, String>> toolID, Map<String,Object> toolDocker) {
+    private String getJSONTableToolContentCWL(Map<String, Pair<String, String>> toolID, Map<String, Pair<String, String>> toolDocker) {
         // set up JSON for Table Tool Content CWL
         ArrayList<Object> tools = new ArrayList<>();
 
@@ -1067,16 +1069,13 @@ public class WorkflowResource {
             String fileName = toolID.get(key).getRight();
 
             //get the docker requirement
-            Map<String, Pair<String, String>> dockerReq = (Map<String, Pair<String, String>>) toolDocker.get(key);
-            String classReq = (String)dockerReq.keySet().toArray()[0];
-            String dockerPullName = dockerReq.get(classReq).getLeft();
-            String dockerLink = dockerReq.get(classReq).getRight();
+            String dockerPullName = toolDocker.get(key).getLeft();
+            String dockerLink = toolDocker.get(key).getRight();
 
             //put everything into a map, then ArrayList
             Map<String, String> dataToolEntry = new LinkedHashMap<>();
             dataToolEntry.put("id", toolName);
             dataToolEntry.put("file", fileName);
-            dataToolEntry.put("class", classReq);
             dataToolEntry.put("docker", dockerPullName);
             dataToolEntry.put("link",dockerLink);
             tools.add(dataToolEntry);
