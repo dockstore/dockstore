@@ -1207,28 +1207,6 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/User"
-    post:
-      tags:
-      - "users"
-      summary: "Add new user"
-      description: "Register a new user, admin only"
-      operationId: "registerUser"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "username"
-        in: "query"
-        required: false
-        type: "string"
-      - name: "is_admin"
-        in: "query"
-        required: false
-        type: "boolean"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/User"
   /users/groups:
     get:
       tags:
@@ -1965,6 +1943,33 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/SourceFile"
+  /workflows/{workflowId}/dag/{workflowVersionId}:
+    get:
+      tags:
+      - "workflows"
+      summary: "Get the DAG for a given workflow version"
+      description: ""
+      operationId: "getWorkflowDag"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "workflowId"
+        in: "path"
+        description: "workflowId"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "workflowVersionId"
+        in: "path"
+        description: "workflowVersionId"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "string"
   /workflows/{workflowId}/labels:
     put:
       tags:
@@ -2675,6 +2680,11 @@ definitions:
     description: "This describes one entry in the dockstore. Logically, this currently\
       \ means one tuple of registry (either quay or docker hub), organization, image\
       \ name, and toolname which can be\n * associated with CWL and Dockerfile documents"
+  GithubComView:
+    type: "object"
+    properties:
+      parent:
+        $ref: "#/definitions/GitHubComAuthenticationResource"
   SourceFile:
     type: "object"
     required:
@@ -2793,11 +2803,6 @@ definitions:
           \ fields like the description, author, etc. are updated."
     description: "A tool version describes a particular iteration of a tool as described\
       \ by a reference to a specific image and dockerfile."
-  GithubComView:
-    type: "object"
-    properties:
-      parent:
-        $ref: "#/definitions/GitHubComAuthenticationResource"
   QuayIOView:
     type: "object"
     properties:
