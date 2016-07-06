@@ -110,7 +110,7 @@ public class WorkflowResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
 
-    private enum workflowType {
+    private enum Type {
         DAG, TOOLS
     }
 
@@ -728,9 +728,9 @@ public class WorkflowResource {
             }
 
             if (workflow.getDescriptorType().equals("wdl")) {
-                result = getContentWDL(tempMainDescriptor,workflowType.DAG);
+                result = getContentWDL(tempMainDescriptor,Type.DAG);
             } else {
-                result = getContentCWL(descFileContent, secondaryDescContent, workflowType.DAG);
+                result = getContentCWL(descFileContent, secondaryDescContent, Type.DAG);
             }
         }
         return result;
@@ -752,10 +752,10 @@ public class WorkflowResource {
         Workflow workflow = workflowDAO.findById(workflowId);
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
-        String descFileContent = mainDescriptor.getContent();
-        Map<String, String> secondaryDescContent = new HashMap<>();
-
         if(mainDescriptor != null) {
+            String descFileContent = mainDescriptor.getContent();
+            Map<String, String> secondaryDescContent = new HashMap<>();
+
             File tmpDir = Files.createTempDir();
             File tempMainDescriptor = null;
 
@@ -778,10 +778,10 @@ public class WorkflowResource {
             String result; // will have the JSON string after done calling the method
             if(workflow.getDescriptorType().equals("wdl")) {
                 //WDL workflow
-                result = getContentWDL(tempMainDescriptor, workflowType.TOOLS);
+                result = getContentWDL(tempMainDescriptor, Type.TOOLS);
             } else{
                 //CWL workflow
-                result = getContentCWL(descFileContent, secondaryDescContent, workflowType.TOOLS);
+                result = getContentCWL(descFileContent, secondaryDescContent, Type.TOOLS);
             }
             return result;
         }
@@ -834,7 +834,7 @@ public class WorkflowResource {
      * @param type either dag or tools
      * @return String
      * */
-    private String getContentWDL(File tempMainDescriptor, workflowType type) {
+    private String getContentWDL(File tempMainDescriptor, Type type) {
         Bridge bridge = new Bridge();
         Map<String, Seq> callToTask = (LinkedHashMap)bridge.getCallsAndDocker(tempMainDescriptor);
         Map<String, Pair<String, String>> taskContent = new HashMap<>();
@@ -845,7 +845,7 @@ public class WorkflowResource {
             String taskID = entry.getKey();
             Seq taskDocker = entry.getValue();  //still in form of Seq, need to get first element or head of the list
             String dockerName = taskDocker.head().toString();
-            if(type.equals(workflowType.TOOLS)){
+            if(type.equals(Type.TOOLS)){
                 if (entry.getValue() != null){
                     taskContent.put(taskID, new MutablePair<>(dockerName, getURLFromEntry(dockerName)));
                 } else{
@@ -863,9 +863,9 @@ public class WorkflowResource {
         }
 
         //call and return the Json string transformer
-        if(type.equals(workflowType.TOOLS)){
+        if(type.equals(Type.TOOLS)){
             result = getJSONTableToolContentWDL(taskContent);
-        }else if(type.equals(workflowType.DAG)){
+        }else if(type.equals(Type.DAG)){
             result = setupJSONDAG(nodePairs);
         }
 
@@ -880,7 +880,7 @@ public class WorkflowResource {
      * @param type either dag or tools
      * @return String
      * */
-    private String getContentCWL(String content, Map<String, String> secondaryDescContent, workflowType type) {
+    private String getContentCWL(String content, Map<String, String> secondaryDescContent, Type type) {
         Yaml yaml = new Yaml();
         Map <String, Object> sections;
         String defaultDockerEnv = "";
@@ -931,7 +931,7 @@ public class WorkflowResource {
                             for (Map<String, Object> requirement : requirements) {
                                 if (requirement.get("class").equals("DockerRequirement")) {
                                     defaultDockerEnv = requirement.get("dockerPull").toString();
-                                    if(type.equals(workflowType.TOOLS)){
+                                    if(type.equals(Type.TOOLS)){
                                         //get the docker file and link
                                         dockerPullURL = getURLFromEntry((String)requirement.get("dockerPull"));
                                         //put the tool ID and docker information into two different maps
@@ -949,7 +949,7 @@ public class WorkflowResource {
                     }
 
                     if (defaultDocker) {
-                        if(type.equals(workflowType.TOOLS)) {
+                        if(type.equals(Type.TOOLS)) {
                             // no docker requirement
                             if(defaultDockerEnv.equals("")){
                                 defaultDockerEnv = "Not Specified";
@@ -970,9 +970,9 @@ public class WorkflowResource {
         }
 
         //call and return the Json string transformer
-        if(type.equals(workflowType.TOOLS)){
+        if(type.equals(Type.TOOLS)){
             result = getJSONTableToolContentCWL(toolID, toolDocker);
-        }else if(type.equals(workflowType.DAG)){
+        }else if(type.equals(Type.DAG)){
             result = setupJSONDAG(nodePairs);
         }
         return result;
