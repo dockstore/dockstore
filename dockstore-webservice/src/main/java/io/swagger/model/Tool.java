@@ -16,14 +16,13 @@
 
 package io.swagger.model;
 
-import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import io.swagger.model.ToolType;
-import io.swagger.model.ToolVersion;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 
 
@@ -32,7 +31,7 @@ import java.util.List;
  **/
 
 @ApiModel(description = "A tool (or described tool) describes one pairing of a tool as described in a descriptor file (which potentially describes multiple tools) and a Docker image.")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-06-07T18:19:37.276Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-05T15:18:23.446Z")
 public class Tool   {
   
   private String url = null;
@@ -44,6 +43,8 @@ public class Tool   {
   private String author = null;
   private String metaVersion = null;
   private List<String> contains = new ArrayList<String>();
+  private Boolean verified = null;
+  private String verifiedSource = null;
   private List<ToolVersion> versions = new ArrayList<ToolVersion>();
 
   /**
@@ -208,6 +209,42 @@ public class Tool   {
   }
 
   /**
+   * Reports whether this tool has been verified by a specific organization or individual
+   **/
+  public Tool verified(Boolean verified) {
+    this.verified = verified;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "Reports whether this tool has been verified by a specific organization or individual")
+  @JsonProperty("verified")
+  public Boolean getVerified() {
+    return verified;
+  }
+  public void setVerified(Boolean verified) {
+    this.verified = verified;
+  }
+
+  /**
+   * Source of metadata that can support a verified tool, such as an email or URL
+   **/
+  public Tool verifiedSource(String verifiedSource) {
+    this.verifiedSource = verifiedSource;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "Source of metadata that can support a verified tool, such as an email or URL")
+  @JsonProperty("verified-source")
+  public String getVerifiedSource() {
+    return verifiedSource;
+  }
+  public void setVerifiedSource(String verifiedSource) {
+    this.verifiedSource = verifiedSource;
+  }
+
+  /**
    * A list of versions for this tool
    **/
   public Tool versions(List<ToolVersion> versions) {
@@ -244,12 +281,14 @@ public class Tool   {
         Objects.equals(author, tool.author) &&
         Objects.equals(metaVersion, tool.metaVersion) &&
         Objects.equals(contains, tool.contains) &&
+        Objects.equals(verified, tool.verified) &&
+        Objects.equals(verifiedSource, tool.verifiedSource) &&
         Objects.equals(versions, tool.versions);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(url, id, organization, toolname, tooltype, description, author, metaVersion, contains, versions);
+    return Objects.hash(url, id, organization, toolname, tooltype, description, author, metaVersion, contains, verified, verifiedSource, versions);
   }
 
   @Override
@@ -266,6 +305,8 @@ public class Tool   {
     sb.append("    author: ").append(toIndentedString(author)).append("\n");
     sb.append("    metaVersion: ").append(toIndentedString(metaVersion)).append("\n");
     sb.append("    contains: ").append(toIndentedString(contains)).append("\n");
+    sb.append("    verified: ").append(toIndentedString(verified)).append("\n");
+    sb.append("    verifiedSource: ").append(toIndentedString(verifiedSource)).append("\n");
     sb.append("    versions: ").append(toIndentedString(versions)).append("\n");
     sb.append("}");
     return sb.toString();
