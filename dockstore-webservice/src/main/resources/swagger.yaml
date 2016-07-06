@@ -61,6 +61,24 @@ paths:
           description: "A Metadata object describing this service."
           schema:
             $ref: "#/definitions/Metadata"
+  /api/v1/tool-types:
+    get:
+      tags:
+      - "GA4GH"
+      summary: "List all tool types"
+      description: "This endpoint returns all tool-types available "
+      operationId: "toolTypesGet"
+      produces:
+      - "application/json"
+      - "text/plain"
+      parameters: []
+      responses:
+        200:
+          description: "An array of methods that match the filter."
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/ToolType"
   /api/v1/tools:
     get:
       tags:
@@ -192,97 +210,6 @@ paths:
           description: "A tool version."
           schema:
             $ref: "#/definitions/ToolVersion"
-  /api/v1/tools/{id}/versions/{version-id}/descriptor:
-    get:
-      tags:
-      - "GA4GH"
-      summary: "Get the tool descriptor (CWL/WDL) for the specified tool."
-      description: "Returns the CWL or WDL descriptor for the specified tool."
-      operationId: "toolsIdVersionsVersionIdDescriptorGet"
-      produces:
-      - "application/json"
-      - "text/plain"
-      parameters:
-      - name: "id"
-        in: "path"
-        description: "A unique identifier of the tool, scoped to this registry, for\
-          \ example `123456`"
-        required: true
-        type: "string"
-      - name: "version-id"
-        in: "path"
-        description: "An identifier of the tool version for this particular tool registry,\
-          \ for example `v1`"
-        required: true
-        type: "string"
-      - name: "format"
-        in: "query"
-        description: "The output type of the descriptor. If not specified it is up\
-          \ to the underlying implementation to determine which output format to return."
-        required: false
-        type: "string"
-        enum:
-        - "CWL"
-        - "WDL"
-      responses:
-        200:
-          description: "The tool descriptor."
-          schema:
-            $ref: "#/definitions/ToolDescriptor"
-        404:
-          description: "The tool can not be output in the specified format."
-          schema:
-            $ref: "#/definitions/ToolDescriptor"
-  /api/v1/tools/{id}/versions/{version-id}/descriptor/{relative-path}:
-    get:
-      tags:
-      - "GA4GH"
-      summary: "Get additional tool descriptor files (CWL/WDL) relative to the main\
-        \ file"
-      description: "Returns additional CWL or WDL descriptors for the specified tool\
-        \ in the same or subdirectories"
-      operationId: "toolsIdVersionsVersionIdDescriptorRelativePathGet"
-      produces:
-      - "application/json"
-      - "text/plain"
-      parameters:
-      - name: "id"
-        in: "path"
-        description: "A unique identifier of the tool, scoped to this registry, for\
-          \ example `123456`"
-        required: true
-        type: "string"
-      - name: "version-id"
-        in: "path"
-        description: "An identifier of the tool version for this particular tool registry,\
-          \ for example `v1`"
-        required: true
-        type: "string"
-      - name: "relative-path"
-        in: "path"
-        description: "A relative path to the additional file (same directory or subdirectories),\
-          \ for example 'foo.cwl' would return a 'foo.cwl' from the same directory\
-          \ as the main descriptor"
-        required: true
-        type: "string"
-      - name: "format"
-        in: "query"
-        description: "The output type of the descriptor. If not specified it is up\
-          \ to the underlying implementation to determine which output format to return."
-        required: false
-        type: "string"
-        enum:
-        - "CWL"
-        - "WDL"
-      responses:
-        200:
-          description: "The tool descriptor."
-          schema:
-            $ref: "#/definitions/ToolDescriptor"
-        404:
-          description: "The tool can not be output in the specified format."
-          schema:
-            $ref: "#/definitions/ToolDescriptor"
   /api/v1/tools/{id}/versions/{version-id}/dockerfile:
     get:
       tags:
@@ -315,6 +242,105 @@ paths:
           description: "The tool payload is not present in the service."
           schema:
             $ref: "#/definitions/ToolDockerfile"
+  /api/v1/tools/{id}/versions/{version-id}/{type}/descriptor:
+    get:
+      tags:
+      - "GA4GH"
+      summary: "Get the tool descriptor (CWL/WDL) for the specified tool."
+      description: "Returns the CWL or WDL descriptor for the specified tool."
+      operationId: "toolsIdVersionsVersionIdTypeDescriptorGet"
+      produces:
+      - "application/json"
+      - "text/plain"
+      parameters:
+      - name: "type"
+        in: "path"
+        description: "The output type of the descriptor. If not specified it is up\
+          \ to the underlying implementation to determine which output type to return.\
+          \ Plain types return the bare descriptor while the \"non-plain\" types return\
+          \ a descriptor wrapped with metadata"
+        required: true
+        type: "string"
+        enum:
+        - "CWL"
+        - "WDL"
+        - "plain-CWL"
+        - "plain-WDL"
+      - name: "id"
+        in: "path"
+        description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        required: true
+        type: "string"
+      - name: "version-id"
+        in: "path"
+        description: "An identifier of the tool version for this particular tool registry,\
+          \ for example `v1`"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "The tool descriptor."
+          schema:
+            $ref: "#/definitions/ToolDescriptor"
+        404:
+          description: "The tool can not be output in the specified type."
+          schema:
+            $ref: "#/definitions/ToolDescriptor"
+  /api/v1/tools/{id}/versions/{version-id}/{type}/descriptor/{relative-path}:
+    get:
+      tags:
+      - "GA4GH"
+      summary: "Get additional tool descriptor files (CWL/WDL) relative to the main\
+        \ file"
+      description: "Returns additional CWL or WDL descriptors for the specified tool\
+        \ in the same or subdirectories"
+      operationId: "toolsIdVersionsVersionIdTypeDescriptorRelativePathGet"
+      produces:
+      - "application/json"
+      - "text/plain"
+      parameters:
+      - name: "type"
+        in: "path"
+        description: "The output type of the descriptor. If not specified it is up\
+          \ to the underlying implementation to determine which output type to return.\
+          \  Plain types return the bare descriptor while the \"non-plain\" types\
+          \ return a descriptor wrapped with metadata"
+        required: true
+        type: "string"
+        enum:
+        - "CWL"
+        - "WDL"
+        - "plain-CWL"
+        - "plain-WDL"
+      - name: "id"
+        in: "path"
+        description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        required: true
+        type: "string"
+      - name: "version-id"
+        in: "path"
+        description: "An identifier of the tool version for this particular tool registry,\
+          \ for example `v1`"
+        required: true
+        type: "string"
+      - name: "relative-path"
+        in: "path"
+        description: "A relative path to the additional file (same directory or subdirectories),\
+          \ for example 'foo.cwl' would return a 'foo.cwl' from the same directory\
+          \ as the main descriptor"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "The tool descriptor."
+          schema:
+            $ref: "#/definitions/ToolDescriptor"
+        404:
+          description: "The tool can not be output in the specified type."
+          schema:
+            $ref: "#/definitions/ToolDescriptor"
   /auth/tokens:
     get:
       tags:
@@ -2288,20 +2314,6 @@ definitions:
         description: "String representation of the tag"
     description: "This describes a descriptive label that can be placed on an entry\
       \ in the dockstore"
-  ToolType:
-    type: "object"
-    properties:
-      id:
-        type: "string"
-        description: "The unique identifier for the type"
-      name:
-        type: "string"
-        description: "A short friendly name for the type"
-      description:
-        type: "string"
-        description: "A longer explanation of what this type is and what it can accomplish"
-    description: "Describes a type of tool allowing us to categorize workflows, tools,\
-      \ and maybe even other entities (such as services) separately"
   Metadata:
     type: "object"
     required:
@@ -2318,6 +2330,20 @@ definitions:
         description: "A friendly name that can be used in addition to the hostname\
           \ to describe a registry"
     description: "Describes this registry to better allow for mirroring and indexing."
+  ToolType:
+    type: "object"
+    properties:
+      id:
+        type: "string"
+        description: "The unique identifier for the type"
+      name:
+        type: "string"
+        description: "A short friendly name for the type"
+      description:
+        type: "string"
+        description: "A longer explanation of what this type is and what it can accomplish"
+    description: "Describes a type of tool allowing us to categorize workflows, tools,\
+      \ and maybe even other entities (such as services) separately"
   Workflow:
     type: "object"
     required:
@@ -2680,11 +2706,6 @@ definitions:
     description: "This describes one entry in the dockstore. Logically, this currently\
       \ means one tuple of registry (either quay or docker hub), organization, image\
       \ name, and toolname which can be\n * associated with CWL and Dockerfile documents"
-  GithubComView:
-    type: "object"
-    properties:
-      parent:
-        $ref: "#/definitions/GitHubComAuthenticationResource"
   SourceFile:
     type: "object"
     required:
@@ -2801,8 +2822,22 @@ definitions:
         type: "string"
         description: "The version of this tool version in the registry. Iterates when\
           \ fields like the description, author, etc. are updated."
+      verified:
+        type: "boolean"
+        description: "Reports whether this tool has been verified by a specific organization\
+          \ or individual"
+        default: false
+      verified-source:
+        type: "string"
+        description: "Source of metadata that can support a verified tool, such as\
+          \ an email or URL"
     description: "A tool version describes a particular iteration of a tool as described\
       \ by a reference to a specific image and dockerfile."
+  GithubComView:
+    type: "object"
+    properties:
+      parent:
+        $ref: "#/definitions/GitHubComAuthenticationResource"
   QuayIOView:
     type: "object"
     properties:
@@ -2851,6 +2886,15 @@ definitions:
           \ this tool (for example `https://bio.tools/tool/mytum.de/SNAP2/1`)"
         items:
           type: "string"
+      verified:
+        type: "boolean"
+        description: "Reports whether this tool has been verified by a specific organization\
+          \ or individual"
+        default: false
+      verified-source:
+        type: "string"
+        description: "Source of metadata that can support a verified tool, such as\
+          \ an email or URL"
       versions:
         type: "array"
         description: "A list of versions for this tool"

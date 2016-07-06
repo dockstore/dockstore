@@ -19,7 +19,7 @@ package io.swagger.api;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-06-07T18:19:37.276Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-05T18:47:03.457Z")
 public abstract class ToolsApiService {
       public abstract Response toolsGet(String id,String registry,String organization,String name,String toolname,String description,String author,SecurityContext securityContext)
       throws NotFoundException;
@@ -27,12 +27,12 @@ public abstract class ToolsApiService {
       throws NotFoundException;
       public abstract Response toolsIdVersionsGet(String id,SecurityContext securityContext)
       throws NotFoundException;
-      public abstract Response toolsIdVersionsVersionIdDescriptorGet(String id,String versionId,String format,SecurityContext securityContext)
-      throws NotFoundException;
-      public abstract Response toolsIdVersionsVersionIdDescriptorRelativePathGet(String id,String versionId,String relativePath,String format,SecurityContext securityContext)
-      throws NotFoundException;
       public abstract Response toolsIdVersionsVersionIdDockerfileGet(String id,String versionId,SecurityContext securityContext)
       throws NotFoundException;
       public abstract Response toolsIdVersionsVersionIdGet(String id,String versionId,SecurityContext securityContext)
+      throws NotFoundException;
+      public abstract Response toolsIdVersionsVersionIdTypeDescriptorGet(String type,String id,String versionId,SecurityContext securityContext)
+      throws NotFoundException;
+      public abstract Response toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(String type,String id,String versionId,String relativePath,SecurityContext securityContext)
       throws NotFoundException;
 }

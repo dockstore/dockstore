@@ -38,7 +38,7 @@ import javax.ws.rs.core.SecurityContext;
 
 @Produces({ "application/json", "text/plain" })
 @io.swagger.annotations.Api(description = "the tools API")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-06-07T18:19:37.276Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-05T18:47:03.457Z")
 public class ToolsApi  {
    private final ToolsApiService delegate = ToolsApiServiceFactory.getToolsApi();
 
@@ -87,39 +87,6 @@ public class ToolsApi  {
         return delegate.toolsIdVersionsGet(id,securityContext);
     }
     @GET
-    @Path("/{id}/versions/{version-id}/descriptor")
-    @UnitOfWork
-    @Produces({ "application/json", "text/plain" })
-    @io.swagger.annotations.ApiOperation(value = "Get the tool descriptor (CWL/WDL) for the specified tool.", notes = "Returns the CWL or WDL descriptor for the specified tool.", response = ToolDescriptor.class, tags={ "GA4GH",  })
-    @io.swagger.annotations.ApiResponses(value = { 
-        @io.swagger.annotations.ApiResponse(code = 200, message = "The tool descriptor.", response = ToolDescriptor.class),
-        @io.swagger.annotations.ApiResponse(code = 404, message = "The tool can not be output in the specified format.", response = ToolDescriptor.class) })
-    public Response toolsIdVersionsVersionIdDescriptorGet(
-        @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`",required=true) @PathParam("id") String id,
-        @ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`",required=true) @PathParam("version-id") String versionId,
-        @ApiParam(value = "The output type of the descriptor. If not specified it is up to the underlying implementation to determine which output format to return.", allowableValues="CWL, WDL") @QueryParam("format") String format,
-        @Context SecurityContext securityContext)
-    throws NotFoundException {
-        return delegate.toolsIdVersionsVersionIdDescriptorGet(id,versionId,format,securityContext);
-    }
-    @GET
-    @Path("/{id}/versions/{version-id}/descriptor/{relative-path}")
-    @UnitOfWork
-    @Produces({ "application/json", "text/plain" })
-    @io.swagger.annotations.ApiOperation(value = "Get additional tool descriptor files (CWL/WDL) relative to the main file", notes = "Returns additional CWL or WDL descriptors for the specified tool in the same or subdirectories", response = ToolDescriptor.class, tags={ "GA4GH",  })
-    @io.swagger.annotations.ApiResponses(value = { 
-        @io.swagger.annotations.ApiResponse(code = 200, message = "The tool descriptor.", response = ToolDescriptor.class),
-        @io.swagger.annotations.ApiResponse(code = 404, message = "The tool can not be output in the specified format.", response = ToolDescriptor.class) })
-    public Response toolsIdVersionsVersionIdDescriptorRelativePathGet(
-        @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`",required=true) @PathParam("id") String id,
-        @ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`",required=true) @PathParam("version-id") String versionId,
-        @ApiParam(value = "A relative path to the additional file (same directory or subdirectories), for example 'foo.cwl' would return a 'foo.cwl' from the same directory as the main descriptor",required=true) @PathParam("relative-path") String relativePath,
-        @ApiParam(value = "The output type of the descriptor. If not specified it is up to the underlying implementation to determine which output format to return.", allowableValues="CWL, WDL") @QueryParam("format") String format,
-        @Context SecurityContext securityContext)
-    throws NotFoundException {
-        return delegate.toolsIdVersionsVersionIdDescriptorRelativePathGet(id,versionId,relativePath,format,securityContext);
-    }
-    @GET
     @Path("/{id}/versions/{version-id}/dockerfile")
     @UnitOfWork
     @Produces({ "application/json", "text/plain" })
@@ -138,7 +105,7 @@ public class ToolsApi  {
     @Path("/{id}/versions/{version-id}")
     @UnitOfWork
     @Produces({ "application/json", "text/plain" })
-    @io.swagger.annotations.ApiOperation(value = "List one specific tool version, acts as an anchor for self references", notes = "This endpoint returns one specific tool version", response = ToolVersion.class, tags={ "GA4GH" })
+    @io.swagger.annotations.ApiOperation(value = "List one specific tool version, acts as an anchor for self references", notes = "This endpoint returns one specific tool version", response = ToolVersion.class, tags={ "GA4GH",  })
     @io.swagger.annotations.ApiResponses(value = { 
         @io.swagger.annotations.ApiResponse(code = 200, message = "A tool version.", response = ToolVersion.class) })
     public Response toolsIdVersionsVersionIdGet(
@@ -147,5 +114,38 @@ public class ToolsApi  {
         @Context SecurityContext securityContext)
     throws NotFoundException {
         return delegate.toolsIdVersionsVersionIdGet(id,versionId,securityContext);
+    }
+    @GET
+    @Path("/{id}/versions/{version-id}/{type}/descriptor")
+    @UnitOfWork
+    @Produces({ "application/json", "text/plain" })
+    @io.swagger.annotations.ApiOperation(value = "Get the tool descriptor (CWL/WDL) for the specified tool.", notes = "Returns the CWL or WDL descriptor for the specified tool.", response = ToolDescriptor.class, tags={ "GA4GH",  })
+    @io.swagger.annotations.ApiResponses(value = { 
+        @io.swagger.annotations.ApiResponse(code = 200, message = "The tool descriptor.", response = ToolDescriptor.class),
+        @io.swagger.annotations.ApiResponse(code = 404, message = "The tool can not be output in the specified type.", response = ToolDescriptor.class) })
+    public Response toolsIdVersionsVersionIdTypeDescriptorGet(
+        @ApiParam(value = "The output type of the descriptor. If not specified it is up to the underlying implementation to determine which output type to return. Plain types return the bare descriptor while the \"non-plain\" types return a descriptor wrapped with metadata",required=true, allowableValues="CWL, WDL, plain-CWL, plain-WDL") @PathParam("type") String type,
+        @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`",required=true) @PathParam("id") String id,
+        @ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`",required=true) @PathParam("version-id") String versionId,
+        @Context SecurityContext securityContext)
+    throws NotFoundException {
+        return delegate.toolsIdVersionsVersionIdTypeDescriptorGet(type,id,versionId,securityContext);
+    }
+    @GET
+    @Path("/{id}/versions/{version-id}/{type}/descriptor/{relative-path}")
+    @UnitOfWork
+    @Produces({ "application/json", "text/plain" })
+    @io.swagger.annotations.ApiOperation(value = "Get additional tool descriptor files (CWL/WDL) relative to the main file", notes = "Returns additional CWL or WDL descriptors for the specified tool in the same or subdirectories", response = ToolDescriptor.class, tags={ "GA4GH" })
+    @io.swagger.annotations.ApiResponses(value = { 
+        @io.swagger.annotations.ApiResponse(code = 200, message = "The tool descriptor.", response = ToolDescriptor.class),
+        @io.swagger.annotations.ApiResponse(code = 404, message = "The tool can not be output in the specified type.", response = ToolDescriptor.class) })
+    public Response toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(
+        @ApiParam(value = "The output type of the descriptor. If not specified it is up to the underlying implementation to determine which output type to return.  Plain types return the bare descriptor while the \"non-plain\" types return a descriptor wrapped with metadata",required=true, allowableValues="CWL, WDL, plain-CWL, plain-WDL") @PathParam("type") String type,
+        @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`",required=true) @PathParam("id") String id,
+        @ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`",required=true) @PathParam("version-id") String versionId,
+        @ApiParam(value = "A relative path to the additional file (same directory or subdirectories), for example 'foo.cwl' would return a 'foo.cwl' from the same directory as the main descriptor",required=true) @PathParam("relative-path") String relativePath,
+        @Context SecurityContext securityContext)
+    throws NotFoundException {
+        return delegate.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(type,id,versionId,relativePath,securityContext);
     }
 }

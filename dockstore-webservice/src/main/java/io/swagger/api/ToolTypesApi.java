@@ -18,8 +18,8 @@ package io.swagger.api;
 
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dropwizard.hibernate.UnitOfWork;
-import io.swagger.api.factories.MetadataApiServiceFactory;
-import io.swagger.model.Metadata;
+import io.swagger.api.factories.ToolTypesApiServiceFactory;
+import io.swagger.model.ToolType;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -28,22 +28,23 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 
-@Path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/metadata")
+@Path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/tool-types")
+
 @Produces({ "application/json", "text/plain" })
-@io.swagger.annotations.Api(description = "the metadata API")
+@io.swagger.annotations.Api(description = "the tool-types API")
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-05T18:47:03.457Z")
-public class MetadataApi  {
-   private final MetadataApiService delegate = MetadataApiServiceFactory.getMetadataApi();
+public class ToolTypesApi  {
+   private final ToolTypesApiService delegate = ToolTypesApiServiceFactory.getToolTypesApi();
 
     @GET
     @UnitOfWork
     @Produces({ "application/json", "text/plain" })
-    @io.swagger.annotations.ApiOperation(value = "Return some metadata that is useful for describing this registry", notes = "Return some metadata that is useful for describing this registry", response = Metadata.class, tags={ "GA4GH" })
+    @io.swagger.annotations.ApiOperation(value = "List all tool types", notes = "This endpoint returns all tool-types available ", response = ToolType.class, responseContainer = "List", tags={ "GA4GH" })
     @io.swagger.annotations.ApiResponses(value = { 
-        @io.swagger.annotations.ApiResponse(code = 200, message = "A Metadata object describing this service.", response = Metadata.class) })
-    public Response metadataGet(
+        @io.swagger.annotations.ApiResponse(code = 200, message = "An array of methods that match the filter.", response = ToolType.class, responseContainer = "List") })
+    public Response toolTypesGet(
         @Context SecurityContext securityContext)
     throws NotFoundException {
-        return delegate.metadataGet(securityContext);
+        return delegate.toolTypesGet(securityContext);
     }
 }
