@@ -56,7 +56,7 @@ definitions:
       registry:
         description: 'This is a specific docker provider like quay.io or dockerhub
           or n/a?, required: GA4GH'
-        enum: [DOCKER_HUB, QUAY_IO]
+        enum: [QUAY_IO, DOCKER_HUB]
         type: string
       tags:
         description: Implementation specific tracking of valid build tags for the docker container
@@ -142,7 +142,7 @@ definitions:
       path: {description: Path to source file in git repo, type: string}
       type:
         description: Enumerates the type of file
-        enum: [DOCKERFILE, DOCKSTORE_CWL, DOCKSTORE_WDL]
+        enum: [DOCKSTORE_CWL, DOCKSTORE_WDL, DOCKERFILE]
         type: string
     required: [path, type]
     type: object
@@ -389,21 +389,21 @@ paths:
         using metadata query parameters. '
       operationId: toolsGet
       parameters:
+      - {description: 'A unique identifier of the tool, scoped to this registry, for
+          example `123456`', in: query, name: id, required: false, type: string}
+      - {description: The image registry that contains the image., in: query, name: registry,
+        required: false, type: string}
+      - {description: The organization in the registry that published the image.,
+        in: query, name: organization, required: false, type: string}
+      - {description: The name of the image., in: query, name: name, required: false,
+        type: string}
+      - {description: The name of the tool., in: query, name: toolname, required: false,
+        type: string}
+      - {description: The description of the tool., in: query, name: description,
+        required: false, type: string}
       - {description: 'The author of the tool (TODO a thought occurs, are we assuming
           that the author of the CWL and the image are the same?).', in: query, name: author,
         required: false, type: string}
-      - {description: The description of the tool., in: query, name: description,
-        required: false, type: string}
-      - {description: 'A unique identifier of the tool, scoped to this registry, for
-          example `123456`', in: query, name: id, required: false, type: string}
-      - {description: The name of the image., in: query, name: name, required: false,
-        type: string}
-      - {description: The organization in the registry that published the image.,
-        in: query, name: organization, required: false, type: string}
-      - {description: The image registry that contains the image., in: query, name: registry,
-        required: false, type: string}
-      - {description: The name of the tool., in: query, name: toolname, required: false,
-        type: string}
       produces: [application/json, text/plain]
       responses:
         200:
@@ -484,14 +484,14 @@ paths:
       description: Returns the CWL or WDL descriptor for the specified tool.
       operationId: toolsIdVersionsVersionIdTypeDescriptorGet
       parameters:
-      - {description: 'A unique identifier of the tool, scoped to this registry, for
-          example `123456`', in: path, name: id, required: true, type: string}
       - description: The output type of the descriptor. If not specified it is up to the underlying implementation to determine which output type to return. Plain types return the bare descriptor while the "non-plain" types return a descriptor wrapped with metadata
         enum: [CWL, WDL, plain-CWL, plain-WDL]
         in: path
         name: type
         required: true
         type: string
+      - {description: 'A unique identifier of the tool, scoped to this registry, for
+          example `123456`', in: path, name: id, required: true, type: string}
       - {description: 'An identifier of the tool version for this particular tool
           registry, for example `v1`', in: path, name: version-id, required: true,
         type: string}
@@ -510,20 +510,20 @@ paths:
       description: Returns additional CWL or WDL descriptors for the specified tool in the same or subdirectories
       operationId: toolsIdVersionsVersionIdTypeDescriptorRelativePathGet
       parameters:
-      - {description: 'A unique identifier of the tool, scoped to this registry, for
-          example `123456`', in: path, name: id, required: true, type: string}
-      - {description: 'A relative path to the additional file (same directory or subdirectories),
-          for example ''foo.cwl'' would return a ''foo.cwl'' from the same directory
-          as the main descriptor', in: path, name: relative-path, required: true,
-        type: string}
       - description: The output type of the descriptor. If not specified it is up to the underlying implementation to determine which output type to return.  Plain types return the bare descriptor while the "non-plain" types return a descriptor wrapped with metadata
         enum: [CWL, WDL, plain-CWL, plain-WDL]
         in: path
         name: type
         required: true
         type: string
+      - {description: 'A unique identifier of the tool, scoped to this registry, for
+          example `123456`', in: path, name: id, required: true, type: string}
       - {description: 'An identifier of the tool version for this particular tool
           registry, for example `v1`', in: path, name: version-id, required: true,
+        type: string}
+      - {description: 'A relative path to the additional file (same directory or subdirectories),
+          for example ''foo.cwl'' would return a ''foo.cwl'' from the same directory
+          as the main descriptor', in: path, name: relative-path, required: true,
         type: string}
       produces: [application/json, text/plain]
       responses:
@@ -821,13 +821,13 @@ paths:
       description: ''
       operationId: updateContainer
       parameters:
+      - {description: Tool to modify., format: int64, in: path, name: containerId,
+        required: true, type: integer}
       - description: Tool with updated information
         in: body
         name: body
         required: true
         schema: {$ref: '#/definitions/DockstoreTool'}
-      - {description: Tool to modify., format: int64, in: path, name: containerId,
-        required: true, type: integer}
       produces: [application/json]
       responses:
         200:
@@ -857,8 +857,8 @@ paths:
       parameters:
       - {description: Tool id, format: int64, in: path, name: containerId, required: true,
         type: integer}
-      - {in: path, name: relative-path, required: true, type: string}
       - {in: query, name: tag, required: false, type: string}
+      - {in: path, name: relative-path, required: true, type: string}
       produces: [application/json]
       responses:
         200:
@@ -886,15 +886,15 @@ paths:
       description: Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.
       operationId: updateLabels
       parameters:
+      - {description: Tool to modify., format: int64, in: path, name: containerId,
+        required: true, type: integer}
+      - {description: Comma-delimited list of labels., in: query, name: labels, required: true,
+        type: string}
       - description: This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.
         in: body
         name: body
         required: false
         schema: {type: string}
-      - {description: Tool to modify., format: int64, in: path, name: containerId,
-        required: true, type: integer}
-      - {description: Comma-delimited list of labels., in: query, name: labels, required: true,
-        type: string}
       produces: [application/json]
       responses:
         200:
@@ -907,13 +907,13 @@ paths:
       description: publish a container (public or private). Assumes that user is using quay.io and github.
       operationId: publish
       parameters:
+      - {description: Tool id to publish, format: int64, in: path, name: containerId,
+        required: true, type: integer}
       - description: PublishRequest to refresh the list of repos for a user
         in: body
         name: body
         required: true
         schema: {$ref: '#/definitions/PublishRequest'}
-      - {description: Tool id to publish, format: int64, in: path, name: containerId,
-        required: true, type: integer}
       produces: [application/json]
       responses:
         200:
@@ -974,6 +974,8 @@ paths:
       description: Tag correspond to each row of the versions table listing all information for a docker repo tag
       operationId: addTags
       parameters:
+      - {description: Tool to modify., format: int64, in: path, name: containerId,
+        required: true, type: integer}
       - description: List of new tags
         in: body
         name: body
@@ -981,8 +983,6 @@ paths:
         schema:
           items: {$ref: '#/definitions/Tag'}
           type: array
-      - {description: Tool to modify., format: int64, in: path, name: containerId,
-        required: true, type: integer}
       produces: [application/json]
       responses:
         200:
@@ -996,6 +996,8 @@ paths:
       description: Tag correspond to each row of the versions table listing all information for a docker repo tag
       operationId: updateTags
       parameters:
+      - {description: Tool to modify., format: int64, in: path, name: containerId,
+        required: true, type: integer}
       - description: List of modified tags
         in: body
         name: body
@@ -1003,8 +1005,6 @@ paths:
         schema:
           items: {$ref: '#/definitions/Tag'}
           type: array
-      - {description: Tool to modify., format: int64, in: path, name: containerId,
-        required: true, type: integer}
       produces: [application/json]
       responses:
         200:
@@ -1066,8 +1066,8 @@ paths:
       parameters:
       - {description: Tool id, format: int64, in: path, name: containerId, required: true,
         type: integer}
-      - {in: path, name: relative-path, required: true, type: string}
       - {in: query, name: tag, required: false, type: string}
+      - {in: path, name: relative-path, required: true, type: string}
       produces: [application/json]
       responses:
         200:
@@ -1316,13 +1316,13 @@ paths:
       description: ''
       operationId: addGroupToUser
       parameters:
+      - {description: User ID of user, format: int64, in: path, name: userId, required: true,
+        type: integer}
       - description: PublishRequest to refresh the list of repos for a user
         in: body
         name: body
         required: true
         schema: {$ref: '#/definitions/Group'}
-      - {description: User ID of user, format: int64, in: path, name: userId, required: true,
-        type: integer}
       produces: [application/json]
       responses:
         200:
@@ -1335,9 +1335,9 @@ paths:
       description: ''
       operationId: removeUserFromGroup
       parameters:
-      - {description: Group ID of group, format: int64, in: path, name: groupId, required: true,
-        type: integer}
       - {description: User ID of user, format: int64, in: path, name: userId, required: true,
+        type: integer}
+      - {description: Group ID of group, format: int64, in: path, name: groupId, required: true,
         type: integer}
       produces: [application/json]
       responses:
@@ -1478,15 +1478,15 @@ paths:
       description: Manually register workflow (public or private).
       operationId: manualRegister
       parameters:
-      - {description: Workflow container new descriptor path (CWL or WDL) and/or name,
-        in: query, name: defaultWorkflowPath, required: true, type: string}
-      - {description: Descriptor type, in: query, name: descriptorType, required: true,
-        type: string}
-      - {description: Workflow name, in: query, name: workflowName, required: true,
+      - {description: Workflow registry, in: query, name: workflowRegistry, required: true,
         type: string}
       - {description: Workflow repository, in: query, name: workflowPath, required: true,
         type: string}
-      - {description: Workflow registry, in: query, name: workflowRegistry, required: true,
+      - {description: Workflow container new descriptor path (CWL or WDL) and/or name,
+        in: query, name: defaultWorkflowPath, required: true, type: string}
+      - {description: Workflow name, in: query, name: workflowName, required: true,
+        type: string}
+      - {description: Descriptor type, in: query, name: descriptorType, required: true,
         type: string}
       produces: [application/json]
       responses:
@@ -1598,13 +1598,13 @@ paths:
       description: ''
       operationId: updateWorkflow
       parameters:
+      - {description: Workflow to modify., format: int64, in: path, name: workflowId,
+        required: true, type: integer}
       - description: Workflow with updated information
         in: body
         name: body
         required: true
         schema: {$ref: '#/definitions/Workflow'}
-      - {description: Workflow to modify., format: int64, in: path, name: workflowId,
-        required: true, type: integer}
       produces: [application/json]
       responses:
         200:
@@ -1617,9 +1617,9 @@ paths:
       description: Does not need authentication
       operationId: cwl
       parameters:
-      - {in: query, name: tag, required: false, type: string}
       - {description: Tool id, format: int64, in: path, name: workflowId, required: true,
         type: integer}
+      - {in: query, name: tag, required: false, type: string}
       produces: [application/json]
       responses:
         200:
@@ -1632,10 +1632,10 @@ paths:
       description: Does not need authentication
       operationId: secondaryCwlPath
       parameters:
-      - {in: path, name: relative-path, required: true, type: string}
-      - {in: query, name: tag, required: false, type: string}
       - {description: Tool id, format: int64, in: path, name: workflowId, required: true,
         type: integer}
+      - {in: query, name: tag, required: false, type: string}
+      - {in: path, name: relative-path, required: true, type: string}
       produces: [application/json]
       responses:
         200:
@@ -1664,15 +1664,15 @@ paths:
       description: Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.
       operationId: updateLabels
       parameters:
+      - {description: Tool to modify., format: int64, in: path, name: workflowId,
+        required: true, type: integer}
+      - {description: Comma-delimited list of labels., in: query, name: labels, required: true,
+        type: string}
       - description: This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.
         in: body
         name: body
         required: false
         schema: {type: string}
-      - {description: Comma-delimited list of labels., in: query, name: labels, required: true,
-        type: string}
-      - {description: Tool to modify., format: int64, in: path, name: workflowId,
-        required: true, type: integer}
       produces: [application/json]
       responses:
         200:
@@ -1685,13 +1685,13 @@ paths:
       description: Publish/publish a workflow (public or private).
       operationId: publish
       parameters:
+      - {description: Tool id to publish/unpublish, format: int64, in: path, name: workflowId,
+        required: true, type: integer}
       - description: PublishRequest to refresh the list of repos for a user
         in: body
         name: body
         required: true
         schema: {$ref: '#/definitions/PublishRequest'}
-      - {description: Tool id to publish/unpublish, format: int64, in: path, name: workflowId,
-        required: true, type: integer}
       produces: [application/json]
       responses:
         200:
@@ -1732,9 +1732,9 @@ paths:
       description: Does not need authentication
       operationId: secondaryCwl
       parameters:
-      - {in: query, name: tag, required: false, type: string}
       - {description: Tool id, format: int64, in: path, name: workflowId, required: true,
         type: integer}
+      - {in: query, name: tag, required: false, type: string}
       produces: [application/json]
       responses:
         200:
@@ -1749,9 +1749,9 @@ paths:
       description: Does not need authentication
       operationId: secondaryWdl
       parameters:
-      - {in: query, name: tag, required: false, type: string}
       - {description: Tool id, format: int64, in: path, name: workflowId, required: true,
         type: integer}
+      - {in: query, name: tag, required: false, type: string}
       produces: [application/json]
       responses:
         200:
@@ -1782,9 +1782,9 @@ paths:
       description: Does not need authentication
       operationId: wdl
       parameters:
-      - {in: query, name: tag, required: false, type: string}
       - {description: Tool id, format: int64, in: path, name: workflowId, required: true,
         type: integer}
+      - {in: query, name: tag, required: false, type: string}
       produces: [application/json]
       responses:
         200:
@@ -1797,10 +1797,10 @@ paths:
       description: Does not need authentication
       operationId: secondaryWdlPath
       parameters:
-      - {in: path, name: relative-path, required: true, type: string}
-      - {in: query, name: tag, required: false, type: string}
       - {description: Tool id, format: int64, in: path, name: workflowId, required: true,
         type: integer}
+      - {in: query, name: tag, required: false, type: string}
+      - {in: path, name: relative-path, required: true, type: string}
       produces: [application/json]
       responses:
         200:
@@ -1813,6 +1813,8 @@ paths:
       description: Workflow version correspond to each row of the versions table listing all information for a workflow
       operationId: updateWorkflowVersion
       parameters:
+      - {description: Workflow to modify., format: int64, in: path, name: workflowId,
+        required: true, type: integer}
       - description: List of modified workflow versions
         in: body
         name: body
@@ -1820,8 +1822,6 @@ paths:
         schema:
           items: {$ref: '#/definitions/WorkflowVersion'}
           type: array
-      - {description: Workflow to modify., format: int64, in: path, name: workflowId,
-        required: true, type: integer}
       produces: [application/json]
       responses:
         200:
@@ -1835,11 +1835,11 @@ produces: [application/json]
 schemes: [http]
 swagger: '2.0'
 tags:
-- {description: A curated subset of resources proposed as a common standard for tool repositories,
-  name: GA4GH}
 - {description: List and register entries in the dockstore (pairs of images + metadata (CWL and Dockerfile)),
   name: containers}
 - {description: List and modify tags for containers, name: containertags}
+- {description: A curated subset of resources proposed as a common standard for tool repositories,
+  name: GA4GH}
 - {description: List source code repositories (should be generalized from github),
   name: github.repo}
 - {description: stop-gap allowing developers to associate with bitbucket, name: integration.bitbucket.org}
@@ -1847,5 +1847,5 @@ tags:
 - {description: stop-gap allowing developers to associate with quay.io, name: integration.quay.io}
 - {description: 'List, modify, refresh, and delete tokens for external services',
   name: tokens}
-- {description: 'List, modify, and manage end users of the dockstore', name: users}
 - {description: List and register workflows in the dockstore (CWL or WDL), name: workflows}
+- {description: 'List, modify, and manage end users of the dockstore', name: users}

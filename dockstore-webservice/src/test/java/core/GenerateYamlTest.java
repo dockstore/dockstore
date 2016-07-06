@@ -36,7 +36,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -83,10 +82,11 @@ public class GenerateYamlTest {
             private Object sortMapByKey(Object object) {
                 if (object instanceof Map) {
                     TreeMap sortedMap = new TreeMap(Ordering.natural());
-                    Set<Map.Entry> entrySet = ((Map)object).entrySet();
-                    for (Map.Entry entry : entrySet) {
-                        entry.setValue(sortMapByKey(entry.getValue()));
-                    }
+                    // not sure if we actually need to go recursive, it seems to mess up parameter order
+                    //                    Set<Map.Entry> entrySet = ((Map)object).entrySet();
+//                    for (Map.Entry entry : entrySet) {
+//                        entry.setValue(sortMapByKey(entry.getValue()));
+//                    }
                     sortedMap.putAll((Map)object);
                     return sortedMap;
                 } else if (object instanceof List){
