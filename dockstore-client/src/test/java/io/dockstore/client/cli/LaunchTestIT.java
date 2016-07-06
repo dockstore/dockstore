@@ -21,7 +21,6 @@ import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -66,8 +65,6 @@ public class LaunchTestIT {
         Assert.assertTrue("output should include a successful cromwell run",systemOutRule.getLog().contains("Cromwell exit code: 0") );
     }
 
-    //This test will be ignored for now because of cwltool and cwl file provisioning problem
-    @Ignore
     @Test
     public void cwlCorrect() throws IOException{
         //Test when content and extension are cwl  --> no need descriptor
@@ -84,12 +81,37 @@ public class LaunchTestIT {
         WorkflowsApi api = mock(WorkflowsApi.class);
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
-        client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
+        // do not use a cache
+        runWorkflow(cwlFile, args, api, usersApi, client, false);
+    }
+
+    @Test
+    public void cwlCorrectWithCache() throws IOException{
+        //Test when content and extension are cwl  --> no need descriptor
+
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("1st-workflow.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("1st-workflow-job.json"));
+
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("--local-entry");
+            add("--json");
+            add(cwlJSON.getAbsolutePath());
+        }};
+
+        WorkflowsApi api = mock(WorkflowsApi.class);
+        UsersApi usersApi = mock(UsersApi.class);
+        Client client = new Client();
+        // use a cache
+        runWorkflow(cwlFile, args, api, usersApi, client, true);
+    }
+
+    private void runWorkflow(File cwlFile, ArrayList<String> args, WorkflowsApi api, UsersApi usersApi, Client client, boolean useCache) {
+        client.setConfigFile(ResourceHelpers.resourceFilePath(useCache ? "config.withCache" : "config"));
 
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
         workflowClient.checkEntryFile(cwlFile.getAbsolutePath(), args, null);
 
-        Assert.assertTrue("output should include a successful cromwell run",systemOutRule.getLog().contains("Cromwell exit code: 0") );
+        Assert.assertTrue("output should include a successful cwltool run",systemOutRule.getLog().contains("Final process status is success") );
     }
 
     @Test
@@ -116,8 +138,6 @@ public class LaunchTestIT {
         Assert.assertTrue("output should include a successful cromwell run",systemOutRule.getLog().contains("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end") );
     }
 
-    //This test will be ignored for now because of cwltool and cwl file provisioning problem
-    @Ignore
     @Test
     public void cwlWrongExtForce() throws IOException{
         //Test when content = cwl but ext = wdl, descriptor provided --> CWL
@@ -300,8 +320,6 @@ public class LaunchTestIT {
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, CWL_STRING);
     }
 
-    //This test will be ignored for now because of cwltool and cwl file provisioning problem
-    @Ignore
     @Test
     public void cwlNoExt() throws IOException{
     //Test when content = cwl but no ext
@@ -325,7 +343,7 @@ public class LaunchTestIT {
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
-        Assert.assertTrue("output should include a successful cromwell run",systemOutRule.getLog().contains("This is a CWL file.. Please put an extension to the entry file name.") );
+        Assert.assertTrue("output should contain a validation issue",systemOutRule.getLog().contains("This is a CWL file.. Please put an extension to the entry file name.") );
     }
 
     @Test
