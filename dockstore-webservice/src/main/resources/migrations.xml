@@ -252,5 +252,10 @@
                 tableName="tool"/>
     </changeSet>
 
+    <changeSet id="change_workflow_git_format" author="dyuen">
+        <sql dbms="postgresql">
+            update workflow set giturl = replace(giturl, 'git://github.com', 'git@github.com');
+        </sql>
+    </changeSet>
 
 </databaseChangeLog>
