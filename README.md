@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/ga4gh/dockstore.svg?branch=develop)](https://travis-ci.org/ga4gh/dockstore) [![Coverage Status](https://coveralls.io/repos/github/ga4gh/dockstore/badge.svg?branch=develop)](https://coveralls.io/github/ga4gh/dockstore?branch=develop) [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/common-workflow-language/common-workflow-language?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Build Status](https://travis-ci.org/ga4gh/dockstore.svg?branch=develop)](https://travis-ci.org/ga4gh/dockstore) [![Coverage Status](https://coveralls.io/repos/github/ga4gh/dockstore/badge.svg?branch=develop)](https://coveralls.io/github/ga4gh/dockstore?branch=develop) [![Gitter](https://badges.gitter.im/Join%20Chat.svg)]https://gitter.im/ga4gh/dockstore?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 # Dockstore
 
