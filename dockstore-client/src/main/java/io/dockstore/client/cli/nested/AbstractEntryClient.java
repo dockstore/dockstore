@@ -540,13 +540,13 @@ public abstract class AbstractEntryClient {
     public Boolean checkCWL(File content){
         /* CWL: check for 'class:CommandLineTool', 'inputs: ','outputs: ', and 'baseCommand'. Optional: 'cwlVersion'
          CWL: check for 'class:Workflow', 'inputs: ','outputs: ', and 'steps'. Optional: 'cwlVersion'*/
-        Pattern inputPattern = Pattern.compile("(.*)(inputs)(.*)(:)(.*)");
-        Pattern outputPattern = Pattern.compile("(.*)(outputs)(.*)(:)(.*)");
+        Pattern inputPattern = Pattern.compile("(.*)(inputs)(.*)");
+        Pattern outputPattern = Pattern.compile("(.*)(outputs)(.*)");
         Pattern classWfPattern = Pattern.compile("(.*)(class)(.*)(:)(\\sWorkflow)");
         Pattern classToolPattern = Pattern.compile("(.*)(class)(.*)(:)(\\sCommandLineTool)");
-        Pattern commandPattern = Pattern.compile("(.*)(baseCommand)(.*)(:)(.*)");
-        Pattern versionPattern = Pattern.compile("(.*)(cwlVersion)(.*)(:)(.*)");
-        Pattern stepsPattern = Pattern.compile("(.*)(steps)(.*)(:)(.*)");
+        Pattern commandPattern = Pattern.compile("(.*)(baseCommand)(.*)");
+        Pattern versionPattern = Pattern.compile("(.*)(cwlVersion)(.*)");
+        Pattern stepsPattern = Pattern.compile("(.*)(steps)(.*)");
         String missing = "Required fields that are missing from CWL file :";
         boolean inputFound = false, classWfFound = false, classToolFound = false, outputFound = false,
                 commandFound = false, versionFound = false, stepsFound = false;
@@ -611,6 +611,9 @@ public abstract class AbstractEntryClient {
                 }
                 if(!classToolFound && !classWfFound) {
                     missing += " 'class'";
+                }
+                if(classToolFound && !commandFound){
+                    missing += " 'baseCommand'";
                 }
                 errorMessage(missing, CLIENT_ERROR);
             }
