@@ -16,18 +16,20 @@
 
 package io.dockstore.webservice.helpers;
 
+import com.esotericsoftware.yamlbeans.YamlException;
 import com.esotericsoftware.yamlbeans.YamlReader;
 import com.google.common.base.Optional;
 import io.dockstore.client.Bridge;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import wdl4s.parser.WdlParser;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -114,9 +116,9 @@ public abstract class SourceCodeRepoInterface {
                 // tool.setHasCollab(true);
                 tool.setValidTrigger(true);
                 LOG.info("Repository has Dockstore.cwl");
-            } catch (IOException ex) {
-                LOG.info("CWL file is malformed");
-                ex.printStackTrace();
+            } catch (YamlException ex){
+                LOG.info("CWL file is malformed " + ex.getCause().toString());
+                throw new CustomWebApplicationException("Could not parse yaml: " + ex.getCause().toString(), HttpStatus.SC_BAD_REQUEST);
             }
         }
         return tool;
