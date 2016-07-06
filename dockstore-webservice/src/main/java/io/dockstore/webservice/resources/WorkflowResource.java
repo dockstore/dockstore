@@ -110,7 +110,7 @@ public class WorkflowResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
 
-    enum workflowType {
+    private enum workflowType {
         DAG, TOOLS
     }
 
