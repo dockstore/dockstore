@@ -844,7 +844,7 @@ public class WorkflowResource {
         for (Map.Entry<String, Seq> entry : callToTask.entrySet()) {
             String taskID = entry.getKey();
             Seq taskDocker = entry.getValue();  //still in form of Seq, need to get first element or head of the list
-            if(type.equals(Type.TOOLS)){
+            if(type == Type.TOOLS){
                 if (taskDocker != null){
                     String dockerName = taskDocker.head().toString();
                     taskContent.put(taskID, new MutablePair<>(dockerName, getURLFromEntry(dockerName)));
@@ -864,9 +864,9 @@ public class WorkflowResource {
         }
 
         //call and return the Json string transformer
-        if(type.equals(Type.TOOLS)){
+        if(type == Type.TOOLS){
             result = getJSONTableToolContentWDL(taskContent);
-        }else if(type.equals(Type.DAG)){
+        }else if(type == Type.DAG){
             result = setupJSONDAG(nodePairs);
         }
 
@@ -939,7 +939,7 @@ public class WorkflowResource {
                             for (Map<String, Object> requirement : requirements) {
                                 if (requirement.get("class").equals("DockerRequirement")) {
                                     defaultDockerEnv = requirement.get("dockerPull").toString();
-                                    if(type.equals(Type.TOOLS)){
+                                    if(type == Type.TOOLS){
                                         //get the docker file and link
                                         dockerPullURL = getURLFromEntry((String)requirement.get("dockerPull"));
                                         //put the tool ID and docker information into two different maps
@@ -957,7 +957,7 @@ public class WorkflowResource {
                     }
 
                     if (defaultDocker) {
-                        if(type.equals(Type.TOOLS)) {
+                        if(type == Type.TOOLS) {
                             // no docker requirement
                             if(defaultDockerEnv.equals("")){
                                 defaultDockerEnv = "Not Specified";
@@ -978,9 +978,9 @@ public class WorkflowResource {
         }
 
         //call and return the Json string transformer
-        if(type.equals(Type.TOOLS)){
+        if(type == Type.TOOLS){
             result = getJSONTableToolContentCWL(toolID, toolDocker);
-        }else if(type.equals(Type.DAG)){
+        }else if(type == Type.DAG){
             result = setupJSONDAG(nodePairs);
         }
         return result;
