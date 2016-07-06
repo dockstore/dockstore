@@ -704,10 +704,10 @@ public class WorkflowResource {
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
         String result = null;
-        String descFileContent = mainDescriptor.getContent();
-        Map<String, String> secondaryDescContent = new HashMap<>();
 
         if(mainDescriptor != null) {
+            String descFileContent = mainDescriptor.getContent();
+            Map<String, String> secondaryDescContent = new HashMap<>();
             File tmpDir = Files.createTempDir();
             File tempMainDescriptor = null;
 
@@ -844,15 +844,16 @@ public class WorkflowResource {
         for (Map.Entry<String, Seq> entry : callToTask.entrySet()) {
             String taskID = entry.getKey();
             Seq taskDocker = entry.getValue();  //still in form of Seq, need to get first element or head of the list
-            String dockerName = taskDocker.head().toString();
             if(type.equals(Type.TOOLS)){
-                if (entry.getValue() != null){
+                if (taskDocker != null){
+                    String dockerName = taskDocker.head().toString();
                     taskContent.put(taskID, new MutablePair<>(dockerName, getURLFromEntry(dockerName)));
                 } else{
                     taskContent.put(taskID, new MutablePair<>("Not Specified", "Not Specified"));
                 }
             }else{
-                if (entry.getValue() != null){
+                if (taskDocker != null){
+                    String dockerName = taskDocker.head().toString();
                     nodePairs.add(new MutablePair<>(taskID, getURLFromEntry(dockerName)));
                 } else{
                     nodePairs.add(new MutablePair<>(taskID, ""));
@@ -918,10 +919,17 @@ public class WorkflowResource {
                     }
 
                     //get the tool file based on "run" command
-                    String secondaryDescriptor = secondaryDescContent.get(fileName); //get the file content
-                    InputStream secondaryIS = IOUtils.toInputStream(secondaryDescriptor); //convert to InputStream
+
+                    String secondaryDescriptor; //get the file content
+                    InputStream secondaryIS; //convert to InputStream
                     Yaml helperYaml = new Yaml();
-                    Map<String, Object> helperGroups = (Map<String, Object>) helperYaml.load(secondaryIS);
+                    Map<String, Object> helperGroups = new HashMap<>();
+                    if(secondaryDescContent.size() != 0){
+                        secondaryDescriptor = secondaryDescContent.get(fileName); //get the file content
+                        secondaryIS = IOUtils.toInputStream(secondaryDescriptor); //convert to InputStream
+                        helperGroups = (Map<String, Object>) helperYaml.load(secondaryIS);
+                    }
+
                     boolean defaultDocker = true;
 
                     for (String helperGroup : helperGroups.keySet()) {
