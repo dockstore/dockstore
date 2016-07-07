@@ -46,9 +46,9 @@ import java.util.concurrent.TimeoutException;
 import static io.dockstore.common.CommonTestUtilities.clearStateMakePrivate2;
 
 /**
- * Created by jpatricia on 24/06/16.
+ * Created by jpatricia on 04/07/16.
  */
-public class DAGWorkflowTestIT {
+public class ToolsWorkflowTestIT {
 
     @ClassRule
     public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
@@ -92,102 +92,120 @@ public class DAGWorkflowTestIT {
 
         //getting the dag json string
         final String basePath = WorkflowET.getWebClient().getBasePath();
-        URL url = new URL(basePath + "/workflows/" +githubWorkflow.getId()+"/dag/" + master.get().getId() );
+        URL url = new URL(basePath + "/workflows/" +githubWorkflow.getId()+"/tools/" + master.get().getId() );
         List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
 
         return strings;
     }
 
-    private int countNodeInJSON(List<String> strings){
+    private int countToolInJSON(List<String> strings){
         //count the number of nodes in the DAG json
-        int countNode = 0;
+        int countTool = 0;
         int last = 0;
-        String node = "tool";
+        String tool = "id";
         while(last !=-1){
-            last = strings.get(0).indexOf(node,last);
+            last = strings.get(0).indexOf(tool,last);
 
             if(last !=-1){
-                countNode++;
-                last += node.length();
+                countTool++;
+                last += tool.length();
             }
         }
 
-        return countNode;
+        return countTool;
     }
 
 
     @Test
-    public void testWorkflowDAGCWL() throws IOException, TimeoutException, ApiException {
+    public void testWorkflowToolCWL() throws IOException, TimeoutException, ApiException {
         // Input: 1st-workflow.cwl
         // Repo: test_workflow_cwl
         // Branch: master
         // Test: normal cwl workflow DAG
-        // Return: JSON with 2 nodes and an edge connecting it (nodes:{{untar},{compile}}, edges:{untar->compile})
+        // Return: JSON string with two tools, only one tool has a docker requirement
 
         final List<String> strings = getJSON("DockstoreTestUser2/test_workflow_cwl", "/1st-workflow.cwl", "cwl", "master");
-        int countNode = countNodeInJSON(strings);
+        int countNode = countToolInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have two nodes", countNode, 2);
-        Assert.assertTrue("node data should have untar as tool", strings.get(0).contains("untar"));
-        Assert.assertTrue("node data should have compile as tool", strings.get(0).contains("compile"));
-        Assert.assertTrue("edge should connect untar and compile", strings.get(0).contains("\"source\":\"0\",\"target\":\"1\""));
+        Assert.assertEquals("JSON should have two tools", countNode, 2);
+        Assert.assertTrue("tool should have untar as id", strings.get(0).contains("untar"));
+        Assert.assertTrue("tool should have compile as id", strings.get(0).contains("compile"));
+        Assert.assertTrue("untar docker and link should be blank", strings.get(0).contains("\"id\":\"untar\","+
+                "\"file\":\"tar-param.cwl\","+
+                "\"docker\":\"Not Specified\"," +
+                "\"link\":\"Not Specified\""));
+        Assert.assertTrue("compile docker and link should not be blank", strings.get(0).contains("\"id\":\"compile\"," +
+                "\"file\":\"arguments.cwl\","+
+                "\"docker\":\"java:7\"," +
+                "\"link\":\"https://hub.docker.com/_/java\""));
 
     }
 
     @Test
-    public void testWorkflowDAGWDLSingleNode() throws IOException, TimeoutException, ApiException {
+    public void testWorkflowToolWDLSingleNode() throws IOException, TimeoutException, ApiException {
         // Input: hello.wdl
         // Repo: test_workflow_wdl
         // Branch: master
         // Test: normal wdl workflow DAG, single node
-        // Return: JSON with a node and no edge (nodes:{{hello}},edges:{}
+        // Return: JSON string with one tool with docker requirement
 
         final List<String> strings = getJSON("DockstoreTestUser2/test_workflow_wdl", "/hello.wdl", "wdl", "master");
-        int countNode = countNodeInJSON(strings);
+        int countNode = countToolInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have one node", countNode,1);
-        Assert.assertTrue("node data should have hello as task", strings.get(0).contains("hello"));
-        Assert.assertTrue("should have no edge", strings.get(0).contains("\"edges\":[]"));
+        Assert.assertEquals("JSON should have one tool", countNode,1);
+        Assert.assertTrue("tool should have hello as id", strings.get(0).contains("hello"));
+        Assert.assertTrue("hello docker and link should not be blank", strings.get(0).contains("\"id\":\"hello\","+
+                "\"docker\":\"ubuntu:latest\","+
+                "\"link\":\"https://hub.docker.com/_/ubuntu\""));
+
     }
 
     @Test
-    public void testWorkflowDAGWDLMultipleNodes() throws IOException, TimeoutException, ApiException {
+    public void testWorkflowToolWDLMultipleNodes() throws IOException, TimeoutException, ApiException {
         // Input: hello.wdl
         // Repo: hello-dockstore-workflow
         // Branch: master
         // Test: normal wdl workflow DAG, multiple nodes
-        // Return: JSON with a node and no edge (nodes:{{ps},{cgrep},{wc}},edges:{ps->cgrep, cgrep->wc}
+        // Return: JSON string with three tools and all of them have no docker requirement
 
         final List<String> strings = getJSON("DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "wdl", "testWDL");
-        int countNode = countNodeInJSON(strings);
+        int countNode = countToolInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have three nodes", countNode,3);
-        Assert.assertTrue("node data should have ps as tool", strings.get(0).contains("ps"));
-        Assert.assertTrue("node data should have cgrep as tool", strings.get(0).contains("cgrep"));
-        Assert.assertTrue("node data should have wc as tool", strings.get(0).contains("wc"));
-        Assert.assertTrue("should have no edge", strings.get(0).contains("\"source\":\"0\",\"target\":\"1\""));
-        Assert.assertTrue("should have no edge", strings.get(0).contains("\"source\":\"1\",\"target\":\"2\""));
+        Assert.assertEquals("JSON should have three tools", countNode,3);
+        Assert.assertTrue("tool should have ps as id", strings.get(0).contains("ps"));
+        Assert.assertTrue("tool should have cgrep as id", strings.get(0).contains("cgrep"));
+        Assert.assertTrue("tool should have have wc as id", strings.get(0).contains("wc"));
+        Assert.assertTrue("ps docker and link should be blank", strings.get(0).contains("\"id\":\"ps\","+
+                "\"docker\":\"Not Specified\","+
+                "\"link\":\"Not Specified\""));
+        Assert.assertTrue("cgrep docker and link should be blank", strings.get(0).contains("\"id\":\"cgrep\","+
+                "\"docker\":\"Not Specified\","+
+                "\"link\":\"Not Specified\""));
+        Assert.assertTrue("wc docker and link should be blank", strings.get(0).contains("\"id\":\"wc\","+
+                "\"docker\":\"Not Specified\","+
+                "\"link\":\"Not Specified\""));
+
     }
 
     @Test
-    public void testWorkflowDAGCWLMissingTool() throws IOException, TimeoutException, ApiException {
+    public void testWorkflowToolCWLMissingTool() throws IOException, TimeoutException, ApiException {
         // Input: Dockstore.cwl
         // Repo: hello-dockstore-workflow
         // Branch: testCWL
         // Test: Repo does not have required tool files called by workflow file
-        // Return: JSON not blank, but it will have empty nodes and edges (nodes:{},edges:{})
+        // Return: JSON string blank array
 
         final List<String> strings = getJSON("DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.cwl", "cwl", "testCWL");
 
         //JSON will have node:[] and edges:[]
-        Assert.assertEquals("JSON should not have any data for nodes and edges", strings.size(),1);
+        Assert.assertEquals("JSON should not have any data tools", strings.size(),1);
     }
 
     @Test
-    public void testWorkflowDAGWDLMissingTask() throws IOException, TimeoutException, ApiException {
+    public void testWorkflowToolWDLMissingTask() throws IOException, TimeoutException, ApiException {
         // Input: hello.wdl
         // Repo: test_workflow_wdl
         // Branch: missing_docker
@@ -201,20 +219,28 @@ public class DAGWorkflowTestIT {
     }
 
     @Test
-    public void testDAGImportSyntax() throws IOException, TimeoutException, ApiException {
+    public void testToolImportSyntax() throws IOException, TimeoutException, ApiException {
         // Input: Dockstore.cwl
         // Repo: dockstore-whalesay-imports
         // Branch: master
         // Test: "run: {import:.....}"
-        // Return: DAG with two nodes and an edge connecting it (nodes:{{rev},{sorted}}, edges:{rev->sorted})
+        // Return: JSON string contains the two tools, both have docker requirement
 
         final List<String> strings = getJSON("DockstoreTestUser2/dockstore-whalesay-imports", "/Dockstore.cwl", "cwl", "master");
-        int countNode = countNodeInJSON(strings);
+        int countNode = countToolInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have two nodes", countNode, 2);
-        Assert.assertTrue("node data should have rev as tool", strings.get(0).contains("rev"));
-        Assert.assertTrue("node data should have sorted as tool", strings.get(0).contains("sorted"));
-        Assert.assertTrue("edge should connect rev and sorted", strings.get(0).contains("\"source\":\"0\",\"target\":\"1\""));
+        Assert.assertEquals("JSON should have two tools", countNode, 2);
+        Assert.assertTrue("tool data should have rev as id", strings.get(0).contains("rev"));
+        Assert.assertTrue("tool data should have sorted as id", strings.get(0).contains("sorted"));
+        Assert.assertTrue("untar docker and link should use default docker req from workflow", strings.get(0).contains("\"id\":\"rev\","+
+                "\"file\":\"revtool.cwl\","+
+                "\"docker\":\"debian:8\"," +
+                "\"link\":\"https://hub.docker.com/_/debian\""));
+        Assert.assertTrue("compile docker and link should use default docker req from workflow", strings.get(0).contains("\"id\":\"sorted\"," +
+                "\"file\":\"sorttool.cwl\","+
+                "\"docker\":\"debian:8\"," +
+                "\"link\":\"https://hub.docker.com/_/debian\""));
+
     }
 }
