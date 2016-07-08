@@ -385,6 +385,15 @@ public class WorkflowResource {
         c.updateInfo(workflow);
 
         Workflow result = workflowDAO.findById(workflowId);
+
+        //update the workflow path in all workflowVersions
+        Set<WorkflowVersion> versions = c.getVersions();
+        List<WorkflowVersion> workflowVersions = new ArrayList<>();
+        workflowVersions.addAll(versions);
+        for(WorkflowVersion version : workflowVersions){
+            version.setWorkflowPath(result.getDefaultWorkflowPath());
+        }
+
         Helper.checkEntry(result);
 
         return result;
