@@ -383,21 +383,31 @@ public class WorkflowResource {
         }
 
         c.updateInfo(workflow);
-
         Workflow result = workflowDAO.findById(workflowId);
-
-        //update the workflow path in all workflowVersions
-        Set<WorkflowVersion> versions = c.getVersions();
-        List<WorkflowVersion> workflowVersions = new ArrayList<>();
-        workflowVersions.addAll(versions);
-        for(WorkflowVersion version : workflowVersions){
-            version.setWorkflowPath(result.getDefaultWorkflowPath());
-        }
-
         Helper.checkEntry(result);
 
         return result;
 
+    }
+
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/{workflowId}/resetVersionPaths")
+    @ApiOperation(value = "Change the workflow paths", notes = "Workflow version correspond to each row of the versions table listing all information for a workflow", response = WorkflowVersion.class, responseContainer = "List")
+    public Set<WorkflowVersion> updateWorkflowPath(@ApiParam(hidden = true) @Auth User user,
+                                   @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
+                                   @ApiParam(value = "Workflow with updated information", required = true) Workflow workflow){
+
+        Workflow c = workflowDAO.findById(workflowId);
+
+        //update the workflow path in all workflowVersions
+        Set<WorkflowVersion> versions = c.getVersions();
+        for(WorkflowVersion version : versions){
+            version.setWorkflowPath(workflow.getDefaultWorkflowPath());
+        }
+
+        return versions;
     }
 
     @GET
