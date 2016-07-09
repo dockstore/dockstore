@@ -26,6 +26,8 @@ To install CWL tool:
 
     pip install cwl-runner  cwltool==1.0.20160316150250 schema-salad==1.7.20160316150109 avro==1.7.7
 
+You may need other pip installable tools like `typing`.  This depends on your python environment.
+
 ### Building
 
 If you maven build in the root directory this will build not only the web service but the client tool:
