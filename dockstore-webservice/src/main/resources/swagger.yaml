@@ -1729,9 +1729,7 @@ paths:
       responses:
         200:
           description: successful operation
-          schema:
-            items: {$ref: '#/definitions/WorkflowVersion'}
-            type: array
+          schema: {$ref: '#/definitions/Workflow'}
       summary: Change the workflow paths
       tags: [workflows]
   /workflows/{workflowId}/restub:

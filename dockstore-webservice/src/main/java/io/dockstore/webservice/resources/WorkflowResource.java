@@ -394,7 +394,7 @@ public class WorkflowResource {
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/resetVersionPaths")
-    @ApiOperation(value = "Change the workflow paths", notes = "Workflow version correspond to each row of the versions table listing all information for a workflow", response = WorkflowVersion.class, responseContainer = "List")
+    @ApiOperation(value = "Change the workflow paths", notes = "Workflow version correspond to each row of the versions table listing all information for a workflow", response = Workflow.class)
     public Workflow updateWorkflowPath(@ApiParam(hidden = true) @Auth User user,
                                    @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
                                    @ApiParam(value = "Workflow with updated information", required = true) Workflow workflow){
