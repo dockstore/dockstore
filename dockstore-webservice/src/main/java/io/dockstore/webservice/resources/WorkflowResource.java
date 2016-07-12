@@ -395,11 +395,15 @@ public class WorkflowResource {
     @UnitOfWork
     @Path("/{workflowId}/resetVersionPaths")
     @ApiOperation(value = "Change the workflow paths", notes = "Workflow version correspond to each row of the versions table listing all information for a workflow", response = WorkflowVersion.class, responseContainer = "List")
-    public Set<WorkflowVersion> updateWorkflowPath(@ApiParam(hidden = true) @Auth User user,
+    public Workflow updateWorkflowPath(@ApiParam(hidden = true) @Auth User user,
                                    @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
                                    @ApiParam(value = "Workflow with updated information", required = true) Workflow workflow){
 
         Workflow c = workflowDAO.findById(workflowId);
+
+        //check if the user and the entry is correct
+        Helper.checkEntry(c);
+        Helper.checkUser(user, c);
 
         //update the workflow path in all workflowVersions
         Set<WorkflowVersion> versions = c.getVersions();
@@ -407,7 +411,7 @@ public class WorkflowResource {
             version.setWorkflowPath(workflow.getDefaultWorkflowPath());
         }
 
-        return versions;
+        return c;
     }
 
     @GET
