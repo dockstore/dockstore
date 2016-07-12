@@ -1,10 +1,6 @@
 import psycopg2
 import json
 
-from datetime import timedelta
-from flask import make_response, request, current_app
-from functools import update_wrapper
-
 from flask import Flask
 
 
@@ -16,14 +12,15 @@ def output_container_format():
     conn_string = "host='localhost' dbname='dockstore' user='ulim' password='3233173'"
     conn = psycopg2.connect(conn_string)
     cur = conn.cursor();
-    cur.execute("SELECT name, author, description, registryId FROM gmod_tools")
+    cur.execute("SELECT toolname, author, description, url, id FROM gmod_tools")
     containers_info = cur.fetchall()
     for container_info in containers_info:
         info_dict = {}
         info_dict['name'] = container_info[0]
         info_dict['author'] = container_info[1]
         info_dict['gitUrl'] = "git@github.com:ICGC-TCGA-PanCancer/CGP-Somatic-Docker.git"
-        info_dict['path'] = container_info[3]
+        info_dict['url'] = container_info[3]
+        info_dict['path'] = container_info[4]
         output_container_arr.append(info_dict)
 
     cur.close()
@@ -38,4 +35,4 @@ def after_request(response):
   return response
 
 if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0')
+    app.run(host='0.0.0.0')

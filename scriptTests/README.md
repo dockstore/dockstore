@@ -18,3 +18,11 @@ This work allows users to type in the local database information so as to fetch 
 
 
 ### Run on docker
+#### Get the Repository
+`git clone git@github.com:spacime/dockstore_search_serve.git`
+#### Build Image Based ont Dockerfile
+`sudo docker build -t <name of image> .`
+#### Start the Created Image
+`sudo docker run <name of image>`
+#### Configure the Port
+`sudo docker run -d -p <port of local machine>:<port of image> fetch_data_server`
