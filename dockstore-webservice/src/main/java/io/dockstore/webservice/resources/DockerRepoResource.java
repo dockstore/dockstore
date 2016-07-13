@@ -252,6 +252,10 @@ public class DockerRepoResource {
 
         Tool c = toolDAO.findById(containerId);
 
+        //use helper to check the user and the entry
+        Helper.checkEntry(c);
+        Helper.checkUser(user, c);
+
         //update the workflow path in all workflowVersions
         Set<Tag> tags = c.getTags();
         for(Tag tag : tags){
