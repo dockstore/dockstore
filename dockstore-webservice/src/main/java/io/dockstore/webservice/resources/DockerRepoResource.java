@@ -245,8 +245,8 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/updateTagPaths")
-    @ApiOperation(value = "Change the workflow paths", notes = "Tag correspond to each row of the versions table listing all information for a docker repo tag", response = Tag.class, responseContainer = "List")
-    public Set<Tag> updateTagContainerPath(@ApiParam(hidden = true) @Auth User user,
+    @ApiOperation(value = "Change the workflow paths", notes = "Tag correspond to each row of the versions table listing all information for a docker repo tag",  response = Tool.class)
+    public Tool updateTagContainerPath(@ApiParam(hidden = true) @Auth User user,
                                                @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
                                                @ApiParam(value = "Tool with updated information", required = true) Tool tool){
 
@@ -264,7 +264,7 @@ public class DockerRepoResource {
             tag.setDockerfilePath(tool.getDefaultDockerfilePath());
         }
 
-        return tags;
+        return c;
     }
 
     @GET
