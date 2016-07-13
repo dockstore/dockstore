@@ -41,7 +41,6 @@ import java.util.concurrent.TimeoutException;
 
 import static io.dockstore.common.CommonTestUtilities.clearStateMakePrivate2;
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
-import static org.aspectj.weaver.tools.cache.SimpleCacheFactory.path;
 
 /**
  * This test suite will have tests for the workflow mode of the Dockstore Client.
