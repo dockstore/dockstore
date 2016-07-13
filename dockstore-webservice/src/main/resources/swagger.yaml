@@ -1713,6 +1713,25 @@ paths:
           schema: {$ref: '#/definitions/Workflow'}
       summary: Refresh one particular workflow. Always do a full refresh when targetted
       tags: [workflows]
+  /workflows/{workflowId}/resetVersionPaths:
+    put:
+      description: Workflow version correspond to each row of the versions table listing all information for a workflow
+      operationId: updateWorkflowPath
+      parameters:
+      - {description: Workflow to modify., format: int64, in: path, name: workflowId,
+        required: true, type: integer}
+      - description: Workflow with updated information
+        in: body
+        name: body
+        required: true
+        schema: {$ref: '#/definitions/Workflow'}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema: {$ref: '#/definitions/Workflow'}
+      summary: Change the workflow paths
+      tags: [workflows]
   /workflows/{workflowId}/restub:
     get:
       description: Restubs a full, unpublished workflow.
@@ -1760,6 +1779,22 @@ paths:
             items: {$ref: '#/definitions/SourceFile'}
             type: array
       summary: Get the corresponding Dockstore.wdl file on Github.
+      tags: [workflows]
+  /workflows/{workflowId}/tools/{workflowVersionId}:
+    get:
+      description: ''
+      operationId: getTableToolContent
+      parameters:
+      - {description: workflowId, format: int64, in: path, name: workflowId, required: true,
+        type: integer}
+      - {description: workflowVersionId, format: int64, in: path, name: workflowVersionId,
+        required: true, type: integer}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema: {type: string}
+      summary: Get the Tools for a given workflow version
       tags: [workflows]
   /workflows/{workflowId}/users:
     get:
