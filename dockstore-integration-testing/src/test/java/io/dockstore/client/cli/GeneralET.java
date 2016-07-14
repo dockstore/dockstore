@@ -552,7 +552,6 @@ public class GeneralET {
                 toolsApi.refresh(toolTest.getId());
 
                 toolTest.setDefaultCwlPath("/test1.cwl");
-                toolsApi.refresh(toolTest.getId());
                 toolsApi.updateTagContainerPath(toolTest.getId(),toolTest);
                 toolsApi.refresh(toolTest.getId());
 
@@ -593,7 +592,6 @@ public class GeneralET {
                 toolsApi.refresh(toolTest.getId());
 
                 toolTest.setDefaultWdlPath("/test1.wdl");
-                toolsApi.refresh(toolTest.getId());
                 toolsApi.updateTagContainerPath(toolTest.getId(),toolTest);
                 toolsApi.refresh(toolTest.getId());
 
@@ -634,7 +632,6 @@ public class GeneralET {
                 toolsApi.refresh(toolTest.getId());
 
                 toolTest.setDefaultDockerfilePath("/test1/Dockerfile");
-                toolsApi.refresh(toolTest.getId());
                 toolsApi.updateTagContainerPath(toolTest.getId(),toolTest);
                 toolsApi.refresh(toolTest.getId());
 
