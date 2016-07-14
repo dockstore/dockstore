@@ -82,6 +82,13 @@ public class GeneralET {
                 return client;
         }
 
+        /**
+         * This method will create and register a new container for testing
+         * @return DockstoreTool
+         * @throws IOException
+         * @throws TimeoutException
+         * @throws ApiException
+         */
         private DockstoreTool getContainer() {
                 DockstoreTool c = new DockstoreTool();
                 c.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
@@ -114,6 +121,48 @@ public class GeneralET {
                 tag.getSourceFiles().add(fileDockerFile);
                 c.getTags().add(tag);
                 return c;
+        }
+
+       /**
+        * this method will set up the webservice and return the container api
+        * @return ContainersApi
+        * @throws IOException
+        * @throws TimeoutException
+        * @throws ApiException
+        */
+        private ContainersApi setupWebService() throws IOException, TimeoutException, ApiException{
+                // Set up webservice
+                ApiClient client = getWebClient();
+
+                //Set up user api and get the container api
+                UsersApi usersApi = new UsersApi(client);
+                final Long userId = usersApi.getUser().getId();
+                usersApi.refresh(userId);
+                ContainersApi toolsApi = new ContainersApi(client);
+
+                // Make publish request (true)
+                final PublishRequest publishRequest = new PublishRequest();
+                publishRequest.setPublish(true);
+
+                return toolsApi;
+        }
+
+        /**
+         * this method will set up the databse and select data needed
+         * @return cwl/wdl/dockerfile path of the tool's tag in the database
+         * @throws IOException
+         * @throws TimeoutException
+         * @throws ApiException
+         */
+        private String getPathfromDB(String type){
+                // Set up DB
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+                // Select data from DB
+                final Long toolID = testingPostgres.runSelectStatement("select id from tool where name = 'testUpdatePath'", new ScalarHandler<>());
+                final Long tagID = testingPostgres.runSelectStatement("select tagid from tool_tag where toolid = "+toolID, new ScalarHandler<>());
+                final String path = testingPostgres.runSelectStatement("select "+type+" from tag where id = "+tagID, new ScalarHandler<>());
+
+                return path;
         }
 
         /**
@@ -533,35 +582,21 @@ public class GeneralET {
         */
         @Test
         public void testUpdateToolPathCWL() throws IOException, TimeoutException, ApiException {
-                // Set up webservice
-                ApiClient client = getWebClient();
-
-                //Set up user api and get the container api
-                UsersApi usersApi = new UsersApi(client);
-                final Long userId = usersApi.getUser().getId();
-                usersApi.refresh(userId);
-                ContainersApi toolsApi = new ContainersApi(client);
-
-                // Make publish request (true)
-                final PublishRequest publishRequest = new PublishRequest();
-                publishRequest.setPublish(true);
+                //setup webservice and get tool api
+                ContainersApi toolsApi = setupWebService();
 
                 //register tool
                 DockstoreTool c = getContainer();
                 DockstoreTool toolTest = toolsApi.registerManual(c);
                 toolsApi.refresh(toolTest.getId());
 
+                //change the default cwl path and refresh
                 toolTest.setDefaultCwlPath("/test1.cwl");
                 toolsApi.updateTagContainerPath(toolTest.getId(),toolTest);
                 toolsApi.refresh(toolTest.getId());
 
-                // Set up DB
-                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-
-                //check if the workflow versions have the same workflow path or not in the database
-                final Long toolID = testingPostgres.runSelectStatement("select id from tool where name = 'testUpdatePath'", new ScalarHandler<>());
-                final Long tagID = testingPostgres.runSelectStatement("select tagid from tool_tag where toolid = "+toolID, new ScalarHandler<>());
-                final String path = testingPostgres.runSelectStatement("select cwlpath from tag where id = "+tagID, new ScalarHandler<>());
+                //check if the tag's dockerfile path have the same cwl path or not in the database
+                final String path = getPathfromDB("cwlpath");
                 Assert.assertTrue("the cwl path should be changed to /test1.cwl", path.equals("/test1.cwl"));
         }
 
@@ -573,35 +608,22 @@ public class GeneralET {
         */
         @Test
         public void testUpdateToolPathWDL() throws IOException, TimeoutException, ApiException {
-                // Set up webservice
-                ApiClient client = getWebClient();
-
-                //Set up user api and get the container api
-                UsersApi usersApi = new UsersApi(client);
-                final Long userId = usersApi.getUser().getId();
-                usersApi.refresh(userId);
-                ContainersApi toolsApi = new ContainersApi(client);
-
-                // Make publish request (true)
-                final PublishRequest publishRequest = new PublishRequest();
-                publishRequest.setPublish(true);
+                //setup webservice and get tool api
+                ContainersApi toolsApi = setupWebService();
 
                 //register tool
                 DockstoreTool c = getContainer();
                 DockstoreTool toolTest = toolsApi.registerManual(c);
                 toolsApi.refresh(toolTest.getId());
 
+                //change the default wdl path and refresh
                 toolTest.setDefaultWdlPath("/test1.wdl");
                 toolsApi.updateTagContainerPath(toolTest.getId(),toolTest);
                 toolsApi.refresh(toolTest.getId());
 
-                // Set up DB
-                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
 
-                //check if the workflow versions have the same workflow path or not in the database
-                final Long toolID = testingPostgres.runSelectStatement("select id from tool where name = 'testUpdatePath'", new ScalarHandler<>());
-                final Long tagID = testingPostgres.runSelectStatement("select tagid from tool_tag where toolid = "+toolID, new ScalarHandler<>());
-                final String path = testingPostgres.runSelectStatement("select wdlpath from tag where id = "+tagID, new ScalarHandler<>());
+                //check if the tag's wdl path have the same wdl path or not in the database
+                final String path = getPathfromDB("wdlpath");
                 Assert.assertTrue("the cwl path should be changed to /test1.wdl", path.equals("/test1.wdl"));
         }
 
@@ -613,35 +635,21 @@ public class GeneralET {
          */
         @Test
         public void testUpdateToolPathDockerfile() throws IOException, TimeoutException, ApiException {
-                // Set up webservice
-                ApiClient client = getWebClient();
-
-                //Set up user api and get the container api
-                UsersApi usersApi = new UsersApi(client);
-                final Long userId = usersApi.getUser().getId();
-                usersApi.refresh(userId);
-                ContainersApi toolsApi = new ContainersApi(client);
-
-                // Make publish request (true)
-                final PublishRequest publishRequest = new PublishRequest();
-                publishRequest.setPublish(true);
+                //setup webservice and get tool api
+                ContainersApi toolsApi = setupWebService();
 
                 //register tool
                 DockstoreTool c = getContainer();
                 DockstoreTool toolTest = toolsApi.registerManual(c);
                 toolsApi.refresh(toolTest.getId());
 
+                //change the default dockerfile and refresh
                 toolTest.setDefaultDockerfilePath("/test1/Dockerfile");
                 toolsApi.updateTagContainerPath(toolTest.getId(),toolTest);
                 toolsApi.refresh(toolTest.getId());
 
-                // Set up DB
-                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-
-                //check if the workflow versions have the same workflow path or not in the database
-                final Long toolID = testingPostgres.runSelectStatement("select id from tool where name = 'testUpdatePath'", new ScalarHandler<>());
-                final Long tagID = testingPostgres.runSelectStatement("select tagid from tool_tag where toolid = "+toolID, new ScalarHandler<>());
-                final String path = testingPostgres.runSelectStatement("select dockerfilepath from tag where id = "+tagID, new ScalarHandler<>());
+                //check if the tag's dockerfile path have the same dockerfile path or not in the database
+                final String path = getPathfromDB("dockerfilepath");
                 Assert.assertTrue("the cwl path should be changed to /test1/Dockerfile", path.equals("/test1/Dockerfile"));
         }
 
