@@ -21,7 +21,6 @@ jdk:
 install:
 - docker version
 - pip2.7 install --user cwl-runner cwltool==1.0.20160323212343 schema-salad==1.7.20160316203940 avro==1.7.7
-- docker pull commonworkflowlanguage/nodejs-engine
 before_script:
 - psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
 - psql -c "ALTER USER dockstore WITH superuser;" -U postgres
@@ -37,3 +36,11 @@ after_success:
 - mvn -B clean install -DskipITs=false -Pconfidential-tests cobertura:cobertura-integration-test
 - mvn -B coveralls:report
 - mvn -B versioneye:update
+
+notifications:
+  webhooks:
+    urls:
+      - https://webhooks.gitter.im/e/7f1c48703628e3514bb6
+    on_success: change  # options: [always|never|change] default: always
+    on_failure: always  # options: [always|never|change] default: always
+    on_start: never     # options: [always|never|change] default: always
