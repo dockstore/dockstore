@@ -12,6 +12,7 @@ This work allows users to type in the local database information so as to fetch 
 
 #### Fetch data remotely and store in local database
 The file remote-websites contains the list of websites we need to search
+
 `python fetchDataFromDockstore.py -S remote-websites`
 
 #### start the URL API server, for
