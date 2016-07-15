@@ -305,8 +305,21 @@ public class SystemClientIT {
 
         final ToolDockerfile toolDockerfile = toolApi.toolsIdVersionsVersionIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5","master");
         assertTrue(toolDockerfile.getDockerfile().contains("dockerstuff"));
-        final ToolDescriptor cwl = toolApi.toolsIdVersionsVersionIdDescriptorGet("registry.hub.docker.com/seqware/seqware/test5", "master", "CWL");
+        final ToolDescriptor cwl = toolApi.toolsIdVersionsVersionIdTypeDescriptorGet("cwl", "registry.hub.docker.com/seqware/seqware/test5", "master");
         assertTrue(cwl.getDescriptor().contains("cwlstuff"));
+
+        // hit up the plain text versions
+        final String basePath = client.getBasePath();
+        String encodedID = "registry.hub.docker.com%2Fseqware%2Fseqware%2Ftest5";
+        URL url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/"+encodedID+"/versions/master/cwl-plain/descriptor");
+        List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
+        assertTrue(strings.size() == 1 && strings.get(0).equals("cwlstuff"));
+
+        //hit up the relative path version
+        String encodedPath = "%2FDockstore.cwl";
+        url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/"+encodedID+"/versions/master/cwl-plain/descriptor/"+encodedPath);
+        strings = Resources.readLines(url, Charset.forName("UTF-8"));
+        assertTrue(strings.size() == 1 && strings.get(0).equals("cwlstuff"));
     }
 
     // Can't test publish repos that don't exist

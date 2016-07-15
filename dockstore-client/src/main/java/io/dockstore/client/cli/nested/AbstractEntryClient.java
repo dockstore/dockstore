@@ -568,9 +568,9 @@ public abstract class AbstractEntryClient {
                     outputFound = true;
                 } else if(matchCommand.find()){
                     commandFound = true;
-                }else if(matchVersion.find()){
+                } else if(matchVersion.find()){
                     versionFound = true;
-                }else if(matchSteps.find()){
+                } else if(matchSteps.find()){
                     stepsFound = true;
                 } else{
                     if(getEntryType().toLowerCase().equals("workflow") && matchWf.find()){
@@ -595,7 +595,7 @@ public abstract class AbstractEntryClient {
                     out("Warning: 'cwlVersion' field is missing in the CWL file.");
                 }
                 return true;
-            } else if((!inputFound && !outputFound && !classToolFound && !commandFound)|| (!inputFound && !outputFound && !classWfFound)){
+            } else if((!inputFound && !outputFound && !classToolFound && !commandFound) || (!inputFound && !outputFound && !classWfFound)){
                 //not a CWL file, could be WDL or something else
                 return false;
             } else{
@@ -611,6 +611,9 @@ public abstract class AbstractEntryClient {
                 }
                 if(!classToolFound && !classWfFound) {
                     missing += " 'class'";
+                }
+                if(classToolFound && !commandFound){
+                    missing += " 'baseCommand'";
                 }
                 errorMessage(missing, CLIENT_ERROR);
             }

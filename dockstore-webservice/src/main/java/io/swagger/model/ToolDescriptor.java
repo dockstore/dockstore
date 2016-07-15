@@ -30,7 +30,7 @@ import java.util.Objects;
  **/
 
 @ApiModel(description = "A tool descriptor is a metadata document that describes one or more tools.")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-06-14T14:46:23.838Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-05T15:18:23.446Z")
 public class ToolDescriptor   {
   
 
