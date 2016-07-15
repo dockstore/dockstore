@@ -6,57 +6,8 @@ import json
 import getopt
 import io
 
-def main():
-    # set the configuration from command line for database
-    # databaseArg = ''
-    # databaseUserArg = ''
-    # databasePasswordArg = ''
-    #
-    # try:
-    #     opts, args = getopt.getopt(argv, "d:u:p:")
-    # except getopt.GetoptError:
-    #     print 'usage'
-    #     sys.exit(2)
-    #
-    # for opt, arg in opts:
-    #     if opt == '-d':
-    #         databaseArg = arg
-    #     elif opt == '-u':
-    #         databaseUserArg = arg
-    #     elif opt == '-p':
-    #         databasePasswordArg = arg
-
-    # configure and connect database
-    # conn_string = "host='localhost' dbname='" + databaseArg + "' user='" + databaseUserArg + \
-    #               "' password='"+ databasePasswordArg +"'"
-    conn_string = "host='localhost' dbname='dockstore' user='ulim' password='3233173'"
-    conn = psycopg2.connect(conn_string)
-    cur = conn.cursor()
-
-    # Check whether need to create new gmod_tools table
-    cur.execute("SELECT * FROM information_schema.tables WHERE table_name='gmod_tools';")
-    if not bool(cur.rowcount):
-        cur.execute("CREATE TABLE gmod_tools (url varchar PRIMARY KEY, \
-                                              id varchar, \
-                                              organization varchar, \
-                                              toolname varchar, \
-                                              tooltype json, \
-                                              description varchar, \
-                                              author varchar, \
-                                              metaVersion varchar);")
-
-    # check whether need to create new gmod_tools_versions_table
-    cur.execute("SELECT * FROM information_schema.tables WHERE table_name='gmod_tools_versions_table'")
-    if not bool(cur.rowcount):
-        cur.execute("CREATE TABLE gmod_tools_versions_table (name varchar, \
-                                              url varchar PRIMARY KEY, \
-                                              id varchar, \
-                                              image varchar, \
-                                              descriptor json, \
-                                              dockerfile json, \
-                                              metaVersion varchar);")
-
-    request = urllib2.Request('https://www.dockstore.org:8443/api/v1/tools')
+def store_into_database(remote_website, cur):
+    request = urllib2.Request(remote_website)
     response = urllib2.urlopen(request)
     json_data = json.loads(response.read())
 
@@ -124,9 +75,56 @@ def main():
     print "# of tools in final db", len(toolTable)
     print "# of version in final db", len(versionTable)
 
+def main(argv):
+
+    file_name = ""
+    try:
+        opts, args = getopt.getopt(argv, "S:")
+    except getopt.GetoptError:
+        print 'usage'
+        sys.exit(2)
+
+    for opt, arg in opts:
+        if opt == '-S':
+            file_name = arg
+
+    # configure and connect database
+    conn_string = "host='localhost' dbname='dockstore' user='ulim' password='3233173'"
+    conn = psycopg2.connect(conn_string)
+    cur = conn.cursor()
+
+    # Check whether need to create new gmod_tools table
+    cur.execute("SELECT * FROM information_schema.tables WHERE table_name='gmod_tools';")
+    if not bool(cur.rowcount):
+        cur.execute("CREATE TABLE gmod_tools (url varchar PRIMARY KEY, \
+                                              id varchar, \
+                                              organization varchar, \
+                                              toolname varchar, \
+                                              tooltype json, \
+                                              description varchar, \
+                                              author varchar, \
+                                              metaVersion varchar);")
+
+    # check whether need to create new gmod_tools_versions_table
+    cur.execute("SELECT * FROM information_schema.tables WHERE table_name='gmod_tools_versions_table'")
+    if not bool(cur.rowcount):
+        cur.execute("CREATE TABLE gmod_tools_versions_table (name varchar, \
+                                              url varchar PRIMARY KEY, \
+                                              id varchar, \
+                                              image varchar, \
+                                              descriptor json, \
+                                              dockerfile json, \
+                                              metaVersion varchar);")
+
+    websites_list_file = open('remote-websites', 'r')
+    remote_websites = websites_list_file.readlines()
+
+    for remote_website in remote_websites:
+        store_into_database(remote_website.strip(' \t\n\r'), cur)
+
     conn.commit()
     cur.close()
     conn.close()
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])

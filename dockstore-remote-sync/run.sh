@@ -13,5 +13,5 @@ psql -c 'create database dockstore with owner = ulim;' -U postgres
 # psql -c "ALTER USER <username> WITH superuser;" -U postgres
 # psql -c 'create database <dbname> with owner = <username>;' -U postgres
 
-python fetchDataFromDockstore.py
+python fetchDataFromDockstore.py -S remote-websites
 python sever.py

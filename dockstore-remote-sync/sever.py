@@ -18,7 +18,6 @@ def output_container_format():
         info_dict = {}
         info_dict['name'] = container_info[0]
         info_dict['author'] = container_info[1]
-        info_dict['gitUrl'] = "git@github.com:ICGC-TCGA-PanCancer/CGP-Somatic-Docker.git"
         info_dict['url'] = container_info[3]
         info_dict['path'] = container_info[4]
         output_container_arr.append(info_dict)
