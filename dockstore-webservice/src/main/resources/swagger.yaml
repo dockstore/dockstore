@@ -1028,6 +1028,25 @@ paths:
         default: {description: successful operation}
       summary: Delete tag linked to a container
       tags: [containertags]
+  /containers/{containerId}/updateTagPaths:
+    put:
+      description: Tag correspond to each row of the versions table listing all information for a docker repo tag
+      operationId: updateTagContainerPath
+      parameters:
+      - {description: Tool to modify., format: int64, in: path, name: containerId,
+        required: true, type: integer}
+      - description: Tool with updated information
+        in: body
+        name: body
+        required: true
+        schema: {$ref: '#/definitions/DockstoreTool'}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema: {$ref: '#/definitions/DockstoreTool'}
+      summary: Change the workflow paths
+      tags: [containers]
   /containers/{containerId}/users:
     get:
       description: ''

@@ -241,6 +241,32 @@ public class DockerRepoResource {
 
     }
 
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}/updateTagPaths")
+    @ApiOperation(value = "Change the workflow paths", notes = "Tag correspond to each row of the versions table listing all information for a docker repo tag",  response = Tool.class)
+    public Tool updateTagContainerPath(@ApiParam(hidden = true) @Auth User user,
+                                               @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
+                                               @ApiParam(value = "Tool with updated information", required = true) Tool tool){
+
+        Tool c = toolDAO.findById(containerId);
+
+        //use helper to check the user and the entry
+        Helper.checkEntry(c);
+        Helper.checkUser(user, c);
+
+        //update the workflow path in all workflowVersions
+        Set<Tag> tags = c.getTags();
+        for(Tag tag : tags){
+            tag.setCwlPath(tool.getDefaultCwlPath());
+            tag.setWdlPath(tool.getDefaultWdlPath());
+            tag.setDockerfilePath(tool.getDefaultDockerfilePath());
+        }
+
+        return c;
+    }
+
     @GET
     @Timed
     @UnitOfWork
