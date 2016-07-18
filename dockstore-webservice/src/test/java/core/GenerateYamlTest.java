@@ -32,6 +32,7 @@ import org.yaml.snakeyaml.representer.Representer;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -61,10 +62,10 @@ public class GenerateYamlTest {
 
         // try sorting it
         Yaml yaml = new Yaml(new SorterRepresenter());
-        final Object load = yaml.load(FileUtils.readFileToString(destination));
+        final Object load = yaml.load(FileUtils.readFileToString(destination, StandardCharsets.UTF_8));
         // a re-dump might be sorted
         String strDump = yaml.dump(load);
-        FileUtils.write(destination, strDump);
+        FileUtils.write(destination, strDump, StandardCharsets.UTF_8);
     }
 
     private class SorterRepresenter extends Representer{

@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -167,7 +168,7 @@ public class BasicPostgreSQL {
     protected boolean loadDatabaseDump(String sqlDumpFile){
         Statement statement = null;
         try {
-            final String s = FileUtils.readFileToString(new File(sqlDumpFile));
+            final String s = FileUtils.readFileToString(new File(sqlDumpFile), StandardCharsets.UTF_8);
             try(Connection connection = dataSource.getConnection()) {
                 statement = connection.createStatement();
                 statement.execute(s);

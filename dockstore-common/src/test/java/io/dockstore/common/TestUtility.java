@@ -21,6 +21,7 @@ import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 import static io.dockstore.common.CommonTestUtilities.DUMMY_TOKEN_1;
 
@@ -35,8 +36,8 @@ public class TestUtility {
     public static String getConfigFileLocation(boolean correctUser, boolean validPort) throws IOException {
         File tempDir = Files.createTempDir();
         final File tempFile = File.createTempFile("config", "config", tempDir);
-        FileUtils.write(tempFile, "token: " + (correctUser ? DUMMY_TOKEN_1 : "foobar") + "\n");
-        FileUtils.write(tempFile, "server-url: http://localhost:" + (validPort ? "8000" : "9001") + "\n", true);
+        FileUtils.write(tempFile, "token: " + (correctUser ? DUMMY_TOKEN_1 : "foobar") + "\n", StandardCharsets.UTF_8);
+        FileUtils.write(tempFile, "server-url: http://localhost:" + (validPort ? "8000" : "9001") + "\n", StandardCharsets.UTF_8, true);
 
         return tempFile.getAbsolutePath();
     }
