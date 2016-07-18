@@ -428,6 +428,10 @@
                 <version>0.17</version>
                 <exclusions>
                     <exclusion>
+                        <groupId>javax.servlet</groupId>
+                        <artifactId>servlet-api</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>com.google.auth</groupId>
                         <artifactId>google-auth-library</artifactId>
                     </exclusion>

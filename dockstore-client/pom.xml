@@ -44,11 +44,6 @@
             <artifactId>dockstore-launcher</artifactId>
             <version>0.4-beta.4-SNAPSHOT</version>
         </dependency>
-        <dependency>
-            <groupId>io.dockstore</groupId>
-            <artifactId>dockstore-common</artifactId>
-            <version>0.4-beta.4-SNAPSHOT</version>
-        </dependency>
         
         <dependency>
             <groupId>io.dropwizard</groupId>
