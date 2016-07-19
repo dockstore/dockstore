@@ -20,6 +20,7 @@ jdk:
 - oraclejdk8
 install:
 - docker version
+- pip2.7 install --user setuptools==24.0.3
 - pip2.7 install --user cwl-runner cwltool==1.0.20160323212343 schema-salad==1.7.20160316203940 avro==1.7.7
 before_script:
 - psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres

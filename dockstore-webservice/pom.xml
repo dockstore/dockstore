@@ -23,7 +23,7 @@
     <packaging>jar</packaging>
 
     <properties>
-        <jetty-servlet.version>9.2.13.v20150730</jetty-servlet.version>
+        <jetty-servlet.version>9.2.17.v20160517</jetty-servlet.version>
     </properties>
     
     <parent>
