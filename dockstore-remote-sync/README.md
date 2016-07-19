@@ -20,6 +20,7 @@ The file remote-websites contains the list of websites we need to search
 
 
 ### Run on docker
+In order to reduce the configuration, we can start our server on a docker container.
 #### Get the Repository
 `git clone git@github.com:spacime/dockstore_search_serve.git`
 #### Build Image Based on Dockerfile
