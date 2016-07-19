@@ -341,7 +341,7 @@ public class LauncherCWL {
                 newJSON.put(paramName, newRecord);
 
                 // TODO: fill in for all possible types
-            } else if (currentParam instanceof Integer || currentParam instanceof Float || currentParam instanceof Boolean || currentParam instanceof String) {
+            } else if (currentParam instanceof Integer || currentParam instanceof Double || currentParam instanceof Float || currentParam instanceof Boolean || currentParam instanceof String) {
                 newJSON.put(paramName, currentParam);
             } else if (currentParam instanceof List) {
                 // this code kinda assumes that if a list exists, its a list of files which is not correct
