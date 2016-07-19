@@ -873,7 +873,7 @@ public abstract class AbstractEntryClient {
                 for (JsonElement element : asJsonArray) {
                     final String finalString = gson.toJson(element);
                     final File tempJson = File.createTempFile("parameter", ".json", Files.createTempDir());
-                    FileUtils.write(tempJson, finalString);
+                    FileUtils.write(tempJson, finalString, StandardCharsets.UTF_8);
                     final LauncherCWL cwlLauncher = new LauncherCWL(getConfigFile(), tempCWL.getAbsolutePath(), tempJson.getAbsolutePath());
                     if (this instanceof WorkflowClient) {
                         cwlLauncher.run(Workflow.class);
@@ -921,7 +921,7 @@ public abstract class AbstractEntryClient {
                     final String finalString = gson.toJson(json);
 
                     // write it out
-                    FileUtils.write(tempJson, finalString);
+                    FileUtils.write(tempJson, finalString, StandardCharsets.UTF_8);
 
                     // final String stringMapAsString = gson.toJson(stringMap);
                     // Files.write(stringMapAsString, tempJson, StandardCharsets.UTF_8);
@@ -977,7 +977,7 @@ public abstract class AbstractEntryClient {
             // Convert parameter JSON to a map
             WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning(this.getConfigFile());
             Gson gson = new Gson();
-            String jsonString = FileUtils.readFileToString(parameterFile);
+            String jsonString = FileUtils.readFileToString(parameterFile, StandardCharsets.UTF_8);
             Map<String, Object> inputJson = gson.fromJson(jsonString, HashMap.class);
 
             // Download files and change to local location
@@ -1009,8 +1009,8 @@ public abstract class AbstractEntryClient {
 
             System.out.flush();
             System.err.flush();
-            String stdout = stdoutCapture.toString();
-            String stderr = stderrCapture.toString();
+            String stdout = stdoutCapture.toString(StandardCharsets.UTF_8);
+            String stderr = stderrCapture.toString(StandardCharsets.UTF_8);
 
             System.setOut(savedOut);
             System.setErr(savedErr);
@@ -1057,18 +1057,18 @@ public abstract class AbstractEntryClient {
         File tmp;
         Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"(.*)");
         File file = new File(tempDescriptor.getAbsolutePath());
-        List<String> lines = FileUtils.readLines(file);
+        List<String> lines = FileUtils.readLines(file, StandardCharsets.UTF_8);
         tmp = new File(tempDir + File.separator + "overwrittenImports.wdl");
 
         // Replace relative imports with absolute (to temp dir)
         for (String line : lines) {
             Matcher m = p.matcher(line);
             if (!m.find()) {
-                FileUtils.writeStringToFile(tmp, line + "\n", true);
+                FileUtils.writeStringToFile(tmp, line + "\n", StandardCharsets.UTF_8, true);
             } else {
                 if (!m.group(1).startsWith(File.separator)) {
                     String newImportLine = "import \"" + tempDir + File.separator + m.group(1) + "\"" + m.group(2) + "\n";
-                    FileUtils.writeStringToFile(tmp, newImportLine, true);
+                    FileUtils.writeStringToFile(tmp, newImportLine, StandardCharsets.UTF_8, true);
                 }
             }
         }

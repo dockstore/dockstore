@@ -1,11 +1,12 @@
 #!/usr/bin/env cwl-runner
 class: CommandLineTool
+cwlVersion: v1.0
 inputs:
-  - id: "#infile"
+  infile:
     type: {type: array, items: File}
     inputBinding: {position: 1}
 outputs:
-  - id: "#outfile"
+  outfile:
     type: File
     outputBinding: {glob: "out.txt"}
 baseCommand: [wc, -l]

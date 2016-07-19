@@ -153,7 +153,7 @@ public class FileProvisioning {
             final String endpoint = config.getString(S3_ENDPOINT);
             LOG.info("found custom S3 endpoint, setting to {}", endpoint);
             s3Client.setEndpoint(endpoint);
-            s3Client.setS3ClientOptions(new S3ClientOptions().withPathStyleAccess(true));
+            s3Client.setS3ClientOptions(S3ClientOptions.builder().setPathStyleAccess(true).build());
         }
         return s3Client;
     }
