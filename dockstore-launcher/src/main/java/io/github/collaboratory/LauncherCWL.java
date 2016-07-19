@@ -20,6 +20,7 @@ import com.amazonaws.auth.SignerFactory;
 import com.amazonaws.services.s3.internal.S3Signer;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
 import com.google.gson.Gson;
 import io.cwl.avro.CWL;
 import io.cwl.avro.CommandLineTool;
@@ -121,6 +122,19 @@ public class LauncherCWL {
         gson = CWL.getTypeSafeCWLToolDocument();
     }
 
+    /**
+     * Work around for https://github.com/common-workflow-language/cwltool/issues/87
+     * @param cwlFile
+     * @return
+     */
+    public ImmutablePair<String, String> parseCWL(final String cwlFile) {
+        // update seems to just output the JSON version without checking file links
+        final String[] s = { "cwltool", "--non-strict", "--print-pre", cwlFile };
+        final ImmutablePair<String, String> execute = io.cwl.avro.Utilities
+                .executeCommand(Joiner.on(" ").join(Arrays.asList(s)), false,  Optional.absent(), Optional.absent());
+        return execute;
+    }
+
     public void run(Class cwlClassTarget){
         // now read in the INI file
         try {
@@ -130,8 +144,8 @@ public class LauncherCWL {
         }
 
         // parse the CWL tool definition without validation
-        CWL cwlUtil = new CWL();
-        final String imageDescriptorContent = cwlUtil.parseCWL(imageDescriptorPath, false).getLeft();
+        // final String imageDescriptorContent = cwlUtil.parseCWL(imageDescriptorPath, false).getLeft();
+        final String imageDescriptorContent = this.parseCWL(imageDescriptorPath).getLeft();
         final Object cwlObject = gson.fromJson(imageDescriptorContent, cwlClassTarget);
 
         if (cwlObject == null) {
@@ -201,13 +215,8 @@ public class LauncherCWL {
 
         // for each file input from the CWL
         for (CommandOutputParameter file : outputs) {
-
-            // pull back the name of the input from the CWL
             LOG.info(file.toString());
-            String cwlID = file.getId().toString().substring(1);
-            LOG.info("ID: {}", cwlID);
-
-            prepUploadsHelper(inputsOutputs, fileMap, cwlID);
+            handleParameter(inputsOutputs, fileMap, file.getId().toString());
         }
         return fileMap;
     }
@@ -222,15 +231,19 @@ public class LauncherCWL {
 
         // for each file input from the CWL
         for (WorkflowOutputParameter file : outputs) {
-
-            // pull back the name of the input from the CWL
             LOG.info(file.toString());
-            String cwlID = file.getId().toString().substring(1);
-            LOG.info("ID: {}", cwlID);
-
-            prepUploadsHelper(inputsOutputs, fileMap, cwlID);
+            handleParameter(inputsOutputs, fileMap, file.getId().toString());
         }
         return fileMap;
+    }
+
+    private void handleParameter(Map<String, Object> inputsOutputs, Map<String, List<FileProvisioning.FileInfo>> fileMap,
+            String fileIdString) {
+        // pull back the name of the input from the CWL
+        String cwlID = fileIdString.contains("#") ? fileIdString.split("#")[1] : fileIdString;
+        LOG.info("ID: {}", cwlID);
+
+        prepUploadsHelper(inputsOutputs, fileMap, cwlID);
     }
 
     private void prepUploadsHelper(Map<String, Object> inputsOutputs, Map<String, List<FileProvisioning.FileInfo>> fileMap, String cwlID) {
@@ -328,7 +341,7 @@ public class LauncherCWL {
                 newJSON.put(paramName, newRecord);
 
                 // TODO: fill in for all possible types
-            } else if (currentParam instanceof Integer || currentParam instanceof Float || currentParam instanceof Boolean || currentParam instanceof String) {
+            } else if (currentParam instanceof Integer || currentParam instanceof Double || currentParam instanceof Float || currentParam instanceof Boolean || currentParam instanceof String) {
                 newJSON.put(paramName, currentParam);
             } else if (currentParam instanceof List) {
                 // this code kinda assumes that if a list exists, its a list of files which is not correct
@@ -409,7 +422,7 @@ public class LauncherCWL {
     }
 
     private Map<String, Object> runCWLCommand(String cwlFile, String jsonSettings, String outputDir, String workingDir) {
-        String[] s = {"cwltool","--non-strict","--enable-net","--outdir", outputDir, "--tmpdir-prefix", workingDir, cwlFile, jsonSettings};
+        String[] s = {"cwltool","--enable-dev","--non-strict","--enable-net","--outdir", outputDir, "--tmpdir-prefix", workingDir, cwlFile, jsonSettings};
         final String joined = Joiner.on(" ").join(Arrays.asList(s));
         System.out.println("Executing: " + joined);
         final ImmutablePair<String, String> execute = Utilities.executeCommand(joined);
@@ -510,6 +523,10 @@ public class LauncherCWL {
             String cwlInputFileID = getId.invoke(file).toString();
             // trim quotes or starting '#' if necessary
             cwlInputFileID = CharMatcher.is('#').trimLeadingFrom(cwlInputFileID);
+            // split on # if needed
+            cwlInputFileID = cwlInputFileID.contains("#") ? cwlInputFileID.split("#")[1] : cwlInputFileID;
+            // remove extra namespace if needed
+            cwlInputFileID = cwlInputFileID.contains("/") ? cwlInputFileID.split("/")[1] : cwlInputFileID;
             LOG.info("ID: {}", cwlInputFileID);
             pullFilesHelper(inputsOutputs, fileMap, cwlInputFileID);
         }

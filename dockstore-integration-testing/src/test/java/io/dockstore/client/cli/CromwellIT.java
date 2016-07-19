@@ -30,6 +30,7 @@ import scala.collection.immutable.List;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -73,7 +74,7 @@ public class CromwellIT {
         Gson gson = new Gson();
         String jsonString = null;
         try {
-            jsonString = FileUtils.readFileToString(parameterFile);
+            jsonString = FileUtils.readFileToString(parameterFile, StandardCharsets.UTF_8);
             Map<String, Object> inputJson = gson.fromJson(jsonString, HashMap.class);
 
             Map<String,Object> fileMap = wdlFileProvisioning.pullFiles(inputJson, wdlInputs);

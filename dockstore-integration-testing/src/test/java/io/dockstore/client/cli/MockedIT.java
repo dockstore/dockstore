@@ -42,6 +42,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 import static io.dockstore.common.CommonTestUtilities.clearState;
 import static org.mockito.Matchers.anyObject;
@@ -84,7 +85,7 @@ public class MockedIT {
 
         // mock return of a simple CWL file
         File sourceFile = new File(ResourceHelpers.resourceFilePath("dockstore-tool-linux-sort.cwl"));
-        final String sourceFileContents = FileUtils.readFileToString(sourceFile);
+        final String sourceFileContents = FileUtils.readFileToString(sourceFile, StandardCharsets.UTF_8);
         SourceFile file = mock(SourceFile.class);
         when(file.getContent()).thenReturn(sourceFileContents);
         doReturn(file).when(toolClient).getDescriptorFromServer("quay.io/collaboratory/dockstore-tool-linux-sort", "cwl");
@@ -92,7 +93,7 @@ public class MockedIT {
 
         // mock return of a more complicated CWL file
         File sourceFileArrays = new File(ResourceHelpers.resourceFilePath("arrays.cwl"));
-        final String sourceFileArraysContents = FileUtils.readFileToString(sourceFileArrays);
+        final String sourceFileArraysContents = FileUtils.readFileToString(sourceFileArrays, StandardCharsets.UTF_8);
         SourceFile file2 = mock(SourceFile.class);
         when(file2.getContent()).thenReturn(sourceFileArraysContents);
         doReturn(file2).when(toolClient).getDescriptorFromServer("quay.io/collaboratory/arrays", "cwl");

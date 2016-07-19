@@ -915,7 +915,7 @@ public class WorkflowResource {
         ArrayList<Pair<String, String>> nodePairs = new ArrayList<>();
         String result = null;
 
-        InputStream is = IOUtils.toInputStream(content);
+        InputStream is = IOUtils.toInputStream(content, StandardCharsets.UTF_8);
         sections = (Map<String, Object>) yaml.load(is);
         for (String section : sections.keySet()) {
             if (section.equals("requirements") || section.equals("hints")) {
@@ -949,7 +949,7 @@ public class WorkflowResource {
                     Map<String, Object> helperGroups = new HashMap<>();
                     if(secondaryDescContent.size() != 0){
                         secondaryDescriptor = secondaryDescContent.get(fileName); //get the file content
-                        secondaryIS = IOUtils.toInputStream(secondaryDescriptor); //convert to InputStream
+                        secondaryIS = IOUtils.toInputStream(secondaryDescriptor, StandardCharsets.UTF_8); //convert to InputStream
                         helperGroups = (Map<String, Object>) helperYaml.load(secondaryIS);
                     }
 
