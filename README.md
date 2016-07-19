@@ -24,9 +24,9 @@ Other notable dependencies to note are:
 
 To install CWL tool:
 
-    pip install cwl-runner  cwltool==1.0.20160316150250 schema-salad==1.7.20160316150109 avro==1.7.7
+    pip install --user cwl-runner cwltool==1.0.20160712154127 schema-salad==1.14.20160708181155 avro==1.8.1
 
-You may need other pip installable tools like `typing`.  This depends on your python environment.
+You may need other pip installable tools like `typing` or 'setuptools'.  This depends on your python environment.
 
 ### Building
 
