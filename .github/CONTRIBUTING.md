@@ -18,6 +18,6 @@
 
 * Suggest your change in the [gitter forum](https://gitter.im/ga4gh/dockstore) and start writing code.
 
-#### **Do you want to contribute to the Rails documentation?**
+#### **Do you want to contribute to the Dockstore documentation?**
 
 * Most of our documentation is associated with the UI. https://github.com/ga4gh/dockstore-ui/tree/develop/app/docs
