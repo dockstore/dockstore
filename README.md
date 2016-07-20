@@ -10,23 +10,30 @@ This repo is the web service for the Dockstore. The usage of this is to enumerat
 
 For the related web UI see the [dockstore-ui](https://github.com/ga4gh/dockstore-ui) project.
 
-## Usage
+## For Dockstore Users
 
-### Dependencies
+The following section is useful for users of Dockstore (e.g. those that want to browse, register, and launch tools). 
 
-The dependency environment for Dockstore is described by our [Travis-CI config](https://github.com/ga4gh/dockstore/blob/develop/.travis.yml). Specifically, note the setup instructions for postgres. Specifically, you will need to have postgres installed and setup with the database user specified in .travis.yml. 
+After registering at https://dockstore.org , you will be able to download the Dockstore CLI at https://dockstore.org/onboarding
 
-Other notable dependencies to note are:  
+The CLI has the following dependencies
 
 * Java (1.8.0\_66 or similar)
-* Maven (3.3.9)
 * cwltool (to run CWL workflows locally)
 
 To install CWL tool:
 
     pip install --user cwl-runner cwltool==1.0.20160712154127 schema-salad==1.14.20160708181155 avro==1.8.1
 
-You may need other pip installable tools like `typing` or 'setuptools'.  This depends on your python environment.
+You may need other pip installable tools like `typing` or `setuptools`.  This depends on your python environment.
+
+## For Dockstore Developers
+
+The following section is useful for Dockstore developers (e.g. those that want to improve or fix the Dockstore web service and UI)
+
+### Dependencies
+
+The dependency environment for Dockstore is described by our [Travis-CI config](https://github.com/ga4gh/dockstore/blob/develop/.travis.yml). In addition to the dependencies for Dockstore users, note the setup instructions for postgres. Specifically, you will need to have postgres installed and setup with the database user specified in .travis.yml. 
 
 ### Building
 
@@ -243,11 +250,3 @@ Probably the best way to run this since it includes a bundled postgres.  Keep in
 You can also run with defaults using
 
 1. `docker run -P -ti --rm dockstore`
-
-
-## TODO
-
-1. items from Brian
-   2. you need better directions for filling in the yml settings file
-1. you need to document the config file
-1. you need to document the release process, how to update the jar the dockstore command line downloads
