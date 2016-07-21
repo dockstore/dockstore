@@ -185,16 +185,6 @@
             <groupId>io.dropwizard</groupId>
             <artifactId>dropwizard-core</artifactId>
             <version>${dropwizard.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>ch.qos.logback</groupId>
-                    <artifactId>logback-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>ch.qos.logback</groupId>
-                    <artifactId>logback-classic</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.dropwizard</groupId>
@@ -481,7 +471,6 @@
             <groupId>com.fasterxml.jackson.jaxrs</groupId>
             <artifactId>jackson-jaxrs-json-provider</artifactId>
         </dependency>
-
     </dependencies>
 
 
@@ -602,7 +591,6 @@
                                 <usedDependency>io.dropwizard:dropwizard-views-freemarker</usedDependency>
                                 <usedDependency>org.apache.commons:commons-lang3</usedDependency>
                             </usedDependencies>
-
                         </configuration>
                     </execution>
                 </executions>
