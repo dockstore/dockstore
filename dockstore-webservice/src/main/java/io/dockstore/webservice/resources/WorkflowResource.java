@@ -917,10 +917,11 @@ public class WorkflowResource {
 
         InputStream is = IOUtils.toInputStream(content, StandardCharsets.UTF_8);
         sections = (Map<String, Object>) yaml.load(is);
-        for (String section : sections.keySet()) {
+        for (Map.Entry<String, Object> entry : sections.entrySet()) {
+            String section = entry.getKey();
             if (section.equals("requirements") || section.equals("hints")) {
                 //docker requirement of the workflow
-                ArrayList<Map <String, Object>> requirements = (ArrayList<Map <String, Object>>) sections.get(section);
+                ArrayList<Map <String, Object>> requirements = (ArrayList<Map <String, Object>>) entry.getValue();
                 for (Map <String, Object> requirement : requirements) {
                     if (requirement.get("class").equals("DockerRequirement")) {
                         defaultDockerEnv = requirement.get("dockerPull").toString();
@@ -930,7 +931,7 @@ public class WorkflowResource {
 
             if (section.equals("steps")) {
                 // try to see each tool through "steps" command
-                ArrayList<Map <String, Object>> steps = (ArrayList<Map <String, Object>>) sections.get(section);
+                ArrayList<Map <String, Object>> steps = (ArrayList<Map <String, Object>>) entry.getValue();
                 for (Map <String, Object> step : steps) {
                     Object file = step.get("run");
                     String fileName;
@@ -955,10 +956,11 @@ public class WorkflowResource {
 
                     boolean defaultDocker = true;
 
-                    for (String helperGroup : helperGroups.keySet()) {
+                    for (Map.Entry<String, Object> helperGroupEntry : helperGroups.entrySet()) {
+                        String helperGroup = helperGroupEntry.getKey();
                         // find the docker requirement inside the tool file
                         if (helperGroup.equals("requirements") || helperGroup.equals("hints")) {
-                            ArrayList<Map<String, Object>> requirements = (ArrayList<Map<String, Object>>) helperGroups.get(helperGroup);
+                            ArrayList<Map<String, Object>> requirements = (ArrayList<Map<String, Object>>) helperGroupEntry.getValue();
                             for (Map<String, Object> requirement : requirements) {
                                 if (requirement.get("class").equals("DockerRequirement")) {
                                     defaultDockerEnv = requirement.get("dockerPull").toString();
@@ -1015,7 +1017,7 @@ public class WorkflowResource {
      * @param dockerEntry has the docker name
      * @return URL
      */
-    public String getURLFromEntry(String dockerEntry) {
+    private String getURLFromEntry(String dockerEntry) {
         // For now ignore tag, later on it may be more useful
         String quayIOPath = "https://quay.io/repository/";
         String dockerHubPathR = "https://hub.docker.com/r/"; // For type repo/subrepo:tag
@@ -1062,7 +1064,7 @@ public class WorkflowResource {
      * @param nodePairs has the list of nodes and its content
      * @return String
      */
-    public String setupJSONDAG(ArrayList<Pair<String, String>> nodePairs){
+    private String setupJSONDAG(ArrayList<Pair<String, String>> nodePairs){
         ArrayList<Object> nodes = new ArrayList<>();
         ArrayList<Object> edges = new ArrayList<>();
         Map<String, ArrayList<Object>> dagJson = new LinkedHashMap<>();
@@ -1104,10 +1106,12 @@ public class WorkflowResource {
         ArrayList<Object> tools = new ArrayList<>();
 
         //iterate through each step within workflow file
-        for(String key : toolID.keySet()){
+        for(Map.Entry<String, Pair<String, String>> entry : toolID.entrySet()){
+            String key = entry.getKey();
+            Pair<String, String> value = entry.getValue();
             //get the idName and fileName
-            String toolName = toolID.get(key).getLeft();
-            String fileName = toolID.get(key).getRight();
+            String toolName = value.getLeft();
+            String fileName = value.getRight();
 
             //get the docker requirement
             String dockerPullName = toolDocker.get(key).getLeft();
@@ -1137,9 +1141,11 @@ public class WorkflowResource {
         ArrayList<Object> tasks = new ArrayList<>();
 
         //iterate through each task within workflow file
-        for(String key : taskContent.keySet()){
-            String dockerPull = taskContent.get(key).getLeft();
-            String dockerLink = taskContent.get(key).getRight();
+        for(Map.Entry<String, Pair<String, String>> entry : taskContent.entrySet()){
+            String key = entry.getKey();
+            Pair<String, String> value = entry.getValue();
+            String dockerPull = value.getLeft();
+            String dockerLink = value.getRight();
 
             //put everything into a map, then ArrayList
             Map<String, String> dataTaskEntry = new LinkedHashMap<>();
