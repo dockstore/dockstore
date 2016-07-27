@@ -24,9 +24,9 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.swagger.api.NotFoundException;
 import io.swagger.api.ToolsApiService;
+import io.swagger.model.ToolClass;
 import io.swagger.model.ToolDescriptor;
 import io.swagger.model.ToolDockerfile;
-import io.swagger.model.ToolType;
 import io.swagger.model.ToolVersion;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -235,7 +235,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             return null;
         }
         // TODO: hook this up to a type field in our DB?
-        ToolType type = new ToolType();
+        ToolClass type = new ToolClass();
         type.setName("CommandLineTool");
         type.setId("0");
         type.setDescription("CWL described CommandLineTool");
@@ -247,7 +247,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         tool.setMetaVersion(container.getLastUpdated() != null ? container.getLastUpdated().toString() : "");
         tool.setOrganization(container.getNamespace());
         tool.setToolname(container.getName());
-        tool.setTooltype(type);
+        tool.setToolclass(type);
         tool.setId(newID);
         tool.setUrl(globalId);
         tool.setVerified(false);

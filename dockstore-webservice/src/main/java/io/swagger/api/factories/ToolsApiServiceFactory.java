@@ -19,7 +19,7 @@ package io.swagger.api.factories;
 import io.swagger.api.ToolsApiService;
 import io.swagger.api.impl.ToolsApiServiceImpl;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-06-07T18:19:37.276Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-27T17:44:39.014Z")
 public class ToolsApiServiceFactory {
 
    private final static ToolsApiService service = new ToolsApiServiceImpl();

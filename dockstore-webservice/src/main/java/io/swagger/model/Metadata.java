@@ -29,10 +29,11 @@ import java.util.Objects;
  **/
 
 @ApiModel(description = "Describes this registry to better allow for mirroring and indexing.")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-05T15:18:23.446Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-27T17:44:39.014Z")
 public class Metadata   {
   
   private String version = null;
+  private String apiVersion = null;
   private String country = null;
   private String friendlyName = null;
 
@@ -52,6 +53,24 @@ public class Metadata   {
   }
   public void setVersion(String version) {
     this.version = version;
+  }
+
+  /**
+   * The version of the GA4GH supported by this registry
+   **/
+  public Metadata apiVersion(String apiVersion) {
+    this.apiVersion = apiVersion;
+    return this;
+  }
+
+  
+  @ApiModelProperty(required = true, value = "The version of the GA4GH supported by this registry")
+  @JsonProperty("api-version")
+  public String getApiVersion() {
+    return apiVersion;
+  }
+  public void setApiVersion(String apiVersion) {
+    this.apiVersion = apiVersion;
   }
 
   /**
@@ -101,13 +120,14 @@ public class Metadata   {
     }
     Metadata metadata = (Metadata) o;
     return Objects.equals(version, metadata.version) &&
+        Objects.equals(apiVersion, metadata.apiVersion) &&
         Objects.equals(country, metadata.country) &&
         Objects.equals(friendlyName, metadata.friendlyName);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(version, country, friendlyName);
+    return Objects.hash(version, apiVersion, country, friendlyName);
   }
 
   @Override
@@ -116,6 +136,7 @@ public class Metadata   {
     sb.append("class Metadata {\n");
     
     sb.append("    version: ").append(toIndentedString(version)).append("\n");
+    sb.append("    apiVersion: ").append(toIndentedString(apiVersion)).append("\n");
     sb.append("    country: ").append(toIndentedString(country)).append("\n");
     sb.append("    friendlyName: ").append(toIndentedString(friendlyName)).append("\n");
     sb.append("}");

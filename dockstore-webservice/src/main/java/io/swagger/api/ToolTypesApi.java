@@ -19,7 +19,8 @@ package io.swagger.api;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.api.factories.ToolTypesApiServiceFactory;
-import io.swagger.model.ToolType;
+import io.swagger.client.model.ToolType;
+import io.swagger.model.ToolClass;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -41,7 +42,7 @@ public class ToolTypesApi  {
     @Produces({ "application/json", "text/plain" })
     @io.swagger.annotations.ApiOperation(value = "List all tool types", notes = "This endpoint returns all tool-types available ", response = ToolType.class, responseContainer = "List", tags={ "GA4GH" })
     @io.swagger.annotations.ApiResponses(value = { 
-        @io.swagger.annotations.ApiResponse(code = 200, message = "An array of methods that match the filter.", response = ToolType.class, responseContainer = "List") })
+        @io.swagger.annotations.ApiResponse(code = 200, message = "An array of methods that match the filter.", response = ToolClass.class, responseContainer = "List") })
     public Response toolTypesGet(
         @Context SecurityContext securityContext)
     throws NotFoundException {

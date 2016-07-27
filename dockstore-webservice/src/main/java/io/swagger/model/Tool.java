@@ -31,14 +31,14 @@ import java.util.Objects;
  **/
 
 @ApiModel(description = "A tool (or described tool) describes one pairing of a tool as described in a descriptor file (which potentially describes multiple tools) and a Docker image.")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-05T15:18:23.446Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-27T17:44:39.014Z")
 public class Tool   {
   
   private String url = null;
   private String id = null;
   private String organization = null;
   private String toolname = null;
-  private ToolType tooltype = null;
+  private ToolClass toolclass = null;
   private String description = null;
   private String author = null;
   private String metaVersion = null;
@@ -121,19 +121,19 @@ public class Tool   {
 
   /**
    **/
-  public Tool tooltype(ToolType tooltype) {
-    this.tooltype = tooltype;
+  public Tool toolclass(ToolClass toolclass) {
+    this.toolclass = toolclass;
     return this;
   }
 
   
   @ApiModelProperty(required = true, value = "")
-  @JsonProperty("tooltype")
-  public ToolType getTooltype() {
-    return tooltype;
+  @JsonProperty("toolclass")
+  public ToolClass getToolclass() {
+    return toolclass;
   }
-  public void setTooltype(ToolType tooltype) {
-    this.tooltype = tooltype;
+  public void setToolclass(ToolClass toolclass) {
+    this.toolclass = toolclass;
   }
 
   /**
@@ -276,7 +276,7 @@ public class Tool   {
         Objects.equals(id, tool.id) &&
         Objects.equals(organization, tool.organization) &&
         Objects.equals(toolname, tool.toolname) &&
-        Objects.equals(tooltype, tool.tooltype) &&
+        Objects.equals(toolclass, tool.toolclass) &&
         Objects.equals(description, tool.description) &&
         Objects.equals(author, tool.author) &&
         Objects.equals(metaVersion, tool.metaVersion) &&
@@ -288,7 +288,7 @@ public class Tool   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(url, id, organization, toolname, tooltype, description, author, metaVersion, contains, verified, verifiedSource, versions);
+    return Objects.hash(url, id, organization, toolname, toolclass, description, author, metaVersion, contains, verified, verifiedSource, versions);
   }
 
   @Override
@@ -300,7 +300,7 @@ public class Tool   {
     sb.append("    id: ").append(toIndentedString(id)).append("\n");
     sb.append("    organization: ").append(toIndentedString(organization)).append("\n");
     sb.append("    toolname: ").append(toIndentedString(toolname)).append("\n");
-    sb.append("    tooltype: ").append(toIndentedString(tooltype)).append("\n");
+    sb.append("    toolclass: ").append(toIndentedString(toolclass)).append("\n");
     sb.append("    description: ").append(toIndentedString(description)).append("\n");
     sb.append("    author: ").append(toIndentedString(author)).append("\n");
     sb.append("    metaVersion: ").append(toIndentedString(metaVersion)).append("\n");

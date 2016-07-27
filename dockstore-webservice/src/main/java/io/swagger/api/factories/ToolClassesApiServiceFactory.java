@@ -14,13 +14,18 @@
  *    limitations under the License.
  */
 
-package io.swagger.api;
+package io.swagger.api.factories;
 
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
+import io.swagger.api.ToolClassesApiService;
+import io.swagger.api.impl.ToolClassesApiServiceImpl;
 
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-27T17:44:39.014Z")
-public abstract class MetadataApiService {
-      public abstract Response metadataGet(SecurityContext securityContext)
-      throws NotFoundException;
+public class ToolClassesApiServiceFactory {
+
+   private final static ToolClassesApiService service = new ToolClassesApiServiceImpl();
+
+   public static ToolClassesApiService getToolClassesApi()
+   {
+      return service;
+   }
 }

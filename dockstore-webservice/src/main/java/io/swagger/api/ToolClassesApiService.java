@@ -20,7 +20,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-27T17:44:39.014Z")
-public abstract class MetadataApiService {
-      public abstract Response metadataGet(SecurityContext securityContext)
+public abstract class ToolClassesApiService {
+      public abstract Response toolClassesGet(SecurityContext securityContext)
       throws NotFoundException;
 }
