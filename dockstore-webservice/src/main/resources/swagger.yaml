@@ -247,14 +247,6 @@ definitions:
           )', type: string}
     required: [dockerfile]
     type: object
-  ToolType:
-    description: Describes a type of tool allowing us to categorize workflows, tools, and maybe even other entities (such as services) separately
-    properties:
-      description: {description: A longer explanation of what this type is and what it can accomplish,
-        type: string}
-      id: {description: The unique identifier for the type, type: string}
-      name: {description: A short friendly name for the type, type: string}
-    type: object
   ToolVersion:
     description: A tool version describes a particular iteration of a tool as described by a reference to a specific image and dockerfile.
     properties:
@@ -383,20 +375,6 @@ paths:
     get:
       description: 'This endpoint returns all tool-classes available   '
       operationId: toolClassesGet
-      parameters: []
-      produces: [application/json, text/plain]
-      responses:
-        200:
-          description: An array of methods that match the filter.
-          schema:
-            items: {$ref: '#/definitions/ToolClass'}
-            type: array
-      summary: List all tool types
-      tags: [GA4GH]
-  /api/v1/tool-types:
-    get:
-      description: 'This endpoint returns all tool-types available '
-      operationId: toolTypesGet
       parameters: []
       produces: [application/json, text/plain]
       responses:
