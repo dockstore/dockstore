@@ -1,6 +1,1 @@
-{
-    "hello_input": {
-        "class": "File",
-        "path": "hello-input.txt"
-    }
-}
+../../../collab-cwl-job.json
