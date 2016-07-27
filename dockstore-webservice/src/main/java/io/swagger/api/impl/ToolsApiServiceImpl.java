@@ -35,7 +35,6 @@ import org.slf4j.LoggerFactory;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
@@ -227,10 +226,10 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             // construct escaped ID
             newID = container.getToolPath();
             String escapedID = URLEncoder.encode(newID, StandardCharsets.UTF_8.displayName());
-            URI uri = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()), "/tools/" + escapedID,
+            URI uri = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()), "/api/v1/tools/",
                     null, null);
-            globalId = uri.toURL().toString();
-        } catch (URISyntaxException | MalformedURLException | UnsupportedEncodingException e) {
+            globalId = uri.toString() + escapedID;
+        } catch (URISyntaxException | UnsupportedEncodingException e) {
             LOG.error("Could not construct URL for our container with id: " + container.getId());
             return null;
         }
