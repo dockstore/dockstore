@@ -22,7 +22,7 @@ definitions:
       default_dockerfile_path: {description: 'This indicates for the associated git
           repository, the default path to the Dockerfile, required: GA4GH', type: string}
       default_wdl_path: {description: 'This indicates for the associated git repository,
-          the default path to the WDL document', readOnly: true, type: string}
+          the default path to the WDL document', type: string}
       description: {description: 'This is a human-readable description of this container
           and what it is trying to accomplish, required GA4GH', type: string}
       email: {description: This is the email of the git organization, type: string}

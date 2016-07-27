@@ -53,7 +53,9 @@ public class EntryVersionHelper<T extends Entry> {
     public List<T> filterContainersForHiddenTags(List<T> entries) {
         for (T entry : entries) {
             dao.evict(entry);
-            // need to have this evict so that hibernate does not actually delete the tags
+            // clear users which are also lazy loaded
+            entry.setUsers(null);
+            // need to have this evict so that hibernate does not actually delete the tags and users
             Set<Version> versions = entry.getVersions();
             versions.removeIf(Version::isHidden);
         }

@@ -71,7 +71,7 @@ public abstract class Entry<S extends Entry, T extends Version> {
     @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty(value = "This indicates the users that have control over this entry, dockstore specific", required = false)
-    private final Set<User> users;
+    private Set<User> users;
 
     @Column
     @ApiModelProperty("This is the email of the git organization")
@@ -137,6 +137,10 @@ public abstract class Entry<S extends Entry, T extends Version> {
 
     public void setLabels(SortedSet<Label> labels) {
         this.labels = labels;
+    }
+
+    public void setUsers(Set<User> users) {
+        this.users = users;
     }
 
     public Set<User> getUsers() {
