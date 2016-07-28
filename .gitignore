@@ -2,6 +2,9 @@
 .idea
 *.class
 *.swp
+
+# Contains SQL statements to initialize testing DB with a confidential user and tokens
+# Contains SQL statements to initialize testing DB with a confidential user, assuming they followed the dockstore setup tutorial
 *.sql
 
 *.gradle
@@ -25,9 +28,6 @@ dockstore-webservice/target/
 dockstore-client/target/
 dockstore-launcher/target/
 dockstore-launcher/foo.json
-swagger-java-client/build.gradle
-swagger-java-client/gradle.properties
-swagger-java-client/settings.gradle
 swagger-java-client/target/
 swagger-java-quay-client/target/
 dockstore-webservice/nbactions.xml
@@ -42,14 +42,12 @@ dockstore-integration-testing/datastore/
 dockstore-integration-testing/src/test/resources/config_file.txt
 dockstore-integration-testing/src/test/resources/config_file2.txt
 
-# Contains SQL statements to initialize testing DB with a confidential user and tokens
-dockstore-integration-testing/src/test/resources/db_confidential_dump.sql
-
-# Contains SQL statements to initialize testing DB with a confidential user, assuming they followed the dockstore setup tutorial
-dockstore-integration-testing/src/test/resources/db_confidential_dump_full.sql
-
 # The dockstore.yml file for running the confidential tests
 dockstore-integration-testing/src/test/resources/dockstoreTest.yml
 
 # The tarball of the above three confidential files
 dockstore-integration-testing/src/test/resources/secrets.tar
+dockstore-client/Cromwell.stderr.txt
+dockstore-client/Cromwell.stdout.txt
+dockstore-client/datastore
+dockstore-client/cromwell-executions

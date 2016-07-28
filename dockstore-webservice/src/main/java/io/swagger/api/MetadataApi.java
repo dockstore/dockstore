@@ -29,9 +29,10 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 
 @Path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/metadata")
+
 @Produces({ "application/json", "text/plain" })
 @io.swagger.annotations.Api(description = "the metadata API")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-05T18:47:03.457Z")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-27T17:44:39.014Z")
 public class MetadataApi  {
    private final MetadataApiService delegate = MetadataApiServiceFactory.getMetadataApi();
 

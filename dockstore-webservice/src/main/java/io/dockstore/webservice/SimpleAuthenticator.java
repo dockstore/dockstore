@@ -16,11 +16,6 @@
 
 package io.dockstore.webservice;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Optional;
-
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -28,6 +23,10 @@ import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.auth.AuthenticationException;
 import io.dropwizard.auth.Authenticator;
 import io.dropwizard.hibernate.UnitOfWork;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Optional;
 
 /**
  *
@@ -51,6 +50,6 @@ public class SimpleAuthenticator implements Authenticator<String, User> {
         if (token != null) {
             return Optional.of(userDAO.findById(token.getUserId()));
         }
-        return Optional.absent();
+        return Optional.empty();
     }
 }

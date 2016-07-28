@@ -121,49 +121,49 @@ public class WDLFileProvisioning {
 
         }
 
-        /**
-         * Creates a new mapping to represent the Input JSON file with updated file paths
-         * @param originalInputJson
-         * @param newInputJson
-         * @return Path to new JSON file
-         */
-        public String createUpdatedInputsJson(Map<String, Object> originalInputJson, Map<String, Object> newInputJson) {
-                JSONObject newJSON = new JSONObject();
-                for (String paramName : originalInputJson.keySet()) {
-                        boolean isNew = false; // is the entry from the newInputJson mapping?
+    /**
+     * Creates a new mapping to represent the Input JSON file with updated file paths
+     *
+     * @param originalInputJson
+     * @param newInputJson
+     * @return Path to new JSON file
+     */
+    public String createUpdatedInputsJson(Map<String, Object> originalInputJson, Map<String, Object> newInputJson) {
+        JSONObject newJSON = new JSONObject();
+        for (Map.Entry<String, Object> entry : originalInputJson.entrySet()) {
+            String paramName = entry.getKey();
+            boolean isNew = false; // is the entry from the newInputJson mapping?
 
-                        // Get value of mapping
-                        final Object currentParam = originalInputJson.get(paramName);
+            // Get value of mapping
+            final Object currentParam = entry.getValue();
 
-                        // Iterate through new input mapping until you find a matching FQN
-                        for (Map.Entry<String, Object> entry : newInputJson.entrySet()) {
-                                if (paramName.equals(entry.getKey())) {
-                                        isNew = true;
-                                        try {
-                                                newJSON.put(entry.getKey(), entry.getValue());
-                                        } catch (JSONException e) {
-                                                e.printStackTrace();
-                                        }
-                                        break;
-                                }
-                        }
-
-                        // If not a file, will just add as is
-                        if (!isNew) {
-                                try {
-                                        newJSON.put(paramName, currentParam);
-                                } catch (JSONException e) {
-                                        e.printStackTrace();
-                                }
-                        }
+            // Iterate through new input mapping until you find a matching FQN
+            for (Map.Entry<String, Object> newEntry : newInputJson.entrySet()) {
+                if (paramName.equals(newEntry.getKey())) {
+                    isNew = true;
+                    try {
+                        newJSON.put(newEntry.getKey(), newEntry.getValue());
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                    break;
                 }
+            }
 
-                // Now make a new file
-
-                final Path path = writeJob(newJSON);
-                return path.toFile().getAbsolutePath();
-
+            // If not a file, will just add as is
+            if (!isNew) {
+                try {
+                    newJSON.put(paramName, currentParam);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
         }
+
+        // Now make a new file
+        final Path path = writeJob(newJSON);
+        return path.toFile().getAbsolutePath();
+    }
 
         /**
          * Writes a given JSON object to new file jobOutputPath

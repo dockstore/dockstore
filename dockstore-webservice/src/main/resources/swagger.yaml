@@ -22,7 +22,7 @@ definitions:
       default_dockerfile_path: {description: 'This indicates for the associated git
           repository, the default path to the Dockerfile, required: GA4GH', type: string}
       default_wdl_path: {description: 'This indicates for the associated git repository,
-          the default path to the WDL document', readOnly: true, type: string}
+          the default path to the WDL document', type: string}
       description: {description: 'This is a human-readable description of this container
           and what it is trying to accomplish, required GA4GH', type: string}
       email: {description: This is the email of the git organization, type: string}
@@ -113,12 +113,14 @@ definitions:
   Metadata:
     description: Describes this registry to better allow for mirroring and indexing.
     properties:
+      api-version: {description: The version of the GA4GH supported by this registry,
+        type: string}
       country: {description: A country code for the registry (ISO 3166-1 alpha-3),
         type: string}
       friendly-name: {description: A friendly name that can be used in addition to the hostname to describe a registry,
         type: string}
       version: {description: The version of this registry, type: string}
-    required: [version]
+    required: [api-version, version]
     type: object
   PublishRequest:
     properties:
@@ -201,8 +203,8 @@ definitions:
       meta-version: {description: 'The version of this tool in the registry. Iterates
           when fields like the description, author, etc. are updated.', type: string}
       organization: {description: The organization that published the image., type: string}
+      toolclass: {$ref: '#/definitions/ToolClass'}
       toolname: {description: The name of the tool., type: string}
-      tooltype: {$ref: '#/definitions/ToolType'}
       url: {description: 'The URL for this tool in this registry, for example `http://agora.broadinstitute.org/tools/123456`',
         type: string}
       verified: {default: false, description: Reports whether this tool has been verified by a specific organization or individual,
@@ -213,7 +215,15 @@ definitions:
         description: A list of versions for this tool
         items: {$ref: '#/definitions/ToolVersion'}
         type: array
-    required: [author, id, meta-version, organization, tooltype, url, versions]
+    required: [author, id, meta-version, organization, toolclass, url, versions]
+    type: object
+  ToolClass:
+    description: Describes a class (type) of tool allowing us to categorize workflows, tools, and maybe even other entities (such as services) separately
+    properties:
+      description: {description: A longer explanation of what this class is and what it can accomplish,
+        type: string}
+      id: {description: The unique identifier for the class, type: string}
+      name: {description: A short friendly name for the class, type: string}
     type: object
   ToolDescriptor:
     description: A tool descriptor is a metadata document that describes one or more tools.
@@ -237,14 +247,6 @@ definitions:
           )', type: string}
     required: [dockerfile]
     type: object
-  ToolType:
-    description: Describes a type of tool allowing us to categorize workflows, tools, and maybe even other entities (such as services) separately
-    properties:
-      description: {description: A longer explanation of what this type is and what it can accomplish,
-        type: string}
-      id: {description: The unique identifier for the type, type: string}
-      name: {description: A short friendly name for the type, type: string}
-    type: object
   ToolVersion:
     description: A tool version describes a particular iteration of a tool as described by a reference to a specific image and dockerfile.
     properties:
@@ -263,7 +265,7 @@ definitions:
         type: boolean}
       verified-source: {description: 'Source of metadata that can support a verified
           tool, such as an email or URL', type: string}
-    required: [descriptor, id, image, meta-version, url]
+    required: [descriptor, id, meta-version, url]
     type: object
   User:
     description: End users for the dockstore
@@ -369,17 +371,17 @@ paths:
           schema: {$ref: '#/definitions/Metadata'}
       summary: Return some metadata that is useful for describing this registry
       tags: [GA4GH]
-  /api/v1/tool-types:
+  /api/v1/tool-classes:
     get:
-      description: 'This endpoint returns all tool-types available '
-      operationId: toolTypesGet
+      description: 'This endpoint returns all tool-classes available   '
+      operationId: toolClassesGet
       parameters: []
       produces: [application/json, text/plain]
       responses:
         200:
           description: An array of methods that match the filter.
           schema:
-            items: {$ref: '#/definitions/ToolType'}
+            items: {$ref: '#/definitions/ToolClass'}
             type: array
       summary: List all tool types
       tags: [GA4GH]

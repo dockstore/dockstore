@@ -201,7 +201,7 @@ public class ClientIT {
         checkCommandForHelp(new String[] { "tool", "label", "--help"});
         checkCommandForHelp(new String[] { "tool", "convert", "--help"});
         checkCommandForHelp(new String[] { "tool", "convert", "cwl2json", "--help"});
-        checkCommandForHelp(new String[] { "tool", "convert", "wd2json", "--help"});
+        checkCommandForHelp(new String[] { "tool", "convert", "wdl2json", "--help"});
         checkCommandForHelp(new String[] { "tool", "convert", "entry2json", "--help"});
         checkCommandForHelp(new String[] { "tool", "convert", "entry2tsv", "--help"});
         checkCommandForHelp(new String[] { "tool", "launch", "--help"});

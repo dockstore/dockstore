@@ -30,7 +30,8 @@ public class MetadataApiServiceImpl extends MetadataApiService {
     throws NotFoundException {
         Metadata metadata = new Metadata();
         metadata.setCountry("CAN");
-        metadata.setFriendlyName("Your friendly neighbourhood docker store");
+        metadata.setApiVersion("1.0.0");
+        metadata.setFriendlyName("Dockstore");
         metadata.setVersion(ToolsApiServiceImpl.class.getPackage().getImplementationVersion());
         return Response.ok(metadata).build();
     }

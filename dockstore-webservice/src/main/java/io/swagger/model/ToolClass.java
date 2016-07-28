@@ -25,27 +25,27 @@ import java.util.Objects;
 
 
 /**
- * Describes a type of tool allowing us to categorize workflows, tools, and maybe even other entities (such as services) separately
+ * Describes a class (type) of tool allowing us to categorize workflows, tools, and maybe even other entities (such as services) separately
  **/
 
-@ApiModel(description = "Describes a type of tool allowing us to categorize workflows, tools, and maybe even other entities (such as services) separately")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-05T15:18:23.446Z")
-public class ToolType   {
+@ApiModel(description = "Describes a class (type) of tool allowing us to categorize workflows, tools, and maybe even other entities (such as services) separately")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-27T17:44:39.014Z")
+public class ToolClass   {
   
   private String id = null;
   private String name = null;
   private String description = null;
 
   /**
-   * The unique identifier for the type
+   * The unique identifier for the class
    **/
-  public ToolType id(String id) {
+  public ToolClass id(String id) {
     this.id = id;
     return this;
   }
 
   
-  @ApiModelProperty(value = "The unique identifier for the type")
+  @ApiModelProperty(value = "The unique identifier for the class")
   @JsonProperty("id")
   public String getId() {
     return id;
@@ -55,15 +55,15 @@ public class ToolType   {
   }
 
   /**
-   * A short friendly name for the type
+   * A short friendly name for the class
    **/
-  public ToolType name(String name) {
+  public ToolClass name(String name) {
     this.name = name;
     return this;
   }
 
   
-  @ApiModelProperty(value = "A short friendly name for the type")
+  @ApiModelProperty(value = "A short friendly name for the class")
   @JsonProperty("name")
   public String getName() {
     return name;
@@ -73,15 +73,15 @@ public class ToolType   {
   }
 
   /**
-   * A longer explanation of what this type is and what it can accomplish
+   * A longer explanation of what this class is and what it can accomplish
    **/
-  public ToolType description(String description) {
+  public ToolClass description(String description) {
     this.description = description;
     return this;
   }
 
   
-  @ApiModelProperty(value = "A longer explanation of what this type is and what it can accomplish")
+  @ApiModelProperty(value = "A longer explanation of what this class is and what it can accomplish")
   @JsonProperty("description")
   public String getDescription() {
     return description;
@@ -99,10 +99,10 @@ public class ToolType   {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    ToolType toolType = (ToolType) o;
-    return Objects.equals(id, toolType.id) &&
-        Objects.equals(name, toolType.name) &&
-        Objects.equals(description, toolType.description);
+    ToolClass toolClass = (ToolClass) o;
+    return Objects.equals(id, toolClass.id) &&
+        Objects.equals(name, toolClass.name) &&
+        Objects.equals(description, toolClass.description);
   }
 
   @Override
@@ -113,7 +113,7 @@ public class ToolType   {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class ToolType {\n");
+    sb.append("class ToolClass {\n");
     
     sb.append("    id: ").append(toIndentedString(id)).append("\n");
     sb.append("    name: ").append(toIndentedString(name)).append("\n");

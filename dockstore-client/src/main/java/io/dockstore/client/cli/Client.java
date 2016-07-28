@@ -160,8 +160,7 @@ public class Client {
         String currentVersion = null;
         File file = new File(installLocation);
         String line = null;
-        try {
-            BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file.toString()), "utf-8"));
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file.toString()), "utf-8"))){
             while ((line = br.readLine()) != null) {
                 if (line.startsWith("DEFAULT_DOCKSTORE_VERSION")) {
                     break;

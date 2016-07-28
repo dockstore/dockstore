@@ -61,7 +61,7 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.views.ViewBundle;
 import io.swagger.api.MetadataApi;
-import io.swagger.api.ToolTypesApi;
+import io.swagger.api.ToolClassesApi;
 import io.swagger.api.ToolsApi;
 import io.swagger.api.impl.ToolsApiServiceImpl;
 import io.swagger.jaxrs.config.BeanConfig;
@@ -235,10 +235,11 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         // attach the container dao statically to avoid too much modification of generated code
         ToolsApiServiceImpl.setToolDAO(toolDAO);
+        ToolsApiServiceImpl.setWorkflowDAO(workflowDAO);
         ToolsApiServiceImpl.setConfig(configuration);
         environment.jersey().register(new ToolsApi());
         environment.jersey().register(new MetadataApi());
-        environment.jersey().register(new ToolTypesApi());
+        environment.jersey().register(new ToolClassesApi());
 
         // extra renderers
         environment.jersey().register(new TextToolDescriptorMessageBodyWriter());

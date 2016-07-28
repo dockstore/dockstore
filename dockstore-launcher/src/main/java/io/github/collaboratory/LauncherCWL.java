@@ -316,9 +316,10 @@ public class LauncherCWL {
 
         JSONObject newJSON = new JSONObject();
 
-        for (String paramName : inputsAndOutputsJson.keySet()) {
+        for (Entry<String, Object> entry : inputsAndOutputsJson.entrySet()) {
+            String paramName = entry.getKey();
 
-            final Object currentParam = inputsAndOutputsJson.get(paramName);
+            final Object currentParam = entry.getValue();
             if (currentParam instanceof Map) {
                 Map<String, Object> param = (Map<String, Object>) currentParam;
                 String path = (String) param.get("path");
@@ -346,9 +347,9 @@ public class LauncherCWL {
             } else if (currentParam instanceof List) {
                 // this code kinda assumes that if a list exists, its a list of files which is not correct
                 List currentParamList = (List)currentParam;
-                for (Object entry : currentParamList) {
-                    if (entry instanceof Map){
-                        Map<String, String> param = (Map<String, String>)entry;
+                for (Object entry2 : currentParamList) {
+                    if (entry2 instanceof Map){
+                        Map<String, String> param = (Map<String, String>)entry2;
                         String path = param.get("path");
                         LOG.info("PATH: {} PARAM_NAME: {}", path, paramName);
                         // will be null for output, only dealing with inputs currently
@@ -465,8 +466,9 @@ public class LauncherCWL {
 
         LOG.info("UPLOADING FILES...");
 
-        for (String key : fileMap.keySet()) {
-            List<FileProvisioning.FileInfo> files = fileMap.get(key);
+        for (Entry<String, List<FileProvisioning.FileInfo>> entry : fileMap.entrySet()) {
+            List<FileProvisioning.FileInfo> files = entry.getValue();
+            String key = entry.getKey();
 
             if ((outputObject.get(key) instanceof List)){
                 List<Map<String, String>> cwltoolOutput = (List)outputObject.get(key);

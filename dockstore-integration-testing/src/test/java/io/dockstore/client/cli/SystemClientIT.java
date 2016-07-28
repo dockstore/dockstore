@@ -244,7 +244,7 @@ public class SystemClientIT {
         ApiClient client = getAdminWebClient();
         GAGHApi toolApi = new GAGHApi(client);
         final Metadata metadata = toolApi.metadataGet();
-        assertTrue(metadata.getFriendlyName().contains("docker"));
+        assertTrue(metadata.getFriendlyName().contains("Dockstore"));
     }
 
     @Test
