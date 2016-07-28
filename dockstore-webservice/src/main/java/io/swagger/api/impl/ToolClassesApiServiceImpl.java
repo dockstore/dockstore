@@ -31,16 +31,24 @@ public class ToolClassesApiServiceImpl extends ToolClassesApiService {
     public Response toolClassesGet(SecurityContext securityContext)
     throws NotFoundException {
         final List<ToolClass> toolTypes = new ArrayList<ToolClass>();
-        ToolClass type1 = new ToolClass();
-        type1.setName("CommandLineTool");
-        type1.setId("0");
-        type1.setDescription("CommandLineTool");
-        toolTypes.add(type1);
+        toolTypes.add(getCommandLineToolClass());
+        toolTypes.add(getWorkflowClass());
+        return Response.ok().entity(toolTypes).build();
+    }
+
+    static ToolClass getWorkflowClass() {
         ToolClass type2 = new ToolClass();
         type2.setName("Workflow");
         type2.setId("1");
         type2.setDescription("Workflow");
-        toolTypes.add(type2);
-        return Response.ok().entity(toolTypes).build();
+        return type2;
+    }
+
+    static ToolClass getCommandLineToolClass() {
+        ToolClass type1 = new ToolClass();
+        type1.setName("CommandLineTool");
+        type1.setId("0");
+        type1.setDescription("CommandLineTool");
+        return type1;
     }
 }

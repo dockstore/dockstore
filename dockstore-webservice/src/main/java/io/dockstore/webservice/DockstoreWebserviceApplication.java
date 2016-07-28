@@ -235,6 +235,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         // attach the container dao statically to avoid too much modification of generated code
         ToolsApiServiceImpl.setToolDAO(toolDAO);
+        ToolsApiServiceImpl.setWorkflowDAO(workflowDAO);
         ToolsApiServiceImpl.setConfig(configuration);
         environment.jersey().register(new ToolsApi());
         environment.jersey().register(new MetadataApi());
