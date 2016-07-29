@@ -13,7 +13,6 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-
 package io.swagger.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,9 +23,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.ext.Provider;
 
-@Provider
-@Produces({MediaType.APPLICATION_JSON})
-public class JacksonJsonProvider extends JacksonJaxbJsonProvider {
+@Provider @Produces({ MediaType.APPLICATION_JSON }) public class JacksonJsonProvider extends JacksonJaxbJsonProvider {
     private static ObjectMapper commonMapper = Json.mapper();
 
     public JacksonJsonProvider() {

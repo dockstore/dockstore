@@ -113,7 +113,7 @@ definitions:
   Metadata:
     description: Describes this registry to better allow for mirroring and indexing.
     properties:
-      api-version: {description: The version of the GA4GH supported by this registry,
+      api-version: {description: The version of the GA4GH tool-registry API supported by this registry,
         type: string}
       country: {description: A country code for the registry (ISO 3166-1 alpha-3),
         type: string}
@@ -359,7 +359,7 @@ info:
   title: Dockstore API
   version: 1.0.2
 paths:
-  /api/v1/metadata:
+  /api/ga4gh/v1/metadata:
     get:
       description: Return some metadata that is useful for describing this registry
       operationId: metadataGet
@@ -371,9 +371,9 @@ paths:
           schema: {$ref: '#/definitions/Metadata'}
       summary: Return some metadata that is useful for describing this registry
       tags: [GA4GH]
-  /api/v1/tool-classes:
+  /api/ga4gh/v1/tool-classes:
     get:
-      description: 'This endpoint returns all tool-classes available   '
+      description: 'This endpoint returns all tool-classes available '
       operationId: toolClassesGet
       parameters: []
       produces: [application/json, text/plain]
@@ -385,7 +385,7 @@ paths:
             type: array
       summary: List all tool types
       tags: [GA4GH]
-  /api/v1/tools:
+  /api/ga4gh/v1/tools:
     get:
       description: 'This endpoint returns all tools available or a filtered subset
         using metadata query parameters. '
@@ -406,16 +406,23 @@ paths:
       - {description: 'The author of the tool (TODO a thought occurs, are we assuming
           that the author of the CWL and the image are the same?).', in: query, name: author,
         required: false, type: string}
+      - {description: 'Start index of paging. Pagination results can be based on numbers
+          or other values chosen by the registry implementor (for example, SHA values).
+          If this exceeds the current result set return an empty set.  If not specified
+          in the request this will start at the beginning of the results.', in: query,
+        name: offset, required: false, type: string}
+      - {description: Amount of records to return in a given page.  By default it is 1000.,
+        format: int32, in: query, name: limit, required: false, type: integer}
       produces: [application/json, text/plain]
       responses:
         200:
-          description: An array of methods that match the filter.
+          description: An array of Tools that match the filter.
           schema:
             items: {$ref: '#/definitions/Tool'}
             type: array
       summary: List all tools
       tags: [GA4GH]
-  /api/v1/tools/{id}:
+  /api/ga4gh/v1/tools/{id}:
     get:
       description: This endpoint returns one specific tool (which has ToolVersions nested inside it)
       operationId: toolsIdGet
@@ -429,7 +436,7 @@ paths:
           schema: {$ref: '#/definitions/Tool'}
       summary: List one specific tool, acts as an anchor for self references
       tags: [GA4GH]
-  /api/v1/tools/{id}/versions:
+  /api/ga4gh/v1/tools/{id}/versions:
     get:
       description: Returns all versions of the specified tool
       operationId: toolsIdVersionsGet
@@ -445,7 +452,7 @@ paths:
             type: array
       summary: List versions of a tool
       tags: [GA4GH]
-  /api/v1/tools/{id}/versions/{version-id}:
+  /api/ga4gh/v1/tools/{id}/versions/{version-id}:
     get:
       description: This endpoint returns one specific tool version
       operationId: toolsIdVersionsVersionIdGet
@@ -461,7 +468,7 @@ paths:
           schema: {$ref: '#/definitions/ToolVersion'}
       summary: List one specific tool version, acts as an anchor for self references
       tags: [GA4GH]
-  /api/v1/tools/{id}/versions/{version-id}/dockerfile:
+  /api/ga4gh/v1/tools/{id}/versions/{version-id}/dockerfile:
     get:
       description: Returns the dockerfile for the specified image.
       operationId: toolsIdVersionsVersionIdDockerfileGet
@@ -481,7 +488,7 @@ paths:
           schema: {$ref: '#/definitions/ToolDockerfile'}
       summary: Get the dockerfile for the specified image.
       tags: [GA4GH]
-  /api/v1/tools/{id}/versions/{version-id}/{type}/descriptor:
+  /api/ga4gh/v1/tools/{id}/versions/{version-id}/{type}/descriptor:
     get:
       description: Returns the CWL or WDL descriptor for the specified tool.
       operationId: toolsIdVersionsVersionIdTypeDescriptorGet
@@ -507,7 +514,7 @@ paths:
           schema: {$ref: '#/definitions/ToolDescriptor'}
       summary: Get the tool descriptor (CWL/WDL) for the specified tool.
       tags: [GA4GH]
-  /api/v1/tools/{id}/versions/{version-id}/{type}/descriptor/{relative-path}:
+  /api/ga4gh/v1/tools/{id}/versions/{version-id}/{type}/descriptor/{relative-path}:
     get:
       description: Returns additional CWL or WDL descriptors for the specified tool in the same or subdirectories
       operationId: toolsIdVersionsVersionIdTypeDescriptorRelativePathGet
