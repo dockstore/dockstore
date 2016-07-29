@@ -16,7 +16,9 @@
 
 package io.swagger.api.impl;
 
+import avro.shaded.com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
+import com.google.common.collect.Lists;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -34,12 +36,15 @@ import io.swagger.model.ToolDescriptor;
 import io.swagger.model.ToolDockerfile;
 import io.swagger.model.ToolVersion;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
@@ -54,6 +59,7 @@ import java.util.Set;
 public class ToolsApiServiceImpl extends ToolsApiService {
 
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiServiceImpl.class);
+    public static final int DEFAULT_PAGE_SIZE = 1000;
 
     private static ToolDAO toolDAO = null;
     private static WorkflowDAO workflowDAO = null;
@@ -93,7 +99,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             }
 
             String escapedID = URLEncoder.encode(newID, StandardCharsets.UTF_8.displayName());
-            URI uri = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()), "/api/v1/tools/", null,
+            URI uri = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()), "/api/ga4gh/v1/tools/", null,
                     null);
             globalId = uri.toString() + escapedID;
         } catch (URISyntaxException | UnsupportedEncodingException e) {
@@ -414,7 +420,57 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             results.add(tool);
         }
 
-        return Response.ok(results).build();
+        if (limit == null){
+            limit = DEFAULT_PAGE_SIZE;
+        }
+        List<List<io.swagger.model.Tool>> pagedResults = Lists.partition(results, limit);
+        int offsetInteger = 0;
+        if (offset != null){
+            offsetInteger = Integer.valueOf(offset);
+        }
+        if (offsetInteger >= pagedResults.size()){
+            results = new ArrayList<>();
+        } else{
+            results = pagedResults.get(offsetInteger);
+        }
+        final Response.ResponseBuilder responseBuilder = Response.ok(results);
+        responseBuilder.header("current-offset", offset);
+        responseBuilder.header("current-limit", limit);
+        // construct links to other pages
+        try {
+            List<String> filters = new ArrayList<>();
+            handleParameter(registryId, "id", filters);
+            handleParameter(organization, "organization", filters);
+            handleParameter(name, "name", filters);
+            handleParameter(toolname, "toolname", filters);
+            handleParameter(description, "description", filters);
+            handleParameter(author, "author", filters);
+            handleParameter(registry, "registry", filters);
+            handleParameter(limit.toString(), "limit", filters);
+
+            if (offsetInteger + 1 < pagedResults.size()) {
+                URI nextPageURI = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()),
+                        "/api/ga4gh/v1/tools", Joiner.on('&').join(filters) + "&offset=" + (offsetInteger + 1), null);
+                responseBuilder.header("next-page",nextPageURI.toURL().toString());
+            }
+            URI lastPageURI = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()), "/api/ga4gh/v1/tools",
+                    Joiner.on('&').join(filters) + "&offset="+(pagedResults.size()-1),
+                    null);
+            responseBuilder.header("last-page",lastPageURI.toURL().toString());
+
+
+        } catch (URISyntaxException | MalformedURLException e) {
+            throw new WebApplicationException("Could not construct page links", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        return responseBuilder.build();
+    }
+
+
+    private void handleParameter(String parameter, String queryName, List<String> filters) {
+        if (parameter != null) {
+            filters.add(queryName + "=" + parameter);
+        }
     }
 
     /**
