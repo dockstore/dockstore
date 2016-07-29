@@ -426,7 +426,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         List<List<io.swagger.model.Tool>> pagedResults = Lists.partition(results, limit);
         int offsetInteger = 0;
         if (offset != null){
-            offsetInteger = Integer.valueOf(offset);
+            offsetInteger = Integer.parseInt(offset);
         }
         if (offsetInteger >= pagedResults.size()){
             results = new ArrayList<>();
