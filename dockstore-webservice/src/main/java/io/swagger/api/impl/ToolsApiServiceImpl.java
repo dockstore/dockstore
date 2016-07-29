@@ -470,10 +470,14 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                 return Response.status(Response.Status.OK).entity(unwrap?dockerfile.getDockerfile():dockerfile).build();
             } else {
                 if (relativePath == null) {
-                    if (type == SourceFile.FileType.DOCKSTORE_WDL || type == SourceFile.FileType.DOCKSTORE_CWL) {
+                    if (type == SourceFile.FileType.DOCKSTORE_WDL && toolVersion.getDescriptor().getType() == ToolDescriptor.TypeEnum.WDL) {
+                        final ToolDescriptor descriptor = toolVersion.getDescriptor();
+                        return Response.status(Response.Status.OK).entity(unwrap?descriptor.getDescriptor():descriptor).build();
+                    } else if (type == SourceFile.FileType.DOCKSTORE_CWL && toolVersion.getDescriptor().getType() == ToolDescriptor.TypeEnum.CWL) {
                         final ToolDescriptor descriptor = toolVersion.getDescriptor();
                         return Response.status(Response.Status.OK).entity(unwrap?descriptor.getDescriptor():descriptor).build();
                     }
+                    return Response.status(Response.Status.NOT_FOUND).build();
                 } else{
                     final Set<SourceFile> sourceFiles = oldFirst.get().getSourceFiles();
                     final Optional<SourceFile> first1 = sourceFiles.stream()
