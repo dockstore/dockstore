@@ -13,26 +13,28 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-
 package io.swagger.api;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-27T17:44:39.014Z")
-public abstract class ToolsApiService {
-      public abstract Response toolsGet(String id,String registry,String organization,String name,String toolname,String description,String author,SecurityContext securityContext)
-      throws NotFoundException;
-      public abstract Response toolsIdGet(String id,SecurityContext securityContext)
-      throws NotFoundException;
-      public abstract Response toolsIdVersionsGet(String id,SecurityContext securityContext)
-      throws NotFoundException;
-      public abstract Response toolsIdVersionsVersionIdDockerfileGet(String id,String versionId,SecurityContext securityContext)
-      throws NotFoundException;
-      public abstract Response toolsIdVersionsVersionIdGet(String id,String versionId,SecurityContext securityContext)
-      throws NotFoundException;
-      public abstract Response toolsIdVersionsVersionIdTypeDescriptorGet(String type,String id,String versionId,SecurityContext securityContext)
-      throws NotFoundException;
-      public abstract Response toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(String type,String id,String versionId,String relativePath,SecurityContext securityContext)
-      throws NotFoundException;
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-29T19:58:43.367Z") public abstract class ToolsApiService {
+    public abstract Response toolsGet(String id, String registry, String organization, String name, String toolname, String description,
+            String author, String offset, Integer limit, SecurityContext securityContext) throws NotFoundException;
+
+    public abstract Response toolsIdGet(String id, SecurityContext securityContext) throws NotFoundException;
+
+    public abstract Response toolsIdVersionsGet(String id, SecurityContext securityContext) throws NotFoundException;
+
+    public abstract Response toolsIdVersionsVersionIdDockerfileGet(String id, String versionId, SecurityContext securityContext)
+            throws NotFoundException;
+
+    public abstract Response toolsIdVersionsVersionIdGet(String id, String versionId, SecurityContext securityContext)
+            throws NotFoundException;
+
+    public abstract Response toolsIdVersionsVersionIdTypeDescriptorGet(String type, String id, String versionId,
+            SecurityContext securityContext) throws NotFoundException;
+
+    public abstract Response toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(String type, String id, String versionId,
+            String relativePath, SecurityContext securityContext) throws NotFoundException;
 }

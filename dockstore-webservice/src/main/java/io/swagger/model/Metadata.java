@@ -13,7 +13,6 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-
 package io.swagger.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -22,136 +21,118 @@ import io.swagger.annotations.ApiModelProperty;
 
 import java.util.Objects;
 
-
-
 /**
  * Describes this registry to better allow for mirroring and indexing.
  **/
 
-@ApiModel(description = "Describes this registry to better allow for mirroring and indexing.")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-27T17:44:39.014Z")
-public class Metadata   {
-  
-  private String version = null;
-  private String apiVersion = null;
-  private String country = null;
-  private String friendlyName = null;
+@ApiModel(description = "Describes this registry to better allow for mirroring and indexing.") @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-29T19:58:43.367Z") public class Metadata {
 
-  /**
-   * The version of this registry
-   **/
-  public Metadata version(String version) {
-    this.version = version;
-    return this;
-  }
+    private String version = null;
+    private String apiVersion = null;
+    private String country = null;
+    private String friendlyName = null;
 
-  
-  @ApiModelProperty(required = true, value = "The version of this registry")
-  @JsonProperty("version")
-  public String getVersion() {
-    return version;
-  }
-  public void setVersion(String version) {
-    this.version = version;
-  }
-
-  /**
-   * The version of the GA4GH supported by this registry
-   **/
-  public Metadata apiVersion(String apiVersion) {
-    this.apiVersion = apiVersion;
-    return this;
-  }
-
-  
-  @ApiModelProperty(required = true, value = "The version of the GA4GH supported by this registry")
-  @JsonProperty("api-version")
-  public String getApiVersion() {
-    return apiVersion;
-  }
-  public void setApiVersion(String apiVersion) {
-    this.apiVersion = apiVersion;
-  }
-
-  /**
-   * A country code for the registry (ISO 3166-1 alpha-3)
-   **/
-  public Metadata country(String country) {
-    this.country = country;
-    return this;
-  }
-
-  
-  @ApiModelProperty(value = "A country code for the registry (ISO 3166-1 alpha-3)")
-  @JsonProperty("country")
-  public String getCountry() {
-    return country;
-  }
-  public void setCountry(String country) {
-    this.country = country;
-  }
-
-  /**
-   * A friendly name that can be used in addition to the hostname to describe a registry
-   **/
-  public Metadata friendlyName(String friendlyName) {
-    this.friendlyName = friendlyName;
-    return this;
-  }
-
-  
-  @ApiModelProperty(value = "A friendly name that can be used in addition to the hostname to describe a registry")
-  @JsonProperty("friendly-name")
-  public String getFriendlyName() {
-    return friendlyName;
-  }
-  public void setFriendlyName(String friendlyName) {
-    this.friendlyName = friendlyName;
-  }
-
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
+    /**
+     * The version of this registry
+     **/
+    public Metadata version(String version) {
+        this.version = version;
+        return this;
     }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
+
+    @ApiModelProperty(required = true, value = "The version of this registry") @JsonProperty("version") public String getVersion() {
+        return version;
     }
-    Metadata metadata = (Metadata) o;
-    return Objects.equals(version, metadata.version) &&
-        Objects.equals(apiVersion, metadata.apiVersion) &&
-        Objects.equals(country, metadata.country) &&
-        Objects.equals(friendlyName, metadata.friendlyName);
-  }
 
-  @Override
-  public int hashCode() {
-    return Objects.hash(version, apiVersion, country, friendlyName);
-  }
-
-  @Override
-  public String toString() {
-    StringBuilder sb = new StringBuilder();
-    sb.append("class Metadata {\n");
-    
-    sb.append("    version: ").append(toIndentedString(version)).append("\n");
-    sb.append("    apiVersion: ").append(toIndentedString(apiVersion)).append("\n");
-    sb.append("    country: ").append(toIndentedString(country)).append("\n");
-    sb.append("    friendlyName: ").append(toIndentedString(friendlyName)).append("\n");
-    sb.append("}");
-    return sb.toString();
-  }
-
-  /**
-   * Convert the given object to string with each line indented by 4 spaces
-   * (except the first line).
-   */
-  private String toIndentedString(Object o) {
-    if (o == null) {
-      return "null";
+    public void setVersion(String version) {
+        this.version = version;
     }
-    return o.toString().replace("\n", "\n    ");
-  }
+
+    /**
+     * The version of the GA4GH tool-registry API supported by this registry
+     **/
+    public Metadata apiVersion(String apiVersion) {
+        this.apiVersion = apiVersion;
+        return this;
+    }
+
+    @ApiModelProperty(required = true, value = "The version of the GA4GH tool-registry API supported by this registry") @JsonProperty("api-version") public String getApiVersion() {
+        return apiVersion;
+    }
+
+    public void setApiVersion(String apiVersion) {
+        this.apiVersion = apiVersion;
+    }
+
+    /**
+     * A country code for the registry (ISO 3166-1 alpha-3)
+     **/
+    public Metadata country(String country) {
+        this.country = country;
+        return this;
+    }
+
+    @ApiModelProperty(value = "A country code for the registry (ISO 3166-1 alpha-3)") @JsonProperty("country") public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
+    }
+
+    /**
+     * A friendly name that can be used in addition to the hostname to describe a registry
+     **/
+    public Metadata friendlyName(String friendlyName) {
+        this.friendlyName = friendlyName;
+        return this;
+    }
+
+    @ApiModelProperty(value = "A friendly name that can be used in addition to the hostname to describe a registry") @JsonProperty("friendly-name") public String getFriendlyName() {
+        return friendlyName;
+    }
+
+    public void setFriendlyName(String friendlyName) {
+        this.friendlyName = friendlyName;
+    }
+
+    @Override public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Metadata metadata = (Metadata) o;
+        return Objects.equals(version, metadata.version) && Objects.equals(apiVersion, metadata.apiVersion) && Objects
+                .equals(country, metadata.country) && Objects.equals(friendlyName, metadata.friendlyName);
+    }
+
+    @Override public int hashCode() {
+        return Objects.hash(version, apiVersion, country, friendlyName);
+    }
+
+    @Override public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("class Metadata {\n");
+
+        sb.append("    version: ").append(toIndentedString(version)).append("\n");
+        sb.append("    apiVersion: ").append(toIndentedString(apiVersion)).append("\n");
+        sb.append("    country: ").append(toIndentedString(country)).append("\n");
+        sb.append("    friendlyName: ").append(toIndentedString(friendlyName)).append("\n");
+        sb.append("}");
+        return sb.toString();
+    }
+
+    /**
+     * Convert the given object to string with each line indented by 4 spaces
+     * (except the first line).
+     */
+    private String toIndentedString(Object o) {
+        if (o == null) {
+            return "null";
+        }
+        return o.toString().replace("\n", "\n    ");
+    }
 }
 

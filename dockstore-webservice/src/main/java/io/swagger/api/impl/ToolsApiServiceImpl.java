@@ -16,7 +16,9 @@
 
 package io.swagger.api.impl;
 
+import avro.shaded.com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
+import com.google.common.collect.Lists;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -34,12 +36,15 @@ import io.swagger.model.ToolDescriptor;
 import io.swagger.model.ToolDockerfile;
 import io.swagger.model.ToolVersion;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
@@ -54,6 +59,7 @@ import java.util.Set;
 public class ToolsApiServiceImpl extends ToolsApiService {
 
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiServiceImpl.class);
+    public static final int DEFAULT_PAGE_SIZE = 1000;
 
     private static ToolDAO toolDAO = null;
     private static WorkflowDAO workflowDAO = null;
@@ -71,15 +77,192 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         ToolsApiServiceImpl.workflowDAO = workflowDAO;
     }
 
-    @Override
-    public Response toolsIdGet(String id, SecurityContext securityContext) throws NotFoundException {
+    /**
+     * Convert our Tool object to a standard Tool format
+     *
+     * @param container our data object
+     * @return standardised data object
+     */
+    private static io.swagger.model.Tool convertContainer2Tool(Entry container) {
+        String globalId;
+        // TODO: properly pass this information
+        String newID;
+        try {
+            // construct escaped ID
+            if (container instanceof Tool) {
+                newID = ((Tool) container).getToolPath();
+            } else if (container instanceof Workflow) {
+                newID = "#workflow/" + ((Workflow) container).getPath();
+            } else {
+                LOG.error("Could not construct URL for our container with id: " + container.getId());
+                return null;
+            }
+
+            String escapedID = URLEncoder.encode(newID, StandardCharsets.UTF_8.displayName());
+            URI uri = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()), "/api/ga4gh/v1/tools/", null,
+                    null);
+            globalId = uri.toString() + escapedID;
+        } catch (URISyntaxException | UnsupportedEncodingException e) {
+            LOG.error("Could not construct URL for our container with id: " + container.getId());
+            return null;
+        }
+        // TODO: hook this up to a type field in our DB?
+        ToolClass type = container instanceof Tool ?
+                ToolClassesApiServiceImpl.getCommandLineToolClass() :
+                ToolClassesApiServiceImpl.getWorkflowClass();
+
+        io.swagger.model.Tool tool = new io.swagger.model.Tool();
+        tool.setAuthor(container.getAuthor());
+        tool.setDescription(container.getDescription());
+        tool.setMetaVersion(container.getLastUpdated() != null ? container.getLastUpdated().toString() : null);
+        tool.setToolclass(type);
+        tool.setId(newID);
+        tool.setUrl(globalId);
+        tool.setVerified(false);
+        tool.setVerifiedSource("");
+        // tool specific
+        if (container instanceof Tool) {
+            Tool inputTool = (Tool) container;
+            tool.setToolname(inputTool.getToolname());
+            tool.setOrganization(inputTool.getNamespace());
+            tool.setToolname(inputTool.getName());
+        }
+        // workflow specific
+        if (container instanceof Workflow) {
+            Workflow inputTool = (Workflow) container;
+            tool.setToolname(inputTool.getPath());
+            tool.setOrganization(inputTool.getOrganization());
+            tool.setToolname(inputTool.getWorkflowName());
+        }
+
+        // TODO: contains has no counterpart in our DB
+        // setup versions as well
+        Set inputVersions;
+        if (container instanceof Tool) {
+            inputVersions = ((Tool) container).getTags();
+        } else {
+            inputVersions = ((Workflow) container).getWorkflowVersions();
+        }
+
+        for (Version inputVersion : (Set<Version>) inputVersions) {
+
+            // tags with no names make no sense here
+            // also hide hidden tags
+            if (inputVersion.getName() == null || inputVersion.isHidden()) {
+                continue;
+            }
+            if (inputVersion instanceof Tag && ((Tag) inputVersion).getImageId() == null) {
+                continue;
+            }
+
+            ToolVersion version = new ToolVersion();
+            // version id
+            String globalVersionId;
+            try {
+                globalVersionId = globalId + "/versions/" + URLEncoder.encode(inputVersion.getName(), StandardCharsets.UTF_8.displayName());
+            } catch (UnsupportedEncodingException e) {
+                LOG.error("Could not construct URL for our container with id: " + container.getId());
+                return null;
+            }
+            version.setUrl(globalVersionId);
+
+            version.setId(tool.getId() + ":" + inputVersion.getName());
+
+            version.setName(inputVersion.getName());
+
+            version.setVerified(false);
+            version.setVerifiedSource("");
+
+            String urlBuilt;
+            final String githubPrefix = "git@github.com:";
+            final String bitbucketPrefix = "git@bitbucket.org:";
+            if (container.getGitUrl().startsWith(githubPrefix)) {
+                urlBuilt = extractHTTPPrefix(container.getGitUrl(), inputVersion.getReference(), githubPrefix,
+                        "https://raw.githubusercontent.com/");
+            } else if (container.getGitUrl().startsWith(bitbucketPrefix)) {
+                urlBuilt = extractHTTPPrefix(container.getGitUrl(), inputVersion.getReference(), bitbucketPrefix, "https://bitbucket.org/");
+            } else {
+                LOG.error("Found a git url neither from bitbucket or github " + container.getGitUrl());
+                urlBuilt = null;
+            }
+
+            final Set<SourceFile> sourceFiles = inputVersion.getSourceFiles();
+            for (SourceFile file : sourceFiles) {
+                if (inputVersion instanceof Tag) {
+                    switch (file.getType()) {
+                    case DOCKERFILE:
+                        ToolDockerfile dockerfile = new ToolDockerfile();
+                        dockerfile.setDockerfile(file.getContent());
+                        dockerfile.setUrl(urlBuilt + ((Tag) inputVersion).getDockerfilePath());
+                        version.setDockerfile(dockerfile);
+                        break;
+                    case DOCKSTORE_CWL:
+                        version.setDescriptor(buildSourceFile(urlBuilt + ((Tag) inputVersion).getCwlPath(), file));
+                        break;
+                    case DOCKSTORE_WDL:
+                        version.setDescriptor(buildSourceFile(urlBuilt + ((Tag) inputVersion).getWdlPath(), file));
+                        break;
+                    }
+                } else if (inputVersion instanceof WorkflowVersion) {
+                    switch (file.getType()) {
+                    case DOCKSTORE_CWL:
+                        version.setDescriptor(buildSourceFile(urlBuilt + ((WorkflowVersion) inputVersion).getWorkflowPath(), file));
+                        break;
+                    case DOCKSTORE_WDL:
+                        version.setDescriptor(buildSourceFile(urlBuilt + ((WorkflowVersion) inputVersion).getWorkflowPath(), file));
+                        break;
+                    }
+                }
+            }
+            if (container instanceof Tool) {
+                version.setImage(((Tool) container).getPath() + ":" + inputVersion.getName());
+            }
+            tool.getVersions().add(version);
+            version.setMetaVersion(inputVersion.getLastModified() != null ? String.valueOf(inputVersion.getLastModified()) : null);
+        }
+        return tool;
+    }
+
+    /**
+     * Build a descriptor and attach it to a version
+     *
+     * @param url  url to set for the descriptor
+     * @param file a file with content for the descriptor
+     */
+    private static ToolDescriptor buildSourceFile(String url, SourceFile file) {
+        ToolDescriptor wdlDescriptor = new ToolDescriptor();
+        if (file.getType() == SourceFile.FileType.DOCKSTORE_CWL) {
+            wdlDescriptor.setType(ToolDescriptor.TypeEnum.CWL);
+        } else if (file.getType() == SourceFile.FileType.DOCKSTORE_WDL) {
+            wdlDescriptor.setType(ToolDescriptor.TypeEnum.WDL);
+        }
+        wdlDescriptor.setDescriptor(file.getContent());
+        wdlDescriptor.setUrl(url);
+        return wdlDescriptor;
+    }
+
+    /**
+     * @param gitUrl       The git formatted url for the repo
+     * @param reference    the git tag or branch
+     * @param githubPrefix the prefix for the git formatted url to strip out
+     * @param builtPrefix  the prefix to use to start the extracted prefix
+     * @return the prefix to access these files
+     */
+    private static String extractHTTPPrefix(String gitUrl, String reference, String githubPrefix, String builtPrefix) {
+        StringBuilder urlBuilder = new StringBuilder();
+        urlBuilder.append(builtPrefix);
+        final String substring = gitUrl.substring(githubPrefix.length(), gitUrl.lastIndexOf(".git"));
+        urlBuilder.append(substring).append('/').append(reference);
+        return urlBuilder.toString();
+    }
+
+    @Override public Response toolsIdGet(String id, SecurityContext securityContext) throws NotFoundException {
         ParsedRegistryID parsedID = new ParsedRegistryID(id);
         Entry entry = getEntry(parsedID);
         return buildToolResponse(entry, null, false);
     }
 
-    @Override
-    public Response toolsIdVersionsGet(String id, SecurityContext securityContext) throws NotFoundException {
+    @Override public Response toolsIdVersionsGet(String id, SecurityContext securityContext) throws NotFoundException {
         ParsedRegistryID parsedID = new ParsedRegistryID(id);
         Entry entry = getEntry(parsedID);
         return buildToolResponse(entry, null, true);
@@ -114,8 +297,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         return response;
     }
 
-    @Override
-    public Response toolsIdVersionsVersionIdGet(String id, String versionId, SecurityContext securityContext)
+    @Override public Response toolsIdVersionsVersionIdGet(String id, String versionId, SecurityContext securityContext)
             throws NotFoundException {
         ParsedRegistryID parsedID = new ParsedRegistryID(id);
         try {
@@ -131,14 +313,13 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         Entry entry;
         if (parsedID.isTool()) {
             entry = toolDAO.findPublishedByToolPath(parsedID.getPath(), parsedID.getToolName());
-        } else{
+        } else {
             entry = workflowDAO.findPublishedByPath(parsedID.getPath());
         }
         return entry;
     }
 
-    @Override
-    public Response toolsIdVersionsVersionIdTypeDescriptorGet(String type, String id, String versionId,
+    @Override public Response toolsIdVersionsVersionIdTypeDescriptorGet(String type, String id, String versionId,
             SecurityContext securityContext) throws NotFoundException {
         SourceFile.FileType fileType = getFileType(type);
         if (fileType == null) {
@@ -147,10 +328,9 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         return getFileByToolVersionID(id, versionId, fileType, null, StringUtils.containsIgnoreCase(type, "plain"));
     }
 
-    @Override
-    public Response toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(String type, String id, String versionId, String relativePath,
-            SecurityContext securityContext) throws NotFoundException {
-        if (type == null){
+    @Override public Response toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(String type, String id, String versionId,
+            String relativePath, SecurityContext securityContext) throws NotFoundException {
+        if (type == null) {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
         SourceFile.FileType fileType = getFileType(type);
@@ -163,11 +343,11 @@ public class ToolsApiServiceImpl extends ToolsApiService {
 
     private SourceFile.FileType getFileType(String format) {
         SourceFile.FileType type;
-        if (StringUtils.containsIgnoreCase(format, "CWL")){
+        if (StringUtils.containsIgnoreCase(format, "CWL")) {
             type = SourceFile.FileType.DOCKSTORE_CWL;
-        } else if (StringUtils.containsIgnoreCase(format, "WDL")){
+        } else if (StringUtils.containsIgnoreCase(format, "WDL")) {
             type = SourceFile.FileType.DOCKSTORE_WDL;
-        } else if(Objects.equals("JSON", format)){
+        } else if (Objects.equals("JSON", format)) {
             // if JSON is specified
             type = SourceFile.FileType.DOCKSTORE_CWL;
         } else {
@@ -177,15 +357,13 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         return type;
     }
 
-    @Override
-    public Response toolsIdVersionsVersionIdDockerfileGet(String id, String versionId, SecurityContext securityContext)
+    @Override public Response toolsIdVersionsVersionIdDockerfileGet(String id, String versionId, SecurityContext securityContext)
             throws NotFoundException {
         return getFileByToolVersionID(id, versionId, SourceFile.FileType.DOCKERFILE, null, false);
     }
 
-    @Override
-    public Response toolsGet(String registryId, String registry, String organization, String name, String toolname,
-            String description, String author, SecurityContext securityContext) throws NotFoundException {
+    @Override public Response toolsGet(String registryId, String registry, String organization, String name, String toolname,
+            String description, String author, String offset, Integer limit, SecurityContext securityContext) throws NotFoundException {
         final List<Entry> all = new ArrayList<>();
         all.addAll(toolDAO.findAllPublished());
         all.addAll(workflowDAO.findAllPublished());
@@ -193,13 +371,13 @@ public class ToolsApiServiceImpl extends ToolsApiService {
 
         List<io.swagger.model.Tool> results = new ArrayList<>();
         for (Entry c : all) {
-            if (c instanceof Workflow && (registryId != null || registry != null ||
-                    organization != null || name != null || toolname != null)){
+            if (c instanceof Workflow && (registryId != null || registry != null || organization != null || name != null
+                    || toolname != null)) {
                 continue;
             }
 
             if (c instanceof Tool) {
-                Tool tool = (Tool)c;
+                Tool tool = (Tool) c;
                 // check each criteria. This sucks. Can we do this better with reflection? Or should we pre-convert?
                 if (registryId != null) {
                     if (!registryId.contains(tool.getToolPath())) {
@@ -242,194 +420,69 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             results.add(tool);
         }
 
-        return Response.ok(results).build();
-    }
-
-    /**
-     * Convert our Tool object to a standard Tool format
-     *
-     * @param container our data object
-     * @return standardised data object
-     */
-    private static io.swagger.model.Tool convertContainer2Tool(Entry container) {
-        String globalId;
-        // TODO: properly pass this information
-        String newID;
+        if (limit == null){
+            limit = DEFAULT_PAGE_SIZE;
+        }
+        List<List<io.swagger.model.Tool>> pagedResults = Lists.partition(results, limit);
+        int offsetInteger = 0;
+        if (offset != null){
+            offsetInteger = Integer.parseInt(offset);
+        }
+        if (offsetInteger >= pagedResults.size()){
+            results = new ArrayList<>();
+        } else{
+            results = pagedResults.get(offsetInteger);
+        }
+        final Response.ResponseBuilder responseBuilder = Response.ok(results);
+        responseBuilder.header("current-offset", offset);
+        responseBuilder.header("current-limit", limit);
+        // construct links to other pages
         try {
-            // construct escaped ID
-            if (container instanceof Tool) {
-                newID = ((Tool) container).getToolPath();
-            } else if (container instanceof Workflow){
-                newID = "#workflow/" + ((Workflow) container).getPath();
-            } else{
-                LOG.error("Could not construct URL for our container with id: " + container.getId());
-                return null;
+            List<String> filters = new ArrayList<>();
+            handleParameter(registryId, "id", filters);
+            handleParameter(organization, "organization", filters);
+            handleParameter(name, "name", filters);
+            handleParameter(toolname, "toolname", filters);
+            handleParameter(description, "description", filters);
+            handleParameter(author, "author", filters);
+            handleParameter(registry, "registry", filters);
+            handleParameter(limit.toString(), "limit", filters);
+
+            if (offsetInteger + 1 < pagedResults.size()) {
+                URI nextPageURI = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()),
+                        "/api/ga4gh/v1/tools", Joiner.on('&').join(filters) + "&offset=" + (offsetInteger + 1), null);
+                responseBuilder.header("next-page",nextPageURI.toURL().toString());
             }
+            URI lastPageURI = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()), "/api/ga4gh/v1/tools",
+                    Joiner.on('&').join(filters) + "&offset="+(pagedResults.size()-1),
+                    null);
+            responseBuilder.header("last-page",lastPageURI.toURL().toString());
 
-            String escapedID = URLEncoder.encode(newID, StandardCharsets.UTF_8.displayName());
-            URI uri = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()), "/api/v1/tools/",
-                    null, null);
-            globalId = uri.toString() + escapedID;
-        } catch (URISyntaxException | UnsupportedEncodingException e) {
-            LOG.error("Could not construct URL for our container with id: " + container.getId());
-            return null;
-        }
-        // TODO: hook this up to a type field in our DB?
-        ToolClass type = container instanceof Tool ? ToolClassesApiServiceImpl.getCommandLineToolClass() : ToolClassesApiServiceImpl.getWorkflowClass();
 
-        io.swagger.model.Tool tool = new io.swagger.model.Tool();
-        tool.setAuthor(container.getAuthor());
-        tool.setDescription(container.getDescription());
-        tool.setMetaVersion(container.getLastUpdated() != null ? container.getLastUpdated().toString() : null);
-        tool.setToolclass(type);
-        tool.setId(newID);
-        tool.setUrl(globalId);
-        tool.setVerified(false);
-        tool.setVerifiedSource("");
-        // tool specific
-        if (container instanceof Tool){
-            Tool inputTool = (Tool)container;
-            tool.setToolname(inputTool.getToolname());
-            tool.setOrganization(inputTool.getNamespace());
-            tool.setToolname(inputTool.getName());
-        }
-        // workflow specific
-        if (container instanceof Workflow){
-            Workflow inputTool = (Workflow)container;
-            tool.setToolname(inputTool.getPath());
-            tool.setOrganization(inputTool.getOrganization());
-            tool.setToolname(inputTool.getWorkflowName());
+        } catch (URISyntaxException | MalformedURLException e) {
+            throw new WebApplicationException("Could not construct page links", HttpStatus.SC_BAD_REQUEST);
         }
 
-        // TODO: contains has no counterpart in our DB
-        // setup versions as well
-        Set inputVersions;
-        if (container instanceof Tool){
-            inputVersions = ((Tool) container).getTags();
-        } else {
-            inputVersions = ((Workflow) container).getWorkflowVersions();
+        return responseBuilder.build();
+    }
+
+
+    private void handleParameter(String parameter, String queryName, List<String> filters) {
+        if (parameter != null) {
+            filters.add(queryName + "=" + parameter);
         }
-
-        for (Version inputVersion : (Set<Version>)inputVersions) {
-
-            // tags with no names make no sense here
-            // also hide hidden tags
-            if (inputVersion.getName() == null || inputVersion.isHidden()) {
-                continue;
-            }
-            if (inputVersion instanceof Tag && ((Tag) inputVersion).getImageId() == null){
-                continue;
-            }
-
-            ToolVersion version = new ToolVersion();
-            // version id
-            String globalVersionId;
-            try {
-                globalVersionId = globalId + "/versions/" + URLEncoder.encode(inputVersion.getName(), StandardCharsets.UTF_8.displayName());
-            } catch (UnsupportedEncodingException e) {
-                LOG.error("Could not construct URL for our container with id: " + container.getId());
-                return null;
-            }
-            version.setUrl(globalVersionId);
-
-            version.setId(tool.getId()+":" + inputVersion.getName());
-
-            version.setName(inputVersion.getName());
-
-            version.setVerified(false);
-            version.setVerifiedSource("");
-
-            String urlBuilt;
-            final String githubPrefix = "git@github.com:";
-            final String bitbucketPrefix = "git@bitbucket.org:";
-            if (container.getGitUrl().startsWith(githubPrefix)) {
-                urlBuilt = extractHTTPPrefix(container.getGitUrl(), inputVersion.getReference(), githubPrefix, "https://raw.githubusercontent.com/");
-            } else if (container.getGitUrl().startsWith(bitbucketPrefix)) {
-                urlBuilt = extractHTTPPrefix(container.getGitUrl(), inputVersion.getReference(), bitbucketPrefix, "https://bitbucket.org/");
-            } else {
-                LOG.error("Found a git url neither from bitbucket or github " + container.getGitUrl());
-                urlBuilt = null;
-            }
-
-            final Set<SourceFile> sourceFiles = inputVersion.getSourceFiles();
-            for (SourceFile file : sourceFiles) {
-                if (inputVersion instanceof Tag) {
-                    switch (file.getType()) {
-                    case DOCKERFILE:
-                        ToolDockerfile dockerfile = new ToolDockerfile();
-                        dockerfile.setDockerfile(file.getContent());
-                        dockerfile.setUrl(urlBuilt + ((Tag) inputVersion).getDockerfilePath());
-                        version.setDockerfile(dockerfile);
-                        break;
-                    case DOCKSTORE_CWL:
-                        version.setDescriptor(buildSourceFile(urlBuilt + ((Tag) inputVersion).getCwlPath(), file));
-                        break;
-                    case DOCKSTORE_WDL:
-                        version.setDescriptor(buildSourceFile(urlBuilt + ((Tag) inputVersion).getWdlPath(), file));
-                        break;
-                    }
-                } else if (inputVersion instanceof WorkflowVersion){
-                    switch (file.getType()) {
-                    case DOCKSTORE_CWL:
-                        version.setDescriptor(buildSourceFile(urlBuilt + ((WorkflowVersion) inputVersion).getWorkflowPath(), file));
-                        break;
-                    case DOCKSTORE_WDL:
-                        version.setDescriptor(buildSourceFile(urlBuilt + ((WorkflowVersion) inputVersion).getWorkflowPath(), file));
-                        break;
-                    }
-                }
-            }
-            if (container instanceof Tool) {
-                version.setImage(((Tool) container).getPath() + ":" + inputVersion.getName());
-            }
-            tool.getVersions().add(version);
-            version.setMetaVersion(inputVersion.getLastModified() != null ? String.valueOf(inputVersion.getLastModified()) : null);
-        }
-        return tool;
     }
 
     /**
-     * Build a descriptor and attach it to a version
-     *
-     * @param url  url to set for the descriptor
-     * @param file a file with content for the descriptor
-     */
-    private static ToolDescriptor buildSourceFile(String url, SourceFile file) {
-        ToolDescriptor wdlDescriptor = new ToolDescriptor();
-        if (file.getType() == SourceFile.FileType.DOCKSTORE_CWL){
-            wdlDescriptor.setType(ToolDescriptor.TypeEnum.CWL);
-        } else if (file.getType() == SourceFile.FileType.DOCKSTORE_WDL){
-            wdlDescriptor.setType(ToolDescriptor.TypeEnum.WDL);
-        }
-        wdlDescriptor.setDescriptor(file.getContent());
-        wdlDescriptor.setUrl(url);
-        return wdlDescriptor;
-    }
-
-    /**
-     * @param gitUrl       The git formatted url for the repo
-     * @param reference    the git tag or branch
-     * @param githubPrefix the prefix for the git formatted url to strip out
-     * @param builtPrefix  the prefix to use to start the extracted prefix
-     * @return the prefix to access these files
-     */
-    private static String extractHTTPPrefix(String gitUrl, String reference, String githubPrefix, String builtPrefix) {
-        StringBuilder urlBuilder = new StringBuilder();
-        urlBuilder.append(builtPrefix);
-        final String substring = gitUrl.substring(githubPrefix.length(), gitUrl.lastIndexOf(".git"));
-        urlBuilder.append(substring).append('/').append(reference);
-        return urlBuilder.toString();
-    }
-
-    /**
-     * @param registryId    registry id
-     * @param versionId     git reference
-     * @param type          type of file
-     * @param relativePath  if null, return the primary descriptor, if not null, return a specific file
-     * @param unwrap        unwrap the file and present the descriptor sans wrapper model
+     * @param registryId   registry id
+     * @param versionId    git reference
+     * @param type         type of file
+     * @param relativePath if null, return the primary descriptor, if not null, return a specific file
+     * @param unwrap       unwrap the file and present the descriptor sans wrapper model
      * @return a specific file wrapped in a response
      */
-    private Response getFileByToolVersionID(String registryId, String versionId, SourceFile.FileType type, String relativePath, boolean unwrap) {
+    private Response getFileByToolVersionID(String registryId, String versionId, SourceFile.FileType type, String relativePath,
+            boolean unwrap) {
         // if a version is provided, get that version, otherwise return the newest
         ParsedRegistryID parsedID = new ParsedRegistryID(registryId);
         try {
@@ -453,38 +506,39 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                 .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
 
         Optional<? extends Version> oldFirst;
-        if (entry instanceof Tool){
-            Tool toolEntry = (Tool)entry;
-            oldFirst = toolEntry.getVersions().stream()
-                    .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
-        } else{
-            Workflow workflowEntry = (Workflow)entry;
-            oldFirst = workflowEntry.getVersions().stream()
-                    .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
+        if (entry instanceof Tool) {
+            Tool toolEntry = (Tool) entry;
+            oldFirst = toolEntry.getVersions().stream().filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId))
+                    .findFirst();
+        } else {
+            Workflow workflowEntry = (Workflow) entry;
+            oldFirst = workflowEntry.getVersions().stream().filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId))
+                    .findFirst();
         }
 
-        if (first.isPresent() && oldFirst.isPresent()){
+        if (first.isPresent() && oldFirst.isPresent()) {
             final ToolVersion toolVersion = first.get();
             if (type == SourceFile.FileType.DOCKERFILE) {
                 final ToolDockerfile dockerfile = toolVersion.getDockerfile();
-                return Response.status(Response.Status.OK).entity(unwrap?dockerfile.getDockerfile():dockerfile).build();
+                return Response.status(Response.Status.OK).entity(unwrap ? dockerfile.getDockerfile() : dockerfile).build();
             } else {
                 if (relativePath == null) {
                     if (type == SourceFile.FileType.DOCKSTORE_WDL && toolVersion.getDescriptor().getType() == ToolDescriptor.TypeEnum.WDL) {
                         final ToolDescriptor descriptor = toolVersion.getDescriptor();
-                        return Response.status(Response.Status.OK).entity(unwrap?descriptor.getDescriptor():descriptor).build();
-                    } else if (type == SourceFile.FileType.DOCKSTORE_CWL && toolVersion.getDescriptor().getType() == ToolDescriptor.TypeEnum.CWL) {
+                        return Response.status(Response.Status.OK).entity(unwrap ? descriptor.getDescriptor() : descriptor).build();
+                    } else if (type == SourceFile.FileType.DOCKSTORE_CWL
+                            && toolVersion.getDescriptor().getType() == ToolDescriptor.TypeEnum.CWL) {
                         final ToolDescriptor descriptor = toolVersion.getDescriptor();
-                        return Response.status(Response.Status.OK).entity(unwrap?descriptor.getDescriptor():descriptor).build();
+                        return Response.status(Response.Status.OK).entity(unwrap ? descriptor.getDescriptor() : descriptor).build();
                     }
                     return Response.status(Response.Status.NOT_FOUND).build();
-                } else{
+                } else {
                     final Set<SourceFile> sourceFiles = oldFirst.get().getSourceFiles();
-                    final Optional<SourceFile> first1 = sourceFiles.stream()
-                            .filter(file -> file.getPath().equalsIgnoreCase(relativePath)).findFirst();
-                    if (first1.isPresent()){
+                    final Optional<SourceFile> first1 = sourceFiles.stream().filter(file -> file.getPath().equalsIgnoreCase(relativePath))
+                            .findFirst();
+                    if (first1.isPresent()) {
                         final SourceFile entity = first1.get();
-                        return Response.status(Response.Status.OK).entity(unwrap?entity.getContent():entity).build();
+                        return Response.status(Response.Status.OK).entity(unwrap ? entity.getContent() : entity).build();
                     }
                 }
             }
@@ -503,6 +557,23 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         private String name;
         private String toolName;
 
+        ParsedRegistryID(String id) {
+            try {
+                id = URLDecoder.decode(id, StandardCharsets.UTF_8.displayName());
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
+            List<String> textSegments = Splitter.on('/').omitEmptyStrings().splitToList(id);
+            if (textSegments.get(0).equalsIgnoreCase("#workflow")) {
+                tool = false;
+            } else {
+                registry = textSegments.get(0);
+            }
+            organization = textSegments.get(1);
+            name = textSegments.get(2);
+            toolName = textSegments.size() > 3 ? textSegments.get(3) : "";
+        }
+
         public String getRegistry() {
             return registry;
         }
@@ -519,31 +590,15 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             return toolName;
         }
 
-        ParsedRegistryID(String id) {
-            try {
-                id = URLDecoder.decode(id, StandardCharsets.UTF_8.displayName());
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
-            List<String> textSegments = Splitter.on('/').omitEmptyStrings().splitToList(id);
-            if (textSegments.get(0).equalsIgnoreCase("#workflow")){
-                tool = false;
-            } else {
-                registry = textSegments.get(0);
-            }
-            organization = textSegments.get(1);
-            name = textSegments.get(2);
-            toolName = textSegments.size() > 3 ? textSegments.get(3) : "";
-        }
-
         /**
          * Get an internal path
+         *
          * @return an internal path, usable only if we know if we have a tool or workflow
          */
         public String getPath() {
-            if (tool){
+            if (tool) {
                 return registry + "/" + organization + "/" + name;
-            } else{
+            } else {
                 return organization + "/" + name;
             }
         }

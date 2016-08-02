@@ -13,7 +13,6 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-
 package io.swagger.api;
 
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -30,21 +29,15 @@ import javax.ws.rs.core.SecurityContext;
 
 @Path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/metadata")
 
-@Produces({ "application/json", "text/plain" })
-@io.swagger.annotations.Api(description = "the metadata API")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-27T17:44:39.014Z")
-public class MetadataApi  {
-   private final MetadataApiService delegate = MetadataApiServiceFactory.getMetadataApi();
+@Produces({ "application/json",
+        "text/plain" }) @io.swagger.annotations.Api(description = "the metadata API") @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-29T19:58:43.367Z") public class MetadataApi {
+    private final MetadataApiService delegate = MetadataApiServiceFactory.getMetadataApi();
 
-    @GET
-    @UnitOfWork
-    @Produces({ "application/json", "text/plain" })
-    @io.swagger.annotations.ApiOperation(value = "Return some metadata that is useful for describing this registry", notes = "Return some metadata that is useful for describing this registry", response = Metadata.class, tags={ "GA4GH" })
-    @io.swagger.annotations.ApiResponses(value = { 
-        @io.swagger.annotations.ApiResponse(code = 200, message = "A Metadata object describing this service.", response = Metadata.class) })
-    public Response metadataGet(
-        @Context SecurityContext securityContext)
-    throws NotFoundException {
+    @GET @UnitOfWork @Produces({ "application/json",
+            "text/plain" }) @io.swagger.annotations.ApiOperation(value = "Return some metadata that is useful for describing this registry", notes = "Return some metadata that is useful for describing this registry", response = Metadata.class, tags = {
+            "GA4GH", }) @io.swagger.annotations.ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "A Metadata object describing this service.", response = Metadata.class) }) public Response metadataGet(
+            @Context SecurityContext securityContext) throws NotFoundException {
         return delegate.metadataGet(securityContext);
     }
 }

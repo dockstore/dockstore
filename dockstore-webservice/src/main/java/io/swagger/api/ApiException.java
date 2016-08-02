@@ -13,14 +13,14 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-
 package io.swagger.api;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-27T17:44:39.014Z")
-public class ApiException extends Exception{
-	private int code;
-	public ApiException (int code, String msg) {
-		super(msg);
-		this.code = code;
-	}
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-29T19:58:43.367Z") public class ApiException
+        extends Exception {
+    private int code;
+
+    public ApiException(int code, String msg) {
+        super(msg);
+        this.code = code;
+    }
 }

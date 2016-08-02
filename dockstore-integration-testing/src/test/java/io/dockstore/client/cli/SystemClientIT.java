@@ -256,15 +256,15 @@ public class SystemClientIT {
         DockstoreTool c = getContainer();
         containersApi.registerManual(c);
 
-        List<Tool> tools = toolApi.toolsGet(null, null, null, null, null, null, null);
+        List<Tool> tools = toolApi.toolsGet(null, null, null, null, null, null, null, null, null);
         assertTrue(tools.size() == 2);
 
         // test a few constraints
-        tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, null, null, null, null, null, null);
+        tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, null, null, null, null, null, null, null, null);
         assertTrue(tools.size() == 1);
-        tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, Registry.QUAY_IO.toString(), null, null, null, null, null);
+        tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, Registry.QUAY_IO.toString(), null, null, null, null, null, null, null);
         assertTrue(tools.size() == 1);
-        tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, Registry.DOCKER_HUB.toString(), null, null, null, null, null);
+        tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, Registry.DOCKER_HUB.toString(), null, null, null, null, null, null, null);
         assertTrue(tools.size() == 0);
     }
 

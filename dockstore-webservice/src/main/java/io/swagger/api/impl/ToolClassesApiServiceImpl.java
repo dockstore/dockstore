@@ -25,17 +25,8 @@ import javax.ws.rs.core.SecurityContext;
 import java.util.ArrayList;
 import java.util.List;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-27T17:44:39.014Z")
-public class ToolClassesApiServiceImpl extends ToolClassesApiService {
-    @Override
-    public Response toolClassesGet(SecurityContext securityContext)
-    throws NotFoundException {
-        final List<ToolClass> toolTypes = new ArrayList<ToolClass>();
-        toolTypes.add(getCommandLineToolClass());
-        toolTypes.add(getWorkflowClass());
-        return Response.ok().entity(toolTypes).build();
-    }
-
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-27T17:44:39.014Z") public class ToolClassesApiServiceImpl
+        extends ToolClassesApiService {
     static ToolClass getWorkflowClass() {
         ToolClass type2 = new ToolClass();
         type2.setName("Workflow");
@@ -50,5 +41,12 @@ public class ToolClassesApiServiceImpl extends ToolClassesApiService {
         type1.setId("0");
         type1.setDescription("CommandLineTool");
         return type1;
+    }
+
+    @Override public Response toolClassesGet(SecurityContext securityContext) throws NotFoundException {
+        final List<ToolClass> toolTypes = new ArrayList<ToolClass>();
+        toolTypes.add(getCommandLineToolClass());
+        toolTypes.add(getWorkflowClass());
+        return Response.ok().entity(toolTypes).build();
     }
 }
