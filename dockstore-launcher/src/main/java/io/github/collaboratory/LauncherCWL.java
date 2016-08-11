@@ -608,21 +608,21 @@ public class LauncherCWL {
         Utilities.executeCommand("mkdir -p " + downloadDirectory);
         File downloadDirFileObj = new File(downloadDirectory);
 
-        copyIndividualFile(key, path, cwlInputFileID, fileMap, downloadDirFileObj, true);
+        copyIndividualFile(key, path, fileMap, downloadDirFileObj, true);
 
         // also handle secondary files if specified
         if (secondaryFiles != null) {
             for (String sFile : secondaryFiles) {
                 String sPath = path;
                 while (sFile.startsWith("^")){
-                    sFile = sFile.replaceFirst("^","");
+                    sFile = sFile.replaceFirst("\\^","");
                     int periodIndex = path.lastIndexOf(".");
                     if (periodIndex != -1){
                         sPath = sPath.substring(0, periodIndex);
                     }
                 }
                 sPath = sPath + sFile;
-                copyIndividualFile(key, sPath, cwlInputFileID + sFile, fileMap, downloadDirFileObj, false);
+                copyIndividualFile(key, sPath, fileMap, downloadDirFileObj, false);
             }
         }
     }
@@ -631,14 +631,14 @@ public class LauncherCWL {
      *
      * @param key
      * @param path
-     * @param cwlInputFileID
      * @param fileMap
      * @param downloadDirFileObj
      * @param record add a record to the fileMap
      */
-    private void copyIndividualFile(String key, String path, String cwlInputFileID, Map<String, FileProvisioning.FileInfo> fileMap,
+    private void copyIndividualFile(String key, String path, Map<String, FileProvisioning.FileInfo> fileMap,
             File downloadDirFileObj, boolean record) {
-        final Path targetFilePath = Paths.get(downloadDirFileObj.getAbsolutePath(), cwlInputFileID);
+        String shortfileName = Paths.get(path).getFileName().toString();
+        final Path targetFilePath = Paths.get(downloadDirFileObj.getAbsolutePath(), shortfileName);
 
         // expects URI in "path": "icgc:eef47481-670d-4139-ab5b-1dad808a92d9"
         PathInfo pathInfo = new PathInfo(path);
@@ -651,7 +651,7 @@ public class LauncherCWL {
         if (record) {
             fileMap.put(key, info);
         }
-        LOG.info("DOWNLOADED FILE: LOCAL: {} URL: {}", cwlInputFileID, path);
+        LOG.info("DOWNLOADED FILE: LOCAL: {} URL: {}", shortfileName, path);
     }
 
     private CommandLine parseCommandLine(CommandLineParser parser, String[] args) {
