@@ -908,6 +908,7 @@ public class WorkflowResource {
         Yaml yaml = new Yaml();
         Map <String, Object> sections;
         String defaultDockerEnv = "";
+        String dockerEnv = "";
         String dockerPullURL= "";
         Integer index = 0;
         Map<String, Pair<String, String>> toolID = new HashMap<>();     // map for toolID and toolName
@@ -963,13 +964,13 @@ public class WorkflowResource {
                             ArrayList<Map<String, Object>> requirements = (ArrayList<Map<String, Object>>) helperGroupEntry.getValue();
                             for (Map<String, Object> requirement : requirements) {
                                 if (requirement.get("class").equals("DockerRequirement")) {
-                                    defaultDockerEnv = requirement.get("dockerPull").toString();
+                                    dockerEnv = requirement.get("dockerPull").toString();
                                     if(type == Type.TOOLS){
                                         //get the docker file and link
                                         dockerPullURL = getURLFromEntry((String)requirement.get("dockerPull"));
                                         //put the tool ID and docker information into two different maps
                                         toolID.put(index.toString(), new MutablePair<>(step.get("id").toString(), fileName));
-                                        toolDocker.put(index.toString(),new MutablePair<>(defaultDockerEnv, dockerPullURL));
+                                        toolDocker.put(index.toString(),new MutablePair<>(dockerEnv, dockerPullURL));
                                         index++;
                                     }else{
                                         nodePairs.add(new MutablePair<>(step.get("id").toString().replaceFirst("#", ""), getURLFromEntry(requirement.get("dockerPull").toString())));
@@ -985,14 +986,15 @@ public class WorkflowResource {
                         if(type == Type.TOOLS) {
                             // no docker requirement
                             if(defaultDockerEnv.equals("")){
-                                defaultDockerEnv = "Not Specified";
+                                dockerEnv = "Not Specified";
                                 dockerPullURL = "Not Specified"; // the workflow does not specify any docker requirement too
                             }else{
+                                dockerEnv = defaultDockerEnv;
                                 dockerPullURL = getURLFromEntry(defaultDockerEnv); //get default from workflow docker requirement
                             }
 
                             toolID.put(index.toString(), new MutablePair<>(step.get("id").toString(), fileName));
-                            toolDocker.put(index.toString(), new MutablePair<>(defaultDockerEnv, dockerPullURL));
+                            toolDocker.put(index.toString(), new MutablePair<>(dockerEnv, dockerPullURL));
                             index++;
                         }else{
                             nodePairs.add(new MutablePair<>(step.get("id").toString().replaceFirst("#", ""), getURLFromEntry(defaultDockerEnv)));
