@@ -506,7 +506,7 @@ public class LauncherCWL {
         fileProvisioning.provisionOutputFile(file, cwlOutputPath);
     }
 
-    private Map<String, FileProvisioning.FileInfo> pullFiles(Object cwlObject,  Map<String, Object> inputsOutputs) {
+    private Map<String, FileProvisioning.FileInfo> pullFiles(Object cwlObject, Map<String, Object> inputsOutputs) {
         Map<String, FileProvisioning.FileInfo> fileMap = new HashMap<>();
 
         LOG.info("DOWNLOADING INPUT FILES...");
@@ -514,32 +514,45 @@ public class LauncherCWL {
         final Method getInputs;
         try {
             getInputs = cwlObject.getClass().getDeclaredMethod("getInputs");
-        final List<?> files = (List<?>) getInputs.invoke(cwlObject);
+            final List<?> files = (List<?>) getInputs.invoke(cwlObject);
 
-        // for each file input from the CWL
-        for (Object file : files) {
-            // pull back the name of the input from the CWL
-            LOG.info(file.toString());
-            // remove the hash from the cwlInputFileID
-            final Method getId = file.getClass().getDeclaredMethod("getId");
-            String cwlInputFileID = getId.invoke(file).toString();
-            // trim quotes or starting '#' if necessary
-            cwlInputFileID = CharMatcher.is('#').trimLeadingFrom(cwlInputFileID);
-            // split on # if needed
-            cwlInputFileID = cwlInputFileID.contains("#") ? cwlInputFileID.split("#")[1] : cwlInputFileID;
-            // remove extra namespace if needed
-            cwlInputFileID = cwlInputFileID.contains("/") ? cwlInputFileID.split("/")[1] : cwlInputFileID;
-            LOG.info("ID: {}", cwlInputFileID);
-            pullFilesHelper(inputsOutputs, fileMap, cwlInputFileID);
-        }
-        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException  e) {
+            // for each file input from the CWL
+            for (Object file : files) {
+                // pull back the name of the input from the CWL
+                LOG.info(file.toString());
+                // remove the hash from the cwlInputFileID
+                final Method getId = file.getClass().getDeclaredMethod("getId");
+                String cwlInputFileID = getId.invoke(file).toString();
+                // trim quotes or starting '#' if necessary
+                cwlInputFileID = CharMatcher.is('#').trimLeadingFrom(cwlInputFileID);
+                // split on # if needed
+                cwlInputFileID = cwlInputFileID.contains("#") ? cwlInputFileID.split("#")[1] : cwlInputFileID;
+                // remove extra namespace if needed
+                cwlInputFileID = cwlInputFileID.contains("/") ? cwlInputFileID.split("/")[1] : cwlInputFileID;
+                LOG.info("ID: {}", cwlInputFileID);
+
+                // identify and get secondary files if needed
+                final Method getSecondaryFiles = file.getClass().getDeclaredMethod("getSecondaryFiles");
+                List<String> secondaryFiles = (List<String>) getSecondaryFiles.invoke(file);
+
+                pullFilesHelper(inputsOutputs, fileMap, cwlInputFileID, secondaryFiles);
+            }
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
             LOG.error("Reflection issue, this is likely a coding problem.");
             throw new RuntimeException();
         }
         return fileMap;
     }
 
-    private void pullFilesHelper(Map<String, Object> inputsOutputs, Map<String, FileProvisioning.FileInfo> fileMap, String cwlInputFileID) {
+    /**
+     *
+     * @param inputsOutputs json parameter file
+     * @param fileMap a record of the files that we have provisioned
+     * @param cwlInputFileID the file id from the CWL file
+     * @param secondaryFiles a record of secondary files that were identified
+     */
+    private void pullFilesHelper(Map<String, Object> inputsOutputs, Map<String, FileProvisioning.FileInfo> fileMap, String cwlInputFileID,
+            List<String> secondaryFiles) {
         // now that I have an input name from the CWL I can find it in the JSON parameterization for this run
         LOG.info("JSON: {}", inputsOutputs);
         for (Entry<String, Object> stringObjectEntry : inputsOutputs.entrySet()) {
@@ -555,7 +568,7 @@ public class LauncherCWL {
                             String path = (String) lhm.get("path");
                             // notice I'm putting key:path together so they are unique in the hash
                             if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
-                                doProcessFile(stringObjectEntry.getKey() + ":" + path, path, cwlInputFileID, fileMap);
+                                doProcessFile(stringObjectEntry.getKey() + ":" + path, path, cwlInputFileID, fileMap, secondaryFiles);
                             }
                         }
                     }
@@ -566,7 +579,7 @@ public class LauncherCWL {
                 HashMap param = (HashMap) stringObjectEntry.getValue();
                 String path = (String) param.get("path");
                 if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
-                    doProcessFile(stringObjectEntry.getKey(), path, cwlInputFileID, fileMap);
+                    doProcessFile(stringObjectEntry.getKey(), path, cwlInputFileID, fileMap, secondaryFiles);
                 }
 
             }
@@ -575,13 +588,15 @@ public class LauncherCWL {
 
     /**
      * Looks like this is intended to copy one file from source to a local destination
-     * @param key what is this?
-     * @param path the path for the source of the file, whether s3 or http
+     *
+     * @param key            what is this?
+     * @param path           the path for the source of the file, whether s3 or http
      * @param cwlInputFileID looks like the descriptor for a particular path+class pair in the parameter json file, starts with a hash in the CWL file
-     * @param fileMap store information on each added file as a return type
+     * @param fileMap        store information on each added file as a return type
+     * @param secondaryFiles secondary files that also need to be transferred
      */
     private void doProcessFile(final String key, final String path, final String cwlInputFileID,
-            Map<String, FileProvisioning.FileInfo> fileMap) {
+            Map<String, FileProvisioning.FileInfo> fileMap, List<String> secondaryFiles) {
 
         // key is unique for that key:download URL, cwlInputFileID is just the key
 
@@ -593,7 +608,37 @@ public class LauncherCWL {
         Utilities.executeCommand("mkdir -p " + downloadDirectory);
         File downloadDirFileObj = new File(downloadDirectory);
 
-        final Path targetFilePath = Paths.get(downloadDirFileObj.getAbsolutePath(), cwlInputFileID);
+        copyIndividualFile(key, path, fileMap, downloadDirFileObj, true);
+
+        // also handle secondary files if specified
+        if (secondaryFiles != null) {
+            for (String sFile : secondaryFiles) {
+                String sPath = path;
+                while (sFile.startsWith("^")){
+                    sFile = sFile.replaceFirst("\\^","");
+                    int periodIndex = path.lastIndexOf(".");
+                    if (periodIndex != -1){
+                        sPath = sPath.substring(0, periodIndex);
+                    }
+                }
+                sPath = sPath + sFile;
+                copyIndividualFile(key, sPath, fileMap, downloadDirFileObj, false);
+            }
+        }
+    }
+
+    /**
+     *
+     * @param key
+     * @param path
+     * @param fileMap
+     * @param downloadDirFileObj
+     * @param record add a record to the fileMap
+     */
+    private void copyIndividualFile(String key, String path, Map<String, FileProvisioning.FileInfo> fileMap,
+            File downloadDirFileObj, boolean record) {
+        String shortfileName = Paths.get(path).getFileName().toString();
+        final Path targetFilePath = Paths.get(downloadDirFileObj.getAbsolutePath(), shortfileName);
 
         // expects URI in "path": "icgc:eef47481-670d-4139-ab5b-1dad808a92d9"
         PathInfo pathInfo = new PathInfo(path);
@@ -603,11 +648,11 @@ public class LauncherCWL {
         info.setLocalPath(targetFilePath.toFile().getAbsolutePath());
         info.setUrl(path);
         // key may contain either key:download_URL for array inputs or just cwlInputFileID for scalar input
-        fileMap.put(key, info);
-        LOG.info("DOWNLOADED FILE: LOCAL: {} URL: {}", cwlInputFileID, path);
+        if (record) {
+            fileMap.put(key, info);
+        }
+        LOG.info("DOWNLOADED FILE: LOCAL: {} URL: {}", shortfileName, path);
     }
-
-
 
     private CommandLine parseCommandLine(CommandLineParser parser, String[] args) {
         try {
