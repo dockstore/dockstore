@@ -313,7 +313,8 @@ public class FileProvisioning {
                 // trigger a copy from the URL to a local file path that's a UUID to avoid collision
                 fsManager = VFS.getManager();
                 // check for a local file path
-                FileObject dest = fsManager.resolveFile(file.getUrl());
+                Path currentWorkingDir = Paths.get("").toAbsolutePath();
+                FileObject dest = fsManager.resolveFile(currentWorkingDir.toFile(), file.getUrl());
                 FileObject src = fsManager.resolveFile(sourceFile.getAbsolutePath());
                 copyFromInputStreamToOutputStream(src.getContent().getInputStream(), inputSize, dest.getContent().getOutputStream());
             } catch (IOException e) {
