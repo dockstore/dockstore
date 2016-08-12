@@ -920,74 +920,42 @@ public class WorkflowResource {
         sections = (Map<String, Object>) yaml.load(is);
         for (Map.Entry<String, Object> entry : sections.entrySet()) {
             String section = entry.getKey();
-            if (section.equals("hints")) {
-                //docker requirement of the workflow
-                ArrayList<Map<String, Object>> requirements = (ArrayList<Map<String, Object>>) entry.getValue();
-                for (Map <String, Object> requirement : requirements) {
-                    if (requirement.get("class").equals("DockerRequirement")) {
-                        defaultDockerEnv = requirement.get("dockerPull").toString();
-                    }
-                }
-            }
-            else if(section.equals("requirements")){
-                List<Map<Map<String, Object>,Object>> requirements = (List<Map<Map<String, Object>,Object>>) entry.getValue();
-                for (Map<Map<String, Object>,Object> requirement : requirements) {
-                    if (requirement.get("class").equals("DockerRequirement")) {
-                        defaultDockerEnv = requirement.get("dockerPull").toString();
-                    }
-                }
-            }
-
-
+            defaultDockerEnv = getDefaultDockerEnv(section,entry);
             if (section.equals("steps")) {
                 // try to see each tool through "steps" command
                 List<Map <String, Object>> steps = new ArrayList<>();
-
-                if (entry.getValue() instanceof Map) {
-                    Map<Map.Entry<String, Object>,Object> stepsMap = (Map<Map.Entry<String,Object>,Object>) entry.getValue();
-                    for(Object stepMap : stepsMap.keySet()){
-                        String keyStep = stepMap.toString();
-                        Object valueStep = stepsMap.get(stepMap);
-                        Map<String, Object> stepMapValue = new HashMap<>();
-                        stepMapValue.put(keyStep,valueStep);
-                        steps.add(stepMapValue);
-                    }
-                }else {
-                    steps = (ArrayList<Map <String, Object>>) entry.getValue();
-                }
+                steps = getStepsArray(entry);
 
                 for (Map <String, Object> step : steps) {
                     Object file=null;
                     String fileName="";
-                    String StepIdValue="";
+                    String stepIdValue="";
                     boolean expressionTool = false;
                     boolean expHasRequirement = false;
                     Set<Map.Entry<String, Object>> stepEntrySet = step.entrySet();
                     for (Map.Entry<String, Object> stepEntryValues : stepEntrySet){
                         if(stepEntryValues.getValue() instanceof Map){
-                            StepIdValue = stepEntryValues.getKey();
+                            stepIdValue = stepEntryValues.getKey();
                             Map<String, Object> valueOfStep = (Map<String, Object>)stepEntryValues.getValue();
                             file = valueOfStep.get("run");
                         }else{
                             if(stepEntryValues.getKey().equals("run")){
                                 file = stepEntryValues.getValue();
                             }else if(stepEntryValues.getKey().equals("id")){
-                                StepIdValue = stepEntryValues.getValue().toString();
+                                stepIdValue = stepEntryValues.getValue().toString();
                             }
                         }
                     }
-
                     if(file instanceof String){
                         fileName = file.toString();
                     } else{
                         Map<String, Object> fileMap = (Map<String, Object>) file;
                         if(fileMap.containsKey("expression")){
                             expressionTool = true;
-                            //check if expression has docker requirement
                             if(!(fileMap.get("expression") instanceof String)){
+                                expHasRequirement = false;
                                 //TODO check if expressionTool has requirement/hints or not
-                                //if yes, expHasRequirement = true
-                                //get the docker requirement
+                                //if yes, expHasRequirement = true, get the docker requirement
                             }
                         }else{
                             expressionTool = false;
@@ -998,7 +966,6 @@ public class WorkflowResource {
                             }
                         }
                     }
-
                     //get the tool file based on "run" command
                     String secondaryDescriptor; //get the file content
                     InputStream secondaryIS; //convert to InputStream
@@ -1023,11 +990,11 @@ public class WorkflowResource {
                                                 //get the docker file and link
                                                 dockerPullURL = getURLFromEntry((String)requirement.get("dockerPull"));
                                                 //put the tool ID and docker information into two different maps
-                                                toolID.put(index.toString(), new MutablePair<>(StepIdValue, fileName));
+                                                toolID.put(index.toString(), new MutablePair<>(stepIdValue, fileName));
                                                 toolDocker.put(index.toString(),new MutablePair<>(dockerEnv, dockerPullURL));
                                                 index++;
                                             }else{
-                                                nodePairs.add(new MutablePair<>(StepIdValue.replaceFirst("#", ""), getURLFromEntry(requirement.get("dockerPull").toString())));
+                                                nodePairs.add(new MutablePair<>(stepIdValue.replaceFirst("#", ""), getURLFromEntry(requirement.get("dockerPull").toString())));
                                             }
                                             defaultDocker = false;
                                             break;
@@ -1041,15 +1008,13 @@ public class WorkflowResource {
                             if(type.equals(Type.DAG)){
                                 if(!expHasRequirement){
                                     //no docker requirement
-                                    nodePairs.add(new MutablePair<>(StepIdValue.replaceFirst("#", ""), ""));
+                                    nodePairs.add(new MutablePair<>(stepIdValue.replaceFirst("#", ""), ""));
                                 }else{
-                                    //has docker requirement/hint
-                                    //get the link of docker requirement and add to nodePairs
+                                    //has docker requirement/hint, get the link of docker requirement and add to nodePairs
+                                    nodePairs.add(new MutablePair<>(stepIdValue.replaceFirst("#", ""), ""));
                                 }
                             }
                         }
-
-
 
                         if (defaultDocker) {
                             if(type == Type.TOOLS) {
@@ -1082,6 +1047,44 @@ public class WorkflowResource {
         }
         return result;
 
+    }
+
+    private List<Map<String,Object>> getStepsArray(Map.Entry<String, Object> entry){
+        List<Map<String,Object>> steps = new ArrayList<>();
+        if (entry.getValue() instanceof Map) {
+            Map<Map.Entry<String, Object>,Object> stepsMap = (Map<Map.Entry<String,Object>,Object>) entry.getValue();
+            for(Object stepMap : stepsMap.keySet()){
+                String keyStep = stepMap.toString();
+                Object valueStep = stepsMap.get(stepMap);
+                Map<String, Object> stepMapValue = new HashMap<>();
+                stepMapValue.put(keyStep,valueStep);
+                steps.add(stepMapValue);
+            }
+        }else {
+            steps = (ArrayList<Map <String, Object>>) entry.getValue();
+        }
+        return steps;
+    }
+
+    private String getDefaultDockerEnv(String section,Map.Entry<String, Object> entry){
+        String defaultDockerEnv="";
+        if (section.equals("hints")) {
+            //docker requirement of the workflow
+            ArrayList<Map<String, Object>> requirements = (ArrayList<Map<String, Object>>) entry.getValue();
+            for (Map <String, Object> requirement : requirements) {
+                if (requirement.get("class").equals("DockerRequirement")) {
+                    defaultDockerEnv = requirement.get("dockerPull").toString();
+                }
+            }
+        } else if(section.equals("requirements")){
+            List<Map<Map<String, Object>,Object>> requirements = (List<Map<Map<String, Object>,Object>>) entry.getValue();
+            for (Map<Map<String, Object>,Object> requirement : requirements) {
+                if (requirement.get("class").equals("DockerRequirement")) {
+                    defaultDockerEnv = requirement.get("dockerPull").toString();
+                }
+            }
+        }
+        return defaultDockerEnv;
     }
 
     /**
