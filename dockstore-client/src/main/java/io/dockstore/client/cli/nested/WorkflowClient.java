@@ -22,7 +22,6 @@ import io.dockstore.client.cli.Client;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.Body1;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
@@ -34,6 +33,7 @@ import org.apache.http.HttpStatus;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -90,7 +90,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
             String combinedLabelString = generateLabelString(addsSet, removesSet, existingLabels);
 
-            Workflow updatedWorkflow = workflowsApi.updateLabels(workflowId, combinedLabelString, new Body1());
+            Workflow updatedWorkflow = workflowsApi.updateLabels(workflowId, combinedLabelString, "");
 
             List<Label> newLabels = updatedWorkflow.getLabels();
             if (!newLabels.isEmpty()) {
@@ -131,7 +131,7 @@ public class WorkflowClient extends AbstractEntryClient {
             if (workflow == null || !workflow.getIsPublished()) {
                 errorMessage("This workflow is not published.", Client.COMMAND_ERROR);
             } else {
-                Date dateUploaded = workflow.getLastUpdated();
+                Date dateUploaded = Date.from(workflow.getLastUpdated().toLocalDateTime().atZone(ZoneId.systemDefault()).toInstant());
 
                 String description = workflow.getDescription();
                 if (description == null) {

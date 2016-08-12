@@ -594,6 +594,7 @@
                                 <usedDependency>io.swagger:swagger-jersey2-jaxrs</usedDependency>
                                 <usedDependency>io.dropwizard:dropwizard-views-freemarker</usedDependency>
                                 <usedDependency>org.apache.commons:commons-lang3</usedDependency>
+                                <usedDependency>com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider</usedDependency>
                             </usedDependencies>
                         </configuration>
                     </execution>

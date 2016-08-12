@@ -102,7 +102,7 @@ public class GeneralET {
                 c.setNamespace("testPath");
                 c.setToolname("test5");
                 c.setPath("quay.io/dockstoretestuser2/dockstore-tool-imports");
-                c.setToolPath("registry.hub.docker.com/seqware/seqware/test5");
+                c.setPath("registry.hub.docker.com/seqware/seqware/test5");
                 Tag tag = new Tag();
                 tag.setName("master");
                 tag.setReference("refs/heads/master");

@@ -52,7 +52,7 @@ definitions:
       namespace: {description: 'This is a docker namespace for the container, required:
           GA4GH', type: string}
       path: {description: 'This is a generated full docker path including registry
-          and namespace, used for docker pull commands', readOnly: true, type: string}
+          and namespace, used for docker pull commands', type: string}
       registry:
         description: 'This is a specific docker provider like quay.io or dockerhub
           or n/a?, required: GA4GH'
@@ -124,7 +124,7 @@ definitions:
     type: object
   PublishRequest:
     properties:
-      publish: {default: false, readOnly: true, type: boolean}
+      publish: {default: false, type: boolean}
     type: object
   QuayIOAuthenticationResource:
     properties:
@@ -309,7 +309,7 @@ definitions:
         type: string
       organization: {description: This is a git organization for the workflow, type: string}
       path: {description: 'This is a generated full workflow path including organization,
-          repository name, and workflow name', readOnly: true, type: string}
+          repository name, and workflow name', type: string}
       repository: {description: This is a git repository name, type: string}
       users:
         description: This indicates the users that have control over this entry, dockstore specific
