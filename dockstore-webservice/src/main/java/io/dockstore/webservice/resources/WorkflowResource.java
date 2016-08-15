@@ -920,9 +920,8 @@ public class WorkflowResource {
         sections = (Map<String, Object>) yaml.load(is);
         for (Map.Entry<String, Object> entry : sections.entrySet()) {
             String section = entry.getKey();
-            defaultDockerEnv = getDefaultDockerEnv(section,entry);
+            defaultDockerEnv = getDefaultDockerEnv(section,entry,defaultDockerEnv);
             if (section.equals("steps")) {
-                // try to see each tool through "steps" command
                 List<Map <String, Object>> steps = new ArrayList<>();
                 steps = getStepsArray(entry);
 
@@ -935,10 +934,20 @@ public class WorkflowResource {
                     Set<Map.Entry<String, Object>> stepEntrySet = step.entrySet();
                     for (Map.Entry<String, Object> stepEntryValues : stepEntrySet){
                         if(stepEntryValues.getValue() instanceof Map){
-                            stepIdValue = stepEntryValues.getKey();
-                            Map<String, Object> valueOfStep = (Map<String, Object>)stepEntryValues.getValue();
-                            file = valueOfStep.get("run");
-                        }else{
+                            Map<String, Object> valueOfStep = new HashMap<>();
+                            if(stepEntryValues.getKey().equals("run")){ //run:{import:<filename>.cwl}, run:{include:<filename>.cwl}
+                                valueOfStep = (Map<String, Object>)stepEntryValues.getValue();
+                                if(valueOfStep.containsKey("import")){
+                                    file = valueOfStep.get("import");
+                                } else if(valueOfStep.containsKey("include")){
+                                    file = valueOfStep.get("include");
+                                }
+                            }else{ //run:<filename>.cwl but id is the key (CWL 1.0)
+                                stepIdValue = stepEntryValues.getKey();
+                                valueOfStep = (Map<String, Object>)stepEntryValues.getValue();
+                                file = valueOfStep.get("run");
+                            }
+                        }else{ //id is not the key of step
                             if(stepEntryValues.getKey().equals("run")){
                                 file = stepEntryValues.getValue();
                             }else if(stepEntryValues.getKey().equals("id")){
@@ -974,7 +983,7 @@ public class WorkflowResource {
                     if(secondaryDescContent.size() != 0){
                         boolean defaultDocker = true;
                         if(!expressionTool){
-                            //run:<filename>.cwl, run:{import:<filename>.cwl, run:{include:<filename>.cwl
+                            //run:<filename>.cwl, run:{import:<filename>.cwl}, run:{include:<filename>.cwl}
                             secondaryDescriptor = secondaryDescContent.get(fileName); //get the file content
                             secondaryIS = IOUtils.toInputStream(secondaryDescriptor, StandardCharsets.UTF_8); //convert to InputStream
                             helperGroups = (Map<String, Object>) helperYaml.load(secondaryIS);
@@ -987,7 +996,6 @@ public class WorkflowResource {
                                         if (requirement.get("class").equals("DockerRequirement")) {
                                             dockerEnv = requirement.get("dockerPull").toString();
                                             if(type == Type.TOOLS){
-                                                //get the docker file and link
                                                 dockerPullURL = getURLFromEntry((String)requirement.get("dockerPull"));
                                                 //put the tool ID and docker information into two different maps
                                                 toolID.put(index.toString(), new MutablePair<>(stepIdValue, fileName));
@@ -1004,29 +1012,24 @@ public class WorkflowResource {
                             }
                         }else{
                             defaultDocker = false;
-                            //run: expression: <something>, this should not be added to Tools table, but shuold still be added to DAG
+                            //run: expression: <something>, this should not be added to Tools table, but should still be added to DAG
                             if(type.equals(Type.DAG)){
-                                if(!expHasRequirement){
-                                    //no docker requirement
+                                if(!expHasRequirement){ //no docker requirement
                                     nodePairs.add(new MutablePair<>(stepIdValue.replaceFirst("#", ""), ""));
-                                }else{
-                                    //has docker requirement/hint, get the link of docker requirement and add to nodePairs
+                                }else{ //has docker requirement/hint, get the link of docker requirement and add to nodePairs
                                     nodePairs.add(new MutablePair<>(stepIdValue.replaceFirst("#", ""), ""));
                                 }
                             }
                         }
-
                         if (defaultDocker) {
                             if(type == Type.TOOLS) {
-                                // no docker requirement
-                                if(defaultDockerEnv.equals("")){
+                                if(defaultDockerEnv.equals("")){ // no docker requirement
                                     dockerEnv = "Not Specified";
                                     dockerPullURL = "Not Specified"; // the workflow does not specify any docker requirement too
                                 }else{
                                     dockerEnv = defaultDockerEnv;
                                     dockerPullURL = getURLFromEntry(defaultDockerEnv); //get default from workflow docker requirement
                                 }
-
                                 toolID.put(index.toString(), new MutablePair<>(step.get("id").toString(), fileName));
                                 toolDocker.put(index.toString(), new MutablePair<>(dockerEnv, dockerPullURL));
                                 index++;
@@ -1038,7 +1041,6 @@ public class WorkflowResource {
                 }
             }
         }
-
         //call and return the Json string transformer
         if(type == Type.TOOLS){
             result = getJSONTableToolContentCWL(toolID, toolDocker);
@@ -1046,9 +1048,13 @@ public class WorkflowResource {
             result = setupJSONDAG(nodePairs);
         }
         return result;
-
     }
 
+    /**
+     * This method is to get the steps of CWL workflow in form of array
+     * @param entry
+     * @return steps
+     */
     private List<Map<String,Object>> getStepsArray(Map.Entry<String, Object> entry){
         List<Map<String,Object>> steps = new ArrayList<>();
         if (entry.getValue() instanceof Map) {
@@ -1066,8 +1072,15 @@ public class WorkflowResource {
         return steps;
     }
 
-    private String getDefaultDockerEnv(String section,Map.Entry<String, Object> entry){
-        String defaultDockerEnv="";
+    /**
+     * This method will check for the docker environment of the workflow by looking for "hints" and "requirements"
+     * and make it as default docker environment (if available, else return "")
+     * @param section
+     * @param entry
+     * @param defaultDockerEnv
+     * @return defaultDockerEnv
+     */
+    private String getDefaultDockerEnv(String section,Map.Entry<String, Object> entry, String defaultDockerEnv){
         if (section.equals("hints")) {
             //docker requirement of the workflow
             ArrayList<Map<String, Object>> requirements = (ArrayList<Map<String, Object>>) entry.getValue();
