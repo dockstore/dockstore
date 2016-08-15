@@ -927,7 +927,7 @@ public class WorkflowResource {
                     boolean expressionTool = false;
                     Set<Map.Entry<String, Object>> stepEntrySet = step.entrySet();
                     for (Map.Entry<String, Object> stepEntryValues : stepEntrySet){
-                        if(stepEntryValues.getValue() instanceof Map){
+                        if(stepEntryValues.getValue() instanceof Map){ //{pass_filter->{in->..., out->..., ...}}
                             Map<String, Object> valueOfStep;
                             if(stepEntryValues.getKey().equals("run")){ //run:{import:<filename>.cwl}, run:{include:<filename>.cwl}
                                 valueOfStep = (Map<String, Object>)stepEntryValues.getValue();
@@ -941,7 +941,7 @@ public class WorkflowResource {
                                 valueOfStep = (Map<String, Object>)stepEntryValues.getValue();
                                 file = valueOfStep.get("run");
                             }
-                        }else{ //id is not the key of step
+                        }else{ //{id->..., in->..., out-> ..., run->...}
                             if(stepEntryValues.getKey().equals("run")){
                                 file = stepEntryValues.getValue();
                             }else if(stepEntryValues.getKey().equals("id")){
@@ -949,23 +949,23 @@ public class WorkflowResource {
                             }
                         }
                     }
-                    if(file instanceof String){
+                    if(file instanceof String){ // run: <filename>.cwl
                         fileName = file.toString();
-                    } else{
+                    } else{ //run: expression-> ..... in->.....
                         Map<String, Object> fileMap = (Map<String, Object>) file;
                         if(fileMap.get("class").equals("ExpressionTool")){
-                            expressionTool = true;
+                            expressionTool = true; //ExpressionTool means that this id is not a tool
                             if(fileMap.containsKey("requirement") || fileMap.containsKey("hints")){
                                 dockerEnv = getDockerEnvExprTool(fileMap);
                                 dockerPullURL = getURLFromEntry(dockerEnv);
-                            }else{
+                            }else{ //run is a map but does not have any hints/requirements
                                 dockerPullURL = "";
                             }
                         }
                     }
                     //get the tool file based on "run" command
-                    String secondaryDescriptor; //get the file content
-                    InputStream secondaryIS; //convert to InputStream
+                    String secondaryDescriptor;
+                    InputStream secondaryIS;
                     Yaml helperYaml = new Yaml();
                     Map<String, Object> helperGroups;
                     if(secondaryDescContent.size() != 0){
@@ -1000,12 +1000,12 @@ public class WorkflowResource {
                             }
                             if (defaultDocker) {
                                 if(type == Type.TOOLS) {
-                                    if(defaultDockerEnv.equals("")){ // no docker requirement
+                                    if(defaultDockerEnv.equals("")){ // no docker requirement found in the workflow
                                         dockerEnv = "Not Specified";
-                                        dockerPullURL = "Not Specified"; // the workflow does not specify any docker requirement too
-                                    }else{
+                                        dockerPullURL = "Not Specified";
+                                    }else{ //docker requirement is specified in the workflow
                                         dockerEnv = defaultDockerEnv;
-                                        dockerPullURL = getURLFromEntry(defaultDockerEnv); //get default from workflow docker requirement
+                                        dockerPullURL = getURLFromEntry(defaultDockerEnv); //get default docker requirement from workflow
                                     }
                                     toolID.put(index.toString(), new MutablePair<>(stepIdValue, fileName));
                                     toolDocker.put(index.toString(), new MutablePair<>(dockerEnv, dockerPullURL));
@@ -1015,7 +1015,7 @@ public class WorkflowResource {
                                 }
                             }
                         }else{
-                            if(type.equals(Type.DAG)){ //only if it is has ExpressionTool and DAG
+                            if(type.equals(Type.DAG)){ //IFF it is has ExpressionTool and DAG
                                 nodePairs.add(new MutablePair<>(stepIdValue.replaceFirst("#", ""), dockerPullURL));
                             }
                         }
@@ -1130,33 +1130,28 @@ public class WorkflowResource {
 
         // TODO: How to deal with multiple entries of a tool? For now just grab the first
         if (dockerEntry.startsWith("quay.io/")) {
-            Tool tool;
-            if(toolDAO.findByPath(dockerEntry).size() !=0){
-                tool = toolDAO.findByPath(dockerEntry).get(0);
-                if (tool != null) {
-                    url = dockstorePath + dockerEntry;
-                } else {
-                    url = dockerEntry.replaceFirst("quay\\.io/", quayIOPath);
-                }
-            }else {
+            List<Tool> byPath = toolDAO.findPublishedByPath(dockerEntry);
+            if (byPath == null || byPath.isEmpty()){
+                // when we cannot find a published tool on Dockstore, link to quay.io
                 url = dockerEntry.replaceFirst("quay\\.io/", quayIOPath);
+            } else{
+                // when we found a published tool, link to the tool on Dockstore
+                url = dockstorePath + dockerEntry;
             }
         } else {
             String[] parts = dockerEntry.split("/");
             if (parts.length == 2) {
-                Tool tool;
-                if(toolDAO.findByPath("registry.hub.docker.com/" + dockerEntry).size() !=0){
-                    tool = toolDAO.findByPath("registry.hub.docker.com/" + dockerEntry).get(0);
-                    if (tool != null) {
-                        url = dockstorePath + "registry.hub.docker.com/" + dockerEntry;
-                    } else {
-                        url = dockerHubPathR + dockerEntry;
-                    }
-                }else{
-                    url = "";
+                // if the path looks like pancancer/pcawg-oxog-tools
+                List<Tool> publishedByPath = toolDAO.findPublishedByPath("registry.hub.docker.com/" + dockerEntry);
+                if (publishedByPath == null || publishedByPath.isEmpty()) {
+                    // when we cannot find a published tool on Dockstore, link to docker hub
+                    url = dockerHubPathR + dockerEntry;
+                } else {
+                    // when we found a published tool, link to the tool on Dockstore
+                    url = dockstorePath + "registry.hub.docker.com/" + dockerEntry;
                 }
-
             } else {
+                // if the path looks like debian:8 or debian
                 url = dockerHubPathUnderscore + dockerEntry;
             }
 
