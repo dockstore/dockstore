@@ -217,4 +217,21 @@ public class DAGWorkflowTestIT {
         Assert.assertTrue("node data should have sorted as tool", strings.get(0).contains("sorted"));
         Assert.assertTrue("edge should connect rev and sorted", strings.get(0).contains("\"source\":\"0\",\"target\":\"1\""));
     }
+
+    @Test
+    public void testDAGCWL1Syntax() throws IOException, TimeoutException, ApiException {
+        // Input: preprocess_vcf.cwl
+        // Repo: OxoG-Dockstore-Tools
+        // Branch: develop
+        // Test: "[pass_filter -> [inputs: ...., outputs: ....]] instead of [id->pass_filter,inputs->....]"
+        // Return: DAG with 17 nodes
+
+        final List<String> strings = getJSON("DockstoreTestUser2/OxoG-Dockstore-Tools", "/preprocess_vcf.cwl", "cwl", "develop");
+        int countNode = countNodeInJSON(strings);
+
+        Assert.assertTrue("JSON should not be blank", strings.size() > 0);
+        Assert.assertEquals("JSON should have two nodes", countNode, 17);
+        Assert.assertTrue("node data should have pass_filter as tool", strings.get(0).contains("pass_filter"));
+        Assert.assertTrue("node data should have merge_vcfs as tool", strings.get(0).contains("merge_vcfs"));
+    }
 }
