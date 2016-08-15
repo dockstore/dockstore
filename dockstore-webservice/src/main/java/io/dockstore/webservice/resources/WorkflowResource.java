@@ -1130,13 +1130,17 @@ public class WorkflowResource {
 
         // TODO: How to deal with multiple entries of a tool? For now just grab the first
         if (dockerEntry.startsWith("quay.io/")) {
-            Tool tool = toolDAO.findByPath(dockerEntry).get(0);
-            if (tool != null) {
-                url = dockstorePath + dockerEntry;
-            } else {
+            Tool tool;
+            if(toolDAO.findByPath(dockerEntry).size() !=0){
+                tool = toolDAO.findByPath(dockerEntry).get(0);
+                if (tool != null) {
+                    url = dockstorePath + dockerEntry;
+                } else {
+                    url = dockerEntry.replaceFirst("quay\\.io/", quayIOPath);
+                }
+            }else {
                 url = dockerEntry.replaceFirst("quay\\.io/", quayIOPath);
             }
-
         } else {
             String[] parts = dockerEntry.split("/");
             if (parts.length == 2) {
