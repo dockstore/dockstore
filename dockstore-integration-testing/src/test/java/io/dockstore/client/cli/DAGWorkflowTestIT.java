@@ -102,7 +102,7 @@ public class DAGWorkflowTestIT {
         //count the number of nodes in the DAG json
         int countNode = 0;
         int last = 0;
-        String node = "tool";
+        String node = "id";
         while(last !=-1){
             last = strings.get(0).indexOf(node,last);
 

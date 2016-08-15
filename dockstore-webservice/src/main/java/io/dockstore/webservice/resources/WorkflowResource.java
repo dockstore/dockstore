@@ -911,7 +911,7 @@ public class WorkflowResource {
         Integer index = 0;
         Map<String, Pair<String, String>> toolID = new HashMap<>();     // map for toolID and toolName
         Map<String, Pair<String, String>> toolDocker = new HashMap<>(); // map for docker
-        ArrayList<Pair<String, String>> nodePairs = new ArrayList<>();
+        ArrayList<Pair<String, String>> nodePairs = new ArrayList<>();  // array for dag nodes
         String result = null;
 
         InputStream is = IOUtils.toInputStream(content, StandardCharsets.UTF_8);
@@ -1015,7 +1015,7 @@ public class WorkflowResource {
                                 }
                             }
                         }else{
-                            if(type.equals(Type.DAG)){ //IFF it is has ExpressionTool and DAG
+                            if(type.equals(Type.DAG)){ //IFF it is has ExpressionTool and Type is DAG
                                 nodePairs.add(new MutablePair<>(stepIdValue.replaceFirst("#", ""), dockerPullURL));
                             }
                         }
@@ -1034,7 +1034,7 @@ public class WorkflowResource {
     }
 
     /**
-     * This method will
+     * This method will get the docker environment inside an expressionTool
      * @param fileMap
      * @return dockerEnv
      */
@@ -1049,7 +1049,7 @@ public class WorkflowResource {
             hasReq = true;
             reqInsideRun = (Map<String, Object>)fileMap.get("hints");
         }
-        if(hasReq){
+        if(hasReq){ //if expression tool has requirements/hints
             if(reqInsideRun.get("class").equals("DockerRequirement")){
                 dockerEnv = reqInsideRun.get("dockerPull").toString();
             }
@@ -1178,6 +1178,7 @@ public class WorkflowResource {
             nodeEntry.put("data", dataEntry);
             nodes.add(nodeEntry);
 
+            //TODO: edges are all currently pointing from idCount-1 to idCount, this is not always true
             if (idCount > 0) {
                 Map<String, Object> edgeEntry = new HashMap<>();
                 Map<String, String> sourceTarget = new HashMap<>();
