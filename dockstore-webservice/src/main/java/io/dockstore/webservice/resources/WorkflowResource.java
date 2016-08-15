@@ -907,9 +907,7 @@ public class WorkflowResource {
     private String getContentCWL(String content, Map<String, String> secondaryDescContent, Type type) {
         Yaml yaml = new Yaml();
         Map <String, Object> sections;
-        String defaultDockerEnv = "";
-        String dockerEnv = "";
-        String dockerPullURL= "";
+        String defaultDockerEnv = "", dockerEnv = "", dockerPullURL = "";
         Integer index = 0;
         Map<String, Pair<String, String>> toolID = new HashMap<>();     // map for toolID and toolName
         Map<String, Pair<String, String>> toolDocker = new HashMap<>(); // map for docker
@@ -922,19 +920,15 @@ public class WorkflowResource {
             String section = entry.getKey();
             defaultDockerEnv = getDefaultDockerEnv(section,entry,defaultDockerEnv);
             if (section.equals("steps")) {
-                List<Map <String, Object>> steps = new ArrayList<>();
-                steps = getStepsArray(entry);
-
+                List<Map <String, Object>> steps = getStepsArray(entry);
                 for (Map <String, Object> step : steps) {
                     Object file=null;
-                    String fileName="";
-                    String stepIdValue="";
+                    String fileName="", stepIdValue="";
                     boolean expressionTool = false;
-                    boolean expHasRequirement = false;
                     Set<Map.Entry<String, Object>> stepEntrySet = step.entrySet();
                     for (Map.Entry<String, Object> stepEntryValues : stepEntrySet){
                         if(stepEntryValues.getValue() instanceof Map){
-                            Map<String, Object> valueOfStep = new HashMap<>();
+                            Map<String, Object> valueOfStep;
                             if(stepEntryValues.getKey().equals("run")){ //run:{import:<filename>.cwl}, run:{include:<filename>.cwl}
                                 valueOfStep = (Map<String, Object>)stepEntryValues.getValue();
                                 if(valueOfStep.containsKey("import")){
@@ -959,19 +953,13 @@ public class WorkflowResource {
                         fileName = file.toString();
                     } else{
                         Map<String, Object> fileMap = (Map<String, Object>) file;
-                        if(fileMap.containsKey("expression")){
+                        if(fileMap.get("class").equals("ExpressionTool")){
                             expressionTool = true;
-                            if(!(fileMap.get("expression") instanceof String)){
-                                expHasRequirement = false;
-                                //TODO check if expressionTool has requirement/hints or not
-                                //if yes, expHasRequirement = true, get the docker requirement
-                            }
-                        }else{
-                            expressionTool = false;
-                            if(fileMap.containsKey("import")){
-                               fileName = fileMap.get("import").toString();
-                            } else if(fileMap.containsKey("include")){
-                                fileName = fileMap.get("include").toString();
+                            if(fileMap.containsKey("requirement") || fileMap.containsKey("hints")){
+                                dockerEnv = getDockerEnvExprTool(fileMap);
+                                dockerPullURL = getURLFromEntry(dockerEnv);
+                            }else{
+                                dockerPullURL = "";
                             }
                         }
                     }
@@ -979,7 +967,7 @@ public class WorkflowResource {
                     String secondaryDescriptor; //get the file content
                     InputStream secondaryIS; //convert to InputStream
                     Yaml helperYaml = new Yaml();
-                    Map<String, Object> helperGroups = new HashMap<>();
+                    Map<String, Object> helperGroups;
                     if(secondaryDescContent.size() != 0){
                         boolean defaultDocker = true;
                         if(!expressionTool){
@@ -996,7 +984,7 @@ public class WorkflowResource {
                                         if (requirement.get("class").equals("DockerRequirement")) {
                                             dockerEnv = requirement.get("dockerPull").toString();
                                             if(type == Type.TOOLS){
-                                                dockerPullURL = getURLFromEntry((String)requirement.get("dockerPull"));
+                                                dockerPullURL = getURLFromEntry(dockerEnv);
                                                 //put the tool ID and docker information into two different maps
                                                 toolID.put(index.toString(), new MutablePair<>(stepIdValue, fileName));
                                                 toolDocker.put(index.toString(),new MutablePair<>(dockerEnv, dockerPullURL));
@@ -1010,33 +998,28 @@ public class WorkflowResource {
                                     }
                                 }
                             }
-                        }else{
-                            defaultDocker = false;
-                            //run: expression: <something>, this should not be added to Tools table, but should still be added to DAG
-                            if(type.equals(Type.DAG)){
-                                if(!expHasRequirement){ //no docker requirement
-                                    nodePairs.add(new MutablePair<>(stepIdValue.replaceFirst("#", ""), ""));
-                                }else{ //has docker requirement/hint, get the link of docker requirement and add to nodePairs
-                                    nodePairs.add(new MutablePair<>(stepIdValue.replaceFirst("#", ""), ""));
-                                }
-                            }
-                        }
-                        if (defaultDocker) {
-                            if(type == Type.TOOLS) {
-                                if(defaultDockerEnv.equals("")){ // no docker requirement
-                                    dockerEnv = "Not Specified";
-                                    dockerPullURL = "Not Specified"; // the workflow does not specify any docker requirement too
+                            if (defaultDocker) {
+                                if(type == Type.TOOLS) {
+                                    if(defaultDockerEnv.equals("")){ // no docker requirement
+                                        dockerEnv = "Not Specified";
+                                        dockerPullURL = "Not Specified"; // the workflow does not specify any docker requirement too
+                                    }else{
+                                        dockerEnv = defaultDockerEnv;
+                                        dockerPullURL = getURLFromEntry(defaultDockerEnv); //get default from workflow docker requirement
+                                    }
+                                    toolID.put(index.toString(), new MutablePair<>(stepIdValue, fileName));
+                                    toolDocker.put(index.toString(), new MutablePair<>(dockerEnv, dockerPullURL));
+                                    index++;
                                 }else{
-                                    dockerEnv = defaultDockerEnv;
-                                    dockerPullURL = getURLFromEntry(defaultDockerEnv); //get default from workflow docker requirement
+                                    nodePairs.add(new MutablePair<>(stepIdValue.replaceFirst("#", ""), getURLFromEntry(defaultDockerEnv)));
                                 }
-                                toolID.put(index.toString(), new MutablePair<>(step.get("id").toString(), fileName));
-                                toolDocker.put(index.toString(), new MutablePair<>(dockerEnv, dockerPullURL));
-                                index++;
-                            }else{
-                                nodePairs.add(new MutablePair<>(step.get("id").toString().replaceFirst("#", ""), getURLFromEntry(defaultDockerEnv)));
+                            }
+                        }else{
+                            if(type.equals(Type.DAG)){ //only if it is has ExpressionTool and DAG
+                                nodePairs.add(new MutablePair<>(stepIdValue.replaceFirst("#", ""), dockerPullURL));
                             }
                         }
+
                     }
                 }
             }
@@ -1048,6 +1031,30 @@ public class WorkflowResource {
             result = setupJSONDAG(nodePairs);
         }
         return result;
+    }
+
+    /**
+     * This method will
+     * @param fileMap
+     * @return dockerEnv
+     */
+    private String getDockerEnvExprTool(Map<String, Object> fileMap){
+        Map<String, Object> reqInsideRun = new HashMap<>();
+        String dockerEnv="";
+        boolean hasReq = false;
+        if(fileMap.containsKey("requirements")){
+            hasReq = true;
+            reqInsideRun = (Map<String, Object>)fileMap.get("requirements");
+        } else if(fileMap.containsKey("hints")){
+            hasReq = true;
+            reqInsideRun = (Map<String, Object>)fileMap.get("hints");
+        }
+        if(hasReq){
+            if(reqInsideRun.get("class").equals("DockerRequirement")){
+                dockerEnv = reqInsideRun.get("dockerPull").toString();
+            }
+        }
+        return dockerEnv;
     }
 
     /**
