@@ -21,6 +21,7 @@ import com.amazonaws.services.s3.internal.S3Signer;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import io.cwl.avro.CWL;
 import io.cwl.avro.CommandLineTool;
@@ -533,7 +534,13 @@ public class LauncherCWL {
 
                 // identify and get secondary files if needed
                 final Method getSecondaryFiles = file.getClass().getDeclaredMethod("getSecondaryFiles");
-                List<String> secondaryFiles = (List<String>) getSecondaryFiles.invoke(file);
+                final Object invoke = getSecondaryFiles.invoke(file);
+                List<String> secondaryFiles = null;
+                if (invoke instanceof List){
+                    secondaryFiles = (List<String>) invoke;
+                } else if (invoke instanceof String){
+                    secondaryFiles = Lists.newArrayList((String)invoke);
+                }
 
                 pullFilesHelper(inputsOutputs, fileMap, cwlInputFileID, secondaryFiles);
             }
