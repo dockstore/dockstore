@@ -230,7 +230,7 @@ public class DAGWorkflowTestIT {
         int countNode = countNodeInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have two nodes", countNode, 17);
+        Assert.assertEquals("JSON should have 17 nodes", countNode, 17);
         Assert.assertTrue("node data should have pass_filter as tool", strings.get(0).contains("pass_filter"));
         Assert.assertTrue("node data should have merge_vcfs as tool", strings.get(0).contains("merge_vcfs"));
     }
@@ -247,7 +247,7 @@ public class DAGWorkflowTestIT {
         int countNode = countNodeInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have two nodes", countNode, 17);
+        Assert.assertEquals("JSON should have 17 nodes", countNode, 17);
         Assert.assertTrue("node 'filter' should have tool link to ubuntu", strings.get(0).contains("\"name\":\"filter\",\"id\":\"2\",\"tool\":\"https://hub.docker.com/_/ubuntu\""));
     }
 }

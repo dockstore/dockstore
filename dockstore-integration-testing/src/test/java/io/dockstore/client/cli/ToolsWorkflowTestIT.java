@@ -256,7 +256,7 @@ public class ToolsWorkflowTestIT {
         int countNode = countToolInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have two tools", countNode, 5);
+        Assert.assertEquals("JSON should have 5 tools", countNode, 5);
         Assert.assertTrue("tool data should have pass_filter as id", strings.get(0).contains("pass_filter"));
         Assert.assertTrue("tool data should have merge_vcfs as id", strings.get(0).contains("merge_vcfs"));
         Assert.assertTrue("pass_filter should not have docker link", strings.get(0).contains("\"id\":\"pass_filter\","+
@@ -281,7 +281,7 @@ public class ToolsWorkflowTestIT {
         int countNode = countToolInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have two tools", countNode, 5);
+        Assert.assertEquals("JSON should have 5 tools", countNode, 5);
         Assert.assertTrue("tool data should have pass_filter as id", strings.get(0).contains("pass_filter"));
         Assert.assertTrue("tool data should have merge_vcfs as id", strings.get(0).contains("merge_vcfs"));
         Assert.assertTrue("pass_filter should not have docker link", strings.get(0).contains("\"id\":\"pass_filter\","+
