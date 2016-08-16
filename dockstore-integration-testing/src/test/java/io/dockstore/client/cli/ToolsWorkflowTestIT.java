@@ -243,4 +243,54 @@ public class ToolsWorkflowTestIT {
                 "\"link\":\"https://hub.docker.com/_/debian\""));
 
     }
+
+    @Test
+    public void testToolCWL1Syntax() throws IOException, TimeoutException, ApiException {
+        // Input: preprocess_vcf.cwl
+        // Repo: OxoG-Dockstore-Tools
+        // Branch: develop
+        // Test: "[pass_filter -> [inputs: ...., outputs: ....]] instead of [id->pass_filter,inputs->....]"
+        // Return: JSON string contains five tools, all have docker requirement, but no link to it since the link is invalid
+
+        final List<String> strings = getJSON("DockstoreTestUser2/OxoG-Dockstore-Tools", "/preprocess_vcf.cwl", "cwl", "develop");
+        int countNode = countToolInJSON(strings);
+
+        Assert.assertTrue("JSON should not be blank", strings.size() > 0);
+        Assert.assertEquals("JSON should have 5 tools", countNode, 5);
+        Assert.assertTrue("tool data should have pass_filter as id", strings.get(0).contains("pass_filter"));
+        Assert.assertTrue("tool data should have merge_vcfs as id", strings.get(0).contains("merge_vcfs"));
+        Assert.assertTrue("pass_filter should not have docker link", strings.get(0).contains("\"id\":\"pass_filter\","+
+                "\"file\":\"pass-filter.cwl\","+
+                "\"docker\":\"pancancer/pcawg-oxog-tools\"," +
+                "\"link\":\"https://hub.docker.com/r/pancancer/pcawg-oxog-tools\""));
+        Assert.assertTrue("merge_vcfs should not have docker link", strings.get(0).contains("\"id\":\"merge_vcfs\"," +
+                "\"file\":\"vcf_merge.cwl\","+
+                "\"docker\":\"pancancer/pcawg-oxog-tools\"," +
+                "\"link\":\"https://hub.docker.com/r/pancancer/pcawg-oxog-tools\""));
+    }
+
+    @Test
+    public void testToolCWL1SyntaxCorrectLink() throws IOException, TimeoutException, ApiException {
+        // Input: preprocess_vcf.cwl
+        // Repo: OxoG-Dockstore-Tools
+        // Branch: correct_docker_link
+        // Test: "pass_filter should have a link to quay repo"
+        // Return: JSON string contains five tools, all have docker requirement, but no link to it since the link is invalid
+
+        final List<String> strings = getJSON("DockstoreTestUser2/OxoG-Dockstore-Tools", "/preprocess_vcf.cwl", "cwl", "correct_docker_link");
+        int countNode = countToolInJSON(strings);
+
+        Assert.assertTrue("JSON should not be blank", strings.size() > 0);
+        Assert.assertEquals("JSON should have 5 tools", countNode, 5);
+        Assert.assertTrue("tool data should have pass_filter as id", strings.get(0).contains("pass_filter"));
+        Assert.assertTrue("tool data should have merge_vcfs as id", strings.get(0).contains("merge_vcfs"));
+        Assert.assertTrue("pass_filter should not have docker link", strings.get(0).contains("\"id\":\"pass_filter\","+
+                "\"file\":\"pass-filter.cwl\","+
+                "\"docker\":\"quay.io/pancancer/pcawg-oxog-tools\"," +
+                "\"link\":\"https://quay.io/repository/pancancer/pcawg-oxog-tools\""));
+        Assert.assertTrue("merge_vcfs should not have docker link", strings.get(0).contains("\"id\":\"merge_vcfs\"," +
+                "\"file\":\"vcf_merge.cwl\","+
+                "\"docker\":\"pancancer/pcawg-oxog-tools\"," +
+                "\"link\":\"https://hub.docker.com/r/pancancer/pcawg-oxog-tools\""));
+    }
 }

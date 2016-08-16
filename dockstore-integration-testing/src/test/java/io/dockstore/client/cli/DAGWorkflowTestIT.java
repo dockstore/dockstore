@@ -102,7 +102,7 @@ public class DAGWorkflowTestIT {
         //count the number of nodes in the DAG json
         int countNode = 0;
         int last = 0;
-        String node = "tool";
+        String node = "id";
         while(last !=-1){
             last = strings.get(0).indexOf(node,last);
 
@@ -216,5 +216,38 @@ public class DAGWorkflowTestIT {
         Assert.assertTrue("node data should have rev as tool", strings.get(0).contains("rev"));
         Assert.assertTrue("node data should have sorted as tool", strings.get(0).contains("sorted"));
         Assert.assertTrue("edge should connect rev and sorted", strings.get(0).contains("\"source\":\"0\",\"target\":\"1\""));
+    }
+
+    @Test
+    public void testDAGCWL1Syntax() throws IOException, TimeoutException, ApiException {
+        // Input: preprocess_vcf.cwl
+        // Repo: OxoG-Dockstore-Tools
+        // Branch: develop
+        // Test: "[pass_filter -> [inputs: ...., outputs: ....]] instead of [id->pass_filter,inputs->....]"
+        // Return: DAG with 17 nodes
+
+        final List<String> strings = getJSON("DockstoreTestUser2/OxoG-Dockstore-Tools", "/preprocess_vcf.cwl", "cwl", "develop");
+        int countNode = countNodeInJSON(strings);
+
+        Assert.assertTrue("JSON should not be blank", strings.size() > 0);
+        Assert.assertEquals("JSON should have 17 nodes", countNode, 17);
+        Assert.assertTrue("node data should have pass_filter as tool", strings.get(0).contains("pass_filter"));
+        Assert.assertTrue("node data should have merge_vcfs as tool", strings.get(0).contains("merge_vcfs"));
+    }
+
+    @Test
+    public void testHintsExpressionTool() throws IOException, TimeoutException, ApiException {
+        // Input: preprocess_vcf.cwl
+        // Repo: OxoG-Dockstore-Tools
+        // Branch: hints_ExpressionTool
+        // Test: "filter has a docker requirement inside expression Tool, linked to ubuntu"
+        // Return: DAG with 17 nodes
+
+        final List<String> strings = getJSON("DockstoreTestUser2/OxoG-Dockstore-Tools", "/preprocess_vcf.cwl", "cwl", "hints_ExpressionTool");
+        int countNode = countNodeInJSON(strings);
+
+        Assert.assertTrue("JSON should not be blank", strings.size() > 0);
+        Assert.assertEquals("JSON should have 17 nodes", countNode, 17);
+        Assert.assertTrue("node 'filter' should have tool link to ubuntu", strings.get(0).contains("\"name\":\"filter\",\"id\":\"2\",\"tool\":\"https://hub.docker.com/_/ubuntu\""));
     }
 }
