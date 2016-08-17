@@ -242,8 +242,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new ToolClassesApi());
 
         // extra renderers
-        environment.jersey().register(new TextToolDescriptorMessageBodyWriter());
-        environment.jersey().register(new TextSourceFileMessageBodyWriter());
+        environment.jersey().register(new CharsetResponseFilter());
 
         // swagger stuff
 

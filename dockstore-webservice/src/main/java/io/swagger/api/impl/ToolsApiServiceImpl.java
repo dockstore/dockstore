@@ -112,7 +112,11 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                 ToolClassesApiServiceImpl.getWorkflowClass();
 
         io.swagger.model.Tool tool = new io.swagger.model.Tool();
-        tool.setAuthor(container.getAuthor());
+        if (container.getAuthor() == null){
+            tool.setAuthor("Unknown author");
+        } else{
+            tool.setAuthor(container.getAuthor());
+        }
         tool.setDescription(container.getDescription());
         tool.setMetaVersion(container.getLastUpdated() != null ? container.getLastUpdated().toString() : null);
         tool.setToolclass(type);
@@ -217,8 +221,11 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             if (container instanceof Tool) {
                 version.setImage(((Tool) container).getPath() + ":" + inputVersion.getName());
             }
-            tool.getVersions().add(version);
-            version.setMetaVersion(inputVersion.getLastModified() != null ? String.valueOf(inputVersion.getLastModified()) : null);
+            if (version.getDescriptor() != null) {
+                // ensure that descriptor is non-null before adding to list
+                tool.getVersions().add(version);
+                version.setMetaVersion(inputVersion.getLastModified() != null ? String.valueOf(inputVersion.getLastModified()) : null);
+            }
         }
         return tool;
     }
@@ -417,7 +424,9 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             }
             // if passing, for each container that matches the criteria, convert to standardised format and return
             io.swagger.model.Tool tool = convertContainer2Tool(c);
-            results.add(tool);
+            if (tool != null) {
+                results.add(tool);
+            }
         }
 
         if (limit == null){
