@@ -38,6 +38,8 @@ public class CharsetResponseFilter implements ContainerResponseFilter {
      */
     @Override public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) throws IOException {
         MediaType contentType = responseContext.getMediaType();
-        responseContext.getHeaders().putSingle("Content-Type", contentType.toString() + ";charset=UTF-8");
+        if (contentType != null) {
+            responseContext.getHeaders().putSingle("Content-Type", contentType.toString() + ";charset=UTF-8");
+        }
     }
 }
