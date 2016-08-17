@@ -22,7 +22,7 @@
     <name>swagger-java-quay-client</name>
   
     <parent>
-        <version>0.4-beta.6</version>
+        <version>0.4-beta.6-SNAPSHOT</version>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
         <relativePath>../pom.xml</relativePath>
