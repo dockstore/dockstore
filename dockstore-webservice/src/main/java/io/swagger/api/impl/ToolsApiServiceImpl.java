@@ -41,6 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.io.UnsupportedEncodingException;
@@ -529,7 +530,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             final ToolVersion toolVersion = first.get();
             if (type == SourceFile.FileType.DOCKERFILE) {
                 final ToolDockerfile dockerfile = toolVersion.getDockerfile();
-                return Response.status(Response.Status.OK).entity(unwrap ? dockerfile.getDockerfile() : dockerfile).build();
+                return Response.status(Response.Status.OK).type(unwrap? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(unwrap ? dockerfile.getDockerfile() : dockerfile).build();
             } else {
                 if (relativePath == null) {
                     if (type == SourceFile.FileType.DOCKSTORE_WDL && toolVersion.getDescriptor().getType() == ToolDescriptor.TypeEnum.WDL) {
@@ -538,7 +539,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                     } else if (type == SourceFile.FileType.DOCKSTORE_CWL
                             && toolVersion.getDescriptor().getType() == ToolDescriptor.TypeEnum.CWL) {
                         final ToolDescriptor descriptor = toolVersion.getDescriptor();
-                        return Response.status(Response.Status.OK).entity(unwrap ? descriptor.getDescriptor() : descriptor).build();
+                        return Response.status(Response.Status.OK).type(unwrap? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(unwrap ? descriptor.getDescriptor() : descriptor).build();
                     }
                     return Response.status(Response.Status.NOT_FOUND).build();
                 } else {
@@ -547,7 +548,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                             .findFirst();
                     if (first1.isPresent()) {
                         final SourceFile entity = first1.get();
-                        return Response.status(Response.Status.OK).entity(unwrap ? entity.getContent() : entity).build();
+                        return Response.status(Response.Status.OK).type(unwrap? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(unwrap ? entity.getContent() : entity).build();
                     }
                 }
             }
