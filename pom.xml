@@ -19,7 +19,7 @@
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>0.4-beta.7</version>
+    <version>0.4-beta.8-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
@@ -61,7 +61,7 @@
         <connection>${github.url}</connection>
         <developerConnection>${github.url}</developerConnection>
         <url>${github.url}</url>
-        <tag>0.4-beta.7</tag>
+        <tag>0.4-beta.6</tag>
     </scm>
 
     <repositories>
