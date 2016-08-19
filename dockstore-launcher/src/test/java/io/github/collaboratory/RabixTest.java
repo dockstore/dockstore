@@ -22,6 +22,9 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.rabix.backend.local.BackendCommandLine;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * Test out integration of Rabix jar
@@ -32,12 +35,18 @@ public class RabixTest {
     public final ExpectedSystemExit exit = ExpectedSystemExit.none();
 
     @Test
-    public void testRabixCall(){
+    public void testRabixCall() throws IOException {
         File cwlFile = FileUtils.getFile("src", "test", "resources", "dna2protein.cwl.json");
         File jobFile = FileUtils.getFile("src", "test", "resources", "translate.cwl.json");
         File configDir = FileUtils.getFile("src", "test", "resources");
 
         exit.expectSystemExitWithStatus(0);
+        // need to create a dummy docker config file for spotify client
+        Path path = Paths.get(System.getProperty("user.home"), ".dockercfg");
+        if (!path.toFile().exists()){
+            path.toFile().createNewFile();
+        }
+
         BackendCommandLine.main(new String[]{"-c", configDir.getAbsolutePath(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath()});
     }
 }
