@@ -41,8 +41,9 @@
         <jackson.version>2.7.6</jackson.version>
         <jersey-version>2.23.1</jersey-version>
         <junit-version>4.12</junit-version>
+        <jetty-version>9.3.9.v20160517</jetty-version>
         <logback.version>1.1.7</logback.version>
-        <aws.version>1.10.77</aws.version>
+        <aws.version>1.11.26</aws.version>
         <powermock.version>1.6.4</powermock.version>
         <mockito.version>1.10.19</mockito.version>
         <cwlavro.version>v1.0</cwlavro.version>
@@ -50,6 +51,7 @@
         <slf4j.version>1.7.21</slf4j.version>
         <swagger-ui.version>2.1.4</swagger-ui.version>
         <maven-fire.version>2.19.1</maven-fire.version>
+        <asm.version>5.0.3</asm.version>
     </properties>
 
     <organization>
@@ -280,6 +282,12 @@
                 <groupId>org.glassfish.jersey.core</groupId>
                 <artifactId>jersey-client</artifactId>
                 <version>${jersey-version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.ow2.asm</groupId>
+                        <artifactId>asm-debug-all</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.glassfish.jersey.core</groupId>
@@ -291,6 +299,13 @@
                 <artifactId>jersey-media-multipart</artifactId>
                 <version>${jersey-version}</version>
             </dependency>
+            <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.connectors/jersey-apache-connector -->
+            <dependency>
+                <groupId>org.glassfish.jersey.connectors</groupId>
+                <artifactId>jersey-apache-connector</artifactId>
+                <version>${jersey-version}</version>
+            </dependency>
+
 
             <dependency>
                 <groupId>io.swagger</groupId>
@@ -529,7 +544,7 @@
             <dependency>
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
-                <version>1.15</version>
+                <version>1.17</version>
             </dependency>
 
             <dependency>
@@ -584,6 +599,12 @@
                 <groupId>org.sagebionetworks</groupId>
                 <artifactId>synapseJavaClient</artifactId>
                 <version>137.0</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.sagebionetworks</groupId>
+                        <artifactId>schema-to-pojo-lib</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -610,6 +631,122 @@
                 <artifactId>commons-beanutils</artifactId>
                 <version>1.9.2</version>
             </dependency>
+
+            <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-pool2 -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-pool2</artifactId>
+                <version>2.4.2</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-guava -->
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-guava</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.containers/jersey-container-servlet-core -->
+            <dependency>
+                <groupId>org.glassfish.jersey.containers</groupId>
+                <artifactId>jersey-container-servlet-core</artifactId>
+                <version>2.23.1</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/org.eclipse.jetty/jetty-server -->
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-server</artifactId>
+                <version>${jetty-version}</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/org.eclipse.jetty/jetty-servlet -->
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-servlet</artifactId>
+                <version>${jetty-version}</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/org.eclipse.jetty/jetty-http -->
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-http</artifactId>
+                <version>${jetty-version}</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/org.eclipse.jetty/jetty-io -->
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-io</artifactId>
+                <version>${jetty-version}</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-compress -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>1.9</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.jaxrs/jackson-jaxrs-base -->
+            <dependency>
+                <groupId>com.fasterxml.jackson.jaxrs</groupId>
+                <artifactId>jackson-jaxrs-base</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.module/jackson-module-jaxb-annotations -->
+            <dependency>
+                <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jackson-module-jaxb-annotations</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/com.google.inject.extensions/guice-servlet -->
+            <dependency>
+                <groupId>com.google.inject.extensions</groupId>
+                <artifactId>guice-servlet</artifactId>
+                <version>4.0</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/org.fusesource.hawtbuf/hawtbuf -->
+            <dependency>
+                <groupId>org.fusesource.hawtbuf</groupId>
+                <artifactId>hawtbuf</artifactId>
+                <version>1.11</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/org.ow2.asm/asm-tree -->
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm-tree</artifactId>
+                <version>${asm.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm</artifactId>
+                <version>${asm.version}</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/org.apache.avro/avro -->
+            <dependency>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro</artifactId>
+                <version>1.8.1</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/com.google.inject.extensions/guice-multibindings -->
+            <dependency>
+                <groupId>com.google.inject.extensions</groupId>
+                <artifactId>guice-multibindings</artifactId>
+                <version>4.0</version>
+            </dependency>
+
+            <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.test-framework/jersey-test-framework-core -->
+            <dependency>
+                <groupId>org.glassfish.jersey.test-framework</groupId>
+                <artifactId>jersey-test-framework-core</artifactId>
+                <version>${jersey-version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.ow2.asm</groupId>
+                        <artifactId>asm-debug-all</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+
+
+
+
+
+
 
         </dependencies>
     </dependencyManagement>

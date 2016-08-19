@@ -1,0 +1,6 @@
+{
+   "input_file": {
+      "class" : "File",
+      "path": "src/test/resources/data/input.txt"
+     }
+}

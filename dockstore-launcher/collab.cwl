@@ -5,7 +5,7 @@ description: "Markdown description text here"
 id: "HelloWorld"
 label: "HelloWorld Tool"
 
-cwlVersion: "cwl:draft-3.dev1"
+cwlVersion: draft-3
 
 dct:creator:
   "@id": "http://orcid.org/0000-0003-3566-7705"
@@ -44,7 +44,7 @@ outputs:
       glob: hello-output.txt
     description: "this describes an output file that should be saved after execution"
 
-baseCommand: ["bash", "-c"]
+baseCommand: ["/bin/bash", "-c"]
 arguments:
   - valueFrom: $("cat " + inputs.hello_input.path + " > hello-output.txt &&"
               + " ls " + inputs.ref_file_1.path + " >> hello-output.txt && "
