@@ -27,6 +27,8 @@ before_script:
 - psql -c "ALTER USER dockstore WITH superuser;" -U postgres
 - psql -c 'create database webservice_test with owner = dockstore;' -U postgres
 - export PATH=$PATH:$PWD/dockstore-client/target
+  # satisfy docker spotify client
+- echo "{}" >  ~/.dockercfg
 script: mvn -B clean install -DskipITs=false -Pconfidential-tests
 before_install:
 - mvn dependency:get -Dartifact=org.eluder.coveralls:coveralls-maven-plugin:4.2.0
