@@ -73,6 +73,7 @@ import okhttp3.OkUrlFactory;
 import org.apache.http.client.HttpClient;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
+import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -203,6 +204,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                                                                  .setAuthorizer(new SimpleAuthorizer()).setPrefix("Bearer").setRealm("SUPER SECRET STUFF").buildAuthFilter()));
         environment.jersey().register(new AuthValueFactoryProvider.Binder<>(User.class));
         environment.jersey().register(RolesAllowedDynamicFeature.class);
+        // jersey-media-json-jackson floating around from rabix causes issues
+        environment.jersey().property(CommonProperties.FEATURE_AUTO_DISCOVERY_DISABLE, true);
 
         final ObjectMapper mapper = environment.getObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
