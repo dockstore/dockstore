@@ -772,13 +772,49 @@
                         <groupId>org.apache.activemq</groupId>
                         <artifactId>activemq-core</artifactId>
                     </exclusion>
-                    <!-- this causes some bizarre Jackson error relating to unknown fields, possibly due to Jackson1 code http://blog.dejavu.sk/2014/02/21/jersey-2-6-has-been-released-new-and-noteworthy/ -->
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.spotify</groupId>
+                <artifactId>docker-client</artifactId>
+                <version>3.5.12</version>
+                <classifier>shaded</classifier>
+                <exclusions>
                     <exclusion>
-                        <groupId>org.glassfish.jersey.media</groupId>
+                        <artifactId>jersey-client</artifactId>
+                        <groupId>org.glassfish.jersey.core</groupId>
+                    </exclusion>
+                    <exclusion>
                         <artifactId>jersey-media-json-jackson</artifactId>
+                        <groupId>org.glassfish.jersey.media</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>jersey-apache-connector</artifactId>
+                        <groupId>org.glassfish.jersey.connectors</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>jackson-databind</artifactId>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>jackson-datatype-guava</artifactId>
+                        <groupId>com.fasterxml.jackson.datatype</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>jackson-jaxrs-json-provider</artifactId>
+                        <groupId>com.fasterxml.jackson.jaxrs</groupId>
                     </exclusion>
                 </exclusions>
             </dependency>
+            <!-- https:/mvnrepository.com/artifact/org.glassfish.jersey.media/jersey-media-json-jackson -->
+            <!-- needed for some odd reason for bunny -->
+            <dependency>
+                <groupId>org.glassfish.jersey.media</groupId>
+                <artifactId>jersey-media-json-jackson</artifactId>
+                <version>${jersey-version}</version>
+                <scope>runtime</scope>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
