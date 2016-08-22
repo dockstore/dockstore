@@ -35,6 +35,13 @@
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-webservice</artifactId>
             <version>0.4-beta.8-SNAPSHOT</version>
+            <exclusions>
+                <!-- this causes some bizarre Jackson error relating to unknown fields, possibly due to Jackson1 code http://blog.dejavu.sk/2014/02/21/jersey-2-6-has-been-released-new-and-noteworthy/ -->
+                <exclusion>
+                    <groupId>org.glassfish.jersey.media</groupId>
+                    <artifactId>jersey-media-json-jackson</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- testing -->

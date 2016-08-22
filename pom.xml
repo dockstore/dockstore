@@ -650,12 +650,6 @@
                 <artifactId>jersey-container-servlet-core</artifactId>
                 <version>${jersey-version}</version>
             </dependency>
-            <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.media/jersey-media-json-jackson -->
-            <dependency>
-                <groupId>org.glassfish.jersey.media</groupId>
-                <artifactId>jersey-media-json-jackson</artifactId>
-                <version>${jersey-version}</version>
-            </dependency>
 
             <!-- https://mvnrepository.com/artifact/org.eclipse.jetty/jetty-server -->
             <dependency>
@@ -699,6 +693,20 @@
                 <artifactId>jackson-dataformat-smile</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
+            <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.dataformat/jackson-dataformat-xml -->
+            <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-xml</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.dataformat/jackson-dataformat-cbor -->
+            <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-cbor</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+
+
 
             <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.module/jackson-module-jaxb-annotations -->
             <dependency>
@@ -755,13 +763,22 @@
                 </exclusions>
             </dependency>
 
-
-
-
-
-
-
-
+            <dependency>
+                <groupId>org.rabix</groupId>
+                <artifactId>rabix-backend-local</artifactId>
+                <version>0.6.1</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.activemq</groupId>
+                        <artifactId>activemq-core</artifactId>
+                    </exclusion>
+                    <!-- this causes some bizarre Jackson error relating to unknown fields, possibly due to Jackson1 code http://blog.dejavu.sk/2014/02/21/jersey-2-6-has-been-released-new-and-noteworthy/ -->
+                    <exclusion>
+                        <groupId>org.glassfish.jersey.media</groupId>
+                        <artifactId>jersey-media-json-jackson</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

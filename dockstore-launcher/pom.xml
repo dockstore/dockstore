@@ -133,13 +133,6 @@
         <dependency>
             <groupId>org.rabix</groupId>
             <artifactId>rabix-backend-local</artifactId>
-            <version>0.6.1</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.activemq</groupId>
-                    <artifactId>activemq-core</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
