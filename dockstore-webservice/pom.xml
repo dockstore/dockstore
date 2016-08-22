@@ -435,8 +435,13 @@
                     <groupId>ch.qos.logback</groupId>
                     <artifactId>logback-classic</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.rabix</groupId>
+                    <artifactId>rabix-backend-local</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
+
 
         <!-- testing -->
         <dependency>

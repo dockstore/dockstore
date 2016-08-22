@@ -648,8 +648,15 @@
             <dependency>
                 <groupId>org.glassfish.jersey.containers</groupId>
                 <artifactId>jersey-container-servlet-core</artifactId>
-                <version>2.23.1</version>
+                <version>${jersey-version}</version>
             </dependency>
+            <!-- https://mvnrepository.com/artifact/org.glassfish.jersey.media/jersey-media-json-jackson -->
+            <dependency>
+                <groupId>org.glassfish.jersey.media</groupId>
+                <artifactId>jersey-media-json-jackson</artifactId>
+                <version>${jersey-version}</version>
+            </dependency>
+
             <!-- https://mvnrepository.com/artifact/org.eclipse.jetty/jetty-server -->
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
@@ -686,6 +693,13 @@
                 <artifactId>jackson-jaxrs-base</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
+            <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.dataformat/jackson-dataformat-smile -->
+            <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-smile</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+
             <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.module/jackson-module-jaxb-annotations -->
             <dependency>
                 <groupId>com.fasterxml.jackson.module</groupId>
