@@ -10,7 +10,7 @@ The Dockstore concept is simple, provide a place where users can share tools enc
 
 For the live site see https://dockstore.org
 
-This repo is the web service for the Dockstore. The usage of this is to enumerate the docker containers (from quay.io and hopefully docker hub) and the workflows (from github) that are available to users of Dockstore.org.
+This repo is the web service for the Dockstore. The usage of this is to enumerate the docker containers (from quay.io and hopefully docker hub) and the workflows (from github/bitbucket) that are available to users of Dockstore.org.
 
 For the related web UI see the [dockstore-ui](https://github.com/ga4gh/dockstore-ui) project.
 
