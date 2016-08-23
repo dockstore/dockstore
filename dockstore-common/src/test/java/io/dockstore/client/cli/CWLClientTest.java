@@ -16,17 +16,14 @@
 
 package io.dockstore.client.cli;
 
+import com.google.common.io.Resources;
+import com.google.gson.Gson;
+import io.cwl.avro.CWL;
+import org.junit.Test;
+
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
-
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.junit.Test;
-
-import com.google.common.io.Resources;
-import com.google.gson.Gson;
-
-import io.cwl.avro.CWL;
 
 import static org.junit.Assert.assertTrue;
 
@@ -54,17 +51,16 @@ public class CWLClientTest {
     public void parseCWL() throws Exception{
         final URL resource = Resources.getResource("cwl.json");
         final CWL cwl = new CWL();
-        final ImmutablePair<String, String> output = cwl.parseCWL(resource.getFile(), true);
-        assertTrue(!output.getLeft().isEmpty() && output.getLeft().contains("cwlVersion"));
-        assertTrue(!output.getRight().isEmpty() && output.getRight().contains("cwltool"));
+        final String output = cwl.parseCWL(resource.getFile());
+        assertTrue(!output.isEmpty() && output.contains("cwlVersion"));
     }
 
     @Test
     public void extractCWLTypes() throws Exception{
         final URL resource = Resources.getResource("cwl.json");
         final CWL cwl = new CWL();
-        final ImmutablePair<String, String> output = cwl.parseCWL(resource.getFile(), true);
-        final Map<String, String> typeMap = cwl.extractCWLTypes(output.getLeft());
+        final String output = cwl.parseCWL(resource.getFile());
+        final Map<String, String> typeMap = cwl.extractCWLTypes(output);
         assertTrue(typeMap.size() == 3);
         assertTrue("int".equals(typeMap.get("mem_gb")));
         assertTrue("File".equals(typeMap.get("bam_input")));

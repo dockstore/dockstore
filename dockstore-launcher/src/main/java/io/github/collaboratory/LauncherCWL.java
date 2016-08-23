@@ -20,7 +20,6 @@ import com.amazonaws.auth.SignerFactory;
 import com.amazonaws.services.s3.internal.S3Signer;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import io.cwl.avro.CWL;
@@ -42,6 +41,10 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.rabix.bindings.BindingException;
+import org.rabix.bindings.Bindings;
+import org.rabix.bindings.BindingsFactory;
+import org.rabix.bindings.model.Application;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -126,14 +129,20 @@ public class LauncherCWL {
     /**
      * Work around for https://github.com/common-workflow-language/cwltool/issues/87
      * @param cwlFile
-     * @return
+     * @return JSON representation of CWL
      */
-    public ImmutablePair<String, String> parseCWL(final String cwlFile) {
-        // update seems to just output the JSON version without checking file links
-        final String[] s = { "cwltool", "--non-strict", "--print-pre", cwlFile };
-        final ImmutablePair<String, String> execute = io.cwl.avro.Utilities
-                .executeCommand(Joiner.on(" ").join(Arrays.asList(s)), false,  Optional.absent(), Optional.absent());
-        return execute;
+    public String parseCWL(final String cwlFile) {
+
+        File filePath = new File(cwlFile);
+        final String fileURI = filePath.toURI().toString();
+        final Bindings bindings;
+        try {
+            bindings = BindingsFactory.create(fileURI);
+            final Application application = bindings.loadAppObject(fileURI);
+            return application.serialize();
+        } catch (BindingException e) {
+            throw new RuntimeException("could not convert CWL into JSON", e);
+        }
     }
 
     public void run(Class cwlClassTarget){
@@ -146,7 +155,7 @@ public class LauncherCWL {
 
         // parse the CWL tool definition without validation
         // final String imageDescriptorContent = cwlUtil.parseCWL(imageDescriptorPath, false).getLeft();
-        final String imageDescriptorContent = this.parseCWL(imageDescriptorPath).getLeft();
+        final String imageDescriptorContent = this.parseCWL(imageDescriptorPath);
         final Object cwlObject = gson.fromJson(imageDescriptorContent, cwlClassTarget);
 
         if (cwlObject == null) {
