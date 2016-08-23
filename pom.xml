@@ -51,7 +51,7 @@
         <slf4j.version>1.7.21</slf4j.version>
         <swagger-ui.version>2.1.4</swagger-ui.version>
         <maven-fire.version>2.19.1</maven-fire.version>
-        <asm.version>5.0.3</asm.version>
+        <asm.version>5.0.4</asm.version>
     </properties>
 
     <organization>
@@ -177,6 +177,11 @@
                 <version>${logback.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk</artifactId>
+                <version>${aws.version}</version>
+            </dependency>
             <dependency>
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-java-sdk-core</artifactId>
@@ -604,6 +609,10 @@
                         <groupId>org.sagebionetworks</groupId>
                         <artifactId>schema-to-pojo-lib</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>com.amazonaws</groupId>
+                        <artifactId>aws-java-sdk</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
 
@@ -731,12 +740,37 @@
                 <groupId>org.ow2.asm</groupId>
                 <artifactId>asm-tree</artifactId>
                 <version>${asm.version}</version>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.ow2.asm</groupId>
                 <artifactId>asm</artifactId>
                 <version>${asm.version}</version>
+                <scope>provided</scope>
             </dependency>
+            <!-- https://mvnrepository.com/artifact/org.ow2.asm/asm-debug-all -->
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm-debug-all</artifactId>
+                <version>${asm.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/org.ow2.asm/asm-analysis -->
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm-analysis</artifactId>
+                <version>${asm.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/org.ow2.asm/asm-commons -->
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm-commons</artifactId>
+                <version>${asm.version}</version>
+                <scope>provided</scope>
+            </dependency>
+
+
             <!-- https://mvnrepository.com/artifact/org.apache.avro/avro -->
             <dependency>
                 <groupId>org.apache.avro</groupId>
