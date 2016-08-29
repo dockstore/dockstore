@@ -52,6 +52,7 @@
         <swagger-ui.version>2.1.4</swagger-ui.version>
         <maven-fire.version>2.19.1</maven-fire.version>
         <asm.version>5.0.4</asm.version>
+        <rabix.version>0.6.1</rabix.version>
     </properties>
 
     <organization>
@@ -807,7 +808,7 @@
             <dependency>
                 <groupId>org.rabix</groupId>
                 <artifactId>rabix-backend-local</artifactId>
-                <version>0.6.1</version>
+                <version>${rabix.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.apache.activemq</groupId>
@@ -815,6 +816,52 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+            <dependency>
+                <groupId>org.rabix</groupId>
+                <artifactId>rabix-executor</artifactId>
+                <version>${rabix.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.activemq</groupId>
+                        <artifactId>activemq-core</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.rabix</groupId>
+                <artifactId>rabix-bindings-draft3</artifactId>
+                <version>${rabix.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.activemq</groupId>
+                        <artifactId>activemq-core</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.rabix</groupId>
+                <artifactId>rabix-common</artifactId>
+                <version>${rabix.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.activemq</groupId>
+                        <artifactId>activemq-core</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.rabix</groupId>
+                <artifactId>rabix-bindings</artifactId>
+                <version>${rabix.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.activemq</groupId>
+                        <artifactId>activemq-core</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+
             <dependency>
                 <groupId>com.spotify</groupId>
                 <artifactId>docker-client</artifactId>

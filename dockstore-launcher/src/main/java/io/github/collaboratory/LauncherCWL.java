@@ -132,7 +132,6 @@ public class LauncherCWL {
      * @return JSON representation of CWL
      */
     public String parseCWL(final String cwlFile) {
-
         File filePath = new File(cwlFile);
         final String fileURI = filePath.toURI().toString();
         final Bindings bindings;

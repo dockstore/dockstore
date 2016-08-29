@@ -1,5 +1,5 @@
 #!/usr/bin/env cwl-runner
-cwlVersion: v1.0
+cwlVersion: draft-3
 class: Workflow
 requirements:
   ScatterFeatureRequirement: {}
