@@ -486,7 +486,7 @@ public abstract class AbstractEntryClient {
             cwl2jsonHelp();
         } else {
             final String cwlPath = reqVal(args, "--cwl");
-            final ImmutablePair<String, String> output = cwlUtil.parseCWL(cwlPath, true);
+            final ImmutablePair<String, String> output = cwlUtil.parseCWL(cwlPath);
 
             final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
             final Map<String, Object> runJson = cwlUtil.extractRunJson(output.getLeft());
@@ -1092,7 +1092,7 @@ public abstract class AbstractEntryClient {
 
         if (descriptor.equals(CWL_STRING)) {
             // need to suppress output
-            final ImmutablePair<String, String> output = cwlUtil.parseCWL(tempDescriptor.getAbsolutePath(), true);
+            final ImmutablePair<String, String> output = cwlUtil.parseCWL(tempDescriptor.getAbsolutePath());
             final Map<String, Object> stringObjectMap = cwlUtil.extractRunJson(output.getLeft());
             if (json) {
                 final Gson gson = CWL.getTypeSafeCWLToolDocument();

@@ -388,7 +388,7 @@ public class DockerRepoResource {
 
         Helper.checkUser(user, c);
 
-        if (request.getPublish()) {
+        if (request.isPublish()) {
             boolean validTag = false;
 
             if (c.getMode() == ToolMode.MANUAL_IMAGE_PATH) {

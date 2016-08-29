@@ -23,7 +23,6 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.UsersApi;
-import io.swagger.client.model.Body;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.PublishRequest;
@@ -36,6 +35,7 @@ import org.apache.http.HttpStatus;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -389,7 +389,7 @@ public class ToolClient extends AbstractEntryClient {
 
             String combinedLabelString = generateLabelString(addsSet, removesSet, existingLabels);
 
-            DockstoreTool updatedContainer = containersApi.updateLabels(containerId, combinedLabelString, new Body());
+            DockstoreTool updatedContainer = containersApi.updateLabels(containerId, combinedLabelString, "");
 
             List<Label> newLabels = updatedContainer.getLabels();
             if (!newLabels.isEmpty()) {
@@ -414,7 +414,7 @@ public class ToolClient extends AbstractEntryClient {
                 errorMessage("This container is not published.", Client.COMMAND_ERROR);
             } else {
 
-                Date dateUploaded = container.getLastBuild();
+                Date dateUploaded = Date.from(container.getLastBuild().toLocalDateTime().atZone(ZoneId.systemDefault()).toInstant());
 
                 String description = container.getDescription();
                 if (description == null) {

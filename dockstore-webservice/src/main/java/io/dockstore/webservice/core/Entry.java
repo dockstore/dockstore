@@ -34,6 +34,8 @@ import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.SequenceGenerator;
+import java.time.OffsetTime;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -213,12 +215,12 @@ public abstract class Entry<S extends Entry, T extends Version> {
     }
 
     @JsonProperty
-    public Date getLastUpdated() {
-        return lastUpdated;
+    public OffsetTime getLastUpdated() {
+        return OffsetTime.ofInstant(lastUpdated.toInstant(), ZoneId.systemDefault());
     }
 
-    public void setLastUpdated(Date lastUpdated) {
-        this.lastUpdated = lastUpdated;
+    public void setLastUpdated(OffsetTime lastUpdated) {
+        this.lastUpdated = new Date(lastUpdated.getNano());
     }
 
 

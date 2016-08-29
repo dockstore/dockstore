@@ -77,7 +77,7 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     @ApiModelProperty(value = "This is a git repository name", required = true)
     private String repository;
     @Column
-    @ApiModelProperty(value = "This is a generated full workflow path including organization, repository name, and workflow name", readOnly = true)
+    @ApiModelProperty(value = "This is a generated full workflow path including organization, repository name, and workflow name")
     private String path;
     @Column(nullable = false)
     @ApiModelProperty(value = "This is a descriptor type for the workflow, either CWL or WDL (Defaults to CWL)", required = true)

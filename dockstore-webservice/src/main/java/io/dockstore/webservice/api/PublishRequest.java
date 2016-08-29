@@ -27,17 +27,22 @@ import io.swagger.annotations.ApiModel;
  */
 @ApiModel("PublishRequest")
 public class PublishRequest {
+    @JsonProperty
     private boolean publish;
 
     public PublishRequest() {
     }
 
     public PublishRequest(boolean publish) {
+        this.setPublish(publish);
+    }
+
+
+    public void setPublish(boolean publish) {
         this.publish = publish;
     }
 
-    @JsonProperty
-    public boolean getPublish() {
+    public boolean isPublish() {
         return publish;
     }
 }

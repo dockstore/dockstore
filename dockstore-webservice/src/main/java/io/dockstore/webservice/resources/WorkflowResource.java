@@ -453,7 +453,7 @@ public class WorkflowResource {
 
         Helper.checkUser(user, c);
 
-        if (request.getPublish()) {
+        if (request.isPublish()) {
             boolean validTag = false;
             Set<WorkflowVersion> versions = c.getVersions();
             for (WorkflowVersion workflowVersion : versions) {

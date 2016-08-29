@@ -35,6 +35,8 @@ import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.OffsetTime;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -253,7 +255,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         workflow.setRepository(name);
         final String gitUrl = BITBUCKET_GIT_URL_PREFIX + repositoryId + BITBUCKET_GIT_URL_SUFFIX;
         workflow.setGitUrl(gitUrl);
-        workflow.setLastUpdated(new Date());
+        workflow.setLastUpdated(OffsetTime.ofInstant(new Date().toInstant(), ZoneId.systemDefault()));
         // make sure path is constructed
         workflow.setPath(workflow.getPath());
 
