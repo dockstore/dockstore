@@ -42,6 +42,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
+import java.time.OffsetTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -323,7 +325,7 @@ public final class Helper {
         final Date time = new Date();
         // Save all new and existing containers, and generate new tags
         for (final Tool tool : dbToolList) {
-            tool.setLastUpdated(time);
+            tool.setLastUpdated(OffsetTime.ofInstant(time.toInstant(), ZoneId.systemDefault()));
             tool.addUser(user);
             toolDAO.create(tool);
 

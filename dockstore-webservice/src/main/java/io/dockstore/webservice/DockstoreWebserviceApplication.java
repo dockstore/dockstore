@@ -139,6 +139,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             }
         });
 
+
         if (cache == null) {
             int cacheSize = CACHE_IN_MB * BYTES_IN_KILOBYTE * KILOBYTES_IN_MEGABYTE; // 100 MiB
             final File tempDir;

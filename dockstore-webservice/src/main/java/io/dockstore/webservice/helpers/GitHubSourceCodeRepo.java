@@ -40,6 +40,8 @@ import wdl4s.NamespaceWithWorkflow;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.OffsetTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
@@ -189,7 +191,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             workflow.setOrganization(repository.getOwner().getLogin());
             workflow.setRepository(repository.getName());
             workflow.setGitUrl(repository.getSshUrl());
-            workflow.setLastUpdated(new Date());
+            workflow.setLastUpdated(OffsetTime.ofInstant(new Date().toInstant(), ZoneId.systemDefault()));
             // make sure path is constructed
 
             if (!existingWorkflow.isPresent()){

@@ -20,6 +20,7 @@ import ch.qos.logback.classic.Level;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.gson.Gson;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.ToolClient;
@@ -530,10 +531,10 @@ public class Client {
 
     private static ObjectMapper getObjectMapper() {
         if (objectMapper == null){
-            return new ObjectMapper();
-        } else {
-            return objectMapper;
+            objectMapper = new ObjectMapper();
+            objectMapper.registerModule(new JavaTimeModule());
         }
+        return objectMapper;
     }
 
     /**
