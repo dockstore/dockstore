@@ -18,6 +18,7 @@ package io.dockstore.webservice.helpers;
 
 import com.google.common.base.Optional;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
@@ -112,46 +113,62 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public Tool findDescriptor(Tool c, String type) {
+    public Entry findDescriptor(Entry entry, String type) {
         Repository repository = null;
         try {
             repository = service.getRepository(gitUsername, gitRepository);
         } catch (IOException e) {
-            LOG.error(gitUsername + ": Repo: {} could not be retrieved", c.getGitUrl());
+            LOG.error(gitUsername + ": Repo: {} could not be retrieved", entry.getGitUrl());
         }
         if (repository == null) {
-            LOG.info(gitUsername + ": Github repository not found for {}", c.getPath());
+            if (entry instanceof Tool) {
+                LOG.info(gitUsername + ": Github repository not found for {}", ((Tool) entry).getPath());
+            } else {
+                LOG.info(gitUsername + ": Github repository not found for {}", ((Workflow) entry).getPath());
+            }
         } else {
             LOG.info(gitUsername + ": Github found for: {}", repository.getName());
             try {
                 // Determine the default branch on Github
                 String mainBranch = repository.getDefaultBranch();
-                c.setMainBranch(mainBranch);
+                entry.setMainBranch(mainBranch);
 
                 // Determine which branch to use for tool info
                 String branchToUse;
-                if (c.getDefaultVersion() == null) { // or default version is invalid
+                if (entry.getDefaultVersion() == null) { // or default version is invalid
                     branchToUse = mainBranch;
                 } else {
-                    branchToUse = c.getDefaultVersion();
+                    branchToUse = entry.getDefaultVersion();
                 }
 
                 // Get file name of interest
                 String fileName = "";
 
-                for (Tag tag : c.getTags()) {
-                    if (tag.getName().equals(branchToUse)) {
-                        if (type.equals("cwl")) {
-                            fileName = tag.getCwlPath();
-                        } else {
-                            fileName = tag.getWdlPath();
+                // If tools
+                if (entry instanceof Tool) {
+                    for (Tag tag : ((Tool)entry).getVersions()) {
+                        if (tag.getName().equals(branchToUse)) {
+                            if (type.equals("cwl")) {
+                                fileName = tag.getCwlPath();
+                            } else {
+                                fileName = tag.getWdlPath();
+                            }
                         }
                     }
                 }
 
-//                if (fileName.startsWith("/")) {
-//                    fileName = fileName.substring(1);
-//                }
+                // If workflow
+                if (entry instanceof Workflow) {
+                    for (WorkflowVersion workflowVersion : ((Workflow) entry).getVersions()) {
+                        if (workflowVersion.getName().equals(branchToUse)) {
+                            fileName = workflowVersion.getWorkflowPath();
+                        }
+                    }
+                }
+
+                if (fileName.startsWith("/")) {
+                    fileName = fileName.substring(1);
+                }
 
                 // Get content of file
                 List<RepositoryContents> contents = cService.getContents(repository, fileName, branchToUse);
@@ -163,17 +180,17 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     // Add for new descriptor types
                     // Grab important metadata from CWL file (expects file to have .cwl extension)
                     if (type.equals("cwl")) {
-                        c = parseCWLContent(c, content);
+                        entry = parseCWLContent(entry, content);
                     }
                     if (type.equals("wdl")) {
-                        c = parseWDLContent(c, content);
+                        entry = parseWDLContent(entry, content);
                     }
                 }
             } catch (IOException ex) {
                 LOG.info(gitUsername + ": Repo: {} has no descriptor file ", repository.getName());
             }
         }
-        return c;
+        return entry;
     }
 
     @Override
@@ -333,6 +350,13 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 }
 
                 workflow.addWorkflowVersion(version);
+            }
+
+            // Get information about default version
+            if (workflow.getDescriptorType().equals("cwl")) {
+                findDescriptor(workflow, "cwl");
+            } else {
+                findDescriptor(workflow, "wdl");
             }
 
             return workflow;

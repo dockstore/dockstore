@@ -254,6 +254,7 @@ public abstract class Entry<S extends Entry, T extends Version> {
         // isPublished = entry.getIsPublished();
         lastModified = entry.getLastModified();
         this.setAuthor(entry.getAuthor());
+        this.setEmail(entry.getEmail());
 
         // Only overwrite the giturl if the new git url is not empty (no value)
         // This will stop the case where there are no autobuilds for a quay repo, but a manual git repo has been set.

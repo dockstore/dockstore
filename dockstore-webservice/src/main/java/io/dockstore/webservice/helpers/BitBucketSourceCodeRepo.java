@@ -23,6 +23,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
@@ -127,8 +128,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public Tool findDescriptor(Tool tool, String type) {
-        String giturl = tool.getGitUrl();
+    public Entry findDescriptor(Entry entry, String type) {
+        String giturl = entry.getGitUrl();
         if (giturl != null && !giturl.isEmpty()) {
 
             Pattern p = Pattern.compile("git\\@bitbucket.org:(\\S+)/(\\S+)\\.git");
@@ -136,7 +137,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             LOG.info(gitUsername + ": " + giturl);
             if (!m.find()) {
                 LOG.info(gitUsername + ": Namespace and/or repository name could not be found from tool's giturl");
-                return tool;
+                return entry;
             }
 
             String url = BITBUCKET_API_URL + "repositories/" + m.group(1) + '/' + m.group(2) + "/main-branch";
@@ -152,11 +153,11 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
                 // branch stores the "main branch" on bitbucket
                 String branch = map.get("name");
-                tool.setMainBranch(branch);
+                entry.setMainBranch(branch);
 
                 // Determine the branch to use for tool info
-                if (tool.getDefaultVersion() != null) { // or default version is invalid
-                    branch = tool.getDefaultVersion();
+                if (entry.getDefaultVersion() != null) { // or default version is invalid
+                    branch = entry.getDefaultVersion();
                 }
 
                 if (branch == null) {
@@ -169,12 +170,24 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 // Get file name of interest
                 String fileName = "";
 
-                for (Tag tag : tool.getTags()) {
-                    if (tag.getName().equals(branch)) {
-                        if (type.equals("cwl")) {
-                            fileName = tag.getCwlPath();
-                        } else {
-                            fileName = tag.getWdlPath();
+                // If tools
+                if (entry instanceof Tool) {
+                    for (Tag tag : ((Tool)entry).getVersions()) {
+                        if (tag.getName().equals(branch)) {
+                            if (type.equals("cwl")) {
+                                fileName = tag.getCwlPath();
+                            } else {
+                                fileName = tag.getWdlPath();
+                            }
+                        }
+                    }
+                }
+
+                // If workflow
+                if (entry instanceof Workflow) {
+                    for (WorkflowVersion workflowVersion : ((Workflow) entry).getVersions()) {
+                        if (workflowVersion.getName().equals(branch)) {
+                            fileName = workflowVersion.getWorkflowPath();
                         }
                     }
                 }
@@ -209,10 +222,10 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 // Add for new descriptor types
                 // expects file to have .cwl extension
                 if (type.equals("cwl")) {
-                    tool = parseCWLContent(tool, content);
+                    entry = parseCWLContent(entry, content);
                 }
                 if (type.equals("wdl")) {
-                     tool = parseWDLContent(tool, content);
+                    entry = parseWDLContent(entry, content);
                 }
 
                 // if (tool.getHasCollab()) {
@@ -223,7 +236,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             }
         }
 
-        return tool;
+        return entry;
     }
 
     @Override
@@ -372,6 +385,13 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 }
             }
 
+        }
+
+        // Get information about default version
+        if (workflow.getDescriptorType().equals("cwl")) {
+            findDescriptor(workflow, "cwl");
+        } else {
+            findDescriptor(workflow, "wdl");
         }
 
         return workflow;
