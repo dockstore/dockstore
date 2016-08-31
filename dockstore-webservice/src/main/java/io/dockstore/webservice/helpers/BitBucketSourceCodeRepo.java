@@ -24,12 +24,12 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.resources.ResourceUtilities;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
@@ -127,12 +127,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public Tool findDescriptor(Tool tool, String fileName) {
-        String descriptorType = FilenameUtils.getExtension(fileName);
-        if (fileName.startsWith("/")) {
-            fileName = fileName.substring(1);
-        }
-
+    public Tool findDescriptor(Tool tool, String type) {
         String giturl = tool.getGitUrl();
         if (giturl != null && !giturl.isEmpty()) {
 
@@ -145,6 +140,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             }
 
             String url = BITBUCKET_API_URL + "repositories/" + m.group(1) + '/' + m.group(2) + "/main-branch";
+
             Optional<String> asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
             LOG.info(gitUsername + ": RESOURCE CALL: {}", url);
             if (asString.isPresent()) {
@@ -154,13 +150,37 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 Map<String, String> map = new HashMap<>();
                 map = (Map<String, String>) gson.fromJson(branchJson, map.getClass());
 
+                // branch stores the "main branch" on bitbucket
                 String branch = map.get("name");
+                tool.setMainBranch(branch);
+
+                // Determine the branch to use for tool info
+                if (tool.getDefaultVersion() != null) { // or default version is invalid
+                    branch = tool.getDefaultVersion();
+                }
 
                 if (branch == null) {
                     LOG.info(gitUsername + ": Could NOT find bitbucket default branch!");
                     return null;
                 } else {
                     LOG.info(gitUsername + ": Default branch: {}", branch);
+                }
+
+                // Get file name of interest
+                String fileName = "";
+
+                for (Tag tag : tool.getTags()) {
+                    if (tag.getName().equals(branch)) {
+                        if (type.equals("cwl")) {
+                            fileName = tag.getCwlPath();
+                        } else {
+                            fileName = tag.getWdlPath();
+                        }
+                    }
+                }
+
+                if (fileName.startsWith("/")) {
+                  fileName = fileName.substring(1);
                 }
 
                 // String response = asString.get();
@@ -172,7 +192,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 // Set<String> branches = branchMap.keySet();
                 //
                 // for (String branch : branches) {
-                LOG.info(gitUsername + ": Checking {} branch for {} file", branch, descriptorType);
+                LOG.info(gitUsername + ": Checking {} branch for {} file", branch, type);
 
                 String content = "";
 
@@ -180,7 +200,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
                 LOG.info(gitUsername + ": RESOURCE CALL: {}", url);
                 if (asString.isPresent()) {
-                    LOG.info(gitUsername + ": {} FOUND", descriptorType);
+                    LOG.info(gitUsername + ": {} FOUND", type);
                     content = asString.get();
                 } else {
                     LOG.info(gitUsername + ": Branch: {} has no {}", branch, fileName);
@@ -188,10 +208,10 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
                 // Add for new descriptor types
                 // expects file to have .cwl extension
-                if (descriptorType.equals("cwl")) {
+                if (type.equals("cwl")) {
                     tool = parseCWLContent(tool, content);
                 }
-                if (descriptorType.equals("wdl")) {
+                if (type.equals("wdl")) {
                      tool = parseWDLContent(tool, content);
                 }
 

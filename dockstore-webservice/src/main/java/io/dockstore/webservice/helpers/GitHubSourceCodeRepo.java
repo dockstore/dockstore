@@ -19,6 +19,7 @@ package io.dockstore.webservice.helpers;
 import com.google.common.base.Optional;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
@@ -111,8 +112,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public Tool findDescriptor(Tool c, String fileName) {
-        String descriptorType = FilenameUtils.getExtension(fileName);
+    public Tool findDescriptor(Tool c, String type) {
         Repository repository = null;
         try {
             repository = service.getRepository(gitUsername, gitRepository);
@@ -124,22 +124,50 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         } else {
             LOG.info(gitUsername + ": Github found for: {}", repository.getName());
             try {
-                List<RepositoryContents> contents;
-                contents = cService.getContents(repository, fileName);
+                // Determine the default branch on Github
+                String mainBranch = repository.getDefaultBranch();
+                c.setMainBranch(mainBranch);
+
+                // Determine which branch to use for tool info
+                String branchToUse;
+                if (c.getDefaultVersion() == null) { // or default version is invalid
+                    branchToUse = mainBranch;
+                } else {
+                    branchToUse = c.getDefaultVersion();
+                }
+
+                // Get file name of interest
+                String fileName = "";
+
+                for (Tag tag : c.getTags()) {
+                    if (tag.getName().equals(branchToUse)) {
+                        if (type.equals("cwl")) {
+                            fileName = tag.getCwlPath();
+                        } else {
+                            fileName = tag.getWdlPath();
+                        }
+                    }
+                }
+
+//                if (fileName.startsWith("/")) {
+//                    fileName = fileName.substring(1);
+//                }
+
+                // Get content of file
+                List<RepositoryContents> contents = cService.getContents(repository, fileName, branchToUse);
+
+                // Parse content
                 if (!(contents == null || contents.isEmpty())) {
                     String content = extractGitHubContents(contents);
 
                     // Add for new descriptor types
                     // Grab important metadata from CWL file (expects file to have .cwl extension)
-                    if (descriptorType.equals("cwl")) {
+                    if (type.equals("cwl")) {
                         c = parseCWLContent(c, content);
                     }
-                    if (descriptorType.equals("wdl")) {
+                    if (type.equals("wdl")) {
                         c = parseWDLContent(c, content);
                     }
-                    
-                    // Currently only can pull name of task? or workflow from WDL
-                    // Add this later, should call parseWDLContent and use the existing Broad WDL parser
                 }
             } catch (IOException ex) {
                 LOG.info(gitUsername + ": Repo: {} has no descriptor file ", repository.getName());
@@ -214,6 +242,19 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             List<String> references = new ArrayList<>();
             service.getBranches(id).forEach(branch -> references.add(branch.getName()));
             service.getTags(id).forEach(tag -> references.add(tag.getName()));
+
+            // Determine the default branch on github
+            String mainBranch = repository.getDefaultBranch();
+            workflow.setMainBranch(mainBranch);
+
+            // Determine which branch to use for workflow info
+            String branchToUse;
+            if (workflow.getDefaultVersion() == null) {
+                branchToUse = mainBranch;
+            } else {
+                branchToUse = workflow.getDefaultVersion();
+            }
+
             for (String ref : references) {
                 LOG.info(gitUsername + ": Looking at reference: " + ref);
                 WorkflowVersion version = new WorkflowVersion();
@@ -293,6 +334,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
                 workflow.addWorkflowVersion(version);
             }
+
             return workflow;
         } catch (IOException e) {
             LOG.info(gitUsername + ": Cannot getNewWorkflow {}");

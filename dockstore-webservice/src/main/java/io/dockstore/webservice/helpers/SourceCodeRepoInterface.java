@@ -57,7 +57,7 @@ public abstract class SourceCodeRepoInterface {
      * @param c a container to be updated
      * @return an updated container with fields from the descriptor filled in
      */
-    public abstract Tool findDescriptor(Tool c, String fileName);
+    public abstract Tool findDescriptor(Tool c, String type);
 
     /**
      * Get the email for the current user
@@ -84,14 +84,14 @@ public abstract class SourceCodeRepoInterface {
     }
 
     /**
-     * Parses the cwl content to get the author and description. Updates the tool with the author, description, and hasCollab fields.
+     * Parses the cwl content to get the author, email, and description. Updates the tool with the author, description, and hasCollab fields.
      *
      * @param tool a tool to be updated
      * @param content a cwl document
      * @return the updated tool
      */
     protected Tool parseCWLContent(Tool tool, String content) {
-        // parse the collab.cwl file to get description and author
+        // parse the collab.cwl file to get important metadata
         if (content != null && !content.isEmpty()) {
             try {
                 YamlReader reader = new YamlReader(content);
@@ -109,6 +109,8 @@ public abstract class SourceCodeRepoInterface {
                 if (map != null) {
                     String author = (String) map.get("foaf:name");
                     tool.setAuthor(author);
+                    String email = (String) map.get("foaf:mbox");
+                    tool.setEmail(email);
                 } else {
                     LOG.info("Creator not found!");
                 }
