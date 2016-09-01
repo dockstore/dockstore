@@ -83,6 +83,7 @@ public abstract class SourceCodeRepoInterface {
         targetWorkflow.setRepository(sourceWorkflow.getRepository());
         targetWorkflow.setGitUrl(sourceWorkflow.getGitUrl());
         targetWorkflow.setDescriptorType(sourceWorkflow.getDescriptorType());
+        targetWorkflow.setDefaultVersion(sourceWorkflow.getDefaultVersion());
     }
 
     /**

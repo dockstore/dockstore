@@ -388,6 +388,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         }
 
         // Get information about default version
+
         if (workflow.getDescriptorType().equals("cwl")) {
             findDescriptor(workflow, "cwl");
         } else {

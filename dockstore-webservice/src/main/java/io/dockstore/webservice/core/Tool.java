@@ -304,6 +304,7 @@ public class Tool extends Entry<Tool, Tag> {
         defaultCwlPath = tool.getDefaultCwlPath();
         defaultWdlPath = tool.getDefaultWdlPath();
         defaultDockerfilePath = tool.getDefaultDockerfilePath();
+        this.setDefaultVersion(tool.getDefaultVersion());
 
         toolname = tool.getToolname();
         this.setGitUrl(tool.getGitUrl());

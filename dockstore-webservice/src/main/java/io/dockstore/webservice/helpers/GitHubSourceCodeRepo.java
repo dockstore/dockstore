@@ -260,18 +260,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             service.getBranches(id).forEach(branch -> references.add(branch.getName()));
             service.getTags(id).forEach(tag -> references.add(tag.getName()));
 
-            // Determine the default branch on github
-            String mainBranch = repository.getDefaultBranch();
-            workflow.setMainBranch(mainBranch);
-
-            // Determine which branch to use for workflow info
-            String branchToUse;
-            if (workflow.getDefaultVersion() == null) {
-                branchToUse = mainBranch;
-            } else {
-                branchToUse = workflow.getDefaultVersion();
-            }
-
             for (String ref : references) {
                 LOG.info(gitUsername + ": Looking at reference: " + ref);
                 WorkflowVersion version = new WorkflowVersion();
