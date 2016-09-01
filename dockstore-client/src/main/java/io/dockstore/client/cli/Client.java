@@ -88,7 +88,6 @@ public class Client {
 
     private String configFile = null;
     private ContainersApi containersApi;
-    private WorkflowsApi workflowsApi;
     private GAGHApi ga4ghApi;
 
     public static final int PADDING = 3;
@@ -128,7 +127,7 @@ public class Client {
      *
      * @return path for the dockstore
      */
-    public static String getInstallLocation() {
+    static String getInstallLocation() {
         String installLocation = null;
 
         String executable = "dockstore";
@@ -156,7 +155,7 @@ public class Client {
      * @param installLocation path for the dockstore CLI script
      * @return the current version of the dockstore CLI script
      */
-    public static String getCurrentVersion(String installLocation) {
+    static String getCurrentVersion(String installLocation) {
         String currentVersion = null;
         File file = new File(installLocation);
         String line = null;
@@ -414,35 +413,42 @@ public class Client {
                         out("   dockstore --upgrade-unstable"); // takes you to the newest unstable version
                     }
                 } else {    //current is not the most stable version
-                    if(optVal.equals("stable")){
+                    switch (optVal) {
+                    case "stable":
                         out("Upgrading to most recent stable release (" + currentVersion + " -> " + latestVersion + ")");
-                        downloadURL(browserDownloadUrl,installLocation);
+                        downloadURL(browserDownloadUrl, installLocation);
                         out("Download complete. You are now on version " + latestVersion + " of Dockstore.");
-                    }else if(optVal.equals("none")){
-                        if(compareVersion(currentVersion)){
+                        break;
+                    case "none":
+                        if (compareVersion(currentVersion)) {
                             // current version is the latest unstable version
                             out("You are currently on the latest unstable version. If you wish to upgrade to the latest stable version, please use the following command:");
                             out("   dockstore --upgrade-stable");
-                        }else{
+                        } else {
                             // current version is the older unstable version
                             // upgrade to latest stable version
                             out("Upgrading to most recent stable release (" + currentVersion + " -> " + latestVersion + ")");
-                            downloadURL(browserDownloadUrl,installLocation);
+                            downloadURL(browserDownloadUrl, installLocation);
                             out("Download complete. You are now on version " + latestVersion + " of Dockstore.");
                         }
-                    }else if(optVal.equals("unstable")){
-                        if(Objects.equals(currentVersion, latestUnstable)){
+                        break;
+                    case "unstable":
+                        if (Objects.equals(currentVersion, latestUnstable)) {
                             // current version is the latest unstable version
                             out("You are currently on the latest unstable version. If you wish to upgrade to the latest stable version, please use the following command:");
                             out("   dockstore --upgrade-stable");
-                        }else{
+                        } else {
                             //user wants to upgrade to newest unstable version
                             upgradeURL = getUnstableURL(latestUnstable, mapRel);
                             out("Downloading version " + latestUnstable + " of Dockstore.");
-                            downloadURL(upgradeURL,installLocation);
+                            downloadURL(upgradeURL, installLocation);
                             out("Download complete. You are now on version " + latestUnstable + " of Dockstore.");
                         }
+                        break;
+                    default:
+                        /** do nothing */
                     }
+
                 }
             } catch (IOException e) {
                 exceptionMessage(e, "Could not connect to Github. You may have reached your rate limit.", IO_ERROR);
@@ -524,7 +530,7 @@ public class Client {
         }
     }
 
-    public static void setObjectMapper(ObjectMapper objectMapper){
+    static void setObjectMapper(ObjectMapper objectMapper){
         Client.objectMapper = objectMapper;
     }
 
@@ -656,7 +662,6 @@ public class Client {
             defaultApiClient.setBasePath(serverUrl);
 
             this.containersApi = new ContainersApi(defaultApiClient);
-            this.workflowsApi = new WorkflowsApi(defaultApiClient);
             this.ga4ghApi = new GAGHApi(defaultApiClient);
 
             ToolClient toolClient = new ToolClient(containersApi, new ContainertagsApi(defaultApiClient), new UsersApi(defaultApiClient), this);
@@ -758,7 +763,7 @@ public class Client {
         return configFile;
     }
 
-    public void setConfigFile(String configFile) {
+    void setConfigFile(String configFile) {
         this.configFile = configFile;
     }
 }
