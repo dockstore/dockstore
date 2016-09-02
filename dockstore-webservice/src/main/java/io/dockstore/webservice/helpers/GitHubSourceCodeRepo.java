@@ -146,7 +146,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 // If tools
                 if (entry instanceof Tool) {
                     for (Tag tag : ((Tool)entry).getVersions()) {
-                        if (tag.getName().equals(branchToUse)) {
+                        if (tag.getReference().equals(branchToUse)) {
                             if (type.equals("cwl")) {
                                 fileName = tag.getCwlPath();
                             } else {
@@ -159,7 +159,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 // If workflow
                 if (entry instanceof Workflow) {
                     for (WorkflowVersion workflowVersion : ((Workflow) entry).getVersions()) {
-                        if (workflowVersion.getName().equals(branchToUse)) {
+                        if (workflowVersion.getReference().equals(branchToUse)) {
                             fileName = workflowVersion.getWorkflowPath();
                         }
                     }

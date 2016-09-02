@@ -172,7 +172,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 // If tools
                 if (entry instanceof Tool) {
                     for (Tag tag : ((Tool)entry).getVersions()) {
-                        if (tag.getName().equals(branch)) {
+                        if (tag.getReference().equals(branch)) {
                             if (type.equals("cwl")) {
                                 fileName = tag.getCwlPath();
                             } else {
@@ -185,7 +185,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 // If workflow
                 if (entry instanceof Workflow) {
                     for (WorkflowVersion workflowVersion : ((Workflow) entry).getVersions()) {
-                        if (workflowVersion.getName().equals(branch)) {
+                        if (workflowVersion.getReference().equals(branch)) {
                             fileName = workflowVersion.getWorkflowPath();
                         }
                     }
