@@ -80,9 +80,6 @@ public abstract class Entry<S extends Entry, T extends Version> {
     @ApiModelProperty("This is the default version of the entry")
     private String defaultVersion;
     @Column
-    @ApiModelProperty("This is the main branch as determined by the git hosting service (Github or Bitbucket)")
-    private String mainBranch;
-    @Column
     @JsonProperty("is_published")
     @ApiModelProperty("Implementation specific visibility in this web service")
     private boolean isPublished;
@@ -139,14 +136,6 @@ public abstract class Entry<S extends Entry, T extends Version> {
 
     public void setDefaultVersion(String defaultVersion) {
         this.defaultVersion = defaultVersion;
-    }
-
-    public String getMainBranch() {
-        return mainBranch;
-    }
-
-    public void setMainBranch(String mainBranch) {
-        this.mainBranch = mainBranch;
     }
 
     public void setAuthor(String author) {

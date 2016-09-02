@@ -131,7 +131,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             try {
                 // Determine the default branch on Github
                 String mainBranch = repository.getDefaultBranch();
-                entry.setMainBranch(mainBranch);
 
                 // Determine which branch to use for tool info
                 String branchToUse;

@@ -516,7 +516,7 @@ public class WorkflowClient extends AbstractEntryClient {
                     out("Not a valid workflow version.");
                     out("Valid versions include:");
                     for (WorkflowVersion workflowVersion : workflow.getWorkflowVersions()) {
-                        out(workflowVersion.getName());
+                        out(workflowVersion.getReference());
                     }
                 }
 

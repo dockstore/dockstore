@@ -153,7 +153,6 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
                 // branch stores the "main branch" on bitbucket
                 String branch = map.get("name");
-                entry.setMainBranch(branch);
 
                 // Determine the branch to use for tool info
                 if (entry.getDefaultVersion() != null) { // or default version is invalid

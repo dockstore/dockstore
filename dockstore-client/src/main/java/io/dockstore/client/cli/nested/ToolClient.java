@@ -646,7 +646,7 @@ public class ToolClient extends AbstractEntryClient {
                     out("Not a valid tag.");
                     out("Valid tags include:");
                     for (Tag tag : container.getTags()) {
-                        out(tag.getName());
+                        out(tag.getReference());
                     }
                 }
 
