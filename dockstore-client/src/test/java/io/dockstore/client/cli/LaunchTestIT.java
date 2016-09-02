@@ -16,8 +16,10 @@
 
 package io.dockstore.client.cli;
 
+import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.client.cli.nested.WorkflowClient;
 import io.dropwizard.testing.ResourceHelpers;
+import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import org.junit.Assert;
@@ -86,6 +88,24 @@ public class LaunchTestIT {
     }
 
     @Test
+    public void yamlToolCorrect() throws IOException{
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("1st-tool.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("echo-job.yml"));
+
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("--local-entry");
+            add("--yaml");
+            add(cwlJSON.getAbsolutePath());
+        }};
+
+        ContainersApi api = mock(ContainersApi.class);
+        UsersApi usersApi = mock(UsersApi.class);
+        Client client = new Client();
+        // do not use a cache
+        runTool(cwlFile, args, api, usersApi, client, false);
+    }
+
+    @Test
     public void cwlCorrectWithCache() throws IOException{
         //Test when content and extension are cwl  --> no need descriptor
 
@@ -103,6 +123,15 @@ public class LaunchTestIT {
         Client client = new Client();
         // use a cache
         runWorkflow(cwlFile, args, api, usersApi, client, true);
+    }
+
+    private void runTool(File cwlFile, ArrayList<String> args, ContainersApi api, UsersApi usersApi, Client client, boolean useCache) {
+        client.setConfigFile(ResourceHelpers.resourceFilePath(useCache ? "config.withCache" : "config"));
+
+        ToolClient toolClient = new ToolClient(api, null, usersApi, client);
+        toolClient.checkEntryFile(cwlFile.getAbsolutePath(), args, null);
+
+        Assert.assertTrue("output should include a successful cwltool run",systemOutRule.getLog().contains("Final process status is success") );
     }
 
     private void runWorkflow(File cwlFile, ArrayList<String> args, WorkflowsApi api, UsersApi usersApi, Client client, boolean useCache) {

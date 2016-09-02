@@ -46,6 +46,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.json.JSONObject;
+import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -846,8 +848,13 @@ public abstract class AbstractEntryClient {
             isLocalEntry = true;
         }
 
-        final String jsonRun = optVal(args, "--json", null);
+        final String yamlRun = optVal(args, "--yaml", null);
+        String jsonRun = optVal(args, "--json", null);
         final String csvRuns = optVal(args, "--tsv", null);
+
+        if (!(yamlRun != null ^ jsonRun != null ^ csvRuns != null)){
+            errorMessage("One of  --json, --yaml, and --tsv is required", CLIENT_ERROR);
+        }
 
         final File tempDir = Files.createTempDir();
         File tempCWL;
@@ -862,6 +869,7 @@ public abstract class AbstractEntryClient {
             Files.write(cwlFromServer.getContent(), tempCWL, StandardCharsets.UTF_8);
             downloadDescriptors(entry, "cwl", tempDir);
         }
+        jsonRun = convertYamlToJson(yamlRun, jsonRun);
 
         final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
         if (jsonRun != null) {
@@ -937,6 +945,21 @@ public abstract class AbstractEntryClient {
             errorMessage("Missing required parameters, one of  --json or --tsv is required", CLIENT_ERROR);
         }
 
+    }
+
+    private String convertYamlToJson(String yamlRun, String jsonRun) throws IOException {
+        // if we have a yaml parameter file, convert it into a json
+        if (yamlRun != null){
+            final File tempFile = File.createTempFile("temp", "json");
+            Yaml yaml = new Yaml();
+            final FileInputStream fileInputStream = FileUtils.openInputStream(new File(yamlRun));
+            Map<String,Object> map= (Map<String, Object>) yaml.load(fileInputStream);
+            JSONObject jsonObject=new JSONObject(map);
+            final String jsonContent = jsonObject.toString();
+            FileUtils.write(tempFile, jsonContent, StandardCharsets.UTF_8);
+            jsonRun = tempFile.getAbsolutePath();
+        }
+        return jsonRun;
     }
 
     private void launchWdl(final List<String> args) {
@@ -1322,6 +1345,7 @@ public abstract class AbstractEntryClient {
         out("");
         out("Optional parameters:");
         out("  --json <json file>                  Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs");
+        out("  --yaml <yaml file>                  Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs");
         out("  --tsv <tsv file>                    One row corresponds to parameters for one run in the dockstore (Only for CWL)");
         out("  --descriptor <descriptor type>      Descriptor type used to launch workflow. Defaults to " + CWL_STRING);
         out("  --local-entry                       Allows you to specify a full path to a local descriptor for --entry instead of an entry path");
