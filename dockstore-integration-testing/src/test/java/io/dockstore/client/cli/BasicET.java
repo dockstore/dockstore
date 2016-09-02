@@ -623,4 +623,25 @@ public class BasicET {
 
         }
 
+
+        /**
+         * This tests that a tool can be updated to have default version, and that metadata is set related to the default version
+         */
+        @Test
+        public void testSetDefaultTag(){
+                // Set up DB
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+                // Update tool with default version that has no metadata
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry", "quay.io/dockstoretestuser/quayandgithub",
+                        "--default-tag", "master", "--script" });
+
+                final long count = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser/quayandgithub' and defaultversion = 'master'", new ScalarHandler<>());
+                Assert.assertTrue("the tool should have a default version set", count == 1);
+
+                final long count2= testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser/quayandgithub' and defaultversion = 'master' and author = 'Dockstore Test User'", new ScalarHandler<>());
+                Assert.assertTrue("the tool should have any metadata set (author)", count2 == 1);
+
+        }
+
 }
