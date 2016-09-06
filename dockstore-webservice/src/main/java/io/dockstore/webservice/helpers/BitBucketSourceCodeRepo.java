@@ -170,7 +170,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 String fileName = "";
 
                 // If tools
-                if (entry instanceof Tool) {
+                if (entry.getClass().equals(Tool.class)) {
                     // If no tags exist on quay
                     if (((Tool)entry).getVersions().size() == 0) {
                         LOG.info(gitUsername + ": Repo: {} has no tags", ((Tool) entry).getPath());
@@ -188,7 +188,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 }
 
                 // If workflow
-                if (entry instanceof Workflow) {
+                if (entry.getClass().equals(Workflow.class)) {
                     for (WorkflowVersion workflowVersion : ((Workflow) entry).getVersions()) {
                         if (workflowVersion.getReference().equals(branch)) {
                             fileName = workflowVersion.getWorkflowPath();

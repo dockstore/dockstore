@@ -50,6 +50,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -115,13 +117,38 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     @Override
     public Entry findDescriptor(Entry entry, String type) {
         Repository repository = null;
-        try {
-            repository = service.getRepository(gitUsername, gitRepository);
-        } catch (IOException e) {
-            LOG.error(gitUsername + ": Repo: {} could not be retrieved", entry.getGitUrl());
+        String repositoryId;
+
+
+        if (gitRepository == null) {
+            if (entry.getClass().equals(Tool.class)) {
+                // Parse git url for repo
+                Pattern p = Pattern.compile("git\\@bitbucket.org:(\\S+)/(\\S+)\\.git");
+                Matcher m = p.matcher(entry.getGitUrl());
+
+                if (!m.find()) {
+                    LOG.error(gitUsername + ": Repo: {} could not be retrieved", entry.getGitUrl());
+                    repositoryId = null;
+                } else {
+                    repositoryId = m.group(2);
+                }
+            } else {
+                repositoryId = ((Workflow) entry).getRepository();
+            }
+        } else {
+            repositoryId = gitRepository;
+        }
+
+
+        if (repositoryId != null) {
+            try {
+                repository = service.getRepository(gitUsername, repositoryId);
+            } catch (IOException e) {
+                LOG.error(gitUsername + ": Repo: {} could not be retrieved", entry.getGitUrl());
+            }
         }
         if (repository == null) {
-            if (entry instanceof Tool) {
+            if (entry.getClass().equals(Tool.class)) {
                 LOG.info(gitUsername + ": Github repository not found for {}", ((Tool) entry).getPath());
             } else {
                 LOG.info(gitUsername + ": Github repository not found for {}", ((Workflow) entry).getPath());
@@ -134,7 +161,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
                 // Determine which branch to use for tool info
                 String branchToUse;
-                if (entry.getDefaultVersion() == null) { // or default version is invalid
+                if (entry.getDefaultVersion() == null) {
                     branchToUse = mainBranch;
                 } else {
                     branchToUse = entry.getDefaultVersion();
@@ -144,7 +171,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 String fileName = "";
 
                 // If tools
-                if (entry instanceof Tool) {
+                if (entry.getClass().equals(Tool.class)) {
                     // If no tags exist on quay
                     if (((Tool)entry).getVersions().size() == 0) {
                         LOG.info(gitUsername + ": Repo: {} has no tags", repository.getName());
@@ -162,7 +189,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 }
 
                 // If workflow
-                if (entry instanceof Workflow) {
+                if (entry.getClass().equals(Workflow.class)) {
                     for (WorkflowVersion workflowVersion : ((Workflow) entry).getVersions()) {
                         if (workflowVersion.getReference().equals(branchToUse)) {
                             fileName = workflowVersion.getWorkflowPath();

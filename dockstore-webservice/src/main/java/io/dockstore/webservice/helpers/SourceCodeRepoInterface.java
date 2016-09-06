@@ -140,7 +140,7 @@ public abstract class SourceCodeRepoInterface {
         try {
             WdlParser parser = new WdlParser();
             WdlParser.TokenStream tokens;
-            if (entry instanceof Tool) {
+            if (entry.getClass().equals(Tool.class)) {
                 tokens = new WdlParser.TokenStream(parser.lex(content, FilenameUtils.getName(((Tool)entry).getDefaultWdlPath())));
             } else {
                 tokens = new WdlParser.TokenStream(parser.lex(content, FilenameUtils.getName(((Workflow)entry).getDefaultWorkflowPath())));
