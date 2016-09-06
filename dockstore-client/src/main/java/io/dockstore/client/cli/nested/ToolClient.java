@@ -123,7 +123,7 @@ public class ToolClient extends AbstractEntryClient {
             String description = "";
             String gitUrl = "";
 
-            if (container.getValidTrigger()) {
+            if (container.getIsPublished()) {
                 descriptor = "Yes";
             }
 
@@ -668,7 +668,8 @@ public class ToolClient extends AbstractEntryClient {
         SourceFile file = new SourceFile();
         // simply getting published descriptors does not require permissions
         DockstoreTool container = containersApi.getPublishedContainerByToolPath(path);
-        if (container.getValidTrigger()) {
+
+        if (container != null) {
             try {
                 if (descriptorType.equals(CWL_STRING)) {
                     file = containersApi.cwl(container.getId(), tag);

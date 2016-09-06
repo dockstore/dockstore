@@ -391,6 +391,7 @@ public class DockerRepoResource {
         if (request.getPublish()) {
             boolean validTag = false;
 
+            // Why are manual images always valid?
             if (c.getMode() == ToolMode.MANUAL_IMAGE_PATH) {
                 validTag = true;
             } else {
@@ -403,10 +404,8 @@ public class DockerRepoResource {
                 }
             }
 
-            // TODO: for now, validTrigger signals if the user has a cwl file in their git repository's default branch. Don't need to check
-            // this if we check the cwl in the tags.
-            // if (validTag && c.getValidTrigger() && !c.getGitUrl().isEmpty()) {
-            if (validTag && !c.getGitUrl().isEmpty() && c.getValidTrigger()) {
+            // Can publish a tool IF it has at least one valid tag (or is manual) and a git url
+            if (validTag && !c.getGitUrl().isEmpty()) {
                 c.setIsPublished(true);
             } else {
                 throw new CustomWebApplicationException("Repository does not meet requirements to publish.", HttpStatus.SC_BAD_REQUEST);

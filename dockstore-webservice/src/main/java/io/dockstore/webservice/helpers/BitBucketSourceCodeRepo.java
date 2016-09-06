@@ -171,8 +171,13 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
                 // If tools
                 if (entry instanceof Tool) {
+                    // If no tags exist on quay
+                    if (((Tool)entry).getVersions().size() == 0) {
+                        LOG.info(gitUsername + ": Repo: {} has no tags", ((Tool) entry).getPath());
+                        return entry;
+                    }
                     for (Tag tag : ((Tool)entry).getVersions()) {
-                        if (tag.getReference().equals(branch)) {
+                        if (tag.getReference() != null && tag.getReference().equals(branch)) {
                             if (type.equals("cwl")) {
                                 fileName = tag.getCwlPath();
                             } else {

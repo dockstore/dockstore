@@ -234,8 +234,6 @@ public final class Helper {
                 // Grab and parse files to get tool information
                 // Add for new descriptor types
 
-                tool.setValidTrigger(false);  // Default is false since we must first check to see if descriptors are valid
-
                 //Check if default version is set
                 // If not set or invalid, set tag of interest to tag stored in main tag
                 // If set and valid, set tag of interest to tag stored in default version

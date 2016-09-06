@@ -145,8 +145,13 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
                 // If tools
                 if (entry instanceof Tool) {
+                    // If no tags exist on quay
+                    if (((Tool)entry).getVersions().size() == 0) {
+                        LOG.info(gitUsername + ": Repo: {} has no tags", repository.getName());
+                        return entry;
+                    }
                     for (Tag tag : ((Tool)entry).getVersions()) {
-                        if (tag.getReference().equals(branchToUse)) {
+                        if (tag.getReference() != null && tag.getReference().equals(branchToUse)) {
                             if (type.equals("cwl")) {
                                 fileName = tag.getCwlPath();
                             } else {
@@ -170,19 +175,21 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 }
 
                 // Get content of file
-                List<RepositoryContents> contents = cService.getContents(repository, fileName, branchToUse);
+                if (fileName != "") {
+                    List<RepositoryContents> contents = cService.getContents(repository, fileName, branchToUse);
 
-                // Parse content
-                if (!(contents == null || contents.isEmpty())) {
-                    String content = extractGitHubContents(contents);
+                    // Parse content
+                    if (!(contents == null || contents.isEmpty())) {
+                        String content = extractGitHubContents(contents);
 
-                    // Add for new descriptor types
-                    // Grab important metadata from CWL file (expects file to have .cwl extension)
-                    if (type.equals("cwl")) {
-                        entry = parseCWLContent(entry, content);
-                    }
-                    if (type.equals("wdl")) {
-                        entry = parseWDLContent(entry, content);
+                        // Add for new descriptor types
+                        // Grab important metadata from CWL file (expects file to have .cwl extension)
+                        if (type.equals("cwl")) {
+                            entry = parseCWLContent(entry, content);
+                        }
+                        if (type.equals("wdl")) {
+                            entry = parseWDLContent(entry, content);
+                        }
                     }
                 }
             } catch (IOException ex) {

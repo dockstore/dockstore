@@ -175,13 +175,9 @@ public class QuayImageRegistry implements ImageRegistryInterface {
             tool.setPath(path);
 
             LOG.info(quayToken.getUsername() + " : ========== Configuring {} ==========", path);
-            // if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
-            // checkTriggers(tool);
-            // if (tool.hasValidTrigger()) {
+
 
             updateContainersWithBuildInfo(formatter, mapOfBuilds, gson, tool, repo, path);
-            // }
-            // }
         }
         return mapOfBuilds;
     }

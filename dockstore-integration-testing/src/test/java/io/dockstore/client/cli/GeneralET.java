@@ -98,7 +98,6 @@ public class GeneralET {
                 c.setDefaultCwlPath("/Dockstore.cwl");
                 c.setRegistry(DockstoreTool.RegistryEnum.DOCKER_HUB);
                 c.setIsPublished(false);
-                c.setValidTrigger(true);
                 c.setNamespace("testPath");
                 c.setToolname("test5");
                 c.setPath("quay.io/dockstoretestuser2/dockstore-tool-imports");
@@ -172,7 +171,7 @@ public class GeneralET {
         public void testListAvailableContainers() {
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
                 final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='f'", new ScalarHandler<>());
-                Assert.assertTrue("there should be 5 entries, there are " + count, count == 5);
+                Assert.assertTrue("there should be 4 entries, there are " + count, count == 4);
         }
 
         /**
@@ -397,83 +396,6 @@ public class GeneralET {
         public void testRefreshOtherUsersContainer(){
                 systemExit.expectSystemExitWithStatus(Client.API_ERROR);
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "refresh", "--entry", "quay.io/test_org/test1", "--script" });
-        }
-
-        /**
-         * Check that a containers CWL and Dockerfile paths are updated to make a container valid, and then changing again will make them invalid (quick register)
-         */
-        @Test
-        public void testUpdateAlternateStructureQuickReg(){
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry", "quay.io/dockstoretestuser2/quayandgithubalternate",
-                        "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
-
-                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser2/quayandgithubalternate' and validtrigger = 't'", new ScalarHandler<>());
-                Assert.assertTrue("the container should now have a valid trigger", count == 1);
-
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry", "quay.io/dockstoretestuser2/quayandgithubalternate",
-                        "--cwl-path", "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile", "--script" });
-
-                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser2/quayandgithubalternate' and validtrigger = 't'", new ScalarHandler<>());
-                Assert.assertTrue("the container should now have an invalid trigger again", count2 == 0);
-        }
-
-        /**
-         * Check that a containers cwl and Dockerfile paths are updated to make a container invalid, then valid again (manual)
-         */
-        @Test
-        public void testUpdateAlternateStructureManual(){
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.toString(),
-                        "--namespace", "dockstoretestuser2", "--name", "quayandgithubalternate", "--git-url", "git@github.com:dockstoretestuser2/quayandgithubalternate.git", "--git-reference",
-                        "master", "--toolname", "alternate", "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
-
-                // check valid trigger
-                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser2/quayandgithubalternate' and toolname = 'alternate' and validtrigger = 't'", new ScalarHandler<>());
-                Assert.assertTrue("the container should now have a valid trigger", count == 1);
-
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry", "quay.io/dockstoretestuser2/quayandgithubalternate/alternate",
-                        "--cwl-path", "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile", "--script" });
-
-                // check invalid trigger
-                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser2/quayandgithubalternate' and toolname = 'alternate' and validtrigger = 'f'", new ScalarHandler<>());
-                Assert.assertTrue("the container should now have an invalid trigger", count2 == 1);
-
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry", "quay.io/dockstoretestuser2/quayandgithubalternate/alternate",
-                        "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
-
-                // check valid trigger
-                final long count3 = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser2/quayandgithubalternate' and toolname = 'alternate' and validtrigger = 't'", new ScalarHandler<>());
-                Assert.assertTrue("the container should now have a valid trigger again", count3 == 1);
-        }
-
-        /**
-         * Check that changing the wdl path for a container with only WDL descriptor will make the container invalid, then valid again
-         */
-        @Test
-        public void testUpdateWdlManual(){
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.toString(),
-                        "--namespace", "dockstoretestuser2", "--name", "quayandgithubwdl", "--git-url", "git@github.com:dockstoretestuser2/quayandgithubwdl.git", "--git-reference",
-                        "master", "--toolname", "validWdl", "--script" });
-
-                // check valid trigger
-                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser2/quayandgithubwdl' and toolname = 'validWdl' and validtrigger = 't'", new ScalarHandler<>());
-                Assert.assertTrue("the container should have a valid trigger", count == 1);
-
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry", "quay.io/dockstoretestuser2/quayandgithubwdl/validWdl",
-                        "--wdl-path", "/testDir/Dockstore.wdl", "--script" });
-
-                // check invalid trigger
-                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser2/quayandgithubwdl' and toolname = 'validWdl' and validtrigger = 'f'", new ScalarHandler<>());
-                Assert.assertTrue("the container should now have an invalid trigger", count2 == 1);
-
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry", "quay.io/dockstoretestuser2/quayandgithubwdl/validWdl",
-                        "--wdl-path", "/Dockstore.wdl", "--script" });
-
-                // check valid trigger
-                final long count3 = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser2/quayandgithubwdl' and toolname = 'validWdl' and validtrigger = 't'", new ScalarHandler<>());
-                Assert.assertTrue("the container should now have a valid trigger again", count3 == 1);
         }
 
         /**

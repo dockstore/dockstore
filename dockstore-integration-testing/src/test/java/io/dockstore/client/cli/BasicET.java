@@ -330,26 +330,11 @@ public class BasicET {
         @Test
         public void testQuayGithubQuickRegisterWithWDL() {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--entry", "quay.io/dockstoretestuser/quayandgithub", "--script" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--entry", "quay.io/dockstoretestuser/quayandgithub", "--script" });
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser/quayandgithub' and validtrigger = 't'", new ScalarHandler<>());
+                final long count = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser/quayandgithub' and ispublished = 't'", new ScalarHandler<>());
                 Assert.assertTrue("the given entry should be valid", count == 1);
-
-                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool, tag, tool_tag where tool.path = 'quay.io/dockstoretestuser/quayandgithub' and tool.id = tool_tag.toolid and tool_tag.toolid = tag.id", new ScalarHandler<>());
-                Assert.assertTrue("the given entry should have three valid tags", count2 == 3);
-        }
-
-        /**
-         * Test adding a entry with an invalid WDL descriptor
-         */
-        @Test
-        public void testQuayGithubInvalidWDL() {
-                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser/quayandgithubwdl'  and validtrigger = 'f'", new ScalarHandler<>());
-                Assert.assertTrue("the given entry should be invalid", count == 1);
-
-                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool, tag, tool_tag where tool.path = 'quay.io/dockstoretestuser/quayandgithubwdl' and tool.id = tool_tag.toolid and tool_tag.tagid = tag.id", new ScalarHandler<>());
-                Assert.assertTrue("the given entry should have two valid tags, found " + count2, count2 == 2);
         }
 
         /*
@@ -466,13 +451,13 @@ public class BasicET {
                         "master", "--toolname", "alternate", "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='t' and validtrigger='t'", new ScalarHandler<>());
+                final long count = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='t'", new ScalarHandler<>());
 
                 Assert.assertTrue("there should be 1 entry", count == 1);
 
                 // Unpublish
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--unpub", "--entry", "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub/alternate", "--script" });
-                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='f' and validtrigger='t'", new ScalarHandler<>());
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='f'", new ScalarHandler<>());
 
                 Assert.assertTrue("there should be 1 entry", count2 == 1);
         }
@@ -563,17 +548,12 @@ public class BasicET {
                 final long count = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='t'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 1 entry", count == 1);
 
-                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate'  and validtrigger='t'", new ScalarHandler<>());
-                Assert.assertTrue("there should be 1 valid entry", count2 == 1);
-
                 // Unpublish
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--unpub", "--entry", "registry.hub.docker.com/dockstoretestuser/dockerhubandbitbucket/alternate", "--script" });
 
                 final long count3 = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='f'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 1 entry", count3 == 1);
 
-                final long count4 = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and validtrigger='t'", new ScalarHandler<>());
-                Assert.assertTrue("there should be 1 valid entry", count4 == 1);
         }
 
         /**

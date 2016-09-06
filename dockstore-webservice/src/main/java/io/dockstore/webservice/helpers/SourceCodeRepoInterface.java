@@ -118,11 +118,6 @@ public abstract class SourceCodeRepoInterface {
                     LOG.info("Creator not found!");
                 }
 
-                // tool.setHasCollab(true);
-                // if tool
-                if (entry instanceof Tool) {
-                    ((Tool)entry).setValidTrigger(true);
-                }
                 LOG.info("Repository has Dockstore.cwl");
             } catch (YamlException ex){
                 LOG.info("CWL file is malformed " + ex.getCause().toString());
@@ -155,9 +150,6 @@ public abstract class SourceCodeRepoInterface {
             if (ast == null) {
                 LOG.info("Error with WDL file.");
             } else {
-                if (entry instanceof Tool) {
-                    ((Tool)entry).setValidTrigger(true);
-                }
                 LOG.info("Repository has Dockstore.wdl");
             }
         } catch (WdlParser.SyntaxError syntaxError) {

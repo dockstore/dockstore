@@ -78,8 +78,6 @@ definitions:
         items: {$ref: '#/definitions/User'}
         type: array
         uniqueItems: true
-      validTrigger: {default: false, description: 'Implementation specific, this image
-          has descriptor file(s) associated with it', type: boolean}
     required: [default_cwl_path, default_dockerfile_path, default_wdl_path, gitUrl,
       mode, name, namespace, registry, toolname]
     type: object
