@@ -614,7 +614,7 @@ public class BasicET {
 
                 // Update tool with default version that has no metadata
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry", "quay.io/dockstoretestuser/quayandgithub",
-                        "--default-tag", "master", "--script" });
+                        "--default-version", "master", "--script" });
 
                 final long count = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser/quayandgithub' and defaultversion = 'master'", new ScalarHandler<>());
                 Assert.assertTrue("the tool should have a default version set", count == 1);

@@ -623,7 +623,7 @@ public class ToolClient extends AbstractEntryClient {
                 final String dockerfilePath = optVal(args, "--dockerfile-path", container.getDefaultDockerfilePath());
                 final String toolname = optVal(args, "--toolname", container.getToolname());
                 final String gitUrl = optVal(args, "--git-url", container.getGitUrl());
-                final String defaultTag = optVal(args, "--default-tag", container.getDefaultVersion());
+                final String defaultTag = optVal(args, "--default-version", container.getDefaultVersion());
 
                 container.setDefaultCwlPath(cwlPath);
                 container.setDefaultWdlPath(wdlPath);
@@ -757,7 +757,7 @@ public class ToolClient extends AbstractEntryClient {
         out("  --dockerfile-path <dockerfile-path>         Path to default dockerfile location");
         out("  --toolname <toolname>                       Toolname for the given tool");
         out("  --git-url <git-url>                         Git url");
-        out("  --default-tag <default-tag>                 Default branch name");
+        out("  --default-version <default-version>         Default branch name");
         printHelpFooter();
     }
 
