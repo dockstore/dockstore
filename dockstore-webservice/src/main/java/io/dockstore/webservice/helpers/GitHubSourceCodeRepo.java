@@ -17,6 +17,8 @@
 package io.dockstore.webservice.helpers;
 
 import com.google.common.base.Optional;
+
+import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -115,7 +117,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public Entry findDescriptor(Entry entry, String type) {
+    public Entry findDescriptor(Entry entry, AbstractEntryClient.Type type) {
         Repository repository = null;
         String repositoryId;
 
@@ -179,7 +181,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     }
                     for (Tag tag : ((Tool)entry).getVersions()) {
                         if (tag.getReference() != null && tag.getReference().equals(branchToUse)) {
-                            if (type.equals("cwl")) {
+                            if (type == AbstractEntryClient.Type.CWL) {
                                 fileName = tag.getCwlPath();
                             } else {
                                 fileName = tag.getWdlPath();
@@ -211,10 +213,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
                         // Add for new descriptor types
                         // Grab important metadata from CWL file (expects file to have .cwl extension)
-                        if (type.equals("cwl")) {
+                        if (type == AbstractEntryClient.Type.CWL) {
                             entry = parseCWLContent(entry, content);
                         }
-                        if (type.equals("wdl")) {
+                        if (type == AbstractEntryClient.Type.WDL) {
                             entry = parseWDLContent(entry, content);
                         }
                     }
@@ -375,9 +377,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
             // Get information about default version
             if (workflow.getDescriptorType().equals("cwl")) {
-                findDescriptor(workflow, "cwl");
+                findDescriptor(workflow, AbstractEntryClient.Type.CWL);
             } else {
-                findDescriptor(workflow, "wdl");
+                findDescriptor(workflow, AbstractEntryClient.Type.WDL);
             }
 
             return workflow;

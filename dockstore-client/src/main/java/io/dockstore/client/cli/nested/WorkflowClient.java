@@ -518,6 +518,7 @@ public class WorkflowClient extends AbstractEntryClient {
                     for (WorkflowVersion workflowVersion : workflow.getWorkflowVersions()) {
                         out(workflowVersion.getReference());
                     }
+                    errorMessage("Please enter a valid version.", Client.CLIENT_ERROR);
                 }
 
                 workflowsApi.updateWorkflow(workflowId, workflow);

@@ -334,7 +334,7 @@ public class BasicET {
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
                 final long count = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser/quayandgithub' and ispublished = 't'", new ScalarHandler<>());
-                Assert.assertTrue("the given entry should be valid", count == 1);
+                Assert.assertTrue("the given entry should be published", count == 1);
         }
 
         /*
@@ -612,7 +612,7 @@ public class BasicET {
                 // Set up DB
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
 
-                // Update tool with default version that has no metadata
+                // Update tool with default version that has metadata
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry", "quay.io/dockstoretestuser/quayandgithub",
                         "--default-version", "master", "--script" });
 
@@ -621,6 +621,13 @@ public class BasicET {
 
                 final long count2= testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser/quayandgithub' and defaultversion = 'master' and author = 'Dockstore Test User'", new ScalarHandler<>());
                 Assert.assertTrue("the tool should have any metadata set (author)", count2 == 1);
+
+                // Invalidate tags
+                testingPostgres.runUpdateStatement("UPDATE tag SET valid='f'");
+
+                // Shouldn't be able to publish
+                systemExit.expectSystemExitWithStatus(Client.API_ERROR);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--entry", "quay.io/dockstoretestuser/quayandgithub", "--script" });
 
         }
 

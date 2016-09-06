@@ -22,6 +22,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+
+import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -128,7 +130,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public Entry findDescriptor(Entry entry, String type) {
+    public Entry findDescriptor(Entry entry, AbstractEntryClient.Type type) {
         String giturl = entry.getGitUrl();
         if (giturl != null && !giturl.isEmpty()) {
 
@@ -178,7 +180,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                     }
                     for (Tag tag : ((Tool)entry).getVersions()) {
                         if (tag.getReference() != null && tag.getReference().equals(branch)) {
-                            if (type.equals("cwl")) {
+                            if (type == AbstractEntryClient.Type.CWL) {
                                 fileName = tag.getCwlPath();
                             } else {
                                 fileName = tag.getWdlPath();
@@ -225,10 +227,10 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
                 // Add for new descriptor types
                 // expects file to have .cwl extension
-                if (type.equals("cwl")) {
+                if (type == AbstractEntryClient.Type.CWL) {
                     entry = parseCWLContent(entry, content);
                 }
-                if (type.equals("wdl")) {
+                if (type == AbstractEntryClient.Type.WDL) {
                     entry = parseWDLContent(entry, content);
                 }
 
@@ -394,9 +396,9 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         // Get information about default version
 
         if (workflow.getDescriptorType().equals("cwl")) {
-            findDescriptor(workflow, "cwl");
+            findDescriptor(workflow, AbstractEntryClient.Type.CWL);
         } else {
-            findDescriptor(workflow, "wdl");
+            findDescriptor(workflow, AbstractEntryClient.Type.WDL);
         }
 
         return workflow;

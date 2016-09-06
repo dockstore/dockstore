@@ -19,6 +19,8 @@ package io.dockstore.webservice.helpers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
+
+import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Registry;
@@ -240,12 +242,12 @@ public final class Helper {
 
                 if (tool.getDefaultCwlPath() != null) {
                     LOG.info(githubToken.getUsername() + " : Parsing CWL...");
-                    sourceCodeRepo.findDescriptor(tool, "cwl");
+                    sourceCodeRepo.findDescriptor(tool, AbstractEntryClient.Type.CWL);
                 }
 
                 if (tool.getDefaultWdlPath() != null) {
                     LOG.info(githubToken.getUsername() + " : Parsing WDL...");
-                    sourceCodeRepo.findDescriptor(tool, "wdl");
+                    sourceCodeRepo.findDescriptor(tool, AbstractEntryClient.Type.WDL);
                 }
 
             }

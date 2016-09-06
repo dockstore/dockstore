@@ -20,6 +20,7 @@ import com.esotericsoftware.yamlbeans.YamlException;
 import com.esotericsoftware.yamlbeans.YamlReader;
 import com.google.common.base.Optional;
 import io.dockstore.client.Bridge;
+import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Tool;
@@ -58,7 +59,7 @@ public abstract class SourceCodeRepoInterface {
      * @param c an entry to be updated
      * @return an updated entry with fields from the descriptor filled in
      */
-    public abstract Entry findDescriptor(Entry c, String type);
+    public abstract Entry findDescriptor(Entry c, AbstractEntryClient.Type type);
 
     /**
      * Get the email for the current user

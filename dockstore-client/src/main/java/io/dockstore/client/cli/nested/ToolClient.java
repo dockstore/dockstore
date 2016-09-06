@@ -643,11 +643,12 @@ public class ToolClient extends AbstractEntryClient {
                 }
 
                 if (!updateVersionSuccess && defaultTag != null) {
-                    out("Not a valid tag.");
-                    out("Valid tags include:");
+                    out("Not a valid version.");
+                    out("Valid versions include:");
                     for (Tag tag : container.getTags()) {
                         out(tag.getReference());
                     }
+                    errorMessage("Please enter a valid version.", Client.CLIENT_ERROR);
                 }
 
                 containersApi.updateContainer(containerId, container);

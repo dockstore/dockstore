@@ -434,12 +434,21 @@ public class GeneralWorkflowET {
                 // Update workflow with version with metadata
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--default-version", "testBoth", "--script" });
 
-                // Asset default version is updated and author and email are set
+                // Assert default version is updated and author and email are set
                 final long count3 = testingPostgres.runSelectStatement("select count(*) from workflow where defaultversion = 'testBoth'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 1 matching workflow, there is " + count3, count3 == 1);
 
                 final long count4 = testingPostgres.runSelectStatement("select count(*) from workflow where defaultversion = 'testBoth' and author = 'testAuthor' and email = 'testEmail'", new ScalarHandler<>());
                 Assert.assertTrue("The given workflow should have contact info", count4 == 1);
 
+                // Unpublish
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--unpub", "--script" });
+
+                // Alter workflow so that it has no valid tags
+                testingPostgres.runUpdateStatement("UPDATE workflowversion SET valid='f'");
+
+                // Now you shouldn't be able to publish the workflow
+                systemExit.expectSystemExitWithStatus(Client.API_ERROR);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--script" });
         }
 }
