@@ -22,14 +22,17 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+
+import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.resources.ResourceUtilities;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
@@ -127,13 +130,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public Tool findDescriptor(Tool tool, String fileName) {
-        String descriptorType = FilenameUtils.getExtension(fileName);
-        if (fileName.startsWith("/")) {
-            fileName = fileName.substring(1);
-        }
-
-        String giturl = tool.getGitUrl();
+    public Entry findDescriptor(Entry entry, AbstractEntryClient.Type type) {
+        String giturl = entry.getGitUrl();
         if (giturl != null && !giturl.isEmpty()) {
 
             Pattern p = Pattern.compile("git\\@bitbucket.org:(\\S+)/(\\S+)\\.git");
@@ -141,10 +139,11 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             LOG.info(gitUsername + ": " + giturl);
             if (!m.find()) {
                 LOG.info(gitUsername + ": Namespace and/or repository name could not be found from tool's giturl");
-                return tool;
+                return entry;
             }
 
             String url = BITBUCKET_API_URL + "repositories/" + m.group(1) + '/' + m.group(2) + "/main-branch";
+
             Optional<String> asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
             LOG.info(gitUsername + ": RESOURCE CALL: {}", url);
             if (asString.isPresent()) {
@@ -154,13 +153,53 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 Map<String, String> map = new HashMap<>();
                 map = (Map<String, String>) gson.fromJson(branchJson, map.getClass());
 
+                // branch stores the "main branch" on bitbucket
                 String branch = map.get("name");
+
+                // Determine the branch to use for tool info
+                if (entry.getDefaultVersion() != null) { // or default version is invalid
+                    branch = entry.getDefaultVersion();
+                }
 
                 if (branch == null) {
                     LOG.info(gitUsername + ": Could NOT find bitbucket default branch!");
                     return null;
                 } else {
                     LOG.info(gitUsername + ": Default branch: {}", branch);
+                }
+
+                // Get file name of interest
+                String fileName = "";
+
+                // If tools
+                if (entry.getClass().equals(Tool.class)) {
+                    // If no tags exist on quay
+                    if (((Tool)entry).getVersions().size() == 0) {
+                        LOG.info(gitUsername + ": Repo: {} has no tags", ((Tool) entry).getPath());
+                        return entry;
+                    }
+                    for (Tag tag : ((Tool)entry).getVersions()) {
+                        if (tag.getReference() != null && tag.getReference().equals(branch)) {
+                            if (type == AbstractEntryClient.Type.CWL) {
+                                fileName = tag.getCwlPath();
+                            } else {
+                                fileName = tag.getWdlPath();
+                            }
+                        }
+                    }
+                }
+
+                // If workflow
+                if (entry.getClass().equals(Workflow.class)) {
+                    for (WorkflowVersion workflowVersion : ((Workflow) entry).getVersions()) {
+                        if (workflowVersion.getReference().equals(branch)) {
+                            fileName = workflowVersion.getWorkflowPath();
+                        }
+                    }
+                }
+
+                if (fileName.startsWith("/")) {
+                  fileName = fileName.substring(1);
                 }
 
                 // String response = asString.get();
@@ -172,7 +211,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 // Set<String> branches = branchMap.keySet();
                 //
                 // for (String branch : branches) {
-                LOG.info(gitUsername + ": Checking {} branch for {} file", branch, descriptorType);
+                LOG.info(gitUsername + ": Checking {} branch for {} file", branch, type);
 
                 String content = "";
 
@@ -180,7 +219,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
                 LOG.info(gitUsername + ": RESOURCE CALL: {}", url);
                 if (asString.isPresent()) {
-                    LOG.info(gitUsername + ": {} FOUND", descriptorType);
+                    LOG.info(gitUsername + ": {} FOUND", type);
                     content = asString.get();
                 } else {
                     LOG.info(gitUsername + ": Branch: {} has no {}", branch, fileName);
@@ -188,11 +227,11 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
                 // Add for new descriptor types
                 // expects file to have .cwl extension
-                if (descriptorType.equals("cwl")) {
-                    tool = parseCWLContent(tool, content);
+                if (type == AbstractEntryClient.Type.CWL) {
+                    entry = parseCWLContent(entry, content);
                 }
-                if (descriptorType.equals("wdl")) {
-                     tool = parseWDLContent(tool, content);
+                if (type == AbstractEntryClient.Type.WDL) {
+                    entry = parseWDLContent(entry, content);
                 }
 
                 // if (tool.getHasCollab()) {
@@ -203,7 +242,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             }
         }
 
-        return tool;
+        return entry;
     }
 
     @Override
@@ -352,6 +391,14 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 }
             }
 
+        }
+
+        // Get information about default version
+
+        if (workflow.getDescriptorType().equals("cwl")) {
+            findDescriptor(workflow, AbstractEntryClient.Type.CWL);
+        } else {
+            findDescriptor(workflow, AbstractEntryClient.Type.WDL);
         }
 
         return workflow;

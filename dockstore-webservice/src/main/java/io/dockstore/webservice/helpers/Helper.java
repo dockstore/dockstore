@@ -19,6 +19,8 @@ package io.dockstore.webservice.helpers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
+
+import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Registry;
@@ -79,6 +81,7 @@ public final class Helper {
     private static void updateFiles(Tool tool, final HttpClient client, final FileDAO fileDAO, final Token githubToken, final Token bitbucketToken) {
         Set<Tag> tags = tool.getTags();
 
+        // For each tag, will download files to db and determine if the tag is valid
         for (Tag tag : tags) {
             LOG.info(githubToken.getUsername() + " : Updating files for tag {}", tag.getName());
 
@@ -223,29 +226,31 @@ public final class Helper {
                 }
             }
 
+            // Grab files for each version/tag and check if valid
             updateFiles(tool, client, fileDAO, githubToken, bitbucketToken);
 
+            // Now grab default/main tag to grab general information (defaults to github/bitbucket "main branch")
             final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(tool.getGitUrl(), client,
                     bitbucketToken == null ? null : bitbucketToken.getContent(), githubToken.getContent());
-            String email = "";
             if (sourceCodeRepo != null) {
                 // Grab and parse files to get tool information
                 // Add for new descriptor types
-                tool.setValidTrigger(false);  // Default is false since we must first check to see if descriptors are valid
+
+                //Check if default version is set
+                // If not set or invalid, set tag of interest to tag stored in main tag
+                // If set and valid, set tag of interest to tag stored in default version
 
                 if (tool.getDefaultCwlPath() != null) {
                     LOG.info(githubToken.getUsername() + " : Parsing CWL...");
-                    sourceCodeRepo.findDescriptor(tool, tool.getDefaultCwlPath());
+                    sourceCodeRepo.findDescriptor(tool, AbstractEntryClient.Type.CWL);
                 }
 
                 if (tool.getDefaultWdlPath() != null) {
                     LOG.info(githubToken.getUsername() + " : Parsing WDL...");
-                    sourceCodeRepo.findDescriptor(tool, tool.getDefaultWdlPath());
+                    sourceCodeRepo.findDescriptor(tool, AbstractEntryClient.Type.WDL);
                 }
 
             }
-            tool.setEmail(email);
-
             toolDAO.create(tool);
         }
 
@@ -556,6 +561,7 @@ public final class Helper {
         List<Tool> findByMode = toolDAO.findByMode(ToolMode.MANUAL_IMAGE_PATH);
         findByMode.removeIf(test -> !test.getUsers().contains(currentUser));
         apiTools.addAll(findByMode);
+
         // ends up with docker image path -> quay.io data structure representing builds
         final Map<String, ArrayList<?>> mapOfBuilds = new HashMap<>();
         for (final ImageRegistryInterface anInterface : allRegistries) {

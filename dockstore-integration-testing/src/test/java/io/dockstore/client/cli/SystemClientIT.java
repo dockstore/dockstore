@@ -188,7 +188,6 @@ public class SystemClientIT {
         c.setDefaultCwlPath("/Dockstore.cwl");
         c.setRegistry(DockstoreTool.RegistryEnum.DOCKER_HUB);
         c.setIsPublished(true);
-        c.setValidTrigger(true);
         c.setNamespace("seqware");
         c.setToolname("test5");
         c.setPath("registry.hub.docker.com/seqware/seqware");

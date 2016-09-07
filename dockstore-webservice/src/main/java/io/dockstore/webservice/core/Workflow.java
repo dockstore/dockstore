@@ -211,10 +211,12 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         return this.descriptorType;
     }
 
+    // Used to update workflow manually (not refresh)
     public void updateInfo(Workflow workflow) {
         workflowName = workflow.getWorkflowName();
         path = workflow.getPath();
         descriptorType = workflow.getDescriptorType();
         defaultWorkflowPath = workflow.getDefaultWorkflowPath();
+        this.setDefaultVersion(workflow.getDefaultVersion());
     }
 }

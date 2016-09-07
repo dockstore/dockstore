@@ -115,10 +115,6 @@ public class Tool extends Entry<Tool, Tag> {
     @ApiModelProperty("Implementation specific timestamp for last built")
     private Date lastBuild;
 
-    @Column
-    @ApiModelProperty("Implementation specific, this image has descriptor file(s) associated with it")
-    private boolean validTrigger;
-
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinTable(name = "tool_tag", joinColumns = @JoinColumn(name = "toolid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "tagid", referencedColumnName = "id"))
     @ApiModelProperty("Implementation specific tracking of valid build tags for the docker container")
@@ -149,7 +145,6 @@ public class Tool extends Entry<Tool, Tag> {
         super.update(tool);
         this.setDescription(tool.getDescription());
         lastBuild = tool.getLastBuild();
-        validTrigger = tool.getValidTrigger();
     }
 
 
@@ -189,11 +184,6 @@ public class Tool extends Entry<Tool, Tag> {
     @JsonProperty
     public Date getLastBuild() {
         return lastBuild;
-    }
-
-    @JsonProperty
-    public boolean getValidTrigger() {
-        return validTrigger;
     }
 
     public Set<Tag> getTags() {
@@ -237,10 +227,6 @@ public class Tool extends Entry<Tool, Tag> {
 
     public void setLastBuild(Date lastBuild) {
         this.lastBuild = lastBuild;
-    }
-
-    public void setValidTrigger(boolean validTrigger) {
-        this.validTrigger = validTrigger;
     }
 
     @JsonProperty
@@ -304,6 +290,7 @@ public class Tool extends Entry<Tool, Tag> {
         defaultCwlPath = tool.getDefaultCwlPath();
         defaultWdlPath = tool.getDefaultWdlPath();
         defaultDockerfilePath = tool.getDefaultDockerfilePath();
+        this.setDefaultVersion(tool.getDefaultVersion());
 
         toolname = tool.getToolname();
         this.setGitUrl(tool.getGitUrl());

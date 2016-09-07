@@ -478,6 +478,7 @@ public class WorkflowClient extends AbstractEntryClient {
                 String workflowName = optVal(args, "--workflow-name", workflow.getWorkflowName());
                 String descriptorType = optVal(args, "--descriptor-type", workflow.getDescriptorType());
                 String workflowDescriptorPath = optVal(args, "--workflow-path", workflow.getWorkflowPath());
+                String defaultVersion = optVal(args, "--default-version", workflow.getDefaultVersion());
 
                 if (workflow.getMode() == io.swagger.client.model.Workflow.ModeEnum.STUB) {
 
@@ -501,7 +502,27 @@ public class WorkflowClient extends AbstractEntryClient {
                 String path = Joiner.on("/").skipNulls().join(workflow.getOrganization(), workflow.getRepository(), workflow.getWorkflowName());
                 workflow.setPath(path);
 
+                // If valid version
+                boolean updateVersionSuccess = false;
+                for (WorkflowVersion workflowVersion : workflow.getWorkflowVersions()) {
+                    if (workflowVersion.getName().equals(defaultVersion)) {
+                        workflow.setDefaultVersion(defaultVersion);
+                        updateVersionSuccess = true;
+                        break;
+                    }
+                }
+
+                if (!updateVersionSuccess && defaultVersion != null) {
+                    out("Not a valid workflow version.");
+                    out("Valid versions include:");
+                    for (WorkflowVersion workflowVersion : workflow.getWorkflowVersions()) {
+                        out(workflowVersion.getReference());
+                    }
+                    errorMessage("Please enter a valid version.", Client.CLIENT_ERROR);
+                }
+
                 workflowsApi.updateWorkflow(workflowId, workflow);
+                workflowsApi.refresh(workflowId);
                 out("The workflow has been updated.");
             } catch (ApiException ex) {
                 exceptionMessage(ex, "", Client.API_ERROR);
@@ -524,6 +545,7 @@ public class WorkflowClient extends AbstractEntryClient {
         out("  --workflow-name <workflow-name>              Name for the given workflow");
         out("  --descriptor-type <descriptor-type>          Descriptor type of the given workflow.  Can only be altered if workflow is a STUB.");
         out("  --workflow-path <workflow-path>              Path to default workflow location");
+        out("  --default-version <default-version>          Default branch name");
         printHelpFooter();
     }
 

@@ -123,7 +123,7 @@ public class ToolClient extends AbstractEntryClient {
             String description = "";
             String gitUrl = "";
 
-            if (container.getValidTrigger()) {
+            if (container.getIsPublished()) {
                 descriptor = "Yes";
             }
 
@@ -623,12 +623,33 @@ public class ToolClient extends AbstractEntryClient {
                 final String dockerfilePath = optVal(args, "--dockerfile-path", container.getDefaultDockerfilePath());
                 final String toolname = optVal(args, "--toolname", container.getToolname());
                 final String gitUrl = optVal(args, "--git-url", container.getGitUrl());
+                final String defaultTag = optVal(args, "--default-version", container.getDefaultVersion());
 
                 container.setDefaultCwlPath(cwlPath);
                 container.setDefaultWdlPath(wdlPath);
                 container.setDefaultDockerfilePath(dockerfilePath);
                 container.setToolname(toolname);
                 container.setGitUrl(gitUrl);
+
+                // if valid version
+                boolean updateVersionSuccess = false;
+
+                for (Tag tag : container.getTags()) {
+                    if (tag.getName().equals(defaultTag)) {
+                        container.setDefaultVersion(defaultTag);
+                        updateVersionSuccess = true;
+                        break;
+                    }
+                }
+
+                if (!updateVersionSuccess && defaultTag != null) {
+                    out("Not a valid version.");
+                    out("Valid versions include:");
+                    for (Tag tag : container.getTags()) {
+                        out(tag.getReference());
+                    }
+                    errorMessage("Please enter a valid version.", Client.CLIENT_ERROR);
+                }
 
                 containersApi.updateContainer(containerId, container);
                 containersApi.refresh(containerId);
@@ -648,7 +669,8 @@ public class ToolClient extends AbstractEntryClient {
         SourceFile file = new SourceFile();
         // simply getting published descriptors does not require permissions
         DockstoreTool container = containersApi.getPublishedContainerByToolPath(path);
-        if (container.getValidTrigger()) {
+
+        if (container != null) {
             try {
                 if (descriptorType.equals(CWL_STRING)) {
                     file = containersApi.cwl(container.getId(), tag);
@@ -736,6 +758,7 @@ public class ToolClient extends AbstractEntryClient {
         out("  --dockerfile-path <dockerfile-path>         Path to default dockerfile location");
         out("  --toolname <toolname>                       Toolname for the given tool");
         out("  --git-url <git-url>                         Git url");
+        out("  --default-version <default-version>         Default branch name");
         printHelpFooter();
     }
 

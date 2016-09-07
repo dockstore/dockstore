@@ -17,6 +17,7 @@ definitions:
     properties:
       author: {description: This is the name of the author stated in the Dockstore.cwl,
         type: string}
+      defaultVersion: {description: This is the default version of the entry, type: string}
       default_cwl_path: {description: 'This indicates for the associated git repository,
           the default path to the CWL document, required: GA4GH', type: string}
       default_dockerfile_path: {description: 'This indicates for the associated git
@@ -77,8 +78,6 @@ definitions:
         items: {$ref: '#/definitions/User'}
         type: array
         uniqueItems: true
-      validTrigger: {default: false, description: 'Implementation specific, this image
-          has descriptor file(s) associated with it', type: boolean}
     required: [default_cwl_path, default_dockerfile_path, default_wdl_path, gitUrl,
       mode, name, namespace, registry, toolname]
     type: object
@@ -283,6 +282,7 @@ definitions:
     properties:
       author: {description: This is the name of the author stated in the Dockstore.cwl,
         type: string}
+      defaultVersion: {description: This is the default version of the entry, type: string}
       description: {description: 'This is a human-readable description of this container
           and what it is trying to accomplish, required GA4GH', type: string}
       descriptorType: {description: 'This is a descriptor type for the workflow, either
