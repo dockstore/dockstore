@@ -337,6 +337,7 @@ public class GeneralWorkflowET {
         /**
          * Tests that convert with valid imports will work (for WDL)
          */
+        // TODO: this test should fail since the descriptor is not a valid workflow
         @Test
         public void testRefreshAndConvertWithImportsWDL() {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh",

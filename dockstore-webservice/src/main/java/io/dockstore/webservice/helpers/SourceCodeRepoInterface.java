@@ -29,9 +29,13 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.dockstore.webservice.core.WorkflowMode;
+import wdl4s.NamespaceWithWorkflow;
 import wdl4s.parser.WdlParser;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -60,6 +64,7 @@ public abstract class SourceCodeRepoInterface {
      * @return an updated entry with fields from the descriptor filled in
      */
     public abstract Entry findDescriptor(Entry c, AbstractEntryClient.Type type);
+    // TODO: should rename this to better describe what it does
 
     /**
      * Get the email for the current user
@@ -182,4 +187,83 @@ public abstract class SourceCodeRepoInterface {
         return bridge.getImportFiles(workflowFile);
     }
 
+    /**
+     * Given the content of a file, determines if it is a valid WDL workflow
+     * @param content
+     * @return true if valid WDL workflow, false otherwise
+         */
+    public Boolean checkValidWDLWorkflow(String content) {
+        final NamespaceWithWorkflow nameSpaceWithWorkflow = NamespaceWithWorkflow.load(content);
+        if (nameSpaceWithWorkflow != null) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Given the content of a file, determines if it is a valid CWL workflow
+     * @param content
+     * @return true if valid CWL workflow, false otherwise
+         */
+    public Boolean checkValidCWLWorkflow(String content) {
+        if (content.contains("class: Workflow")) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public abstract Workflow initializeWorkflow(String repositoryId);
+
+    public abstract Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow, Map<String, String> existingDefaults);
+
+    public Workflow getWorkflow(String repositoryId, Optional<Workflow> existingWorkflow) {
+        // Determine git host of workflow
+        AbstractEntryClient.gitHost gitHost;
+        if (this.getClass().equals(GitHubSourceCodeRepo.class)) {
+            gitHost = AbstractEntryClient.gitHost.GITHUB;
+        } else if (this.getClass().equals(BitBucketSourceCodeRepo.class)) {
+            gitHost = AbstractEntryClient.gitHost.BITBUCKET;
+        }
+
+        // Initialize workflow
+        Workflow workflow = initializeWorkflow(repositoryId);
+
+        // Determine if workflow should be returned as a STUB or FULL
+        if (!existingWorkflow.isPresent()){
+            // when there is no existing workflow at all, just return a stub workflow. Also set descriptor type to default cwl.
+            workflow.setDescriptorType("cwl");
+            return workflow;
+        }
+        if (existingWorkflow.get().getMode() == WorkflowMode.STUB){
+            // when there is an existing stub workflow, just return the new stub as well
+            return workflow;
+        }
+
+        // If this point has been reached, then the workflow will be a FULL workflow (and not a STUB)
+        workflow.setMode(WorkflowMode.FULL);
+
+        // if it exists, extract paths from the previous workflow entry
+        Map<String, String> existingDefaults = new HashMap<>();
+        if (existingWorkflow.isPresent()){
+            // Copy over existing workflow versions
+            existingWorkflow.get().getWorkflowVersions().forEach(existingVersion -> existingDefaults.put(existingVersion.getReference(), existingVersion.getWorkflowPath()));
+
+            // Copy workflow information from source (existingWorkflow) to target (workflow)
+            copyWorkflow(existingWorkflow.get(), workflow);
+        }
+
+        // Create branches and associated source files
+        setupWorkflowVersions(repositoryId, workflow, existingWorkflow, existingDefaults);
+
+        // Get metadata for workflow
+        if (workflow.getDescriptorType().equals("cwl")) {
+            findDescriptor(workflow, AbstractEntryClient.Type.CWL);
+        } else {
+            findDescriptor(workflow, AbstractEntryClient.Type.WDL);
+        }
+
+        return workflow;
+    }
 }

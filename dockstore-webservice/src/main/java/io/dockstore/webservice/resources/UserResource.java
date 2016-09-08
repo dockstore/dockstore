@@ -372,8 +372,10 @@ public class UserResource {
 
         Helper.checkUser(authUser, userId);
 
+        // Refresh all workflows, including full workflows
         workflowResource.refreshStubWorkflowsForUser(authUser);
-        // refresh the user
+
+        // Refresh the user
         authUser = userDAO.findById(authUser.getId());
         return FluentIterable.from(authUser.getEntries()).filter(Workflow.class).toList();
     }

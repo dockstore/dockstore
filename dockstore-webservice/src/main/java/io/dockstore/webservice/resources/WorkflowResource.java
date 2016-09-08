@@ -185,12 +185,14 @@ public class WorkflowResource {
     }
 
     /**
-     * Refresh workflows for one user
+     * For each valid token for a git hosting service, refresh all workflows
      * @param user a user to refresh workflows for
      */
     public void refreshStubWorkflowsForUser(User user) {
         try {
             List<Token> tokens = checkOnBitbucketToken(user);
+
+            // Check if tokens for git hosting services are valid and refresh corresponding workflows
 
             // Refresh Bitbucket
             Token bitbucketToken = Helper.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
@@ -220,28 +222,36 @@ public class WorkflowResource {
         // Mapping of git url to repository name (owner/repo)
         final Map<String, String> workflowGitUrl2Name = sourceCodeRepoInterface.getWorkflowGitUrl2RepositoryId();
 
+        // For each entry found of the associated git hosting service
         for(Map.Entry<String, String> entry : workflowGitUrl2Name.entrySet()) {
+            // Get all workflows with the same giturl
             final List<Workflow> byGitUrl = workflowDAO.findByGitUrl(entry.getKey());
+
             if (byGitUrl.size() > 0) {
-                // Workflows exist
+                // Workflows exist with the given git url
                 for (Workflow workflow : byGitUrl) {
-                    // when 1) workflows are already known, update the copy in the db
-                    // update the one workflow from github
+                    // Update existing workflows with new information from the repository
+                    // Note we pass the existing workflow as a base for the updated version of the workflow
                     final Workflow newWorkflow = sourceCodeRepoInterface.getNewWorkflow(entry.getValue(), Optional.of(workflow));
 
-                    // take ownership of these workflows
+                    // Take ownership of these workflows
                     workflow.getUsers().add(user);
+
+                    // Update the existing matching workflows based off of the new information
                     updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow);
                 }
             } else {
-                // Workflows are not registered, add them
+                // Workflows are not registered for the given git url, add one
                 final Workflow newWorkflow = sourceCodeRepoInterface.getNewWorkflow(entry.getValue(), Optional.absent());
 
+                // The workflow was successfully created
                 if (newWorkflow != null) {
                     final long workflowID = workflowDAO.create(newWorkflow);
                     // need to create nested data models
                     final Workflow workflowFromDB = workflowDAO.findById(workflowID);
                     workflowFromDB.getUsers().add(user);
+
+                    // Update newly created template workflow (workflowFromDB) with found data from the repository
                     updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow);
                 }
             }
