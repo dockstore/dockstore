@@ -106,10 +106,6 @@ public abstract class AbstractEntryClient {
         CWL, WDL, NONE
     }
 
-    public enum GitHost {
-        GITHUB, BITBUCKET
-    }
-
     public abstract String getConfigFile();
 
     /**

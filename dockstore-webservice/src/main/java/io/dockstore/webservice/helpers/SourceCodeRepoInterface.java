@@ -226,14 +226,6 @@ public abstract class SourceCodeRepoInterface {
          * @return workflow
          */
     public Workflow getWorkflow(String repositoryId, Optional<Workflow> existingWorkflow) {
-        // Determine git host of workflow
-        AbstractEntryClient.GitHost gitHost;
-        if (this.getClass().equals(GitHubSourceCodeRepo.class)) {
-            gitHost = AbstractEntryClient.GitHost.GITHUB;
-        } else if (this.getClass().equals(BitBucketSourceCodeRepo.class)) {
-            gitHost = AbstractEntryClient.GitHost.BITBUCKET;
-        }
-
         // Initialize workflow
         Workflow workflow = initializeWorkflow(repositoryId);
 
