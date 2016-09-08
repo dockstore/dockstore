@@ -63,8 +63,7 @@ public abstract class SourceCodeRepoInterface {
      * @param c an entry to be updated
      * @return an updated entry with fields from the descriptor filled in
      */
-    public abstract Entry findDescriptor(Entry c, AbstractEntryClient.Type type);
-    // TODO: should rename this to better describe what it does
+    public abstract Entry getMetadataFromDescriptor(Entry c, AbstractEntryClient.Type type);
 
     /**
      * Get the email for the current user
@@ -203,10 +202,29 @@ public abstract class SourceCodeRepoInterface {
         return false;
     }
 
+    /**
+     * Set up workflow with basic attributes from git repository
+     * @param repositoryId
+     * @return workflow with some attributes set
+         */
     public abstract Workflow initializeWorkflow(String repositoryId);
 
+    /**
+     * Finds all of the workflow versions for a given workflow and store them and their corresponding source files
+     * @param repositoryId
+     * @param workflow
+     * @param existingWorkflow
+     * @param existingDefaults
+         * @return workflow with associated workflow versions
+         */
     public abstract Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow, Map<String, String> existingDefaults);
 
+    /**
+     * Creates or updates a workflow based on the situation. Will grab workflow versions and more metadata if workflow is FULL
+     * @param repositoryId
+     * @param existingWorkflow
+         * @return workflow
+         */
     public Workflow getWorkflow(String repositoryId, Optional<Workflow> existingWorkflow) {
         // Determine git host of workflow
         AbstractEntryClient.GitHost gitHost;
@@ -248,15 +266,12 @@ public abstract class SourceCodeRepoInterface {
 
         // Get metadata for workflow
         if (workflow.getDescriptorType().equals("cwl")) {
-            findDescriptor(workflow, AbstractEntryClient.Type.CWL);
+            getMetadataFromDescriptor(workflow, AbstractEntryClient.Type.CWL);
         } else {
-            findDescriptor(workflow, AbstractEntryClient.Type.WDL);
+            getMetadataFromDescriptor(workflow, AbstractEntryClient.Type.WDL);
         }
 
         return workflow;
     }
 
-    public Entry getMetadataFromDescriptor(Entry c, AbstractEntryClient.Type type) {
-
-    }
 }

@@ -116,7 +116,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public Entry findDescriptor(Entry entry, AbstractEntryClient.Type type) {
+    public Entry getMetadataFromDescriptor(Entry entry, AbstractEntryClient.Type type) {
         Repository repository = null;
         String repositoryId;
 

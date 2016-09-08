@@ -130,7 +130,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public Entry findDescriptor(Entry entry, AbstractEntryClient.Type type) {
+    public Entry getMetadataFromDescriptor(Entry entry, AbstractEntryClient.Type type) {
         String giturl = entry.getGitUrl();
         if (giturl != null && !giturl.isEmpty()) {
 
@@ -232,12 +232,6 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 if (type == AbstractEntryClient.Type.WDL) {
                     entry = parseWDLContent(entry, content);
                 }
-
-                // if (tool.getHasCollab()) {
-                // break;
-                // }
-                // }
-
             }
         }
 

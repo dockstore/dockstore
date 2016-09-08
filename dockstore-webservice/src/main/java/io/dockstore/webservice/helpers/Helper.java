@@ -242,12 +242,12 @@ public final class Helper {
 
                 if (tool.getDefaultCwlPath() != null) {
                     LOG.info(githubToken.getUsername() + " : Parsing CWL...");
-                    sourceCodeRepo.findDescriptor(tool, AbstractEntryClient.Type.CWL);
+                    sourceCodeRepo.getMetadataFromDescriptor(tool, AbstractEntryClient.Type.CWL);
                 }
 
                 if (tool.getDefaultWdlPath() != null) {
                     LOG.info(githubToken.getUsername() + " : Parsing WDL...");
-                    sourceCodeRepo.findDescriptor(tool, AbstractEntryClient.Type.WDL);
+                    sourceCodeRepo.getMetadataFromDescriptor(tool, AbstractEntryClient.Type.WDL);
                 }
 
             }
@@ -543,14 +543,19 @@ public final class Helper {
                 throw new CustomWebApplicationException("quay.io tools found, but quay.io token not found. Please link your quay.io account before refreshing.", HttpStatus.SC_BAD_REQUEST);
             }
         }
+
+        // Get a list of all image registries
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
         final List<ImageRegistryInterface> allRegistries = factory.getAllRegistries();
 
+        // Get a list of all namespaces from all image registries
         List<String> namespaces = new ArrayList<>();
         // TODO: figure out better approach, for now just smash together stuff from DockerHub and quay.io
         for (ImageRegistryInterface anInterface : allRegistries) {
             namespaces.addAll(anInterface.getNamespaces());
         }
+
+        // Get a list of all tools found based on the namespaces list
         List<Tool> apiTools = new ArrayList<>();
         for (ImageRegistryInterface anInterface : allRegistries) {
             apiTools.addAll(anInterface.getContainers(namespaces));
