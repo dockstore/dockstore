@@ -171,17 +171,6 @@ public abstract class SourceCodeRepoInterface {
      */
     public abstract Map<String, String> getWorkflowGitUrl2RepositoryId();
 
-    /**
-     * Given a repositoryid, get a workflow
-     * TODO: pass in an existing workflow when we need to override paths
-     * @param repositoryId uniquely identify a repo
-     * @param existingWorkflow an existing workflow entry, when existingWorkflow is a stub or empty, simply create a new stub entry
-     *                         when existingWorkflow is a full workflow, do a full refresh but use the existing workflow paths as a guide
-     *                         for where to look for files
-     * @return a fully realized workflow
-     */
-    public abstract Workflow getNewWorkflow(String repositoryId, Optional<Workflow> existingWorkflow);
-
     List<String> getWdlImports(File workflowFile){
         Bridge bridge = new Bridge();
         return bridge.getImportFiles(workflowFile);
@@ -220,11 +209,11 @@ public abstract class SourceCodeRepoInterface {
 
     public Workflow getWorkflow(String repositoryId, Optional<Workflow> existingWorkflow) {
         // Determine git host of workflow
-        AbstractEntryClient.gitHost gitHost;
+        AbstractEntryClient.GitHost gitHost;
         if (this.getClass().equals(GitHubSourceCodeRepo.class)) {
-            gitHost = AbstractEntryClient.gitHost.GITHUB;
+            gitHost = AbstractEntryClient.GitHost.GITHUB;
         } else if (this.getClass().equals(BitBucketSourceCodeRepo.class)) {
-            gitHost = AbstractEntryClient.gitHost.BITBUCKET;
+            gitHost = AbstractEntryClient.GitHost.BITBUCKET;
         }
 
         // Initialize workflow
@@ -265,5 +254,9 @@ public abstract class SourceCodeRepoInterface {
         }
 
         return workflow;
+    }
+
+    public Entry getMetadataFromDescriptor(Entry c, AbstractEntryClient.Type type) {
+
     }
 }

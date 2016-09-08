@@ -232,7 +232,7 @@ public class WorkflowResource {
                 for (Workflow workflow : byGitUrl) {
                     // Update existing workflows with new information from the repository
                     // Note we pass the existing workflow as a base for the updated version of the workflow
-                    final Workflow newWorkflow = sourceCodeRepoInterface.getNewWorkflow(entry.getValue(), Optional.of(workflow));
+                    final Workflow newWorkflow = sourceCodeRepoInterface.getWorkflow(entry.getValue(), Optional.of(workflow));
 
                     // Take ownership of these workflows
                     workflow.getUsers().add(user);
@@ -242,7 +242,7 @@ public class WorkflowResource {
                 }
             } else {
                 // Workflows are not registered for the given git url, add one
-                final Workflow newWorkflow = sourceCodeRepoInterface.getNewWorkflow(entry.getValue(), Optional.absent());
+                final Workflow newWorkflow = sourceCodeRepoInterface.getWorkflow(entry.getValue(), Optional.absent());
 
                 // The workflow was successfully created
                 if (newWorkflow != null) {
@@ -287,7 +287,7 @@ public class WorkflowResource {
 
         // do a full refresh when targeted like this
         workflow.setMode(WorkflowMode.FULL);
-        final Workflow newWorkflow = sourceCodeRepo.getNewWorkflow(workflow.getOrganization() + '/' + workflow.getRepository(), Optional.of(workflow));
+        final Workflow newWorkflow = sourceCodeRepo.getWorkflow(workflow.getOrganization() + '/' + workflow.getRepository(), Optional.of(workflow));
         workflow.getUsers().add(user);
         updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow);
 
@@ -661,7 +661,7 @@ public class WorkflowResource {
         final SourceCodeRepoInterface sourceCodeRepo = getSourceCodeRepoInterface(gitURL, user);
 
         // Create workflow
-        Workflow newWorkflow = sourceCodeRepo.getNewWorkflow(completeWorkflowPath, Optional.absent());
+        Workflow newWorkflow = sourceCodeRepo.getWorkflow(completeWorkflowPath, Optional.absent());
 
         if (newWorkflow == null) {
             throw new CustomWebApplicationException("Please enter a valid repository.", HttpStatus.SC_BAD_REQUEST);

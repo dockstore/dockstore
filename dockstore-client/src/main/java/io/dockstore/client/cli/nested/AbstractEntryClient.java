@@ -106,7 +106,7 @@ public abstract class AbstractEntryClient {
         CWL, WDL, NONE
     }
 
-    public enum gitHost {
+    public enum GitHost {
         GITHUB, BITBUCKET
     }
 
