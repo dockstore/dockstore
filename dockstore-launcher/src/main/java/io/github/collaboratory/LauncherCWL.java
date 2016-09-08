@@ -192,7 +192,7 @@ public class LauncherCWL {
 
         // run command
         System.out.println("Calling out to cwltool to run your " + (cwlObject instanceof Workflow ? "workflow" : "tool"));
-        Map<String, Object> outputObj = runCWLCommand(imageDescriptorPath, newJsonPath, globalWorkingDir + "/outputs/", globalWorkingDir + "/working/");
+        Map<String, Object> outputObj = runCWLCommand(imageDescriptorPath, newJsonPath, globalWorkingDir + "/outputs/", globalWorkingDir + "/working/", config);
         System.out.println();
 
         // push output files
@@ -423,9 +423,26 @@ public class LauncherCWL {
         return new File(workingDir + "/launcher-" + uuid).getAbsolutePath();
     }
 
-    private Map<String, Object> runCWLCommand(String cwlFile, String jsonSettings, String outputDir, String workingDir) {
+    private Map<String, Object> runCWLCommand(String cwlFile, String jsonSettings, String outputDir, String workingDir, HierarchicalINIConfiguration config) {
         String[] s = {"cwltool","--enable-dev","--non-strict","--enable-net","--outdir", outputDir, "--tmpdir-prefix", workingDir, cwlFile, jsonSettings};
-        final String joined = Joiner.on(" ").join(Arrays.asList(s));
+
+        // Get extras from config file
+        final ArrayList<String> extraFlags = (ArrayList)config.getList("cwltool-extra-parameters");
+
+        if (extraFlags.size() > 0) {
+            System.out.println("########### WARNING ###########");
+            System.out.println("You are using extra flags for CWLtool which may not be supported. Use at your own risk.");
+        }
+
+        for (int i = 0; i < extraFlags.size(); i++) {
+            extraFlags.set(i, extraFlags.get(i).trim());
+            System.out.println(extraFlags.get(i));
+        }
+
+        ArrayList<String> newCommand = new ArrayList<>(Arrays.asList(s));
+        newCommand.addAll(1, extraFlags);
+
+        final String joined = Joiner.on(" ").join(newCommand);
         System.out.println("Executing: " + joined);
         final ImmutablePair<String, String> execute = Utilities.executeCommand(joined);
         // mutate stderr and stdout into format for output
