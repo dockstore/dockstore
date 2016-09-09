@@ -18,11 +18,9 @@ package io.dockstore.webservice.helpers;
 
 import com.google.common.base.Optional;
 
-import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
@@ -164,6 +162,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             workflow.setRepository(repository.getName());
             workflow.setGitUrl(repository.getSshUrl());
             workflow.setLastUpdated(new Date());
+            // Why is the path not set here?
         } catch (IOException e) {
             LOG.info(gitUsername + ": Cannot getNewWorkflow {}");
             return null;
@@ -218,7 +217,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     if (calculatedExtension.equalsIgnoreCase("cwl") || calculatedExtension.equalsIgnoreCase("yml") || calculatedExtension.equalsIgnoreCase("yaml")) {
                         validWorkflow = checkValidCWLWorkflow(content);
                     } else {
-                        validWorkflow = checkValidWDLWorkflow(content);
+                        // Need to also download imports to check validity for WDL
+                        validWorkflow = true;
+//                        validWorkflow = checkValidWDLWorkflow(content);
                     }
 
                     if (validWorkflow) {
@@ -261,6 +262,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         return workflow;
     }
 
+    @Override
     public String getRepositoryId(Entry entry) {
         String repositoryId;
         if (gitRepository == null) {
@@ -284,6 +286,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         return repositoryId;
     }
 
+    @Override
     public String getMainBranch(Entry entry, String repositoryId) {
         Repository repository;
         String mainBranch = null;
@@ -308,6 +311,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         return mainBranch;
     }
 
+    @Override
     public String getFileContents(String filePath, String branch, String repositoryId) {
         String content = null;
 

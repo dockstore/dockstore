@@ -250,7 +250,7 @@ public abstract class SourceCodeRepoInterface {
         // Create branches and associated source files
         setupWorkflowVersions(repositoryId, workflow, existingWorkflow, existingDefaults);
 
-        // Get metadata for workflow
+        // Get metadata for workflow and update workflow with it
         if (workflow.getDescriptorType().equals("cwl")) {
             updateEntryMetadata(workflow, AbstractEntryClient.Type.CWL);
         } else {
@@ -262,7 +262,7 @@ public abstract class SourceCodeRepoInterface {
 
     /**
      * Update an entry with the contents of the descriptor file from a source code repo
-     * @param entry
+     * @param entry@Override
      * @param type
          * @return
          */
@@ -346,26 +346,26 @@ public abstract class SourceCodeRepoInterface {
     }
 
     /**
-     *
+     * Get the repository Id of an entry to be used for API calls
      * @param entry
-     * @return
+     * @return repository id of an entry
          */
     public abstract String getRepositoryId(Entry entry);
 
     /**
-     *
+     * Returns the branch of interest used to determine tool and workflow metadata
      * @param entry
      * @param repositoryId
-         * @return
+         * @return Branch of interest
          */
     public abstract String getMainBranch(Entry entry, String repositoryId);
 
     /**
-     *
+     * Returns the content of a given file from a specific git repository and branch
      * @param filePath
      * @param branch
      * @param repositoryId
-         * @return
+         * @return content of a file from git host
          */
     public abstract String getFileContents(String filePath, String branch, String repositoryId);
 

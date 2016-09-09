@@ -218,6 +218,11 @@ public class WorkflowResource {
         }
     }
 
+    /**
+     * Gets a mapping of all workflows from git host, and updates/adds as appropriate
+     * @param sourceCodeRepoInterface
+     * @param user
+         */
     private void refreshHelper(final SourceCodeRepoInterface sourceCodeRepoInterface, User user) {
         // Mapping of git url to repository name (owner/repo)
         final Map<String, String> workflowGitUrl2Name = sourceCodeRepoInterface.getWorkflowGitUrl2RepositoryId();

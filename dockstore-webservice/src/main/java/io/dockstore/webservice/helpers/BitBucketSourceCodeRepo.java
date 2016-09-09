@@ -23,12 +23,9 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.core.Tag;
-import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.resources.ResourceUtilities;
@@ -191,7 +188,9 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             if (type == SourceFile.FileType.DOCKSTORE_CWL) {
                 validWorkflow = checkValidCWLWorkflow(content);
             } else {
-                validWorkflow = checkValidWDLWorkflow(content);
+                // Need to also download imports to check validity for WDL
+                validWorkflow = true;
+//                validWorkflow = checkValidWDLWorkflow(content);
             }
 
             if (validWorkflow) {
@@ -306,6 +305,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         return workflow;
     }
 
+    @Override
     public String getRepositoryId(Entry entry) {
         String repositoryId;
         String giturl = entry.getGitUrl();
@@ -324,6 +324,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         return repositoryId;
     }
 
+    @Override
     public String getMainBranch(Entry entry, String repositoryId) {
         String branch;
 
@@ -356,6 +357,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         return branch;
     }
 
+    @Override
     public String getFileContents(String filePath, String branch, String repositoryId) {
         String content = null;
         Optional<String> asString;
