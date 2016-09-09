@@ -129,115 +129,6 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public Entry getMetadataFromDescriptor(Entry entry, AbstractEntryClient.Type type) {
-        String giturl = entry.getGitUrl();
-        if (giturl != null && !giturl.isEmpty()) {
-
-            // Determine owner and repository for API call
-            Pattern p = Pattern.compile("git\\@bitbucket.org:(\\S+)/(\\S+)\\.git");
-            Matcher m = p.matcher(giturl);
-            LOG.info(gitUsername + ": " + giturl);
-            if (!m.find()) {
-                LOG.info(gitUsername + ": Namespace and/or repository name could not be found from tool's giturl");
-                return entry;
-            }
-
-            // Create API call string
-            String url = BITBUCKET_API_URL + "repositories/" + m.group(1) + '/' + m.group(2) + "/main-branch";
-
-            // Call BitBucket API
-            Optional<String> asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
-            LOG.info(gitUsername + ": RESOURCE CALL: {}", url);
-
-            if (asString.isPresent()) {
-                // Get JSON string and convert into a map
-                String branchJson = asString.get();
-                Gson gson = new Gson();
-                Map<String, String> map = new HashMap<>();
-                map = (Map<String, String>) gson.fromJson(branchJson, map.getClass());
-
-                // Branch stores the "main branch" on bitbucket
-                String branch = map.get("name");
-
-                // Determine the branch to use for tool info
-                if (entry.getDefaultVersion() != null) {
-                    branch = entry.getDefaultVersion();
-                }
-
-                // Check for errors
-                if (branch == null) {
-                    LOG.info(gitUsername + ": Could NOT find bitbucket default branch!");
-                    return null;
-                } else {
-                    LOG.info(gitUsername + ": Default branch: {}", branch);
-                }
-
-                // Get file name of interest
-                String fileName = "";
-
-                // If entry is a tool
-                if (entry.getClass().equals(Tool.class)) {
-                    // If no tags exist on quay
-                    if (((Tool)entry).getVersions().size() == 0) {
-                        LOG.info(gitUsername + ": Repo: {} has no tags", ((Tool) entry).getPath());
-                        return entry;
-                    }
-
-                    // Find filepath to parse
-                    for (Tag tag : ((Tool)entry).getVersions()) {
-                        if (tag.getReference() != null && tag.getReference().equals(branch)) {
-                            if (type == AbstractEntryClient.Type.CWL) {
-                                fileName = tag.getCwlPath();
-                            } else {
-                                fileName = tag.getWdlPath();
-                            }
-                        }
-                    }
-                }
-
-                // If entry is a workflow
-                if (entry.getClass().equals(Workflow.class)) {
-                    // Find filepath to parse
-                    for (WorkflowVersion workflowVersion : ((Workflow) entry).getVersions()) {
-                        if (workflowVersion.getReference().equals(branch)) {
-                            fileName = workflowVersion.getWorkflowPath();
-                        }
-                    }
-                }
-
-                if (fileName.startsWith("/")) {
-                  fileName = fileName.substring(1);
-                }
-
-                LOG.info(gitUsername + ": Checking {} branch for {} file", branch, type);
-
-                String content = "";
-
-                url = BITBUCKET_API_URL + "repositories/" + m.group(1) + '/' + m.group(2) + "/raw/" + branch + '/' + fileName;
-                asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
-                LOG.info(gitUsername + ": RESOURCE CALL: {}", url);
-                if (asString.isPresent()) {
-                    LOG.info(gitUsername + ": {} FOUND", type);
-                    content = asString.get();
-                } else {
-                    LOG.info(gitUsername + ": Branch: {} has no {}", branch, fileName);
-                }
-
-                // Add for new descriptor types
-                // expects file to have .cwl extension
-                if (type == AbstractEntryClient.Type.CWL) {
-                    entry = parseCWLContent(entry, content);
-                }
-                if (type == AbstractEntryClient.Type.WDL) {
-                    entry = parseWDLContent(entry, content);
-                }
-            }
-        }
-
-        return entry;
-    }
-
-    @Override
     public String getOrganizationEmail() {
         // TODO: Need to get email of the container's organization/user
         return "";
@@ -413,5 +304,69 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         }
 
         return workflow;
+    }
+
+    public String getRepositoryId(Entry entry) {
+        String repositoryId;
+        String giturl = entry.getGitUrl();
+
+        Pattern p = Pattern.compile("git\\@bitbucket.org:(\\S+)/(\\S+)\\.git");
+        Matcher m = p.matcher(giturl);
+        LOG.info(gitUsername + ": " + giturl);
+
+        if (!m.find()) {
+            LOG.info(gitUsername + ": Namespace and/or repository name could not be found from tool's giturl");
+            return null;
+        }
+
+        repositoryId = m.group(1) + "/" + m.group(2);
+
+        return repositoryId;
+    }
+
+    public String getMainBranch(Entry entry, String repositoryId) {
+        String branch;
+
+        // Is default version set?
+        if (entry.getDefaultVersion() != null) {
+            branch = entry.getDefaultVersion();
+        } else {
+            // If default version is not set, need to find the main branch
+
+            // Create API call string
+            String url = BITBUCKET_API_URL + "repositories/" + repositoryId + "/main-branch";
+
+            // Call BitBucket API
+            Optional<String> asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
+            LOG.info(gitUsername + ": RESOURCE CALL: {}", url);
+
+            if (asString.isPresent()) {
+                String branchJson = asString.get();
+                Gson gson = new Gson();
+                Map<String, String> map = new HashMap<>();
+                map = (Map<String, String>) gson.fromJson(branchJson, map.getClass());
+
+                // Branch stores the "main branch" on bitbucket
+                branch = map.get("name");
+            } else {
+                branch = null;
+            }
+        }
+
+        return branch;
+    }
+
+    public String getFileContents(String filePath, String branch, String repositoryId) {
+        String content = null;
+        Optional<String> asString;
+
+        String url = BITBUCKET_API_URL + "repositories/" + repositoryId + "/raw/" + branch + '/' + filePath;
+        asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
+        LOG.info(gitUsername + ": RESOURCE CALL: {}", url);
+        if (asString.isPresent()) {
+            content = asString.get();
+        }
+
+        return content;
     }
 }

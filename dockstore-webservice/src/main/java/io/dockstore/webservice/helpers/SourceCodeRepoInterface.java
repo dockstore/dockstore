@@ -23,6 +23,7 @@ import io.dockstore.client.Bridge;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import org.apache.commons.io.FilenameUtils;
@@ -31,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.dockstore.webservice.core.WorkflowMode;
+import io.dockstore.webservice.core.WorkflowVersion;
 import wdl4s.NamespaceWithWorkflow;
 import wdl4s.parser.WdlParser;
 
@@ -58,21 +60,13 @@ public abstract class SourceCodeRepoInterface {
     public abstract String readFile(String fileName, String reference);
 
     /**
-     * Update an entry with the contents of the descriptor file from a source code repo
-     * 
-     * @param c an entry to be updated
-     * @return an updated entry with fields from the descriptor filled in
-     */
-    public abstract Entry getMetadataFromDescriptor(Entry c, AbstractEntryClient.Type type);
-
-    /**
      * Get the email for the current user
      * @return email for the logged in user
      */
     public abstract String getOrganizationEmail();
 
     /**
-     *
+     * Copies some of the attributes of the source workflow to the target workflow
      * @param sourceWorkflow
      * @param targetWorkflow
          */
@@ -258,12 +252,121 @@ public abstract class SourceCodeRepoInterface {
 
         // Get metadata for workflow
         if (workflow.getDescriptorType().equals("cwl")) {
-            getMetadataFromDescriptor(workflow, AbstractEntryClient.Type.CWL);
+            updateEntryMetadata(workflow, AbstractEntryClient.Type.CWL);
         } else {
-            getMetadataFromDescriptor(workflow, AbstractEntryClient.Type.WDL);
+            updateEntryMetadata(workflow, AbstractEntryClient.Type.WDL);
         }
 
         return workflow;
     }
+
+    /**
+     * Update an entry with the contents of the descriptor file from a source code repo
+     * @param entry
+     * @param type
+         * @return
+         */
+    public Entry updateEntryMetadata(Entry entry, AbstractEntryClient.Type type) {
+        // Determine which branch to use
+        String repositoryId = getRepositoryId(entry);
+
+        if (repositoryId == null) {
+            LOG.info("Could not find repository information.");
+            return entry;
+        }
+
+        String branch = getMainBranch(entry, repositoryId);
+
+        if (branch == null) {
+            // error getting branch
+            LOG.info(repositoryId + " : Error getting the main branch.");
+            return entry;
+        }
+
+        // Determine the file path of the descriptor
+        String filePath = null;
+
+        // If entry is a tool
+        if (entry.getClass().equals(Tool.class)) {
+            // If no tags exist on quay
+            if (((Tool)entry).getVersions().size() == 0) {
+                return entry;
+            }
+
+            // Find filepath to parse
+            for (Tag tag : ((Tool)entry).getVersions()) {
+                if (tag.getReference() != null && tag.getReference().equals(branch)) {
+                    if (type == AbstractEntryClient.Type.CWL) {
+                        filePath = tag.getCwlPath();
+                    } else {
+                        filePath = tag.getWdlPath();
+                    }
+                }
+            }
+        }
+
+        // If entry is a workflow
+        if (entry.getClass().equals(Workflow.class)) {
+            // Find filepath to parse
+            for (WorkflowVersion workflowVersion : ((Workflow) entry).getVersions()) {
+                if (workflowVersion.getReference().equals(branch)) {
+                    filePath = workflowVersion.getWorkflowPath();
+                }
+            }
+        }
+
+        if (filePath == null) {
+            LOG.info(repositoryId + " : No descriptor found for " + branch + ".");
+            return entry;
+        }
+
+        // Why is this needed?
+        if (filePath.startsWith("/")) {
+            filePath = filePath.substring(1);
+        }
+
+        // Get file contents
+        // Does this need to be an API call? can't we just use the files we have in the database?
+        String content = getFileContents(filePath, branch, repositoryId);
+
+        if (content == null) {
+            LOG.info(repositoryId + " : Error getting descriptor for " + branch + " with path " + filePath);
+            return entry;
+        }
+
+        // Parse file content and update
+        if (type == AbstractEntryClient.Type.CWL) {
+            entry = parseCWLContent(entry, content);
+        }
+        if (type == AbstractEntryClient.Type.WDL) {
+            entry = parseWDLContent(entry, content);
+        }
+
+        return entry;
+    }
+
+    /**
+     *
+     * @param entry
+     * @return
+         */
+    public abstract String getRepositoryId(Entry entry);
+
+    /**
+     *
+     * @param entry
+     * @param repositoryId
+         * @return
+         */
+    public abstract String getMainBranch(Entry entry, String repositoryId);
+
+    /**
+     *
+     * @param filePath
+     * @param branch
+     * @param repositoryId
+         * @return
+         */
+    public abstract String getFileContents(String filePath, String branch, String repositoryId);
 
 }

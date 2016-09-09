@@ -247,6 +247,7 @@ public class WorkflowResource {
                 // The workflow was successfully created
                 if (newWorkflow != null) {
                     final long workflowID = workflowDAO.create(newWorkflow);
+
                     // need to create nested data models
                     final Workflow workflowFromDB = workflowDAO.findById(workflowID);
                     workflowFromDB.getUsers().add(user);

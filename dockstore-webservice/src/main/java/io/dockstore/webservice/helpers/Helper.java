@@ -242,12 +242,12 @@ public final class Helper {
 
                 if (tool.getDefaultCwlPath() != null) {
                     LOG.info(githubToken.getUsername() + " : Parsing CWL...");
-                    sourceCodeRepo.getMetadataFromDescriptor(tool, AbstractEntryClient.Type.CWL);
+                    sourceCodeRepo.updateEntryMetadata(tool, AbstractEntryClient.Type.CWL);
                 }
 
                 if (tool.getDefaultWdlPath() != null) {
                     LOG.info(githubToken.getUsername() + " : Parsing WDL...");
-                    sourceCodeRepo.getMetadataFromDescriptor(tool, AbstractEntryClient.Type.WDL);
+                    sourceCodeRepo.updateEntryMetadata(tool, AbstractEntryClient.Type.WDL);
                 }
 
             }

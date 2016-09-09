@@ -115,120 +115,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public Entry getMetadataFromDescriptor(Entry entry, AbstractEntryClient.Type type) {
-        Repository repository = null;
-        String repositoryId;
-
-        // If no git repository is set, find it from the entry's gitURL
-        if (gitRepository == null) {
-            if (entry.getClass().equals(Tool.class)) {
-                // Parse git url for repo
-                Pattern p = Pattern.compile("git\\@bitbucket.org:(\\S+)/(\\S+)\\.git");
-                Matcher m = p.matcher(entry.getGitUrl());
-
-                if (!m.find()) {
-                    LOG.error(gitUsername + ": Repo: {} could not be retrieved", entry.getGitUrl());
-                    repositoryId = null;
-                } else {
-                    repositoryId = m.group(2);
-                }
-            } else {
-                repositoryId = ((Workflow) entry).getRepository();
-            }
-        } else {
-            repositoryId = gitRepository;
-        }
-
-        // Get repository based on username and repo id
-        if (repositoryId != null) {
-            try {
-                repository = service.getRepository(gitUsername, repositoryId);
-            } catch (IOException e) {
-                LOG.error(gitUsername + ": Repo: {} could not be retrieved", entry.getGitUrl());
-            }
-        }
-
-        // Update entry information bases on default version or main branch
-        if (repository == null) {
-            if (entry.getClass().equals(Tool.class)) {
-                LOG.info(gitUsername + ": Github repository not found for {}", ((Tool) entry).getPath());
-            } else {
-                LOG.info(gitUsername + ": Github repository not found for {}", ((Workflow) entry).getPath());
-            }
-        } else {
-            LOG.info(gitUsername + ": Github found for: {}", repository.getName());
-            try {
-                // Determine the default branch on Github
-                String mainBranch = repository.getDefaultBranch();
-
-                // Determine which branch to use for tool info
-                String branchToUse;
-                if (entry.getDefaultVersion() == null) {
-                    branchToUse = mainBranch;
-                } else {
-                    branchToUse = entry.getDefaultVersion();
-                }
-
-                // Get file name of interest
-                String fileName = "";
-
-                // If tools
-                if (entry.getClass().equals(Tool.class)) {
-                    // If no tags exist on quay
-                    if (((Tool)entry).getVersions().size() == 0) {
-                        LOG.info(gitUsername + ": Repo: {} has no tags", repository.getName());
-                        return entry;
-                    }
-                    for (Tag tag : ((Tool)entry).getVersions()) {
-                        if (tag.getReference() != null && tag.getReference().equals(branchToUse)) {
-                            if (type == AbstractEntryClient.Type.CWL) {
-                                fileName = tag.getCwlPath();
-                            } else {
-                                fileName = tag.getWdlPath();
-                            }
-                        }
-                    }
-                }
-
-                // If workflow
-                if (entry.getClass().equals(Workflow.class)) {
-                    for (WorkflowVersion workflowVersion : ((Workflow) entry).getVersions()) {
-                        if (workflowVersion.getReference().equals(branchToUse)) {
-                            fileName = workflowVersion.getWorkflowPath();
-                        }
-                    }
-                }
-
-                if (fileName.startsWith("/")) {
-                    fileName = fileName.substring(1);
-                }
-
-                // Get content of file
-                if (fileName != "") {
-                    List<RepositoryContents> contents = cService.getContents(repository, fileName, branchToUse);
-
-                    // Parse content
-                    if (!(contents == null || contents.isEmpty())) {
-                        String content = extractGitHubContents(contents);
-
-                        // Add for new descriptor types
-                        // Grab important metadata from CWL file (expects file to have .cwl extension)
-                        if (type == AbstractEntryClient.Type.CWL) {
-                            entry = parseCWLContent(entry, content);
-                        }
-                        if (type == AbstractEntryClient.Type.WDL) {
-                            entry = parseWDLContent(entry, content);
-                        }
-                    }
-                }
-            } catch (IOException ex) {
-                LOG.info(gitUsername + ": Repo: {} has no descriptor file ", repository.getName());
-            }
-        }
-        return entry;
-    }
-
-    @Override
     public String getOrganizationEmail() {
         User organization;
         try {
@@ -375,4 +261,66 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         return workflow;
     }
 
+    public String getRepositoryId(Entry entry) {
+        String repositoryId;
+        if (gitRepository == null) {
+            if (entry.getClass().equals(Tool.class)) {
+                // Parse git url for repo
+                Pattern p = Pattern.compile("git\\@bitbucket.org:(\\S+)/(\\S+)\\.git");
+                Matcher m = p.matcher(entry.getGitUrl());
+
+                if (!m.find()) {
+                    repositoryId = null;
+                } else {
+                    repositoryId = m.group(2);
+                }
+            } else {
+                repositoryId = ((Workflow) entry).getRepository();
+            }
+        } else {
+            repositoryId = gitRepository;
+        }
+
+        return repositoryId;
+    }
+
+    public String getMainBranch(Entry entry, String repositoryId) {
+        Repository repository;
+        String mainBranch = null;
+
+        // Get repository based on username and repo id
+        if (repositoryId != null) {
+            try {
+                repository = service.getRepository(gitUsername, repositoryId);
+
+                // Determine the default branch on Github
+                mainBranch = repository.getDefaultBranch();
+            } catch (IOException e) {
+                return null;
+            }
+        }
+
+        // Determine which branch to use for tool info
+        if (entry.getDefaultVersion() != null) {
+            mainBranch = entry.getDefaultVersion();
+        }
+
+        return mainBranch;
+    }
+
+    public String getFileContents(String filePath, String branch, String repositoryId) {
+        String content = null;
+
+        try {
+            Repository repository = service.getRepository(gitUsername, repositoryId);
+            List<RepositoryContents> contents = cService.getContents(repository, filePath, branch);
+            if (!(contents == null || contents.isEmpty())) {
+                content = extractGitHubContents(contents);
+            }
+
+        } catch (IOException ex) {
+            LOG.info(gitUsername + ": Repo: has no descriptor file ");
+        }
+        return content;
+    }
 }
