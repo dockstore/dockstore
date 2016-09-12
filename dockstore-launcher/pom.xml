@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
-        <version>1.0-rc.0</version>
+        <version>1.0-rc.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>dockstore-launcher</artifactId>
@@ -33,7 +33,7 @@
 	 <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.0-rc.0</version>
+            <version>1.0-rc.1-SNAPSHOT</version>
         </dependency>
 		<dependency>
 			<groupId>commons-cli</groupId>
