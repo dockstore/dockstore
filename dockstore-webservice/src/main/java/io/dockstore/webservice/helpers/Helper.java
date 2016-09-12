@@ -287,7 +287,7 @@ public final class Helper {
                 }
             }
 
-            // Add tool to remove list if it is no longer on Quay (Ignore manual DockerHub tools)
+            // Add tool to remove list if it is no longer on Quay (Ignore manual DockerHub/Quay tools)
             if (!exists && oldTool.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
                 oldTool.removeUser(user);
                 toDelete.add(oldTool);
@@ -329,7 +329,7 @@ public final class Helper {
 
         final Date time = new Date();
 
-        // Save all new and existing tools, and generate new tags
+        // Save all new and existing tools
         for (final Tool tool : dbToolList) {
             tool.setLastUpdated(time);
             tool.addUser(user);
@@ -564,26 +564,26 @@ public final class Helper {
             apiTools.addAll(anInterface.getContainers(namespaces));
         }
 
+        // hack: read relevant tools from database, ignoring manual builds not owned by the current user
         // TODO: when we get proper docker hub support, get this above
-        // hack: read relevant containers from database
         User currentUser = userDAO.findById(userId);
         List<Tool> findByMode = toolDAO.findByMode(ToolMode.MANUAL_IMAGE_PATH);
         findByMode.removeIf(test -> !test.getUsers().contains(currentUser));
         apiTools.addAll(findByMode);
 
+        // Update tools found from API with build information, and
         // ends up with docker image path -> quay.io data structure representing builds
         final Map<String, ArrayList<?>> mapOfBuilds = new HashMap<>();
         for (final ImageRegistryInterface anInterface : allRegistries) {
             mapOfBuilds.putAll(anInterface.getBuildMap(apiTools));
         }
 
-        // end up with key = path; value = list of tags
-        // final Map<String, List<Tag>> tagMap = getWorkflowVersions(client, allRepos, objectMapper, quayToken, bitbucketToken, githubToken,
-        // mapOfBuilds);
+        // Ignore updating DockerHub and manual tools for now
         removeContainersThatCannotBeUpdated(dbTools);
 
         final User dockstoreUser = userDAO.findById(userId);
-        // update information on a container by container level
+
+        // update basic tool information and remove tools that no longer exist on quay
         updateContainers(apiTools, dbTools, dockstoreUser, toolDAO);
         userDAO.clearCache();
 

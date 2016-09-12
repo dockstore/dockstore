@@ -278,7 +278,6 @@ public abstract class SourceCodeRepoInterface {
         String branch = getMainBranch(entry, repositoryId);
 
         if (branch == null) {
-            // error getting branch
             LOG.info(repositoryId + " : Error getting the main branch.");
             return entry;
         }

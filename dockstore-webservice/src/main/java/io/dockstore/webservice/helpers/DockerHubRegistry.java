@@ -27,7 +27,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Tag;
 
 /**
- * A no-op interface intended as a place-holder for where we will implemnt docker hub functionality when they get around to exposing and
+ * A no-op interface intended as a place-holder for where we will implement docker hub functionality when they get around to exposing and
  * implementing their API.
  * 
  * @author dyuen
