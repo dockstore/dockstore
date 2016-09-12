@@ -188,9 +188,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             if (type == SourceFile.FileType.DOCKSTORE_CWL) {
                 validWorkflow = checkValidCWLWorkflow(content);
             } else {
-                // Need to also download imports to check validity for WDL
-                validWorkflow = true;
-//                validWorkflow = checkValidWDLWorkflow(content);
+                validWorkflow = checkValidWDLWorkflow(content);
             }
 
             if (validWorkflow) {
@@ -283,10 +281,12 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                         sourceFileSet.addAll(stringSourceFileMap.values());
                     }
 
+                    // If source file is found and valid then add it
                     if (sourceFile.getContent() != null) {
                         version.getSourceFiles().add(sourceFile);
                     }
 
+                    // The version is valid if source files are found
                     if (version.getSourceFiles().size() > 0) {
                         version.setValid(true);
                     }

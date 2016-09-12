@@ -175,12 +175,14 @@ public abstract class SourceCodeRepoInterface {
      * @return true if valid WDL workflow, false otherwise
          */
     public Boolean checkValidWDLWorkflow(String content) {
-        final NamespaceWithWorkflow nameSpaceWithWorkflow = NamespaceWithWorkflow.load(content);
-        if (nameSpaceWithWorkflow != null) {
-            return true;
-        }
-
-        return false;
+//        final NamespaceWithWorkflow nameSpaceWithWorkflow = NamespaceWithWorkflow.load(content);
+//        if (nameSpaceWithWorkflow != null) {
+//            return true;
+//        }
+//
+//        return false;
+        // For now as long as a file exists, it is a valid WDL
+        return true;
     }
 
     /**

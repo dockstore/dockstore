@@ -81,18 +81,20 @@ public class GeneralWorkflowET {
                 Assert.assertTrue("there should be 0 published entries, there are " + count, count == 0);
                 final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid='t'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 2 valid versions, there are " + count2, count2 == 2);
+                final long count3 = testingPostgres.runSelectStatement("select count(*) from workflow where mode='FULL'", new ScalarHandler<>());
+                Assert.assertTrue("there should be 1 full workflows, there are " + count3, count3 == 1);
 
                 // attempt to publish it
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--script" });
 
-                final long count3 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", new ScalarHandler<>());
-                Assert.assertTrue("there should be 1 published entry, there are " + count3, count3 == 1);
+                final long count4 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", new ScalarHandler<>());
+                Assert.assertTrue("there should be 1 published entry, there are " + count4, count4 == 1);
 
                 // unpublish
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--unpub", "--script" });
 
-                final long count4 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", new ScalarHandler<>());
-                Assert.assertTrue("there should be 0 published entries, there are " + count4, count4 == 0);
+                final long count5 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", new ScalarHandler<>());
+                Assert.assertTrue("there should be 0 published entries, there are " + count5, count5 == 0);
 
         }
 

@@ -195,7 +195,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             version.setReference(ref);
             version.setValid(false);
 
-            // determine workflow version from previous
+            // Determine workflow version from previous
             String calculatedPath = existingDefaults.getOrDefault(ref, existingWorkflow.get().getDefaultWorkflowPath());
             version.setWorkflowPath(calculatedPath);
             Set<SourceFile> sourceFileSet = new HashSet<>();
@@ -235,7 +235,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                         // try to use the FileImporter to re-use code for handling imports
                         FileImporter importer = new FileImporter(this);
                         final Map<String, SourceFile> stringSourceFileMap = importer
-                                .resolveImports(content, workflow, SourceFile.FileType.DOCKSTORE_CWL, version);
+                                .resolveImports(content, workflow, file.getType(), version);
                         sourceFileSet.addAll(stringSourceFileMap.values());
                     }
                 }
