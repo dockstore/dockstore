@@ -217,9 +217,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     if (calculatedExtension.equalsIgnoreCase("cwl") || calculatedExtension.equalsIgnoreCase("yml") || calculatedExtension.equalsIgnoreCase("yaml")) {
                         validWorkflow = checkValidCWLWorkflow(content);
                     } else {
-                        // Need to also download imports to check validity for WDL
-                        validWorkflow = true;
-//                        validWorkflow = checkValidWDLWorkflow(content);
+                        validWorkflow = checkValidWDLWorkflow(content);
                     }
 
                     if (validWorkflow) {
