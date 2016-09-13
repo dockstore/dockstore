@@ -103,6 +103,10 @@ public abstract class SourceCodeRepoInterface {
                 Map map = (Map) object;
 
                 String description = (String) map.get("description");
+                // changed for CWL 1.0
+                if (map.containsKey("doc")){
+                    description = (String)map.get("doc");
+                }
                 if (description != null) {
                     entry.setDescription(description);
                 } else {
