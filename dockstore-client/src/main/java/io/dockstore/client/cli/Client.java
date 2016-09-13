@@ -601,7 +601,7 @@ public class Client {
         out("                       Default: false");
         out("  --version            Print dockstore's version");
         out("                       Default: false");
-        out("  --server-metadata    Print metdata describing the dockstore webservice");
+        out("  --server-metadata    Print metadata describing the dockstore webservice");
         out("                       Default: false");
         out("  --upgrade            Upgrades to the latest stable release of Dockstore");
         out("                       Default: false");
