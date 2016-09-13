@@ -15,6 +15,8 @@
  */
 package io.swagger.model;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
@@ -27,7 +29,9 @@ import java.util.Objects;
 /**
  * A tool descriptor is a metadata document that describes one or more tools.
  */
-@ApiModel(description = "A tool descriptor is a metadata document that describes one or more tools.") @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z") public class ToolDescriptor {
+@ApiModel(description = "A tool descriptor is a metadata document that describes one or more tools.") @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
+@JsonNaming(PropertyNamingStrategy.KebabCaseStrategy.class)
+public class ToolDescriptor {
   private TypeEnum type = null;
   private String descriptor = null;
   private String url = null;

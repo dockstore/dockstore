@@ -15,6 +15,8 @@
  */
 package io.swagger.model;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
@@ -27,7 +29,9 @@ import java.util.Objects;
 /**
  * Describes a class (type) of tool allowing us to categorize workflows, tools, and maybe even other entities (such as services) separately
  */
-@ApiModel(description = "Describes a class (type) of tool allowing us to categorize workflows, tools, and maybe even other entities (such as services) separately") @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z") public class ToolClass {
+@ApiModel(description = "Describes a class (type) of tool allowing us to categorize workflows, tools, and maybe even other entities (such as services) separately") @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
+@JsonNaming(PropertyNamingStrategy.KebabCaseStrategy.class)
+public class ToolClass {
   private String id = null;
 
   private String name = null;

@@ -15,6 +15,8 @@
  */
 package io.swagger.model;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
@@ -29,7 +31,9 @@ import java.util.Objects;
 /**
  * A tool version describes a particular iteration of a tool as described by a reference to a specific image and dockerfile.
  */
-@ApiModel(description = "A tool version describes a particular iteration of a tool as described by a reference to a specific image and dockerfile.") @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z") public class ToolVersion {
+@ApiModel(description = "A tool version describes a particular iteration of a tool as described by a reference to a specific image and dockerfile.") @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
+@JsonNaming(PropertyNamingStrategy.KebabCaseStrategy.class)
+public class ToolVersion {
     private String name = null;
 
     private String url = null;

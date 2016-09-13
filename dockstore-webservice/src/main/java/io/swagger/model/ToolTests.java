@@ -15,6 +15,8 @@
  */
 package io.swagger.model;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
@@ -31,6 +33,7 @@ import java.util.Objects;
  */
 @ApiModel(description = "A tool document that describes how to test with one or more sample test JSON.")
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
+@JsonNaming(PropertyNamingStrategy.KebabCaseStrategy.class)
 public class ToolTests   {
   private String test = null;
 
