@@ -33,7 +33,6 @@ import org.slf4j.LoggerFactory;
 
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
-import wdl4s.NamespaceWithWorkflow;
 import wdl4s.parser.WdlParser;
 
 import java.io.File;
