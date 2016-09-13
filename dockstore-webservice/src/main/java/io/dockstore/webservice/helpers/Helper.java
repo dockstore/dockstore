@@ -153,6 +153,7 @@ public final class Helper {
                     return;
                 }
 
+                // Determine which tags need to be deleted (no longer exist on registry)
                 List<Tag> toDelete = new ArrayList<>(0);
                 for (Iterator<Tag> iterator = existingTags.iterator(); iterator.hasNext();) {
                     Tag oldTag = iterator.next();
@@ -169,10 +170,11 @@ public final class Helper {
                     }
                 }
 
+                // Iterate over tags found from registry
                 for (Tag newTag : newTags) {
                     boolean exists = false;
 
-                    // Find if user already has the tool
+                    // Find if user already has the tool (if so then update)
                     for (Tag oldTag : existingTags) {
                         if (newTag.getName().equals(oldTag.getName())) {
                             exists = true;
@@ -300,7 +302,7 @@ public final class Helper {
             String path = newTool.getPath();
             boolean exists = false;
 
-            // Find if user already has the tool
+            // Find if user already has the tool, if so just update
             for (Tool oldTool : dbToolList) {
                 if ((newTool.getToolPath().equals(oldTool.getToolPath())) || (newTool.getPath().equals(oldTool.getPath()) && newTool.getGitUrl().equals(
                     oldTool.getGitUrl()))) {
@@ -320,7 +322,7 @@ public final class Helper {
                 }
             }
 
-            // Tool does not already exist
+            // Tool does not already exist, add it
             if (!exists) {
                 newTool.setPath(newTool.getPath());
                 dbToolList.add(newTool);
@@ -588,9 +590,11 @@ public final class Helper {
         userDAO.clearCache();
 
         final List<Tool> newDBTools = getContainers(userId, userDAO);
-        // update information on a tag by tag level
+
+        // Get tags from API
         final Map<String, List<Tag>> tagMap = getTags(client, newDBTools, objectMapper, quayToken, mapOfBuilds);
 
+        // Update existing tags with new content, add/remove tags as well
         updateTags(newDBTools, client, toolDAO, tagDAO, fileDAO, githubToken, bitbucketToken, tagMap);
         userDAO.clearCache();
         return getContainers(userId, userDAO);
