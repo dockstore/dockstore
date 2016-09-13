@@ -178,6 +178,7 @@ Background:
 2. Hit Generate Server and select JAX-RS
 3. Replace the appropriate classes in dockstore-webservice
 4. Unlike the client classes, we cannot separate quite as cleanly. Classes to watch out for are io.swagger.api.ToolsApi (includes DropWizard specific UnitOfWork annotations and a custom path) and io.swagger.api.impl.ToolsApiServiceImpl (includes our implementation).
+5. Customizations include, `@Path(DockstoreWebserviceApplication.GA4GH_API_PATH + <depends on api class>)` for Api classes, `@UnitOfWork` added to resources, and `@JsonNaming(PropertyNamingStrategy.KebabCaseStrategy.class)` added to model classes for GA4GH.
 
 
 ### CWL Avro documents

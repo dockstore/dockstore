@@ -202,6 +202,8 @@ definitions:
       meta-version: {description: 'The version of this tool in the registry. Iterates
           when fields like the description, author, etc. are updated.', type: string}
       organization: {description: The organization that published the image., type: string}
+      signed: {default: false, description: Reports whether this tool has been signed.,
+        type: boolean}
       toolclass: {$ref: '#/definitions/ToolClass'}
       toolname: {description: The name of the tool., type: string}
       url: {description: 'The URL for this tool in this registry, for example `http://agora.broadinstitute.org/tools/123456`',
@@ -246,11 +248,24 @@ definitions:
           )', type: string}
     required: [dockerfile]
     type: object
+  ToolTests:
+    description: A tool document that describes how to test with one or more sample test JSON.
+    properties:
+      test: {description: The test JSON content for this tool., type: string}
+      url: {description: Optional url to the test JSON used to test this tool, type: string}
+    required: [test]
+    type: object
   ToolVersion:
     description: A tool version describes a particular iteration of a tool as described by a reference to a specific image and dockerfile.
     properties:
-      descriptor: {$ref: '#/definitions/ToolDescriptor'}
-      dockerfile: {$ref: '#/definitions/ToolDockerfile'}
+      descriptor-type:
+        description: The type (or types) of descriptors available.
+        items:
+          enum: [CWL, WDL]
+          type: string
+        type: array
+      dockerfile: {default: false, description: Reports if this tool has a dockerfile available.,
+        type: boolean}
       id: {description: 'An identifier of the version of this tool for this particular
           tool registry, for example `v1`', type: string}
       image: {description: The docker path to the image (and version) for this tool. (e.g. quay.io/seqware/seqware_full/1.1),
@@ -264,7 +279,7 @@ definitions:
         type: boolean}
       verified-source: {description: 'Source of metadata that can support a verified
           tool, such as an email or URL', type: string}
-    required: [descriptor, id, meta-version, url]
+    required: [id, meta-version, url]
     type: object
   User:
     description: End users for the dockstore
@@ -543,6 +558,36 @@ paths:
           description: The tool can not be output in the specified type.
           schema: {$ref: '#/definitions/ToolDescriptor'}
       summary: Get additional tool descriptor files (CWL/WDL) relative to the main file
+      tags: [GA4GH]
+  /api/ga4gh/v1/tools/{id}/versions/{version-id}/{type}/tests:
+    get:
+      description: ''
+      operationId: toolsIdVersionsVersionIdTypeTestsGet
+      parameters:
+      - description: The output type of the descriptor. If not specified it is up to the underlying implementation to determine which output type to return. Plain types return the bare descriptor while the "non-plain" types return a descriptor wrapped with metadata
+        enum: [CWL, WDL, plain-CWL, plain-WDL]
+        in: path
+        name: type
+        required: true
+        type: string
+      - {description: 'A unique identifier of the tool, scoped to this registry, for
+          example `123456`', in: path, name: id, required: true, type: string}
+      - {description: 'An identifier of the tool version for this particular tool
+          registry, for example `v1`', in: path, name: version-id, required: true,
+        type: string}
+      produces: [application/json, text/plain]
+      responses:
+        200:
+          description: The tool test JSON response.
+          schema:
+            items: {$ref: '#/definitions/ToolTests'}
+            type: array
+        404:
+          description: The tool can not be output in the specified type.
+          schema:
+            items: {$ref: '#/definitions/ToolTests'}
+            type: array
+      summary: Get an array of test JSONs suitable for use with this descriptor type.
       tags: [GA4GH]
   /auth/tokens:
     get:

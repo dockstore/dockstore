@@ -18,7 +18,9 @@ package io.swagger.api.impl;
 
 import avro.shaded.com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
+import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Table;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -36,6 +38,8 @@ import io.swagger.model.ToolDescriptor;
 import io.swagger.model.ToolDockerfile;
 import io.swagger.model.ToolVersion;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,6 +60,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+
+import static io.dockstore.webservice.core.SourceFile.FileType.DOCKERFILE;
+import static io.dockstore.webservice.core.SourceFile.FileType.DOCKSTORE_CWL;
+import static io.dockstore.webservice.core.SourceFile.FileType.DOCKSTORE_WDL;
 
 public class ToolsApiServiceImpl extends ToolsApiService {
 
@@ -84,7 +92,8 @@ public class ToolsApiServiceImpl extends ToolsApiService {
      * @param container our data object
      * @return standardised data object
      */
-    private static io.swagger.model.Tool convertContainer2Tool(Entry container) {
+    private static Pair<io.swagger.model.Tool, Table<String, SourceFile.FileType, Object>> convertContainer2Tool(Entry container) {
+        Table<String, SourceFile.FileType, Object> fileTable = HashBasedTable.create();
         String globalId;
         // TODO: properly pass this information
         String newID;
@@ -177,6 +186,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
 
             version.setVerified(false);
             version.setVerifiedSource("");
+            version.setDockerfile(false);
 
             String urlBuilt;
             final String githubPrefix = "git@github.com:";
@@ -199,22 +209,27 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                         ToolDockerfile dockerfile = new ToolDockerfile();
                         dockerfile.setDockerfile(file.getContent());
                         dockerfile.setUrl(urlBuilt + ((Tag) inputVersion).getDockerfilePath());
-                        version.setDockerfile(dockerfile);
+                        version.setDockerfile(true);
+                        fileTable.put(inputVersion.getName(),DOCKERFILE, dockerfile);
                         break;
                     case DOCKSTORE_CWL:
-                        version.setDescriptor(buildSourceFile(urlBuilt + ((Tag) inputVersion).getCwlPath(), file));
+                        version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);
+                        fileTable.put(inputVersion.getName(), DOCKSTORE_CWL, buildSourceFile(urlBuilt + ((Tag) inputVersion).getCwlPath(), file));
                         break;
                     case DOCKSTORE_WDL:
-                        version.setDescriptor(buildSourceFile(urlBuilt + ((Tag) inputVersion).getWdlPath(), file));
+                        version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);
+                        fileTable.put(inputVersion.getName(), DOCKSTORE_WDL, buildSourceFile(urlBuilt + ((Tag) inputVersion).getWdlPath(), file));
                         break;
                     }
                 } else if (inputVersion instanceof WorkflowVersion) {
                     switch (file.getType()) {
                     case DOCKSTORE_CWL:
-                        version.setDescriptor(buildSourceFile(urlBuilt + ((WorkflowVersion) inputVersion).getWorkflowPath(), file));
+                        version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);
+                        fileTable.put(inputVersion.getName(), DOCKSTORE_CWL, buildSourceFile(urlBuilt + ((WorkflowVersion) inputVersion).getWorkflowPath(), file));
                         break;
                     case DOCKSTORE_WDL:
-                        version.setDescriptor(buildSourceFile(urlBuilt + ((WorkflowVersion) inputVersion).getWorkflowPath(), file));
+                        version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);
+                        fileTable.put(inputVersion.getName(), DOCKSTORE_WDL, buildSourceFile(urlBuilt + ((WorkflowVersion) inputVersion).getWorkflowPath(), file));
                         break;
                     }
                 }
@@ -222,13 +237,13 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             if (container instanceof Tool) {
                 version.setImage(((Tool) container).getPath() + ":" + inputVersion.getName());
             }
-            if (version.getDescriptor() != null) {
+            if (!version.getDescriptorType().isEmpty()) {
                 // ensure that descriptor is non-null before adding to list
                 tool.getVersions().add(version);
                 version.setMetaVersion(inputVersion.getLastModified() != null ? String.valueOf(inputVersion.getLastModified()) : null);
             }
         }
-        return tool;
+        return new ImmutablePair<>(tool, fileTable);
     }
 
     /**
@@ -239,9 +254,9 @@ public class ToolsApiServiceImpl extends ToolsApiService {
      */
     private static ToolDescriptor buildSourceFile(String url, SourceFile file) {
         ToolDescriptor wdlDescriptor = new ToolDescriptor();
-        if (file.getType() == SourceFile.FileType.DOCKSTORE_CWL) {
+        if (file.getType() == DOCKSTORE_CWL) {
             wdlDescriptor.setType(ToolDescriptor.TypeEnum.CWL);
-        } else if (file.getType() == SourceFile.FileType.DOCKSTORE_WDL) {
+        } else if (file.getType() == DOCKSTORE_WDL) {
             wdlDescriptor.setType(ToolDescriptor.TypeEnum.WDL);
         }
         wdlDescriptor.setDescriptor(file.getContent());
@@ -284,7 +299,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             // check whether this is registered
             response = Response.status(Response.Status.UNAUTHORIZED).build();
         } else {
-            io.swagger.model.Tool tool = convertContainer2Tool(container);
+            io.swagger.model.Tool tool = convertContainer2Tool(container).getLeft();
             assert (tool != null);
             // filter out other versions if we're narrowing to a specific version
             if (version != null) {
@@ -349,15 +364,21 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         return getFileByToolVersionID(id, versionId, fileType, relativePath, StringUtils.containsIgnoreCase(type, "plain"));
     }
 
+    @Override public Response toolsIdVersionsVersionIdTypeTestsGet(String type, String id, String versionId,
+            SecurityContext securityContext) throws NotFoundException {
+        /** we do not have test data implemented */
+        return Response.status(Response.Status.NOT_FOUND).build();
+    }
+
     private SourceFile.FileType getFileType(String format) {
         SourceFile.FileType type;
         if (StringUtils.containsIgnoreCase(format, "CWL")) {
-            type = SourceFile.FileType.DOCKSTORE_CWL;
+            type = DOCKSTORE_CWL;
         } else if (StringUtils.containsIgnoreCase(format, "WDL")) {
-            type = SourceFile.FileType.DOCKSTORE_WDL;
+            type = DOCKSTORE_WDL;
         } else if (Objects.equals("JSON", format)) {
             // if JSON is specified
-            type = SourceFile.FileType.DOCKSTORE_CWL;
+            type = DOCKSTORE_CWL;
         } else {
             // TODO: no other descriptor formats implemented for now
             type = null;
@@ -367,7 +388,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
 
     @Override public Response toolsIdVersionsVersionIdDockerfileGet(String id, String versionId, SecurityContext securityContext)
             throws NotFoundException {
-        return getFileByToolVersionID(id, versionId, SourceFile.FileType.DOCKERFILE, null, false);
+        return getFileByToolVersionID(id, versionId, DOCKERFILE, null, false);
     }
 
     @Override public Response toolsGet(String registryId, String registry, String organization, String name, String toolname,
@@ -424,7 +445,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                 }
             }
             // if passing, for each container that matches the criteria, convert to standardised format and return
-            io.swagger.model.Tool tool = convertContainer2Tool(c);
+            io.swagger.model.Tool tool = convertContainer2Tool(c).getLeft();
             if (tool != null) {
                 results.add(tool);
             }
@@ -507,11 +528,12 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
 
-        final io.swagger.model.Tool convertedTool = convertContainer2Tool(entry);
+        final Pair<io.swagger.model.Tool, Table<String, SourceFile.FileType, Object>> toolTablePair = convertContainer2Tool(entry);
         String finalVersionId = versionId;
-        if (convertedTool == null || convertedTool.getVersions() == null) {
+        if (toolTablePair == null || toolTablePair.getKey().getVersions() == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
+        io.swagger.model.Tool convertedTool = toolTablePair.getKey();
         final Optional<ToolVersion> first = convertedTool.getVersions().stream()
                 .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
 
@@ -526,19 +548,23 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                     .findFirst();
         }
 
+        final Table<String, SourceFile.FileType, Object> table = toolTablePair.getValue();
         if (first.isPresent() && oldFirst.isPresent()) {
             final ToolVersion toolVersion = first.get();
-            if (type == SourceFile.FileType.DOCKERFILE) {
-                final ToolDockerfile dockerfile = toolVersion.getDockerfile();
+            final String toolVersionName = toolVersion.getName();
+            if (type == DOCKERFILE) {
+                final ToolDockerfile dockerfile = (ToolDockerfile) table.get(toolVersionName, SourceFile.FileType.DOCKERFILE);
                 return Response.status(Response.Status.OK).type(unwrap? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(unwrap ? dockerfile.getDockerfile() : dockerfile).build();
             } else {
                 if (relativePath == null) {
-                    if (type == SourceFile.FileType.DOCKSTORE_WDL && toolVersion.getDescriptor().getType() == ToolDescriptor.TypeEnum.WDL) {
-                        final ToolDescriptor descriptor = toolVersion.getDescriptor();
+                    if ((type == DOCKSTORE_WDL) && (((ToolDescriptor)table.get(toolVersionName, SourceFile.FileType.DOCKSTORE_WDL)).getType()
+                            == ToolDescriptor.TypeEnum.WDL)) {
+                        final ToolDescriptor descriptor = (ToolDescriptor) table.get(toolVersionName, SourceFile.FileType.DOCKSTORE_WDL);
                         return Response.status(Response.Status.OK).entity(unwrap ? descriptor.getDescriptor() : descriptor).build();
-                    } else if (type == SourceFile.FileType.DOCKSTORE_CWL
-                            && toolVersion.getDescriptor().getType() == ToolDescriptor.TypeEnum.CWL) {
-                        final ToolDescriptor descriptor = toolVersion.getDescriptor();
+                    } else if (type == DOCKSTORE_CWL
+                            && (((ToolDescriptor)table.get(toolVersionName, SourceFile.FileType.DOCKSTORE_CWL)).getType()
+                            == ToolDescriptor.TypeEnum.CWL))  {
+                        final ToolDescriptor descriptor = (ToolDescriptor) table.get(toolVersionName, SourceFile.FileType.DOCKSTORE_CWL);
                         return Response.status(Response.Status.OK).type(unwrap? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(unwrap ? descriptor.getDescriptor() : descriptor).build();
                     }
                     return Response.status(Response.Status.NOT_FOUND).build();

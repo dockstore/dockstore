@@ -18,7 +18,7 @@ package io.swagger.api;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-29T19:58:43.367Z") public abstract class ToolsApiService {
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z") public abstract class ToolsApiService {
     public abstract Response toolsGet(String id, String registry, String organization, String name, String toolname, String description,
             String author, String offset, Integer limit, SecurityContext securityContext) throws NotFoundException;
 
@@ -37,4 +37,7 @@ import javax.ws.rs.core.SecurityContext;
 
     public abstract Response toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(String type, String id, String versionId,
             String relativePath, SecurityContext securityContext) throws NotFoundException;
+
+    public abstract Response toolsIdVersionsVersionIdTypeTestsGet(String type, String id, String versionId, SecurityContext securityContext)
+            throws NotFoundException;
 }
