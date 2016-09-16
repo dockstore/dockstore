@@ -23,11 +23,11 @@
     <packaging>jar</packaging>
 
     <properties>
-        <jetty-servlet.version>9.2.13.v20150730</jetty-servlet.version>
+        <jetty-servlet.version>9.3.9.v20160517</jetty-servlet.version>
     </properties>
     
     <parent>
-        <version>0.4-beta.1</version>
+        <version>1.0</version>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
         <relativePath>../pom.xml</relativePath>
@@ -37,7 +37,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-quay-client</artifactId>
-            <version>0.4-beta.1</version>
+            <version>1.0</version>
         </dependency>
         <dependency>
             <groupId>io.swagger</groupId>
@@ -193,6 +193,10 @@
             <scope>test</scope>
             <exclusions>
                 <exclusion>
+                    <groupId>org.mockito</groupId>
+                    <artifactId>mockito-core</artifactId>
+                </exclusion>
+                <exclusion>
                     <groupId>org.assertj</groupId>
                     <artifactId>assertj-core</artifactId>
                 </exclusion>
@@ -239,7 +243,7 @@
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-validator</artifactId>
-            <version>5.2.2.Final</version>
+            <version>5.2.4.Final</version>
         </dependency>
         <dependency>
             <groupId>io.dropwizard</groupId>
@@ -274,7 +278,7 @@
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-core</artifactId>
-            <version>4.3.11.Final</version>
+            <version>5.1.0.Final</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.javassist</groupId>
@@ -375,6 +379,12 @@
             <groupId>io.dropwizard</groupId>
             <artifactId>dropwizard-jackson</artifactId>
             <version>${dropwizard.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-classic</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -406,25 +416,35 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.4</version>
         </dependency>
-        <dependency>
-            <groupId>org.yaml</groupId>
-            <artifactId>snakeyaml</artifactId>
-            <version>1.15</version>
-        </dependency>
+
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-client</artifactId>
-            <version>0.4-beta.1</version>
+            <version>1.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-access</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-classic</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- testing -->
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>0.4-beta.1</version>
+            <version>1.0</version>
             <scope>test</scope>
+            <type>test-jar</type>
         </dependency>
         <dependency>
             <groupId>com.github.stefanbirkner</groupId>
@@ -441,7 +461,20 @@
             <artifactId>okhttp-urlconnection</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.4</version>
+        </dependency>
 
+        <dependency>
+            <groupId>io.swagger</groupId>
+            <artifactId>swagger-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.jaxrs</groupId>
+            <artifactId>jackson-jaxrs-json-provider</artifactId>
+        </dependency>
     </dependencies>
 
 
@@ -506,6 +539,12 @@
                 <configuration>
                     <filters>
                         <filter>
+                            <artifact>io.dockstore:dockstore-client</artifact>
+                            <includes>
+                                <include>io/dockstore/**</include>
+                            </includes>
+                        </filter>
+                        <filter>
                             <artifact>*:*</artifact>
                             <excludes>
                                 <exclude>META-INF/*.SF</exclude>
@@ -554,8 +593,8 @@
                                 <usedDependency>javax.ws.rs:jsr311-api</usedDependency>
                                 <usedDependency>io.swagger:swagger-jersey2-jaxrs</usedDependency>
                                 <usedDependency>io.dropwizard:dropwizard-views-freemarker</usedDependency>
+                                <usedDependency>org.apache.commons:commons-lang3</usedDependency>
                             </usedDependencies>
-
                         </configuration>
                     </execution>
                 </executions>

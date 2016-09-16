@@ -71,11 +71,14 @@ public abstract class Entry<S extends Entry, T extends Version> {
     @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty(value = "This indicates the users that have control over this entry, dockstore specific", required = false)
-    private final Set<User> users;
+    private Set<User> users;
 
     @Column
     @ApiModelProperty("This is the email of the git organization")
     private String email;
+    @Column
+    @ApiModelProperty("This is the default version of the entry")
+    private String defaultVersion;
     @Column
     @JsonProperty("is_published")
     @ApiModelProperty("Implementation specific visibility in this web service")
@@ -127,6 +130,14 @@ public abstract class Entry<S extends Entry, T extends Version> {
         this.description = description;
     }
 
+    public String getDefaultVersion() {
+        return defaultVersion;
+    }
+
+    public void setDefaultVersion(String defaultVersion) {
+        this.defaultVersion = defaultVersion;
+    }
+
     public void setAuthor(String author) {
         this.author = author;
     }
@@ -137,6 +148,10 @@ public abstract class Entry<S extends Entry, T extends Version> {
 
     public void setLabels(SortedSet<Label> labels) {
         this.labels = labels;
+    }
+
+    public void setUsers(Set<User> users) {
+        this.users = users;
     }
 
     public Set<User> getUsers() {
@@ -224,10 +239,11 @@ public abstract class Entry<S extends Entry, T extends Version> {
      */
     public void update(S entry) {
         this.setDescription(entry.getDescription());
-        // this causes an issue when newly refreshed tools wthat are not published overwrite publish settings for existing containers
+        // this causes an issue when newly refreshed tools that are not published overwrite publish settings for existing containers
         // isPublished = entry.getIsPublished();
         lastModified = entry.getLastModified();
         this.setAuthor(entry.getAuthor());
+        this.setEmail(entry.getEmail());
 
         // Only overwrite the giturl if the new git url is not empty (no value)
         // This will stop the case where there are no autobuilds for a quay repo, but a manual git repo has been set.

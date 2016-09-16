@@ -33,6 +33,7 @@ import io.swagger.client.api.GAGHApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Metadata;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -73,10 +74,11 @@ import static io.dockstore.client.cli.ArgumentUtility.optVal;
 import static io.dockstore.client.cli.ArgumentUtility.out;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
+import static io.dockstore.common.FileProvisioning.getCacheDirectory;
 
 /**
  * Main entrypoint for the dockstore CLI.
- * 
+ *
  * @author xliu
  *
  */
@@ -86,7 +88,6 @@ public class Client {
 
     private String configFile = null;
     private ContainersApi containersApi;
-    private WorkflowsApi workflowsApi;
     private GAGHApi ga4ghApi;
 
     public static final int PADDING = 3;
@@ -99,7 +100,7 @@ public class Client {
     public static final int COMMAND_ERROR = 10; // Command is not successful, but not due to errors
 
     public static final AtomicBoolean DEBUG = new AtomicBoolean(false);
-    public static final AtomicBoolean SCRIPT = new AtomicBoolean(false);
+    private static final AtomicBoolean SCRIPT = new AtomicBoolean(false);
     private static ObjectMapper objectMapper;
 
     /*
@@ -113,7 +114,7 @@ public class Client {
      */
     private void serverMetadata() {
         try {
-            final Metadata metadata = ga4ghApi.toolsMetadataGet();
+            final Metadata metadata = ga4ghApi.metadataGet();
             final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
             out(gson.toJson(metadata));
         } catch (ApiException ex) {
@@ -126,7 +127,7 @@ public class Client {
      *
      * @return path for the dockstore
      */
-    public static String getInstallLocation() {
+    static String getInstallLocation() {
         String installLocation = null;
 
         String executable = "dockstore";
@@ -154,12 +155,11 @@ public class Client {
      * @param installLocation path for the dockstore CLI script
      * @return the current version of the dockstore CLI script
      */
-    public static String getCurrentVersion(String installLocation) {
+    static String getCurrentVersion(String installLocation) {
         String currentVersion = null;
         File file = new File(installLocation);
         String line = null;
-        try {
-            BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file.toString()), "utf-8"));
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file.toString()), "utf-8"))){
             while ((line = br.readLine()) != null) {
                 if (line.startsWith("DEFAULT_DOCKSTORE_VERSION")) {
                     break;
@@ -183,7 +183,14 @@ public class Client {
         return currentVersion;
     }
 
-    public static String openCurrentVersion(URL link, String info){
+    /**
+     * This method will get information based on the json file on the link to the current version
+     * However, it can only be the information outside "assets" (i.e "name","id","prerelease")
+     * @param link
+     * @param info
+     * @return
+     */
+    private static String getFromJSON(URL link, String info){
         ObjectMapper mapper = getObjectMapper();
         Map<String,Object> mapCur;
         try{
@@ -191,52 +198,75 @@ public class Client {
             return mapCur.get(info).toString();
 
         } catch(IOException e){
-            exceptionMessage(e,"cannot find "+info+" in "+link,IO_ERROR);
         }
         return "null";
     }
 
     /**
-     * Check if the date of the current is later or earlier than latest version
-     * @param current
-     * @param latest
+     * This method will return a map consists of all the releases
      * @return
      */
-    public static Boolean compareVersion(String current, String latest){
+    private static List<Map<String, Object>> getAllReleases(){
+        URL url;
+        try {
+            ObjectMapper mapper = getObjectMapper();
+            url = new URL("https://api.github.com/repos/ga4gh/dockstore/releases");
+            List<Map<String, Object>> mapRel;
+            try{
+                TypeFactory typeFactory = mapper.getTypeFactory();
+                CollectionType ct = typeFactory.constructCollectionType(List.class, Map.class);
+                mapRel = mapper.readValue(url, ct);
+                return mapRel;
+            } catch(IOException e){
+            }
+
+        }catch(MalformedURLException e){
+        }
+        return null;
+    }
+
+    /**
+     * This method will return the latest unstable version
+     * @return
+     */
+    private static String getLatestUnstableVersion(){
+        List<Map<String,Object>> allReleases = getAllReleases();
+        Map<String, Object> map;
+        for (Map<String, Object> allRelease : allReleases) {
+            map = allRelease;
+            if (map.get("prerelease").toString().equals("true")) {
+                return map.get("name").toString();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Check if the ID of the current is bigger or smaller than latest version
+     * @param current
+     * @return
+     */
+    private static Boolean compareVersion(String current){
         URL urlCurrent, urlLatest;
         try{
             urlCurrent = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/tags/"+current);
             urlLatest = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/latest");
 
-            ObjectMapper mapper = getObjectMapper();
-            Map<String, Object> mapCur, mapLat;
-            int idCur,idLat;
+            int idCurrent,idLatest;
             String prerelease;
 
-            try {
-                //id of latest version
-                mapLat = mapper.readValue(urlLatest, Map.class);
-                idLat = Integer.parseInt(mapLat.get("id").toString());
+            idLatest = Integer.parseInt(getFromJSON(urlLatest,"id"));
+            idCurrent = Integer.parseInt(getFromJSON(urlCurrent,"id"));
+            prerelease = getFromJSON(urlCurrent,"prerelease");
 
-                //id and prerelease of current version
-//                mapCur = mapper.readValue(urlCurrent, Map.class);
-//                idCur = Integer.parseInt(mapCur.get("id").toString());
-//                prerelease = mapCur.get("prerelease").toString();
-                idCur = Integer.parseInt(openCurrentVersion(urlCurrent,"id"));
-                prerelease = openCurrentVersion(urlCurrent,"prerelease");
-
-                //check if currentVersion is earlier than latestVersion or not
-                //id will be bigger if newer, prerelease=true if unstable
-                //newer return true, older return false
-                if(prerelease.equals("true") && (idCur>idLat)) {
-                    return true;  //current is newer and not stable
-                }
-                return false;
-            } catch (IOException e) {
-                exceptionMessage(e, "Could not connect to Github. You may have reached your rate limit.", IO_ERROR);
-            }
-        }catch (MalformedURLException e) {
+            //check if currentVersion is earlier than latestVersion or not
+            //id will be bigger if newer, prerelease=true if unstable
+            //newer return true, older return false
+            return prerelease.equals("true") && (idCurrent > idLatest);
+        } catch (MalformedURLException e) {
             exceptionMessage(e,"Failed to open URL",CLIENT_ERROR);
+        } catch(NumberFormatException e){
+           return true;
         }
         return false;
     }
@@ -248,9 +278,8 @@ public class Client {
      * @return
      */
     public static String getLatestVersion() {
-        URL url;
         try {
-            url = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/latest");
+            URL url = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/latest");
             ObjectMapper mapper = getObjectMapper();
             Map<String, Object> map;
             try {
@@ -268,11 +297,10 @@ public class Client {
 
     /**
      * Checks if the given tag exists as a release for Dockstore
-     *
      * @param tag
      * @return
      */
-    public static Boolean checkIfTagExists(String tag) {
+    private static Boolean checkIfTagExists(String tag) {
         try {
             URL url = new URL("https://api.github.com/repos/ga4gh/dockstore/releases");
             ObjectMapper mapper = getObjectMapper();
@@ -286,19 +314,35 @@ public class Client {
                 }
                 return false;
             } catch (IOException e) {
-                // e.printStackTrace();
             }
 
         } catch (MalformedURLException e) {
-            // e.printStackTrace();
         }
         return false;
     }
 
     /**
+     * This method returns the url to upgrade to desired version
+     * However, this will only work for all releases json (List<Map<String, Object>> instead of Map<String,Object>)
+     * @param version
+     * @return
+     */
+    private static String getUnstableURL(String version, List<Map<String, Object>> allReleases){
+        Map<String, Object> map;
+        for(int i=0;i<allReleases.size();i++){
+            map = allReleases.get(i);
+            if(map.get("name").toString().equals(version)){
+                ArrayList<Map<String, String>> assetsList = (ArrayList<Map<String, String>>) allReleases.get(i).get("assets");
+                return assetsList.get(0).get("browser_download_url");
+            }
+        }
+        return null;
+    }
+
+    /**
      * for downloading content for upgrade
      */
-    public static void downloadURL(String browserDownloadUrl, String installLocation){
+    private static void downloadURL(String browserDownloadUrl, String installLocation){
         try{
             URL dockstoreExecutable = new URL(browserDownloadUrl);
             File file = new File(installLocation);
@@ -310,11 +354,15 @@ public class Client {
         }
     }
 
+    private void clean() throws ConfigurationException, IOException {
+        final String cacheDirectory = getCacheDirectory(new HierarchicalINIConfiguration(getConfigFile()));
+        FileUtils.deleteDirectory(new File(cacheDirectory));
+    }
 
     /**
      * Checks for upgrade for Dockstore and install
      */
-    public static void upgrade(String optVal) {
+    private static void upgrade(String optVal) {
 
         // Try to get version installed
         String installLocation = getInstallLocation();
@@ -328,19 +376,15 @@ public class Client {
         }
 
         // Update if necessary
-        URL url = null;
-        URL urlRel = null;
+        URL url;
 
         String latestPath = "https://api.github.com/repos/ga4gh/dockstore/releases/latest";
-        String allReleases = "https://api.github.com/repos/ga4gh/dockstore/releases";
-        String latestVersion = null;
-        String firstElement = null;
+        String latestVersion, upgradeURL;
         try {
             url = new URL(latestPath);
-            urlRel = new URL(allReleases);
             ObjectMapper mapper = getObjectMapper();
-            Map<String, Object> map = null;
-            List<Map<String, Object>> mapRel = null;
+            Map<String, Object> map;
+            List<Map<String, Object>> mapRel;
 
             try {
                 // Read JSON from Github
@@ -349,63 +393,62 @@ public class Client {
                 ArrayList<Map<String, String>> map2 = (ArrayList<Map<String, String>>) map.get("assets");
                 String browserDownloadUrl = map2.get(0).get("browser_download_url");
 
-                //get the first element in releases(the most recent release/pre-release published)
-                TypeFactory typeFactory = mapper.getTypeFactory();
-                CollectionType ct = typeFactory.constructCollectionType(List.class, Map.class);
-                mapRel = mapper.readValue(urlRel, ct);
-                ArrayList<Map<String, String>> assetsList = (ArrayList<Map<String, String>>) mapRel.get(0).get("assets");
-                String upgradeURL =  assetsList.get(0).get("browser_download_url");
-                firstElement = mapRel.get(0).get("name").toString();
+                //get the map of all releases
+                mapRel = getAllReleases();
+                String latestUnstable = getLatestUnstableVersion();
 
                 out("Current Dockstore version: " + currentVersion);
+
                 // Check if installed version is up to date
-                if (latestVersion.equals(currentVersion)) {
-                    if(optVal.equals("unstable")){
-                        //user wants to upgrade to newer unstable version
-                        if(mapRel.get(0).get("prerelease").toString().equals("true")){
-                            //the latest publish is unstable
-                            out("Downloading version " + firstElement + " of Dockstore.");
-                            downloadURL(upgradeURL,installLocation);
-                            out("Download complete. You are now on version " + firstElement + " of Dockstore.");
-                        }
+                if (latestVersion.equals(currentVersion)) {   //current is the most stable version
+                    if(optVal.equals("unstable")){   // downgrade or upgrade to recent unstable version
+                        upgradeURL = getUnstableURL(latestUnstable, mapRel);
+                        out("Downloading version " + latestUnstable + " of Dockstore.");
+                        downloadURL(upgradeURL,installLocation);
+                        out("Download complete. You are now on version " + latestUnstable + " of Dockstore.");
                     }else{
                         //user input '--upgrade' without knowing the version or the optional commands
                         out("You are running the latest stable version...");
                         out("If you wish to upgrade to the newest unstable version, please use the following command:");
                         out("   dockstore --upgrade-unstable"); // takes you to the newest unstable version
                     }
-                } else {
-                    if(optVal.equals("stable")){
+                } else {    //current is not the most stable version
+                    switch (optVal) {
+                    case "stable":
                         out("Upgrading to most recent stable release (" + currentVersion + " -> " + latestVersion + ")");
-                        downloadURL(browserDownloadUrl,installLocation);
+                        downloadURL(browserDownloadUrl, installLocation);
                         out("Download complete. You are now on version " + latestVersion + " of Dockstore.");
-                    }else if(optVal.equals("none")){
-                        if(compareVersion(currentVersion,latestVersion)){
-                            // current version is the newer unstable version
-                            out("You are currently on the newer unstable version. If you wish to upgrade to the latest stable version, please use the following command:");
+                        break;
+                    case "none":
+                        if (compareVersion(currentVersion)) {
+                            // current version is the latest unstable version
+                            out("You are currently on the latest unstable version. If you wish to upgrade to the latest stable version, please use the following command:");
                             out("   dockstore --upgrade-stable");
-                        }else{
+                        } else {
                             // current version is the older unstable version
-                            // upgrade to newer stable version
+                            // upgrade to latest stable version
                             out("Upgrading to most recent stable release (" + currentVersion + " -> " + latestVersion + ")");
-                            downloadURL(browserDownloadUrl,installLocation);
+                            downloadURL(browserDownloadUrl, installLocation);
                             out("Download complete. You are now on version " + latestVersion + " of Dockstore.");
                         }
-                    }else if(optVal.equals("unstable")){
-                        if(currentVersion.equals(mapRel.get(0).get("name").toString())){
-                            // current version is the newer unstable version
-                            out("You are currently on the newer unstable version. If you wish to upgrade to the latest stable version, please use the following command:");
+                        break;
+                    case "unstable":
+                        if (Objects.equals(currentVersion, latestUnstable)) {
+                            // current version is the latest unstable version
+                            out("You are currently on the latest unstable version. If you wish to upgrade to the latest stable version, please use the following command:");
                             out("   dockstore --upgrade-stable");
-                        }else{
-                            //user wants to upgrade to newer unstable version
-                            if(mapRel.get(0).get("prerelease").toString().equals("true")){
-                                //the latest publish is unstable
-                                out("Downloading version " + firstElement + " of Dockstore.");
-                                downloadURL(upgradeURL,installLocation);
-                                out("Download complete. You are now on version " + firstElement + " of Dockstore.");
-                            }
+                        } else {
+                            //user wants to upgrade to newest unstable version
+                            upgradeURL = getUnstableURL(latestUnstable, mapRel);
+                            out("Downloading version " + latestUnstable + " of Dockstore.");
+                            downloadURL(upgradeURL, installLocation);
+                            out("Download complete. You are now on version " + latestUnstable + " of Dockstore.");
                         }
+                        break;
+                    default:
+                        /** do nothing */
                     }
+
                 }
             } catch (IOException e) {
                 exceptionMessage(e, "Could not connect to Github. You may have reached your rate limit.", IO_ERROR);
@@ -418,7 +461,7 @@ public class Client {
     /**
      * Will check for updates if three months have gone by since the last update
      */
-    public static void checkForUpdates() {
+    private static void checkForUpdates() {
         final int monthsBeforeCheck = 3;
         String installLocation = getInstallLocation();
         if (installLocation != null) {
@@ -454,22 +497,13 @@ public class Client {
 
                                 if (currentVersion.equals(latestVersion)) {
                                     out("You have the most recent stable release.");
-                                    out("If you wish to upgrade to the newest unstable version, please use the following command:");
+                                    out("If you wish to upgrade to the latest unstable version, please use the following command:");
                                     out("   dockstore --upgrade-unstable"); // takes you to the newest unstable version
                                 } else {
                                     //not the latest stable version, could be on the newest unstable or older unstable/stable version
                                     out("Latest version : " + latestVersion);
                                     out("You do not have the most recent stable release of Dockstore.");
-                                    if(compareVersion(currentVersion,latestVersion)){
-                                        //current version is newer than latest stable
-                                        out("You are currently on the newer unstable version. If you wish to upgrade to the latest stable version, please use the following command:");
-                                        out("   dockstore --upgrade-stable"); //takes you to the newest stable version no matter what
-
-                                    }else{
-                                        //current version is older than latest stable
-                                        out("Please upgrade with the following command:");
-                                        out("   dockstore --upgrade");  // takes you to the newest stable version, unless you're already "past it"
-                                    }
+                                    displayUpgradeMessage(currentVersion);
                                 }
                             }
                         } catch (ParseException e) {
@@ -484,7 +518,19 @@ public class Client {
         }
     }
 
-    public static void setObjectMapper(ObjectMapper objectMapper){
+    private static void displayUpgradeMessage(String currentVersion) {
+        if(compareVersion(currentVersion)){
+            //current version is latest than latest stable
+            out("You are currently on the latest unstable version. If you wish to upgrade to the latest stable version, please use the following command:");
+            out("   dockstore --upgrade-stable"); //takes you to the newest stable version no matter what
+        }else{
+            //current version is older than latest stable
+            out("Please upgrade with the following command:");
+            out("   dockstore --upgrade");  // takes you to the newest stable version, unless you're already "past it"
+        }
+    }
+
+    static void setObjectMapper(ObjectMapper objectMapper){
         Client.objectMapper = objectMapper;
     }
 
@@ -499,7 +545,7 @@ public class Client {
     /**
      * Prints out version information for the Dockstore CLI
      */
-    public static void version() {
+    private static void version() {
         String installLocation = getInstallLocation();
         if (installLocation == null) {
             errorMessage("Can't find location of Dockstore executable. Is it on the PATH?", CLIENT_ERROR);
@@ -516,25 +562,19 @@ public class Client {
         }
 
         out("Dockstore version " + currentVersion);
+        // skip upgrade check for development versions
+        if (currentVersion.endsWith("SNAPSHOT")){
+            return;
+        }
         //check if the current version is the latest stable version or not
         if (Objects.equals(currentVersion,latestVersion)) {
             out("You are running the latest stable version...");
-            out("If you wish to upgrade to the newest unstable version, please use the following command:");
+            out("If you wish to upgrade to the latest unstable version, please use the following command:");
             out("   dockstore --upgrade-unstable"); // takes you to the newest unstable version
         } else {
             //not the latest stable version, could be on the newest unstable or older unstable/stable version
             out("The latest stable version is " + latestVersion);
-            if(compareVersion(currentVersion,latestVersion)){
-                //current version is newer than latest stable
-                out("You are currently on the newer unstable version. If you wish to upgrade to the latest stable version, please use the following command:");
-                out("   dockstore --upgrade-stable"); //takes you to the newest stable version no matter what
-
-            }else{
-                //current version is older than latest stable
-                out("Please upgrade with the following command:");
-                out("   dockstore --upgrade");  // takes you to the newest stable version, unless you're already "past it"
-            }
-
+            displayUpgradeMessage(currentVersion);
         }
     }
 
@@ -561,7 +601,7 @@ public class Client {
         out("                       Default: false");
         out("  --version            Print dockstore's version");
         out("                       Default: false");
-        out("  --server-metadata    Print metdata describing the dockstore webservice");
+        out("  --server-metadata    Print metadata describing the dockstore webservice");
         out("                       Default: false");
         out("  --upgrade            Upgrades to the latest stable release of Dockstore");
         out("                       Default: false");
@@ -573,6 +613,7 @@ public class Client {
         out("                       Default: ~/.dockstore/config");
         out("  --script             Will not check Github for newer versions of Dockstore");
         out("                       Default: false");
+        out("  --clean-cache        Delete the Dockstore launcher cache to save space");
         printHelpFooter();
     }
 
@@ -582,7 +623,7 @@ public class Client {
      * --------------
      */
 
-    public void run(String[] argv){
+    private void run(String[] argv){
         List<String> args = new ArrayList<>(Arrays.asList(argv));
 
         if (flag(args, "--debug") || flag(args, "--d")) {
@@ -621,7 +662,6 @@ public class Client {
             defaultApiClient.setBasePath(serverUrl);
 
             this.containersApi = new ContainersApi(defaultApiClient);
-            this.workflowsApi = new WorkflowsApi(defaultApiClient);
             this.ga4ghApi = new GAGHApi(defaultApiClient);
 
             ToolClient toolClient = new ToolClient(containersApi, new ContainertagsApi(defaultApiClient), new UsersApi(defaultApiClient), this);
@@ -676,25 +716,28 @@ public class Client {
                     // see if this is a general command
                     if (null != cmd) {
                         switch (cmd) {
-                        case "-v":
-                        case "--version":
-                            version();
+                            case "-v":
+                            case "--version":
+                                version();
+                                break;
+                            case "--server-metadata":
+                                serverMetadata();
+                                break;
+                            case "--upgrade":
+                                upgrade("none");
+                                break;
+                            case "--upgrade-stable":
+                                upgrade("stable");
+                                break;
+                            case "--upgrade-unstable":
+                                upgrade("unstable");
                             break;
-                        case "--server-metadata":
-                            serverMetadata();
-                            break;
-                        case "--upgrade":
-                            upgrade("none");
-                            break;
-                        case "--upgrade-stable":
-                            upgrade("stable");
-                            break;
-                        case "--upgrade-unstable":
-                            upgrade("unstable");
-                            break;
-                        default:
-                            invalid(cmd);
-                            break;
+                        case "--clean-cache":
+                            clean();
+                                break;
+                            default:
+                                invalid(cmd);
+                                break;
                         }
                     }
                 } catch (Kill k) {
@@ -720,7 +763,7 @@ public class Client {
         return configFile;
     }
 
-    public void setConfigFile(String configFile) {
+    void setConfigFile(String configFile) {
         this.configFile = configFile;
     }
 }

@@ -16,20 +16,6 @@
 
 package io.dockstore.client.cli;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-import java.util.concurrent.TimeoutException;
-
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
-import org.apache.commons.dbutils.handlers.ScalarHandler;
-import org.apache.commons.io.FileUtils;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.Constants;
 import io.dockstore.common.Utilities;
@@ -42,8 +28,22 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.PublishRequest;
+import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
+import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.dbutils.handlers.ScalarHandler;
+import org.apache.commons.io.FileUtils;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.contrib.java.lang.system.ExpectedSystemExit;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.TimeoutException;
 
 import static io.dockstore.common.CommonTestUtilities.clearStateMakePrivate2;
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
@@ -61,6 +61,7 @@ public class WorkflowET {
             DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstoreTest.yml"));
     private static final String DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW = "DockstoreTestUser2/hello-dockstore-workflow";
     private static final String DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW = "dockstore_testuser2/dockstore-workflow";
+    private static final String DOCKSTORE_TEST_USER2_IMPORTS_DOCKSTORE_WORKFLOW = "DockstoreTestUser2/dockstore-whalesay-imports";
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
@@ -70,7 +71,7 @@ public class WorkflowET {
         clearStateMakePrivate2();
     }
 
-    public static ApiClient getWebClient() throws IOException, TimeoutException {
+    protected static ApiClient getWebClient() throws IOException, TimeoutException {
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         File configFile = FileUtils.getFile("src", "test", "resources", "config2");
         HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
@@ -289,5 +290,25 @@ public class WorkflowET {
         } finally {
             assertTrue("The workflow cannot be registered as the repository doesn't exist.", !success);
         }
+    }
+
+    @Test
+    public void testSecondaryFileOperations() throws IOException, TimeoutException, ApiException {
+        final ApiClient webClient = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
+        workflowApi.manualRegister("github", DOCKSTORE_TEST_USER2_IMPORTS_DOCKSTORE_WORKFLOW, "/Dockstore.cwl", "", "cwl");
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_IMPORTS_DOCKSTORE_WORKFLOW);
+        final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
+        // test out methods to access secondary files
+
+        final List<SourceFile> masterImports = workflowApi.secondaryCwl(workflow.getId(), "master");
+        assertTrue("should find 2 imports, found " + masterImports.size(), masterImports.size() == 2);
+        final SourceFile master = workflowApi.cwl(workflow.getId(), "master");
+        assertTrue("master content incorrect", master.getContent().contains("two-step workflow"));
+
+        // get secondary files by path
+        SourceFile revtool = workflowApi.secondaryCwlPath(workflow.getId(), "revtool.cwl", "master");
+        assertTrue("revtool content incorrect", revtool.getContent().contains("example command line program wrapper for the Unix tool \"rev\""));
     }
 }

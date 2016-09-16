@@ -17,18 +17,12 @@
 package io.dockstore.webservice.resources;
 
 import com.codahale.metrics.annotation.Timed;
-import com.google.common.base.Charsets;
-import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.google.common.hash.Hashing;
-import com.google.common.io.BaseEncoding;
-import com.google.gson.Gson;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.core.Token;
-import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
@@ -60,11 +54,8 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Random;
 
 /**
  *
@@ -210,34 +201,6 @@ public class UserResource {
         Helper.checkUser(user, userId);
 
         return tokenDAO.findQuayByUserId(userId);
-    }
-
-    @POST
-    @Timed
-    @UnitOfWork
-    @RolesAllowed("admin")
-    @ApiOperation(value = "Add new user", notes = "Register a new user, admin only", response = User.class)
-    public User registerUser(@QueryParam("username") String username, @QueryParam("is_admin") boolean isAdmin) {
-        final Random random = new Random();
-        final int bufferLength = 1024;
-        final byte[] buffer = new byte[bufferLength];
-        random.nextBytes(buffer);
-        String randomString = BaseEncoding.base64Url().omitPadding().encode(buffer);
-        final String accessToken = Hashing.sha256().hashString(username + randomString, Charsets.UTF_8).toString();
-
-        User user = new User();
-        user.setUsername(username);
-        user.setIsAdmin(isAdmin);
-        long userId = userDAO.create(user);
-
-        Token token = new Token();
-        token.setTokenSource(TokenType.DOCKSTORE.toString());
-        token.setContent(accessToken);
-        token.setUsername(username);
-        token.setUserId(userId);
-        tokenDAO.create(token);
-
-        return userDAO.findById(userId);
     }
 
     @GET
@@ -449,42 +412,5 @@ public class UserResource {
     @ApiOperation(value = "Get the logged-in user", response = User.class)
     public User getUser(@ApiParam(hidden = true) @Auth User user) {
         return userDAO.findById(user.getId());
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork
-    @Path("/organizations")
-    @RolesAllowed("admin")
-    @ApiOperation(value = "Get user's organizations", notes = "For testing purposes. Returns the list of organizations from user's Quay.io account", response = ArrayList.class, responseContainer = "List", hidden = true)
-    public ArrayList getOrganizations(@ApiParam(hidden = true) @Auth User authUser) {
-        // Helper.checkUser(authUser);
-
-        List<Token> tokens = tokenDAO.findQuayByUserId(authUser.getId());
-        Token token;
-        if (tokens.isEmpty()) {
-            throw new CustomWebApplicationException("Quay.io token not found.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        } else {
-            token = tokens.get(0);
-        }
-
-        String url = "https://quay.io/api/v1/user/";
-        Optional<String> asString = ResourceUtilities.asString(url, token.getContent(), client);
-        if (asString.isPresent()) {
-            String response = asString.get();
-            LOG.info(authUser.getUsername() + ": " + "RESOURCE CALL: {}", url);
-
-            Gson gson = new Gson();
-            // Map<String, String> map = new HashMap<>();
-            // map = (Map<String, String>) gson.fromJson(response, map.getClass());
-            //
-            // String username = map.get("username");
-            // LOG.info(user.getUsername() + ": " + (username);
-
-            Map<String, ArrayList> map2 = new HashMap<>();
-            map2 = (Map<String, ArrayList>) gson.fromJson(response, map2.getClass());
-            return map2.get("organizations");
-        }
-        return null;
     }
 }

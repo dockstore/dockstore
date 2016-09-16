@@ -16,6 +16,21 @@
 
 package io.dockstore.client.cli.nested;
 
+import com.google.common.base.Joiner;
+import com.google.common.io.Files;
+import io.dockstore.client.cli.Client;
+import io.swagger.client.ApiException;
+import io.swagger.client.api.UsersApi;
+import io.swagger.client.api.WorkflowsApi;
+import io.swagger.client.model.Body1;
+import io.swagger.client.model.Label;
+import io.swagger.client.model.PublishRequest;
+import io.swagger.client.model.SourceFile;
+import io.swagger.client.model.User;
+import io.swagger.client.model.Workflow;
+import io.swagger.client.model.WorkflowVersion;
+import org.apache.http.HttpStatus;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -24,40 +39,22 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.http.HttpStatus;
-
-import com.google.common.base.Joiner;
-import com.google.common.io.Files;
-
-import io.dockstore.client.cli.Client;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.Body1;
-import io.swagger.client.model.Label;
-import io.swagger.client.model.Workflow;
-import io.swagger.client.model.User;
-import io.swagger.client.model.SourceFile;
-import io.swagger.client.model.WorkflowVersion;
-import io.swagger.client.api.UsersApi;
-import io.swagger.client.model.PublishRequest;
-
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.DESCRIPTION_HEADER;
 import static io.dockstore.client.cli.ArgumentUtility.GIT_HEADER;
-import static io.dockstore.client.cli.ArgumentUtility.MAX_DESCRIPTION;
 import static io.dockstore.client.cli.ArgumentUtility.NAME_HEADER;
 import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
+import static io.dockstore.client.cli.ArgumentUtility.boolWord;
+import static io.dockstore.client.cli.ArgumentUtility.columnWidthsWorkflow;
+import static io.dockstore.client.cli.ArgumentUtility.containsHelpRequest;
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
-import static io.dockstore.client.cli.ArgumentUtility.out;
-import static io.dockstore.client.cli.ArgumentUtility.containsHelpRequest;
 import static io.dockstore.client.cli.ArgumentUtility.getGitRegistry;
+import static io.dockstore.client.cli.ArgumentUtility.optVal;
+import static io.dockstore.client.cli.ArgumentUtility.out;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
 import static io.dockstore.client.cli.ArgumentUtility.reqVal;
-import static io.dockstore.client.cli.ArgumentUtility.optVal;
-import static io.dockstore.client.cli.ArgumentUtility.columnWidthsWorkflow;
-import static io.dockstore.client.cli.ArgumentUtility.boolWord;
 
 /**
  * This stub will eventually implement all operations on the CLI that are
@@ -67,7 +64,7 @@ import static io.dockstore.client.cli.ArgumentUtility.boolWord;
  */
 public class WorkflowClient extends AbstractEntryClient {
 
-    public static final String UPDATE_WORKFLOW = "update_workflow";
+    private static final String UPDATE_WORKFLOW = "update_workflow";
     private final WorkflowsApi workflowsApi;
     private final UsersApi usersApi;
     private final Client client;
@@ -216,23 +213,8 @@ public class WorkflowClient extends AbstractEntryClient {
     }
 
     @Override
-    protected void handleDescriptor(String descriptorType, String entry) {
-        try {
-            SourceFile file = getDescriptorFromServer(entry, descriptorType);
-
-            if (file.getContent() != null && !file.getContent().isEmpty()) {
-                out(file.getContent());
-            } else {
-                errorMessage("No " + descriptorType + " file found", Client.COMMAND_ERROR);
-            }
-        } catch (ApiException ex) {
-            exceptionMessage(ex, "", Client.API_ERROR);
-        }
-    }
-
-    @Override
     protected void handlePublishUnpublish(String entryPath, String newName, boolean unpublishRequest) {
-        Workflow existingWorkflow = null;
+        Workflow existingWorkflow;
         boolean isPublished = false;
         try {
             existingWorkflow = workflowsApi.getWorkflowByPath(entryPath);
@@ -258,9 +240,7 @@ public class WorkflowClient extends AbstractEntryClient {
                     Workflow workflow = workflowsApi.getWorkflowByPath(entryPath);
 
                     Workflow newWorkflow = new Workflow();
-                    String registry = null;
-
-                    registry = getGitRegistry(workflow.getGitUrl());
+                    String registry = getGitRegistry(workflow.getGitUrl());
 
                     newWorkflow = workflowsApi.manualRegister(registry, workflow.getPath(), workflow.getWorkflowPath(), newWorkflow.getWorkflowName(), workflow.getDescriptorType());
 
@@ -339,7 +319,6 @@ public class WorkflowClient extends AbstractEntryClient {
             if (user == null) {
                 errorMessage("User not found", Client.CLIENT_ERROR);
             }
-
             List<Workflow> workflows = usersApi.userPublishedWorkflows(user.getId());
             printWorkflowList(workflows);
         } catch (ApiException ex) {
@@ -460,12 +439,7 @@ public class WorkflowClient extends AbstractEntryClient {
                 gitUrl = workflow.getGitUrl();
             }
 
-            if (workflow.getDescription() != null) {
-                description = workflow.getDescription();
-                if (description.length() > MAX_DESCRIPTION) {
-                    description = description.substring(0, MAX_DESCRIPTION - Client.PADDING) + "...";
-                }
-            }
+            description = getCleanedDescription(workflow.getDescription());
 
             out(format, workflow.getPath(), description, gitUrl, boolWord(workflow.getIsPublished()));
         }
@@ -504,6 +478,7 @@ public class WorkflowClient extends AbstractEntryClient {
                 String workflowName = optVal(args, "--workflow-name", workflow.getWorkflowName());
                 String descriptorType = optVal(args, "--descriptor-type", workflow.getDescriptorType());
                 String workflowDescriptorPath = optVal(args, "--workflow-path", workflow.getWorkflowPath());
+                String defaultVersion = optVal(args, "--default-version", workflow.getDefaultVersion());
 
                 if (workflow.getMode() == io.swagger.client.model.Workflow.ModeEnum.STUB) {
 
@@ -527,7 +502,27 @@ public class WorkflowClient extends AbstractEntryClient {
                 String path = Joiner.on("/").skipNulls().join(workflow.getOrganization(), workflow.getRepository(), workflow.getWorkflowName());
                 workflow.setPath(path);
 
+                // If valid version
+                boolean updateVersionSuccess = false;
+                for (WorkflowVersion workflowVersion : workflow.getWorkflowVersions()) {
+                    if (workflowVersion.getName().equals(defaultVersion)) {
+                        workflow.setDefaultVersion(defaultVersion);
+                        updateVersionSuccess = true;
+                        break;
+                    }
+                }
+
+                if (!updateVersionSuccess && defaultVersion != null) {
+                    out("Not a valid workflow version.");
+                    out("Valid versions include:");
+                    for (WorkflowVersion workflowVersion : workflow.getWorkflowVersions()) {
+                        out(workflowVersion.getReference());
+                    }
+                    errorMessage("Please enter a valid version.", Client.CLIENT_ERROR);
+                }
+
                 workflowsApi.updateWorkflow(workflowId, workflow);
+                workflowsApi.refresh(workflowId);
                 out("The workflow has been updated.");
             } catch (ApiException ex) {
                 exceptionMessage(ex, "", Client.API_ERROR);
@@ -535,7 +530,7 @@ public class WorkflowClient extends AbstractEntryClient {
         }
     }
 
-    public static void updateWorkflowHelp() {
+    private static void updateWorkflowHelp() {
         printHelpHeader();
         out("Usage: dockstore workflow " + UPDATE_WORKFLOW + " --help");
         out("       dockstore workflow " + UPDATE_WORKFLOW + " [parameters]");
@@ -550,6 +545,7 @@ public class WorkflowClient extends AbstractEntryClient {
         out("  --workflow-name <workflow-name>              Name for the given workflow");
         out("  --descriptor-type <descriptor-type>          Descriptor type of the given workflow.  Can only be altered if workflow is a STUB.");
         out("  --workflow-path <workflow-path>              Path to default workflow location");
+        out("  --default-version <default-version>          Default branch name");
         printHelpFooter();
     }
 
@@ -593,7 +589,7 @@ public class WorkflowClient extends AbstractEntryClient {
         }
     }
 
-    public static void versionTagHelp() {
+    private static void versionTagHelp() {
         printHelpHeader();
         out("Usage: dockstore workflow version_tag --help");
         out("       dockstore workflow version_tag [parameters]");
@@ -635,7 +631,7 @@ public class WorkflowClient extends AbstractEntryClient {
         }
     }
 
-    public void restubHelp() {
+    private void restubHelp() {
         printHelpHeader();
         out("Usage: dockstore workflow restub --help");
         out("       dockstore workflow restub [parameters]");
@@ -706,13 +702,13 @@ public class WorkflowClient extends AbstractEntryClient {
                 if (descriptor.toLowerCase().equals("cwl")) {
                     List<SourceFile> files = workflowsApi.secondaryCwl(workflow.getId(), version);
                     for (SourceFile sourceFile : files) {
-                        File tempDescriptor = new File(tempDir.getAbsolutePath() + sourceFile.getPath());
+                        File tempDescriptor = new File(tempDir.getAbsolutePath(), sourceFile.getPath());
                         Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
                     }
                 } else {
                     List<SourceFile> files = workflowsApi.secondaryWdl(workflow.getId(), version);
                     for (SourceFile sourceFile : files) {
-                        File tempDescriptor = new File(tempDir.getAbsolutePath() + sourceFile.getPath());
+                        File tempDescriptor = new File(tempDir.getAbsolutePath(),  sourceFile.getPath());
                         Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
                     }
                 }

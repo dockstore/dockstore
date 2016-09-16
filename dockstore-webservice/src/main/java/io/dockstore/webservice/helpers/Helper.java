@@ -19,6 +19,8 @@ package io.dockstore.webservice.helpers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
+
+import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Registry;
@@ -30,7 +32,6 @@ import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.helpers.SourceCodeRepoInterface.FileResponse;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -80,6 +81,7 @@ public final class Helper {
     private static void updateFiles(Tool tool, final HttpClient client, final FileDAO fileDAO, final Token githubToken, final Token bitbucketToken) {
         Set<Tag> tags = tool.getTags();
 
+        // For each tag, will download files to db and determine if the tag is valid
         for (Tag tag : tags) {
             LOG.info(githubToken.getUsername() + " : Updating files for tag {}", tag.getName());
 
@@ -224,29 +226,31 @@ public final class Helper {
                 }
             }
 
+            // Grab files for each version/tag and check if valid
             updateFiles(tool, client, fileDAO, githubToken, bitbucketToken);
 
+            // Now grab default/main tag to grab general information (defaults to github/bitbucket "main branch")
             final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(tool.getGitUrl(), client,
                     bitbucketToken == null ? null : bitbucketToken.getContent(), githubToken.getContent());
-            String email = "";
             if (sourceCodeRepo != null) {
                 // Grab and parse files to get tool information
                 // Add for new descriptor types
-                tool.setValidTrigger(false);  // Default is false since we must first check to see if descriptors are valid
+
+                //Check if default version is set
+                // If not set or invalid, set tag of interest to tag stored in main tag
+                // If set and valid, set tag of interest to tag stored in default version
 
                 if (tool.getDefaultCwlPath() != null) {
                     LOG.info(githubToken.getUsername() + " : Parsing CWL...");
-                    sourceCodeRepo.findDescriptor(tool, tool.getDefaultCwlPath());
+                    sourceCodeRepo.findDescriptor(tool, AbstractEntryClient.Type.CWL);
                 }
 
                 if (tool.getDefaultWdlPath() != null) {
                     LOG.info(githubToken.getUsername() + " : Parsing WDL...");
-                    sourceCodeRepo.findDescriptor(tool, tool.getDefaultWdlPath());
+                    sourceCodeRepo.findDescriptor(tool, AbstractEntryClient.Type.WDL);
                 }
 
             }
-            tool.setEmail(email);
-
             toolDAO.create(tool);
         }
 
@@ -445,6 +449,10 @@ public final class Helper {
             final ObjectMapper objectMapper, final TokenDAO tokenDAO, final long userId) {
         List<Token> tokens = tokenDAO.findByUserId(userId);
         Token quayToken = extractToken(tokens, TokenType.QUAY_IO.toString());
+        if (quayToken == null){
+            // no quay token extracted
+            throw new CustomWebApplicationException("no quay token found, please link your quay.io account to read from quay.io", HttpStatus.SC_NOT_FOUND);
+        }
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
 
         final ImageRegistryInterface imageRegistry = factory.createImageRegistry(tool.getRegistry());
@@ -466,17 +474,26 @@ public final class Helper {
     private static List<SourceFile> loadFiles(HttpClient client, Token bitbucketToken, Token githubToken, Tool c, Tag tag) {
         List<SourceFile> files = new ArrayList<>();
 
+        final String bitbucketTokenContent = bitbucketToken == null ? null : bitbucketToken.getContent();
+        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(c.getGitUrl(), client,
+                bitbucketTokenContent, githubToken.getContent());
+        FileImporter importer = new FileImporter(sourceCodeRepo);
+
         // Add for new descriptor types
         for (FileType f : FileType.values()) {
-            FileResponse fileResponse = readGitRepositoryFile(c, f, client, tag, bitbucketToken, githubToken);
+            String fileResponse = importer.readGitRepositoryFile(f, tag, null);
             if (fileResponse != null) {
                 SourceFile dockstoreFile = new SourceFile();
                 dockstoreFile.setType(f);
-                dockstoreFile.setContent(fileResponse.getContent());
+                dockstoreFile.setContent(fileResponse);
                 if (f == FileType.DOCKERFILE) {
                     dockstoreFile.setPath(tag.getDockerfilePath());
                 } else if (f == FileType.DOCKSTORE_CWL) {
                     dockstoreFile.setPath(tag.getCwlPath());
+                    // see if there are imported files and resolve them
+                    Map<String, SourceFile> importedFiles = importer
+                            .resolveImports(fileResponse, c, f, tag);
+                    files.addAll(importedFiles.values());
                 } else if (f == FileType.DOCKSTORE_WDL) {
                     dockstoreFile.setPath(tag.getWdlPath());
                 }
@@ -522,6 +539,9 @@ public final class Helper {
         }
         if (quayToken == null) {
             LOG.info("WARNING: QUAY token not found!");
+            if (dbTools.stream().filter(tool -> tool.getRegistry().equals(Registry.QUAY_IO)).count() > 0){
+                throw new CustomWebApplicationException("quay.io tools found, but quay.io token not found. Please link your quay.io account before refreshing.", HttpStatus.SC_BAD_REQUEST);
+            }
         }
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
         final List<ImageRegistryInterface> allRegistries = factory.getAllRegistries();
@@ -541,6 +561,7 @@ public final class Helper {
         List<Tool> findByMode = toolDAO.findByMode(ToolMode.MANUAL_IMAGE_PATH);
         findByMode.removeIf(test -> !test.getUsers().contains(currentUser));
         apiTools.addAll(findByMode);
+
         // ends up with docker image path -> quay.io data structure representing builds
         final Map<String, ArrayList<?>> mapOfBuilds = new HashMap<>();
         for (final ImageRegistryInterface anInterface : allRegistries) {
@@ -699,56 +720,11 @@ public final class Helper {
     }
 
     /**
-     * Read a file from the tool's git repository.
-     *
-     * @param tool
-     * @param fileType
-     * @param client
-     * @param tag
-     * @param bitbucketToken
-     * @return a FileResponse instance
-     */
-    public static FileResponse readGitRepositoryFile(Tool tool, FileType fileType, HttpClient client, Tag tag,
-            Token bitbucketToken, Token githubToken) {
-        final String bitbucketTokenContent = bitbucketToken == null ? null : bitbucketToken.getContent();
-
-        if (tool.getGitUrl() == null || tool.getGitUrl().isEmpty()) {
-            return null;
-        }
-        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(tool.getGitUrl(), client,
-                bitbucketTokenContent, githubToken.getContent());
-
-        if (sourceCodeRepo == null) {
-            return null;
-        }
-
-        final String reference = tag.getReference();// sourceCodeRepo.getReference(tool.getGitUrl(), tag.getReference());
-
-        // Do not try to get file if the reference is not available
-        if (reference == null) {
-            return null;
-        }
-
-        String fileName = "";
-
-        // Add for new descriptor types
-        if (fileType == FileType.DOCKERFILE) {
-            fileName = tag.getDockerfilePath();
-        } else if (fileType == FileType.DOCKSTORE_CWL) {
-            fileName = tag.getCwlPath();
-        } else if (fileType == FileType.DOCKSTORE_WDL) {
-            fileName = tag.getWdlPath();
-        }
-
-        return sourceCodeRepo.readFile(fileName, reference, tool.getGitUrl());
-    }
-
-    /**
      * @param reference
      *            a raw reference from git like "refs/heads/master"
      * @return the last segment like master
      */
-    public static String parseReference(String reference) {
+    private static String parseReference(String reference) {
         if (reference != null) {
             Pattern p = Pattern.compile("([\\S][^/\\s]+)?/([\\S][^/\\s]+)?/(\\S+)");
             Matcher m = p.matcher(reference);

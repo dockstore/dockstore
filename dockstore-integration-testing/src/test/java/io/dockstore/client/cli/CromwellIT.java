@@ -16,25 +16,23 @@
 
 package io.dockstore.client.cli;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-
-import org.apache.commons.io.FileUtils;
-import org.junit.Assert;
-import org.junit.Test;
-
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
-
 import cromwell.Main;
 import io.dockstore.client.Bridge;
 import io.dockstore.common.WDLFileProvisioning;
 import io.dropwizard.testing.ResourceHelpers;
+import org.apache.commons.io.FileUtils;
+import org.junit.Assert;
+import org.junit.Test;
 import scala.collection.JavaConversions;
 import scala.collection.immutable.List;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 
 
 /**
@@ -76,9 +74,8 @@ public class CromwellIT {
         Gson gson = new Gson();
         String jsonString = null;
         try {
-            jsonString = FileUtils.readFileToString(parameterFile);
-            Map<String, Object> map = new HashMap<>();
-            Map<String, Object> inputJson = gson.fromJson(jsonString, map.getClass());
+            jsonString = FileUtils.readFileToString(parameterFile, StandardCharsets.UTF_8);
+            Map<String, Object> inputJson = gson.fromJson(jsonString, HashMap.class);
 
             Map<String,Object> fileMap = wdlFileProvisioning.pullFiles(inputJson, wdlInputs);
 

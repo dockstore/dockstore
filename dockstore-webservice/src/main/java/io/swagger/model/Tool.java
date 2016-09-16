@@ -13,271 +13,298 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-
 package io.swagger.model;
+
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-
-
-
 /**
  * A tool (or described tool) describes one pairing of a tool as described in a descriptor file (which potentially describes multiple tools) and a Docker image.
  **/
 
-@ApiModel(description = "A tool (or described tool) describes one pairing of a tool as described in a descriptor file (which potentially describes multiple tools) and a Docker image.")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-03-11T20:14:17.098Z")
-public class Tool   {
-  
-  private String globalId = null;
-  private String registryId = null;
-  private String registry = null;
+/**
+ * A tool (or described tool) describes one pairing of a tool as described in a descriptor file (which potentially describes multiple tools) and a Docker image.
+ */
+@ApiModel(description = "A tool (or described tool) describes one pairing of a tool as described in a descriptor file (which potentially describes multiple tools) and a Docker image.") @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
+@JsonNaming(PropertyNamingStrategy.KebabCaseStrategy.class)
+public class Tool {
+  private String url = null;
+
+  private String id = null;
+
   private String organization = null;
-  private String name = null;
+
   private String toolname = null;
-  private ToolType tooltype = null;
+
+  private ToolClass toolclass = null;
+
   private String description = null;
+
   private String author = null;
+
   private String metaVersion = null;
+
   private List<String> contains = new ArrayList<String>();
+
+  private Boolean verified = null;
+
+  private String verifiedSource = null;
+
+  private Boolean signed = null;
+
   private List<ToolVersion> versions = new ArrayList<ToolVersion>();
 
-  
-  /**
-   * The unique identifier for the image. (Proposed - This id should be globally unique across systems and should also identify the system that it comes from for example This id should be globally unique across systems, should also identify the system that it comes from, and be a URL that resolves for example `http://agora.broadinstitute.org/tools/123456`)
-   **/
-  public Tool globalId(String globalId) {
-    this.globalId = globalId;
+  public Tool url(String url) {
+    this.url = url;
     return this;
   }
 
-  
-  @ApiModelProperty(required = true, value = "The unique identifier for the image. (Proposed - This id should be globally unique across systems and should also identify the system that it comes from for example This id should be globally unique across systems, should also identify the system that it comes from, and be a URL that resolves for example `http://agora.broadinstitute.org/tools/123456`)")
-  @JsonProperty("global-id")
-  public String getGlobalId() {
-    return globalId;
-  }
-  public void setGlobalId(String globalId) {
-    this.globalId = globalId;
+  /**
+   * The URL for this tool in this registry, for example `http://agora.broadinstitute.org/tools/123456`
+   *
+   * @return url
+   **/
+  @ApiModelProperty(required = true, value = "The URL for this tool in this registry, for example `http://agora.broadinstitute.org/tools/123456`") public String getUrl() {
+    return url;
   }
 
-  
-  /**
-   * A unique identifier of the tool for this particular tool registry, for example `123456` or `123456_v1`
-   **/
-  public Tool registryId(String registryId) {
-    this.registryId = registryId;
+  public void setUrl(String url) {
+    this.url = url;
+  }
+
+  public Tool id(String id) {
+    this.id = id;
     return this;
   }
 
-  
-  @ApiModelProperty(required = true, value = "A unique identifier of the tool for this particular tool registry, for example `123456` or `123456_v1`")
-  @JsonProperty("registry-id")
-  public String getRegistryId() {
-    return registryId;
-  }
-  public void setRegistryId(String registryId) {
-    this.registryId = registryId;
-  }
-
-  
   /**
-   * The registry that contains the image.
+   * A unique identifier of the tool, scoped to this registry, for example `123456` or `123456_v1`
+   *
+   * @return id
    **/
-  public Tool registry(String registry) {
-    this.registry = registry;
-    return this;
+  @ApiModelProperty(required = true, value = "A unique identifier of the tool, scoped to this registry, for example `123456` or `123456_v1`") public String getId() {
+    return id;
   }
 
-  
-  @ApiModelProperty(required = true, value = "The registry that contains the image.")
-  @JsonProperty("registry")
-  public String getRegistry() {
-    return registry;
-  }
-  public void setRegistry(String registry) {
-    this.registry = registry;
+  public void setId(String id) {
+    this.id = id;
   }
 
-  
-  /**
-   * The organization that published the image.
-   **/
   public Tool organization(String organization) {
     this.organization = organization;
     return this;
   }
 
-  
-  @ApiModelProperty(required = true, value = "The organization that published the image.")
-  @JsonProperty("organization")
-  public String getOrganization() {
+  /**
+   * The organization that published the image.
+   *
+   * @return organization
+   **/
+  @ApiModelProperty(required = true, value = "The organization that published the image.") public String getOrganization() {
     return organization;
   }
+
   public void setOrganization(String organization) {
     this.organization = organization;
   }
 
-  
-  /**
-   * The name of the image.
-   **/
-  public Tool name(String name) {
-    this.name = name;
-    return this;
-  }
-
-  
-  @ApiModelProperty(required = true, value = "The name of the image.")
-  @JsonProperty("name")
-  public String getName() {
-    return name;
-  }
-  public void setName(String name) {
-    this.name = name;
-  }
-
-  
-  /**
-   * The name of the tool.
-   **/
   public Tool toolname(String toolname) {
     this.toolname = toolname;
     return this;
   }
 
-  
-  @ApiModelProperty(value = "The name of the tool.")
-  @JsonProperty("toolname")
-  public String getToolname() {
+  /**
+   * The name of the tool.
+   *
+   * @return toolname
+   **/
+  @ApiModelProperty(value = "The name of the tool.") public String getToolname() {
     return toolname;
   }
+
   public void setToolname(String toolname) {
     this.toolname = toolname;
   }
 
-  
-  /**
-   **/
-  public Tool tooltype(ToolType tooltype) {
-    this.tooltype = tooltype;
+  public Tool toolclass(ToolClass toolclass) {
+    this.toolclass = toolclass;
     return this;
   }
 
-  
-  @ApiModelProperty(required = true, value = "")
-  @JsonProperty("tooltype")
-  public ToolType getTooltype() {
-    return tooltype;
-  }
-  public void setTooltype(ToolType tooltype) {
-    this.tooltype = tooltype;
+  /**
+   * Get toolclass
+   *
+   * @return toolclass
+   **/
+  @ApiModelProperty(required = true, value = "") public ToolClass getToolclass() {
+    return toolclass;
   }
 
-  
-  /**
-   * The description of the tool.
-   **/
+  public void setToolclass(ToolClass toolclass) {
+    this.toolclass = toolclass;
+  }
+
   public Tool description(String description) {
     this.description = description;
     return this;
   }
 
-  
-  @ApiModelProperty(value = "The description of the tool.")
-  @JsonProperty("description")
-  public String getDescription() {
+  /**
+   * The description of the tool.
+   *
+   * @return description
+   **/
+  @ApiModelProperty(value = "The description of the tool.") public String getDescription() {
     return description;
   }
+
   public void setDescription(String description) {
     this.description = description;
   }
 
-  
-  /**
-   * Contact information for the author of this tool entry in the registry. (More complex authorship information is handled by the descriptor)
-   **/
   public Tool author(String author) {
     this.author = author;
     return this;
   }
 
-  
-  @ApiModelProperty(required = true, value = "Contact information for the author of this tool entry in the registry. (More complex authorship information is handled by the descriptor)")
-  @JsonProperty("author")
-  public String getAuthor() {
+  /**
+   * Contact information for the author of this tool entry in the registry. (More complex authorship information is handled by the descriptor)
+   *
+   * @return author
+   **/
+  @ApiModelProperty(required = true, value = "Contact information for the author of this tool entry in the registry. (More complex authorship information is handled by the descriptor)") public String getAuthor() {
     return author;
   }
+
   public void setAuthor(String author) {
     this.author = author;
   }
 
-  
-  /**
-   * The version of this tool in the registry. Iterates when fields like the description, author, etc. are updated.
-   **/
   public Tool metaVersion(String metaVersion) {
     this.metaVersion = metaVersion;
     return this;
   }
 
-  
-  @ApiModelProperty(required = true, value = "The version of this tool in the registry. Iterates when fields like the description, author, etc. are updated.")
-  @JsonProperty("meta-version")
-  public String getMetaVersion() {
+  /**
+   * The version of this tool in the registry. Iterates when fields like the description, author, etc. are updated.
+   *
+   * @return metaVersion
+   **/
+  @ApiModelProperty(required = true, value = "The version of this tool in the registry. Iterates when fields like the description, author, etc. are updated.") public String getMetaVersion() {
     return metaVersion;
   }
+
   public void setMetaVersion(String metaVersion) {
     this.metaVersion = metaVersion;
   }
 
-  
-  /**
-   * An array of IDs for the applications that are stored inside this tool (for example `https://bio.tools/tool/mytum.de/SNAP2/1`)
-   **/
   public Tool contains(List<String> contains) {
     this.contains = contains;
     return this;
   }
 
-  
-  @ApiModelProperty(value = "An array of IDs for the applications that are stored inside this tool (for example `https://bio.tools/tool/mytum.de/SNAP2/1`)")
-  @JsonProperty("contains")
-  public List<String> getContains() {
+  public Tool addContainsItem(String containsItem) {
+    this.contains.add(containsItem);
+    return this;
+  }
+
+  /**
+   * An array of IDs for the applications that are stored inside this tool (for example `https://bio.tools/tool/mytum.de/SNAP2/1`)
+   *
+   * @return contains
+   **/
+  @ApiModelProperty(value = "An array of IDs for the applications that are stored inside this tool (for example `https://bio.tools/tool/mytum.de/SNAP2/1`)") public List<String> getContains() {
     return contains;
   }
+
   public void setContains(List<String> contains) {
     this.contains = contains;
   }
 
-  
+  public Tool verified(Boolean verified) {
+    this.verified = verified;
+    return this;
+  }
+
   /**
+   * Reports whether this tool has been verified by a specific organization or individual
+   *
+   * @return verified
    **/
+  @ApiModelProperty(value = "Reports whether this tool has been verified by a specific organization or individual") public Boolean getVerified() {
+    return verified;
+  }
+
+  public void setVerified(Boolean verified) {
+    this.verified = verified;
+  }
+
+  public Tool verifiedSource(String verifiedSource) {
+    this.verifiedSource = verifiedSource;
+    return this;
+  }
+
+  /**
+   * Source of metadata that can support a verified tool, such as an email or URL
+   *
+   * @return verifiedSource
+   **/
+  @ApiModelProperty(value = "Source of metadata that can support a verified tool, such as an email or URL") public String getVerifiedSource() {
+    return verifiedSource;
+  }
+
+  public void setVerifiedSource(String verifiedSource) {
+    this.verifiedSource = verifiedSource;
+  }
+
+  public Tool signed(Boolean signed) {
+    this.signed = signed;
+    return this;
+  }
+
+  /**
+   * Reports whether this tool has been signed.
+   *
+   * @return signed
+   **/
+  @ApiModelProperty(value = "Reports whether this tool has been signed.") public Boolean getSigned() {
+    return signed;
+  }
+
+  public void setSigned(Boolean signed) {
+    this.signed = signed;
+  }
+
   public Tool versions(List<ToolVersion> versions) {
     this.versions = versions;
     return this;
   }
 
-  
-  @ApiModelProperty(value = "")
-  @JsonProperty("versions")
-  public List<ToolVersion> getVersions() {
+  public Tool addVersionsItem(ToolVersion versionsItem) {
+    this.versions.add(versionsItem);
+    return this;
+  }
+
+  /**
+   * A list of versions for this tool
+   *
+   * @return versions
+   **/
+  @ApiModelProperty(required = true, value = "A list of versions for this tool") public List<ToolVersion> getVersions() {
     return versions;
   }
+
   public void setVersions(List<ToolVersion> versions) {
     this.versions = versions;
   }
 
-  
-
-  @Override
-  public boolean equals(Object o) {
+  @Override public boolean equals(java.lang.Object o) {
     if (this == o) {
       return true;
     }
@@ -285,41 +312,36 @@ public class Tool   {
       return false;
     }
     Tool tool = (Tool) o;
-    return Objects.equals(globalId, tool.globalId) &&
-        Objects.equals(registryId, tool.registryId) &&
-        Objects.equals(registry, tool.registry) &&
-        Objects.equals(organization, tool.organization) &&
-        Objects.equals(name, tool.name) &&
-        Objects.equals(toolname, tool.toolname) &&
-        Objects.equals(tooltype, tool.tooltype) &&
-        Objects.equals(description, tool.description) &&
-        Objects.equals(author, tool.author) &&
-        Objects.equals(metaVersion, tool.metaVersion) &&
-        Objects.equals(contains, tool.contains) &&
-        Objects.equals(versions, tool.versions);
+    return Objects.equals(this.url, tool.url) && Objects.equals(this.id, tool.id) && Objects.equals(this.organization, tool.organization)
+            && Objects.equals(this.toolname, tool.toolname) && Objects.equals(this.toolclass, tool.toolclass) && Objects
+            .equals(this.description, tool.description) && Objects.equals(this.author, tool.author) && Objects
+            .equals(this.metaVersion, tool.metaVersion) && Objects.equals(this.contains, tool.contains) && Objects
+            .equals(this.verified, tool.verified) && Objects.equals(this.verifiedSource, tool.verifiedSource) && Objects
+            .equals(this.signed, tool.signed) && Objects.equals(this.versions, tool.versions);
   }
 
-  @Override
-  public int hashCode() {
-    return Objects.hash(globalId, registryId, registry, organization, name, toolname, tooltype, description, author, metaVersion, contains, versions);
+  @Override public int hashCode() {
+    return Objects
+            .hash(url, id, organization, toolname, toolclass, description, author, metaVersion, contains, verified, verifiedSource, signed,
+                    versions);
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("class Tool {\n");
-    
-    sb.append("    globalId: ").append(toIndentedString(globalId)).append("\n");
-    sb.append("    registryId: ").append(toIndentedString(registryId)).append("\n");
-    sb.append("    registry: ").append(toIndentedString(registry)).append("\n");
+
+    sb.append("    url: ").append(toIndentedString(url)).append("\n");
+    sb.append("    id: ").append(toIndentedString(id)).append("\n");
     sb.append("    organization: ").append(toIndentedString(organization)).append("\n");
-    sb.append("    name: ").append(toIndentedString(name)).append("\n");
     sb.append("    toolname: ").append(toIndentedString(toolname)).append("\n");
-    sb.append("    tooltype: ").append(toIndentedString(tooltype)).append("\n");
+    sb.append("    toolclass: ").append(toIndentedString(toolclass)).append("\n");
     sb.append("    description: ").append(toIndentedString(description)).append("\n");
     sb.append("    author: ").append(toIndentedString(author)).append("\n");
     sb.append("    metaVersion: ").append(toIndentedString(metaVersion)).append("\n");
     sb.append("    contains: ").append(toIndentedString(contains)).append("\n");
+    sb.append("    verified: ").append(toIndentedString(verified)).append("\n");
+    sb.append("    verifiedSource: ").append(toIndentedString(verifiedSource)).append("\n");
+    sb.append("    signed: ").append(toIndentedString(signed)).append("\n");
     sb.append("    versions: ").append(toIndentedString(versions)).append("\n");
     sb.append("}");
     return sb.toString();
@@ -329,7 +351,7 @@ public class Tool   {
    * Convert the given object to string with each line indented by 4 spaces
    * (except the first line).
    */
-  private String toIndentedString(Object o) {
+  private String toIndentedString(java.lang.Object o) {
     if (o == null) {
       return "null";
     }

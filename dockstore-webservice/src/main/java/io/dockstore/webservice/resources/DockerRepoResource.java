@@ -95,7 +95,7 @@ public class DockerRepoResource {
     private final EntryVersionHelper<Tool> entryVersionHelper;
 
 
-    public static final String TARGET_URL = "https://quay.io/api/v1/";
+    private static final String TARGET_URL = "https://quay.io/api/v1/";
 
     private final ObjectMapper objectMapper;
 
@@ -138,7 +138,7 @@ public class DockerRepoResource {
         return tools;
     }
 
-    public List<Tool> refreshToolsForUser(Long userId) {
+    List<Tool> refreshToolsForUser(Long userId) {
         List<Token> tokens = tokenDAO.findBitbucketByUserId(userId);
 
         if (!tokens.isEmpty()) {
@@ -168,11 +168,8 @@ public class DockerRepoResource {
             Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
         }
 
-        Tool tool = Helper.refreshContainer(containerId, user.getId(), client, objectMapper, userDAO, toolDAO,
+        return Helper.refreshContainer(containerId, user.getId(), client, objectMapper, userDAO, toolDAO,
                 tokenDAO, tagDAO, fileDAO);
-
-
-        return tool;
     }
 
     @GET
@@ -242,6 +239,32 @@ public class DockerRepoResource {
 
         return result;
 
+    }
+
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}/updateTagPaths")
+    @ApiOperation(value = "Change the workflow paths", notes = "Tag correspond to each row of the versions table listing all information for a docker repo tag",  response = Tool.class)
+    public Tool updateTagContainerPath(@ApiParam(hidden = true) @Auth User user,
+                                               @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
+                                               @ApiParam(value = "Tool with updated information", required = true) Tool tool){
+
+        Tool c = toolDAO.findById(containerId);
+
+        //use helper to check the user and the entry
+        Helper.checkEntry(c);
+        Helper.checkUser(user, c);
+
+        //update the workflow path in all workflowVersions
+        Set<Tag> tags = c.getTags();
+        for(Tag tag : tags){
+            tag.setCwlPath(tool.getDefaultCwlPath());
+            tag.setWdlPath(tool.getDefaultWdlPath());
+            tag.setDockerfilePath(tool.getDefaultDockerfilePath());
+        }
+
+        return c;
     }
 
     @GET
@@ -320,10 +343,9 @@ public class DockerRepoResource {
         }
 
         long id = toolDAO.create(tool);
-        Tool created = toolDAO.findById(id);
 
         // Helper.refreshContainer(id, authToken.getUserId(), client, objectMapper, userDAO, toolDAO, tokenDAO, tagDAO, fileDAO);
-        return created;
+        return toolDAO.findById(id);
     }
 
     @DELETE
@@ -369,6 +391,7 @@ public class DockerRepoResource {
         if (request.getPublish()) {
             boolean validTag = false;
 
+            // Why are manual images always valid?
             if (c.getMode() == ToolMode.MANUAL_IMAGE_PATH) {
                 validTag = true;
             } else {
@@ -381,10 +404,8 @@ public class DockerRepoResource {
                 }
             }
 
-            // TODO: for now, validTrigger signals if the user has a cwl file in their git repository's default branch. Don't need to check
-            // this if we check the cwl in the tags.
-            // if (validTag && c.getValidTrigger() && !c.getGitUrl().isEmpty()) {
-            if (validTag && !c.getGitUrl().isEmpty() && c.getValidTrigger()) {
+            // Can publish a tool IF it has at least one valid tag (or is manual) and a git url
+            if (validTag && !c.getGitUrl().isEmpty()) {
                 c.setIsPublished(true);
             } else {
                 throw new CustomWebApplicationException("Repository does not meet requirements to publish.", HttpStatus.SC_BAD_REQUEST);
@@ -467,8 +488,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/path/tool/{repository}/published")
-    @ApiOperation(value = "Get a published container by tool path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Tool.class)
-    public Tool getPublishedContainerByToolPath(
+    @ApiOperation(value = "Get a published container by tool path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Tool.class) public Tool getPublishedContainerByToolPath(
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         final String[] split = path.split("/");
         // check that this is a tool path
@@ -478,10 +498,13 @@ public class DockerRepoResource {
             toolname = split[toolPathLength - 1];
         }
 
-        Tool tool = toolDAO.findPublishedByToolPath(Joiner.on("/").join(split[0], split[1], split[2]), toolname);
-        Helper.checkEntry(tool);
-
-        return tool;
+        try {
+            Tool tool = toolDAO.findPublishedByToolPath(Joiner.on("/").join(split[0], split[1], split[2]), toolname);
+            Helper.checkEntry(tool);
+            return tool;
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw new CustomWebApplicationException(path + " not found", HttpStatus.SC_NOT_FOUND);
+        }
     }
 
     @PUT
@@ -614,23 +637,47 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
+    @Path("/{containerId}/cwl/{relative-path}")
+    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class)
+    public SourceFile secondaryCwlPath(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
+            @QueryParam("tag") String tag, @PathParam("relative-path") String path){
+
+        return entryVersionHelper.getSourceFileByPath(containerId, tag, FileType.DOCKSTORE_CWL, path);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}/wdl/{relative-path}")
+    @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class)
+    public SourceFile secondaryWdlPath(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
+            @QueryParam("tag") String tag, @PathParam("relative-path") String path){
+
+        return entryVersionHelper.getSourceFileByPath(containerId, tag, FileType.DOCKSTORE_WDL, path);
+    }
+
+
+
+    @GET
+    @Timed
+    @UnitOfWork
     @Path("/{containerId}/secondaryCwl")
-    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
+    @ApiOperation(value = "Get a list of secondary CWL files from Git.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
     public List<SourceFile> secondaryCwl(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag) {
 
-        return entryVersionHelper.getSourceFiles(containerId, tag, FileType.DOCKSTORE_CWL);
+        return entryVersionHelper.getAllSecondaryFiles(containerId, tag, FileType.DOCKSTORE_CWL);
     }
 
     @GET
     @Timed
     @UnitOfWork
     @Path("/{containerId}/secondaryWdl")
-    @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
+    @ApiOperation(value = "Get a list of secondary WDL files from Git.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
     public List<SourceFile> secondaryWdl(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag) {
 
-        return entryVersionHelper.getSourceFiles(containerId, tag, FileType.DOCKSTORE_WDL);
+        return entryVersionHelper.getAllSecondaryFiles(containerId, tag, FileType.DOCKSTORE_WDL);
     }
 
 }

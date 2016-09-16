@@ -1,32 +1,43 @@
-[![Build Status](https://travis-ci.org/ga4gh/dockstore.svg?branch=develop)](https://travis-ci.org/ga4gh/dockstore)
+[![Build Status](https://travis-ci.org/ga4gh/dockstore.svg?branch=develop)](https://travis-ci.org/ga4gh/dockstore) [![Coverage Status](https://coveralls.io/repos/github/ga4gh/dockstore/badge.svg?branch=develop)](https://coveralls.io/github/ga4gh/dockstore?branch=develop)
+[![license](https://img.shields.io/hexpm/l/plug.svg?maxAge=2592000)](LICENSE)
+[![Website](https://img.shields.io/website/https/dockstore.org.svg)](https://dockstore.org)
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/ga4gh/dockstore?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Coverity Scan](https://img.shields.io/coverity/scan/9682.svg?maxAge=2592000)](https://scan.coverity.com/projects/ga4gh-dockstore)
 
 # Dockstore
-
-[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/common-workflow-language/common-workflow-language?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 The Dockstore concept is simple, provide a place where users can share tools encapsulated in Docker and described with the Common Workflow Language (CWL) which is being recommended by the GA4GH Containers and Workflow group. This enables scientists, for example, to share analytical tools in a way that makes them machine readable and runnable in a variety of environments (SevenBridges, Toil, etc). While the Dockstore is focused on serving researchers in the biosciences the combination of Docker + CWL can be used by anyone to describe the tools and services in their Docker images in a standardized, machine-readable way.  We hope to use this project as motivation to create a GA4GH API standard for container registries and intend on making Dockstore fully compliant.
 
 For the live site see https://dockstore.org
 
-This repo is the web service for the Dockstore. The usage of this is to enumerate the docker containers (from quay.io and hopefully docker hub) and the workflows (from github) that are available to users of Dockstore.org.
+This repo is the web service for the Dockstore. The usage of this is to enumerate the docker containers (from quay.io and hopefully docker hub) and the workflows (from github/bitbucket) that are available to users of Dockstore.org.
 
 For the related web UI see the [dockstore-ui](https://github.com/ga4gh/dockstore-ui) project.
 
-## Usage
+## For Dockstore Users
 
-### Dependencies
+The following section is useful for users of Dockstore (e.g. those that want to browse, register, and launch tools). 
 
-The dependency environment for Dockstore is described by our [Travis-CI config](https://github.com/ga4gh/dockstore/blob/develop/.travis.yml). Specifically, note the setup instructions for postgres. Specifically, you will need to have postgres installed and setup with the database user specified in .travis.yml. 
+After registering at https://dockstore.org , you will be able to download the Dockstore CLI at https://dockstore.org/onboarding
 
-Other notable dependencies to note are:  
+The CLI has the following dependencies
 
 * Java (1.8.0\_66 or similar)
-* Maven (3.3.9)
 * cwltool (to run CWL workflows locally)
 
 To install CWL tool:
 
-    pip install cwl-runner  cwltool==1.0.20160316150250 schema-salad==1.7.20160316150109 avro==1.7.7
+    pip install --user cwl-runner cwltool==1.0.20160712154127 schema-salad==1.14.20160708181155 avro==1.8.1
+
+You may need other pip installable tools like `typing` or `setuptools`.  This depends on your python environment.
+
+## For Dockstore Developers
+
+The following section is useful for Dockstore developers (e.g. those that want to improve or fix the Dockstore web service and UI)
+
+### Dependencies
+
+The dependency environment for Dockstore is described by our [Travis-CI config](https://github.com/ga4gh/dockstore/blob/develop/.travis.yml). In addition to the dependencies for Dockstore users, note the setup instructions for postgres. Specifically, you will need to have postgres installed and setup with the database user specified in .travis.yml. 
 
 ### Building
 
@@ -167,6 +178,7 @@ Background:
 2. Hit Generate Server and select JAX-RS
 3. Replace the appropriate classes in dockstore-webservice
 4. Unlike the client classes, we cannot separate quite as cleanly. Classes to watch out for are io.swagger.api.ToolsApi (includes DropWizard specific UnitOfWork annotations and a custom path) and io.swagger.api.impl.ToolsApiServiceImpl (includes our implementation).
+5. Customizations include, `@Path(DockstoreWebserviceApplication.GA4GH_API_PATH + <depends on api class>)` for Api classes, `@UnitOfWork` added to resources, and `@JsonNaming(PropertyNamingStrategy.KebabCaseStrategy.class)` added to model classes for GA4GH.
 
 
 ### CWL Avro documents
@@ -243,11 +255,3 @@ Probably the best way to run this since it includes a bundled postgres.  Keep in
 You can also run with defaults using
 
 1. `docker run -P -ti --rm dockstore`
-
-
-## TODO
-
-1. items from Brian
-   2. you need better directions for filling in the yml settings file
-1. you need to document the config file
-1. you need to document the release process, how to update the jar the dockstore command line downloads

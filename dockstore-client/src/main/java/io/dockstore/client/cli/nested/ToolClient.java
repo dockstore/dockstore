@@ -16,22 +16,8 @@
 
 package io.dockstore.client.cli.nested;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
-
-import org.apache.commons.io.FilenameUtils;
-import org.apache.http.HttpStatus;
-
 import com.google.common.base.Joiner;
 import com.google.common.io.Files;
-
 import io.dockstore.client.cli.Client;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
@@ -44,6 +30,18 @@ import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.User;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.http.HttpStatus;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
 
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.DESCRIPTION_HEADER;
@@ -56,7 +54,6 @@ import static io.dockstore.client.cli.ArgumentUtility.columnWidthsTool;
 import static io.dockstore.client.cli.ArgumentUtility.containsHelpRequest;
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
-import static io.dockstore.client.cli.ArgumentUtility.kill;
 import static io.dockstore.client.cli.ArgumentUtility.optVal;
 import static io.dockstore.client.cli.ArgumentUtility.out;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
@@ -126,7 +123,7 @@ public class ToolClient extends AbstractEntryClient {
             String description = "";
             String gitUrl = "";
 
-            if (container.getValidTrigger()) {
+            if (container.getIsPublished()) {
                 descriptor = "Yes";
             }
 
@@ -166,12 +163,7 @@ public class ToolClient extends AbstractEntryClient {
                 gitUrl = container.getGitUrl();
             }
 
-            if (container.getDescription() != null) {
-                description = container.getDescription();
-                if (description.length() > MAX_DESCRIPTION) {
-                    description = description.substring(0, MAX_DESCRIPTION - Client.PADDING) + "...";
-                }
-            }
+            description = getCleanedDescription(container.getDescription());
 
             out(format, container.getToolPath(), description, gitUrl);
         }
@@ -184,7 +176,6 @@ public class ToolClient extends AbstractEntryClient {
             if (user == null) {
                 errorMessage("User not found", Client.CLIENT_ERROR);
             }
-            // List<Container> containers = containersApi.allRegisteredContainers();
             List<DockstoreTool> containers = usersApi.userPublishedContainers(user.getId());
             printPublishedList(containers);
         } catch (ApiException ex) {
@@ -341,7 +332,7 @@ public class ToolClient extends AbstractEntryClient {
             if (container != null) {
                 PublishRequest pub = new PublishRequest();
                 pub.setPublish(true);
-                DockstoreTool publishedTool = null;
+                DockstoreTool publishedTool;
                 try {
                     publishedTool = containersApi.publish(container.getId(), pub);
                     if (publishedTool.getIsPublished()) {
@@ -355,25 +346,6 @@ public class ToolClient extends AbstractEntryClient {
                             Client.API_ERROR);
                 }
             }
-        }
-    }
-
-    /**
-     * This method kinda sucks in the way it reaches back into client.
-     * @param descriptorType
-     * @param entry
-     */
-    protected void handleDescriptor(String descriptorType, String entry) {
-        try {
-            SourceFile file = getDescriptorFromServer(entry, descriptorType);
-
-            if (file.getContent() != null && !file.getContent().isEmpty()) {
-                out(file.getContent());
-            } else {
-                errorMessage("No " + descriptorType + " file found", Client.COMMAND_ERROR);
-            }
-        } catch (ApiException ex) {
-            exceptionMessage(ex, "", Client.API_ERROR);
         }
     }
 
@@ -497,18 +469,20 @@ public class ToolClient extends AbstractEntryClient {
             versionTagHelp();
         } else {
             String subcommand = args.remove(0);
-            if (args.isEmpty()) {
-                if (subcommand.equals("add")) {
+            if (containsHelpRequest(args)) {
+                switch (subcommand) {
+                case "add":
                     versionTagAddHelp();
-                    kill("");
-                } else if (subcommand.equals("remove")) {
+                    return;
+                case "remove":
                     versionTagRemoveHelp();
-                    kill("");
-                } else if (subcommand.equals("update")) {
+                    return;
+                case "update":
                     versionTagUpdateHelp();
-                    kill("");
-                } else {
+                    return;
+                default:
                     errorMessage("Please provide a correct subcommand", Client.CLIENT_ERROR);
+                    break;
                 }
             }
 
@@ -516,7 +490,8 @@ public class ToolClient extends AbstractEntryClient {
             try {
                 DockstoreTool container = containersApi.getContainerByToolPath(toolpath);
                 long containerId = container.getId();
-                if (subcommand.equals("add")) {
+                switch (subcommand) {
+                case "add":
                     if (containsHelpRequest(args)) {
                         versionTagAddHelp();
                     } else {
@@ -553,7 +528,8 @@ public class ToolClient extends AbstractEntryClient {
                         }
                     }
 
-                } else if (subcommand.equals("update")) {
+                    break;
+                case "update":
                     if (containsHelpRequest(args)) {
                         versionTagUpdateHelp();
                     } else {
@@ -589,7 +565,8 @@ public class ToolClient extends AbstractEntryClient {
                             errorMessage("Tag " + tagName + " does not exist.", Client.CLIENT_ERROR);
                         }
                     }
-                } else if (subcommand.equals("remove")) {
+                    break;
+                case "remove":
                     if (containsHelpRequest(args)) {
                         versionTagRemoveHelp();
                     } else {
@@ -620,8 +597,10 @@ public class ToolClient extends AbstractEntryClient {
                             errorMessage("Tag " + tagName + " does not exist.", Client.CLIENT_ERROR);
                         }
                     }
-                } else {
+                    break;
+                default:
                     errorMessage("Not a valid subcommand", Client.CLIENT_ERROR);
+                    break;
                 }
             } catch (ApiException ex) {
                 exceptionMessage(ex, "Could not find container", Client.API_ERROR);
@@ -644,12 +623,33 @@ public class ToolClient extends AbstractEntryClient {
                 final String dockerfilePath = optVal(args, "--dockerfile-path", container.getDefaultDockerfilePath());
                 final String toolname = optVal(args, "--toolname", container.getToolname());
                 final String gitUrl = optVal(args, "--git-url", container.getGitUrl());
+                final String defaultTag = optVal(args, "--default-version", container.getDefaultVersion());
 
                 container.setDefaultCwlPath(cwlPath);
                 container.setDefaultWdlPath(wdlPath);
                 container.setDefaultDockerfilePath(dockerfilePath);
                 container.setToolname(toolname);
                 container.setGitUrl(gitUrl);
+
+                // if valid version
+                boolean updateVersionSuccess = false;
+
+                for (Tag tag : container.getTags()) {
+                    if (tag.getName().equals(defaultTag)) {
+                        container.setDefaultVersion(defaultTag);
+                        updateVersionSuccess = true;
+                        break;
+                    }
+                }
+
+                if (!updateVersionSuccess && defaultTag != null) {
+                    out("Not a valid version.");
+                    out("Valid versions include:");
+                    for (Tag tag : container.getTags()) {
+                        out(tag.getReference());
+                    }
+                    errorMessage("Please enter a valid version.", Client.CLIENT_ERROR);
+                }
 
                 containersApi.updateContainer(containerId, container);
                 containersApi.refresh(containerId);
@@ -669,7 +669,8 @@ public class ToolClient extends AbstractEntryClient {
         SourceFile file = new SourceFile();
         // simply getting published descriptors does not require permissions
         DockstoreTool container = containersApi.getPublishedContainerByToolPath(path);
-        if (container.getValidTrigger()) {
+
+        if (container != null) {
             try {
                 if (descriptorType.equals(CWL_STRING)) {
                     file = containersApi.cwl(container.getId(), tag);
@@ -740,7 +741,7 @@ public class ToolClient extends AbstractEntryClient {
         out("");
     }
 
-    public static void updateToolHelp() {
+    private static void updateToolHelp() {
         printHelpHeader();
         out("Usage: dockstore tool " + UPDATE_TOOL + " --help");
         out("       dockstore tool " + UPDATE_TOOL + " [parameters]");
@@ -757,6 +758,7 @@ public class ToolClient extends AbstractEntryClient {
         out("  --dockerfile-path <dockerfile-path>         Path to default dockerfile location");
         out("  --toolname <toolname>                       Toolname for the given tool");
         out("  --git-url <git-url>                         Git url");
+        out("  --default-version <default-version>         Default branch name");
         printHelpFooter();
     }
 

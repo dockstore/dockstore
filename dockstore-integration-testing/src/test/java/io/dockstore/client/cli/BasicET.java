@@ -16,9 +16,13 @@
 
 package io.dockstore.client.cli;
 
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
-
+import io.dockstore.client.cli.nested.ToolClient;
+import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.Registry;
+import io.dropwizard.testing.ResourceHelpers;
+import io.dropwizard.testing.junit.DropwizardAppRule;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.junit.Assert;
 import org.junit.Before;
@@ -28,13 +32,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 
-import io.dockstore.client.cli.nested.ToolClient;
-import io.dockstore.common.CommonTestUtilities;
-import io.dockstore.webservice.DockstoreWebserviceApplication;
-import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dockstore.webservice.core.Registry;
-import io.dropwizard.testing.ResourceHelpers;
-import io.dropwizard.testing.junit.DropwizardAppRule;
+import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 import static io.dockstore.common.CommonTestUtilities.clearStateMakePrivate;
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
@@ -61,11 +60,24 @@ public class BasicET {
          General-ish tests
          */
         /**
-         * Tests that refresh all works
+         * Tests that refresh all works, also that refreshing without a quay.io token should not destroy tools
          */
         @Test
         public void testRefresh() {
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+                final long startToolCount = testingPostgres.runSelectStatement("select count(*) from tool", new ScalarHandler<>());
+                // should have 0 tools to start with
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--script" });
+                // should have a certain number of tools based on github contents
+                final long secondToolCount = testingPostgres.runSelectStatement("select count(*) from tool", new ScalarHandler<>());
+                // delete quay.io token
+                testingPostgres.runUpdateStatement("delete from token where tokensource = 'quay.io'");
+                // refresh
+                systemExit.expectSystemExitWithStatus(Client.API_ERROR);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--script" });
+                // should not delete tools
+                final long thirdToolCount = testingPostgres.runSelectStatement("select count(*) from tool", new ScalarHandler<>());
+                Assert.assertTrue("there should be no change in count of tools", secondToolCount == thirdToolCount);
         }
 
         /**
@@ -318,27 +330,11 @@ public class BasicET {
         @Test
         public void testQuayGithubQuickRegisterWithWDL() {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--entry", "quay.io/dockstoretestuser/quayandgithub", "--script" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--entry", "quay.io/dockstoretestuser/quayandgithub", "--script" });
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser/quayandgithub' and validtrigger = 't'", new ScalarHandler<>());
-                Assert.assertTrue("the given entry should be valid", count == 1);
-
-                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool, tag, tool_tag where tool.path = 'quay.io/dockstoretestuser/quayandgithub' and tool.id = tool_tag.toolid and tool_tag.toolid = tag.id", new ScalarHandler<>());
-                Assert.assertTrue("the given entry should have three valid tags", count2 == 3);
-        }
-
-        /**
-         * Test adding a entry with an invalid WDL descriptor
-         */
-        @Test
-        public void testQuayGithubInvalidWDL() {
-                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser/quayandgithubwdl'  and validtrigger = 'f'", new ScalarHandler<>());
-                Assert.assertTrue("the given entry should be invalid", count == 1);
-
-                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool, tag, tool_tag where tool.path = 'quay.io/dockstoretestuser/quayandgithubwdl' and tool.id = tool_tag.toolid and tool_tag.tagid = tag.id", new ScalarHandler<>());
-                Assert.assertTrue("the given entry should have two valid tags, found " + count2, count2 == 2);
-                System.out.println();
+                final long count = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser/quayandgithub' and ispublished = 't'", new ScalarHandler<>());
+                Assert.assertTrue("the given entry should be published", count == 1);
         }
 
         /*
@@ -455,13 +451,13 @@ public class BasicET {
                         "master", "--toolname", "alternate", "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='t' and validtrigger='t'", new ScalarHandler<>());
+                final long count = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='t'", new ScalarHandler<>());
 
                 Assert.assertTrue("there should be 1 entry", count == 1);
 
                 // Unpublish
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--unpub", "--entry", "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub/alternate", "--script" });
-                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='f' and validtrigger='t'", new ScalarHandler<>());
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='f'", new ScalarHandler<>());
 
                 Assert.assertTrue("there should be 1 entry", count2 == 1);
         }
@@ -552,17 +548,12 @@ public class BasicET {
                 final long count = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='t'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 1 entry", count == 1);
 
-                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate'  and validtrigger='t'", new ScalarHandler<>());
-                Assert.assertTrue("there should be 1 valid entry", count2 == 1);
-
                 // Unpublish
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--unpub", "--entry", "registry.hub.docker.com/dockstoretestuser/dockerhubandbitbucket/alternate", "--script" });
 
                 final long count3 = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and ispublished='f'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 1 entry", count3 == 1);
 
-                final long count4 = testingPostgres.runSelectStatement("select count(*) from tool where toolname = 'alternate' and validtrigger='t'", new ScalarHandler<>());
-                Assert.assertTrue("there should be 1 valid entry", count4 == 1);
         }
 
         /**
@@ -609,6 +600,34 @@ public class BasicET {
                 final long count4 = testingPostgres.runSelectStatement("select count(*) from tool where toolname like 'regular%' and ispublished='t'", new ScalarHandler<>());
 
                 Assert.assertTrue("there should be 0 entries", count4 == 0);
+
+        }
+
+
+        /**
+         * This tests that a tool can be updated to have default version, and that metadata is set related to the default version
+         */
+        @Test
+        public void testSetDefaultTag(){
+                // Set up DB
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+                // Update tool with default version that has metadata
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry", "quay.io/dockstoretestuser/quayandgithub",
+                        "--default-version", "master", "--script" });
+
+                final long count = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser/quayandgithub' and defaultversion = 'master'", new ScalarHandler<>());
+                Assert.assertTrue("the tool should have a default version set", count == 1);
+
+                final long count2= testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser/quayandgithub' and defaultversion = 'master' and author = 'Dockstore Test User'", new ScalarHandler<>());
+                Assert.assertTrue("the tool should have any metadata set (author)", count2 == 1);
+
+                // Invalidate tags
+                testingPostgres.runUpdateStatement("UPDATE tag SET valid='f'");
+
+                // Shouldn't be able to publish
+                systemExit.expectSystemExitWithStatus(Client.API_ERROR);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--entry", "quay.io/dockstoretestuser/quayandgithub", "--script" });
 
         }
 

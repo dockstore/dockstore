@@ -16,9 +16,17 @@
 
 package io.dockstore.client.cli;
 
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
-
+import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dropwizard.testing.ResourceHelpers;
+import io.dropwizard.testing.junit.DropwizardAppRule;
+import io.swagger.client.ApiClient;
+import io.swagger.client.ApiException;
+import io.swagger.client.api.UsersApi;
+import io.swagger.client.api.WorkflowsApi;
+import io.swagger.client.model.PublishRequest;
+import io.swagger.client.model.Workflow;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.junit.Assert;
 import org.junit.Before;
@@ -28,11 +36,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 
-import io.dockstore.common.CommonTestUtilities;
-import io.dockstore.webservice.DockstoreWebserviceApplication;
-import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dropwizard.testing.ResourceHelpers;
-import io.dropwizard.testing.junit.DropwizardAppRule;
+import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 import static io.dockstore.common.CommonTestUtilities.clearStateMakePrivate2;
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
@@ -366,4 +371,84 @@ public class GeneralWorkflowET {
                         ResourceHelpers.resourceFilePath("wdl.json"), "--descriptor", "wdl", "--script", "--local-entry" });
         }
 
+        @Test
+        public void testUpdateWorkflowPath() throws IOException, TimeoutException, ApiException {
+                // Set up webservice
+                ApiClient webClient = WorkflowET.getWebClient();
+                WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
+                UsersApi usersApi = new UsersApi(webClient);
+                final Long userId = usersApi.getUser().getId();
+
+                // Make publish request (true)
+                final PublishRequest publishRequest = new PublishRequest();
+                publishRequest.setPublish(true);
+
+                // Get workflows
+                usersApi.refreshWorkflows(userId);
+
+                Workflow githubWorkflow = workflowApi.manualRegister("github", "DockstoreTestUser2/test_lastmodified", "Dockstore.cwl", "test-update-workflow", "cwl");
+
+                // Publish github workflow
+                Workflow workflow = workflowApi.refresh(githubWorkflow.getId());
+
+                //update the default workflow path to be hello.cwl , the workflow path in workflow versions should also be changes
+                workflow.setWorkflowPath("/Dockstore.cwl");
+                workflowApi.updateWorkflowPath(githubWorkflow.getId(),workflow);
+                workflowApi.refresh(githubWorkflow.getId());
+
+                // Set up DB
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+                //check if the workflow versions have the same workflow path or not in the database
+                final String masterpath = testingPostgres.runSelectStatement("select workflowpath from workflowversion where name = 'testWorkflowPath'", new ScalarHandler<>());
+                final String testpath = testingPostgres.runSelectStatement("select workflowpath from workflowversion where name = 'testWorkflowPath'", new ScalarHandler<>());
+                Assert.assertTrue("workflow path should be the same as default workflow path", masterpath.equals("/Dockstore.cwl"));
+                Assert.assertTrue("workflow path should be the same as default workflow path", testpath.equals("/Dockstore.cwl"));
+        }
+
+        /**
+         * This tests that a workflow can be updated to have default version, and that metadata is set related to the default version
+         */
+        @Test
+        public void testUpdateWorkflowDefaultVersion() {
+                // Set up DB
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+                // Setup workflow
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish", "--repository", "hello-dockstore-workflow", "--organization", "DockstoreTestUser2",
+                        "--git-version-control", "github", "--script" });
+
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+
+                // Update workflow with version with no metadata
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--default-version", "testWDL", "--script" });
+
+                // Assert default version is updated and no author or email is found
+                final long count = testingPostgres.runSelectStatement("select count(*) from workflow where defaultversion = 'testWDL'", new ScalarHandler<>());
+                Assert.assertTrue("there should be 1 matching workflow, there is " + count, count == 1);
+
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from workflow where defaultversion = 'testWDL' and author is null and email is null", new ScalarHandler<>());
+                Assert.assertTrue("The given workflow shouldn't have any contact info", count2 == 1);
+
+                // Update workflow with version with metadata
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--default-version", "testBoth", "--script" });
+
+                // Assert default version is updated and author and email are set
+                final long count3 = testingPostgres.runSelectStatement("select count(*) from workflow where defaultversion = 'testBoth'", new ScalarHandler<>());
+                Assert.assertTrue("there should be 1 matching workflow, there is " + count3, count3 == 1);
+
+                final long count4 = testingPostgres.runSelectStatement("select count(*) from workflow where defaultversion = 'testBoth' and author = 'testAuthor' and email = 'testEmail'", new ScalarHandler<>());
+                Assert.assertTrue("The given workflow should have contact info", count4 == 1);
+
+                // Unpublish
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--unpub", "--script" });
+
+                // Alter workflow so that it has no valid tags
+                testingPostgres.runUpdateStatement("UPDATE workflowversion SET valid='f'");
+
+                // Now you shouldn't be able to publish the workflow
+                systemExit.expectSystemExitWithStatus(Client.API_ERROR);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+        }
 }

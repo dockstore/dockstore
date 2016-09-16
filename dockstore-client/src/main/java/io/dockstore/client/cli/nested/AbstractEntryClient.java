@@ -16,6 +16,7 @@
 
 package io.dockstore.client.cli.nested;
 
+import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
@@ -30,6 +31,7 @@ import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.Workflow;
 import io.dockstore.client.Bridge;
 import io.dockstore.client.cli.Client;
+import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.WDLFileProvisioning;
 import io.github.collaboratory.LauncherCWL;
 import io.swagger.client.ApiException;
@@ -41,13 +43,20 @@ import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.csv.QuoteMode;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.json.JSONObject;
+import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -61,6 +70,7 @@ import java.util.regex.Pattern;
 import static io.dockstore.client.cli.ArgumentUtility.CONVERT;
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.LAUNCH;
+import static io.dockstore.client.cli.ArgumentUtility.MAX_DESCRIPTION;
 import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.containsHelpRequest;
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
@@ -91,6 +101,10 @@ import static io.dockstore.client.cli.Client.IO_ERROR;
  */
 public abstract class AbstractEntryClient {
     private final CWL cwlUtil = new CWL();
+
+    public enum Type {
+        CWL, WDL, NONE
+    }
 
     public abstract String getConfigFile();
 
@@ -262,7 +276,19 @@ public abstract class AbstractEntryClient {
      *            a unique identifier for an entry, called a path for workflows and tools ex:
      *            quay.io/collaboratory/seqware-bwa-workflow:develop for a tool
      */
-    protected abstract void handleDescriptor(String descriptorType, String entry);
+    private void handleDescriptor(String descriptorType, String entry){
+        try {
+            SourceFile file = getDescriptorFromServer(entry, descriptorType);
+
+            if (file.getContent() != null && !file.getContent().isEmpty()) {
+                out(file.getContent());
+            } else {
+                errorMessage("No " + descriptorType + " file found", Client.COMMAND_ERROR);
+            }
+        } catch (ApiException | IOException ex) {
+            exceptionMessage(ex, "", Client.API_ERROR);
+        }
+    }
 
     /**
      *
@@ -294,7 +320,7 @@ public abstract class AbstractEntryClient {
     /**
      * Manually publish a given entry
      *
-     * @param args
+     * @param args user's command-line arguments
      */
     protected abstract void manualPublish(final List<String> args);
 
@@ -397,7 +423,7 @@ public abstract class AbstractEntryClient {
     /*
     Generate label string given add set, remove set, and existing labels
       */
-    public String generateLabelString(Set<String> addsSet, Set<String> removesSet, List<Label> existingLabels) {
+    String generateLabelString(Set<String> addsSet, Set<String> removesSet, List<Label> existingLabels) {
         Set<String> newLabelSet = new HashSet<String>();
 
         // Get existing labels and store in a List
@@ -504,6 +530,283 @@ public abstract class AbstractEntryClient {
     }
 
     /**
+     * this function will check if the content of the file is CWL or not
+     * it will get the content of the file and try to find/match the required fields
+     * Required fields in CWL: 'inputs' 'outputs' 'class' (CommandLineTool: 'baseCommand' , Workflow:'steps'
+     * Optional field, but good practice: 'cwlVersion'
+     * @param content : the entry file content, type File
+     * @return true if the file is CWL (warning will be added here if cwlVersion is not found but will still return true)
+     * false if it's not a CWL file (could be WDL or something else)
+     * errormsg & exit if >=1 required field not found in the file
+     */
+    public Boolean checkCWL(File content){
+        /* CWL: check for 'class:CommandLineTool', 'inputs: ','outputs: ', and 'baseCommand'. Optional: 'cwlVersion'
+         CWL: check for 'class:Workflow', 'inputs: ','outputs: ', and 'steps'. Optional: 'cwlVersion'*/
+        Pattern inputPattern = Pattern.compile("(.*)(inputs)(.*)(:)(.*)");
+        Pattern outputPattern = Pattern.compile("(.*)(outputs)(.*)(:)(.*)");
+        Pattern classWfPattern = Pattern.compile("(.*)(class)(.*)(:)(\\sWorkflow)");
+        Pattern classToolPattern = Pattern.compile("(.*)(class)(.*)(:)(\\sCommandLineTool)");
+        Pattern commandPattern = Pattern.compile("(.*)(baseCommand)(.*)(:)(.*)");
+        Pattern versionPattern = Pattern.compile("(.*)(cwlVersion)(.*)(:)(.*)");
+        Pattern stepsPattern = Pattern.compile("(.*)(steps)(.*)(:)(.*)");
+        String missing = "Required fields that are missing from CWL file :";
+        boolean inputFound = false, classWfFound = false, classToolFound = false, outputFound = false,
+                commandFound = false, versionFound = false, stepsFound = false;
+        Path p = Paths.get(content.getPath());
+        //go through each line of the file content and find the word patterns as described above
+        try{
+            List<String> fileContent = java.nio.file.Files.readAllLines(p, StandardCharsets.UTF_8);
+            for(String line: fileContent){
+                Matcher matchWf = classWfPattern.matcher(line);
+                Matcher matchTool = classToolPattern.matcher(line);
+                Matcher matchInput = inputPattern.matcher(line);
+                Matcher matchOutput = outputPattern.matcher(line);
+                Matcher matchCommand = commandPattern.matcher(line);
+                Matcher matchVersion = versionPattern.matcher(line);
+                Matcher matchSteps = stepsPattern.matcher(line);
+                if(matchInput.find() && !stepsFound){
+                    inputFound = true;
+                } else if(matchOutput.find()){
+                    outputFound = true;
+                } else if(matchCommand.find()){
+                    commandFound = true;
+                } else if(matchVersion.find()){
+                    versionFound = true;
+                } else if(matchSteps.find()){
+                    stepsFound = true;
+                } else{
+                    if(getEntryType().toLowerCase().equals("workflow") && matchWf.find()){
+                        classWfFound = true;
+                    } else if(getEntryType().toLowerCase().equals("tool") && matchTool.find()){
+                        classToolFound = true;
+                    } else if((getEntryType().toLowerCase().equals("tool") && matchWf.find()) || (getEntryType().toLowerCase().equals("workflow") && matchTool.find())){
+                        errorMessage("Entry type does not match the class specified in CWL file.",CLIENT_ERROR);
+                    }
+                }
+            }
+            //check if the required fields are found, if not, give warning for the optional ones or error for the required ones
+            if(inputFound && outputFound && classWfFound && stepsFound){
+                //this is a valid cwl workflow file
+                if(!versionFound) {
+                    out("Warning: 'cwlVersion' field is missing in the CWL file.");
+                }
+                return true;
+            } else if(inputFound && outputFound && classToolFound && commandFound){
+                //this is a valid cwl tool file
+                if(!versionFound){
+                    out("Warning: 'cwlVersion' field is missing in the CWL file.");
+                }
+                return true;
+            } else if((!inputFound && !outputFound && !classToolFound && !commandFound) || (!inputFound && !outputFound && !classWfFound)){
+                //not a CWL file, could be WDL or something else
+                return false;
+            } else{
+                //CWL but some required fields are missing
+                if(!outputFound) {
+                    missing += " 'outputs'";
+                }
+                if(!inputFound) {
+                    missing += " 'inputs'";
+                }
+                if(classWfFound && !stepsFound) {
+                    missing += " 'steps'";
+                }
+                if(!classToolFound && !classWfFound) {
+                    missing += " 'class'";
+                }
+                if(classToolFound && !commandFound){
+                    missing += " 'baseCommand'";
+                }
+                errorMessage(missing, CLIENT_ERROR);
+            }
+        } catch(IOException e){
+            throw new RuntimeException("Failed to get content of entry file.", e);
+        }
+        return false;
+    }
+
+    /**
+     * this function will check if the content of the file is WDL or not
+     * it will get the content of the file and try to find/match the required fields
+     * Required fields in WDL: 'task' 'workflow 'command' 'call' 'output'
+     * @param content : the entry file content, File Type
+     * @return true if it is a valid WDL file
+     * false if it's not a WDL file (could be CWL or something else)
+     * errormsg and exit if >=1 required field not found in the file
+     */
+    public Boolean checkWDL(File content){
+        /* WDL: check for 'task' (must be >=1) ,'call', 'command', 'output' and 'workflow' */
+        Pattern taskPattern = Pattern.compile("(.*)(task)(\\s)(.*)(\\{)");
+        Pattern wfPattern = Pattern.compile("(.*)(workflow)(\\s)(.*)(\\{)");
+        Pattern commandPattern = Pattern.compile("(.*)(command)(.*)");
+        Pattern callPattern = Pattern.compile("(.*)(call)(.*)");
+        Pattern outputPattern = Pattern.compile("(.*)(output)(.*)");
+        boolean wfFound = false, commandFound = false, outputFound = false, callFound = false;
+        Integer counter = 0;
+        String missing = "Required fields that are missing from WDL file :";
+        Path p = Paths.get(content.getPath());
+        //go through each line of the file content and find the word patterns as described above
+        try{
+            List<String> fileContent = java.nio.file.Files.readAllLines(p, StandardCharsets.UTF_8);
+            for(String line: fileContent){
+                Matcher matchTask = taskPattern.matcher(line);
+                Matcher matchWorkflow = wfPattern.matcher(line);
+                Matcher matchCommand = commandPattern.matcher(line);
+                Matcher matchCall = callPattern.matcher(line);
+                Matcher matchOutput = outputPattern.matcher(line);
+                if (matchTask.find()) {
+                    counter++;
+                } else if(matchWorkflow.find()){
+                    wfFound = true;
+                } else if(matchCommand.find()){
+                    commandFound = true;
+                } else if(matchCall.find()){
+                    callFound = true;
+                } else if(matchOutput.find()){
+                    outputFound = true;
+                }
+            }
+            //check all the required fields and give error message if it's missing
+            if(counter>0 && wfFound && commandFound && callFound && outputFound){
+                return true;    //this is a valid WDL file
+            } else if(counter==0 && !wfFound && !commandFound && !callFound && !outputFound){
+                return false;   //not a WDL file, maybe a CWL file or something else
+            } else {
+                //WDL file but some required fields are missing
+                if(counter==0){
+                    missing += " 'task'";
+                }
+                if(!wfFound){
+                    missing+=" 'workflow'";
+                }
+                if(!commandFound){
+                    missing+=" 'command'";
+                }
+                if(!callFound){
+                    missing+=" 'call'";
+                }
+                if(!outputFound) {
+                    missing += " 'output'";
+                }
+                errorMessage(missing, CLIENT_ERROR);
+            }
+
+        } catch (IOException e){
+            throw new RuntimeException("Failed to get content of entry file.", e);
+        }
+        return false;
+    }
+
+
+    /**
+     * this function will check the content of the entry file if it's a valid cwl/wdl file
+     * @param content: the file content, Type File
+     * @return Type -> Type.CWL if file content is CWL
+     * Type.WDL if file content is WDL
+     * Type.NONE if file content is neither WDL nor CWL
+     */
+    public Type checkFileContent(File content){
+        if(checkCWL(content)){
+            return Type.CWL;
+        }else if(checkWDL(content)){
+            return Type.WDL;
+        }
+        return Type.NONE;
+    }
+
+    /**
+     * this function will check the extension of the entry file (cwl/wdl)
+     * @param path: the file path, Type String
+     * @return Type -> Type.CWL if file extension is CWL
+     * Type.WDL if file extension is WDL
+     * Type.NONE if file extension is neither WDL nor CWL, could be no extension or some other random extension(e.g .txt)
+     */
+    public Type checkFileExtension(String path){
+        if(FilenameUtils.getExtension(path).toLowerCase().equals(CWL_STRING)){
+            return Type.CWL;
+        } else if(FilenameUtils.getExtension(path).toLowerCase().equals(WDL_STRING)){
+            return Type.WDL;
+        }
+        return Type.NONE;
+    }
+
+    /**
+     * this function will check for the content and the extension of entry file
+     * for launch simplification, trying to reduce the use '--descriptor' when launching
+     * @param entry relative path to local descriptor for either WDL/CWL tools or workflows
+     * this will either give back exceptionMessage and exit (if the content/extension/descriptor is invalid)
+     * OR proceed with launching the entry file (if it's valid)
+     */
+    public void checkEntryFile(String entry,List<String> argsList, String descriptor){
+        File file = new File(entry);
+        Type ext = checkFileExtension(file.getPath());     //file extension could be cwl,wdl or ""
+        Type content = checkFileContent(file);             //check the file content (wdl,cwl or "")
+
+        if(ext.equals(Type.CWL)){
+            if(content.equals(Type.CWL)) {
+                try {
+                    launchCwl(entry, argsList);
+                } catch (ApiException e) {
+                    exceptionMessage(e, "api error launching workflow", Client.API_ERROR);
+                } catch (IOException e) {
+                    exceptionMessage(e, "io error launching workflow", IO_ERROR);
+                }
+            }else if(!content.equals(Type.CWL) && descriptor==null){
+                //extension is cwl but the content is not cwl
+                out("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end");
+            }else if(!content.equals(Type.CWL) && descriptor.equals(CWL_STRING)){
+                errorMessage("Entry file is not a valid CWL file.", CLIENT_ERROR);
+            }else if(content.equals(Type.WDL) && descriptor.equals(WDL_STRING)) {
+                out("This is a WDL file.. Please put the correct extension to the entry file name.");
+                out("Launching entry file as a WDL file..");
+                launchWdl(argsList);
+            } else{
+                errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
+            }
+        }else if(ext.equals(Type.WDL)){
+            if(content.equals(Type.WDL)){
+                launchWdl(entry, argsList);
+            }else if(!content.equals(Type.WDL) && descriptor==null){
+                //extension is wdl but the content is not wdl
+                out("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end");
+            }else if(!content.equals(Type.WDL) && descriptor.equals(WDL_STRING)){
+                errorMessage("Entry file is not a valid WDL file.", CLIENT_ERROR);
+            }else if(content.equals(Type.CWL) && descriptor.equals(CWL_STRING)){
+                out("This is a CWL file.. Please put the correct extension to the entry file name.");
+                out("Launching entry file as a CWL file..");
+                try {
+                    launchCwl(entry, argsList);
+                } catch (ApiException e) {
+                    exceptionMessage(e, "api error launching workflow", Client.API_ERROR);
+                } catch (IOException e) {
+                    exceptionMessage(e, "io error launching workflow", IO_ERROR);
+                }
+            } else{
+                errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
+            }
+        }else{
+            //no extension given
+            if(content.equals(Type.CWL)){
+                out("This is a CWL file.. Please put an extension to the entry file name.");
+                out("Launching entry file as a CWL file..");
+                try {
+                    launchCwl(entry, argsList);
+                } catch (ApiException e) {
+                    exceptionMessage(e, "api error launching workflow", Client.API_ERROR);
+                } catch (IOException e) {
+                    exceptionMessage(e, "io error launching workflow", IO_ERROR);
+                }
+            }else if(content.equals(Type.WDL)){
+                out("This is a WDL file.. Please put an extension to the entry file name.");
+                out("Launching entry file as a WDL file..");
+                launchWdl(entry, argsList);
+            } else{
+                errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
+            }
+        }
+    }
+
+    /**
      * TODO: this may need to be moved to ToolClient depending on whether we can re-use
      * this for workflows.
      * @param args
@@ -512,31 +815,46 @@ public abstract class AbstractEntryClient {
         if (args.isEmpty() || containsHelpRequest(args)) {
             launchHelp();
         } else {
-            final String descriptor = optVal(args, "--descriptor", CWL_STRING);
-
-            if (descriptor.equals(CWL_STRING)) {
-                try {
-                    launchCwl(args);
-                } catch (ApiException e) {
-                    exceptionMessage(e, "api error launching workflow", Client.API_ERROR);
-                } catch (IOException e) {
-                    exceptionMessage(e, "io error launching workflow", IO_ERROR);
+            if (args.contains("--local-entry")) {
+                final String descriptor = optVal(args, "--descriptor", null);
+                final String entry = reqVal(args, "--entry");
+                checkEntryFile(entry,args, descriptor);
+            }else{
+                final String descriptor = optVal(args, "--descriptor", CWL_STRING);
+                if (descriptor.equals(CWL_STRING)) {
+                    try {
+                        launchCwl(args);
+                    } catch (ApiException e) {
+                        exceptionMessage(e, "api error launching workflow", Client.API_ERROR);
+                    } catch (IOException e) {
+                        exceptionMessage(e, "io error launching workflow", IO_ERROR);
+                    }
+                } else if (descriptor.equals(WDL_STRING)) {
+                    launchWdl(args);
                 }
-            } else if (descriptor.equals(WDL_STRING)) {
-                launchWdl(args);
             }
+
         }
     }
 
     private void launchCwl(final List<String> args) throws ApiException, IOException {
-        boolean isLocalEntry = false;
         String entry = reqVal(args, "--entry");
+        launchCwl(entry, args);
+    }
+
+    private void launchCwl(String entry, final List<String> args) throws ApiException, IOException {
+        boolean isLocalEntry = false;
         if (args.contains("--local-entry")) {
             isLocalEntry = true;
         }
 
-        final String jsonRun = optVal(args, "--json", null);
+        final String yamlRun = optVal(args, "--yaml", null);
+        String jsonRun = optVal(args, "--json", null);
         final String csvRuns = optVal(args, "--tsv", null);
+
+        if (!(yamlRun != null ^ jsonRun != null ^ csvRuns != null)){
+            errorMessage("One of  --json, --yaml, and --tsv is required", CLIENT_ERROR);
+        }
 
         final File tempDir = Files.createTempDir();
         File tempCWL;
@@ -551,6 +869,7 @@ public abstract class AbstractEntryClient {
             Files.write(cwlFromServer.getContent(), tempCWL, StandardCharsets.UTF_8);
             downloadDescriptors(entry, "cwl", tempDir);
         }
+        jsonRun = convertYamlToJson(yamlRun, jsonRun);
 
         final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
         if (jsonRun != null) {
@@ -562,7 +881,7 @@ public abstract class AbstractEntryClient {
                 for (JsonElement element : asJsonArray) {
                     final String finalString = gson.toJson(element);
                     final File tempJson = File.createTempFile("parameter", ".json", Files.createTempDir());
-                    FileUtils.write(tempJson, finalString);
+                    FileUtils.write(tempJson, finalString, StandardCharsets.UTF_8);
                     final LauncherCWL cwlLauncher = new LauncherCWL(getConfigFile(), tempCWL.getAbsolutePath(), tempJson.getAbsolutePath());
                     if (this instanceof WorkflowClient) {
                         cwlLauncher.run(Workflow.class);
@@ -610,7 +929,7 @@ public abstract class AbstractEntryClient {
                     final String finalString = gson.toJson(json);
 
                     // write it out
-                    FileUtils.write(tempJson, finalString);
+                    FileUtils.write(tempJson, finalString, StandardCharsets.UTF_8);
 
                     // final String stringMapAsString = gson.toJson(stringMap);
                     // Files.write(stringMapAsString, tempJson, StandardCharsets.UTF_8);
@@ -628,9 +947,28 @@ public abstract class AbstractEntryClient {
 
     }
 
+    private String convertYamlToJson(String yamlRun, String jsonRun) throws IOException {
+        // if we have a yaml parameter file, convert it into a json
+        if (yamlRun != null){
+            final File tempFile = File.createTempFile("temp", "json");
+            Yaml yaml = new Yaml();
+            final FileInputStream fileInputStream = FileUtils.openInputStream(new File(yamlRun));
+            Map<String,Object> map= (Map<String, Object>) yaml.load(fileInputStream);
+            JSONObject jsonObject=new JSONObject(map);
+            final String jsonContent = jsonObject.toString();
+            FileUtils.write(tempFile, jsonContent, StandardCharsets.UTF_8);
+            jsonRun = tempFile.getAbsolutePath();
+        }
+        return jsonRun;
+    }
+
     private void launchWdl(final List<String> args) {
-        boolean isLocalEntry = false;
         final String entry = reqVal(args, "--entry");
+        launchWdl(entry, args);
+    }
+
+    private void launchWdl(String entry, final List<String> args) {
+        boolean isLocalEntry = false;
         if (args.contains("--local-entry")) {
             isLocalEntry = true;
         }
@@ -646,27 +984,11 @@ public abstract class AbstractEntryClient {
             File tmp;
             if (!isLocalEntry) {
                 wdlFromServer = getDescriptorFromServer(entry, "wdl");
-                File tempWdl = File.createTempFile("temp", ".wdl", tempDir);
-                Files.write(wdlFromServer.getContent(), tempWdl, StandardCharsets.UTF_8);
+                File tempDescriptor = File.createTempFile("temp", ".wdl", tempDir);
+                Files.write(wdlFromServer.getContent(), tempDescriptor, StandardCharsets.UTF_8);
                 downloadDescriptors(entry, "wdl", tempDir);
 
-                Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"(.*)");
-                File file = new File(tempWdl.getAbsolutePath());
-                List<String> lines = FileUtils.readLines(file);
-                tmp = new File(tempDir + File.separator + "overwrittenImports.wdl");
-
-                // Replace relative imports with absolute (to temp dir)
-                for (String line : lines) {
-                    Matcher m = p.matcher(line);
-                    if (!m.find()) {
-                        FileUtils.writeStringToFile(tmp, line + "\n", true);
-                    } else {
-                        if (!m.group(1).startsWith(File.separator)) {
-                            String newImportLine = "import \"" + tempDir + File.separator + m.group(1) + "\"" + m.group(2) + "\n";
-                            FileUtils.writeStringToFile(tmp, newImportLine, true);
-                        }
-                    }
-                }
+                tmp = resolveImportsForDescriptor(tempDir, tempDescriptor);
             } else {
                 tmp = new File(entry);
             }
@@ -678,12 +1000,13 @@ public abstract class AbstractEntryClient {
             // Convert parameter JSON to a map
             WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning(this.getConfigFile());
             Gson gson = new Gson();
-            String jsonString = FileUtils.readFileToString(parameterFile);
-            Map<String, Object> map = new HashMap<>();
-            Map<String, Object> inputJson = gson.fromJson(jsonString, map.getClass());
+            String jsonString = FileUtils.readFileToString(parameterFile, StandardCharsets.UTF_8);
+            Map<String, Object> inputJson = gson.fromJson(jsonString, HashMap.class);
 
             // Download files and change to local location
             // Make a new map of the inputs with updated locations
+            final String workingDir = Paths.get(".").toAbsolutePath().normalize().toString();
+            System.out.println("Creating directories for run of Dockstore launcher in current working directory: " + workingDir);
             Map<String, Object> fileMap = wdlFileProvisioning.pullFiles(inputJson, wdlInputs);
 
             // Make new json file
@@ -693,8 +1016,52 @@ public abstract class AbstractEntryClient {
             final scala.collection.immutable.List<String> wdlRunList = scala.collection.JavaConversions.asScalaBuffer(wdlRun).toList();
 
             // run a workflow
+            System.out.println("Calling out to Cromwell to run your workflow");
+
+            // save the output stream
+            PrintStream savedOut = System.out;
+            PrintStream savedErr = System.err;
+
+            // capture system.out and system.err
+            ByteArrayOutputStream stdoutCapture = new ByteArrayOutputStream();
+            System.setOut(new PrintStream(stdoutCapture, true, StandardCharsets.UTF_8.toString()));
+            ByteArrayOutputStream stderrCapture = new ByteArrayOutputStream();
+            System.setErr(new PrintStream(stderrCapture, true, StandardCharsets.UTF_8.toString()));
+
             final int run = main.run(wdlRunList);
 
+            System.out.flush();
+            System.err.flush();
+            String stdout = stdoutCapture.toString(StandardCharsets.UTF_8);
+            String stderr = stderrCapture.toString(StandardCharsets.UTF_8);
+
+            System.setOut(savedOut);
+            System.setErr(savedErr);
+            System.out.println("Cromwell exit code: " + run);
+
+            LauncherCWL.outputIntegrationOutput(workingDir, ImmutablePair.of(stdout, stderr), stdout.replaceAll("\n", "\t"), stderr.replaceAll("\n", "\t"), "Cromwell");
+
+            // capture the output and provision it
+            final String wdlOutputTarget = optVal(args, "--wdl-output-target", null);
+            if (wdlOutputTarget != null) {
+                // grab values from output JSON
+                Map<String, String> outputJson = gson.fromJson(stdout, HashMap.class);
+                System.out.println("Provisioning your output files to their final destinations");
+                final List<String> outputFiles = bridge.getOutputFiles(tmp);
+                for (String outFile : outputFiles) {
+                    // find file path from output
+                    final File resultFile = new File(outputJson.get(outFile));
+                    FileProvisioning.FileInfo new1 = new FileProvisioning.FileInfo();
+
+                    new1.setUrl(wdlOutputTarget + "/" + resultFile.getParentFile().getName() + "/" + resultFile.getName());
+                    new1.setLocalPath(resultFile.getAbsolutePath());
+                    System.out.println("Uploading: " + outFile + " from " + resultFile + " to : " + new1.getUrl());
+                    FileProvisioning fileProvisioning = new FileProvisioning(this.getConfigFile());
+                    fileProvisioning.provisionOutputFile(new1, resultFile.getAbsolutePath());
+                }
+            } else{
+                System.out.println("Output files left in place");
+            }
         } catch (ApiException ex) {
             exceptionMessage(ex, "", API_ERROR);
         } catch (IOException ex) {
@@ -702,9 +1069,38 @@ public abstract class AbstractEntryClient {
         }
     }
 
+    /**
+     *
+     * @param tempDir
+     * @param tempDescriptor
+     * @return
+     * @throws IOException
+     */
+    private File resolveImportsForDescriptor(File tempDir, File tempDescriptor) throws IOException {
+        File tmp;
+        Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"(.*)");
+        File file = new File(tempDescriptor.getAbsolutePath());
+        List<String> lines = FileUtils.readLines(file, StandardCharsets.UTF_8);
+        tmp = new File(tempDir + File.separator + "overwrittenImports.wdl");
+
+        // Replace relative imports with absolute (to temp dir)
+        for (String line : lines) {
+            Matcher m = p.matcher(line);
+            if (!m.find()) {
+                FileUtils.writeStringToFile(tmp, line + "\n", StandardCharsets.UTF_8, true);
+            } else {
+                if (!m.group(1).startsWith(File.separator)) {
+                    String newImportLine = "import \"" + tempDir + File.separator + m.group(1) + "\"" + m.group(2) + "\n";
+                    FileUtils.writeStringToFile(tmp, newImportLine, StandardCharsets.UTF_8, true);
+                }
+            }
+        }
+        return tmp;
+    }
+
     protected abstract void downloadDescriptors(String entry, String descriptor, File tempDir);
 
-    protected String runString(List<String> args, final boolean json) throws
+    private String runString(List<String> args, final boolean json) throws
             ApiException, IOException {
         final String entry = reqVal(args, "--entry");
         final String descriptor = optVal(args, "--descriptor", CWL_STRING);
@@ -754,25 +1150,10 @@ public abstract class AbstractEntryClient {
                 return buffer.toString();
             }
         } else if (descriptor.equals(WDL_STRING)) {
+            File tmp;
             if (json) {
 
-                Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"(.*)");
-                File file = new File(tempDescriptor.getAbsolutePath());
-                List<String> lines = FileUtils.readLines(file);
-                File tmp = new File(tempDir + File.separator + "overwrittenImports.wdl");
-
-                // Replace relative imports with absolute (to temp dir)
-                for (String line : lines) {
-                    Matcher m = p.matcher(line);
-                    if (!m.find()) {
-                        FileUtils.writeStringToFile(tmp, line + "\n", true);
-                    } else {
-                        if (!m.group(1).startsWith(File.separator)) {
-                            String newImportLine = "import \"" + tempDir + File.separator + m.group(1) + "\"" + m.group(2) + "\n";
-                            FileUtils.writeStringToFile(tmp, newImportLine, true);
-                        }
-                    }
-                }
+                tmp = resolveImportsForDescriptor(tempDir, tempDescriptor);
 
                 final List<String> wdlDocuments = Lists.newArrayList(tmp.getAbsolutePath());
                 final scala.collection.immutable.List<String> wdlList = scala.collection.JavaConversions.asScalaBuffer(wdlDocuments)
@@ -964,10 +1345,22 @@ public abstract class AbstractEntryClient {
         out("");
         out("Optional parameters:");
         out("  --json <json file>                  Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs");
+        out("  --yaml <yaml file>                  Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs");
         out("  --tsv <tsv file>                    One row corresponds to parameters for one run in the dockstore (Only for CWL)");
         out("  --descriptor <descriptor type>      Descriptor type used to launch workflow. Defaults to " + CWL_STRING);
-        out("  --local-entry                       Full path to local descriptor");
+        out("  --local-entry                       Allows you to specify a full path to a local descriptor for --entry instead of an entry path");
+        out("  --wdl-output-target                 Allows you to specify a remote path to provision output files to ex: s3://oicr.temp/testing-launcher/");
         printHelpFooter();
     }
 
+    protected static String getCleanedDescription(String description) {
+        if (description != null) {
+            // strip control characters
+            description = CharMatcher.JAVA_ISO_CONTROL.removeFrom(description);
+            if (description.length() > MAX_DESCRIPTION) {
+                description = description.substring(0, MAX_DESCRIPTION - Client.PADDING) + "...";
+            }
+        }
+        return description;
+    }
 }

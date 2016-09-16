@@ -18,7 +18,10 @@ package io.github.collaboratory;
 
 import com.amazonaws.auth.SignerFactory;
 import com.amazonaws.services.s3.internal.S3Signer;
+import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import io.cwl.avro.CWL;
 import io.cwl.avro.CommandLineTool;
@@ -51,7 +54,6 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -62,6 +64,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * @author boconnor 9/24/15
@@ -121,6 +124,19 @@ public class LauncherCWL {
         gson = CWL.getTypeSafeCWLToolDocument();
     }
 
+    /**
+     * Work around for https://github.com/common-workflow-language/cwltool/issues/87
+     * @param cwlFile
+     * @return
+     */
+    public ImmutablePair<String, String> parseCWL(final String cwlFile) {
+        // update seems to just output the JSON version without checking file links
+        final String[] s = { "cwltool", "--non-strict", "--print-pre", cwlFile };
+        final ImmutablePair<String, String> execute = io.cwl.avro.Utilities
+                .executeCommand(Joiner.on(" ").join(Arrays.asList(s)), false,  Optional.absent(), Optional.absent());
+        return execute;
+    }
+
     public void run(Class cwlClassTarget){
         // now read in the INI file
         try {
@@ -130,8 +146,8 @@ public class LauncherCWL {
         }
 
         // parse the CWL tool definition without validation
-        CWL cwlUtil = new CWL();
-        final String imageDescriptorContent = cwlUtil.parseCWL(imageDescriptorPath, false).getLeft();
+        // final String imageDescriptorContent = cwlUtil.parseCWL(imageDescriptorPath, false).getLeft();
+        final String imageDescriptorContent = this.parseCWL(imageDescriptorPath).getLeft();
         final Object cwlObject = gson.fromJson(imageDescriptorContent, cwlClassTarget);
 
         if (cwlObject == null) {
@@ -177,7 +193,7 @@ public class LauncherCWL {
 
         // run command
         System.out.println("Calling out to cwltool to run your " + (cwlObject instanceof Workflow ? "workflow" : "tool"));
-        Map<String, Object> outputObj = runCWLCommand(imageDescriptorPath, newJsonPath, globalWorkingDir + "/outputs/");
+        Map<String, Object> outputObj = runCWLCommand(imageDescriptorPath, newJsonPath, globalWorkingDir + "/outputs/", globalWorkingDir + "/working/");
         System.out.println();
 
         // push output files
@@ -201,13 +217,8 @@ public class LauncherCWL {
 
         // for each file input from the CWL
         for (CommandOutputParameter file : outputs) {
-
-            // pull back the name of the input from the CWL
             LOG.info(file.toString());
-            String cwlID = file.getId().toString().substring(1);
-            LOG.info("ID: {}", cwlID);
-
-            prepUploadsHelper(inputsOutputs, fileMap, cwlID);
+            handleParameter(inputsOutputs, fileMap, file.getId().toString());
         }
         return fileMap;
     }
@@ -222,15 +233,19 @@ public class LauncherCWL {
 
         // for each file input from the CWL
         for (WorkflowOutputParameter file : outputs) {
-
-            // pull back the name of the input from the CWL
             LOG.info(file.toString());
-            String cwlID = file.getId().toString().substring(1);
-            LOG.info("ID: {}", cwlID);
-
-            prepUploadsHelper(inputsOutputs, fileMap, cwlID);
+            handleParameter(inputsOutputs, fileMap, file.getId().toString());
         }
         return fileMap;
+    }
+
+    private void handleParameter(Map<String, Object> inputsOutputs, Map<String, List<FileProvisioning.FileInfo>> fileMap,
+            String fileIdString) {
+        // pull back the name of the input from the CWL
+        String cwlID = fileIdString.contains("#") ? fileIdString.split("#")[1] : fileIdString;
+        LOG.info("ID: {}", cwlID);
+
+        prepUploadsHelper(inputsOutputs, fileMap, cwlID);
     }
 
     private void prepUploadsHelper(Map<String, Object> inputsOutputs, Map<String, List<FileProvisioning.FileInfo>> fileMap, String cwlID) {
@@ -303,9 +318,10 @@ public class LauncherCWL {
 
         JSONObject newJSON = new JSONObject();
 
-        for (String paramName : inputsAndOutputsJson.keySet()) {
+        for (Entry<String, Object> entry : inputsAndOutputsJson.entrySet()) {
+            String paramName = entry.getKey();
 
-            final Object currentParam = inputsAndOutputsJson.get(paramName);
+            final Object currentParam = entry.getValue();
             if (currentParam instanceof Map) {
                 Map<String, Object> param = (Map<String, Object>) currentParam;
                 String path = (String) param.get("path");
@@ -328,14 +344,14 @@ public class LauncherCWL {
                 newJSON.put(paramName, newRecord);
 
                 // TODO: fill in for all possible types
-            } else if (currentParam instanceof Integer || currentParam instanceof Float || currentParam instanceof Boolean || currentParam instanceof String) {
+            } else if (currentParam instanceof Integer || currentParam instanceof Double || currentParam instanceof Float || currentParam instanceof Boolean || currentParam instanceof String) {
                 newJSON.put(paramName, currentParam);
             } else if (currentParam instanceof List) {
                 // this code kinda assumes that if a list exists, its a list of files which is not correct
                 List currentParamList = (List)currentParam;
-                for (Object entry : currentParamList) {
-                    if (entry instanceof Map){
-                        Map<String, String> param = (Map<String, String>)entry;
+                for (Object entry2 : currentParamList) {
+                    if (entry2 instanceof Map){
+                        Map<String, String> param = (Map<String, String>)entry2;
                         String path = param.get("path");
                         LOG.info("PATH: {} PARAM_NAME: {}", path, paramName);
                         // will be null for output, only dealing with inputs currently
@@ -408,33 +424,69 @@ public class LauncherCWL {
         return new File(workingDir + "/launcher-" + uuid).getAbsolutePath();
     }
 
-    private Map<String, Object> runCWLCommand(String cwlFile, String jsonSettings, String workingDir) {
-        String[] s = {"cwltool","--non-strict","--enable-net","--outdir", workingDir, cwlFile, jsonSettings};
-        final ImmutablePair<String, String> execute = Utilities.executeCommand(Joiner.on(" ").join(Arrays.asList(s)));
-        // mutate stderr and stdout into format for output
-        System.out.println("cwltool stdout:\n"+execute.getLeft().replaceAll("(?m)^", "\t"));
-        System.out.println("cwltool stderr:\n"+execute.getRight().replaceAll("(?m)^", "\t"));
-        Path path = Paths.get(workingDir);
-        try {
-            Path txt = Files.createFile(Paths.get(workingDir +  ".cwltool.stdout.txt"));
-            Files.write(txt, execute.getLeft().getBytes(StandardCharsets.UTF_8));
-            System.out.println("Saving copy of cwltool stdout to: " + txt.toAbsolutePath().toString());
-            Path txt2 = Files.createFile(Paths.get(workingDir +  ".cwltool.stderr.txt"));
-            Files.write(txt2, execute.getRight().getBytes(StandardCharsets.UTF_8));
-            System.out.println("Saving copy of cwltool stderr to: " + txt2.toAbsolutePath().toString());
-        } catch (IOException e) {
-            throw new RuntimeException("unable to save cwltool output", e);
+    private Map<String, Object> runCWLCommand(String cwlFile, String jsonSettings, String outputDir, String workingDir) {
+        // Get extras from config file
+        ArrayList<String> extraFlags = (ArrayList)config.getList("cwltool-extra-parameters");
+
+        if (extraFlags.size() > 0) {
+            System.out.println("########### WARNING ###########");
+            System.out.println("You are using extra flags for CWLtool which may not be supported. Use at your own risk.");
         }
+
+        // Trim the input
+        extraFlags = (ArrayList)extraFlags.stream()
+                .map(flag -> trimAndPrintInput(flag))
+                .collect(Collectors.toList());
+
+        // Create cwltool command
+        ArrayList<String> command = new ArrayList<>(Arrays.asList("cwltool","--enable-dev","--non-strict","--enable-net","--outdir", outputDir, "--tmpdir-prefix", workingDir, cwlFile, jsonSettings));
+        command.addAll(1, extraFlags);
+
+        final String joined = Joiner.on(" ").join(command);
+        System.out.println("Executing: " + joined);
+        final ImmutablePair<String, String> execute = Utilities.executeCommand(joined);
+        // mutate stderr and stdout into format for output
+
+        String stdout = execute.getLeft().replaceAll("(?m)^", "\t");
+        String stderr = execute.getRight().replaceAll("(?m)^", "\t");
+
+        final String cwltool = "cwltool";
+        outputIntegrationOutput(outputDir, execute, stdout, stderr, cwltool);
         Map<String, Object> obj = (Map<String, Object>)yaml.load(execute.getLeft());
         return obj;
+    }
+
+    /**
+     *
+     * @param workingDir where to save stderr and stdout
+     * @param execute a pair holding the unformatted stderr and stderr
+     * @param stdout formatted stdout for outpuit
+     * @param stderr formatted stderr for output
+     * @param cwltool help text explaining name of integration
+     */
+    public static void outputIntegrationOutput(String workingDir, ImmutablePair<String, String> execute, String stdout, String stderr,
+            String cwltool) {
+        System.out.println(cwltool + " stdout:\n" + stdout);
+        System.out.println(cwltool + " stderr:\n"+ stderr);
+        try {
+            final Path path = Paths.get(workingDir + File.separator + cwltool + ".stdout.txt");
+            FileUtils.writeStringToFile(path.toFile(), execute.getLeft(), StandardCharsets.UTF_8, false);
+            System.out.println("Saving copy of "+ cwltool +" stdout to: " + path.toAbsolutePath().toString());
+            final Path txt2 = Paths.get(workingDir + File.separator + cwltool+".stderr.txt");
+            FileUtils.writeStringToFile(txt2.toFile(), execute.getRight(), StandardCharsets.UTF_8, false);
+            System.out.println("Saving copy of "+ cwltool +" stderr to: " + txt2.toAbsolutePath().toString());
+        } catch (IOException e) {
+            throw new RuntimeException("unable to save "+cwltool+" output", e);
+        }
     }
 
     private void pushOutputFiles(Map<String, List<FileProvisioning.FileInfo>> fileMap, Map<String, Object> outputObject) {
 
         LOG.info("UPLOADING FILES...");
 
-        for (String key : fileMap.keySet()) {
-            List<FileProvisioning.FileInfo> files = fileMap.get(key);
+        for (Entry<String, List<FileProvisioning.FileInfo>> entry : fileMap.entrySet()) {
+            List<FileProvisioning.FileInfo> files = entry.getValue();
+            String key = entry.getKey();
 
             if ((outputObject.get(key) instanceof List)){
                 List<Map<String, String>> cwltoolOutput = (List)outputObject.get(key);
@@ -472,7 +524,7 @@ public class LauncherCWL {
         fileProvisioning.provisionOutputFile(file, cwlOutputPath);
     }
 
-    private Map<String, FileProvisioning.FileInfo> pullFiles(Object cwlObject,  Map<String, Object> inputsOutputs) {
+    private Map<String, FileProvisioning.FileInfo> pullFiles(Object cwlObject, Map<String, Object> inputsOutputs) {
         Map<String, FileProvisioning.FileInfo> fileMap = new HashMap<>();
 
         LOG.info("DOWNLOADING INPUT FILES...");
@@ -480,26 +532,51 @@ public class LauncherCWL {
         final Method getInputs;
         try {
             getInputs = cwlObject.getClass().getDeclaredMethod("getInputs");
-        final List<?> files = (List<?>) getInputs.invoke(cwlObject);
+            final List<?> files = (List<?>) getInputs.invoke(cwlObject);
 
-        // for each file input from the CWL
-        for (Object file : files) {
-            // pull back the name of the input from the CWL
-            LOG.info(file.toString());
-            // remove the hash from the cwlInputFileID
-            final Method getId = file.getClass().getDeclaredMethod("getId");
-            String cwlInputFileID = getId.invoke(file).toString().substring(1);
-            LOG.info("ID: {}", cwlInputFileID);
-            pullFilesHelper(inputsOutputs, fileMap, cwlInputFileID);
-        }
-        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException  e) {
+            // for each file input from the CWL
+            for (Object file : files) {
+                // pull back the name of the input from the CWL
+                LOG.info(file.toString());
+                // remove the hash from the cwlInputFileID
+                final Method getId = file.getClass().getDeclaredMethod("getId");
+                String cwlInputFileID = getId.invoke(file).toString();
+                // trim quotes or starting '#' if necessary
+                cwlInputFileID = CharMatcher.is('#').trimLeadingFrom(cwlInputFileID);
+                // split on # if needed
+                cwlInputFileID = cwlInputFileID.contains("#") ? cwlInputFileID.split("#")[1] : cwlInputFileID;
+                // remove extra namespace if needed
+                cwlInputFileID = cwlInputFileID.contains("/") ? cwlInputFileID.split("/")[1] : cwlInputFileID;
+                LOG.info("ID: {}", cwlInputFileID);
+
+                // identify and get secondary files if needed
+                final Method getSecondaryFiles = file.getClass().getDeclaredMethod("getSecondaryFiles");
+                final Object invoke = getSecondaryFiles.invoke(file);
+                List<String> secondaryFiles = null;
+                if (invoke instanceof List){
+                    secondaryFiles = (List<String>) invoke;
+                } else if (invoke instanceof String){
+                    secondaryFiles = Lists.newArrayList((String)invoke);
+                }
+
+                pullFilesHelper(inputsOutputs, fileMap, cwlInputFileID, secondaryFiles);
+            }
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
             LOG.error("Reflection issue, this is likely a coding problem.");
             throw new RuntimeException();
         }
         return fileMap;
     }
 
-    private void pullFilesHelper(Map<String, Object> inputsOutputs, Map<String, FileProvisioning.FileInfo> fileMap, String cwlInputFileID) {
+    /**
+     *
+     * @param inputsOutputs json parameter file
+     * @param fileMap a record of the files that we have provisioned
+     * @param cwlInputFileID the file id from the CWL file
+     * @param secondaryFiles a record of secondary files that were identified
+     */
+    private void pullFilesHelper(Map<String, Object> inputsOutputs, Map<String, FileProvisioning.FileInfo> fileMap, String cwlInputFileID,
+            List<String> secondaryFiles) {
         // now that I have an input name from the CWL I can find it in the JSON parameterization for this run
         LOG.info("JSON: {}", inputsOutputs);
         for (Entry<String, Object> stringObjectEntry : inputsOutputs.entrySet()) {
@@ -515,7 +592,7 @@ public class LauncherCWL {
                             String path = (String) lhm.get("path");
                             // notice I'm putting key:path together so they are unique in the hash
                             if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
-                                doProcessFile(stringObjectEntry.getKey() + ":" + path, path, cwlInputFileID, fileMap);
+                                doProcessFile(stringObjectEntry.getKey() + ":" + path, path, cwlInputFileID, fileMap, secondaryFiles);
                             }
                         }
                     }
@@ -526,7 +603,7 @@ public class LauncherCWL {
                 HashMap param = (HashMap) stringObjectEntry.getValue();
                 String path = (String) param.get("path");
                 if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
-                    doProcessFile(stringObjectEntry.getKey(), path, cwlInputFileID, fileMap);
+                    doProcessFile(stringObjectEntry.getKey(), path, cwlInputFileID, fileMap, secondaryFiles);
                 }
 
             }
@@ -535,12 +612,15 @@ public class LauncherCWL {
 
     /**
      * Looks like this is intended to copy one file from source to a local destination
-     * @param key what is this?
-     * @param path the path for the source of the file, whether s3 or http
+     *
+     * @param key            what is this?
+     * @param path           the path for the source of the file, whether s3 or http
      * @param cwlInputFileID looks like the descriptor for a particular path+class pair in the parameter json file, starts with a hash in the CWL file
-     * @param fileMap store information on each added file as a return type
+     * @param fileMap        store information on each added file as a return type
+     * @param secondaryFiles secondary files that also need to be transferred
      */
-    private void doProcessFile(final String key, final String path, final String cwlInputFileID, Map<String, FileProvisioning.FileInfo> fileMap) {
+    private void doProcessFile(final String key, final String path, final String cwlInputFileID,
+            Map<String, FileProvisioning.FileInfo> fileMap, List<String> secondaryFiles) {
 
         // key is unique for that key:download URL, cwlInputFileID is just the key
 
@@ -552,24 +632,51 @@ public class LauncherCWL {
         Utilities.executeCommand("mkdir -p " + downloadDirectory);
         File downloadDirFileObj = new File(downloadDirectory);
 
-        String targetFilePath = downloadDirFileObj.getAbsolutePath() + "/" + cwlInputFileID;
+        copyIndividualFile(key, path, fileMap, downloadDirFileObj, true);
 
-        // expects URI in "path": "icgc:eef47481-670d-4139-ab5b-1dad808a92d9"
-        PathInfo pathInfo = new PathInfo(path);
-        fileProvisioning.provisionInputFile(path, downloadDirectory, downloadDirFileObj, targetFilePath, pathInfo);
-        if (!pathInfo.isLocalFileType()) {
-            // now add this info to a hash so I can later reconstruct a docker -v command
-            FileProvisioning.FileInfo info = new FileProvisioning.FileInfo();
-            info.setLocalPath(targetFilePath);
-            info.setLocalPath(targetFilePath);
-            info.setUrl(path);
-            // key may contain either key:download_URL for array inputs or just cwlInputFileID for scalar input
-            fileMap.put(key, info);
-            LOG.info("DOWNLOADED FILE: LOCAL: {} URL: {}", cwlInputFileID, path);
+        // also handle secondary files if specified
+        if (secondaryFiles != null) {
+            for (String sFile : secondaryFiles) {
+                String sPath = path;
+                while (sFile.startsWith("^")){
+                    sFile = sFile.replaceFirst("\\^","");
+                    int periodIndex = path.lastIndexOf(".");
+                    if (periodIndex != -1){
+                        sPath = sPath.substring(0, periodIndex);
+                    }
+                }
+                sPath = sPath + sFile;
+                copyIndividualFile(key, sPath, fileMap, downloadDirFileObj, false);
+            }
         }
     }
 
+    /**
+     *
+     * @param key
+     * @param path
+     * @param fileMap
+     * @param downloadDirFileObj
+     * @param record add a record to the fileMap
+     */
+    private void copyIndividualFile(String key, String path, Map<String, FileProvisioning.FileInfo> fileMap,
+            File downloadDirFileObj, boolean record) {
+        String shortfileName = Paths.get(path).getFileName().toString();
+        final Path targetFilePath = Paths.get(downloadDirFileObj.getAbsolutePath(), shortfileName);
 
+        // expects URI in "path": "icgc:eef47481-670d-4139-ab5b-1dad808a92d9"
+        PathInfo pathInfo = new PathInfo(path);
+        fileProvisioning.provisionInputFile(path, targetFilePath, pathInfo);
+        // now add this info to a hash so I can later reconstruct a docker -v command
+        FileProvisioning.FileInfo info = new FileProvisioning.FileInfo();
+        info.setLocalPath(targetFilePath.toFile().getAbsolutePath());
+        info.setUrl(path);
+        // key may contain either key:download_URL for array inputs or just cwlInputFileID for scalar input
+        if (record) {
+            fileMap.put(key, info);
+        }
+        LOG.info("DOWNLOADED FILE: LOCAL: {} URL: {}", shortfileName, path);
+    }
 
     private CommandLine parseCommandLine(CommandLineParser parser, String[] args) {
         try {
@@ -588,5 +695,11 @@ public class LauncherCWL {
     public static void main(String[] args) {
         final LauncherCWL launcherCWL = new LauncherCWL(args);
         launcherCWL.run(CommandLineTool.class);
+    }
+
+    private String trimAndPrintInput(String input) {
+        input = input.trim();
+        System.out.println(input);
+        return input;
     }
 }

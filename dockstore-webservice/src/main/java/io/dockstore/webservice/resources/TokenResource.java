@@ -16,38 +16,21 @@
 
 package io.dockstore.webservice.resources;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-
-import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
-import org.eclipse.egit.github.core.client.GitHubClient;
-import org.eclipse.egit.github.core.service.UserService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.codahale.metrics.annotation.Timed;
+import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
+import com.google.api.client.auth.oauth2.BearerToken;
+import com.google.api.client.auth.oauth2.ClientParametersAuthentication;
+import com.google.api.client.auth.oauth2.TokenResponse;
+import com.google.api.client.http.GenericUrl;
+import com.google.api.client.http.HttpTransport;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.JsonFactory;
+import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
-import com.google.common.base.Splitter;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
 import com.google.gson.Gson;
-
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
@@ -63,6 +46,29 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
+import org.eclipse.egit.github.core.client.GitHubClient;
+import org.eclipse.egit.github.core.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 /**
  * The githubToken resource handles operations with tokens. Tokens are needed to talk with the quay.io and github APIs. In addition, they
@@ -76,7 +82,13 @@ import io.swagger.annotations.ApiResponses;
 public class TokenResource {
     private final TokenDAO tokenDAO;
     private final UserDAO userDAO;
-    private static final String GIT_URL = "https://github.com/";
+
+    /** Global instance of the HTTP transport. */
+    private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
+
+    /** Global instance of the JSON factory. */
+    private static final JsonFactory JSON_FACTORY = new JacksonFactory();
+
     private static final String QUAY_URL = "https://quay.io/api/v1/";
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
     private final String githubClientID;
@@ -84,8 +96,6 @@ public class TokenResource {
     private final String bitbucketClientID;
     private final String bitbucketClientSecret;
     private final HttpClient client;
-
-    private static final int MAX_ITERATIONS = 5;
 
     private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
     private final CachingAuthenticator<String, User> cachingAuthenticator;
@@ -141,19 +151,7 @@ public class TokenResource {
 
         String url = QUAY_URL + "user/";
         Optional<String> asString = ResourceUtilities.asString(url, accessToken, client);
-
-        String username = null;
-        if (asString.isPresent()) {
-            LOG.info("RESOURCE CALL: {}", url);
-
-            String response = asString.get();
-            Gson gson = new Gson();
-            Map<String, String> map = new HashMap<>();
-            map = (Map<String, String>) gson.fromJson(response, map.getClass());
-
-            username = map.get("username");
-            LOG.info("Username: {}", username);
-        }
+        String username = getUserName(url, asString);
 
         if (user != null) {
             List<Token> tokens = tokenDAO.findQuayByUserId(user.getId());
@@ -213,35 +211,19 @@ public class TokenResource {
             + "Once a user has approved permissions for Collaboratory"
             + "Their browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addGithubToken(@QueryParam("code") String code) {
+        final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
+                JSON_FACTORY, new GenericUrl("https://github.com/login/oauth/access_token"),
+                new ClientParametersAuthentication(githubClientID, githubClientSecret), githubClientID,
+                "https://github.com/login/oauth/authorize").build();
+
         String accessToken;
-        String error;
-        int count = MAX_ITERATIONS;
-        while (true) {
-            Optional<String> asString = ResourceUtilities.asString(GIT_URL + "login/oauth/access_token?code=" + code + "&client_id="
-                    + githubClientID + "&client_secret=" + githubClientSecret, null, client);
-
-            if (asString.isPresent()) {
-                Map<String, String> split = Splitter.on('&').trimResults().withKeyValueSeparator("=").split(asString.get());
-                accessToken = split.get("access_token");
-                error = split.get("error");
-            } else {
-                throw new CustomWebApplicationException("Could not retrieve github.com token based on code", HttpStatus.SC_BAD_REQUEST);
-            }
-
-            if (error != null && "bad_verification_code".equals(error)) {
-                LOG.info("ERROR: {}", error);
-                if (--count == 0) {
-                    throw new CustomWebApplicationException("Could not retrieve github.com token based on code", HttpStatus.SC_BAD_REQUEST);
-                } else {
-                    LOG.info("trying again...");
-                }
-            } else if (accessToken != null && !accessToken.isEmpty()) {
-                LOG.info("Successfully recieved accessToken: {}", accessToken);
-                break;
-            } else {
-                LOG.info("Retrieving accessToken was unsuccessful");
-                throw new CustomWebApplicationException("Could not retrieve github.com token based on code", HttpStatus.SC_BAD_REQUEST);
-            }
+        try {
+            TokenResponse tokenResponse = flow.newTokenRequest(code)
+                    .setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
+            accessToken = tokenResponse.getAccessToken();
+        } catch (IOException e) {
+            LOG.error("Retrieving accessToken was unsuccessful");
+            throw new CustomWebApplicationException("Could not retrieve github.com token based on code", HttpStatus.SC_BAD_REQUEST);
         }
 
         GitHubClient githubClient = new GitHubClient();
@@ -266,20 +248,7 @@ public class TokenResource {
             userID = userDAO.create(user);
 
             // CREATE DOCKSTORE TOKEN
-            final Random random = new Random();
-            final int bufferLength = 1024;
-            final byte[] buffer = new byte[bufferLength];
-            random.nextBytes(buffer);
-            String randomString = BaseEncoding.base64Url().omitPadding().encode(buffer);
-            final String dockstoreAccessToken = Hashing.sha256().hashString(githubLogin + randomString, Charsets.UTF_8).toString();
-
-            dockstoreToken = new Token();
-            dockstoreToken.setTokenSource(TokenType.DOCKSTORE.toString());
-            dockstoreToken.setContent(dockstoreAccessToken);
-            dockstoreToken.setUserId(userID);
-            dockstoreToken.setUsername(githubLogin);
-            long dockstoreTokenId = tokenDAO.create(dockstoreToken);
-            dockstoreToken = tokenDAO.findById(dockstoreTokenId);
+            dockstoreToken = createDockstoreToken(userID, githubLogin);
 
         } else {
             userID = user.getId();
@@ -296,20 +265,7 @@ public class TokenResource {
 
         if (dockstoreToken == null) {
             LOG.info("Could not find user's dockstore token. Making new one...");
-            final Random random = new Random();
-            final int bufferLength = 1024;
-            final byte[] buffer = new byte[bufferLength];
-            random.nextBytes(buffer);
-            String randomString = BaseEncoding.base64Url().omitPadding().encode(buffer);
-            final String dockstoreAccessToken = Hashing.sha256().hashString(githubLogin + randomString, Charsets.UTF_8).toString();
-
-            dockstoreToken = new Token();
-            dockstoreToken.setTokenSource(TokenType.DOCKSTORE.toString());
-            dockstoreToken.setContent(dockstoreAccessToken);
-            dockstoreToken.setUserId(userID);
-            dockstoreToken.setUsername(githubLogin);
-            long dockstoreTokenId = tokenDAO.create(dockstoreToken);
-            dockstoreToken = tokenDAO.findById(dockstoreTokenId);
+            dockstoreToken = createDockstoreToken(userID, githubLogin);
         }
 
         if (githubToken == null) {
@@ -327,6 +283,25 @@ public class TokenResource {
         return dockstoreToken;
     }
 
+    private Token createDockstoreToken(long userID, String githubLogin) {
+        Token dockstoreToken;
+        final Random random = new Random();
+        final int bufferLength = 1024;
+        final byte[] buffer = new byte[bufferLength];
+        random.nextBytes(buffer);
+        String randomString = BaseEncoding.base64Url().omitPadding().encode(buffer);
+        final String dockstoreAccessToken = Hashing.sha256().hashString(githubLogin + randomString, Charsets.UTF_8).toString();
+
+        dockstoreToken = new Token();
+        dockstoreToken.setTokenSource(TokenType.DOCKSTORE.toString());
+        dockstoreToken.setContent(dockstoreAccessToken);
+        dockstoreToken.setUserId(userID);
+        dockstoreToken.setUsername(githubLogin);
+        long dockstoreTokenId = tokenDAO.create(dockstoreToken);
+        dockstoreToken = tokenDAO.findById(dockstoreTokenId);
+        return dockstoreToken;
+    }
+
     @GET
     @Timed
     @UnitOfWork
@@ -340,43 +315,26 @@ public class TokenResource {
             throw new CustomWebApplicationException("Please provide an access code", HttpStatus.SC_BAD_REQUEST);
         }
 
-        String url = BITBUCKET_URL + "site/oauth2/access_token";
+        final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
+                JSON_FACTORY, new GenericUrl(BITBUCKET_URL + "site/oauth2/access_token"),
+                new ClientParametersAuthentication(bitbucketClientID, bitbucketClientSecret), bitbucketClientID,
+                "https://bitbucket.org/site/oauth2/authorize").build();
 
-        Optional<String> asString = ResourceUtilities.bitbucketPost(url, null, client, bitbucketClientID, bitbucketClientSecret,
-                "grant_type=authorization_code&code=" + code);
         String accessToken;
         String refreshToken;
-        if (asString.isPresent()) {
-            LOG.info("RESOURCE CALL: {}", url);
-            String json = asString.get();
-            LOG.info(json);
-
-            Gson gson = new Gson();
-            Map<String, String> map = new HashMap<>();
-            map = (Map<String, String>) gson.fromJson(json, map.getClass());
-
-            accessToken = map.get("access_token");
-            refreshToken = map.get("refresh_token");
-        } else {
+        try {
+            TokenResponse tokenResponse = flow.newTokenRequest(code).setScopes(Collections.singletonList("user:email"))
+                    .setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
+            accessToken = tokenResponse.getAccessToken();
+            refreshToken = tokenResponse.getRefreshToken();
+        } catch (IOException e) {
+            LOG.error("Retrieving accessToken was unsuccessful");
             throw new CustomWebApplicationException("Could not retrieve bitbucket.org token based on code", HttpStatus.SC_BAD_REQUEST);
         }
 
-        String username = null;
-
-        url = BITBUCKET_URL + "api/2.0/user";
+        String url = BITBUCKET_URL + "api/2.0/user";
         Optional<String> asString2 = ResourceUtilities.asString(url, accessToken, client);
-
-        if (asString2.isPresent()) {
-            LOG.info("RESOURCE CALL: {}", url);
-
-            String response = asString2.get();
-            Gson gson = new Gson();
-            Map<String, String> map = new HashMap<>();
-            map = (Map<String, String>) gson.fromJson(response, map.getClass());
-
-            username = map.get("username");
-            LOG.info("Username: {}", username);
-        }
+        String username = getUserName(url, asString2);
 
         if (user != null) {
             List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
@@ -404,6 +362,23 @@ public class TokenResource {
             LOG.info("Could not find user");
             throw new CustomWebApplicationException("User not found", HttpStatus.SC_CONFLICT);
         }
+    }
+
+    private String getUserName(String url, Optional<String> asString2) {
+        String username;
+        if (asString2.isPresent()) {
+            LOG.info("RESOURCE CALL: {}", url);
+
+            String response = asString2.get();
+            Gson gson = new Gson();
+            Map<String, String> map = new HashMap<>();
+            map = (Map<String, String>) gson.fromJson(response, map.getClass());
+
+            username = map.get("username");
+            LOG.info("Username: {}", username);
+            return username;
+        }
+        throw new CustomWebApplicationException("User not found", HttpStatus.SC_INTERNAL_SERVER_ERROR);
     }
 
     @GET

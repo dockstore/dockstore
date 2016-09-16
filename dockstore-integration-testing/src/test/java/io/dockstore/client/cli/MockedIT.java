@@ -32,7 +32,9 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -40,6 +42,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 import static io.dockstore.common.CommonTestUtilities.clearState;
 import static org.mockito.Matchers.anyObject;
@@ -61,6 +64,9 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 @PrepareForTest({Client.class, ToolClient.class, UserApi.class})
 public class MockedIT {
 
+    @Rule
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
+
     @ClassRule
     public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
             DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstore.yml"));
@@ -79,7 +85,7 @@ public class MockedIT {
 
         // mock return of a simple CWL file
         File sourceFile = new File(ResourceHelpers.resourceFilePath("dockstore-tool-linux-sort.cwl"));
-        final String sourceFileContents = FileUtils.readFileToString(sourceFile);
+        final String sourceFileContents = FileUtils.readFileToString(sourceFile, StandardCharsets.UTF_8);
         SourceFile file = mock(SourceFile.class);
         when(file.getContent()).thenReturn(sourceFileContents);
         doReturn(file).when(toolClient).getDescriptorFromServer("quay.io/collaboratory/dockstore-tool-linux-sort", "cwl");
@@ -87,7 +93,7 @@ public class MockedIT {
 
         // mock return of a more complicated CWL file
         File sourceFileArrays = new File(ResourceHelpers.resourceFilePath("arrays.cwl"));
-        final String sourceFileArraysContents = FileUtils.readFileToString(sourceFileArrays);
+        final String sourceFileArraysContents = FileUtils.readFileToString(sourceFileArrays, StandardCharsets.UTF_8);
         SourceFile file2 = mock(SourceFile.class);
         when(file2.getContent()).thenReturn(sourceFileArraysContents);
         doReturn(file2).when(toolClient).getDescriptorFromServer("quay.io/collaboratory/arrays", "cwl");
@@ -114,6 +120,8 @@ public class MockedIT {
     public void runLaunchOneJson() throws IOException, ApiException {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--entry",
             "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testOneRun.json") });
+
+        Assert.assertTrue("output should contain cwltool command",systemOutRule.getLog().contains("Executing: cwltool"));
     }
 
     @Test
@@ -139,6 +147,7 @@ public class MockedIT {
             "quay.io/collaboratory/arrays", "--json", ResourceHelpers.resourceFilePath("testArrayLocalInputLocalOutput.json") });
 
         Assert.assertTrue(new File("/tmp/example.bedGraph").exists());
+        Assert.assertTrue("output should contain cwltool command",systemOutRule.getLog().contains("Executing: cwltool"));
     }
 
     /**
@@ -148,12 +157,13 @@ public class MockedIT {
      */
     @Test
     public void runLaunchOneHTTPArrayedJson() throws IOException, ApiException {
-        System.out.println(TestUtility.getConfigFileLocation(true));
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--entry",
             "quay.io/collaboratory/arrays", "--json", ResourceHelpers.resourceFilePath("testArrayHttpInputLocalOutput.json") });
 
         Assert.assertTrue(new File("/tmp/wc1.out").exists());
         Assert.assertTrue(new File("/tmp/wc2.out").exists());
         Assert.assertTrue(new File("/tmp/example.bedGraph").exists());
+
+        Assert.assertTrue("output should contain cwltool command",systemOutRule.getLog().contains("Executing: cwltool"));
     }
 }
