@@ -15,171 +15,206 @@
  */
 package io.swagger.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
  * A tool version describes a particular iteration of a tool as described by a reference to a specific image and dockerfile.
  **/
 
-@ApiModel(description = "A tool version describes a particular iteration of a tool as described by a reference to a specific image and dockerfile.") @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-29T19:58:43.367Z") public class ToolVersion {
-
+/**
+ * A tool version describes a particular iteration of a tool as described by a reference to a specific image and dockerfile.
+ */
+@ApiModel(description = "A tool version describes a particular iteration of a tool as described by a reference to a specific image and dockerfile.") @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
+@JsonNaming(PropertyNamingStrategy.KebabCaseStrategy.class)
+public class ToolVersion {
     private String name = null;
+
     private String url = null;
+
     private String id = null;
+
     private String image = null;
-    private ToolDescriptor descriptor = null;
-    private ToolDockerfile dockerfile = null;
-    private String metaVersion = null;
-    private Boolean verified = null;
-    private String verifiedSource = null;
+
+    private List<DescriptorTypeEnum> descriptorType = new ArrayList<DescriptorTypeEnum>();
+    private Boolean dockerfile = null;
 
     /**
      * The name of the version.
+     *
+     * @return name
      **/
+    @ApiModelProperty(value = "The name of the version.") public String getName() {
+        return name;
+    }
+
+    private String metaVersion = null;
+
+    private Boolean verified = null;
+
+    private String verifiedSource = null;
+
     public ToolVersion name(String name) {
         this.name = name;
         return this;
     }
 
-    @ApiModelProperty(value = "The name of the version.") @JsonProperty("name") public String getName() {
-        return name;
+    /**
+     * The URL for this tool in this registry, for example `http://agora.broadinstitute.org/tools/123456/1`
+     *
+     * @return url
+     **/
+    @ApiModelProperty(required = true, value = "The URL for this tool in this registry, for example `http://agora.broadinstitute.org/tools/123456/1`") public String getUrl() {
+        return url;
     }
 
     public void setName(String name) {
         this.name = name;
     }
 
-    /**
-     * The URL for this tool in this registry, for example `http://agora.broadinstitute.org/tools/123456/1`
-     **/
     public ToolVersion url(String url) {
         this.url = url;
         return this;
     }
 
-    @ApiModelProperty(required = true, value = "The URL for this tool in this registry, for example `http://agora.broadinstitute.org/tools/123456/1`") @JsonProperty("url") public String getUrl() {
-        return url;
+    /**
+     * An identifier of the version of this tool for this particular tool registry, for example `v1`
+     *
+     * @return id
+     **/
+    @ApiModelProperty(required = true, value = "An identifier of the version of this tool for this particular tool registry, for example `v1`") public String getId() {
+        return id;
     }
 
     public void setUrl(String url) {
         this.url = url;
     }
 
-    /**
-     * An identifier of the version of this tool for this particular tool registry, for example `v1`
-     **/
     public ToolVersion id(String id) {
         this.id = id;
         return this;
     }
 
-    @ApiModelProperty(required = true, value = "An identifier of the version of this tool for this particular tool registry, for example `v1`") @JsonProperty("id") public String getId() {
-        return id;
+    /**
+     * The docker path to the image (and version) for this tool. (e.g. quay.io/seqware/seqware_full/1.1)
+     *
+     * @return image
+     **/
+    @ApiModelProperty(value = "The docker path to the image (and version) for this tool. (e.g. quay.io/seqware/seqware_full/1.1)") public String getImage() {
+        return image;
     }
 
     public void setId(String id) {
         this.id = id;
     }
 
-    /**
-     * The docker path to the image (and version) for this tool. (e.g. quay.io/seqware/seqware_full/1.1)
-     **/
     public ToolVersion image(String image) {
         this.image = image;
         return this;
     }
 
-    @ApiModelProperty(value = "The docker path to the image (and version) for this tool. (e.g. quay.io/seqware/seqware_full/1.1)") @JsonProperty("image") public String getImage() {
-        return image;
+    public ToolVersion descriptorType(List<DescriptorTypeEnum> descriptorType) {
+        this.descriptorType = descriptorType;
+        return this;
     }
 
     public void setImage(String image) {
         this.image = image;
     }
 
-    /**
-     **/
-    public ToolVersion descriptor(ToolDescriptor descriptor) {
-        this.descriptor = descriptor;
+    public ToolVersion addDescriptorTypeItem(DescriptorTypeEnum descriptorTypeItem) {
+        this.descriptorType.add(descriptorTypeItem);
         return this;
     }
 
-    @ApiModelProperty(required = true, value = "") @JsonProperty("descriptor") public ToolDescriptor getDescriptor() {
-        return descriptor;
-    }
-
-    public void setDescriptor(ToolDescriptor descriptor) {
-        this.descriptor = descriptor;
-    }
-
     /**
+     * The type (or types) of descriptors available.
+     *
+     * @return descriptorType
      **/
-    public ToolVersion dockerfile(ToolDockerfile dockerfile) {
+    @ApiModelProperty(value = "The type (or types) of descriptors available.") public List<DescriptorTypeEnum> getDescriptorType() {
+        return descriptorType;
+    }
+
+    public void setDescriptorType(List<DescriptorTypeEnum> descriptorType) {
+        this.descriptorType = descriptorType;
+    }
+
+    public ToolVersion dockerfile(Boolean dockerfile) {
         this.dockerfile = dockerfile;
         return this;
     }
 
-    @ApiModelProperty(value = "") @JsonProperty("dockerfile") public ToolDockerfile getDockerfile() {
+    /**
+     * Reports if this tool has a dockerfile available.
+     *
+     * @return dockerfile
+     **/
+    @ApiModelProperty(value = "Reports if this tool has a dockerfile available.") public Boolean getDockerfile() {
         return dockerfile;
     }
 
-    public void setDockerfile(ToolDockerfile dockerfile) {
+    public void setDockerfile(Boolean dockerfile) {
         this.dockerfile = dockerfile;
     }
 
     /**
      * The version of this tool version in the registry. Iterates when fields like the description, author, etc. are updated.
+     *
+     * @return metaVersion
      **/
+    @ApiModelProperty(required = true, value = "The version of this tool version in the registry. Iterates when fields like the description, author, etc. are updated.") public String getMetaVersion() {
+        return metaVersion;
+    }
+
     public ToolVersion metaVersion(String metaVersion) {
         this.metaVersion = metaVersion;
         return this;
     }
 
-    @ApiModelProperty(required = true, value = "The version of this tool version in the registry. Iterates when fields like the description, author, etc. are updated.") @JsonProperty("meta-version") public String getMetaVersion() {
-        return metaVersion;
+    /**
+     * Reports whether this tool has been verified by a specific organization or individual
+     *
+     * @return verified
+     **/
+    @ApiModelProperty(value = "Reports whether this tool has been verified by a specific organization or individual") public Boolean getVerified() {
+        return verified;
     }
 
     public void setMetaVersion(String metaVersion) {
         this.metaVersion = metaVersion;
     }
 
-    /**
-     * Reports whether this tool has been verified by a specific organization or individual
-     **/
     public ToolVersion verified(Boolean verified) {
         this.verified = verified;
         return this;
     }
 
-    @ApiModelProperty(value = "Reports whether this tool has been verified by a specific organization or individual") @JsonProperty("verified") public Boolean getVerified() {
-        return verified;
+    /**
+     * Source of metadata that can support a verified tool, such as an email or URL
+     *
+     * @return verifiedSource
+     **/
+    @ApiModelProperty(value = "Source of metadata that can support a verified tool, such as an email or URL") public String getVerifiedSource() {
+        return verifiedSource;
     }
 
     public void setVerified(Boolean verified) {
         this.verified = verified;
     }
 
-    /**
-     * Source of metadata that can support a verified tool, such as an email or URL
-     **/
     public ToolVersion verifiedSource(String verifiedSource) {
         this.verifiedSource = verifiedSource;
         return this;
     }
 
-    @ApiModelProperty(value = "Source of metadata that can support a verified tool, such as an email or URL") @JsonProperty("verified-source") public String getVerifiedSource() {
-        return verifiedSource;
-    }
-
-    public void setVerifiedSource(String verifiedSource) {
-        this.verifiedSource = verifiedSource;
-    }
-
-    @Override public boolean equals(Object o) {
+    @Override public boolean equals(java.lang.Object o) {
         if (this == o) {
             return true;
         }
@@ -187,14 +222,19 @@ import java.util.Objects;
             return false;
         }
         ToolVersion toolVersion = (ToolVersion) o;
-        return Objects.equals(name, toolVersion.name) && Objects.equals(url, toolVersion.url) && Objects.equals(id, toolVersion.id)
-                && Objects.equals(image, toolVersion.image) && Objects.equals(descriptor, toolVersion.descriptor) && Objects
-                .equals(dockerfile, toolVersion.dockerfile) && Objects.equals(metaVersion, toolVersion.metaVersion) && Objects
-                .equals(verified, toolVersion.verified) && Objects.equals(verifiedSource, toolVersion.verifiedSource);
+        return Objects.equals(this.name, toolVersion.name) && Objects.equals(this.url, toolVersion.url) && Objects
+                .equals(this.id, toolVersion.id) && Objects.equals(this.image, toolVersion.image) && Objects
+                .equals(this.descriptorType, toolVersion.descriptorType) && Objects.equals(this.dockerfile, toolVersion.dockerfile)
+                && Objects.equals(this.metaVersion, toolVersion.metaVersion) && Objects.equals(this.verified, toolVersion.verified)
+                && Objects.equals(this.verifiedSource, toolVersion.verifiedSource);
+    }
+
+    public void setVerifiedSource(String verifiedSource) {
+        this.verifiedSource = verifiedSource;
     }
 
     @Override public int hashCode() {
-        return Objects.hash(name, url, id, image, descriptor, dockerfile, metaVersion, verified, verifiedSource);
+        return Objects.hash(name, url, id, image, descriptorType, dockerfile, metaVersion, verified, verifiedSource);
     }
 
     @Override public String toString() {
@@ -205,7 +245,7 @@ import java.util.Objects;
         sb.append("    url: ").append(toIndentedString(url)).append("\n");
         sb.append("    id: ").append(toIndentedString(id)).append("\n");
         sb.append("    image: ").append(toIndentedString(image)).append("\n");
-        sb.append("    descriptor: ").append(toIndentedString(descriptor)).append("\n");
+        sb.append("    descriptorType: ").append(toIndentedString(descriptorType)).append("\n");
         sb.append("    dockerfile: ").append(toIndentedString(dockerfile)).append("\n");
         sb.append("    metaVersion: ").append(toIndentedString(metaVersion)).append("\n");
         sb.append("    verified: ").append(toIndentedString(verified)).append("\n");
@@ -218,11 +258,30 @@ import java.util.Objects;
      * Convert the given object to string with each line indented by 4 spaces
      * (except the first line).
      */
-    private String toIndentedString(Object o) {
-        if (o == null) {
-            return "null";
+    private String toIndentedString(java.lang.Object o) {
+    if (o == null) {
+      return "null";
+    }
+    return o.toString().replace("\n", "\n    ");
+  }
+
+    /**
+     * Gets or Sets descriptorType
+     */
+    public enum DescriptorTypeEnum {
+        CWL("CWL"),
+
+        WDL("WDL");
+
+        private String value;
+
+        DescriptorTypeEnum(String value) {
+            this.value = value;
         }
-        return o.toString().replace("\n", "\n    ");
+
+        @Override public String toString() {
+            return String.valueOf(value);
+        }
     }
 }
 

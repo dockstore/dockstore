@@ -258,4 +258,14 @@
         </sql>
     </changeSet>
 
+    <changeSet id="default_branch" author="agduncan" context="removes_validtrigger_adds_default_branch">
+       <dropColumn tableName="tool" columnName="validtrigger"></dropColumn>
+       <addColumn tableName="tool">
+           <column name="defaultversion" type="varchar(255)"></column>
+       </addColumn>        
+       <addColumn tableName="workflow">
+           <column name="defaultversion" type="varchar(255)"></column>
+       </addColumn>
+    </changeSet>
+
 </databaseChangeLog>
