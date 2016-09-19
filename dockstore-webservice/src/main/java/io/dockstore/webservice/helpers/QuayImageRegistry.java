@@ -80,8 +80,6 @@ public class QuayImageRegistry extends ImageRegistryInterface {
 
         if (asStringBuilds.isPresent()) {
             final String json = asStringBuilds.get();
-            // LOG.info(json);
-
             Gson gson = new Gson();
             Map<String, Map<String, Map<String, String>>> map = new HashMap<>();
             map = (Map<String, Map<String, Map<String, String>>>) gson.fromJson(json, map.getClass());
@@ -94,7 +92,7 @@ public class QuayImageRegistry extends ImageRegistryInterface {
                     final Tag tag = objectMapper.readValue(s, Tag.class);
                     tags.add(tag);
                 } catch (IOException ex) {
-                    LOG.info(quayToken.getUsername() + " Exception: {}", ex);
+                    LOG.warn(quayToken.getUsername() + " Exception: {}", ex);
                 }
             }
 
@@ -119,7 +117,7 @@ public class QuayImageRegistry extends ImageRegistryInterface {
                 namespaces.add(organizationMap.get("name"));
             }
         } catch (ApiException e) {
-            LOG.info(quayToken.getUsername() + " Exception: {}", e);
+            LOG.warn(quayToken.getUsername() + " Exception: {}", e);
         }
 
         namespaces.add(quayToken.getUsername());
@@ -127,7 +125,7 @@ public class QuayImageRegistry extends ImageRegistryInterface {
     }
 
     @Override
-    public List<Tool> getContainers(List<String> namespaces) {
+    public List<Tool> getToolsFromNamespace(List<String> namespaces) {
         List<Tool> toolList = new ArrayList<>(0);
 
         for (String namespace : namespaces) {
@@ -151,7 +149,7 @@ public class QuayImageRegistry extends ImageRegistryInterface {
                     tools.stream().forEach(container -> container.setMode(ToolMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS));
                     toolList.addAll(tools);
                 } catch (IOException ex) {
-                    LOG.info(quayToken.getUsername() + " Exception: {}", ex);
+                    LOG.warn(quayToken.getUsername() + " Exception: {}", ex);
                 }
             }
         }
@@ -161,8 +159,6 @@ public class QuayImageRegistry extends ImageRegistryInterface {
 
     @Override
     public void updateAPIToolsWithBuildInformation(List<Tool> apiTools) {
-        // Currently sets last build, git url, and registry for a tool
-
         // Initialize useful classes
         final Gson gson = new Gson();
         final SimpleDateFormat formatter = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
@@ -173,7 +169,7 @@ public class QuayImageRegistry extends ImageRegistryInterface {
             final String path = quayToken.getTokenSource() + '/' + repo;
             tool.setPath(path);
 
-            LOG.info("Looking at tool " + tool.getPath());
+            LOG.info("Grabbing tool information for " + tool.getPath());
 
             // Initialize giturl
             String gitUrl = null;
@@ -216,7 +212,7 @@ public class QuayImageRegistry extends ImageRegistryInterface {
                             date = formatter.parse(lastBuild);
                             tool.setLastBuild(date);
                         } catch (ParseException ex) {
-                            LOG.info(quayToken.getUsername() + ": "  + quayToken.getUsername() + " Build date did not match format 'EEE, d MMM yyyy HH:mm:ss Z'");
+                            LOG.warn(quayToken.getUsername() + ": "  + quayToken.getUsername() + " Build date did not match format 'EEE, d MMM yyyy HH:mm:ss Z'");
                         }
                     }
 
@@ -284,69 +280,6 @@ public class QuayImageRegistry extends ImageRegistryInterface {
             }
         }
 
-    }
-
-    /**
-     * For a given tool, update its registry, git, and build information with information from quay.io
-     *
-     * @param formatter
-     * @param mapOfBuilds
-     * @param gson
-     * @param tool
-     * @param repo
-     * @param path
-     */
-    private void updateContainersWithBuildInfo(SimpleDateFormat formatter, Map<String, ArrayList<?>> mapOfBuilds, Gson gson,
-            Tool tool, String repo, String path) {
-        // Get the list of builds from the tool.
-        // Builds contain information such as the Git URL and tags
-        // TODO: work with quay.io to get a better approach such as only the last build for each tag or at the very least paging
-        String urlBuilds = QUAY_URL + "repository/" + repo + "/build/?limit=2147483647";
-        Optional<String> asStringBuilds = ResourceUtilities.asString(urlBuilds, quayToken.getContent(), client);
-        LOG.info(quayToken.getUsername() + " RESOURCE CALL: {}", urlBuilds);
-
-        String gitURL = "";
-
-        if (asStringBuilds.isPresent()) {
-            String json = asStringBuilds.get();
-
-            // parse json using Gson to get the git url of repository and the list of tags
-            Map<String, ArrayList> map = new HashMap<>();
-            map = (Map<String, ArrayList>) gson.fromJson(json, map.getClass());
-            ArrayList builds = map.get("builds");
-            if (builds.size() > 0) {
-
-                mapOfBuilds.put(path, builds);
-
-                // Always looks at the latest build for giturl
-                // ASSUMPTION : We are assuming that for a given Quay repo users are only using one git trigger
-                if (!builds.isEmpty()) {
-                    Map<String, Map<String, String>> map2 = (Map<String, Map<String, String>>) builds.get(0);
-
-                    Map<String, String> triggerMetadata = map2.get("trigger_metadata");
-
-                    if (triggerMetadata != null) {
-                        gitURL = triggerMetadata.get("git_url");
-                    }
-
-                    Map<String, String> map3 = (Map<String, String>) builds.get(0);
-                    String lastBuild = map3.get("started");
-                    LOG.info(quayToken.getUsername() + " : LAST BUILD: {}", lastBuild);
-
-                    Date date;
-                    try {
-                        date = formatter.parse(lastBuild);
-                        tool.setLastBuild(date);
-                    } catch (ParseException ex) {
-                        LOG.info(quayToken.getUsername() + ": "  + quayToken.getUsername() + " Build date did not match format 'EEE, d MMM yyyy HH:mm:ss Z'");
-                    }
-                }
-                if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
-                    tool.setRegistry(Registry.QUAY_IO);
-                    tool.setGitUrl(gitURL);
-                }
-            }
-        }
     }
 
     /**

@@ -218,16 +218,18 @@ public final class Helper {
         List<Tool> updatedTools = new ArrayList<>();
         for (ImageRegistryInterface imageRegistryInterface : allRegistries) {
             if (imageRegistryInterface.getClass().equals(QuayImageRegistry.class)) {
+                LOG.info("Grabbing QUAY repos");
                 updatedTools.addAll(imageRegistryInterface
                         .refreshTools(userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken,
                                 bitbucketToken));
             } else {
+                LOG.info("Grabbing DockerHub repos");
                 updatedTools.addAll(imageRegistryInterface
                         .refreshTools(userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken,
                                 bitbucketToken));
             }
         }
-        userDAO.clearCache();
+
         return updatedTools;
 
     }
@@ -263,7 +265,10 @@ public final class Helper {
         Tool t = imageRegistryInterface
                 .refreshTool(containerId, userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken,
                         bitbucketToken);
+
+        // Update database with tool
         userDAO.clearCache();
+
         return t;
 
     }

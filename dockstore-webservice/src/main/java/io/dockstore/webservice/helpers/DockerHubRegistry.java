@@ -47,7 +47,7 @@ public class DockerHubRegistry extends ImageRegistryInterface {
         return new ArrayList<>();
     }
 
-    @Override public List<Tool> getContainers(List<String> namespaces) {
+    @Override public List<Tool> getToolsFromNamespace(List<String> namespaces) {
         return new ArrayList<>();
     }
 

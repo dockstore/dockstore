@@ -40,19 +40,12 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 
 /**
- * Interface for how to grab data from a registry for docker containers.
+ * Abstract class for registries of docker containers.
  **
  * @author dyuen
  */
 public abstract class ImageRegistryInterface {
     private static final Logger LOG = LoggerFactory.getLogger(ImageRegistryInterface.class);
-
-    /**
-     * Get all tags for a given tool
-     *
-     * @return a list of tags for image that this points to
-     */
-    public abstract List<Tag> getTags(Tool tool);
 
     /**
      * Get the list of namespaces and organizations that the user is associated to on Quay.io.
@@ -62,12 +55,19 @@ public abstract class ImageRegistryInterface {
     public abstract List<String> getNamespaces();
 
     /**
+     * Get all tags for a given tool
+     *
+     * @return a list of tags for image that this points to
+     */
+    public abstract List<Tag> getTags(Tool tool);
+
+    /**
      * Get all containers from provided namespaces
      *
      * @param namespaces
      * @return
      */
-    public abstract List<Tool> getContainers(List<String> namespaces);
+    public abstract List<Tool> getToolsFromNamespace(List<String> namespaces);
 
     /**
      * Updates each tool with build/general information
@@ -84,25 +84,18 @@ public abstract class ImageRegistryInterface {
     public List<Tool> refreshTools(final Long userId, final UserDAO userDAO, final ToolDAO toolDAO,
             final TagDAO tagDAO, final FileDAO fileDAO, final HttpClient client,
             final Token githubToken, final Token bitbucketToken) {
-
-        if (this.getClass().equals(QuayImageRegistry.class)) {
-            LOG.info("Grabbing QUAY repos");
-        } else if (this.getClass().equals(DockerHubRegistry.class)) {
-            LOG.info("Grabbing DockerHub repos");
-        }
-
         // Get all the namespaces for the given registry
         List<String> namespaces = getNamespaces();
 
         // Get all the tools based on the found namespaces
-        List<Tool> apiTools = getContainers(namespaces);
+        List<Tool> apiTools = getToolsFromNamespace(namespaces);
 
         // Add manual tools to list of api tools
         User user = userDAO.findById(userId);
         List<Tool> manualTools = toolDAO.findByMode(ToolMode.MANUAL_IMAGE_PATH);
 
         // Get all tools in the db for the given registry
-        List<Tool> dbTools = new ArrayList<>(getContainers(userId, userDAO));
+        List<Tool> dbTools = new ArrayList<>(getToolsFromUser(userId, userDAO));
 
         // Filter DB tools and API tools to only include relevant tools
         if (this.getClass().equals(QuayImageRegistry.class)) {
@@ -121,14 +114,11 @@ public abstract class ImageRegistryInterface {
         updateAPIToolsWithBuildInformation(apiTools);
 
         // Update db tools by copying over from api tools
-        List<Tool> updatedTools = updateContainers(apiTools, dbTools, user, toolDAO);
-
-        if (updatedTools.size() > 0) {
-            userDAO.clearCache();
-        }
-
-        // Grab updated tools from the database
-        final List<Tool> newDBTools = getContainers(userId, userDAO);
+        List<Tool> newDBTools = updateContainers(apiTools, dbTools, user, toolDAO);
+//        userDAO.clearCache();
+//
+//        // Grab updated tools from the database
+//        final List<Tool> newDBTools = getToolsFromUser(userId, userDAO);
 
         // Remove tools that aren't relevant
         if (this.getClass().equals(QuayImageRegistry.class)) {
@@ -183,7 +173,7 @@ public abstract class ImageRegistryInterface {
         } else {
             List<String> namespaces = new ArrayList<>();
             namespaces.add(tool.getNamespace());
-            apiTools.addAll(getContainers(namespaces));
+            apiTools.addAll(getToolsFromNamespace(namespaces));
         }
         apiTools.removeIf(container1 -> !container1.getPath().equals(tool.getPath()));
 
@@ -207,10 +197,22 @@ public abstract class ImageRegistryInterface {
         List<Tag> toolTags = getTags(tool);
         updateTags(toolTags, tool, githubToken, bitbucketToken, tagDAO, fileDAO, toolDAO, client);
 
+        // Return the updated tool
         return toolDAO.findById(tool.getId());
 
     }
 
+    /**
+     * Updates/Adds/Deletes tags for a specific tool
+     * @param newTags
+     * @param tool
+     * @param githubToken
+     * @param bitbucketToken
+     * @param tagDAO
+     * @param fileDAO
+         * @param toolDAO
+         * @param client
+         */
     @SuppressWarnings("checkstyle:parameternumber")
     public void updateTags(List<Tag> newTags, Tool tool, Token githubToken, Token bitbucketToken, final TagDAO tagDAO, final FileDAO fileDAO, final ToolDAO toolDAO, final HttpClient client) {
         // Get all existing tags
@@ -326,7 +328,6 @@ public abstract class ImageRegistryInterface {
 
     }
 
-
     /**
      * Gets containers for the current user
      *
@@ -334,7 +335,7 @@ public abstract class ImageRegistryInterface {
      * @param userDAO
      * @return
      */
-    public static List<Tool> getContainers(Long userId, UserDAO userDAO) {
+    public List<Tool> getToolsFromUser(Long userId, UserDAO userDAO) {
         final Set<Entry> entries = userDAO.findById(userId).getEntries();
         List<Tool> toolList = new ArrayList<>();
         for (Entry entry : entries) {
@@ -358,7 +359,7 @@ public abstract class ImageRegistryInterface {
      * @param toolDAO
      * @return list of newly updated containers
      */
-    public static List<Tool> updateContainers(final Iterable<Tool> apiContainerList, final List<Tool> dbToolList,
+    public List<Tool> updateContainers(final Iterable<Tool> apiContainerList, final List<Tool> dbToolList,
             final User user, final ToolDAO toolDAO) {
 
         final List<Tool> toDelete = new ArrayList<>();
