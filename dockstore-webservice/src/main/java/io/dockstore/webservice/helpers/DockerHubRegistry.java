@@ -17,9 +17,7 @@
 package io.dockstore.webservice.helpers;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.http.client.HttpClient;
 

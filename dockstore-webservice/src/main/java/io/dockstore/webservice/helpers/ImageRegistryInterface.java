@@ -41,9 +41,7 @@ import io.dockstore.webservice.jdbi.UserDAO;
 
 /**
  * Interface for how to grab data from a registry for docker containers.
- *
- * TODO: A pretty poor abstraction, there are quay.io data structures in here, one step at a time
- *
+ **
  * @author dyuen
  */
 public abstract class ImageRegistryInterface {
@@ -70,6 +68,13 @@ public abstract class ImageRegistryInterface {
      * @return
      */
     public abstract List<Tool> getContainers(List<String> namespaces);
+
+    /**
+     * Updates each tool with build/general information
+     * @param apiTools
+         */
+    public abstract void updateAPIToolsWithBuildInformation(List<Tool> apiTools);
+
 
     /**
      * Updates/Adds/Deletes tools and their associated tags
@@ -116,8 +121,11 @@ public abstract class ImageRegistryInterface {
         updateAPIToolsWithBuildInformation(apiTools);
 
         // Update db tools by copying over from api tools
-        updateContainers(apiTools, dbTools, user, toolDAO);
-        userDAO.clearCache();
+        List<Tool> updatedTools = updateContainers(apiTools, dbTools, user, toolDAO);
+
+        if (updatedTools.size() > 0) {
+            userDAO.clearCache();
+        }
 
         // Grab updated tools from the database
         final List<Tool> newDBTools = getContainers(userId, userDAO);
@@ -133,8 +141,8 @@ public abstract class ImageRegistryInterface {
         for (Tool tool : newDBTools) {
             List<Tag> toolTags = getTags(tool);
             updateTags(toolTags, tool, githubToken, bitbucketToken, tagDAO, fileDAO, toolDAO, client);
+            userDAO.clearCache();
         }
-        userDAO.clearCache();
 
         return newDBTools;
 
@@ -190,7 +198,6 @@ public abstract class ImageRegistryInterface {
         // Update db tools by copying over from api tools
         final User user = userDAO.findById(userId);
         updateContainers(apiTools, dbTools, user, toolDAO);
-        userDAO.clearCache();
 
         // Grab updated tool from the database
         final List<Tool> newDBTools = new ArrayList<>();
@@ -199,13 +206,10 @@ public abstract class ImageRegistryInterface {
         // Get tags and update for each tool
         List<Tag> toolTags = getTags(tool);
         updateTags(toolTags, tool, githubToken, bitbucketToken, tagDAO, fileDAO, toolDAO, client);
-        userDAO.clearCache();
 
         return toolDAO.findById(tool.getId());
 
     }
-
-    public abstract void updateAPIToolsWithBuildInformation(List<Tool> apiTools);
 
     @SuppressWarnings("checkstyle:parameternumber")
     public void updateTags(List<Tag> newTags, Tool tool, Token githubToken, Token bitbucketToken, final TagDAO tagDAO, final FileDAO fileDAO, final ToolDAO toolDAO, final HttpClient client) {
@@ -309,12 +313,12 @@ public abstract class ImageRegistryInterface {
 
             if (tool.getDefaultCwlPath() != null) {
                 LOG.info(githubToken.getUsername() + " : Parsing CWL...");
-                sourceCodeRepo.findDescriptor(tool, AbstractEntryClient.Type.CWL);
+                sourceCodeRepo.updateEntryMetadata(tool, AbstractEntryClient.Type.CWL);
             }
 
             if (tool.getDefaultWdlPath() != null) {
                 LOG.info(githubToken.getUsername() + " : Parsing WDL...");
-                sourceCodeRepo.findDescriptor(tool, AbstractEntryClient.Type.WDL);
+                sourceCodeRepo.updateEntryMetadata(tool, AbstractEntryClient.Type.WDL);
             }
 
         }

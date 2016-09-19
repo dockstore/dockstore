@@ -20,7 +20,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
 
-import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Registry;
@@ -30,7 +29,6 @@ import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
@@ -45,9 +43,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -118,320 +114,6 @@ public final class Helper {
             // Add for new descriptor types
             tag.setValid((hasCwl || hasWdl) && hasDockerfile);
         }
-    }
-
-    /**
-     * Updates each container's tags.
-     *
-     * @param containers
-     * @param client
-     * @param toolDAO
-     * @param tagDAO
-     * @param fileDAO
-     * @param githubToken
-     * @param bitbucketToken
-     * @param tagMap
-     *            docker image path -> list of corresponding Tags
-     */
-    @SuppressWarnings("checkstyle:parameternumber")
-    private static void updateTags(final Iterable<Tool> containers, final HttpClient client, final ToolDAO toolDAO,
-            final TagDAO tagDAO, final FileDAO fileDAO, final Token githubToken, final Token bitbucketToken,
-            final Map<String, List<Tag>> tagMap) {
-        for (final Tool tool : containers) {
-            LOG.info(githubToken.getUsername() + " : --------------- Updating tags for {} ---------------", tool.getToolPath());
-            List<Tag> existingTags = new ArrayList(tool.getTags());
-
-            // TODO: For a manually added tool with a Quay.io registry, auto-populate its tags if it does not have any.
-            // May find another way so that tags are initially auto-populated, and never auto-populated again.
-            if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH
-                    || (tool.getRegistry() == Registry.QUAY_IO && existingTags.isEmpty())) {
-
-                List<Tag> newTags = tagMap.get(tool.getPath());
-
-                if (newTags == null) {
-                    LOG.info(githubToken.getUsername() + " : Tags for tool {} did not get updated because new tags were not found", tool.getPath());
-                    return;
-                }
-
-                List<Tag> toDelete = new ArrayList<>(0);
-                for (Iterator<Tag> iterator = existingTags.iterator(); iterator.hasNext();) {
-                    Tag oldTag = iterator.next();
-                    boolean exists = false;
-                    for (Tag newTag : newTags) {
-                        if (newTag.getName().equals(oldTag.getName())) {
-                            exists = true;
-                            break;
-                        }
-                    }
-                    if (!exists) {
-                        toDelete.add(oldTag);
-                        iterator.remove();
-                    }
-                }
-
-                for (Tag newTag : newTags) {
-                    boolean exists = false;
-
-                    // Find if user already has the tool
-                    for (Tag oldTag : existingTags) {
-                        if (newTag.getName().equals(oldTag.getName())) {
-                            exists = true;
-
-                            oldTag.update(newTag);
-
-                            break;
-                        }
-                    }
-
-                    // Tag does not already exist
-                    if (!exists) {
-                        // this could result in the same tag being added to multiple containers with the same path, need to clone
-                        Tag clonedTag = new Tag();
-                        clonedTag.clone(newTag);
-                        existingTags.add(clonedTag);
-                    }
-
-                }
-
-                boolean allAutomated = true;
-                for (Tag tag : existingTags) {
-                    // create and add a tag if it does not already exist
-                    if (!tool.getTags().contains(tag)) {
-                        LOG.info(githubToken.getUsername() + " : Updating tag {}", tag.getName());
-
-                        long id = tagDAO.create(tag);
-                        tag = tagDAO.findById(id);
-                        tool.addTag(tag);
-
-                        if (!tag.isAutomated()) {
-                            allAutomated = false;
-                        }
-                    }
-                }
-
-                // delete tool if it has no users
-                for (Tag t : toDelete) {
-                    LOG.info(githubToken.getUsername() + " : DELETING tag: {}", t.getName());
-                    t.getSourceFiles().clear();
-                    // tagDAO.delete(t);
-                    tool.getTags().remove(t);
-                }
-
-                if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
-                    if (allAutomated) {
-                        tool.setMode(ToolMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
-                    } else {
-                        tool.setMode(ToolMode.AUTO_DETECT_QUAY_TAGS_WITH_MIXED);
-                    }
-                }
-            }
-
-            // Grab files for each version/tag and check if valid
-            updateFiles(tool, client, fileDAO, githubToken, bitbucketToken);
-
-            // Now grab default/main tag to grab general information (defaults to github/bitbucket "main branch")
-            final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(tool.getGitUrl(), client,
-                    bitbucketToken == null ? null : bitbucketToken.getContent(), githubToken.getContent());
-            if (sourceCodeRepo != null) {
-                // Grab and parse files to get tool information
-                // Add for new descriptor types
-
-                //Check if default version is set
-                // If not set or invalid, set tag of interest to tag stored in main tag
-                // If set and valid, set tag of interest to tag stored in default version
-
-                if (tool.getDefaultCwlPath() != null) {
-                    LOG.info(githubToken.getUsername() + " : Parsing CWL...");
-                    sourceCodeRepo.findDescriptor(tool, AbstractEntryClient.Type.CWL);
-                }
-
-                if (tool.getDefaultWdlPath() != null) {
-                    LOG.info(githubToken.getUsername() + " : Parsing WDL...");
-                    sourceCodeRepo.findDescriptor(tool, AbstractEntryClient.Type.WDL);
-                }
-
-            }
-            toolDAO.create(tool);
-        }
-
-    }
-
-    /**
-     * Updates the new list of containers to the database. Deletes containers that have no users.
-     *
-     * @param apiContainerList
-     *            containers retrieved from quay.io and docker hub
-     * @param dbToolList
-     *            containers retrieved from the database for the current user
-     * @param user
-     *            the current user
-     * @param toolDAO
-     * @return list of newly updated containers
-     */
-    public static List<Tool> updateContainers(final Iterable<Tool> apiContainerList, final List<Tool> dbToolList,
-            final User user, final ToolDAO toolDAO) {
-
-        final List<Tool> toDelete = new ArrayList<>();
-        // Find containers that the user no longer has
-        for (final Iterator<Tool> iterator = dbToolList.iterator(); iterator.hasNext();) {
-            final Tool oldTool = iterator.next();
-            boolean exists = false;
-            for (final Tool newTool : apiContainerList) {
-                if ((newTool.getToolPath().equals(oldTool.getToolPath())) || (newTool.getPath().equals(oldTool.getPath()) && newTool.getGitUrl().equals(
-                        oldTool.getGitUrl()))) {
-                    exists = true;
-                    break;
-                }
-            }
-            if (!exists && oldTool.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
-                oldTool.removeUser(user);
-                // user.removeTool(oldTool);
-                toDelete.add(oldTool);
-                iterator.remove();
-            }
-        }
-
-        // when a container from the registry (ex: quay.io) has newer content, update it from
-        for (Tool newTool : apiContainerList) {
-            String path = newTool.getPath();
-            boolean exists = false;
-
-            // Find if user already has the container
-            for (Tool oldTool : dbToolList) {
-                if ((newTool.getToolPath().equals(oldTool.getToolPath())) || (newTool.getPath().equals(oldTool.getPath()) && newTool.getGitUrl().equals(
-                        oldTool.getGitUrl()))) {
-                    exists = true;
-                    oldTool.update(newTool);
-                    break;
-                }
-            }
-
-            // Find if container already exists, but does not belong to user
-            if (!exists) {
-                Tool oldTool = toolDAO.findByToolPath(path, newTool.getToolname());
-                if (oldTool != null) {
-                    exists = true;
-                    oldTool.update(newTool);
-                    dbToolList.add(oldTool);
-                }
-            }
-
-            // Tool does not already exist
-            if (!exists) {
-                // newTool.setUserId(userId);
-                newTool.setPath(newTool.getPath());
-
-                dbToolList.add(newTool);
-            }
-        }
-
-        final Date time = new Date();
-        // Save all new and existing containers, and generate new tags
-        for (final Tool tool : dbToolList) {
-            tool.setLastUpdated(time);
-            tool.addUser(user);
-            toolDAO.create(tool);
-
-            // do not re-create tags with manual mode
-            // with other types, you can re-create the tags on refresh
-            LOG.info(user.getUsername() + ": UPDATED Tool: {}", tool.getPath());
-        }
-
-        // delete container if it has no users
-        for (Tool c : toDelete) {
-            LOG.info(user.getUsername() + ": {} {}", c.getPath(), c.getUsers().size());
-
-            if (c.getUsers().isEmpty()) {
-                LOG.info(user.getUsername() + ": DELETING: {}", c.getPath());
-                c.getTags().clear();
-                toolDAO.delete(c);
-            }
-        }
-
-        return dbToolList;
-    }
-
-    /**
-     * Get the list of tags for each container from Quay.io.
-     *
-     * @param client
-     * @param tools
-     * @param objectMapper
-     * @param quayToken
-     * @param mapOfBuilds
-     * @return a map: key = path; value = list of tags
-     */
-    @SuppressWarnings("checkstyle:parameternumber")
-    private static Map<String, List<Tag>> getTags(final HttpClient client, final List<Tool> tools,
-            final ObjectMapper objectMapper, final Token quayToken, final Map<String, ArrayList<?>> mapOfBuilds) {
-        final Map<String, List<Tag>> tagMap = new HashMap<>();
-
-        ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
-
-        for (final Tool c : tools) {
-
-            final ImageRegistryInterface imageRegistry = factory.createImageRegistry(c.getRegistry());
-            if (imageRegistry == null) {
-                continue;
-            }
-            final List<Tag> tags = imageRegistry.getTags(c);
-
-            if (c.getRegistry() == Registry.QUAY_IO) {
-                // TODO: this part isn't very good, a true implementation of Docker Hub would need to return
-                // a quay.io-like data structure, we need to replace mapOfBuilds
-                List builds = mapOfBuilds.get(c.getPath());
-
-                if (builds != null && !builds.isEmpty()) {
-                    for (Tag tag : tags) {
-                        LOG.info(quayToken.getUsername() + " : TAG: {}", tag.getName());
-
-                        for (final Object build : builds) {
-                            Map<String, String> idMap = (Map<String, String>) build;
-                            String buildId = idMap.get("id");
-
-                            LOG.info(quayToken.getUsername() + " : Build ID: {}", buildId);
-
-                            Map<String, ArrayList<String>> tagsMap = (Map<String, ArrayList<String>>) build;
-
-                            List<String> buildTags = tagsMap.get("tags");
-
-                            if (buildTags.contains(tag.getName())) {
-                                LOG.info(quayToken.getUsername() + " : Build found with tag: {}", tag.getName());
-
-                                Map<String, Map<String, String>> triggerMetadataMap = (Map<String, Map<String, String>>) build;
-
-                                Map<String, String> triggerMetadata = triggerMetadataMap.get("trigger_metadata");
-
-                                if (triggerMetadata != null) {
-                                    String ref = triggerMetadata.get("ref");
-                                    ref = parseReference(ref);
-                                    tag.setReference(ref);
-                                    if (ref == null) {
-                                        tag.setAutomated(false);
-                                    } else {
-                                        tag.setAutomated(true);
-                                    }
-                                } else {
-                                    LOG.error(quayToken.getUsername() + " : WARNING: trigger_metadata is NULL. Could not parse to get reference!");
-                                }
-
-                                break;
-                            }
-                        }
-
-                        // Add for new descriptor types
-                        tag.setCwlPath(c.getDefaultCwlPath());
-                        tag.setWdlPath(c.getDefaultWdlPath());
-
-                        tag.setDockerfilePath(c.getDefaultDockerfilePath());
-                    }
-                }
-                // tagMap.put(c.getPath(), tags);
-            }
-            tagMap.put(c.getPath(), tags);
-        }
-
-        return tagMap;
     }
 
     /**
@@ -545,7 +227,7 @@ public final class Helper {
                                 bitbucketToken));
             }
         }
-
+        userDAO.clearCache();
         return updatedTools;
 
     }
@@ -578,19 +260,12 @@ public final class Helper {
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
         final ImageRegistryInterface imageRegistryInterface = factory.createImageRegistry(tool.getRegistry());
 
-        return imageRegistryInterface
+        Tool t = imageRegistryInterface
                 .refreshTool(containerId, userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken,
                         bitbucketToken);
+        userDAO.clearCache();
+        return t;
 
-    }
-
-    public static void removeContainersThatCannotBeUpdated(List<Tool> dbTools) {
-        // TODO: for now, with no info coming back from Docker Hub, just skip them always
-        //        dbTools.removeIf(container1 -> container1.getRegistry() == Registry.DOCKER_HUB);
-        // also skip containers on quay.io but in manual mode
-
-        // Only need to skip manual tools (this includes all docker hub tools)
-        dbTools.removeIf(container1 -> container1.getMode() == ToolMode.MANUAL_IMAGE_PATH);
     }
 
     public static Token extractToken(List<Token> tokens, String source) {
