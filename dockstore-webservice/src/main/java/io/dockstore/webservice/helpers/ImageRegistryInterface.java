@@ -107,15 +107,13 @@ public abstract class ImageRegistryInterface {
         apiTools.addAll(manualTools);
 
         // Remove tools that can't be updated (Manual tools)
-        dbTools.removeIf(container1 -> container1.getMode() == ToolMode.MANUAL_IMAGE_PATH);
+        dbTools.removeIf(tool1 -> tool1.getMode() == ToolMode.MANUAL_IMAGE_PATH);
 
         // Update api tools with build information
         updateAPIToolsWithBuildInformation(apiTools);
 
         // Update db tools by copying over from api tools
-        List<Tool> newDBTools = updateContainers(apiTools, dbTools, user, toolDAO);
-        // Does newDBTools include all we want to refresh? Should be all tools
-        // getToolsFromUser(userId, userDAO);
+        List<Tool> newDBTools = updateTools(apiTools, dbTools, user, toolDAO);
 
         // Get tags and update for each tool
         for (Tool tool : newDBTools) {
@@ -124,7 +122,6 @@ public abstract class ImageRegistryInterface {
         }
 
         return newDBTools;
-
     }
 
     /**
@@ -172,11 +169,11 @@ public abstract class ImageRegistryInterface {
         // List of db tools should just include the tool you are refreshing (since it must exist in the database)
         List<Tool> dbTools = new ArrayList<>();
         dbTools.add(tool);
-        dbTools.removeIf(container1 -> container1.getMode() == ToolMode.MANUAL_IMAGE_PATH);
+        dbTools.removeIf(tool1 -> tool1.getMode() == ToolMode.MANUAL_IMAGE_PATH);
 
         // Update db tools by copying over from api tools
         final User user = userDAO.findById(userId);
-        updateContainers(apiTools, dbTools, user, toolDAO);
+        updateTools(apiTools, dbTools, user, toolDAO);
 
         // Grab updated tool from the database
         final List<Tool> newDBTools = new ArrayList<>();
@@ -188,7 +185,6 @@ public abstract class ImageRegistryInterface {
 
         // Return the updated tool
         return toolDAO.findById(tool.getId());
-
     }
 
     /**
@@ -338,18 +334,18 @@ public abstract class ImageRegistryInterface {
     }
 
     /**
-     * Updates the new list of containers to the database. Deletes containers that have no users.
+     * Updates the new list of tools to the database. Deletes tools that have no users.
      *
-     * @param apiContainerList
-     *            containers retrieved from quay.io and docker hub
+     * @param apiToolList
+     *            tools retrieved from quay.io and docker hub
      * @param dbToolList
-     *            containers retrieved from the database for the current user
+     *            tools retrieved from the database for the current user
      * @param user
      *            the current user
      * @param toolDAO
      * @return list of newly updated containers
      */
-    public List<Tool> updateContainers(final Iterable<Tool> apiContainerList, final List<Tool> dbToolList,
+    public List<Tool> updateTools(final Iterable<Tool> apiToolList, final List<Tool> dbToolList,
             final User user, final ToolDAO toolDAO) {
 
         final List<Tool> toDelete = new ArrayList<>();
@@ -357,7 +353,7 @@ public abstract class ImageRegistryInterface {
         for (final Iterator<Tool> iterator = dbToolList.iterator(); iterator.hasNext();) {
             final Tool oldTool = iterator.next();
             boolean exists = false;
-            for (final Tool newTool : apiContainerList) {
+            for (final Tool newTool : apiToolList) {
                 if ((newTool.getToolPath().equals(oldTool.getToolPath())) || (newTool.getPath().equals(oldTool.getPath()) && newTool.getGitUrl().equals(
                         oldTool.getGitUrl()))) {
                     exists = true;
@@ -373,7 +369,7 @@ public abstract class ImageRegistryInterface {
         }
 
         // when a container from the registry (ex: quay.io) has newer content, update it from
-        for (Tool newTool : apiContainerList) {
+        for (Tool newTool : apiToolList) {
             String path = newTool.getPath();
             boolean exists = false;
 
