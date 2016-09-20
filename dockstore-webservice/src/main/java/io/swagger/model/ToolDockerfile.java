@@ -15,7 +15,8 @@
  */
 package io.swagger.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
@@ -25,20 +26,27 @@ import java.util.Objects;
  * A tool dockerfile is a document that describes how to build a particular Docker image.
  **/
 
-@ApiModel(description = "A tool dockerfile is a document that describes how to build a particular Docker image.") @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-29T19:58:43.367Z") public class ToolDockerfile {
-
+/**
+ * A tool dockerfile is a document that describes how to build a particular Docker image.
+ */
+@ApiModel(description = "A tool dockerfile is a document that describes how to build a particular Docker image.") @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
+@JsonNaming(PropertyNamingStrategy.KebabCaseStrategy.class)
+public class ToolDockerfile {
     private String dockerfile = null;
+
     private String url = null;
 
-    /**
-     * The dockerfile content for this tool.
-     **/
     public ToolDockerfile dockerfile(String dockerfile) {
         this.dockerfile = dockerfile;
         return this;
     }
 
-    @ApiModelProperty(required = true, value = "The dockerfile content for this tool.") @JsonProperty("dockerfile") public String getDockerfile() {
+    /**
+     * The dockerfile content for this tool.
+     *
+     * @return dockerfile
+     **/
+    @ApiModelProperty(required = true, value = "The dockerfile content for this tool.") public String getDockerfile() {
         return dockerfile;
     }
 
@@ -46,15 +54,17 @@ import java.util.Objects;
         this.dockerfile = dockerfile;
     }
 
-    /**
-     * Optional url to the dockerfile used to build this image, should include version information, and can include a git hash  (e.g. https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/c83478829802b4d36374870843821abe1b625a71/delly_docker/Dockerfile )
-     **/
     public ToolDockerfile url(String url) {
         this.url = url;
         return this;
     }
 
-    @ApiModelProperty(value = "Optional url to the dockerfile used to build this image, should include version information, and can include a git hash  (e.g. https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/c83478829802b4d36374870843821abe1b625a71/delly_docker/Dockerfile )") @JsonProperty("url") public String getUrl() {
+    /**
+     * Optional url to the dockerfile used to build this image, should include version information, and can include a git hash  (e.g. https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/c83478829802b4d36374870843821abe1b625a71/delly_docker/Dockerfile )
+     *
+     * @return url
+     **/
+    @ApiModelProperty(value = "Optional url to the dockerfile used to build this image, should include version information, and can include a git hash  (e.g. https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/c83478829802b4d36374870843821abe1b625a71/delly_docker/Dockerfile )") public String getUrl() {
         return url;
     }
 
@@ -62,7 +72,7 @@ import java.util.Objects;
         this.url = url;
     }
 
-    @Override public boolean equals(Object o) {
+    @Override public boolean equals(java.lang.Object o) {
         if (this == o) {
             return true;
         }
@@ -70,7 +80,7 @@ import java.util.Objects;
             return false;
         }
         ToolDockerfile toolDockerfile = (ToolDockerfile) o;
-        return Objects.equals(dockerfile, toolDockerfile.dockerfile) && Objects.equals(url, toolDockerfile.url);
+        return Objects.equals(this.dockerfile, toolDockerfile.dockerfile) && Objects.equals(this.url, toolDockerfile.url);
     }
 
     @Override public int hashCode() {
@@ -91,11 +101,11 @@ import java.util.Objects;
      * Convert the given object to string with each line indented by 4 spaces
      * (except the first line).
      */
-    private String toIndentedString(Object o) {
+    private String toIndentedString(java.lang.Object o) {
         if (o == null) {
             return "null";
         }
         return o.toString().replace("\n", "\n    ");
-    }
+  }
 }
 

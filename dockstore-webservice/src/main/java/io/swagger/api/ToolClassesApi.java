@@ -30,7 +30,7 @@ import javax.ws.rs.core.SecurityContext;
 @Path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/tool-classes")
 
 @Produces({ "application/json",
-        "text/plain" }) @io.swagger.annotations.Api(description = "the tool-classes API") @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-29T19:58:43.367Z") public class ToolClassesApi {
+        "text/plain" }) @io.swagger.annotations.Api(description = "the tool-classes API") @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z") public class ToolClassesApi {
     private final ToolClassesApiService delegate = ToolClassesApiServiceFactory.getToolClassesApi();
 
     @GET @UnitOfWork @Produces({ "application/json",
