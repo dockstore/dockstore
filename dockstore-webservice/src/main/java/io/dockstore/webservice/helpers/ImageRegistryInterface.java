@@ -75,7 +75,6 @@ public abstract class ImageRegistryInterface {
          */
     public abstract void updateAPIToolsWithBuildInformation(List<Tool> apiTools);
 
-
     /**
      * Updates/Adds/Deletes tools and their associated tags
      * @return
@@ -115,23 +114,13 @@ public abstract class ImageRegistryInterface {
 
         // Update db tools by copying over from api tools
         List<Tool> newDBTools = updateContainers(apiTools, dbTools, user, toolDAO);
-//        userDAO.clearCache();
-//
-//        // Grab updated tools from the database
-//        final List<Tool> newDBTools = getToolsFromUser(userId, userDAO);
-
-        // Remove tools that aren't relevant
-        if (this.getClass().equals(QuayImageRegistry.class)) {
-            newDBTools.removeIf(test -> !test.getRegistry().equals(Registry.QUAY_IO));
-        } else if (this.getClass().equals(DockerHubRegistry.class)) {
-            newDBTools.removeIf(test -> !test.getRegistry().equals(Registry.DOCKER_HUB));
-        }
+        // Does newDBTools include all we want to refresh? Should be all tools
+        // getToolsFromUser(userId, userDAO);
 
         // Get tags and update for each tool
         for (Tool tool : newDBTools) {
             List<Tag> toolTags = getTags(tool);
             updateTags(toolTags, tool, githubToken, bitbucketToken, tagDAO, fileDAO, toolDAO, client);
-            userDAO.clearCache();
         }
 
         return newDBTools;
@@ -214,7 +203,8 @@ public abstract class ImageRegistryInterface {
          * @param client
          */
     @SuppressWarnings("checkstyle:parameternumber")
-    public void updateTags(List<Tag> newTags, Tool tool, Token githubToken, Token bitbucketToken, final TagDAO tagDAO, final FileDAO fileDAO, final ToolDAO toolDAO, final HttpClient client) {
+    public void updateTags(List<Tag> newTags, Tool tool, Token githubToken, Token bitbucketToken, final TagDAO tagDAO,
+            final FileDAO fileDAO, final ToolDAO toolDAO, final HttpClient client) {
         // Get all existing tags
         List<Tag> existingTags = new ArrayList<>(tool.getTags());
 
@@ -329,7 +319,7 @@ public abstract class ImageRegistryInterface {
     }
 
     /**
-     * Gets containers for the current user
+     * Gets tools for the current user
      *
      * @param userId
      * @param userDAO

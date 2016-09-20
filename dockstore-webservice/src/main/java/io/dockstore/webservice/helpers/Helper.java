@@ -60,7 +60,6 @@ public final class Helper {
 
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
 
-    // public static final String DOCKSTORE_CWL = "Dockstore.cwl";
     public static class RepoList {
 
         private List<Tool> repositories;
@@ -229,7 +228,6 @@ public final class Helper {
                                 bitbucketToken));
             }
         }
-
         return updatedTools;
 
     }
@@ -265,9 +263,6 @@ public final class Helper {
         Tool t = imageRegistryInterface
                 .refreshTool(containerId, userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken,
                         bitbucketToken);
-
-        // Update database with tool
-        userDAO.clearCache();
 
         return t;
 
