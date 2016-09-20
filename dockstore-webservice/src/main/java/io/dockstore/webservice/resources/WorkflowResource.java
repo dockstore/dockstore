@@ -23,6 +23,7 @@ import com.google.gson.Gson;
 import io.dockstore.client.Bridge;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
+import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
 import io.dockstore.webservice.core.Token;
@@ -81,6 +82,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -172,6 +174,10 @@ public class WorkflowResource {
         newWorkflow.setLastUpdated(workflow.getLastUpdated());
         newWorkflow.setWorkflowName(workflow.getWorkflowName());
         newWorkflow.setDescriptorType(workflow.getDescriptorType());
+
+        // Copy Labels
+        SortedSet<Label> labels = (SortedSet) workflow.getLabels();
+        newWorkflow.setLabels(labels);
 
         // copy to new object
         workflowDAO.delete(workflow);
