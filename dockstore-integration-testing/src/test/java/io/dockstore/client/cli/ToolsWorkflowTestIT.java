@@ -204,9 +204,9 @@ public class ToolsWorkflowTestIT {
         //JSON will have node:[] and edges:[]
         Assert.assertEquals("JSON should not have any data tools", strings.size(),1);
     }
-    
-    // This test will fail as long as we are not using validation on WDL workflows and are assuming that if the file exists it is valid
-    @Ignore
+
+    @Test
+    @Ignore("This test will fail as long as we are not using validation on WDL workflows and are assuming that if the file exists it is valid")
     public void testWorkflowToolWDLMissingTask() throws IOException, TimeoutException, ApiException {
         // Input: hello.wdl
         // Repo: test_workflow_wdl

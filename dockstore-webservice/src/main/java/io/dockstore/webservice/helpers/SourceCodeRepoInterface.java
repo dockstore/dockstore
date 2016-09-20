@@ -193,7 +193,7 @@ public abstract class SourceCodeRepoInterface {
      * @param content
      * @return true if valid CWL workflow, false otherwise
          */
-    public Boolean checkValidCWLWorkflow(String content) {
+    public boolean checkValidCWLWorkflow(String content) {
         if (content.contains("class: Workflow")) {
             return true;
         }

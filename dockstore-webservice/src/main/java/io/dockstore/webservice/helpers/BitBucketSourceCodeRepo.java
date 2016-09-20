@@ -183,7 +183,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             String content = asString.get();
 
             // Is workflow descriptor valid?
-            Boolean validWorkflow;
+            boolean validWorkflow;
 
             if (type == SourceFile.FileType.DOCKSTORE_CWL) {
                 validWorkflow = checkValidCWLWorkflow(content);

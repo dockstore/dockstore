@@ -210,7 +210,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     String content = extractGitHubContents(descriptorContents);
 
                     // Is workflow descriptor valid
-                    Boolean validWorkflow;
+                    boolean validWorkflow;
 
                     // TODO: Is this the best way to determine file type? I don't think so
                     // Should be workflow.getDescriptorType().equals("cwl") - though enum is better!
