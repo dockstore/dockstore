@@ -236,7 +236,8 @@ public final class Helper {
         for (ImageRegistryInterface imageRegistryInterface : allRegistries) {
             if (imageRegistryInterface.getClass().equals(QuayImageRegistry.class)) {
                 LOG.info("Grabbing QUAY repos");
-                updatedTools.addAll(imageRegistryInterface
+                updatedTools.addAll(imageRegistryInterface.refreshTools(userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken,
+                        bitbucketToken));
 
         // Get a list of all tools found based on the namespaces list
             } else {
