@@ -64,6 +64,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * @author boconnor 9/24/15
@@ -424,8 +425,24 @@ public class LauncherCWL {
     }
 
     private Map<String, Object> runCWLCommand(String cwlFile, String jsonSettings, String outputDir, String workingDir) {
-        String[] s = {"cwltool","--enable-dev","--non-strict","--enable-net","--outdir", outputDir, "--tmpdir-prefix", workingDir, cwlFile, jsonSettings};
-        final String joined = Joiner.on(" ").join(Arrays.asList(s));
+        // Get extras from config file
+        ArrayList<String> extraFlags = (ArrayList)config.getList("cwltool-extra-parameters");
+
+        if (extraFlags.size() > 0) {
+            System.out.println("########### WARNING ###########");
+            System.out.println("You are using extra flags for CWLtool which may not be supported. Use at your own risk.");
+        }
+
+        // Trim the input
+        extraFlags = (ArrayList)extraFlags.stream()
+                .map(flag -> trimAndPrintInput(flag))
+                .collect(Collectors.toList());
+
+        // Create cwltool command
+        ArrayList<String> command = new ArrayList<>(Arrays.asList("cwltool","--enable-dev","--non-strict","--enable-net","--outdir", outputDir, "--tmpdir-prefix", workingDir, cwlFile, jsonSettings));
+        command.addAll(1, extraFlags);
+
+        final String joined = Joiner.on(" ").join(command);
         System.out.println("Executing: " + joined);
         final ImmutablePair<String, String> execute = Utilities.executeCommand(joined);
         // mutate stderr and stdout into format for output
@@ -678,5 +695,11 @@ public class LauncherCWL {
     public static void main(String[] args) {
         final LauncherCWL launcherCWL = new LauncherCWL(args);
         launcherCWL.run(CommandLineTool.class);
+    }
+
+    private String trimAndPrintInput(String input) {
+        input = input.trim();
+        System.out.println(input);
+        return input;
     }
 }
