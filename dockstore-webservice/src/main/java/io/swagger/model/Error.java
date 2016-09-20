@@ -15,80 +15,88 @@
  */
 package io.swagger.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 
 import java.util.Objects;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-29T19:58:43.367Z") public class Error {
+/**
+ * Error
+ */
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z") public class Error {
+  private Integer code = 500;
 
-    private Integer code = 500;
-    private String message = "Internal Server Error";
+  private String message = "Internal Server Error";
 
-    /**
-     **/
-    public Error code(Integer code) {
-        this.code = code;
-        return this;
+  public Error code(Integer code) {
+    this.code = code;
+    return this;
+  }
+
+  /**
+   * Get code
+   *
+   * @return code
+   **/
+  @ApiModelProperty(required = true, value = "") public Integer getCode() {
+    return code;
+  }
+
+  public void setCode(Integer code) {
+    this.code = code;
+  }
+
+  public Error message(String message) {
+    this.message = message;
+    return this;
+  }
+
+  /**
+   * Get message
+   *
+   * @return message
+   **/
+  @ApiModelProperty(value = "") public String getMessage() {
+    return message;
+  }
+
+  public void setMessage(String message) {
+    this.message = message;
+  }
+
+  @Override public boolean equals(java.lang.Object o) {
+    if (this == o) {
+      return true;
     }
-
-    @ApiModelProperty(required = true, value = "") @JsonProperty("code") public Integer getCode() {
-        return code;
+    if (o == null || getClass() != o.getClass()) {
+      return false;
     }
+    Error error = (Error) o;
+    return Objects.equals(this.code, error.code) && Objects.equals(this.message, error.message);
+  }
 
-    public void setCode(Integer code) {
-        this.code = code;
+  @Override public int hashCode() {
+    return Objects.hash(code, message);
+  }
+
+  @Override public String toString() {
+    StringBuilder sb = new StringBuilder();
+    sb.append("class Error {\n");
+
+    sb.append("    code: ").append(toIndentedString(code)).append("\n");
+    sb.append("    message: ").append(toIndentedString(message)).append("\n");
+    sb.append("}");
+    return sb.toString();
+  }
+
+  /**
+   * Convert the given object to string with each line indented by 4 spaces
+   * (except the first line).
+   */
+  private String toIndentedString(java.lang.Object o) {
+    if (o == null) {
+      return "null";
     }
-
-    /**
-     **/
-    public Error message(String message) {
-        this.message = message;
-        return this;
-    }
-
-    @ApiModelProperty(value = "") @JsonProperty("message") public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    @Override public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        Error error = (Error) o;
-        return Objects.equals(code, error.code) && Objects.equals(message, error.message);
-    }
-
-    @Override public int hashCode() {
-        return Objects.hash(code, message);
-    }
-
-    @Override public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("class Error {\n");
-
-        sb.append("    code: ").append(toIndentedString(code)).append("\n");
-        sb.append("    message: ").append(toIndentedString(message)).append("\n");
-        sb.append("}");
-        return sb.toString();
-    }
-
-    /**
-     * Convert the given object to string with each line indented by 4 spaces
-     * (except the first line).
-     */
-    private String toIndentedString(Object o) {
-        if (o == null) {
-            return "null";
-        }
-        return o.toString().replace("\n", "\n    ");
-    }
+    return o.toString().replace("\n", "\n    ");
+  }
 }
 

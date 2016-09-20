@@ -18,6 +18,6 @@ package io.swagger.api;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-29T19:58:43.367Z") public abstract class MetadataApiService {
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z") public abstract class MetadataApiService {
     public abstract Response metadataGet(SecurityContext securityContext) throws NotFoundException;
 }
