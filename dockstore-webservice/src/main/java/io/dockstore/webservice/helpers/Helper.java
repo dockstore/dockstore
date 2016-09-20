@@ -153,6 +153,7 @@ public final class Helper {
                     return;
                 }
 
+                // Determine which tags need to be deleted (no longer exist on registry)
                 List<Tag> toDelete = new ArrayList<>(0);
                 for (Iterator<Tag> iterator = existingTags.iterator(); iterator.hasNext();) {
                     Tag oldTag = iterator.next();
@@ -169,10 +170,11 @@ public final class Helper {
                     }
                 }
 
+                // Iterate over tags found from registry
                 for (Tag newTag : newTags) {
                     boolean exists = false;
 
-                    // Find if user already has the tool
+                    // Find if user already has the tool (if so then update)
                     for (Tag oldTag : existingTags) {
                         if (newTag.getName().equals(oldTag.getName())) {
                             exists = true;
@@ -242,12 +244,12 @@ public final class Helper {
 
                 if (tool.getDefaultCwlPath() != null) {
                     LOG.info(githubToken.getUsername() + " : Parsing CWL...");
-                    sourceCodeRepo.findDescriptor(tool, AbstractEntryClient.Type.CWL);
+                    sourceCodeRepo.updateEntryMetadata(tool, AbstractEntryClient.Type.CWL);
                 }
 
                 if (tool.getDefaultWdlPath() != null) {
                     LOG.info(githubToken.getUsername() + " : Parsing WDL...");
-                    sourceCodeRepo.findDescriptor(tool, AbstractEntryClient.Type.WDL);
+                    sourceCodeRepo.updateEntryMetadata(tool, AbstractEntryClient.Type.WDL);
                 }
 
             }
@@ -271,32 +273,36 @@ public final class Helper {
     private static List<Tool> updateContainers(final Iterable<Tool> apiContainerList, final List<Tool> dbToolList,
             final User user, final ToolDAO toolDAO) {
 
+        // Creates list of tools to delete
         final List<Tool> toDelete = new ArrayList<>();
+
         // Find containers that the user no longer has
         for (final Iterator<Tool> iterator = dbToolList.iterator(); iterator.hasNext();) {
             final Tool oldTool = iterator.next();
             boolean exists = false;
             for (final Tool newTool : apiContainerList) {
+                // Does the tool in the database still exist in Quay
                 if ((newTool.getToolPath().equals(oldTool.getToolPath())) || (newTool.getPath().equals(oldTool.getPath()) && newTool.getGitUrl().equals(
                     oldTool.getGitUrl()))) {
                     exists = true;
                     break;
                 }
             }
+
+            // Add tool to remove list if it is no longer on Quay (Ignore manual DockerHub/Quay tools)
             if (!exists && oldTool.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
                 oldTool.removeUser(user);
-                // user.removeTool(oldTool);
                 toDelete.add(oldTool);
                 iterator.remove();
             }
         }
 
-        // when a container from the registry (ex: quay.io) has newer content, update it from
+        // when a tool from the registry (ex: quay.io) has newer content, update it from
         for (Tool newTool : apiContainerList) {
             String path = newTool.getPath();
             boolean exists = false;
 
-            // Find if user already has the container
+            // Find if user already has the tool, if so just update
             for (Tool oldTool : dbToolList) {
                 if ((newTool.getToolPath().equals(oldTool.getToolPath())) || (newTool.getPath().equals(oldTool.getPath()) && newTool.getGitUrl().equals(
                     oldTool.getGitUrl()))) {
@@ -316,17 +322,16 @@ public final class Helper {
                 }
             }
 
-            // Tool does not already exist
+            // Tool does not already exist, add it
             if (!exists) {
-                // newTool.setUserId(userId);
                 newTool.setPath(newTool.getPath());
-
                 dbToolList.add(newTool);
             }
         }
 
         final Date time = new Date();
-        // Save all new and existing containers, and generate new tags
+
+        // Save all new and existing tools
         for (final Tool tool : dbToolList) {
             tool.setLastUpdated(time);
             tool.addUser(user);
@@ -337,7 +342,7 @@ public final class Helper {
             LOG.info(user.getUsername() + ": UPDATED Tool: {}", tool.getPath());
         }
 
-        // delete container if it has no users
+        // delete tool if it has no users
         for (Tool c : toDelete) {
             LOG.info(user.getUsername() + ": {} {}", c.getPath(), c.getUsers().size());
 
@@ -543,45 +548,53 @@ public final class Helper {
                 throw new CustomWebApplicationException("quay.io tools found, but quay.io token not found. Please link your quay.io account before refreshing.", HttpStatus.SC_BAD_REQUEST);
             }
         }
+
+        // Get a list of all image registries
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
         final List<ImageRegistryInterface> allRegistries = factory.getAllRegistries();
 
+        // Get a list of all namespaces from all image registries
         List<String> namespaces = new ArrayList<>();
         // TODO: figure out better approach, for now just smash together stuff from DockerHub and quay.io
         for (ImageRegistryInterface anInterface : allRegistries) {
             namespaces.addAll(anInterface.getNamespaces());
         }
+
+        // Get a list of all tools found based on the namespaces list
         List<Tool> apiTools = new ArrayList<>();
         for (ImageRegistryInterface anInterface : allRegistries) {
             apiTools.addAll(anInterface.getContainers(namespaces));
         }
+
+        // hack: read relevant tools from database, ignoring manual builds not owned by the current user
         // TODO: when we get proper docker hub support, get this above
-        // hack: read relevant containers from database
         User currentUser = userDAO.findById(userId);
         List<Tool> findByMode = toolDAO.findByMode(ToolMode.MANUAL_IMAGE_PATH);
         findByMode.removeIf(test -> !test.getUsers().contains(currentUser));
         apiTools.addAll(findByMode);
 
+        // Update tools found from API with build information, and
         // ends up with docker image path -> quay.io data structure representing builds
         final Map<String, ArrayList<?>> mapOfBuilds = new HashMap<>();
         for (final ImageRegistryInterface anInterface : allRegistries) {
             mapOfBuilds.putAll(anInterface.getBuildMap(apiTools));
         }
 
-        // end up with key = path; value = list of tags
-        // final Map<String, List<Tag>> tagMap = getWorkflowVersions(client, allRepos, objectMapper, quayToken, bitbucketToken, githubToken,
-        // mapOfBuilds);
+        // Ignore updating DockerHub and manual tools for now
         removeContainersThatCannotBeUpdated(dbTools);
 
         final User dockstoreUser = userDAO.findById(userId);
-        // update information on a container by container level
+
+        // update basic tool information and remove tools that no longer exist on quay
         updateContainers(apiTools, dbTools, dockstoreUser, toolDAO);
         userDAO.clearCache();
 
         final List<Tool> newDBTools = getContainers(userId, userDAO);
-        // update information on a tag by tag level
+
+        // Get tags from API
         final Map<String, List<Tag>> tagMap = getTags(client, newDBTools, objectMapper, quayToken, mapOfBuilds);
 
+        // Update existing tags with new content, add/remove tags as well
         updateTags(newDBTools, client, toolDAO, tagDAO, fileDAO, githubToken, bitbucketToken, tagMap);
         userDAO.clearCache();
         return getContainers(userId, userDAO);
@@ -614,7 +627,6 @@ public final class Helper {
         if (gitSource.equals("github.com") && githubToken == null) {
             LOG.info("WARNING: GITHUB token not found!");
             throw new CustomWebApplicationException("A valid GitHub token is required to refresh this tool.", HttpStatus.SC_CONFLICT);
-            //throw new CustomWebApplicationException("A valid GitHub token is required to refresh this tool.", HttpStatus.SC_CONFLICT);
         }
         if (gitSource.equals("bitbucket.org") && bitbucketToken == null) {
             LOG.info("WARNING: BITBUCKET token not found!");
@@ -909,10 +921,8 @@ public final class Helper {
         // get quay username
         String quayUsername = quayToken.getUsername();
 
-
         // call quay api, check if user owns or is part of owning organization
         Map<String,Object> map = factory.getQuayInfo(tool);
-
 
         if (map != null){
             String namespace = map.get("namespace").toString();

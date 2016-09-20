@@ -23,15 +23,20 @@ import io.dockstore.client.Bridge;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.dockstore.webservice.core.WorkflowMode;
+import io.dockstore.webservice.core.WorkflowVersion;
 import wdl4s.parser.WdlParser;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -54,21 +59,13 @@ public abstract class SourceCodeRepoInterface {
     public abstract String readFile(String fileName, String reference);
 
     /**
-     * Update an entry with the contents of the descriptor file from a source code repo
-     * 
-     * @param c an entry to be updated
-     * @return an updated entry with fields from the descriptor filled in
-     */
-    public abstract Entry findDescriptor(Entry c, AbstractEntryClient.Type type);
-
-    /**
      * Get the email for the current user
      * @return email for the logged in user
      */
     public abstract String getOrganizationEmail();
 
     /**
-     *
+     * Copies some of the attributes of the source workflow to the target workflow
      * @param sourceWorkflow
      * @param targetWorkflow
          */
@@ -170,20 +167,210 @@ public abstract class SourceCodeRepoInterface {
      */
     public abstract Map<String, String> getWorkflowGitUrl2RepositoryId();
 
-    /**
-     * Given a repositoryid, get a workflow
-     * TODO: pass in an existing workflow when we need to override paths
-     * @param repositoryId uniquely identify a repo
-     * @param existingWorkflow an existing workflow entry, when existingWorkflow is a stub or empty, simply create a new stub entry
-     *                         when existingWorkflow is a full workflow, do a full refresh but use the existing workflow paths as a guide
-     *                         for where to look for files
-     * @return a fully realized workflow
-     */
-    public abstract Workflow getNewWorkflow(String repositoryId, Optional<Workflow> existingWorkflow);
-
     List<String> getWdlImports(File workflowFile){
         Bridge bridge = new Bridge();
         return bridge.getImportFiles(workflowFile);
     }
+
+    /**
+     * Given the content of a file, determines if it is a valid WDL workflow
+     * @param content
+     * @return true if valid WDL workflow, false otherwise
+         */
+    public Boolean checkValidWDLWorkflow(String content) {
+//        final NamespaceWithWorkflow nameSpaceWithWorkflow = NamespaceWithWorkflow.load(content);
+//        if (nameSpaceWithWorkflow != null) {
+//            return true;
+//        }
+//
+//        return false;
+        // For now as long as a file exists, it is a valid WDL
+        return true;
+    }
+
+    /**
+     * Given the content of a file, determines if it is a valid CWL workflow
+     * @param content
+     * @return true if valid CWL workflow, false otherwise
+         */
+    public boolean checkValidCWLWorkflow(String content) {
+        if (content.contains("class: Workflow")) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Set up workflow with basic attributes from git repository
+     * @param repositoryId
+     * @return workflow with some attributes set
+         */
+    public abstract Workflow initializeWorkflow(String repositoryId);
+
+    /**
+     * Finds all of the workflow versions for a given workflow and store them and their corresponding source files
+     * @param repositoryId
+     * @param workflow
+     * @param existingWorkflow
+     * @param existingDefaults
+         * @return workflow with associated workflow versions
+         */
+    public abstract Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow, Map<String, String> existingDefaults);
+
+    /**
+     * Creates or updates a workflow based on the situation. Will grab workflow versions and more metadata if workflow is FULL
+     * @param repositoryId
+     * @param existingWorkflow
+         * @return workflow
+         */
+    public Workflow getWorkflow(String repositoryId, Optional<Workflow> existingWorkflow) {
+        // Initialize workflow
+        Workflow workflow = initializeWorkflow(repositoryId);
+
+        // Determine if workflow should be returned as a STUB or FULL
+        if (!existingWorkflow.isPresent()){
+            // when there is no existing workflow at all, just return a stub workflow. Also set descriptor type to default cwl.
+            workflow.setDescriptorType(AbstractEntryClient.Type.CWL.toString());
+            return workflow;
+        }
+        if (existingWorkflow.get().getMode() == WorkflowMode.STUB){
+            // when there is an existing stub workflow, just return the new stub as well
+            return workflow;
+        }
+
+        // If this point has been reached, then the workflow will be a FULL workflow (and not a STUB)
+        workflow.setMode(WorkflowMode.FULL);
+
+        // if it exists, extract paths from the previous workflow entry
+        Map<String, String> existingDefaults = new HashMap<>();
+        if (existingWorkflow.isPresent()){
+            // Copy over existing workflow versions
+            existingWorkflow.get().getWorkflowVersions().forEach(existingVersion -> existingDefaults.put(existingVersion.getReference(), existingVersion.getWorkflowPath()));
+
+            // Copy workflow information from source (existingWorkflow) to target (workflow)
+            copyWorkflow(existingWorkflow.get(), workflow);
+        }
+
+        // Create branches and associated source files
+        setupWorkflowVersions(repositoryId, workflow, existingWorkflow, existingDefaults);
+
+        // Get metadata for workflow and update workflow with it
+        if (workflow.getDescriptorType().equals(AbstractEntryClient.Type.CWL.toString())) {
+            updateEntryMetadata(workflow, AbstractEntryClient.Type.CWL);
+        } else {
+            updateEntryMetadata(workflow, AbstractEntryClient.Type.WDL);
+        }
+
+        return workflow;
+    }
+
+    /**
+     * Update an entry with the contents of the descriptor file from a source code repo
+     * @param entry@Override
+     * @param type
+         * @return
+         */
+    public Entry updateEntryMetadata(Entry entry, AbstractEntryClient.Type type) {
+        // Determine which branch to use
+        String repositoryId = getRepositoryId(entry);
+
+        if (repositoryId == null) {
+            LOG.info("Could not find repository information.");
+            return entry;
+        }
+
+        String branch = getMainBranch(entry, repositoryId);
+
+        if (branch == null) {
+            LOG.info(repositoryId + " : Error getting the main branch.");
+            return entry;
+        }
+
+        // Determine the file path of the descriptor
+        String filePath = null;
+
+        // If entry is a tool
+        if (entry.getClass().equals(Tool.class)) {
+            // If no tags exist on quay
+            if (((Tool)entry).getVersions().size() == 0) {
+                return entry;
+            }
+
+            // Find filepath to parse
+            for (Tag tag : ((Tool)entry).getVersions()) {
+                if (tag.getReference() != null && tag.getReference().equals(branch)) {
+                    if (type == AbstractEntryClient.Type.CWL) {
+                        filePath = tag.getCwlPath();
+                    } else {
+                        filePath = tag.getWdlPath();
+                    }
+                }
+            }
+        }
+
+        // If entry is a workflow
+        if (entry.getClass().equals(Workflow.class)) {
+            // Find filepath to parse
+            for (WorkflowVersion workflowVersion : ((Workflow) entry).getVersions()) {
+                if (workflowVersion.getReference().equals(branch)) {
+                    filePath = workflowVersion.getWorkflowPath();
+                }
+            }
+        }
+
+        if (filePath == null) {
+            LOG.info(repositoryId + " : No descriptor found for " + branch + ".");
+            return entry;
+        }
+
+        // Why is this needed?
+        if (filePath.startsWith("/")) {
+            filePath = filePath.substring(1);
+        }
+
+        // Get file contents
+        // Does this need to be an API call? can't we just use the files we have in the database?
+        String content = getFileContents(filePath, branch, repositoryId);
+
+        if (content == null) {
+            LOG.info(repositoryId + " : Error getting descriptor for " + branch + " with path " + filePath);
+            return entry;
+        }
+
+        // Parse file content and update
+        if (type == AbstractEntryClient.Type.CWL) {
+            entry = parseCWLContent(entry, content);
+        }
+        if (type == AbstractEntryClient.Type.WDL) {
+            entry = parseWDLContent(entry, content);
+        }
+
+        return entry;
+    }
+
+    /**
+     * Get the repository Id of an entry to be used for API calls
+     * @param entry
+     * @return repository id of an entry
+         */
+    public abstract String getRepositoryId(Entry entry);
+
+    /**
+     * Returns the branch of interest used to determine tool and workflow metadata
+     * @param entry
+     * @param repositoryId
+         * @return Branch of interest
+         */
+    public abstract String getMainBranch(Entry entry, String repositoryId);
+
+    /**
+     * Returns the content of a given file from a specific git repository and branch
+     * @param filePath
+     * @param branch
+     * @param repositoryId
+         * @return content of a file from git host
+         */
+    public abstract String getFileContents(String filePath, String branch, String repositoryId);
 
 }

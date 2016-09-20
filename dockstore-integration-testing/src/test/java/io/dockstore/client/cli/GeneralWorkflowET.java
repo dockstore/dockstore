@@ -81,23 +81,25 @@ public class GeneralWorkflowET {
                 Assert.assertTrue("there should be 0 published entries, there are " + count, count == 0);
                 final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid='t'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 2 valid versions, there are " + count2, count2 == 2);
+                final long count3 = testingPostgres.runSelectStatement("select count(*) from workflow where mode='FULL'", new ScalarHandler<>());
+                Assert.assertTrue("there should be 1 full workflows, there are " + count3, count3 == 1);
 
                 // attempt to publish it
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--script" });
 
-                final long count3 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", new ScalarHandler<>());
-                Assert.assertTrue("there should be 1 published entry, there are " + count3, count3 == 1);
+                final long count4 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", new ScalarHandler<>());
+                Assert.assertTrue("there should be 1 published entry, there are " + count4, count4 == 1);
 
                 // unpublish
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--unpub", "--script" });
 
-                final long count4 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", new ScalarHandler<>());
-                Assert.assertTrue("there should be 0 published entries, there are " + count4, count4 == 0);
+                final long count5 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", new ScalarHandler<>());
+                Assert.assertTrue("there should be 0 published entries, there are " + count5, count5 == 0);
 
         }
 
         /**
-         * This tests that the information for a container can only be seen if it is published
+         * This tests that the information for a workflow can only be seen if it is published
          */
         @Test
         public void testInfo() {
@@ -263,7 +265,7 @@ public class GeneralWorkflowET {
         }
 
         /**
-         * This tests that a restub will not work on an unpublished, full workflow
+         * This tests that a restub will not work on an published, full workflow
          */
         @Test
         public void testRestubError() {
@@ -450,5 +452,61 @@ public class GeneralWorkflowET {
                 // Now you shouldn't be able to publish the workflow
                 systemExit.expectSystemExitWithStatus(Client.API_ERROR);
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+        }
+
+        /**
+         * This test tests a bunch of different assumptions for how refresh should work for workflows
+         */
+        @Test
+        public void testRefreshRelatedConcepts() {
+                // Set up DB
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+                // refresh all
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
+
+                // refresh individual that is valid
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+
+                // check that valid is valid and full
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid='t'", new ScalarHandler<>());
+                Assert.assertTrue("there should be 2 valid versions, there are " + count2, count2 == 2);
+                final long count3 = testingPostgres.runSelectStatement("select count(*) from workflow where mode='FULL'", new ScalarHandler<>());
+                Assert.assertTrue("there should be 1 full workflows, there are " + count3, count3 == 1);
+
+                // Change path for each version so that it is invalid
+                testingPostgres.runUpdateStatement("UPDATE workflowversion SET workflowpath='thisisnotarealpath.cwl'");
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+
+                // Workflow has no valid versions so you cannot publish
+                
+                // check that invalid
+                final long count4 = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid='f'", new ScalarHandler<>());
+                Assert.assertTrue("there should be 4 invalid versions, there are " + count4, count4 == 4);
+
+                // Restub
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "restub", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+
+                // Update workflow to WDL
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--workflow-path", "Dockstore.wdl", "--descriptor-type", "wdl", "--script" });
+
+                // Can now publish workflow
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+
+                // unpublish
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--unpub", "--script" });
+
+                // Set paths to invalid
+                testingPostgres.runUpdateStatement("UPDATE workflowversion SET workflowpath='thisisnotarealpath.wdl'");
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+
+                // Check that versions are invalid
+                final long count5 = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid='f'", new ScalarHandler<>());
+                Assert.assertTrue("there should be 4 invalid versions, there are " + count5, count5 == 4);
+
+                // should now not be able to publish
+                systemExit.expectSystemExitWithStatus(Client.API_ERROR);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+
         }
 }

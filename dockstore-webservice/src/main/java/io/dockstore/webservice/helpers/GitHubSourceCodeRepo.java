@@ -18,14 +18,11 @@ package io.dockstore.webservice.helpers;
 
 import com.google.common.base.Optional;
 
-import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.http.HttpStatus;
@@ -40,7 +37,6 @@ import org.eclipse.egit.github.core.service.OrganizationService;
 import org.eclipse.egit.github.core.service.RepositoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import wdl4s.NamespaceWithWorkflow;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -117,118 +113,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public Entry findDescriptor(Entry entry, AbstractEntryClient.Type type) {
-        Repository repository = null;
-        String repositoryId;
-
-
-        if (gitRepository == null) {
-            if (entry.getClass().equals(Tool.class)) {
-                // Parse git url for repo
-                Pattern p = Pattern.compile("git\\@bitbucket.org:(\\S+)/(\\S+)\\.git");
-                Matcher m = p.matcher(entry.getGitUrl());
-
-                if (!m.find()) {
-                    LOG.error(gitUsername + ": Repo: {} could not be retrieved", entry.getGitUrl());
-                    repositoryId = null;
-                } else {
-                    repositoryId = m.group(2);
-                }
-            } else {
-                repositoryId = ((Workflow) entry).getRepository();
-            }
-        } else {
-            repositoryId = gitRepository;
-        }
-
-
-        if (repositoryId != null) {
-            try {
-                repository = service.getRepository(gitUsername, repositoryId);
-            } catch (IOException e) {
-                LOG.error(gitUsername + ": Repo: {} could not be retrieved", entry.getGitUrl());
-            }
-        }
-        if (repository == null) {
-            if (entry.getClass().equals(Tool.class)) {
-                LOG.info(gitUsername + ": Github repository not found for {}", ((Tool) entry).getPath());
-            } else {
-                LOG.info(gitUsername + ": Github repository not found for {}", ((Workflow) entry).getPath());
-            }
-        } else {
-            LOG.info(gitUsername + ": Github found for: {}", repository.getName());
-            try {
-                // Determine the default branch on Github
-                String mainBranch = repository.getDefaultBranch();
-
-                // Determine which branch to use for tool info
-                String branchToUse;
-                if (entry.getDefaultVersion() == null) {
-                    branchToUse = mainBranch;
-                } else {
-                    branchToUse = entry.getDefaultVersion();
-                }
-
-                // Get file name of interest
-                String fileName = "";
-
-                // If tools
-                if (entry.getClass().equals(Tool.class)) {
-                    // If no tags exist on quay
-                    if (((Tool)entry).getVersions().size() == 0) {
-                        LOG.info(gitUsername + ": Repo: {} has no tags", repository.getName());
-                        return entry;
-                    }
-                    for (Tag tag : ((Tool)entry).getVersions()) {
-                        if (tag.getReference() != null && tag.getReference().equals(branchToUse)) {
-                            if (type == AbstractEntryClient.Type.CWL) {
-                                fileName = tag.getCwlPath();
-                            } else {
-                                fileName = tag.getWdlPath();
-                            }
-                        }
-                    }
-                }
-
-                // If workflow
-                if (entry.getClass().equals(Workflow.class)) {
-                    for (WorkflowVersion workflowVersion : ((Workflow) entry).getVersions()) {
-                        if (workflowVersion.getReference().equals(branchToUse)) {
-                            fileName = workflowVersion.getWorkflowPath();
-                        }
-                    }
-                }
-
-                if (fileName.startsWith("/")) {
-                    fileName = fileName.substring(1);
-                }
-
-                // Get content of file
-                if (fileName != "") {
-                    List<RepositoryContents> contents = cService.getContents(repository, fileName, branchToUse);
-
-                    // Parse content
-                    if (!(contents == null || contents.isEmpty())) {
-                        String content = extractGitHubContents(contents);
-
-                        // Add for new descriptor types
-                        // Grab important metadata from CWL file (expects file to have .cwl extension)
-                        if (type == AbstractEntryClient.Type.CWL) {
-                            entry = parseCWLContent(entry, content);
-                        }
-                        if (type == AbstractEntryClient.Type.WDL) {
-                            entry = parseWDLContent(entry, content);
-                        }
-                    }
-                }
-            } catch (IOException ex) {
-                LOG.info(gitUsername + ": Repo: {} has no descriptor file ", repository.getName());
-            }
-        }
-        return entry;
-    }
-
-    @Override
     public String getOrganizationEmail() {
         User organization;
         try {
@@ -258,141 +142,187 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
     }
 
-    @Override
-    public Workflow getNewWorkflow(String repositoryId, Optional<Workflow> existingWorkflow) {
-        //TODO: need to add pass-through when paths are custom
-        RepositoryId id = RepositoryId.createFromId(repositoryId);
-        try {
-            final Repository repository = service.getRepository(id);
-            LOG.info(gitUsername + ": Looking at repo: " + repository.getSshUrl());
-            Workflow workflow = new Workflow();
-            workflow.setOrganization(repository.getOwner().getLogin());
-            workflow.setRepository(repository.getName());
-            workflow.setGitUrl(repository.getSshUrl());
-            workflow.setLastUpdated(new Date());
-            // make sure path is constructed
-
-            if (!existingWorkflow.isPresent()){
-                // when there is no existing workflow at all, just return a stub workflow. Also set descriptor type to default cwl.
-                workflow.setDescriptorType("cwl");
-                return workflow;
-            }
-            if (existingWorkflow.get().getMode() == WorkflowMode.STUB){
-                // when there is an existing stub workflow, just return the new stub as well
-                return workflow;
-            }
-            workflow.setMode(WorkflowMode.FULL);
-
-            // if it exists, extract paths from the previous workflow entry
-            Map<String, String> existingDefaults = new HashMap<>();
-            if (existingWorkflow.isPresent()){
-                existingWorkflow.get().getWorkflowVersions().forEach(existingVersion -> existingDefaults.put(existingVersion.getReference(), existingVersion.getWorkflowPath()));
-                copyWorkflow(existingWorkflow.get(), workflow);
-            }
-
-            // when getting a full workflow, look for versions and check each version for valid workflows
-            List<String> references = new ArrayList<>();
-            service.getBranches(id).forEach(branch -> references.add(branch.getName()));
-            service.getTags(id).forEach(tag -> references.add(tag.getName()));
-
-            for (String ref : references) {
-                LOG.info(gitUsername + ": Looking at reference: " + ref);
-                WorkflowVersion version = new WorkflowVersion();
-                version.setName(ref);
-                version.setReference(ref);
-                version.setValid(false);
-
-                // determine workflow version from previous
-                String calculatedPath = existingDefaults.getOrDefault(ref, existingWorkflow.get().getDefaultWorkflowPath());
-                version.setWorkflowPath(calculatedPath);
-                Set<SourceFile> sourceFileSet = new HashSet<>();
-                //TODO: is there a case-insensitive endsWith?
-                String calculatedExtension = FilenameUtils.getExtension(calculatedPath);
-
-                if (calculatedExtension.equalsIgnoreCase("cwl") || calculatedExtension.equalsIgnoreCase("yml") || calculatedExtension.equalsIgnoreCase("yaml")) {
-                    // look for workflow file
-                    try {
-                        final List<RepositoryContents> cwlContents = cService.getContents(id, calculatedPath, ref);
-                        if (cwlContents != null && cwlContents.size() > 0) {
-                            String content = extractGitHubContents(cwlContents);
-                            if (content.contains("class: Workflow")) {
-                                // if we have a valid workflow document
-                                SourceFile file = new SourceFile();
-                                file.setType(SourceFile.FileType.DOCKSTORE_CWL);
-                                file.setContent(content);
-                                file.setPath(calculatedPath);
-                                version.getSourceFiles().add(file);
-
-                                // try to use the FileImporter to re-use code for handling imports
-                                FileImporter importer = new FileImporter(this);
-                                final Map<String, SourceFile> stringSourceFileMap = importer
-                                        .resolveImports(content, workflow, SourceFile.FileType.DOCKSTORE_CWL, version);
-                                sourceFileSet.addAll(stringSourceFileMap.values());
-                            }
-                        }
-
-                    } catch (IOException ex) {
-                        LOG.info(gitUsername + ": Error getting contents of file.");
-                    } catch (Exception ex) {
-                        LOG.info(gitUsername + ": " + workflow.getDefaultWorkflowPath() + " on " + ref + " was not valid CWL workflow");
-                    }
-                } else {
-                    try {
-                        final List<RepositoryContents> wdlContents = cService.getContents(id, calculatedPath, ref);
-                        if (wdlContents != null && wdlContents.size() > 0) {
-                            String content = extractGitHubContents(wdlContents);
-
-                            final NamespaceWithWorkflow nameSpaceWithWorkflow = NamespaceWithWorkflow.load(content);
-                            if (nameSpaceWithWorkflow != null) {
-                                // if we have a valid workflow document
-                                SourceFile file = new SourceFile();
-                                file.setType(SourceFile.FileType.DOCKSTORE_WDL);
-                                file.setContent(content);
-                                file.setPath(calculatedPath);
-                                version.getSourceFiles().add(file);
-
-                                // try to use the FileImporter to re-use code for handling imports
-                                FileImporter importer = new FileImporter(this);
-                                final Map<String, SourceFile> stringSourceFileMap = importer
-                                        .resolveImports(content, workflow, SourceFile.FileType.DOCKSTORE_WDL, version);
-                                sourceFileSet.addAll(stringSourceFileMap.values());
-                            }
-                        }
-                    } catch (Exception ex) {
-                        LOG.info(gitUsername + ": " + calculatedPath + " on " + ref + " was not valid WDL workflow");
-                    }
-                }
-
-                if (version.getSourceFiles().size() > 0) {
-                    version.setValid(true);
-                }
-
-                // add extra source files here
-                if (sourceFileSet.size() > 0) {
-                    version.getSourceFiles().addAll(sourceFileSet);
-                }
-
-                workflow.addWorkflowVersion(version);
-            }
-
-            // Get information about default version
-            if (workflow.getDescriptorType().equals("cwl")) {
-                findDescriptor(workflow, AbstractEntryClient.Type.CWL);
-            } else {
-                findDescriptor(workflow, AbstractEntryClient.Type.WDL);
-            }
-
-            return workflow;
-        } catch (IOException e) {
-            LOG.info(gitUsername + ": Cannot getNewWorkflow {}");
-            return null;
-        }
-    }
-
     private String extractGitHubContents(List<RepositoryContents> cwlContents) {
         String encoded = cwlContents.get(0).getContent().replace("\n", "");
         byte[] decode = Base64.getDecoder().decode(encoded);
         return new String(decode, StandardCharsets.UTF_8);
     }
 
+    @Override
+    public Workflow initializeWorkflow(String repositoryId) {
+        Workflow workflow = new Workflow();
+
+        // Get repository ID for API call
+        RepositoryId id = RepositoryId.createFromId(repositoryId);
+
+        // Get repository from API and setup workflow
+        try {
+            final Repository repository = service.getRepository(id);
+            workflow.setOrganization(repository.getOwner().getLogin());
+            workflow.setRepository(repository.getName());
+            workflow.setGitUrl(repository.getSshUrl());
+            workflow.setLastUpdated(new Date());
+            // Why is the path not set here?
+        } catch (IOException e) {
+            LOG.info(gitUsername + ": Cannot getNewWorkflow {}");
+            return null;
+        }
+
+        return workflow;
+    }
+
+    @Override
+    public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow, Map<String, String> existingDefaults) {
+        RepositoryId id = RepositoryId.createFromId(repositoryId);
+
+        // when getting a full workflow, look for versions and check each version for valid workflows
+        List<String> references = new ArrayList<>();
+        try {
+            service.getBranches(id).forEach(branch -> references.add(branch.getName()));
+            service.getTags(id).forEach(tag -> references.add(tag.getName()));
+        } catch (IOException e) {
+            LOG.info(gitUsername + ": Cannot branches or tags for workflow {}");
+            return null;
+        }
+
+        // For each branch (reference) found, create a workflow version and find the associated descriptor files
+        for (String ref : references) {
+            LOG.info(gitUsername + ": Looking at reference: " + ref);
+
+            // Initialize the workflow version
+            WorkflowVersion version = new WorkflowVersion();
+            version.setName(ref);
+            version.setReference(ref);
+            version.setValid(false);
+
+            // Determine workflow version from previous
+            String calculatedPath = existingDefaults.getOrDefault(ref, existingWorkflow.get().getDefaultWorkflowPath());
+            version.setWorkflowPath(calculatedPath);
+            Set<SourceFile> sourceFileSet = new HashSet<>();
+            //TODO: is there a case-insensitive endsWith?
+            String calculatedExtension = FilenameUtils.getExtension(calculatedPath);
+
+            // Grab workflow file from github
+            try {
+                // Get contents of CWL file and store
+                final List<RepositoryContents> descriptorContents = cService.getContents(id, calculatedPath, ref);
+                if (descriptorContents != null && descriptorContents.size() > 0) {
+                    String content = extractGitHubContents(descriptorContents);
+
+                    // Is workflow descriptor valid
+                    boolean validWorkflow;
+
+                    // TODO: Is this the best way to determine file type? I don't think so
+                    // Should be workflow.getDescriptorType().equals("cwl") - though enum is better!
+                    if (calculatedExtension.equalsIgnoreCase("cwl") || calculatedExtension.equalsIgnoreCase("yml") || calculatedExtension.equalsIgnoreCase("yaml")) {
+                        validWorkflow = checkValidCWLWorkflow(content);
+                    } else {
+                        validWorkflow = checkValidWDLWorkflow(content);
+                    }
+
+                    if (validWorkflow) {
+                        // if we have a valid workflow document
+                        SourceFile file = new SourceFile();
+                        if (calculatedExtension.equalsIgnoreCase("cwl") || calculatedExtension.equalsIgnoreCase("yml") || calculatedExtension.equalsIgnoreCase("yaml")) {
+                            file.setType(SourceFile.FileType.DOCKSTORE_CWL);
+                        } else {
+                            file.setType(SourceFile.FileType.DOCKSTORE_WDL);
+                        }
+                        file.setContent(content);
+                        file.setPath(calculatedPath);
+                        version.getSourceFiles().add(file);
+
+                        // try to use the FileImporter to re-use code for handling imports
+                        FileImporter importer = new FileImporter(this);
+                        final Map<String, SourceFile> stringSourceFileMap = importer
+                                .resolveImports(content, workflow, file.getType(), version);
+                        sourceFileSet.addAll(stringSourceFileMap.values());
+                    }
+                }
+
+            } catch (IOException ex) {
+                LOG.info(gitUsername + ": Error getting contents of file.");
+            } catch (Exception ex) {
+                LOG.info(gitUsername + ": " + workflow.getDefaultWorkflowPath() + " on " + ref + " was not valid CWL workflow");
+            }
+
+            if (version.getSourceFiles().size() > 0) {
+                version.setValid(true);
+            }
+
+            // add extra source files here (dependencies from "main" descriptor)
+            if (sourceFileSet.size() > 0) {
+                version.getSourceFiles().addAll(sourceFileSet);
+            }
+
+            workflow.addWorkflowVersion(version);
+        }
+        return workflow;
+    }
+
+    @Override
+    public String getRepositoryId(Entry entry) {
+        String repositoryId;
+        if (gitRepository == null) {
+            if (entry.getClass().equals(Tool.class)) {
+                // Parse git url for repo
+                Pattern p = Pattern.compile("git\\@bitbucket.org:(\\S+)/(\\S+)\\.git");
+                Matcher m = p.matcher(entry.getGitUrl());
+
+                if (!m.find()) {
+                    repositoryId = null;
+                } else {
+                    repositoryId = m.group(2);
+                }
+            } else {
+                repositoryId = ((Workflow) entry).getRepository();
+            }
+        } else {
+            repositoryId = gitRepository;
+        }
+
+        return repositoryId;
+    }
+
+    @Override
+    public String getMainBranch(Entry entry, String repositoryId) {
+        Repository repository;
+        String mainBranch = null;
+
+        // Get repository based on username and repo id
+        if (repositoryId != null) {
+            try {
+                repository = service.getRepository(gitUsername, repositoryId);
+
+                // Determine the default branch on Github
+                mainBranch = repository.getDefaultBranch();
+            } catch (IOException e) {
+                return null;
+            }
+        }
+
+        // Determine which branch to use for tool info
+        if (entry.getDefaultVersion() != null) {
+            mainBranch = entry.getDefaultVersion();
+        }
+
+        return mainBranch;
+    }
+
+    @Override
+    public String getFileContents(String filePath, String branch, String repositoryId) {
+        String content = null;
+
+        try {
+            Repository repository = service.getRepository(gitUsername, repositoryId);
+            List<RepositoryContents> contents = cService.getContents(repository, filePath, branch);
+            if (!(contents == null || contents.isEmpty())) {
+                content = extractGitHubContents(contents);
+            }
+
+        } catch (IOException ex) {
+            LOG.info(gitUsername + ": Repo: has no descriptor file ");
+        }
+        return content;
+    }
 }

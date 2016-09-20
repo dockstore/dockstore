@@ -103,7 +103,19 @@ public abstract class AbstractEntryClient {
     private final CWL cwlUtil = new CWL();
 
     public enum Type {
-        CWL, WDL, NONE
+        CWL("cwl"), WDL("wdl"), NONE("none");
+        private final String desc;
+
+        Type(String name) {
+            desc = name;
+        }
+
+        @Override
+        public String toString() {
+            return desc;
+        }
+
+
     }
 
     public abstract String getConfigFile();
