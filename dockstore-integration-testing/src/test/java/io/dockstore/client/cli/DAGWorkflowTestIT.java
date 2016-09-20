@@ -188,7 +188,7 @@ public class DAGWorkflowTestIT {
     }
 
     // This test will fail as long as we are not using validation on WDL workflows and are assuming that if the file exists it is valid
-    @Ignore
+    @Ignore("This test will fail as long as we are not using validation on WDL workflows and are assuming that if the file exists it is valid")
     public void testWorkflowDAGWDLMissingTask() throws IOException, TimeoutException, ApiException {
         // Input: hello.wdl
         // Repo: test_workflow_wdl

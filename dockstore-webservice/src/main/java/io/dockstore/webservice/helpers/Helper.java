@@ -116,6 +116,22 @@ public final class Helper {
     }
 
     /**
+                // Determine which tags need to be deleted (no longer exist on registry)
+                // Iterate over tags found from registry
+                    // Find if user already has the tool (if so then update)
+                    sourceCodeRepo.updateEntryMetadata(tool, AbstractEntryClient.Type.WDL);
+        // Creates list of tools to delete
+        final List<Tool> toDelete = new ArrayList<>();
+
+                // Does the tool in the database still exist in Quay
+
+            // Add tool to remove list if it is no longer on Quay (Ignore manual DockerHub/Quay tools)
+        // when a tool from the registry (ex: quay.io) has newer content, update it from
+            // Find if user already has the tool, if so just update
+            // Tool does not already exist, add it
+
+        // Save all new and existing tools
+        // delete tool if it has no users
      * Check if the given quay tool has tags
      * @param tool
      * @param client
@@ -210,26 +226,37 @@ public final class Helper {
         checkTokens(quayToken, githubToken, bitbucketToken);
 
         // Get all registries
+
+        // Get a list of all image registries
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
         final List<ImageRegistryInterface> allRegistries = factory.getAllRegistries();
 
-        // Update tools in the database
+        // Get a list of all namespaces from all image registries
         List<Tool> updatedTools = new ArrayList<>();
         for (ImageRegistryInterface imageRegistryInterface : allRegistries) {
             if (imageRegistryInterface.getClass().equals(QuayImageRegistry.class)) {
                 LOG.info("Grabbing QUAY repos");
                 updatedTools.addAll(imageRegistryInterface
-                        .refreshTools(userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken,
-                                bitbucketToken));
+
+        // Get a list of all tools found based on the namespaces list
             } else {
                 LOG.info("Grabbing DockerHub repos");
                 updatedTools.addAll(imageRegistryInterface
                         .refreshTools(userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken,
                                 bitbucketToken));
             }
+
+        // hack: read relevant tools from database, ignoring manual builds not owned by the current user
+        // Update tools found from API with build information, and
         }
         return updatedTools;
 
+        // Ignore updating DockerHub and manual tools for now
+
+        // update basic tool information and remove tools that no longer exist on quay
+
+        // Get tags from API
+        // Update existing tags with new content, add/remove tags as well
     }
 
     @SuppressWarnings("checkstyle:parameternumber")
@@ -467,10 +494,8 @@ public final class Helper {
         // get quay username
         String quayUsername = quayToken.getUsername();
 
-
         // call quay api, check if user owns or is part of owning organization
         Map<String,Object> map = factory.getQuayInfo(tool);
-
 
         if (map != null){
             String namespace = map.get("namespace").toString();

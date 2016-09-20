@@ -193,7 +193,7 @@ public abstract class SourceCodeRepoInterface {
      * @param content
      * @return true if valid CWL workflow, false otherwise
          */
-    public Boolean checkValidCWLWorkflow(String content) {
+    public boolean checkValidCWLWorkflow(String content) {
         if (content.contains("class: Workflow")) {
             return true;
         }
@@ -231,7 +231,7 @@ public abstract class SourceCodeRepoInterface {
         // Determine if workflow should be returned as a STUB or FULL
         if (!existingWorkflow.isPresent()){
             // when there is no existing workflow at all, just return a stub workflow. Also set descriptor type to default cwl.
-            workflow.setDescriptorType("cwl");
+            workflow.setDescriptorType(AbstractEntryClient.Type.CWL.toString());
             return workflow;
         }
         if (existingWorkflow.get().getMode() == WorkflowMode.STUB){
@@ -256,7 +256,7 @@ public abstract class SourceCodeRepoInterface {
         setupWorkflowVersions(repositoryId, workflow, existingWorkflow, existingDefaults);
 
         // Get metadata for workflow and update workflow with it
-        if (workflow.getDescriptorType().equals("cwl")) {
+        if (workflow.getDescriptorType().equals(AbstractEntryClient.Type.CWL.toString())) {
             updateEntryMetadata(workflow, AbstractEntryClient.Type.CWL);
         } else {
             updateEntryMetadata(workflow, AbstractEntryClient.Type.WDL);
