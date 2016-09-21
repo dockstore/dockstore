@@ -471,7 +471,7 @@ public final class Helper {
                     return false;
                 }
             } else {
-                return (namespace.equals(quayUsername) && !isOrg);
+                return (namespace.equals(quayUsername));
             }
         }
         return false;
