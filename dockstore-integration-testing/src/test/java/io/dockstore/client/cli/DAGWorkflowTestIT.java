@@ -187,7 +187,7 @@ public class DAGWorkflowTestIT {
         Assert.assertEquals("JSON should not have any data for nodes and edges", strings.size(),1);
     }
 
-    // This test will fail as long as we are not using validation on WDL workflows and are assuming that if the file exists it is valid
+    @Test
     @Ignore("This test will fail as long as we are not using validation on WDL workflows and are assuming that if the file exists it is valid")
     public void testWorkflowDAGWDLMissingTask() throws IOException, TimeoutException, ApiException {
         // Input: hello.wdl
