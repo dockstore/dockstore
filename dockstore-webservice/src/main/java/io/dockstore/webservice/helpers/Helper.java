@@ -225,8 +225,6 @@ public final class Helper {
         // with Docker Hub support it is now possible that there is no quayToken
         checkTokens(quayToken, githubToken, bitbucketToken);
 
-        // Get all registries
-
         // Get a list of all image registries
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
         final List<ImageRegistryInterface> allRegistries = factory.getAllRegistries();
@@ -236,28 +234,15 @@ public final class Helper {
         for (ImageRegistryInterface imageRegistryInterface : allRegistries) {
             if (imageRegistryInterface.getClass().equals(QuayImageRegistry.class)) {
                 LOG.info("Grabbing QUAY repos");
-                updatedTools.addAll(imageRegistryInterface.refreshTools(userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken,
-                        bitbucketToken));
 
-        // Get a list of all tools found based on the namespaces list
             } else {
                 LOG.info("Grabbing DockerHub repos");
-                updatedTools.addAll(imageRegistryInterface
-                        .refreshTools(userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken,
-                                bitbucketToken));
             }
-
-        // hack: read relevant tools from database, ignoring manual builds not owned by the current user
-        // Update tools found from API with build information, and
+            updatedTools.addAll(imageRegistryInterface
+                    .refreshTools(userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken,
+                            bitbucketToken));
         }
         return updatedTools;
-
-        // Ignore updating DockerHub and manual tools for now
-
-        // update basic tool information and remove tools that no longer exist on quay
-
-        // Get tags from API
-        // Update existing tags with new content, add/remove tags as well
     }
 
     @SuppressWarnings("checkstyle:parameternumber")
@@ -288,11 +273,9 @@ public final class Helper {
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
         final ImageRegistryInterface imageRegistryInterface = factory.createImageRegistry(tool.getRegistry());
 
-        Tool t = imageRegistryInterface
+        return imageRegistryInterface
                 .refreshTool(containerId, userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken,
                         bitbucketToken);
-
-        return t;
 
     }
 
