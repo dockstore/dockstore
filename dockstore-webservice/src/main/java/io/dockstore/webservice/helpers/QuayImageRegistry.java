@@ -44,11 +44,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author dyuen
  */
-public class QuayImageRegistry extends ImageRegistryInterface {
+public class QuayImageRegistry extends AbstractImageRegistry {
 
     public static final String QUAY_URL = "https://quay.io/api/v1/";
 
@@ -256,7 +258,7 @@ public class QuayImageRegistry extends ImageRegistryInterface {
                         Map<String, String> triggerMetadata = triggerMetadataMap.get("trigger_metadata");
                         if (triggerMetadata != null) {
                             String ref = triggerMetadata.get("ref");
-                            ref = Helper.parseReference(ref);
+                            ref = parseReference(ref);
                             tag.setReference(ref);
                             if (ref == null) {
                                 tag.setAutomated(false);
@@ -304,5 +306,29 @@ public class QuayImageRegistry extends ImageRegistryInterface {
         }
         return null;
     }
+
+    /**
+     * @param reference
+     *            a raw reference from git like "refs/heads/master"
+     * @return the last segment like master
+     */
+    public static String parseReference(String reference) {
+        if (reference != null) {
+            Pattern p = Pattern.compile("([\\S][^/\\s]+)?/([\\S][^/\\s]+)?/(\\S+)");
+            Matcher m = p.matcher(reference);
+            if (!m.find()) {
+                LOG.info("Cannot parse reference: {}", reference);
+                return null;
+            }
+
+            // These correspond to the positions of the pattern matcher
+            final int refIndex = 3;
+
+            reference = m.group(refIndex);
+            LOG.info("REFERENCE: {}", reference);
+        }
+        return reference;
+    }
+
 
 }

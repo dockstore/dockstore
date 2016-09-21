@@ -44,8 +44,8 @@ import io.dockstore.webservice.jdbi.UserDAO;
  **
  * @author dyuen
  */
-public abstract class ImageRegistryInterface {
-    private static final Logger LOG = LoggerFactory.getLogger(ImageRegistryInterface.class);
+public abstract class AbstractImageRegistry {
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractImageRegistry.class);
 
     /**
      * Get the list of namespaces and organizations that the user is associated to on Quay.io.
@@ -80,7 +80,7 @@ public abstract class ImageRegistryInterface {
      * @return
      */
     @SuppressWarnings("checkstyle:parameternumber")
-    public List<Tool> refreshTools(final Long userId, final UserDAO userDAO, final ToolDAO toolDAO,
+    public List<Tool> refreshTools(final long userId, final UserDAO userDAO, final ToolDAO toolDAO,
             final TagDAO tagDAO, final FileDAO fileDAO, final HttpClient client,
             final Token githubToken, final Token bitbucketToken) {
         // Get all the namespaces for the given registry

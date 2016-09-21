@@ -31,7 +31,7 @@ import io.dockstore.webservice.core.Tag;
  *
  * @author dyuen
  */
-public class DockerHubRegistry extends ImageRegistryInterface {
+public class DockerHubRegistry extends AbstractImageRegistry {
 
     private final HttpClient client;
 

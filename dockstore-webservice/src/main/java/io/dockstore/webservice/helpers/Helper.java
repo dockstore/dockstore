@@ -140,7 +140,7 @@ public final class Helper {
      * @param userId
      * @return true if tool has tags, false otherwise
      */
-    public static Boolean checkQuayContainerForTags(final Tool tool,final HttpClient client,
+    public static boolean checkQuayContainerForTags(final Tool tool,final HttpClient client,
             final ObjectMapper objectMapper, final TokenDAO tokenDAO, final long userId) {
         List<Token> tokens = tokenDAO.findByUserId(userId);
         Token quayToken = extractToken(tokens, TokenType.QUAY_IO.toString());
@@ -150,7 +150,7 @@ public final class Helper {
         }
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
 
-        final ImageRegistryInterface imageRegistry = factory.createImageRegistry(tool.getRegistry());
+        final AbstractImageRegistry imageRegistry = factory.createImageRegistry(tool.getRegistry());
         final List<Tag> tags = imageRegistry.getTags(tool);
 
         return !tags.isEmpty();
@@ -227,18 +227,18 @@ public final class Helper {
 
         // Get a list of all image registries
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
-        final List<ImageRegistryInterface> allRegistries = factory.getAllRegistries();
+        final List<AbstractImageRegistry> allRegistries = factory.getAllRegistries();
 
         // Get a list of all namespaces from all image registries
         List<Tool> updatedTools = new ArrayList<>();
-        for (ImageRegistryInterface imageRegistryInterface : allRegistries) {
-            if (imageRegistryInterface.getClass().equals(QuayImageRegistry.class)) {
+        for (AbstractImageRegistry abstractImageRegistry : allRegistries) {
+            if (abstractImageRegistry.getClass().equals(QuayImageRegistry.class)) {
                 LOG.info("Grabbing QUAY repos");
 
             } else {
                 LOG.info("Grabbing DockerHub repos");
             }
-            updatedTools.addAll(imageRegistryInterface
+            updatedTools.addAll(abstractImageRegistry
                     .refreshTools(userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken,
                             bitbucketToken));
         }
@@ -271,9 +271,9 @@ public final class Helper {
 
         // Get all registries
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
-        final ImageRegistryInterface imageRegistryInterface = factory.createImageRegistry(tool.getRegistry());
+        final AbstractImageRegistry abstractImageRegistry = factory.createImageRegistry(tool.getRegistry());
 
-        return imageRegistryInterface
+        return abstractImageRegistry
                 .refreshTool(containerId, userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken,
                         bitbucketToken);
 
@@ -286,29 +286,6 @@ public final class Helper {
             }
         }
         return null;
-    }
-
-    /**
-     * @param reference
-     *            a raw reference from git like "refs/heads/master"
-     * @return the last segment like master
-     */
-    public static String parseReference(String reference) {
-        if (reference != null) {
-            Pattern p = Pattern.compile("([\\S][^/\\s]+)?/([\\S][^/\\s]+)?/(\\S+)");
-            Matcher m = p.matcher(reference);
-            if (!m.find()) {
-                LOG.info("Cannot parse reference: {}", reference);
-                return null;
-            }
-
-            // These correspond to the positions of the pattern matcher
-            final int refIndex = 3;
-
-            reference = m.group(refIndex);
-            LOG.info("REFERENCE: {}", reference);
-        }
-        return reference;
     }
 
     /**
@@ -462,7 +439,7 @@ public final class Helper {
      * @param userId
      * @return
      */
-    public static Boolean checkIfUserOwns(final Tool tool,final HttpClient client, final ObjectMapper objectMapper, final TokenDAO tokenDAO, final long userId) {
+    public static boolean checkIfUserOwns(final Tool tool,final HttpClient client, final ObjectMapper objectMapper, final TokenDAO tokenDAO, final long userId) {
         List<Token> tokens = tokenDAO.findByUserId(userId);
         // get quay token
         Token quayToken = extractToken(tokens, TokenType.QUAY_IO.toString());
