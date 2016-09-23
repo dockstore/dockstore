@@ -74,8 +74,14 @@ public class FileImporter {
             if (fileType == SourceFile.FileType.DOCKERFILE) {
                 fileName = tag.getDockerfilePath();
             } else if (fileType == SourceFile.FileType.DOCKSTORE_CWL) {
+                if (tag.getCwlPath().equals("") || tag.getCwlPath() == null) {
+                    return null;
+                }
                 fileName = tag.getCwlPath();
             } else if (fileType == SourceFile.FileType.DOCKSTORE_WDL) {
+                if (tag.getWdlPath().equals("") || tag.getWdlPath() == null) {
+                    return null;
+                }
                 fileName = tag.getWdlPath();
             }
         } else if (version instanceof WorkflowVersion){

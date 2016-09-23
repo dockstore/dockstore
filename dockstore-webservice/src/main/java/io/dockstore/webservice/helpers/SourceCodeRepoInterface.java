@@ -319,7 +319,7 @@ public abstract class SourceCodeRepoInterface {
             }
         }
 
-        if (filePath == null) {
+        if (filePath == null || filePath.equals("")) {
             LOG.info(repositoryId + " : No descriptor found for " + branch + ".");
             return entry;
         }
