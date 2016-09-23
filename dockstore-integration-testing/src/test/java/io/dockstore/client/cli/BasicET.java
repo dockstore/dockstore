@@ -631,4 +631,30 @@ public class BasicET {
 
         }
 
+        /**
+         * This tests that a tool can not be updated to have no default descriptor paths
+         */
+        @Test
+        public void testToolNoDefaultDescriptors(){
+                // Update tool with empty WDL, shouldn't fail
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry", "quay.io/dockstoretestuser/quayandgithub",
+                        "--wdl-path", "", "--script" });
+
+                // Update tool with empty CWL, should now fail
+                systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry", "quay.io/dockstoretestuser/quayandgithub",
+                        "--cwl-path", "", "--script" });
+        }
+
+        /**
+         * This tests that a tool cannot be manually published if it has no default descriptor paths
+         */
+        @Test
+        public void testManualPublishToolNoDescriptorPaths() {
+                // Manual publish, should fail
+                systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.toString(),
+                        "--namespace", "dockstoretestuser", "--name", "quayandgithubalternate", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git", "--git-reference",
+                        "master", "--toolname", "alternate", "--cwl-path", "", "--wdl-path", "", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
+        }
 }

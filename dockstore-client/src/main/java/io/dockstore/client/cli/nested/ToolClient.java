@@ -303,6 +303,11 @@ public class ToolClient extends AbstractEntryClient {
             container.setToolname(toolname);
             container.setPath(Joiner.on("/").skipNulls().join(registry, namespace, name));
 
+            // Check that tool has at least one default path
+            if ((cwlPath == null || cwlPath.equals("")) && (wdlPath == null || wdlPath.equals(""))) {
+                errorMessage("A tool must have at least one descriptor default path.", Client.CLIENT_ERROR);
+            }
+
             if (!Registry.QUAY_IO.toString().equals(registry)) {
                 final String versionName = optVal(args, "--version-name", "latest");
                 final Tag tag = new Tag();
@@ -630,6 +635,11 @@ public class ToolClient extends AbstractEntryClient {
                 container.setDefaultDockerfilePath(dockerfilePath);
                 container.setToolname(toolname);
                 container.setGitUrl(gitUrl);
+
+                // Check that tool has at least one default path
+                if ((cwlPath == null || cwlPath.equals("")) && (wdlPath == null || wdlPath.equals(""))) {
+                    errorMessage("A tool must have at least one descriptor default path.", Client.CLIENT_ERROR);
+                }
 
                 // if valid version
                 boolean updateVersionSuccess = false;
