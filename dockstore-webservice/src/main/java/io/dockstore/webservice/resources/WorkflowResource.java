@@ -20,6 +20,10 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Optional;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import io.cwl.avro.WorkflowStep;
+import io.cwl.avro.WorkflowStepInput;
 import io.dockstore.client.Bridge;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
@@ -52,14 +56,15 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
+
 import scala.collection.immutable.Seq;
 
 import javax.annotation.security.RolesAllowed;
@@ -74,7 +79,6 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -927,131 +931,42 @@ public class WorkflowResource {
      * @return String
      * */
     private String getContentCWL(String content, Map<String, String> secondaryDescContent, Type type) {
+        String result = "";
+        // New Approach for DAG
+//        Map<String, ArrayList<String>> stepToDependencies = new HashMap<>(); // Mapping of stepId -> array of dependencies for a step
+
+        // Convert YAML to JSON
         Yaml yaml = new Yaml();
-        Map <String, Object> sections;
-        String defaultDockerEnv = "", dockerEnv = "", dockerPullURL = "";
-        Integer index = 0;
-        Map<String, Pair<String, String>> toolID = new HashMap<>();     // map for toolID and toolName
-        Map<String, Pair<String, String>> toolDocker = new HashMap<>(); // map for docker
-        ArrayList<Pair<String, String>> nodePairs = new ArrayList<>();  // array for dag nodes
-        String result = null;
+        Map<String, Object> mapping = (Map<String, Object>) yaml.load(content);
+        JSONObject cwlJson = new JSONObject(mapping);
+        LOG.info(cwlJson.toString());
 
-        InputStream is = IOUtils.toInputStream(content, StandardCharsets.UTF_8);
-        sections = (Map<String, Object>) yaml.load(is);
-        for (Map.Entry<String, Object> entry : sections.entrySet()) {
-            String section = entry.getKey();
-            defaultDockerEnv = getDefaultDockerEnv(section,entry,defaultDockerEnv);
-            if (section.equals("steps")) {
-                List<Map <String, Object>> steps = getStepsArray(entry);
-                for (Map <String, Object> step : steps) {
-                    Object file=null;
-                    String fileName="", stepIdValue="";
-                    boolean expressionTool = false;
-                    Set<Map.Entry<String, Object>> stepEntrySet = step.entrySet();
-                    for (Map.Entry<String, Object> stepEntryValues : stepEntrySet){
-                        if(stepEntryValues.getValue() instanceof Map){ //{pass_filter->{in->..., out->..., ...}}
-                            Map<String, Object> valueOfStep;
-                            if(stepEntryValues.getKey().equals("run")){ //run:{import:<filename>.cwl}, run:{include:<filename>.cwl}
-                                valueOfStep = (Map<String, Object>)stepEntryValues.getValue();
-                                if(valueOfStep.containsKey("import")){
-                                    file = valueOfStep.get("import");
-                                } else if(valueOfStep.containsKey("include")){
-                                    file = valueOfStep.get("include");
-                                }
-                            }else{ //run:<filename>.cwl but id is the key (CWL 1.0)
-                                stepIdValue = stepEntryValues.getKey();
-                                valueOfStep = (Map<String, Object>)stepEntryValues.getValue();
-                                file = valueOfStep.get("run");
-                            }
-                        }else{ //{id->..., in->..., out-> ..., run->...}
-                            if(stepEntryValues.getKey().equals("run")){
-                                file = stepEntryValues.getValue();
-                            }else if(stepEntryValues.getKey().equals("id")){
-                                stepIdValue = stepEntryValues.getValue().toString();
-                            }
-                        }
-                    }
-                    if(file instanceof String){ // run: <filename>.cwl
-                        fileName = file.toString();
-                    } else{ //run: expression-> ..... in->.....
-                        Map<String, Object> fileMap = (Map<String, Object>) file;
-                        if(fileMap.get("class").equals("ExpressionTool")){
-                            expressionTool = true; //ExpressionTool means that this id is not a tool
-                            if(fileMap.containsKey("requirement") || fileMap.containsKey("hints")){
-                                dockerEnv = getDockerEnvExprTool(fileMap);
-                                dockerPullURL = getURLFromEntry(dockerEnv);
-                            }else{ //run is a map but does not have any hints/requirements
-                                dockerPullURL = "";
-                            }
-                        }
-                    }
-                    //get the tool file based on "run" command
-                    String secondaryDescriptor;
-                    InputStream secondaryIS;
-                    Yaml helperYaml = new Yaml();
-                    Map<String, Object> helperGroups;
-                    if(secondaryDescContent.size() != 0){
-                        boolean defaultDocker = true;
-                        if(!expressionTool){
-                            //run:<filename>.cwl, run:{import:<filename>.cwl}, run:{include:<filename>.cwl}
-                            secondaryDescriptor = secondaryDescContent.get(fileName); //get the file content
-                            secondaryIS = IOUtils.toInputStream(secondaryDescriptor, StandardCharsets.UTF_8); //convert to InputStream
-                            helperGroups = (Map<String, Object>) helperYaml.load(secondaryIS);
-                            for (Map.Entry<String, Object> helperGroupEntry : helperGroups.entrySet()) {
-                                String helperGroup = helperGroupEntry.getKey();
-                                // find the docker requirement inside the tool file
-                                if (helperGroup.equals("requirements") || helperGroup.equals("hints")) {
-                                    ArrayList<Map<String, Object>> requirements = (ArrayList<Map<String, Object>>) helperGroupEntry.getValue();
-                                    for (Map<String, Object> requirement : requirements) {
-                                        if (requirement.get("class").equals("DockerRequirement")) {
-                                            dockerEnv = requirement.get("dockerPull").toString();
-                                            if(type == Type.TOOLS){
-                                                dockerPullURL = getURLFromEntry(dockerEnv);
-                                                //put the tool ID and docker information into two different maps
-                                                toolID.put(index.toString(), new MutablePair<>(stepIdValue, fileName));
-                                                toolDocker.put(index.toString(),new MutablePair<>(dockerEnv, dockerPullURL));
-                                                index++;
-                                            }else{
-                                                nodePairs.add(new MutablePair<>(stepIdValue.replaceFirst("#", ""), getURLFromEntry(requirement.get("dockerPull").toString())));
-                                            }
-                                            defaultDocker = false;
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                            if (defaultDocker) {
-                                if(type == Type.TOOLS) {
-                                    if(defaultDockerEnv.equals("")){ // no docker requirement found in the workflow
-                                        dockerEnv = "Not Specified";
-                                        dockerPullURL = "Not Specified";
-                                    }else{ //docker requirement is specified in the workflow
-                                        dockerEnv = defaultDockerEnv;
-                                        dockerPullURL = getURLFromEntry(defaultDockerEnv); //get default docker requirement from workflow
-                                    }
-                                    toolID.put(index.toString(), new MutablePair<>(stepIdValue, fileName));
-                                    toolDocker.put(index.toString(), new MutablePair<>(dockerEnv, dockerPullURL));
-                                    index++;
-                                }else{
-                                    nodePairs.add(new MutablePair<>(stepIdValue.replaceFirst("#", ""), getURLFromEntry(defaultDockerEnv)));
-                                }
-                            }
-                        }else{
-                            if(type.equals(Type.DAG)){ //IFF it is has ExpressionTool and Type is DAG
-                                nodePairs.add(new MutablePair<>(stepIdValue.replaceFirst("#", ""), dockerPullURL));
-                            }
-                        }
+        // Create a start and end node (unique, can't be possible stepIds)
 
-                    }
+        // Set up GSON for JSON parsing
+        final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
+        final Object cwlObject = gson.fromJson(cwlJson.toString(), io.cwl.avro.Workflow.class);
+
+        io.cwl.avro.Workflow workflowObject = (io.cwl.avro.Workflow) cwlObject;
+//        LOG.info(workflowObject.toString());
+        
+        // Iterate over steps
+        if (workflowObject.getSteps() instanceof List) {
+            // Store steps into json
+            final Object workflowStepsJson = gson.toJson(workflowObject.getSteps(), new TypeToken<List<WorkflowStep>>() {}.getType());
+
+            // Convert back into object
+            final List<WorkflowStep> workflowSteps = gson.fromJson(workflowStepsJson.toString(), new TypeToken<List<WorkflowStep>>() {}.getType());
+
+            if (workflowSteps instanceof List) {
+                for (Object workflowStep : (List)workflowSteps) {
+                    LOG.info("STEP");
+                    LOG.info(workflowStep.toString());
+
                 }
             }
         }
-        //call and return the Json string transformer
-        if(type == Type.TOOLS){
-            result = getJSONTableToolContentCWL(toolID, toolDocker);
-        }else if(type == Type.DAG){
-            result = setupJSONDAG(nodePairs);
-        }
+
         return result;
     }
 
