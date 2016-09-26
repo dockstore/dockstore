@@ -45,10 +45,10 @@ public class ImageRegistryFactory {
         this.quayToken = quayToken;
     }
 
-    public List<ImageRegistryInterface> getAllRegistries() {
-        List<ImageRegistryInterface> interfaces = new ArrayList<>();
+    public List<AbstractImageRegistry> getAllRegistries() {
+        List<AbstractImageRegistry> interfaces = new ArrayList<>();
         for (Registry r : Registry.values()) {
-            ImageRegistryInterface anInterface = createImageRegistry(r);
+            AbstractImageRegistry anInterface = createImageRegistry(r);
             if (anInterface != null) {
                 interfaces.add(anInterface);
             }
@@ -56,7 +56,7 @@ public class ImageRegistryFactory {
         return interfaces;
     }
 
-    public ImageRegistryInterface createImageRegistry(Registry registry) {
+    public AbstractImageRegistry createImageRegistry(Registry registry) {
         if (registry == Registry.QUAY_IO) {
             if (quayToken == null) {
                 return null;

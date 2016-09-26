@@ -39,7 +39,7 @@ import static io.dockstore.common.CommonTestUtilities.clearStateMakePrivate;
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 
 /**
- * Basic confidential integration tests, focusing on publishing/unpublishing both automatic and manually added containers
+ * Basic confidential integration tests, focusing on publishing/unpublishing both automatic and manually added tools
  * This is important as it tests the web service with real data instead of dummy data, using actual services like Github and Quay
  * @author aduncan
  */
@@ -81,7 +81,7 @@ public class BasicET {
         }
 
         /**
-         * Tests manually adding, updating, and removing a dockerhub container
+         * Tests manually adding, updating, and removing a dockerhub tool
          */
         @Test
         public void testVersionTagDockerhub(){
@@ -114,7 +114,7 @@ public class BasicET {
         }
 
         /**
-         * Tests the case where a manually registered quay container matching an automated build should be treated as a separate auto build (see issue 106)
+         * Tests the case where a manually registered quay tool matching an automated build should be treated as a separate auto build (see issue 106)
          */
         @Test
         public void testManualQuaySameAsAutoQuay() {
@@ -124,11 +124,11 @@ public class BasicET {
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
                 final long count = testingPostgres.runSelectStatement("select count(*) from tool where mode != 'MANUAL_IMAGE_PATH' and path = 'quay.io/dockstoretestuser/quayandgithub' and toolname = 'regular'", new ScalarHandler<>());
-                Assert.assertTrue("the container should be Auto", count == 1);
+                Assert.assertTrue("the tool should be Auto", count == 1);
         }
 
         /**
-         * Tests the case where a manually registered quay container has the same path as an auto build but different git repo
+         * Tests the case where a manually registered quay tool has the same path as an auto build but different git repo
          */
         @Test
         public void testManualQuayToAutoSamePathDifferentGitRepo() {
@@ -138,11 +138,11 @@ public class BasicET {
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
                 final long count = testingPostgres.runSelectStatement("select count(*) from tool where mode = 'MANUAL_IMAGE_PATH' and path = 'quay.io/dockstoretestuser/quayandgithub' and toolname = 'alternate'", new ScalarHandler<>());
-                Assert.assertTrue("the container should be Manual still", count == 1);
+                Assert.assertTrue("the tool should be Manual still", count == 1);
         }
 
         /**
-         * Tests that a manually published container still becomes manual even after the existing similar auto containers all have toolnames (see issue 120)
+         * Tests that a manually published tool still becomes manual even after the existing similar auto tools all have toolnames (see issue 120)
          */
         @Test
         public void testManualQuayToAutoNoAutoWithoutToolname() {
@@ -155,11 +155,11 @@ public class BasicET {
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
                 final long count = testingPostgres.runSelectStatement("select count(*) from tool where mode != 'MANUAL_IMAGE_PATH' and path = 'quay.io/dockstoretestuser/quayandgithub' and toolname = 'testtool'", new ScalarHandler<>());
-                Assert.assertTrue("the container should be Auto", count == 1);
+                Assert.assertTrue("the tool should be Auto", count == 1);
         }
 
         /**
-         * Tests the case where a manually registered quay container does not have any automated builds set up, though a manual build was run (see issue 107)
+         * Tests the case where a manually registered quay tool does not have any automated builds set up, though a manual build was run (see issue 107)
          */
         @Test
         public void testManualQuayManualBuild() {
@@ -168,12 +168,12 @@ public class BasicET {
                         "master", "--toolname", "alternate", "--script" });
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from tool where  path = 'quay.io/dockstoretestuser/noautobuild' and toolname = 'alternate' and lastbuild is not null", new ScalarHandler<>());
-                Assert.assertTrue("the container should have build information", count == 1);
+                final long count = testingPostgres.runSelectStatement("select count(*) from tool,tool_tag,tag where tool.id=tool_tag.toolid and tool_tag.tagid=tag.id and tag.reference is null and tool.path = 'quay.io/dockstoretestuser/noautobuild' and tool.toolname = 'alternate' and tool.lastbuild is not null", new ScalarHandler<>());
+                Assert.assertTrue("the tool should have build information, but no associated git references", count == 1);
         }
 
         /**
-         * Tests the case where a manually registered quay container does not have any tags
+         * Tests the case where a manually registered quay tool does not have any tags
          */
         @Test
         public void testManualQuayNoTags() {
@@ -184,7 +184,7 @@ public class BasicET {
         }
 
         /**
-         * Tests that a quick registered quay container with no autobuild can be updated to have a manually set CWL file from git (see issue 19)
+         * Tests that a quick registered quay tool with no autobuild can be updated to have a manually set CWL file from git (see issue 19)
          */
         @Test
         public void testQuayNoAutobuild() {
@@ -193,19 +193,19 @@ public class BasicET {
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
                 final long count = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser/noautobuild' and giturl = 'git@github.com:DockstoreTestUser/dockstore-whalesay.git'", new ScalarHandler<>());
-                Assert.assertTrue("the container should now have an associated git repo", count == 1);
+                Assert.assertTrue("the tool should now have an associated git repo", count == 1);
 
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry", "quay.io/dockstoretestuser/nobuildsatall",
                         "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--script" });
 
                 final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser/nobuildsatall' and giturl = 'git@github.com:DockstoreTestUser/dockstore-whalesay.git'", new ScalarHandler<>());
-                Assert.assertTrue("the container should now have an associated git repo", count2 == 1);
+                Assert.assertTrue("the tool should now have an associated git repo", count2 == 1);
 
 
         }
 
         /**
-         * Tests a user trying to add a quay container that they do not own and are not in the owning organization
+         * Tests a user trying to add a quay tool that they do not own and are not in the owning organization
          */
         @Test
         public void testAddQuayRepoOfNonOwnedOrg(){
@@ -218,11 +218,11 @@ public class BasicET {
         }
 
         /**
-         * Check that refreshing an existing container will not throw an error
+         * Check that refreshing an existing tool will not throw an error
          * Todo: Update test to check the outcome of a refresh
          */
         @Test
-        public void testRefreshCorrectContainer(){
+        public void testRefreshCorrectTool(){
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--entry", "quay.io/dockstoretestuser/quayandbitbucket", "--script" });
 
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.toString(),
@@ -238,7 +238,7 @@ public class BasicET {
         }
 
         /**
-         * Tests that a git reference for a container can include branches named like feature/...
+         * Tests that a git reference for a tool can include branches named like feature/...
          */
         @Test
         public void testGitReferenceFeatureBranch(){
@@ -249,10 +249,10 @@ public class BasicET {
 
         /*
          Test Quay and Github -
-         These tests are focused on testing containers created from Quay and Github repositories
+         These tests are focused on testing tools created from Quay and Github repositories
           */
         /**
-         * Checks that the two Quay/Github containers were automatically found
+         * Checks that the two Quay/Github tools were automatically found
          */
         @Test
         public void testQuayGithubAutoRegistration(){
@@ -262,7 +262,7 @@ public class BasicET {
         }
 
         /**
-         * Ensures that you can't publish an automatically added Quay/Github container with an alternate structure unless you change the Dockerfile and Dockstore.cwl locations
+         * Ensures that you can't publish an automatically added Quay/Github tool with an alternate structure unless you change the Dockerfile and Dockstore.cwl locations
          */
         @Test
         public void testQuayGithubPublishAlternateStructure(){
@@ -273,10 +273,10 @@ public class BasicET {
         }
 
         /**
-         * Checks that you can properly publish and unpublish a Quay/Github container
+         * Checks that you can properly publish and unpublish a Quay/Github tool
          */
         @Test
-        public void testQuayGithubPublishAndUnpublishAContainer() {
+        public void testQuayGithubPublishAndUnpublishATool() {
                 // Publish
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--entry", "quay.io/dockstoretestuser/quayandgithub", "--script" });
 
@@ -292,7 +292,7 @@ public class BasicET {
         }
 
         /**
-         * Checks that you can manually publish and unpublish a Quay/Github container with an alternate structure, if the CWL and Dockerfile paths are defined properly
+         * Checks that you can manually publish and unpublish a Quay/Github tool with an alternate structure, if the CWL and Dockerfile paths are defined properly
          */
         @Test
         public void testQuayGithubManualPublishAndUnpublishAlternateStructure(){
