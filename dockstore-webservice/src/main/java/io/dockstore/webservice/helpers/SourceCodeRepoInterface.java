@@ -18,6 +18,7 @@ package io.dockstore.webservice.helpers;
 
 import com.esotericsoftware.yamlbeans.YamlException;
 import com.esotericsoftware.yamlbeans.YamlReader;
+import com.google.api.client.repackaged.com.google.common.base.Strings;
 import com.google.common.base.Optional;
 import io.dockstore.client.Bridge;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
@@ -319,7 +320,7 @@ public abstract class SourceCodeRepoInterface {
             }
         }
 
-        if (filePath == null || filePath.equals("")) {
+        if (Strings.isNullOrEmpty(filePath)) {
             LOG.info(repositoryId + " : No descriptor found for " + branch + ".");
             return entry;
         }

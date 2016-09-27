@@ -16,6 +16,7 @@
 
 package io.dockstore.client.cli.nested;
 
+import com.google.api.client.repackaged.com.google.common.base.Strings;
 import com.google.common.base.Joiner;
 import com.google.common.io.Files;
 import io.dockstore.client.cli.Client;
@@ -304,7 +305,7 @@ public class ToolClient extends AbstractEntryClient {
             container.setPath(Joiner.on("/").skipNulls().join(registry, namespace, name));
 
             // Check that tool has at least one default path
-            if ((cwlPath == null || cwlPath.equals("")) && (wdlPath == null || wdlPath.equals(""))) {
+            if (Strings.isNullOrEmpty(cwlPath) && Strings.isNullOrEmpty(wdlPath)) {
                 errorMessage("A tool must have at least one descriptor default path.", Client.CLIENT_ERROR);
             }
 
@@ -637,7 +638,7 @@ public class ToolClient extends AbstractEntryClient {
                 container.setGitUrl(gitUrl);
 
                 // Check that tool has at least one default path
-                if ((cwlPath == null || cwlPath.equals("")) && (wdlPath == null || wdlPath.equals(""))) {
+                if (Strings.isNullOrEmpty(cwlPath) && Strings.isNullOrEmpty(wdlPath)) {
                     errorMessage("A tool must have at least one descriptor default path.", Client.CLIENT_ERROR);
                 }
 
