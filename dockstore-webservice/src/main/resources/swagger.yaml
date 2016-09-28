@@ -346,8 +346,7 @@ definitions:
   WorkflowVersion:
     description: This describes one workflow version associated with a workflow.
     properties:
-      dirtyBit: {default: false, description: True if user has altered the version,
-        type: boolean}
+      dirtyBit: {default: false, description: True if user has altered the tag, type: boolean}
       hidden: {default: false, description: 'Implementation specific, whether this
           row is visible to other users aside from the owner', type: boolean}
       id: {description: Implementation specific ID for the tag in this web service,

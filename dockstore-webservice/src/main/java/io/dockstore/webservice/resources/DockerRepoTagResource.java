@@ -105,7 +105,14 @@ public class DockerRepoTagResource {
         for (Tag tag : tags) {
             if (mapOfExistingTags.containsKey(tag.getId())) {
                 // remove existing copy and add the new one
-                final Tag existingTag = mapOfExistingTags.get(tag.getId());
+                Tag existingTag = mapOfExistingTags.get(tag.getId());
+
+                // If any paths have changed then set dirty bit to true
+                if (!existingTag.getCwlPath().equals(tag.getCwlPath()) || !existingTag.getWdlPath().equals(tag.getWdlPath())
+                        || !existingTag.getDockerfilePath().equals(tag.getDockerfilePath())) {
+                    existingTag.setDirtyBit(true);
+                }
+
                 existingTag.updateByUser(tag);
             }
         }
@@ -130,7 +137,11 @@ public class DockerRepoTagResource {
 
         for (Tag tag : tags) {
             final long tagId = tagDAO.create(tag);
-            final Tag byId = tagDAO.findById(tagId);
+            Tag byId = tagDAO.findById(tagId);
+
+            // Set dirty bit since this is a manual add
+            byId.setDirtyBit(true);
+
             c.addTag(byId);
         }
 

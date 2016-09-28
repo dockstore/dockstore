@@ -528,7 +528,7 @@ public class ToolClient extends AbstractEntryClient {
                         List<Tag> updatedTags = containerTagsApi.addTags(containerId, tags);
                         containersApi.refresh(container.getId());
 
-                        out("The container now has the following tags:");
+                        out("The tool now has the following tags:");
                         for (Tag newTag : updatedTags) {
                             out(newTag.getName());
                         }

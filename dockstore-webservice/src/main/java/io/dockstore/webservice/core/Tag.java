@@ -64,18 +64,6 @@ public class Tag extends Version<Tag> {
     @ApiModelProperty("Path for the WDL document")
     private String wdlPath = "/Dockstore.wdl";
 
-    @Column
-    @ApiModelProperty("True if user has altered the tag")
-    private boolean dirtyBit = false;
-
-    public boolean isDirtyBit() {
-        return dirtyBit;
-    }
-
-    public void setDirtyBit(boolean dirtyBit) {
-        this.dirtyBit = dirtyBit;
-    }
-
     public Tag() {
         super();
     }

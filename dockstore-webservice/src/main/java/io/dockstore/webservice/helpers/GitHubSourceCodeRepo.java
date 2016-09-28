@@ -196,7 +196,20 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             version.setValid(false);
 
             // Determine workflow version from previous
-            String calculatedPath = existingDefaults.getOrDefault(ref, existingWorkflow.get().getDefaultWorkflowPath());
+
+            // Set to false if new version
+            if (existingDefaults.get(ref) == null) {
+                version.setDirtyBit(false);
+            }
+
+            // Use dirty bit to determine workflow path
+            String calculatedPath;
+            if (version.isDirtyBit()) {
+                calculatedPath = existingDefaults.get(ref);
+            } else {
+                calculatedPath = existingWorkflow.get().getDefaultWorkflowPath();
+            }
+
             version.setWorkflowPath(calculatedPath);
             Set<SourceFile> sourceFileSet = new HashSet<>();
             //TODO: is there a case-insensitive endsWith?
