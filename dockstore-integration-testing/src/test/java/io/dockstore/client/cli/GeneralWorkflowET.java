@@ -574,7 +574,7 @@ public class GeneralWorkflowET {
 
                 // There should be 3 versions with new cwl
                 final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion where workflowpath = '/Dockstoreclean.cwl'", new ScalarHandler<>());
-                Assert.assertTrue("there should be 3 versions with workflow path /Dockstoreclean.cwl, there are " + count2, count2 == 3);
+                Assert.assertTrue("there should be 4 versions with workflow path /Dockstoreclean.cwl, there are " + count2, count2 == 4);
 
         }
 
