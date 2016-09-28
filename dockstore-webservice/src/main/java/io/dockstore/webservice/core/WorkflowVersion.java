@@ -40,6 +40,17 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     @ApiModelProperty("Path for the workflow")
     private String workflowPath;
 
+    public boolean isDirtyBit() {
+        return dirtyBit;
+    }
+
+    public void setDirtyBit(boolean dirtyBit) {
+        this.dirtyBit = dirtyBit;
+    }
+
+    @Column
+    @ApiModelProperty("True if user has altered the version")
+    private boolean dirtyBit = false;
 
     public WorkflowVersion() {
         super();
