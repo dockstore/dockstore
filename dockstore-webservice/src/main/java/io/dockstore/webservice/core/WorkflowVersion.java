@@ -52,6 +52,7 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     public void update(WorkflowVersion workflowVersion) {
         super.update(workflowVersion);
         super.setReference(workflowVersion.getReference());
+        workflowPath = workflowVersion.getWorkflowPath();
     }
 
     public void clone(WorkflowVersion tag) {

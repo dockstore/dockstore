@@ -217,7 +217,7 @@ public abstract class SourceCodeRepoInterface {
      * @param existingDefaults
          * @return workflow with associated workflow versions
          */
-    public abstract Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow, Map<String, String> existingDefaults);
+    public abstract Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow, Map<String, WorkflowVersion> existingDefaults);
 
     /**
      * Creates or updates a workflow based on the situation. Will grab workflow versions and more metadata if workflow is FULL
@@ -244,10 +244,10 @@ public abstract class SourceCodeRepoInterface {
         workflow.setMode(WorkflowMode.FULL);
 
         // if it exists, extract paths from the previous workflow entry
-        Map<String, String> existingDefaults = new HashMap<>();
+        Map<String, WorkflowVersion> existingDefaults = new HashMap<>();
         if (existingWorkflow.isPresent()){
             // Copy over existing workflow versions
-            existingWorkflow.get().getWorkflowVersions().forEach(existingVersion -> existingDefaults.put(existingVersion.getReference(), existingVersion.getWorkflowPath()));
+            existingWorkflow.get().getWorkflowVersions().forEach(existingVersion -> existingDefaults.put(existingVersion.getReference(), existingVersion));
 
             // Copy workflow information from source (existingWorkflow) to target (workflow)
             copyWorkflow(existingWorkflow.get(), workflow);
