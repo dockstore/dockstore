@@ -104,12 +104,6 @@ public abstract class Version<T extends Version> implements Comparable<T>{
     public void updateByUser(final Version version) {
         reference = version.reference;
         hidden = version.hidden;
-
-        // Set dirty bit to false unless it is already true
-        if (!isDirtyBit()) {
-            setDirtyBit(false);
-        }
-
     }
 
     public void update(T version) {

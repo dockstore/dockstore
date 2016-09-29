@@ -16,8 +16,8 @@
 
 package io.dockstore.client.cli.nested;
 
-import com.google.api.client.repackaged.com.google.common.base.Strings;
 import com.google.common.base.Joiner;
+import com.google.common.base.Strings;
 import com.google.common.io.Files;
 import io.dockstore.client.cli.Client;
 import io.swagger.client.ApiException;
@@ -664,7 +664,7 @@ public class ToolClient extends AbstractEntryClient {
 
                 containersApi.updateContainer(containerId, container);
                 containersApi.refresh(containerId);
-                out("The container has been updated.");
+                out("The tool has been updated.");
             } catch (ApiException ex) {
                 exceptionMessage(ex, "", Client.API_ERROR);
             }

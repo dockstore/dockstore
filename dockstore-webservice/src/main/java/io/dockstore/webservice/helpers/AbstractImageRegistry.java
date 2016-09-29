@@ -269,9 +269,6 @@ public abstract class AbstractImageRegistry {
                     long id = tagDAO.create(tag);
                     tag = tagDAO.findById(id);
 
-                    // Set dirty bit to false
-                    tag.setDirtyBit(false);
-
                     tool.addTag(tag);
 
                     if (!tag.isAutomated()) {
