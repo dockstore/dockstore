@@ -238,6 +238,14 @@ public abstract class AbstractImageRegistry {
 
                         oldTag.update(newTag);
 
+                        // Update tag with default paths if dirty bit not set
+                        if (!oldTag.isDirtyBit()) {
+                            // Has not been modified => set paths
+                            oldTag.setCwlPath(tool.getDefaultCwlPath());
+                            oldTag.setWdlPath(tool.getDefaultWdlPath());
+                            oldTag.setDockerfilePath(tool.getDefaultDockerfilePath());
+                        }
+
                         break;
                     }
                 }
@@ -260,6 +268,7 @@ public abstract class AbstractImageRegistry {
 
                     long id = tagDAO.create(tag);
                     tag = tagDAO.findById(id);
+
                     tool.addTag(tag);
 
                     if (!tag.isAutomated()) {

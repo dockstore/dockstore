@@ -631,4 +631,63 @@ public class BasicET {
 
         }
 
+        /**
+         * This tests that a tool can not be updated to have no default descriptor paths
+         */
+        @Test
+        public void testToolNoDefaultDescriptors(){
+                // Update tool with empty WDL, shouldn't fail
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry", "quay.io/dockstoretestuser/quayandgithub",
+                        "--wdl-path", "", "--script" });
+
+                // Update tool with empty CWL, should now fail
+                systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry", "quay.io/dockstoretestuser/quayandgithub",
+                        "--cwl-path", "", "--script" });
+        }
+
+        /**
+         * This tests that a tool cannot be manually published if it has no default descriptor paths
+         */
+        @Test
+        public void testManualPublishToolNoDescriptorPaths() {
+                // Manual publish, should fail
+                systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.toString(),
+                        "--namespace", "dockstoretestuser", "--name", "quayandgithubalternate", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git", "--git-reference",
+                        "master", "--toolname", "alternate", "--cwl-path", "", "--wdl-path", "", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
+        }
+
+        /**
+         * This tests the dirty bit attribute for tool tags with quay
+         */
+        @Test
+        public void testQuayDirtyBit() {
+                // Setup db
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+                // Check that no tags have a true dirty bit
+                final long count = testingPostgres.runSelectStatement("select count(*) from tag where dirtybit = true", new ScalarHandler<>());
+                Assert.assertTrue("there should be no tags with dirty bit, there are " + count, count == 0);
+
+                // Edit tag cwl
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "version_tag", "update", "--entry", "quay.io/dockstoretestuser/quayandgithub",
+                                "--name", "master", "--cwl-path", "/Dockstoredirty.cwl", "--script" });
+
+                // Edit another tag wdl
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "version_tag", "update", "--entry", "quay.io/dockstoretestuser/quayandgithub",
+                                "--name", "latest", "--wdl-path", "/Dockstoredirty.wdl", "--script" });
+
+                // There should now be two true dirty bits
+                final long count1 = testingPostgres.runSelectStatement("select count(*) from tag where dirtybit = true", new ScalarHandler<>());
+                Assert.assertTrue("there should be two tags with dirty bit, there are " + count1, count1 ==2);
+
+                // Update default cwl to /Dockstoreclean.cwl
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry", "quay.io/dockstoretestuser/quayandgithub",
+                        "--cwl-path", "/Dockstoreclean.cwl", "--script" });
+
+                // There should only be one tag with /Dockstoreclean.cwl (both tag with new cwl and new wdl should be dirty and not changed)
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from tag where cwlpath = '/Dockstoreclean.cwl'", new ScalarHandler<>());
+                Assert.assertTrue("there should be only one tag with the cwl path /Dockstoreclean.cwl, there are " + count2, count2 ==1);
+        }
 }

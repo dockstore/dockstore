@@ -17,6 +17,7 @@
 package io.dockstore.client.cli.nested;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Strings;
 import com.google.common.io.Files;
 import io.dockstore.client.cli.Client;
 import io.swagger.client.ApiException;
@@ -303,6 +304,11 @@ public class ToolClient extends AbstractEntryClient {
             container.setToolname(toolname);
             container.setPath(Joiner.on("/").skipNulls().join(registry, namespace, name));
 
+            // Check that tool has at least one default path
+            if (Strings.isNullOrEmpty(cwlPath) && Strings.isNullOrEmpty(wdlPath)) {
+                errorMessage("A tool must have at least one descriptor default path.", Client.CLIENT_ERROR);
+            }
+
             if (!Registry.QUAY_IO.toString().equals(registry)) {
                 final String versionName = optVal(args, "--version-name", "latest");
                 final Tag tag = new Tag();
@@ -522,7 +528,7 @@ public class ToolClient extends AbstractEntryClient {
                         List<Tag> updatedTags = containerTagsApi.addTags(containerId, tags);
                         containersApi.refresh(container.getId());
 
-                        out("The container now has the following tags:");
+                        out("The tool now has the following tags:");
                         for (Tag newTag : updatedTags) {
                             out(newTag.getName());
                         }
@@ -631,6 +637,11 @@ public class ToolClient extends AbstractEntryClient {
                 container.setToolname(toolname);
                 container.setGitUrl(gitUrl);
 
+                // Check that tool has at least one default path
+                if (Strings.isNullOrEmpty(cwlPath) && Strings.isNullOrEmpty(wdlPath)) {
+                    errorMessage("A tool must have at least one descriptor default path.", Client.CLIENT_ERROR);
+                }
+
                 // if valid version
                 boolean updateVersionSuccess = false;
 
@@ -653,7 +664,7 @@ public class ToolClient extends AbstractEntryClient {
 
                 containersApi.updateContainer(containerId, container);
                 containersApi.refresh(containerId);
-                out("The container has been updated.");
+                out("The tool has been updated.");
             } catch (ApiException ex) {
                 exceptionMessage(ex, "", Client.API_ERROR);
             }

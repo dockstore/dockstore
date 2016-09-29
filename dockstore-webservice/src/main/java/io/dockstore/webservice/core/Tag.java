@@ -64,7 +64,6 @@ public class Tag extends Version<Tag> {
     @ApiModelProperty("Path for the WDL document")
     private String wdlPath = "/Dockstore.wdl";
 
-
     public Tag() {
         super();
     }

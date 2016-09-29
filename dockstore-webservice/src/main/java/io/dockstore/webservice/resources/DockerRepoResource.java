@@ -259,9 +259,11 @@ public class DockerRepoResource {
         //update the workflow path in all workflowVersions
         Set<Tag> tags = c.getTags();
         for(Tag tag : tags){
-            tag.setCwlPath(tool.getDefaultCwlPath());
-            tag.setWdlPath(tool.getDefaultWdlPath());
-            tag.setDockerfilePath(tool.getDefaultDockerfilePath());
+            if (!tag.isDirtyBit()) {
+                tag.setCwlPath(tool.getDefaultCwlPath());
+                tag.setWdlPath(tool.getDefaultWdlPath());
+                tag.setDockerfilePath(tool.getDefaultDockerfilePath());
+            }
         }
 
         return c;
