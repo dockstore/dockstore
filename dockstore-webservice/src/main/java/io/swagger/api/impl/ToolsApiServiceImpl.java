@@ -56,6 +56,8 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -240,7 +242,12 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             if (!version.getDescriptorType().isEmpty()) {
                 // ensure that descriptor is non-null before adding to list
                 tool.getVersions().add(version);
-                version.setMetaVersion(inputVersion.getLastModified() != null ? String.valueOf(inputVersion.getLastModified()) : null);
+                version.setMetaVersion(String.valueOf(inputVersion.getLastModified() != null ? inputVersion.getLastModified() : new Date(0)));
+            }
+            final List<ToolVersion.DescriptorTypeEnum> descriptorType = version.getDescriptorType();
+            if (!descriptorType.isEmpty()) {
+                EnumSet<ToolVersion.DescriptorTypeEnum> set = EnumSet.copyOf(descriptorType);
+                version.setDescriptorType(Lists.newArrayList(set));
             }
         }
         return new ImmutablePair<>(tool, fileTable);
