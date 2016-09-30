@@ -130,7 +130,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             tool.setAuthor(container.getAuthor());
         }
         tool.setDescription(container.getDescription());
-        tool.setMetaVersion(container.getLastUpdated() != null ? container.getLastUpdated().toString() : null);
+        tool.setMetaVersion(container.getLastUpdated() != null ? container.getLastUpdated().toString() : new Date(0).toString());
         tool.setToolclass(type);
         tool.setId(newID);
         tool.setUrl(globalId);
@@ -239,16 +239,18 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             if (container instanceof Tool) {
                 version.setImage(((Tool) container).getPath() + ":" + inputVersion.getName());
             }
+            // ensure that descriptor is non-null before adding to list
             if (!version.getDescriptorType().isEmpty()) {
-                // ensure that descriptor is non-null before adding to list
-                tool.getVersions().add(version);
+                // do some clean-up
                 version.setMetaVersion(String.valueOf(inputVersion.getLastModified() != null ? inputVersion.getLastModified() : new Date(0)));
+                final List<ToolVersion.DescriptorTypeEnum> descriptorType = version.getDescriptorType();
+                if (!descriptorType.isEmpty()) {
+                    EnumSet<ToolVersion.DescriptorTypeEnum> set = EnumSet.copyOf(descriptorType);
+                    version.setDescriptorType(Lists.newArrayList(set));
+                }
+                tool.getVersions().add(version);
             }
-            final List<ToolVersion.DescriptorTypeEnum> descriptorType = version.getDescriptorType();
-            if (!descriptorType.isEmpty()) {
-                EnumSet<ToolVersion.DescriptorTypeEnum> set = EnumSet.copyOf(descriptorType);
-                version.setDescriptorType(Lists.newArrayList(set));
-            }
+
         }
         return new ImmutablePair<>(tool, fileTable);
     }
