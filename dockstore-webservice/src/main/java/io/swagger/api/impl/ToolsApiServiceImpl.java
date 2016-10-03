@@ -56,6 +56,8 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -128,7 +130,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             tool.setAuthor(container.getAuthor());
         }
         tool.setDescription(container.getDescription());
-        tool.setMetaVersion(container.getLastUpdated() != null ? container.getLastUpdated().toString() : null);
+        tool.setMetaVersion(container.getLastUpdated() != null ? container.getLastUpdated().toString() : new Date(0).toString());
         tool.setToolclass(type);
         tool.setId(newID);
         tool.setUrl(globalId);
@@ -237,11 +239,18 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             if (container instanceof Tool) {
                 version.setImage(((Tool) container).getPath() + ":" + inputVersion.getName());
             }
+            // ensure that descriptor is non-null before adding to list
             if (!version.getDescriptorType().isEmpty()) {
-                // ensure that descriptor is non-null before adding to list
+                // do some clean-up
+                version.setMetaVersion(String.valueOf(inputVersion.getLastModified() != null ? inputVersion.getLastModified() : new Date(0)));
+                final List<ToolVersion.DescriptorTypeEnum> descriptorType = version.getDescriptorType();
+                if (!descriptorType.isEmpty()) {
+                    EnumSet<ToolVersion.DescriptorTypeEnum> set = EnumSet.copyOf(descriptorType);
+                    version.setDescriptorType(Lists.newArrayList(set));
+                }
                 tool.getVersions().add(version);
-                version.setMetaVersion(inputVersion.getLastModified() != null ? String.valueOf(inputVersion.getLastModified()) : null);
             }
+
         }
         return new ImmutablePair<>(tool, fileTable);
     }
