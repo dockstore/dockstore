@@ -1089,12 +1089,19 @@ public class WorkflowResource {
                         Map<String, Object> entryMapping = (Map<String, Object>) yaml.load(secondaryFileContents);
                         JSONObject entryJson = new JSONObject(entryMapping);
 
-                        final Gson gsonTool = getTypeSafeCWLToolDocument();
-                        final CommandLineTool clt = gsonTool.fromJson(entryJson.toString(), io.cwl.avro.CommandLineTool.class);
+                        List<Object> cltRequirements = null;
 
+                        if (isTool(secondaryFileContents)) {
+                            final Gson gsonTool = getTypeSafeCWLToolDocument();
+                            final CommandLineTool clt = gsonTool.fromJson(entryJson.toString(), io.cwl.avro.CommandLineTool.class);
+                            cltRequirements = clt.getRequirements();
+                        } else if (isWorkflow(secondaryFileContents)) {
+                            final Gson gsonTool = getTypeSafeCWLWorkflowDocument();
+                            final io.cwl.avro.Workflow clt = gsonTool.fromJson(entryJson.toString(), io.cwl.avro.Workflow.class);
+                            cltRequirements = clt.getRequirements();
+                        }
                         // Check requirements for docker pull info
                         // TODO: also check hints
-                        List<Object> cltRequirements = clt.getRequirements();
                         if (cltRequirements != null) {
                             String dockerRequirement = getDockerRequirement(cltRequirements);
                             if (dockerRequirement != null) {
@@ -1104,13 +1111,14 @@ public class WorkflowResource {
                     }
                 }
 
-                LOG.info(workflowStepId + " Docker requirement " + stepDockerRequirement);
                 String dockerUrl = getURLFromEntry(stepDockerRequirement);
                 if (type == Type.DAG) {
                     nodePairs.add(new MutablePair<>(workflowStepId, dockerUrl));
                 } else {
-                    toolID.put(workflowStepId, new MutablePair<>(workflowStepId, secondaryFile));
-                    toolDocker.put(workflowStepId, new MutablePair<>(stepDockerRequirement, dockerUrl));
+                    if (!stepDockerRequirement.equals("") && stepDockerRequirement != null) {
+                        toolID.put(workflowStepId, new MutablePair<>(workflowStepId, secondaryFile));
+                        toolDocker.put(workflowStepId, new MutablePair<>(stepDockerRequirement, dockerUrl));
+                    }
                 }
             }
 
@@ -1150,11 +1158,9 @@ public class WorkflowResource {
             } else {
                 result = getJSONTableToolContentCWL(toolID, toolDocker);
             }
-            LOG.info(result);
-
         } catch (Exception ex) {
             LOG.error("The CWL workflow or one of it's dependencies are invalid.");
-            return null;
+            return "{}";
         }
 
         return result;
@@ -1177,6 +1183,20 @@ public class WorkflowResource {
         }
 
         return dockerPath;
+    }
+
+    private boolean isWorkflow(String content) {
+        Pattern p = Pattern.compile(".*class:\\s*Workflow.*");
+        Matcher m = p.matcher(content);
+
+        return m.find();
+    }
+
+    private boolean isTool(String content) {
+        Pattern p = Pattern.compile(".*class:\\s*CommandLineTool.*");
+        Matcher m = p.matcher(content);
+
+        return m.find();
     }
 
     public static Gson getTypeSafeCWLToolDocument() {
@@ -1538,13 +1558,7 @@ public class WorkflowResource {
             //get the docker requirement
             String dockerPullName = toolDocker.get(key).getLeft();
             String dockerLink = toolDocker.get(key).getRight();
-
-            // Check for empty values
-            if (dockerPullName == null) {
-                dockerPullName = "No docker commands";
-                dockerLink = "N/A";
-            }
-
+            
             //put everything into a map, then ArrayList
             Map<String, String> dataToolEntry = new LinkedHashMap<>();
             dataToolEntry.put("id", toolName);
