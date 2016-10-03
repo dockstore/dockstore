@@ -20,8 +20,15 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Optional;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
 
+import io.cwl.avro.Any;
+import io.cwl.avro.CommandInputParameter;
+import io.cwl.avro.InputParameter;
+import io.cwl.avro.WorkflowOutputParameter;
 import io.cwl.avro.WorkflowStep;
 import io.cwl.avro.WorkflowStepInput;
 import io.dockstore.client.Bridge;
@@ -56,6 +63,8 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+
+import org.apache.avro.specific.SpecificRecordBase;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
@@ -79,8 +88,10 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -919,6 +930,7 @@ public class WorkflowResource {
             result = setupJSONDAG(nodePairs);
         }
 
+
         return result;
     }
 
@@ -932,42 +944,253 @@ public class WorkflowResource {
      * */
     private String getContentCWL(String content, Map<String, String> secondaryDescContent, Type type) {
         String result = "";
-        // New Approach for DAG
-//        Map<String, ArrayList<String>> stepToDependencies = new HashMap<>(); // Mapping of stepId -> array of dependencies for a step
 
-        // Convert YAML to JSON
-        Yaml yaml = new Yaml();
-        Map<String, Object> mapping = (Map<String, Object>) yaml.load(content);
-        JSONObject cwlJson = new JSONObject(mapping);
-        LOG.info(cwlJson.toString());
+        // Return null if not CWL 1.0
+        if (!content.contains("cwlVersion: v1.0")) {
+            return null;
+        }
 
-        // Create a start and end node (unique, can't be possible stepIds)
+//        try {
+            if (type.equals(Type.DAG)) {
+                // Initialize data structures
+                Map<String, ArrayList<String>> stepToDependencies = new HashMap<>(); // Mapping of stepId -> array of dependencies for the step
+                ArrayList<Pair<String, String>> nodePairs = new ArrayList<>(); // List of pairings of step id and dockerPull url
+                String defaultDockerPath = "";
 
-        // Set up GSON for JSON parsing
-        final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
-        final Object cwlObject = gson.fromJson(cwlJson.toString(), io.cwl.avro.Workflow.class);
+                // Convert YAML to JSON
+                Yaml yaml = new Yaml();
+                Map<String, Object> mapping = (Map<String, Object>) yaml.load(content);
+                JSONObject cwlJson = new JSONObject(mapping);
 
-        io.cwl.avro.Workflow workflowObject = (io.cwl.avro.Workflow) cwlObject;
-//        LOG.info(workflowObject.toString());
-        
-        // Iterate over steps
-        if (workflowObject.getSteps() instanceof List) {
-            // Store steps into json
-            final Object workflowStepsJson = gson.toJson(workflowObject.getSteps(), new TypeToken<List<WorkflowStep>>() {}.getType());
+                // Create a start and end node (unique, can't be possible stepIds)
 
-            // Convert back into object
-            final List<WorkflowStep> workflowSteps = gson.fromJson(workflowStepsJson.toString(), new TypeToken<List<WorkflowStep>>() {}.getType());
+                // Set up GSON for JSON parsing
+                final Gson gson = getTypeSafeCWLToolDocument();// io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
+                final io.cwl.avro.Workflow workflow = gson.fromJson(cwlJson.toString(), io.cwl.avro.Workflow.class);
 
-            if (workflowSteps instanceof List) {
-                for (Object workflowStep : (List)workflowSteps) {
-                    LOG.info("STEP");
-                    LOG.info(workflowStep.toString());
+                LOG.info(cwlJson.toString());
 
+                // Store workflow steps in json and then read it into map <String, WorkflowStep>
+                String stepJson = gson.toJson(workflow.getSteps());
+
+                Map<String, WorkflowStep> workflowStepMap = gson.fromJson(stepJson, new TypeToken<Map<String, WorkflowStep>>() {
+                }.getType());
+
+                // Iterate through steps to find dependencies and docker requirement
+                for (Map.Entry<String, WorkflowStep> entry : workflowStepMap.entrySet()) {
+                    WorkflowStep workflowStep = entry.getValue();
+                    String workflowStepId = entry.getKey();
+
+                    ArrayList<String> stepDependencies = new ArrayList<>();
+
+                    // Iterate over source and get the dependencies
+                    for (WorkflowStepInput workflowStepInput : workflowStep.getIn()) {
+                        Object sources = workflowStepInput.getSource();
+
+                        if (sources != null) {
+                            if (sources instanceof String) {
+                                String[] sourceSplit = ((String) sources).split("/");
+                                if (sourceSplit.length > 1) {
+                                    stepDependencies.add(sourceSplit[0]);
+                                }
+                            } else {
+                                ArrayList<String> filteredDependencies = filterDependent((ArrayList<String>) sources);
+                                stepDependencies.addAll(filteredDependencies);
+                            }
+                        }
+                    }
+
+                    if (stepDependencies.size() > 0) {
+                        stepToDependencies.put(workflowStepId, stepDependencies);
+                    }
+
+                    // TODO: Get docker pull URL for a given step
+                    // Have to look at secondary file
+                    // Handle it differently depending on if workflow or a tool
+                    // For now just set to the default docker pull
+                    nodePairs.add(new MutablePair<>(workflowStepId, defaultDockerPath));
                 }
+
+                // Determine steps that point to end
+                ArrayList<String> endDependencies = new ArrayList<>();
+
+                for (WorkflowOutputParameter workflowOutputParameter : workflow.getOutputs()) {
+                    Object sources = workflowOutputParameter.getOutputSource();
+                    if (sources != null) {
+                        if (sources instanceof String) {
+                            String[] sourceSplit = ((String) sources).split("/");
+                            if (sourceSplit.length > 1) {
+                                endDependencies.add(sourceSplit[0]);
+                            }
+                        } else {
+                            ArrayList<String> filteredDependencies = filterDependent((ArrayList<String>) sources);
+                            endDependencies.addAll(filteredDependencies);
+                        }
+                    }
+                }
+
+                stepToDependencies.put("UniqueEndKey", endDependencies);
+                nodePairs.add(new MutablePair<>("UniqueEndKey", defaultDockerPath));
+
+                // connect start node with them
+                for (Pair<String, String> node : nodePairs) {
+                    if (stepToDependencies.get(node.getLeft()) == null) {
+                        ArrayList<String> dependencies = new ArrayList<>();
+                        dependencies.add("UniqueBeginKey");
+                        stepToDependencies.put(node.getLeft(), dependencies);
+                    }
+                }
+                nodePairs.add(new MutablePair<>("UniqueBeginKey", defaultDockerPath));
+
+                result = setupJSONDAG(nodePairs, stepToDependencies);
+                LOG.info(result);
+
+            }
+//        } catch (Exception ex) {
+//            LOG.error("The CWL workflow or one of it's dependencies are invalid.");
+//            return null;
+//        }
+
+        return result;
+    }
+
+    public static Gson getTypeSafeCWLToolDocument() {
+        final java.lang.reflect.Type hintType = new TypeToken<List<Any>>() {}.getType();
+        final java.lang.reflect.Type workflowOutputParameterType = new TypeToken<List<WorkflowOutputParameter>>() {}.getType();
+        final java.lang.reflect.Type inputParameterType = new TypeToken<List<InputParameter>>() {}.getType();
+        final java.lang.reflect.Type workflowStepInputType = new TypeToken<List<WorkflowStepInput>>() {}.getType();
+
+        final Gson sequenceSafeGson = new GsonBuilder().registerTypeAdapter(CharSequence.class,
+                (JsonDeserializer<CharSequence>) (json, typeOfT, context) -> json.getAsString()).create();
+
+        return new GsonBuilder().registerTypeAdapter(CharSequence.class,
+                (JsonDeserializer<CharSequence>) (json, typeOfT, context) -> json.getAsString())
+                .registerTypeAdapter(hintType, (JsonDeserializer) (json, typeOfT, context) -> {
+                    Collection<Object> hints = new ArrayList<>();
+                    for (final JsonElement jsonElement : json.getAsJsonArray()) {
+                        final Object o = getCWLObject(sequenceSafeGson, jsonElement);
+                        hints.add(o);
+                    }return hints;
+
+                }).registerTypeAdapter(workflowOutputParameterType, (JsonDeserializer) (json, typeOfT, context) -> {
+                    Collection<Object> workflowOutputParameter = new ArrayList<>();
+                    if (json.isJsonArray()) {
+                        for (final JsonElement jsonElement : json.getAsJsonArray()) {
+                            final Object o = sequenceSafeGson.fromJson(jsonElement, WorkflowOutputParameter.class);
+                            workflowOutputParameter.add(o);
+                        }
+                        return workflowOutputParameter;
+
+                    } else if (json.isJsonObject()){
+                        // store object as a map
+                        Map<String, WorkflowOutputParameter> map = sequenceSafeGson.fromJson(json.getAsJsonObject(), new TypeToken<Map<String,WorkflowOutputParameter>>() {}.getType());
+
+                        // Iterate over keys, add to collection
+                        for (Map.Entry<String, WorkflowOutputParameter> workflowOutputParameterObj : map.entrySet()) {
+                            WorkflowOutputParameter outParam = workflowOutputParameterObj.getValue();
+                            outParam.setId(workflowOutputParameterObj.getKey());
+                            workflowOutputParameter.add(outParam);
+                        }
+                        return workflowOutputParameter;
+
+                    } else{
+                        throw new RuntimeException("unexpected JSON entry");
+                    }
+                }).registerTypeAdapter(inputParameterType, (JsonDeserializer) (json, typeOfT, context) -> {
+                    Collection<Object> inputParameter = new ArrayList<>();
+                    if (json.isJsonArray()) {
+                        for (final JsonElement jsonElement : json.getAsJsonArray()) {
+                            final Object o = sequenceSafeGson.fromJson(jsonElement, InputParameter.class);
+                            inputParameter.add(o);
+                        }
+                        return inputParameter;
+                    } else if (json.isJsonObject()){
+                        // store object as a map
+                        Map<String, Object> map = sequenceSafeGson.fromJson(json.getAsJsonObject(), new TypeToken<Map<String,Object>>() {}.getType());
+
+                        // Iterate over keys, add to collection
+                        InputParameter inParam;
+                        for (Map.Entry<String, Object> inputParameterObj : map.entrySet()) {
+                            if (inputParameterObj.getValue() instanceof Map) {
+                                String inputParameterJson = sequenceSafeGson.toJson(inputParameterObj.getValue());
+                                inParam = sequenceSafeGson.fromJson(inputParameterJson, InputParameter.class);
+                            } else {
+                                inParam = new InputParameter();
+                                inParam.setType(inputParameterObj.getValue());
+                            }
+                            inParam.setId(inputParameterObj.getKey());
+                            inputParameter.add(inParam);
+                        }
+                        return inputParameter;
+
+                    } else{
+                        throw new RuntimeException("unexpected JSON entry");
+                    }
+                }).registerTypeAdapter(workflowStepInputType, (JsonDeserializer) (json, typeOfT, context) -> {
+                    Collection<Object> workflowStepInput = new ArrayList<>();
+                    if (json.isJsonArray()) {
+                        for (final JsonElement jsonElement : json.getAsJsonArray()) {
+                            final Object o = sequenceSafeGson.fromJson(jsonElement, WorkflowStepInput.class);
+                            workflowStepInput.add(o);
+                        }
+                        return workflowStepInput;
+                    } else if (json.isJsonObject()){
+                        // store object as a map
+                        Map<String, Object> map = sequenceSafeGson.fromJson(json.getAsJsonObject(), new TypeToken<Map<String,Object>>() {}.getType());
+
+                        // Iterate over keys, add to collection
+                        WorkflowStepInput wsInput;
+                        for (Map.Entry<String, Object> workflowStepInputObj : map.entrySet()) {
+                            if (workflowStepInputObj.getValue() instanceof Map) {
+                                String workflowStepInputJson = sequenceSafeGson.toJson(workflowStepInputObj.getValue());
+                                wsInput = sequenceSafeGson.fromJson(workflowStepInputJson, WorkflowStepInput.class);
+                            } else {
+                                wsInput = new WorkflowStepInput();
+                                wsInput.setSource(workflowStepInputObj.getValue());
+                            }
+                            wsInput.setId(workflowStepInputObj.getKey());
+                            workflowStepInput.add(wsInput);
+                        }
+                        return workflowStepInput;
+
+                    } else{
+                        throw new RuntimeException("unexpected JSON entry");
+                    }
+                })
+                .registerTypeAdapter(CommandInputParameter.class, (JsonDeserializer<CommandInputParameter>) (json, typeOfT, context) -> {
+                    final CommandInputParameter commandInputParameter = sequenceSafeGson.fromJson(json,
+                            CommandInputParameter.class);
+                    // default has a dollar sign in the schema but not in sample jsons, we could do something here if we wanted
+                    return commandInputParameter;
+                })
+                .serializeNulls().setPrettyPrinting()
+                .create();
+    }
+
+    private ArrayList<String> filterDependent(ArrayList<String> sources) {
+        ArrayList<String> filteredArray = new ArrayList<>();
+
+        for (String s : sources) {
+            String[] split = s.split("/");
+            if (split.length > 1) {
+                filteredArray.add(split[0]);
             }
         }
 
-        return result;
+        return filteredArray;
+    }
+
+    private static Object getCWLObject(Gson gson1, JsonElement jsonElement) {
+        final String elementClass = jsonElement.getAsJsonObject().get("class").getAsString();
+        Class<SpecificRecordBase> anyClass;
+        try {
+            anyClass = (Class<SpecificRecordBase>) Class.forName("io.cwl.avro." + elementClass);
+        } catch (ClassNotFoundException e) {
+            //TODO: this should be a log
+            e.printStackTrace();
+            anyClass = null;
+        }
+        return gson1.fromJson(jsonElement, anyClass);
     }
 
     /**
@@ -1132,13 +1355,52 @@ public class WorkflowResource {
         return convertToJSONString(dagJson);
     }
 
-    /**
-     * This method will setup the tools of CWL workflow
-     * It will then call another method to transform it through Gson to a Json string
-     * @param toolID this is a map containing id name and file name of the tool
-     * @param toolDocker this is a map containing docker name and docker link
-     * @return String
-     * */
+
+    private String setupJSONDAG(ArrayList<Pair<String, String>> nodePairs, Map<String, ArrayList<String>> stepToDependencies) {
+        ArrayList<Object> nodes = new ArrayList<>();
+        ArrayList<Object> edges = new ArrayList<>();
+        Map<String, ArrayList<Object>> dagJson = new LinkedHashMap<>();
+
+        // TODO: still need to setup start and end nodes
+
+        // Iterate over steps, make nodes and edges
+        for (Pair<String, String> node : nodePairs) {
+            String stepId = node.getLeft();
+            String dockerUrl = node.getRight();
+
+            Map<String, Object> nodeEntry = new HashMap<>();
+            Map<String, String> dataEntry = new HashMap<>();
+            dataEntry.put("id", stepId);
+            dataEntry.put("tool", dockerUrl);
+            dataEntry.put("name", stepId);
+            nodeEntry.put("data", dataEntry);
+            nodes.add(nodeEntry);
+
+            // Make edges based on dependencies
+            if (stepToDependencies.get(stepId) != null) {
+                for (String dependency : stepToDependencies.get(stepId)) {
+                    Map<String, Object> edgeEntry = new HashMap<>();
+                    Map<String, String> sourceTarget = new HashMap<>();
+                    sourceTarget.put("source", dependency);
+                    sourceTarget.put("target", stepId);
+                    edgeEntry.put("data", sourceTarget);
+                    edges.add(edgeEntry);
+                }
+            }
+        }
+
+        dagJson.put("nodes", nodes);
+        dagJson.put("edges", edges);
+
+        return convertToJSONString(dagJson);
+    }
+        /**
+         * This method will setup the tools of CWL workflow
+         * It will then call another method to transform it through Gson to a Json string
+         * @param toolID this is a map containing id name and file name of the tool
+         * @param toolDocker this is a map containing docker name and docker link
+         * @return String
+         * */
     private String getJSONTableToolContentCWL(Map<String, Pair<String, String>> toolID, Map<String, Pair<String, String>> toolDocker) {
         // set up JSON for Table Tool Content CWL
         ArrayList<Object> tools = new ArrayList<>();
