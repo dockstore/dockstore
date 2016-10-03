@@ -953,7 +953,7 @@ public class WorkflowResource {
             return "{}";
         }
 
-        try {
+//        try {
             // Initialize data structures for DAG
             Map<String, ArrayList<String>> stepToDependencies = new HashMap<>(); // Mapping of stepId -> array of dependencies for the step
             ArrayList<Pair<String, String>> nodePairs = new ArrayList<>();       // List of pairings of step id and dockerPull url
@@ -986,8 +986,15 @@ public class WorkflowResource {
                 }
             }
 
-            // TODO: Check hints for default docker path
-
+            if (defaultDockerPath.equals("")) {
+                List<Any> hints = workflow.getHints();
+                if (hints != null) {
+                    String dockerHint = getDockerHint(hints, gsonWorkflow);
+                    if (dockerHint != null) {
+                        defaultDockerPath = dockerHint;
+                    }
+                }
+            }
             // Store workflow steps in json and then read it into map <String, WorkflowStep>
             String stepJson = gsonWorkflow.toJson(workflow.getSteps());
 
@@ -1032,8 +1039,16 @@ public class WorkflowResource {
                     stepToDependencies.put(workflowStepId, stepDependencies);
                 }
 
-                // Check workflow step for docker requirement
+                // Check workflow step for docker requirement and hints
                 String stepDockerRequirement = defaultDockerPath;
+
+                List<Any> hints = workflow.getHints();
+                if (hints != null) {
+                    String dockerHint = getDockerHint(hints, gsonWorkflow);
+                    if (dockerHint != null) {
+                        stepDockerRequirement = dockerHint;
+                    }
+                }
 
                 List<Object> stepRequirements = workflowStep.getRequirements();
                 if (stepRequirements != null) {
@@ -1051,6 +1066,15 @@ public class WorkflowResource {
                     secondaryFile = (String)run;
                 } else if (run instanceof CommandLineTool) {
                     CommandLineTool clTool = (CommandLineTool)run;
+
+                    List<Any> toolHints = workflow.getHints();
+                    if (toolHints != null) {
+                        String dockerHint = getDockerHint(toolHints, gsonWorkflow);
+                        if (dockerHint != null) {
+                            stepDockerRequirement = dockerHint;
+                        }
+                    }
+
                     List<Object> toolRequirements = clTool.getRequirements();
                     if (toolRequirements != null) {
                         String dockerRequirement = getDockerRequirement(toolRequirements);
@@ -1060,6 +1084,15 @@ public class WorkflowResource {
                     }
                 } else if (run instanceof io.cwl.avro.Workflow) {
                     io.cwl.avro.Workflow stepWorkflow = (io.cwl.avro.Workflow)run;
+
+                    List<Any> workflowHints = workflow.getHints();
+                    if (workflowHints != null) {
+                        String dockerHint = getDockerHint(workflowHints, gsonWorkflow);
+                        if (dockerHint != null) {
+                            stepDockerRequirement = dockerHint;
+                        }
+                    }
+
                     List<Object> workflowRequirements = stepWorkflow.getRequirements();
                     if (workflowRequirements != null) {
                         String dockerRequirement = getDockerRequirement(workflowRequirements);
@@ -1084,24 +1117,31 @@ public class WorkflowResource {
                 if (secondaryFile != null) {
                     String secondaryFileContents = secondaryDescContent.get(secondaryFile);
                     if (secondaryFileContents != null) {
-                        // For now assume CommandLineTool
-                        // TODO: deal with Workflows
                         Map<String, Object> entryMapping = (Map<String, Object>) yaml.load(secondaryFileContents);
                         JSONObject entryJson = new JSONObject(entryMapping);
 
                         List<Object> cltRequirements = null;
+                        List<Any> cltHints = null;
 
                         if (isTool(secondaryFileContents)) {
                             final Gson gsonTool = getTypeSafeCWLToolDocument();
                             final CommandLineTool clt = gsonTool.fromJson(entryJson.toString(), io.cwl.avro.CommandLineTool.class);
                             cltRequirements = clt.getRequirements();
+                            cltHints = clt.getHints();
                         } else if (isWorkflow(secondaryFileContents)) {
                             final Gson gsonTool = getTypeSafeCWLWorkflowDocument();
                             final io.cwl.avro.Workflow clt = gsonTool.fromJson(entryJson.toString(), io.cwl.avro.Workflow.class);
                             cltRequirements = clt.getRequirements();
+                            cltHints = clt.getHints();
                         }
                         // Check requirements for docker pull info
-                        // TODO: also check hints
+                        if (cltHints != null) {
+                            String dockerHint = getDockerHint(cltHints, gsonWorkflow);
+                            if (dockerHint != null) {
+                                stepDockerRequirement = dockerHint;
+                            }
+                        }
+
                         if (cltRequirements != null) {
                             String dockerRequirement = getDockerRequirement(cltRequirements);
                             if (dockerRequirement != null) {
@@ -1158,10 +1198,10 @@ public class WorkflowResource {
             } else {
                 result = getJSONTableToolContentCWL(toolID, toolDocker);
             }
-        } catch (Exception ex) {
-            LOG.error("The CWL workflow or one of it's dependencies are invalid.");
-            return "{}";
-        }
+//        } catch (Exception ex) {
+//            LOG.error("The CWL workflow or one of it's dependencies are invalid.");
+//            return "{}";
+//        }
 
         return result;
     }
@@ -1179,6 +1219,21 @@ public class WorkflowResource {
             if (((Map)requirement).get("class").equals("DockerRequirement") && ((Map)requirement).get("dockerPull") != null) {
                 dockerPath = ((Map)requirement).get("dockerPull").toString();
                 LOG.info(((Map)requirement).get("dockerPull").toString());
+            }
+        }
+
+        return dockerPath;
+    }
+
+    private String getDockerHint(List<Any> hints, Gson gsonWorkflow) {
+        String hintsJson = gsonWorkflow.toJson(hints);
+        List<Object> hintsList = gsonWorkflow.fromJson(hintsJson, new TypeToken<List<Object>>() {}.getType());
+
+        String dockerPath = null;
+        for (Object requirement : hintsList) {
+            Object dockerRequirement = ((Map)requirement).get("DockerRequirement");
+            if (dockerRequirement != null) {
+                dockerPath = ((Map)dockerRequirement).get("dockerPull").toString();
             }
         }
 
@@ -1558,7 +1613,7 @@ public class WorkflowResource {
             //get the docker requirement
             String dockerPullName = toolDocker.get(key).getLeft();
             String dockerLink = toolDocker.get(key).getRight();
-            
+
             //put everything into a map, then ArrayList
             Map<String, String> dataToolEntry = new LinkedHashMap<>();
             dataToolEntry.put("id", toolName);

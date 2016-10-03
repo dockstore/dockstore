@@ -243,13 +243,13 @@ public class DAGWorkflowTestIT {
         // Repo: OxoG-Dockstore-Tools
         // Branch: hints_ExpressionTool
         // Test: "filter has a docker requirement inside expression Tool, linked to ubuntu"
-        // Return: DAG with 17 nodes
+        // Return: DAG with 19 nodes
 
         final List<String> strings = getJSON("DockstoreTestUser2/OxoG-Dockstore-Tools", "/preprocess_vcf.cwl", "cwl", "hints_ExpressionTool");
-//        int countNode = countNodeInJSON(strings);
-//
-//        Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-//        Assert.assertEquals("JSON should have 17 nodes", countNode, 17);
+        int countNode = countNodeInJSON(strings);
+
+        Assert.assertTrue("JSON should not be blank", strings.size() > 0);
+        Assert.assertEquals("JSON should have 19 nodes", countNode, 19);
 //        Assert.assertTrue("node 'filter' should have tool link to ubuntu", strings.get(0).contains("\"name\":\"filter\",\"id\":\"2\",\"tool\":\"https://hub.docker.com/_/ubuntu\""));
     }
 }
