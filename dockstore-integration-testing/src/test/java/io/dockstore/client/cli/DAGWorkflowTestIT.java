@@ -129,7 +129,7 @@ public class DAGWorkflowTestIT {
         int countNode = countNodeInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have four nodes (including start and end)", countNode, 4);
+        Assert.assertEquals("JSON should have five nodes (including start and end)", countNode, 5);
         Assert.assertTrue("node data should have untar as tool", strings.get(0).contains("untar"));
         Assert.assertTrue("node data should have compile as tool", strings.get(0).contains("compile"));
         Assert.assertTrue("edge should connect untar and compile", strings.get(0).contains("\"source\":\"untar\",\"target\":\"compile\""));

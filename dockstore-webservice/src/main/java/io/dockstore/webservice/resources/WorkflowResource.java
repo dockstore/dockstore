@@ -17,6 +17,7 @@
 package io.dockstore.webservice.resources;
 
 import com.codahale.metrics.annotation.Timed;
+import com.google.api.client.repackaged.com.google.common.base.Strings;
 import com.google.common.base.Optional;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
@@ -1060,7 +1061,7 @@ public class WorkflowResource {
                 if (type == Type.DAG) {
                     nodePairs.add(new MutablePair<>(workflowStepId, dockerUrl));
                 } else {
-                    if (!stepDockerRequirement.equals("") && stepDockerRequirement != null) {
+                    if (!Strings.isNullOrEmpty(stepDockerRequirement)) {
                         toolID.put(workflowStepId, new MutablePair<>(workflowStepId, secondaryFile));
                         toolDocker.put(workflowStepId, new MutablePair<>(stepDockerRequirement, dockerUrl));
                     }
