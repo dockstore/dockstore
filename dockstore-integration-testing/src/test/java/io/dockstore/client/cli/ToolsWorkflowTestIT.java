@@ -104,12 +104,14 @@ public class ToolsWorkflowTestIT {
         int countTool = 0;
         int last = 0;
         String tool = "id";
-        while(last !=-1){
-            last = strings.get(0).indexOf(tool,last);
+        if (strings.size() > 0) {
+            while (last != -1) {
+                last = strings.get(0).indexOf(tool, last);
 
-            if(last !=-1){
-                countTool++;
-                last += tool.length();
+                if (last != -1) {
+                    countTool++;
+                    last += tool.length();
+                }
             }
         }
 
@@ -129,13 +131,9 @@ public class ToolsWorkflowTestIT {
         int countNode = countToolInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have two tools", countNode, 2);
-        Assert.assertTrue("tool should have untar as id", strings.get(0).contains("untar"));
+        Assert.assertEquals("JSON should have one tool with docker image, has " + countNode, countNode, 1);
+        Assert.assertTrue("tool should not have untar since it has no docker image", !strings.get(0).contains("untar"));
         Assert.assertTrue("tool should have compile as id", strings.get(0).contains("compile"));
-        Assert.assertTrue("untar docker and link should be blank", strings.get(0).contains("\"id\":\"untar\","+
-                "\"file\":\"tar-param.cwl\","+
-                "\"docker\":\"Not Specified\"," +
-                "\"link\":\"Not Specified\""));
         Assert.assertTrue("compile docker and link should not be blank", strings.get(0).contains("\"id\":\"compile\"," +
                 "\"file\":\"arguments.cwl\","+
                 "\"docker\":\"java:7\"," +
@@ -221,7 +219,7 @@ public class ToolsWorkflowTestIT {
     }
 
     @Test
-    public void testToolImportSyntax() throws IOException, TimeoutException, ApiException {
+    public void testToolImportAndIncludeSyntax() throws IOException, TimeoutException, ApiException {
         // Input: Dockstore.cwl
         // Repo: dockstore-whalesay-imports
         // Branch: master
@@ -232,18 +230,12 @@ public class ToolsWorkflowTestIT {
         int countNode = countToolInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have two tools", countNode, 2);
-        Assert.assertTrue("tool data should have rev as id", strings.get(0).contains("rev"));
-        Assert.assertTrue("tool data should have sorted as id", strings.get(0).contains("sorted"));
-        Assert.assertTrue("untar docker and link should use default docker req from workflow", strings.get(0).contains("\"id\":\"rev\","+
-                "\"file\":\"revtool.cwl\","+
-                "\"docker\":\"debian:8\"," +
-                "\"link\":\"https://hub.docker.com/_/debian\""));
-        Assert.assertTrue("compile docker and link should use default docker req from workflow", strings.get(0).contains("\"id\":\"sorted\"," +
-                "\"file\":\"sorttool.cwl\","+
-                "\"docker\":\"debian:8\"," +
-                "\"link\":\"https://hub.docker.com/_/debian\""));
-
+        Assert.assertEquals("JSON should have one tool", countNode, 1);
+        Assert.assertTrue("tool data should have compile as id", strings.get(0).contains("compile"));
+        Assert.assertTrue("compile docker and link should use default docker req from workflow", strings.get(0).contains("\"id\":\"compile\","+
+                "\"file\":\"arguments.cwl\","+
+                "\"docker\":\"java:7\"," +
+                "\"link\":\"https://hub.docker.com/_/java\""));
     }
 
     @Test

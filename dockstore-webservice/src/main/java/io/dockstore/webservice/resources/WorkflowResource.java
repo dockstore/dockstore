@@ -29,6 +29,8 @@ import io.cwl.avro.Any;
 import io.cwl.avro.CommandInputParameter;
 import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.CommandOutputParameter;
+import io.cwl.avro.ExpressionTool;
+import io.cwl.avro.ExpressionToolOutputParameter;
 import io.cwl.avro.InputParameter;
 import io.cwl.avro.WorkflowOutputParameter;
 import io.cwl.avro.WorkflowStep;
@@ -944,7 +946,7 @@ public class WorkflowResource {
      * */
     @SuppressWarnings("checkstyle:methodlength")
     private String getContentCWL(String content, Map<String, String> secondaryDescContent, Type type) {
-        if (content.contains("cwlVersion: v1.0")) {
+        if (isValidCwl(content)) {
             // Initialize data structures for DAG
             Map<String, ArrayList<String>> stepToDependencies = new HashMap<>(); // Mapping of stepId -> array of dependencies for the step
             ArrayList<Pair<String, String>> nodePairs = new ArrayList<>();       // List of pairings of step id and dockerPull url
@@ -1018,7 +1020,7 @@ public class WorkflowResource {
 
                 // Check workflow step for docker requirement and hints
                 String stepDockerRequirement = defaultDockerPath;
-                stepDockerRequirement = getRequirementOrHint(workflowStep.getRequirements(), workflow.getHints(), gsonWorkflow, stepDockerRequirement);
+                stepDockerRequirement = getRequirementOrHint(workflowStep.getRequirements(), workflowStep.getHints(), gsonWorkflow, stepDockerRequirement);
 
                 // Check for docker requirement within workflow step file
                 String secondaryFile = null;
@@ -1028,10 +1030,13 @@ public class WorkflowResource {
                     secondaryFile = (String) run;
                 } else if (run instanceof CommandLineTool) {
                     CommandLineTool clTool = (CommandLineTool) run;
-                    stepDockerRequirement = getRequirementOrHint(clTool.getRequirements(), workflow.getHints(), gsonWorkflow, stepDockerRequirement);
+                    stepDockerRequirement = getRequirementOrHint(clTool.getRequirements(), clTool.getHints(), gsonWorkflow, stepDockerRequirement);
                 } else if (run instanceof io.cwl.avro.Workflow) {
                     io.cwl.avro.Workflow stepWorkflow = (io.cwl.avro.Workflow) run;
-                    stepDockerRequirement = getRequirementOrHint(stepWorkflow.getRequirements(), workflow.getHints(), gsonWorkflow, stepDockerRequirement);
+                    stepDockerRequirement = getRequirementOrHint(stepWorkflow.getRequirements(), stepWorkflow.getHints(), gsonWorkflow, stepDockerRequirement);
+                } else if (run instanceof ExpressionTool) {
+                    ExpressionTool expressionTool = (ExpressionTool) run;
+                    stepDockerRequirement = getRequirementOrHint(expressionTool.getRequirements(), expressionTool.getHints(), gsonWorkflow, stepDockerRequirement);
                 } else if (run instanceof Map) {
                     // must be import or include
                     Object importVal = ((Map) run).get("import");
@@ -1097,9 +1102,9 @@ public class WorkflowResource {
             } else {
                 return getJSONTableToolContentCWL(toolID, toolDocker);
             }
+        } else {
+            return null;
         }
-
-        return null;
     }
 
     /**
@@ -1130,16 +1135,21 @@ public class WorkflowResource {
             List<Object> cltRequirements = null;
             List<Any> cltHints = null;
 
-            if (isTool(secondaryFileContents)) {
+            if (isExpressionTool(secondaryFileContents)) {
+                final Gson gsonExpressionTool = getTypeSafeCWLExpressionToolDocument();
+                final ExpressionTool expressionTool = gsonExpressionTool.fromJson(entryJson.toString(), io.cwl.avro.ExpressionTool.class);
+                cltRequirements = expressionTool.getRequirements();
+                cltHints = expressionTool.getHints();
+            } else if (isTool(secondaryFileContents)) {
                 final Gson gsonTool = getTypeSafeCWLToolDocument();
-                final CommandLineTool clt = gsonTool.fromJson(entryJson.toString(), io.cwl.avro.CommandLineTool.class);
-                cltRequirements = clt.getRequirements();
-                cltHints = clt.getHints();
+                final CommandLineTool commandLineTool = gsonTool.fromJson(entryJson.toString(), io.cwl.avro.CommandLineTool.class);
+                cltRequirements = commandLineTool.getRequirements();
+                cltHints = commandLineTool.getHints();
             } else if (isWorkflow(secondaryFileContents)) {
                 final Gson gsonTool = getTypeSafeCWLWorkflowDocument();
-                final io.cwl.avro.Workflow clt = gsonTool.fromJson(entryJson.toString(), io.cwl.avro.Workflow.class);
-                cltRequirements = clt.getRequirements();
-                cltHints = clt.getHints();
+                final io.cwl.avro.Workflow workflow = gsonTool.fromJson(entryJson.toString(), io.cwl.avro.Workflow.class);
+                cltRequirements = workflow.getRequirements();
+                cltHints = workflow.getHints();
             }
             // Check requirements and hints for docker pull info
             stepDockerRequirement = getRequirementOrHint(cltRequirements, cltHints, gsonWorkflow, stepDockerRequirement);
@@ -1211,12 +1221,31 @@ public class WorkflowResource {
     }
 
     /**
+     * Checks if a file is an expression tool (CWL)
+     * @param content
+     * @return true if expression tool, false otherwise
+     */
+    private boolean isExpressionTool(String content) {
+        Pattern p = Pattern.compile(".*class:\\s*ExpressionTool.*");
+        Matcher m = p.matcher(content);
+
+        return m.find();
+    }
+
+    /**
      * Checks if a file is a tool (CWL)
      * @param content
      * @return true if tool, false otherwise
          */
     private boolean isTool(String content) {
         Pattern p = Pattern.compile(".*class:\\s*CommandLineTool.*");
+        Matcher m = p.matcher(content);
+
+        return m.find();
+    }
+
+    private boolean isValidCwl(String content) {
+        Pattern p = Pattern.compile(".*cwlVersion:\\s*v1\\.0.*");
         Matcher m = p.matcher(content);
 
         return m.find();
@@ -1414,6 +1443,90 @@ public class WorkflowResource {
                             CommandInputParameter.class);
                     // default has a dollar sign in the schema but not in sample jsons, we could do something here if we wanted
                     return commandInputParameter;
+                })
+                .serializeNulls().setPrettyPrinting()
+                .create();
+    }
+
+    public static Gson getTypeSafeCWLExpressionToolDocument() {
+        final java.lang.reflect.Type hintType = new TypeToken<List<Any>>() {}.getType();
+        final java.lang.reflect.Type inputParameterType = new TypeToken<List<InputParameter>>() {}.getType();
+        final java.lang.reflect.Type expressionToolOutputParameterType = new TypeToken<List<ExpressionToolOutputParameter>>() {}.getType();
+
+
+        final Gson sequenceSafeGson = new GsonBuilder().registerTypeAdapter(CharSequence.class,
+                (JsonDeserializer<CharSequence>) (json, typeOfT, context) -> json.getAsString()).create();
+
+        return new GsonBuilder().registerTypeAdapter(CharSequence.class,
+                (JsonDeserializer<CharSequence>) (json, typeOfT, context) -> json.getAsString())
+                .registerTypeAdapter(hintType, (JsonDeserializer) (json, typeOfT, context) -> {
+                    Collection<Object> hints = new ArrayList<>();
+                    for (final JsonElement jsonElement : json.getAsJsonArray()) {
+                        final Object o = sequenceSafeGson.fromJson(jsonElement, Object.class);
+                        hints.add(o);
+                    }
+                    return hints;
+
+                }).registerTypeAdapter(inputParameterType, (JsonDeserializer) (json, typeOfT, context) -> {
+                    Collection<Object> inputParameter = new ArrayList<>();
+                    if (json.isJsonArray()) {
+                        for (final JsonElement jsonElement : json.getAsJsonArray()) {
+                            final Object o = sequenceSafeGson.fromJson(jsonElement, InputParameter.class);
+                            inputParameter.add(o);
+                        }
+                        return inputParameter;
+                    } else if (json.isJsonObject()){
+                        // store object as a map
+                        Map<String, Object> map = sequenceSafeGson.fromJson(json.getAsJsonObject(), new TypeToken<Map<String,Object>>() {}.getType());
+
+                        // Iterate over keys, add to collection
+                        InputParameter inParam;
+                        for (Map.Entry<String, Object> inputParameterObj : map.entrySet()) {
+                            if (inputParameterObj.getValue() instanceof Map) {
+                                String inputParameterJson = sequenceSafeGson.toJson(inputParameterObj.getValue());
+                                inParam = sequenceSafeGson.fromJson(inputParameterJson, InputParameter.class);
+                            } else {
+                                inParam = new InputParameter();
+                                inParam.setType(inputParameterObj.getValue());
+                            }
+                            inParam.setId(inputParameterObj.getKey());
+                            inputParameter.add(inParam);
+                        }
+                        return inputParameter;
+
+                    } else{
+                        throw new RuntimeException("unexpected JSON entry");
+                    }
+                }).registerTypeAdapter(expressionToolOutputParameterType, (JsonDeserializer) (json, typeOfT, context) -> {
+                    Collection<Object> expressionToolOutputParameter = new ArrayList<>();
+                    if (json.isJsonArray()) {
+                        for (final JsonElement jsonElement : json.getAsJsonArray()) {
+                            final Object o = sequenceSafeGson.fromJson(jsonElement, ExpressionToolOutputParameter.class);
+                            expressionToolOutputParameter.add(o);
+                        }
+                        return expressionToolOutputParameter;
+                    } else if (json.isJsonObject()){
+                        // store object as a map
+                        Map<String, Object> map = sequenceSafeGson.fromJson(json.getAsJsonObject(), new TypeToken<Map<String,Object>>() {}.getType());
+
+                        // Iterate over keys, add to collection
+                        ExpressionToolOutputParameter expressionToolOutputParam;
+                        for (Map.Entry<String, Object> expressionToolOutputParameterObj : map.entrySet()) {
+                            if (expressionToolOutputParameterObj.getValue() instanceof Map) {
+                                String expressionToolOutputParameterJson = sequenceSafeGson.toJson(expressionToolOutputParameterObj.getValue());
+                                expressionToolOutputParam = sequenceSafeGson.fromJson(expressionToolOutputParameterJson, ExpressionToolOutputParameter.class);
+                            } else {
+                                expressionToolOutputParam = new ExpressionToolOutputParameter();
+                                expressionToolOutputParam.setType(expressionToolOutputParameterObj.getValue());
+                            }
+                            expressionToolOutputParam.setId(expressionToolOutputParameterObj.getKey());
+                            expressionToolOutputParameter.add(expressionToolOutputParam);
+                        }
+                        return expressionToolOutputParameter;
+
+                    } else{
+                        throw new RuntimeException("unexpected JSON entry");
+                    }
                 })
                 .serializeNulls().setPrettyPrinting()
                 .create();

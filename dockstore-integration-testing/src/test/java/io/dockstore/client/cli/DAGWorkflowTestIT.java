@@ -129,10 +129,10 @@ public class DAGWorkflowTestIT {
         int countNode = countNodeInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have two nodes", countNode, 2);
+        Assert.assertEquals("JSON should have four nodes (including start and end)", countNode, 4);
         Assert.assertTrue("node data should have untar as tool", strings.get(0).contains("untar"));
         Assert.assertTrue("node data should have compile as tool", strings.get(0).contains("compile"));
-        Assert.assertTrue("edge should connect untar and compile", strings.get(0).contains("\"source\":\"0\",\"target\":\"1\""));
+        Assert.assertTrue("edge should connect untar and compile", strings.get(0).contains("\"source\":\"untar\",\"target\":\"compile\""));
 
     }
 
@@ -214,10 +214,10 @@ public class DAGWorkflowTestIT {
         int countNode = countNodeInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have two nodes", countNode, 2);
-        Assert.assertTrue("node data should have rev as tool", strings.get(0).contains("rev"));
-        Assert.assertTrue("node data should have sorted as tool", strings.get(0).contains("sorted"));
-        Assert.assertTrue("edge should connect rev and sorted", strings.get(0).contains("\"source\":\"0\",\"target\":\"1\""));
+        Assert.assertEquals("JSON should have four nodes (including start and end)", countNode, 4);
+        Assert.assertTrue("node data should have untar as tool", strings.get(0).contains("untar"));
+        Assert.assertTrue("node data should have compile as tool", strings.get(0).contains("compile"));
+        Assert.assertTrue("edge should connect untar and compile", strings.get(0).contains("\"source\":\"untar\",\"target\":\"compile\""));
     }
 
     @Test
@@ -232,7 +232,7 @@ public class DAGWorkflowTestIT {
         int countNode = countNodeInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have 17 nodes", countNode, 17);
+        Assert.assertEquals("JSON should have 19 nodes", countNode, 19);
         Assert.assertTrue("node data should have pass_filter as tool", strings.get(0).contains("pass_filter"));
         Assert.assertTrue("node data should have merge_vcfs as tool", strings.get(0).contains("merge_vcfs"));
     }
@@ -250,6 +250,7 @@ public class DAGWorkflowTestIT {
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
         Assert.assertEquals("JSON should have 19 nodes", countNode, 19);
-//        Assert.assertTrue("node 'filter' should have tool link to ubuntu", strings.get(0).contains("\"name\":\"filter\",\"id\":\"2\",\"tool\":\"https://hub.docker.com/_/ubuntu\""));
+        Assert.assertTrue("should have end with gather_sanger_indels and merge_vcfs", strings.get(0).contains("\"source\":\"gather_sanger_indels\",\"target\":\"merge_vcfs\""));
+        Assert.assertTrue("should have end with filter and normalize", strings.get(0).contains("\"source\":\"filter\",\"target\":\"normalize\""));
     }
 }
