@@ -252,5 +252,7 @@ public class DAGWorkflowTestIT {
         Assert.assertEquals("JSON should have 19 nodes", countNode, 19);
         Assert.assertTrue("should have end with gather_sanger_indels and merge_vcfs", strings.get(0).contains("\"source\":\"gather_sanger_indels\",\"target\":\"merge_vcfs\""));
         Assert.assertTrue("should have end with filter and normalize", strings.get(0).contains("\"source\":\"filter\",\"target\":\"normalize\""));
+        Assert.assertTrue("should have docker requirement for vcf_merge", strings.get(0).contains("\"name\":\"merge_vcfs\",\"id\":\"merge_vcfs\",\"tool\":\"https://hub.docker.com/r/pancancer/pcawg-oxog-tools\""));
+        Assert.assertTrue("should have docker requirement for clean" + strings.get(0), strings.get(0).contains("\"name\":\"clean\",\"id\":\"clean\",\"tool\":\"https://hub.docker.com/r/pancancer/pcawg-oxog-tools\""));
     }
 }

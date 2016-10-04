@@ -946,7 +946,8 @@ public class WorkflowResource {
      * */
     @SuppressWarnings("checkstyle:methodlength")
     private String getContentCWL(String content, Map<String, String> secondaryDescContent, Type type) {
-        if (isValidCwl(content)) {
+        Yaml yaml = new Yaml();
+        if (isValidCwl(content, yaml)) {
             // Initialize data structures for DAG
             Map<String, ArrayList<String>> stepToDependencies = new HashMap<>(); // Mapping of stepId -> array of dependencies for the step
             ArrayList<Pair<String, String>> nodePairs = new ArrayList<>();       // List of pairings of step id and dockerPull url
@@ -957,7 +958,6 @@ public class WorkflowResource {
             Map<String, Pair<String, String>> toolDocker = new HashMap<>(); // map for docker
 
             // Convert YAML to JSON
-            Yaml yaml = new Yaml();
             Map<String, Object> mapping = (Map<String, Object>) yaml.load(content);
             JSONObject cwlJson = new JSONObject(mapping);
 
@@ -1005,7 +1005,7 @@ public class WorkflowResource {
                                 String[] sourceSplit = ((String) sources).split("/");
                                 // Only add if of the form dependentStep/inputName
                                 if (sourceSplit.length > 1) {
-                                    stepDependencies.add(sourceSplit[0]);
+                                    stepDependencies.add(sourceSplit[0].replaceFirst("#",""));
                                 }
                             } else {
                                 ArrayList<String> filteredDependencies = filterDependent((ArrayList<String>) sources);
@@ -1077,7 +1077,7 @@ public class WorkflowResource {
                         if (sources instanceof String) {
                             String[] sourceSplit = ((String) sources).split("/");
                             if (sourceSplit.length > 1) {
-                                endDependencies.add(sourceSplit[0]);
+                                endDependencies.add(sourceSplit[0].replaceFirst("#",""));
                             }
                         } else {
                             ArrayList<String> filteredDependencies = filterDependent((ArrayList<String>) sources);
@@ -1135,17 +1135,17 @@ public class WorkflowResource {
             List<Object> cltRequirements = null;
             List<Any> cltHints = null;
 
-            if (isExpressionTool(secondaryFileContents)) {
+            if (isExpressionTool(secondaryFileContents, yaml)) {
                 final Gson gsonExpressionTool = getTypeSafeCWLExpressionToolDocument();
                 final ExpressionTool expressionTool = gsonExpressionTool.fromJson(entryJson.toString(), io.cwl.avro.ExpressionTool.class);
                 cltRequirements = expressionTool.getRequirements();
                 cltHints = expressionTool.getHints();
-            } else if (isTool(secondaryFileContents)) {
+            } else if (isTool(secondaryFileContents, yaml)) {
                 final Gson gsonTool = getTypeSafeCWLToolDocument();
                 final CommandLineTool commandLineTool = gsonTool.fromJson(entryJson.toString(), io.cwl.avro.CommandLineTool.class);
                 cltRequirements = commandLineTool.getRequirements();
                 cltHints = commandLineTool.getHints();
-            } else if (isWorkflow(secondaryFileContents)) {
+            } else if (isWorkflow(secondaryFileContents, yaml)) {
                 final Gson gsonTool = getTypeSafeCWLWorkflowDocument();
                 final io.cwl.avro.Workflow workflow = gsonTool.fromJson(entryJson.toString(), io.cwl.avro.Workflow.class);
                 cltRequirements = workflow.getRequirements();
@@ -1213,11 +1213,14 @@ public class WorkflowResource {
      * @param content
      * @return true if workflow, false otherwise
          */
-    private boolean isWorkflow(String content) {
-        Pattern p = Pattern.compile(".*class:\\s*Workflow.*");
-        Matcher m = p.matcher(content);
+    private boolean isWorkflow(String content, Yaml yaml) {
+        Map<String, Object> mapping = (Map<String, Object>) yaml.load(content);
+        String cwlClass = mapping.get("class").toString();
 
-        return m.find();
+        if (cwlClass != null) {
+            return cwlClass.equals("Workflow");
+        }
+        return false;
     }
 
     /**
@@ -1225,11 +1228,14 @@ public class WorkflowResource {
      * @param content
      * @return true if expression tool, false otherwise
      */
-    private boolean isExpressionTool(String content) {
-        Pattern p = Pattern.compile(".*class:\\s*ExpressionTool.*");
-        Matcher m = p.matcher(content);
+    private boolean isExpressionTool(String content, Yaml yaml) {
+        Map<String, Object> mapping = (Map<String, Object>) yaml.load(content);
+        String cwlClass = mapping.get("class").toString();
 
-        return m.find();
+        if (cwlClass != null) {
+            return cwlClass.equals("ExpressionTool");
+        }
+        return false;
     }
 
     /**
@@ -1237,18 +1243,24 @@ public class WorkflowResource {
      * @param content
      * @return true if tool, false otherwise
          */
-    private boolean isTool(String content) {
-        Pattern p = Pattern.compile(".*class:\\s*CommandLineTool.*");
-        Matcher m = p.matcher(content);
+    private boolean isTool(String content, Yaml yaml) {
+        Map<String, Object> mapping = (Map<String, Object>) yaml.load(content);
+        String cwlClass = mapping.get("class").toString();
 
-        return m.find();
+        if (cwlClass != null) {
+            return cwlClass.equals("CommandLineTool");
+        }
+        return false;
     }
 
-    private boolean isValidCwl(String content) {
-        Pattern p = Pattern.compile(".*cwlVersion:\\s*v1\\.0.*");
-        Matcher m = p.matcher(content);
+    private boolean isValidCwl(String content, Yaml yaml) {
+        Map<String, Object> mapping = (Map<String, Object>) yaml.load(content);
+        String cwlVersion = mapping.get("cwlVersion").toString();
 
-        return m.find();
+        if (cwlVersion != null) {
+            return cwlVersion.equals("v1.0");
+        }
+        return false;
     }
 
     public static Gson getTypeSafeCWLToolDocument() {
@@ -1538,7 +1550,7 @@ public class WorkflowResource {
         for (String s : sources) {
             String[] split = s.split("/");
             if (split.length > 1) {
-                filteredArray.add(split[0]);
+                filteredArray.add(split[0].replaceFirst("#",""));
             }
         }
 
