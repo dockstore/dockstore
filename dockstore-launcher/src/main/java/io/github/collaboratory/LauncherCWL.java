@@ -444,7 +444,7 @@ public class LauncherCWL {
 
         final String joined = Joiner.on(" ").join(command);
         System.out.println("Executing: " + joined);
-        final ImmutablePair<String, String> execute = Utilities.executeCommand(joined);
+        final ImmutablePair<String, String> execute = Utilities.executeCommand(joined, System.out, System.err);
         // mutate stderr and stdout into format for output
 
         String stdout = execute.getLeft().replaceAll("(?m)^", "\t");
