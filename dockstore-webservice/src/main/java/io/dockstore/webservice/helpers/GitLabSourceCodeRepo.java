@@ -90,7 +90,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
                         break;
                     } else {
                         // What if username != namespace?
-                        if (projectObject.get("name").getAsString().equals(gitUsername + "/" + gitRepository)) {
+                        if (projectObject.get("path_with_namespace").getAsString().equals(gitUsername + "/" + gitRepository)) {
                             id = projectObject.get("id").getAsString();
                             break;
                         }

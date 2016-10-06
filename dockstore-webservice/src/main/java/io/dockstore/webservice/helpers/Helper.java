@@ -225,7 +225,7 @@ public final class Helper {
         Token gitlabToken = extractToken(tokens, TokenType.GITLAB_COM.toString());
 
         // with Docker Hub support it is now possible that there is no quayToken
-        checkTokens(quayToken, githubToken, bitbucketToken);
+        checkTokens(quayToken, githubToken, bitbucketToken, gitlabToken);
 
         // Get a list of all image registries
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
@@ -270,7 +270,7 @@ public final class Helper {
         Token bitbucketToken = extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
 
         // with Docker Hub support it is now possible that there is no quayToken
-        checkTokens(quayToken, githubToken, bitbucketToken);
+        checkTokens(quayToken, githubToken, bitbucketToken, gitlabToken);
 
         // Get all registries
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
@@ -480,13 +480,16 @@ public final class Helper {
         return false;
     }
 
-    private static void checkTokens(final Token quayToken, final Token githubToken, final Token bitbucketToken) {
+    private static void checkTokens(final Token quayToken, final Token githubToken, final Token bitbucketToken, final Token gitlabToken) {
         if (githubToken == null) {
             LOG.info("GIT token not found!");
             throw new CustomWebApplicationException("Git token not found.", HttpStatus.SC_CONFLICT);
         }
         if (bitbucketToken == null) {
             LOG.info("WARNING: BITBUCKET token not found!");
+        }
+        if (gitlabToken == null) {
+            LOG.info("WARNING: GITLAB token not found!");
         }
         if (quayToken == null) {
             LOG.info("WARNING: QUAY token not found!");
