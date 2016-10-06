@@ -1,9 +1,13 @@
+# These Client ID, Client Secrets, and redirect URIs are used by the webservice to setup a User's access tokens
 template: Hello, %s!
 quayClientID: <fill me in>
 quayRedirectURI: http://<fill me in>:8080/static/quay_callback.htm
 githubClientID: <fill me in>
 githubClientSecret: <fill me in>
 githubRedirectURI: http://<fill me in>:8080/auth/tokens/github.com
+gitlabClientID: <fill me in>
+gitlabClientSecret: <fill me in>
+gitlabRedirectURI: http://<fill me in>:8080/auth/tokens/gitlab.com
 bitbucketClientID: <fill me in>
 bitbucketClientSecret: <fill me in>
 hostname: localhost

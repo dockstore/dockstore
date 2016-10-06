@@ -182,6 +182,18 @@ public class UserResource {
     @GET
     @Timed
     @UnitOfWork
+    @Path("/{userId}/tokens/gitlab.com")
+    @ApiOperation(value = "Get Gitlab tokens with user id", response = Token.class, responseContainer = "List")
+    public List<Token> getGitlabUserTokens(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam("User to return") @PathParam("userId") long userId) {
+        Helper.checkUser(user, userId);
+
+        return tokenDAO.findGitlabByUserId(userId);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
     @Path("/{userId}/tokens/quay.io")
     @ApiOperation(value = "Get Quay tokens with user id", response = Token.class, responseContainer = "List")
     public List<Token> getQuayUserTokens(@ApiParam(hidden = true) @Auth User user,
