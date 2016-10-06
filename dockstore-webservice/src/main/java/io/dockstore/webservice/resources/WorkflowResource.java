@@ -37,6 +37,7 @@ import io.dockstore.webservice.helpers.BitBucketSourceCodeRepo;
 import io.dockstore.webservice.helpers.EntryLabelHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
+import io.dockstore.webservice.helpers.GitLabSourceCodeRepo;
 import io.dockstore.webservice.helpers.Helper;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
@@ -218,6 +219,17 @@ public class WorkflowResource {
                 // get workflows from github for a user and updates db
                 refreshHelper(new GitHubSourceCodeRepo(user.getUsername(), githubToken.getContent(), null), user);
             }
+
+            // Refresh Gitlab
+            Token gitlabToken = Helper.extractToken(tokens, TokenType.GITLAB_COM.toString());
+
+            // Update gitlab workflows if token exists
+            if (gitlabToken != null && gitlabToken.getContent() != null) {
+                // get workflows from gitlab for a user and updates db
+                refreshHelper(new GitLabSourceCodeRepo(user.getUsername(), client, gitlabToken.getContent(), null), user);
+            }
+
+
             // when 3) no data is found for a workflow in the db, we may want to create a warning, note, or label
         } catch (WebApplicationException ex) {
             LOG.info(user.getUsername() + ": " + "Failed to refresh user {}", user.getId());
@@ -698,10 +710,14 @@ public class WorkflowResource {
         List<Token> tokens = checkOnBitbucketToken(user);
         Token bitbucketToken = Helper.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
         Token githubToken = Helper.extractToken(tokens, TokenType.GITHUB_COM.toString());
+        Token gitlabToken = Helper.extractToken(tokens, TokenType.GITLAB_COM.toString());
+
         final String bitbucketTokenContent = bitbucketToken == null ? null : bitbucketToken.getContent();
         final String gitHubTokenContent = githubToken == null ? null : githubToken.getContent();
+        final String gitlabTokenContent = gitlabToken == null ? null : gitlabToken.getContent();
+
         final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(gitUrl, client,
-                bitbucketTokenContent, gitHubTokenContent);
+                bitbucketTokenContent, gitlabTokenContent, gitHubTokenContent);
         if (sourceCodeRepo == null) {
             throw new CustomWebApplicationException("Git tokens invalid, please re-link your git accounts.", HttpStatus.SC_BAD_REQUEST);
         }
