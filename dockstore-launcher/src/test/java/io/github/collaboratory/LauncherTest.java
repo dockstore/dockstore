@@ -30,6 +30,7 @@ import org.junit.rules.ExpectedException;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.util.Optional;
 
 import static io.dockstore.common.FileProvisioning.getCacheDirectory;
 import static org.junit.Assert.assertTrue;
@@ -78,7 +79,8 @@ public class LauncherTest {
             expectedEx.expect(AmazonClientException.class);
             expectedEx.expectMessage("Unable to load AWS credentials from any provider in the chain");
         }
-        final LauncherCWL launcherCWL = new LauncherCWL(iniFile.getAbsolutePath(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath());
+        final LauncherCWL launcherCWL = new LauncherCWL(iniFile.getAbsolutePath(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath(),
+                Optional.of(stdout), Optional.of(stderr));
         launcherCWL.run(CommandLineTool.class);
 
         assertTrue(!stdout.toString().isEmpty());
@@ -96,7 +98,8 @@ public class LauncherTest {
             expectedEx.expect(AmazonClientException.class);
             expectedEx.expectMessage("Unable to load AWS credentials from any provider in the chain");
         }
-        final LauncherCWL launcherCWL = new LauncherCWL(iniFile.getAbsolutePath(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath());
+        final LauncherCWL launcherCWL = new LauncherCWL(iniFile.getAbsolutePath(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath(),
+                Optional.of(stdout), Optional.of(stderr));
         launcherCWL.run(Workflow.class);
 
         assertTrue(!stdout.toString().isEmpty());
