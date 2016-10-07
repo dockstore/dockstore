@@ -21,9 +21,11 @@ import com.google.api.client.repackaged.com.google.common.base.Strings;
 import com.google.common.base.Optional;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
 
 import io.cwl.avro.Any;
+import io.cwl.avro.CWL;
 import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.ExpressionTool;
 import io.cwl.avro.WorkflowOutputParameter;
@@ -958,10 +960,11 @@ public class WorkflowResource {
             Gson gson;
             try {
                 gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
-            } catch (GsonBuildException ex) {
-                LOG.error("There was an error creating the TypeSafe CWLTool GSON object.");
+            } catch (CWL.GsonBuildException ex) {
+                LOG.error("There was an error creating the CWL GSON instance.");
                 return null;
             }
+
             final io.cwl.avro.Workflow workflow = gson.fromJson(cwlJson.toString(), io.cwl.avro.Workflow.class);
 
             if (workflow == null) {

@@ -95,7 +95,7 @@ public class LauncherCWL {
      * Constructor for shell-based launch
      * @param args raw arguments from the command-line
      */
-    public LauncherCWL(String[] args) {
+    public LauncherCWL(String[] args) throws CWL.GsonBuildException {
         // create the command line parser
         CommandLineParser parser = new DefaultParser();
         // parse command line
@@ -114,7 +114,7 @@ public class LauncherCWL {
      * @param imageDescriptorPath descriptor for the tool itself
      * @param runtimeDescriptorPath descriptor for this run of the tool
      */
-    public LauncherCWL(String configFilePath, String imageDescriptorPath, String runtimeDescriptorPath){
+    public LauncherCWL(String configFilePath, String imageDescriptorPath, String runtimeDescriptorPath) throws CWL.GsonBuildException {
         this.configFilePath = configFilePath;
         this.imageDescriptorPath = imageDescriptorPath;
         this.runtimeDescriptorPath = runtimeDescriptorPath;
@@ -693,8 +693,12 @@ public class LauncherCWL {
     }
 
     public static void main(String[] args) {
-        final LauncherCWL launcherCWL = new LauncherCWL(args);
-        launcherCWL.run(CommandLineTool.class);
+        try {
+            final LauncherCWL launcherCWL = new LauncherCWL(args);
+            launcherCWL.run(CommandLineTool.class);
+        } catch (CWL.GsonBuildException ex) {
+            LOG.error("There was an error creating the CWL GSON instance.");
+        }
     }
 
     private String trimAndPrintInput(String input) {
