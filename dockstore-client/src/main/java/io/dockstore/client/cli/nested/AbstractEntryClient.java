@@ -24,6 +24,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import cromwell.Main;
 import io.cwl.avro.CWL;
@@ -500,11 +501,17 @@ public abstract class AbstractEntryClient {
             cwl2jsonHelp();
         } else {
             final String cwlPath = reqVal(args, "--cwl");
-            final ImmutablePair<String, String> output = cwlUtil.parseCWL(cwlPath, true);
+            final ImmutablePair<String, String> output = cwlUtil.parseCWL(cwlPath);
 
-            final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
-            final Map<String, Object> runJson = cwlUtil.extractRunJson(output.getLeft());
-            out(gson.toJson(runJson));
+            try {
+                final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
+                final Map<String, Object> runJson = cwlUtil.extractRunJson(output.getLeft());
+                out(gson.toJson(runJson));
+            } catch (CWL.GsonBuildException ex) {
+                exceptionMessage(ex, "There was an error creating the CWL GSON instance.", API_ERROR);
+            } catch (JsonParseException ex) {
+                exceptionMessage(ex, "The JSON file provided is invalid.", API_ERROR);
+            }
         }
     }
 
@@ -883,78 +890,84 @@ public abstract class AbstractEntryClient {
         }
         jsonRun = convertYamlToJson(yamlRun, jsonRun);
 
-        final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
-        if (jsonRun != null) {
-            // if the root document is an array, this indicates multiple runs
-            JsonParser parser = new JsonParser();
-            final JsonElement parsed = parser.parse(new InputStreamReader(new FileInputStream(jsonRun), StandardCharsets.UTF_8));
-            if (parsed.isJsonArray()) {
-                final JsonArray asJsonArray = parsed.getAsJsonArray();
-                for (JsonElement element : asJsonArray) {
-                    final String finalString = gson.toJson(element);
-                    final File tempJson = File.createTempFile("parameter", ".json", Files.createTempDir());
-                    FileUtils.write(tempJson, finalString, StandardCharsets.UTF_8);
-                    final LauncherCWL cwlLauncher = new LauncherCWL(getConfigFile(), tempCWL.getAbsolutePath(), tempJson.getAbsolutePath());
+        try {
+            final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
+            if (jsonRun != null) {
+                // if the root document is an array, this indicates multiple runs
+                JsonParser parser = new JsonParser();
+                final JsonElement parsed = parser.parse(new InputStreamReader(new FileInputStream(jsonRun), StandardCharsets.UTF_8));
+                if (parsed.isJsonArray()) {
+                    final JsonArray asJsonArray = parsed.getAsJsonArray();
+                    for (JsonElement element : asJsonArray) {
+                        final String finalString = gson.toJson(element);
+                        final File tempJson = File.createTempFile("parameter", ".json", Files.createTempDir());
+                        FileUtils.write(tempJson, finalString, StandardCharsets.UTF_8);
+                        final LauncherCWL cwlLauncher = new LauncherCWL(getConfigFile(), tempCWL.getAbsolutePath(), tempJson.getAbsolutePath());
+                        if (this instanceof WorkflowClient) {
+                            cwlLauncher.run(Workflow.class);
+                        } else {
+                            cwlLauncher.run(CommandLineTool.class);
+                        }
+                    }
+                } else {
+                    final LauncherCWL cwlLauncher = new LauncherCWL(getConfigFile(), tempCWL.getAbsolutePath(), jsonRun);
                     if (this instanceof WorkflowClient) {
                         cwlLauncher.run(Workflow.class);
                     } else {
                         cwlLauncher.run(CommandLineTool.class);
+                    }
+                }
+            } else if (csvRuns != null) {
+                final File csvData = new File(csvRuns);
+                try (CSVParser parser = CSVParser.parse(csvData, StandardCharsets.UTF_8,
+                        CSVFormat.DEFAULT.withDelimiter('\t').withEscape('\\').withQuoteMode(QuoteMode.NONE))) {
+                    // grab header
+                    final Iterator<CSVRecord> iterator = parser.iterator();
+                    final CSVRecord headers = iterator.next();
+                    // ignore row with type information
+                    iterator.next();
+                    // process rows
+                    while (iterator.hasNext()) {
+                        final CSVRecord csvRecord = iterator.next();
+                        final File tempJson = File.createTempFile("temp", ".json", Files.createTempDir());
+                        StringBuilder buffer = new StringBuilder();
+                        buffer.append("{");
+                        for (int i = 0; i < csvRecord.size(); i++) {
+                            buffer.append("\"").append(headers.get(i)).append("\"");
+                            buffer.append(":");
+                            // if the type is an array, just pass it through
+                            buffer.append(csvRecord.get(i));
+
+                            if (i < csvRecord.size() - 1) {
+                                buffer.append(",");
+                            }
+                        }
+                        buffer.append("}");
+                        // prettify it
+                        JsonParser prettyParser = new JsonParser();
+                        JsonObject json = prettyParser.parse(buffer.toString()).getAsJsonObject();
+                        final String finalString = gson.toJson(json);
+
+                        // write it out
+                        FileUtils.write(tempJson, finalString, StandardCharsets.UTF_8);
+
+                        // final String stringMapAsString = gson.toJson(stringMap);
+                        // Files.write(stringMapAsString, tempJson, StandardCharsets.UTF_8);
+                        final LauncherCWL cwlLauncher = new LauncherCWL(this.getConfigFile(), tempCWL.getAbsolutePath(), tempJson.getAbsolutePath());
+                        if (this instanceof WorkflowClient) {
+                            cwlLauncher.run(Workflow.class);
+                        } else {
+                            cwlLauncher.run(CommandLineTool.class);
+                        }
                     }
                 }
             } else {
-                final LauncherCWL cwlLauncher = new LauncherCWL(getConfigFile(), tempCWL.getAbsolutePath(), jsonRun);
-                if (this instanceof WorkflowClient) {
-                    cwlLauncher.run(Workflow.class);
-                } else {
-                    cwlLauncher.run(CommandLineTool.class);
-                }
+                errorMessage("Missing required parameters, one of  --json or --tsv is required", CLIENT_ERROR);
             }
-        } else if (csvRuns != null) {
-            final File csvData = new File(csvRuns);
-            try (CSVParser parser = CSVParser.parse(csvData, StandardCharsets.UTF_8, CSVFormat.DEFAULT.withDelimiter('\t').withEscape('\\')
-                    .withQuoteMode(QuoteMode.NONE))) {
-                // grab header
-                final Iterator<CSVRecord> iterator = parser.iterator();
-                final CSVRecord headers = iterator.next();
-                // ignore row with type information
-                iterator.next();
-                // process rows
-                while (iterator.hasNext()) {
-                    final CSVRecord csvRecord = iterator.next();
-                    final File tempJson = File.createTempFile("temp", ".json", Files.createTempDir());
-                    StringBuilder buffer = new StringBuilder();
-                    buffer.append("{");
-                    for (int i = 0; i < csvRecord.size(); i++) {
-                        buffer.append("\"").append(headers.get(i)).append("\"");
-                        buffer.append(":");
-                        // if the type is an array, just pass it through
-                        buffer.append(csvRecord.get(i));
-
-                        if (i < csvRecord.size() - 1) {
-                            buffer.append(",");
-                        }
-                    }
-                    buffer.append("}");
-                    // prettify it
-                    JsonParser prettyParser = new JsonParser();
-                    JsonObject json = prettyParser.parse(buffer.toString()).getAsJsonObject();
-                    final String finalString = gson.toJson(json);
-
-                    // write it out
-                    FileUtils.write(tempJson, finalString, StandardCharsets.UTF_8);
-
-                    // final String stringMapAsString = gson.toJson(stringMap);
-                    // Files.write(stringMapAsString, tempJson, StandardCharsets.UTF_8);
-                    final LauncherCWL cwlLauncher = new LauncherCWL(this.getConfigFile(), tempCWL.getAbsolutePath(), tempJson.getAbsolutePath());
-                    if (this instanceof WorkflowClient) {
-                        cwlLauncher.run(Workflow.class);
-                    } else {
-                        cwlLauncher.run(CommandLineTool.class);
-                    }
-                }
-            }
-        } else {
-            errorMessage("Missing required parameters, one of  --json or --tsv is required", CLIENT_ERROR);
+        } catch (CWL.GsonBuildException ex) {
+            exceptionMessage(ex, "There was an error creating the CWL GSON instance.", API_ERROR);
+        } catch (JsonParseException ex) {
+            exceptionMessage(ex, "The JSON file provided is invalid.", API_ERROR);
         }
 
     }
@@ -1127,11 +1140,17 @@ public abstract class AbstractEntryClient {
 
         if (descriptor.equals(CWL_STRING)) {
             // need to suppress output
-            final ImmutablePair<String, String> output = cwlUtil.parseCWL(tempDescriptor.getAbsolutePath(), true);
+            final ImmutablePair<String, String> output = cwlUtil.parseCWL(tempDescriptor.getAbsolutePath());
             final Map<String, Object> stringObjectMap = cwlUtil.extractRunJson(output.getLeft());
             if (json) {
-                final Gson gson = CWL.getTypeSafeCWLToolDocument();
-                return gson.toJson(stringObjectMap);
+                try {
+                    final Gson gson = CWL.getTypeSafeCWLToolDocument();
+                    return gson.toJson(stringObjectMap);
+                } catch (CWL.GsonBuildException ex) {
+                    exceptionMessage(ex, "There was an error creating the CWL GSON instance.", API_ERROR);
+                } catch (JsonParseException ex) {
+                    exceptionMessage(ex, "The JSON file provided is invalid.", API_ERROR);
+                }
             } else {
                 // re-arrange as rows and columns
                 final Map<String, String> typeMap = cwlUtil.extractCWLTypes(output.getLeft());

@@ -54,7 +54,7 @@ public class CWLClientTest {
     public void parseCWL() throws Exception{
         final URL resource = Resources.getResource("cwl.json");
         final CWL cwl = new CWL();
-        final ImmutablePair<String, String> output = cwl.parseCWL(resource.getFile(), true);
+        final ImmutablePair<String, String> output = cwl.parseCWL(resource.getFile());
         assertTrue(!output.getLeft().isEmpty() && output.getLeft().contains("cwlVersion"));
         assertTrue(!output.getRight().isEmpty() && output.getRight().contains("cwltool"));
     }
@@ -63,7 +63,7 @@ public class CWLClientTest {
     public void extractCWLTypes() throws Exception{
         final URL resource = Resources.getResource("cwl.json");
         final CWL cwl = new CWL();
-        final ImmutablePair<String, String> output = cwl.parseCWL(resource.getFile(), true);
+        final ImmutablePair<String, String> output = cwl.parseCWL(resource.getFile());
         final Map<String, String> typeMap = cwl.extractCWLTypes(output.getLeft());
         assertTrue(typeMap.size() == 3);
         assertTrue("int".equals(typeMap.get("mem_gb")));

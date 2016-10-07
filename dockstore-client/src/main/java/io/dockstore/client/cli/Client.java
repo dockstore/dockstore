@@ -21,6 +21,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
+
+import io.cwl.avro.CWL;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.client.cli.nested.WorkflowClient;
@@ -92,7 +95,7 @@ public class Client {
 
     public static final int PADDING = 3;
 
-    public static final int GENERIC_ERROR = 1; // General error, not yet descriped by an error type
+    public static final int GENERIC_ERROR = 1; // General error, not yet described by an error type
     public static final int CONNECTION_ERROR = 150; // Connection exception
     public static final int IO_ERROR = 3; // IO throws an exception
     public static final int API_ERROR = 6; // API throws an exception
@@ -119,6 +122,10 @@ public class Client {
             out(gson.toJson(metadata));
         } catch (ApiException ex) {
             exceptionMessage(ex, "", API_ERROR);
+        } catch (CWL.GsonBuildException ex) {
+            exceptionMessage(ex, "There was an error creating the CWL GSON instance.", API_ERROR);
+        } catch (JsonParseException ex) {
+            exceptionMessage(ex, "The JSON file provided is invalid.", API_ERROR);
         }
     }
 
