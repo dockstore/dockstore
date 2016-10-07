@@ -389,13 +389,13 @@ public class GeneralWorkflowET {
                 // Get workflows
                 usersApi.refreshWorkflows(userId);
 
-                Workflow githubWorkflow = workflowApi.manualRegister("github", "DockstoreTestUser2/test_lastmodified", "Dockstore.cwl", "test-update-workflow", "cwl");
+                Workflow githubWorkflow = workflowApi.manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/Dockstore.cwl", "test-update-workflow", "cwl");
 
                 // Publish github workflow
                 Workflow workflow = workflowApi.refresh(githubWorkflow.getId());
 
                 //update the default workflow path to be hello.cwl , the workflow path in workflow versions should also be changes
-                workflow.setWorkflowPath("/Dockstore.cwl");
+                workflow.setWorkflowPath("/hello.cwl");
                 workflowApi.updateWorkflowPath(githubWorkflow.getId(),workflow);
                 workflowApi.refresh(githubWorkflow.getId());
 
@@ -405,8 +405,8 @@ public class GeneralWorkflowET {
                 //check if the workflow versions have the same workflow path or not in the database
                 final String masterpath = testingPostgres.runSelectStatement("select workflowpath from workflowversion where name = 'testWorkflowPath'", new ScalarHandler<>());
                 final String testpath = testingPostgres.runSelectStatement("select workflowpath from workflowversion where name = 'testWorkflowPath'", new ScalarHandler<>());
-                Assert.assertTrue("workflow path should be the same as default workflow path", masterpath.equals("/Dockstore.cwl"));
-                Assert.assertTrue("workflow path should be the same as default workflow path", testpath.equals("/Dockstore.cwl"));
+                Assert.assertTrue("master workflow path should be the same as default workflow path, it is " + masterpath, masterpath.equals("/Dockstore.cwl"));
+                Assert.assertTrue("test workflow path should be the same as default workflow path, it is " + testpath, testpath.equals("/Dockstore.cwl"));
         }
 
         /**
@@ -468,14 +468,14 @@ public class GeneralWorkflowET {
                 // refresh individual that is valid
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--script" });
 
-                // check that valid is valid and full
+                // check that workflow is valid and full
                 final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid='t'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 2 valid versions, there are " + count2, count2 == 2);
                 final long count3 = testingPostgres.runSelectStatement("select count(*) from workflow where mode='FULL'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 1 full workflows, there are " + count3, count3 == 1);
 
                 // Change path for each version so that it is invalid
-                testingPostgres.runUpdateStatement("UPDATE workflowversion SET workflowpath='thisisnotarealpath.cwl'");
+                testingPostgres.runUpdateStatement("UPDATE workflowversion SET workflowpath='thisisnotarealpath.cwl', dirtybit=true");
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--script" });
 
                 // Workflow has no valid versions so you cannot publish
@@ -497,7 +497,7 @@ public class GeneralWorkflowET {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--unpub", "--script" });
 
                 // Set paths to invalid
-                testingPostgres.runUpdateStatement("UPDATE workflowversion SET workflowpath='thisisnotarealpath.wdl'");
+                testingPostgres.runUpdateStatement("UPDATE workflowversion SET workflowpath='thisisnotarealpath.wdl', dirtybit=true");
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--script" });
 
                 // Check that versions are invalid
@@ -507,6 +507,75 @@ public class GeneralWorkflowET {
                 // should now not be able to publish
                 systemExit.expectSystemExitWithStatus(Client.API_ERROR);
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+        }
+
+        /**
+         * This tests the dirty bit attribute for workflow versions with github
+         */
+        @Test
+        public void testGithubDirtyBit() {
+                // Setup DB
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+                // refresh all
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
+
+                // refresh individual that is valid
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--script" });
+
+                // Check that no versions have a true dirty bit
+                final long count = testingPostgres.runSelectStatement("select count(*) from workflowversion where dirtybit = true", new ScalarHandler<>());
+                Assert.assertTrue("there should be no versions with dirty bit, there are " + count, count == 0);
+
+                // Edit workflow path for a version
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "version_tag", "--entry", "DockstoreTestUser2/hello-dockstore-workflow",
+                        "--name", "master", "--workflow-path", "/Dockstoredirty.cwl", "--script" });
+
+                // There should be on dirty bit
+                final long count1 = testingPostgres.runSelectStatement("select count(*) from workflowversion where dirtybit = true", new ScalarHandler<>());
+                Assert.assertTrue("there should be 1 versions with dirty bit, there are " + count1, count1 == 1);
+
+                // Update default cwl
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--workflow-path", "/Dockstoreclean.cwl", "--script" });
+
+                // There should be 3 versions with new cwl
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion where workflowpath = '/Dockstoreclean.cwl'", new ScalarHandler<>());
+                Assert.assertTrue("there should be 3 versions with workflow path /Dockstoreclean.cwl, there are " + count2, count2 == 3);
 
         }
+        /**
+         * This tests the dirty bit attribute for workflow versions with bitbucket
+         */
+        @Test
+        public void testBitbucketDirtyBit() {
+                // Setup DB
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+                // refresh all
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
+
+                // refresh individual that is valid
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry", "dockstore_testuser2/dockstore-workflow", "--script" });
+
+                // Check that no versions have a true dirty bit
+                final long count = testingPostgres.runSelectStatement("select count(*) from workflowversion where dirtybit = true", new ScalarHandler<>());
+                Assert.assertTrue("there should be no versions with dirty bit, there are " + count, count == 0);
+
+                // Edit workflow path for a version
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "version_tag", "--entry", "dockstore_testuser2/dockstore-workflow",
+                        "--name", "master", "--workflow-path", "/Dockstoredirty.cwl", "--script" });
+
+                // There should be on dirty bit
+                final long count1 = testingPostgres.runSelectStatement("select count(*) from workflowversion where dirtybit = true", new ScalarHandler<>());
+                Assert.assertTrue("there should be 1 versions with dirty bit, there are " + count1, count1 == 1);
+
+                // Update default cwl
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry", "dockstore_testuser2/dockstore-workflow", "--workflow-path", "/Dockstoreclean.cwl", "--script" });
+
+                // There should be 3 versions with new cwl
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion where workflowpath = '/Dockstoreclean.cwl'", new ScalarHandler<>());
+                Assert.assertTrue("there should be 4 versions with workflow path /Dockstoreclean.cwl, there are " + count2, count2 == 4);
+
+        }
+
 }

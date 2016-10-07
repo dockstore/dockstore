@@ -44,11 +44,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author dyuen
  */
-public class QuayImageRegistry implements ImageRegistryInterface {
+public class QuayImageRegistry extends AbstractImageRegistry {
 
     public static final String QUAY_URL = "https://quay.io/api/v1/";
 
@@ -80,8 +82,6 @@ public class QuayImageRegistry implements ImageRegistryInterface {
 
         if (asStringBuilds.isPresent()) {
             final String json = asStringBuilds.get();
-            // LOG.info(json);
-
             Gson gson = new Gson();
             Map<String, Map<String, Map<String, String>>> map = new HashMap<>();
             map = (Map<String, Map<String, Map<String, String>>>) gson.fromJson(json, map.getClass());
@@ -93,13 +93,16 @@ public class QuayImageRegistry implements ImageRegistryInterface {
                 try {
                     final Tag tag = objectMapper.readValue(s, Tag.class);
                     tags.add(tag);
-                    // LOG.info(gson.toJson(tag));
                 } catch (IOException ex) {
-                    LOG.info(quayToken.getUsername() + " Exception: {}", ex);
+                    LOG.warn(quayToken.getUsername() + " Exception: {}", ex);
                 }
             }
 
         }
+
+        String repository = tool.getNamespace() + "/" + tool.getName();
+        updateTagsWithBuildInformation(repository, tags, tool);
+
         return tags;
     }
 
@@ -116,7 +119,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
                 namespaces.add(organizationMap.get("name"));
             }
         } catch (ApiException e) {
-            LOG.info(quayToken.getUsername() + " Exception: {}", e);
+            LOG.warn(quayToken.getUsername() + " Exception: {}", e);
         }
 
         namespaces.add(quayToken.getUsername());
@@ -124,13 +127,13 @@ public class QuayImageRegistry implements ImageRegistryInterface {
     }
 
     @Override
-    public List<Tool> getContainers(List<String> namespaces) {
+    public List<Tool> getToolsFromNamespace(List<String> namespaces) {
         List<Tool> toolList = new ArrayList<>(0);
 
         for (String namespace : namespaces) {
             String url = QUAY_URL + "repository?namespace=" + namespace;
             Optional<String> asString = ResourceUtilities.asString(url, quayToken.getContent(), client);
-            LOG.info(quayToken.getUsername() + " : RESOURCE CALL: {}", url);
+            //            LOG.info(quayToken.getUsername() + " : RESOURCE CALL: {}", url);
 
             if (asString.isPresent()) {
                 RepoList repos;
@@ -148,7 +151,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
                     tools.stream().forEach(container -> container.setMode(ToolMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS));
                     toolList.addAll(tools);
                 } catch (IOException ex) {
-                    LOG.info(quayToken.getUsername() + " Exception: {}", ex);
+                    LOG.warn(quayToken.getUsername() + " Exception: {}", ex);
                 }
             }
         }
@@ -157,90 +160,128 @@ public class QuayImageRegistry implements ImageRegistryInterface {
     }
 
     @Override
-    public Map<String, ArrayList<?>> getBuildMap(List<Tool> allRepos) {
+    public void updateAPIToolsWithBuildInformation(List<Tool> apiTools) {
+        // Initialize useful classes
+        final Gson gson = new Gson();
         final SimpleDateFormat formatter = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
 
-        final Map<String, ArrayList<?>> mapOfBuilds = new HashMap<>();
-
-        // Go through each container for each namespace
-        final Gson gson = new Gson();
-        for (final Tool tool : allRepos) {
-
-            if (tool.getRegistry() != Registry.QUAY_IO) {
-                continue;
-            }
-
+        for (Tool tool : apiTools) {
+            // Set path information (not sure why we have to do this here)
             final String repo = tool.getNamespace() + '/' + tool.getName();
             final String path = quayToken.getTokenSource() + '/' + repo;
             tool.setPath(path);
 
-            LOG.info(quayToken.getUsername() + " : ========== Configuring {} ==========", path);
+            LOG.info("Grabbing tool information for " + tool.getPath());
 
+            // Initialize giturl
+            String gitUrl = null;
 
-            updateContainersWithBuildInfo(formatter, mapOfBuilds, gson, tool, repo, path);
-        }
-        return mapOfBuilds;
-    }
+            // Make call for build information from quay (only need most recent)
+            String urlBuilds = QUAY_URL + "repository/" + repo + "/build/?limit=1";
+            Optional<String> asStringBuilds = ResourceUtilities.asString(urlBuilds, quayToken.getContent(), client);
 
-    /**
-     * For a given tool, update its registry, git, and build information with information from quay.io
-     * 
-     * @param formatter
-     * @param mapOfBuilds
-     * @param gson
-     * @param tool
-     * @param repo
-     * @param path
-     */
-    private void updateContainersWithBuildInfo(SimpleDateFormat formatter, Map<String, ArrayList<?>> mapOfBuilds, Gson gson,
-            Tool tool, String repo, String path) {
-        // Get the list of builds from the tool.
-        // Builds contain information such as the Git URL and tags
-        // TODO: work with quay.io to get a better approach such as only the last build for each tag or at the very least paging
-        String urlBuilds = QUAY_URL + "repository/" + repo + "/build/?limit=2147483647";
-        Optional<String> asStringBuilds = ResourceUtilities.asString(urlBuilds, quayToken.getContent(), client);
-        LOG.info(quayToken.getUsername() + " RESOURCE CALL: {}", urlBuilds);
+            // Check result of API call
+            if (asStringBuilds.isPresent()) {
+                String json = asStringBuilds.get();
 
-        String gitURL = "";
+                // Store the json file into a map for parsing
+                Map<String, ArrayList> buildMap = new HashMap<>();
+                buildMap = (Map<String, ArrayList>) gson.fromJson(json, buildMap.getClass());
 
-        if (asStringBuilds.isPresent()) {
-            String json = asStringBuilds.get();
+                // Grad build information
+                ArrayList builds = buildMap.get("builds");
 
-            // parse json using Gson to get the git url of repository and the list of tags
-            Map<String, ArrayList> map = new HashMap<>();
-            map = (Map<String, ArrayList>) gson.fromJson(json, map.getClass());
-            ArrayList builds = map.get("builds");
-            if (builds.size() > 0) {
+                if (builds.size() > 0) {
+                    // Look at the latest build for the git url
+                    // ASSUMPTION : We are assuming that for a given Quay repo users are only using one git trigger
+                    if (!builds.isEmpty()) {
+                        // If a build exists, grab data from it and update the tool
+                        Map<String, Map<String, String>> individualBuild = (Map<String, Map<String, String>>) builds.get(0);
 
-                mapOfBuilds.put(path, builds);
+                        // Get the git url
+                        Map<String, String> triggerMetadata = individualBuild.get("trigger_metadata");
 
-                if (!builds.isEmpty()) {
-                    Map<String, Map<String, String>> map2 = (Map<String, Map<String, String>>) builds.get(0);
+                        if (triggerMetadata != null) {
+                            gitUrl = triggerMetadata.get("git_url");
+                        }
 
-                    Map<String, String> triggerMetadata = map2.get("trigger_metadata");
+                        // Get lastbuild time
+                        Map<String, String> individualBuildStringMap = (Map<String, String>) builds.get(0);
+                        String lastBuild = individualBuildStringMap.get("started");
 
-                    if (triggerMetadata != null) {
-                        gitURL = triggerMetadata.get("git_url");
+                        Date date;
+                        try {
+                            date = formatter.parse(lastBuild);
+                            tool.setLastBuild(date);
+                        } catch (ParseException ex) {
+                            LOG.warn(quayToken.getUsername() + ": "  + quayToken.getUsername() + " Build date did not match format 'EEE, d MMM yyyy HH:mm:ss Z'");
+                        }
                     }
 
-                    Map<String, String> map3 = (Map<String, String>) builds.get(0);
-                    String lastBuild = map3.get("started");
-                    LOG.info(quayToken.getUsername() + " : LAST BUILD: {}", lastBuild);
-
-                    Date date;
-                    try {
-                        date = formatter.parse(lastBuild);
-                        tool.setLastBuild(date);
-                    } catch (ParseException ex) {
-                        LOG.info(quayToken.getUsername() + ": "  + quayToken.getUsername() + " Build date did not match format 'EEE, d MMM yyyy HH:mm:ss Z'");
+                    // Set some attributes if not manual
+                    if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
+                        tool.setRegistry(Registry.QUAY_IO);
+                        tool.setGitUrl(gitUrl);
                     }
-                }
-                if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
-                    tool.setRegistry(Registry.QUAY_IO);
-                    tool.setGitUrl(gitURL);
                 }
             }
         }
+    }
+
+    private void updateTagsWithBuildInformation(String repository, List<Tag> tags, Tool tool) {
+        final Gson gson = new Gson();
+
+        // Grab build information for given repository
+        String urlBuilds = QUAY_URL + "repository/" + repository + "/build/?limit=2147483647";
+        Optional<String> asStringBuilds = ResourceUtilities.asString(urlBuilds, quayToken.getContent(), client);
+
+        // List of builds for a tool
+        ArrayList builds;
+
+        if (asStringBuilds.isPresent()) {
+            String json = asStringBuilds.get();
+            Map<String, ArrayList> map = new HashMap<>();
+            map = (Map<String, ArrayList>) gson.fromJson(json, map.getClass());
+            builds = map.get("builds");
+
+            // Set up tags with build information
+            for (Tag tag : tags) {
+                // Set tag information based on build info
+                for (Object build : builds) {
+                    Map<String, ArrayList<String>> tagsMap = (Map<String, ArrayList<String>>) build;
+                    List<String> buildTags = tagsMap.get("tags");
+
+                    // If build is for given tag
+                    if (buildTags.contains(tag.getName())) {
+                        // Find if tag has a git reference
+                        Map<String, Map<String, String>> triggerMetadataMap = (Map<String, Map<String, String>>) build;
+                        Map<String, String> triggerMetadata = triggerMetadataMap.get("trigger_metadata");
+                        if (triggerMetadata != null) {
+                            String ref = triggerMetadata.get("ref");
+                            ref = parseReference(ref);
+                            tag.setReference(ref);
+                            if (ref == null) {
+                                tag.setAutomated(false);
+                            } else {
+                                tag.setAutomated(true);
+                            }
+                        } else {
+                            LOG.error(quayToken.getUsername() + " : WARNING: trigger_metadata is NULL. Could not parse to get reference!");
+                        }
+
+                        break;
+                    }
+                }
+
+                // Set up default descriptor paths
+                tag.setCwlPath(tool.getDefaultCwlPath());
+                tag.setWdlPath(tool.getDefaultWdlPath());
+
+                // Set up default dockerfile path
+                tag.setDockerfilePath(tool.getDefaultDockerfilePath());
+            }
+        }
+
     }
 
     /**
@@ -248,7 +289,7 @@ public class QuayImageRegistry implements ImageRegistryInterface {
      * Todo: this should be implemented with the Quay API, but they currently don't have a return model for this call
      * @param tool
      * @return
-         */
+     */
     public Map<String, Object> getQuayInfo(final Tool tool){
         final String repo = tool.getNamespace() + '/' + tool.getName();
         final String repoUrl = QUAY_URL + "repository/" + repo;
@@ -265,4 +306,29 @@ public class QuayImageRegistry implements ImageRegistryInterface {
         }
         return null;
     }
+
+    /**
+     * @param reference
+     *            a raw reference from git like "refs/heads/master"
+     * @return the last segment like master
+     */
+    public static String parseReference(String reference) {
+        if (reference != null) {
+            Pattern p = Pattern.compile("([\\S][^/\\s]+)?/([\\S][^/\\s]+)?/(\\S+)");
+            Matcher m = p.matcher(reference);
+            if (!m.find()) {
+                LOG.info("Cannot parse reference: {}", reference);
+                return null;
+            }
+
+            // These correspond to the positions of the pattern matcher
+            final int refIndex = 3;
+
+            reference = m.group(refIndex);
+            LOG.info("REFERENCE: {}", reference);
+        }
+        return reference;
+    }
+
+
 }

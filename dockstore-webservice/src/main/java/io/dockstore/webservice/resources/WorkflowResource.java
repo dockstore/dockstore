@@ -441,7 +441,9 @@ public class WorkflowResource {
         //update the workflow path in all workflowVersions
         Set<WorkflowVersion> versions = c.getVersions();
         for(WorkflowVersion version : versions){
-            version.setWorkflowPath(workflow.getDefaultWorkflowPath());
+            if (!version.isDirtyBit()) {
+                version.setWorkflowPath(workflow.getDefaultWorkflowPath());
+            }
         }
 
         return c;
@@ -740,7 +742,13 @@ public class WorkflowResource {
         for (WorkflowVersion version : workflowVersions) {
             if (mapOfExistingWorkflowVersions.containsKey(version.getId())) {
                 // remove existing copy and add the new one
-                final WorkflowVersion existingTag = mapOfExistingWorkflowVersions.get(version.getId());
+                WorkflowVersion existingTag = mapOfExistingWorkflowVersions.get(version.getId());
+
+                // If path changed then update dirty bit to true
+                if (!existingTag.getWorkflowPath().equals(version.getWorkflowPath())) {
+                    existingTag.setDirtyBit(true);
+                }
+
                 existingTag.updateByUser(version);
             }
         }

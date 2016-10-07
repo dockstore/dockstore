@@ -172,7 +172,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow, Map<String, String> existingDefaults) {
+    public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow, Map<String, WorkflowVersion> existingDefaults) {
         RepositoryId id = RepositoryId.createFromId(repositoryId);
 
         // when getting a full workflow, look for versions and check each version for valid workflows
@@ -196,7 +196,23 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             version.setValid(false);
 
             // Determine workflow version from previous
-            String calculatedPath = existingDefaults.getOrDefault(ref, existingWorkflow.get().getDefaultWorkflowPath());
+
+            String calculatedPath;
+
+            // Set to false if new version
+            if (existingDefaults.get(ref) == null) {
+                version.setDirtyBit(false);
+                calculatedPath = existingWorkflow.get().getDefaultWorkflowPath();
+            } else {
+                // existing version
+                if (existingDefaults.get(ref).isDirtyBit()) {
+                    calculatedPath = existingDefaults.get(ref).getWorkflowPath();
+                } else {
+                    calculatedPath = existingWorkflow.get().getDefaultWorkflowPath();
+                }
+                version.setDirtyBit(existingDefaults.get(ref).isDirtyBit());
+            }
+
             version.setWorkflowPath(calculatedPath);
             Set<SourceFile> sourceFileSet = new HashSet<>();
             //TODO: is there a case-insensitive endsWith?

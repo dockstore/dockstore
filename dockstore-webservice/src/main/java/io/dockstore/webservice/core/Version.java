@@ -89,6 +89,18 @@ public abstract class Version<T extends Version> implements Comparable<T>{
     @ApiModelProperty(value = "Implementation specific, can be a quay.io or docker hub tag name", required = true)
     private String name;
 
+    @Column
+    @ApiModelProperty(value = "True if user has altered the tag")
+    private boolean dirtyBit = false;
+
+    public boolean isDirtyBit() {
+        return dirtyBit;
+    }
+
+    public void setDirtyBit(boolean dirtyBit) {
+        this.dirtyBit = dirtyBit;
+    }
+
     public void updateByUser(final Version version) {
         reference = version.reference;
         hidden = version.hidden;

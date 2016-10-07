@@ -17,22 +17,21 @@
 package io.dockstore.webservice.helpers;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.http.client.HttpClient;
 
+import io.dockstore.webservice.core.Registry;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Tag;
 
 /**
  * A no-op interface intended as a place-holder for where we will implement docker hub functionality when they get around to exposing and
  * implementing their API.
- * 
+ *
  * @author dyuen
  */
-public class DockerHubRegistry implements ImageRegistryInterface {
+public class DockerHubRegistry extends AbstractImageRegistry {
 
     private final HttpClient client;
 
@@ -40,23 +39,22 @@ public class DockerHubRegistry implements ImageRegistryInterface {
         this.client = client;
     }
 
-    @Override
-    public List<Tag> getTags(Tool tool) {
+    @Override public List<Tag> getTags(Tool tool) {
         return new ArrayList<>();
     }
 
-    @Override
-    public List<String> getNamespaces() {
+    @Override public List<String> getNamespaces() {
         return new ArrayList<>();
     }
 
-    @Override
-    public List<Tool> getContainers(List<String> namespaces) {
+    @Override public List<Tool> getToolsFromNamespace(List<String> namespaces) {
         return new ArrayList<>();
     }
 
-    @Override
-    public Map<String, ArrayList<?>> getBuildMap(List<Tool> allRepos) {
-        return new HashMap<>();
+    @Override public void updateAPIToolsWithBuildInformation(List<Tool> apiTools) {
+        for (Tool tool : apiTools) {
+            tool.setRegistry(Registry.DOCKER_HUB);
+        }
     }
+
 }

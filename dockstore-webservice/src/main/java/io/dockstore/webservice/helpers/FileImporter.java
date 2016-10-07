@@ -18,6 +18,7 @@ package io.dockstore.webservice.helpers;
 
 import com.esotericsoftware.yamlbeans.YamlException;
 import com.esotericsoftware.yamlbeans.YamlReader;
+import com.google.common.base.Strings;
 import com.google.common.io.Files;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
@@ -74,8 +75,14 @@ public class FileImporter {
             if (fileType == SourceFile.FileType.DOCKERFILE) {
                 fileName = tag.getDockerfilePath();
             } else if (fileType == SourceFile.FileType.DOCKSTORE_CWL) {
+                if (Strings.isNullOrEmpty(tag.getCwlPath())) {
+                    return null;
+                }
                 fileName = tag.getCwlPath();
             } else if (fileType == SourceFile.FileType.DOCKSTORE_WDL) {
+                if (Strings.isNullOrEmpty(tag.getWdlPath())) {
+                    return null;
+                }
                 fileName = tag.getWdlPath();
             }
         } else if (version instanceof WorkflowVersion){

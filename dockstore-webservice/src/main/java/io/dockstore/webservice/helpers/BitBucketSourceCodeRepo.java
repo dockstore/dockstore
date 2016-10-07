@@ -222,7 +222,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow, Map<String, String> existingDefaults) {
+    public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow, Map<String, WorkflowVersion> existingDefaults) {
         // Look at each version, check for valid workflows
         String url = BITBUCKET_API_URL + "repositories/" + repositoryId + "/branches-tags";
 
@@ -247,8 +247,22 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                     version.setReference(branchName);
                     version.setValid(false);
 
-                    // determine workflow version from previous
-                    String calculatedPath = existingDefaults.getOrDefault(branchName, existingWorkflow.get().getDefaultWorkflowPath());
+                    String calculatedPath;
+
+                    // Set to false if new version
+                    if (existingDefaults.get(branchName) == null) {
+                        version.setDirtyBit(false);
+                        calculatedPath = existingWorkflow.get().getDefaultWorkflowPath();
+                    } else {
+                        // existing version
+                        if (existingDefaults.get(branchName).isDirtyBit()) {
+                            calculatedPath = existingDefaults.get(branchName).getWorkflowPath();
+                        } else {
+                            calculatedPath = existingWorkflow.get().getDefaultWorkflowPath();
+                        }
+                        version.setDirtyBit(existingDefaults.get(branchName).isDirtyBit());
+                    }
+
                     version.setWorkflowPath(calculatedPath);
 
                     // Get relative path of main workflow descriptor to find relative paths
