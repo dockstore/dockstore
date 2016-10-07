@@ -305,10 +305,10 @@ public class WorkflowET {
         final List<SourceFile> masterImports = workflowApi.secondaryCwl(workflow.getId(), "master");
         assertTrue("should find 2 imports, found " + masterImports.size(), masterImports.size() == 2);
         final SourceFile master = workflowApi.cwl(workflow.getId(), "master");
-        assertTrue("master content incorrect", master.getContent().contains("two-step workflow"));
+        assertTrue("master content incorrect", master.getContent().contains("untar") && master.getContent().contains("compile"));
 
         // get secondary files by path
-        SourceFile revtool = workflowApi.secondaryCwlPath(workflow.getId(), "revtool.cwl", "master");
-        assertTrue("revtool content incorrect", revtool.getContent().contains("example command line program wrapper for the Unix tool \"rev\""));
+        SourceFile argumentsTool = workflowApi.secondaryCwlPath(workflow.getId(), "arguments.cwl", "master");
+        assertTrue("argumentstool content incorrect", argumentsTool.getContent().contains("Example trivial wrapper for Java 7 compiler"));
     }
 }

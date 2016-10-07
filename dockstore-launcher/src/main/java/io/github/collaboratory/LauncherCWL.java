@@ -23,6 +23,8 @@ import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
+
 import io.cwl.avro.CWL;
 import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.CommandOutputParameter;
@@ -98,7 +100,7 @@ public class LauncherCWL {
      * Constructor for shell-based launch
      * @param args raw arguments from the command-line
      */
-    public LauncherCWL(String[] args) {
+    public LauncherCWL(String[] args) throws CWL.GsonBuildException {
         // create the command line parser
         CommandLineParser parser = new DefaultParser();
         // parse command line
@@ -157,7 +159,14 @@ public class LauncherCWL {
         // parse the CWL tool definition without validation
         // final String imageDescriptorContent = cwlUtil.parseCWL(imageDescriptorPath, false).getLeft();
         final String imageDescriptorContent = this.parseCWL(imageDescriptorPath).getLeft();
-        final Object cwlObject = gson.fromJson(imageDescriptorContent, cwlClassTarget);
+        Object cwlObject;
+        try {
+            cwlObject = gson.fromJson(imageDescriptorContent, cwlClassTarget);
+        } catch (JsonParseException ex) {
+            LOG.error("The JSON file provided is invalid.");
+            return;
+        }
+
 
         if (cwlObject == null) {
             LOG.info("CWL Workflow was null");
@@ -702,8 +711,12 @@ public class LauncherCWL {
     }
 
     public static void main(String[] args) {
-        final LauncherCWL launcherCWL = new LauncherCWL(args);
-        launcherCWL.run(CommandLineTool.class);
+        try {
+            final LauncherCWL launcherCWL = new LauncherCWL(args);
+            launcherCWL.run(CommandLineTool.class);
+        } catch (CWL.GsonBuildException ex) {
+            LOG.error("There was an error creating the CWL GSON instance.");
+        }
     }
 
     private String trimAndPrintInput(String input) {
