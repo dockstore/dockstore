@@ -955,6 +955,9 @@ public class WorkflowResource {
             Map<String, Object> mapping = (Map<String, Object>) yaml.load(content);
             JSONObject cwlJson = new JSONObject(mapping);
 
+            // Other useful variables
+            String nodePrefix = "dockstore_";
+
             // Set up GSON for JSON parsing
             Gson gson;
             try {
@@ -989,7 +992,7 @@ public class WorkflowResource {
                 // Iterate through steps to find dependencies and docker requirements
                 for (Map.Entry<String, WorkflowStep> entry : workflowStepMap.entrySet()) {
                     WorkflowStep workflowStep = entry.getValue();
-                    String workflowStepId = entry.getKey();
+                    String workflowStepId = nodePrefix + entry.getKey();
 
                     ArrayList<String> stepDependencies = new ArrayList<>();
 
@@ -1003,10 +1006,10 @@ public class WorkflowResource {
                                     String[] sourceSplit = ((String) sources).split("/");
                                     // Only add if of the form dependentStep/inputName
                                     if (sourceSplit.length > 1) {
-                                        stepDependencies.add(sourceSplit[0].replaceFirst("#", ""));
+                                        stepDependencies.add(nodePrefix + sourceSplit[0].replaceFirst("#", ""));
                                     }
                                 } else {
-                                    ArrayList<String> filteredDependencies = filterDependent((ArrayList<String>) sources);
+                                    ArrayList<String> filteredDependencies = filterDependent((ArrayList<String>) sources, nodePrefix);
                                     stepDependencies.addAll(filteredDependencies);
                                 }
                             }
@@ -1079,10 +1082,10 @@ public class WorkflowResource {
                             if (sources instanceof String) {
                                 String[] sourceSplit = ((String) sources).split("/");
                                 if (sourceSplit.length > 1) {
-                                    endDependencies.add(sourceSplit[0].replaceFirst("#", ""));
+                                    endDependencies.add(nodePrefix + sourceSplit[0].replaceFirst("#", ""));
                                 }
                             } else {
-                                ArrayList<String> filteredDependencies = filterDependent((ArrayList<String>) sources);
+                                ArrayList<String> filteredDependencies = filterDependent((ArrayList<String>) sources, nodePrefix);
                                 endDependencies.addAll(filteredDependencies);
                             }
                         }
@@ -1271,13 +1274,13 @@ public class WorkflowResource {
      * @param sources
      * @return filtered list of dependent sources
          */
-    private ArrayList<String> filterDependent(ArrayList<String> sources) {
+    private ArrayList<String> filterDependent(ArrayList<String> sources, String nodePrefix) {
         ArrayList<String> filteredArray = new ArrayList<>();
 
         for (String s : sources) {
             String[] split = s.split("/");
             if (split.length > 1) {
-                filteredArray.add(split[0].replaceFirst("#",""));
+                filteredArray.add(nodePrefix + split[0].replaceFirst("#",""));
             }
         }
 
