@@ -253,6 +253,8 @@ public final class ArgumentUtility {
             return "bitbucket";
         } else if (gitUrl.contains("github")) {
             return "github";
+        } else if (gitUrl.contains("gitlab")) {
+            return "gitlab";
         } else {
             return null;
         }

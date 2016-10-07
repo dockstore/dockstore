@@ -69,7 +69,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         }
 
         String content = null;
-        String branch = null;
+        String branch = reference;
         String id = null;
 
         // Determine a branches default branch (if needed) and ID
@@ -84,16 +84,14 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
                 JsonArray jsonArray = jsonElement.getAsJsonArray();
                 for (JsonElement project : jsonArray) {
                     JsonObject projectObject = project.getAsJsonObject();
-                    if (reference == null) {
-                        branch = projectObject.get("default_branch").getAsString();
+
+                    // What if username != namespace?
+                    if (projectObject.get("path_with_namespace").getAsString().equals(gitUsername + "/" + gitRepository)) {
                         id = projectObject.get("id").getAsString();
-                        break;
-                    } else {
-                        // What if username != namespace?
-                        if (projectObject.get("path_with_namespace").getAsString().equals(gitUsername + "/" + gitRepository)) {
-                            id = projectObject.get("id").getAsString();
-                            break;
+                        if (reference == null) {
+                            branch = projectObject.get("default_branch").getAsString();
                         }
+                        break;
                     }
                 }
             }
