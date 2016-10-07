@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
 
 import io.cwl.avro.CWL;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
@@ -123,6 +124,8 @@ public class Client {
             exceptionMessage(ex, "", API_ERROR);
         } catch (CWL.GsonBuildException ex) {
             exceptionMessage(ex, "There was an error creating the CWL GSON instance.", API_ERROR);
+        } catch (JsonParseException ex) {
+            exceptionMessage(ex, "The JSON file provided is invalid.", API_ERROR);
         }
     }
 

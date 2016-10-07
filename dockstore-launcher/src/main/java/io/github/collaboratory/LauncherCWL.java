@@ -23,6 +23,8 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
+
 import io.cwl.avro.CWL;
 import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.CommandOutputParameter;
@@ -148,7 +150,14 @@ public class LauncherCWL {
         // parse the CWL tool definition without validation
         // final String imageDescriptorContent = cwlUtil.parseCWL(imageDescriptorPath, false).getLeft();
         final String imageDescriptorContent = this.parseCWL(imageDescriptorPath).getLeft();
-        final Object cwlObject = gson.fromJson(imageDescriptorContent, cwlClassTarget);
+        Object cwlObject;
+        try {
+            cwlObject = gson.fromJson(imageDescriptorContent, cwlClassTarget);
+        } catch (JsonParseException ex) {
+            LOG.error("The JSON file provided is invalid.");
+            return;
+        }
+
 
         if (cwlObject == null) {
             LOG.info("CWL Workflow was null");

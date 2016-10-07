@@ -25,7 +25,6 @@ import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
 
 import io.cwl.avro.Any;
-import io.cwl.avro.CWL;
 import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.ExpressionTool;
 import io.cwl.avro.WorkflowOutputParameter;
@@ -960,149 +959,154 @@ public class WorkflowResource {
             Gson gson;
             try {
                 gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
-            } catch (CWL.GsonBuildException ex) {
-                LOG.error("There was an error creating the CWL GSON instance.");
-                return null;
-            }
 
-            final io.cwl.avro.Workflow workflow = gson.fromJson(cwlJson.toString(), io.cwl.avro.Workflow.class);
+                final io.cwl.avro.Workflow workflow = gson.fromJson(cwlJson.toString(), io.cwl.avro.Workflow.class);
 
-            if (workflow == null) {
-                LOG.error("The workflow does not seem to conform to CWL specs.");
-                return null;
-            }
+                if (workflow == null) {
+                    LOG.error("The workflow does not seem to conform to CWL specs.");
+                    return null;
+                }
 
-            // Determine default docker path (Check requirement first and then hint)
-            defaultDockerPath = getRequirementOrHint(workflow.getRequirements(), workflow.getHints(), gson, defaultDockerPath);
+                // Determine default docker path (Check requirement first and then hint)
+                defaultDockerPath = getRequirementOrHint(workflow.getRequirements(), workflow.getHints(), gson, defaultDockerPath);
 
-            // Store workflow steps in json and then read it into map <String, WorkflowStep>
-            String stepJson = gson.toJson(workflow.getSteps());
+                // Store workflow steps in json and then read it into map <String, WorkflowStep>
+                String stepJson = gson.toJson(workflow.getSteps());
 
-            if (stepJson == null) {
-                LOG.error("Could not find any steps for the workflow.");
-                return null;
-            }
+                if (stepJson == null) {
+                    LOG.error("Could not find any steps for the workflow.");
+                    return null;
+                }
 
-            Map<String, WorkflowStep> workflowStepMap = gson.fromJson(stepJson, new TypeToken<Map<String, WorkflowStep>>() {}.getType());
+                Map<String, WorkflowStep> workflowStepMap = gson.fromJson(stepJson, new TypeToken<Map<String, WorkflowStep>>() {
+                }.getType());
 
-            if (workflowStepMap == null) {
-                LOG.error("Error deserializing workflow steps");
-                return null;
-            }
+                if (workflowStepMap == null) {
+                    LOG.error("Error deserializing workflow steps");
+                    return null;
+                }
 
-            // Iterate through steps to find dependencies and docker requirements
-            for (Map.Entry<String, WorkflowStep> entry : workflowStepMap.entrySet()) {
-                WorkflowStep workflowStep = entry.getValue();
-                String workflowStepId = entry.getKey();
+                // Iterate through steps to find dependencies and docker requirements
+                for (Map.Entry<String, WorkflowStep> entry : workflowStepMap.entrySet()) {
+                    WorkflowStep workflowStep = entry.getValue();
+                    String workflowStepId = entry.getKey();
 
-                ArrayList<String> stepDependencies = new ArrayList<>();
+                    ArrayList<String> stepDependencies = new ArrayList<>();
 
-                // Iterate over source and get the dependencies
-                if (workflowStep.getIn() != null) {
-                    for (WorkflowStepInput workflowStepInput : workflowStep.getIn()) {
-                        Object sources = workflowStepInput.getSource();
+                    // Iterate over source and get the dependencies
+                    if (workflowStep.getIn() != null) {
+                        for (WorkflowStepInput workflowStepInput : workflowStep.getIn()) {
+                            Object sources = workflowStepInput.getSource();
 
+                            if (sources != null) {
+                                if (sources instanceof String) {
+                                    String[] sourceSplit = ((String) sources).split("/");
+                                    // Only add if of the form dependentStep/inputName
+                                    if (sourceSplit.length > 1) {
+                                        stepDependencies.add(sourceSplit[0].replaceFirst("#", ""));
+                                    }
+                                } else {
+                                    ArrayList<String> filteredDependencies = filterDependent((ArrayList<String>) sources);
+                                    stepDependencies.addAll(filteredDependencies);
+                                }
+                            }
+                        }
+                        if (stepDependencies.size() > 0) {
+                            stepToDependencies.put(workflowStepId, stepDependencies);
+                        }
+                    }
+
+                    // Check workflow step for docker requirement and hints
+                    String stepDockerRequirement = defaultDockerPath;
+                    stepDockerRequirement = getRequirementOrHint(workflowStep.getRequirements(), workflowStep.getHints(), gson,
+                            stepDockerRequirement);
+
+                    // Check for docker requirement within workflow step file
+                    String secondaryFile = null;
+                    Object run = workflowStep.getRun();
+
+                    if (run instanceof String) {
+                        secondaryFile = (String) run;
+                    } else if (run instanceof CommandLineTool) {
+                        CommandLineTool clTool = (CommandLineTool) run;
+                        stepDockerRequirement = getRequirementOrHint(clTool.getRequirements(), clTool.getHints(), gson,
+                                stepDockerRequirement);
+                    } else if (run instanceof io.cwl.avro.Workflow) {
+                        io.cwl.avro.Workflow stepWorkflow = (io.cwl.avro.Workflow) run;
+                        stepDockerRequirement = getRequirementOrHint(stepWorkflow.getRequirements(), stepWorkflow.getHints(), gson,
+                                stepDockerRequirement);
+                    } else if (run instanceof ExpressionTool) {
+                        ExpressionTool expressionTool = (ExpressionTool) run;
+                        stepDockerRequirement = getRequirementOrHint(expressionTool.getRequirements(), expressionTool.getHints(), gson,
+                                stepDockerRequirement);
+                    } else if (run instanceof Map) {
+                        // must be import or include
+                        Object importVal = ((Map) run).get("import");
+                        if (importVal != null) {
+                            secondaryFile = importVal.toString();
+                        }
+
+                        Object includeVal = ((Map) run).get("include");
+                        if (includeVal != null) {
+                            secondaryFile = includeVal.toString();
+                        }
+                    }
+
+                    // Check secondary file for docker pull
+                    if (secondaryFile != null) {
+                        stepDockerRequirement = parseSecondaryFile(stepDockerRequirement, secondaryDescContent.get(secondaryFile), gson,
+                                yaml);
+                    }
+
+                    String dockerUrl = getURLFromEntry(stepDockerRequirement);
+                    if (type == Type.DAG) {
+                        nodePairs.add(new MutablePair<>(workflowStepId, dockerUrl));
+                    } else {
+                        if (!Strings.isNullOrEmpty(stepDockerRequirement)) {
+                            toolID.put(workflowStepId, new MutablePair<>(workflowStepId, secondaryFile));
+                            toolDocker.put(workflowStepId, new MutablePair<>(stepDockerRequirement, dockerUrl));
+                        }
+                    }
+                }
+
+                if (type == Type.DAG) {
+                    // Determine steps that point to end
+                    ArrayList<String> endDependencies = new ArrayList<>();
+
+                    for (WorkflowOutputParameter workflowOutputParameter : workflow.getOutputs()) {
+                        Object sources = workflowOutputParameter.getOutputSource();
                         if (sources != null) {
                             if (sources instanceof String) {
                                 String[] sourceSplit = ((String) sources).split("/");
-                                // Only add if of the form dependentStep/inputName
                                 if (sourceSplit.length > 1) {
-                                    stepDependencies.add(sourceSplit[0].replaceFirst("#",""));
+                                    endDependencies.add(sourceSplit[0].replaceFirst("#", ""));
                                 }
                             } else {
                                 ArrayList<String> filteredDependencies = filterDependent((ArrayList<String>) sources);
-                                stepDependencies.addAll(filteredDependencies);
+                                endDependencies.addAll(filteredDependencies);
                             }
                         }
                     }
-                    if (stepDependencies.size() > 0) {
-                        stepToDependencies.put(workflowStepId, stepDependencies);
+
+                    stepToDependencies.put("UniqueEndKey", endDependencies);
+                    nodePairs.add(new MutablePair<>("UniqueEndKey", ""));
+
+                    // connect start node with them
+                    for (Pair<String, String> node : nodePairs) {
+                        if (stepToDependencies.get(node.getLeft()) == null) {
+                            ArrayList<String> dependencies = new ArrayList<>();
+                            dependencies.add("UniqueBeginKey");
+                            stepToDependencies.put(node.getLeft(), dependencies);
+                        }
                     }
-                }
-
-                // Check workflow step for docker requirement and hints
-                String stepDockerRequirement = defaultDockerPath;
-                stepDockerRequirement = getRequirementOrHint(workflowStep.getRequirements(), workflowStep.getHints(), gson, stepDockerRequirement);
-
-                // Check for docker requirement within workflow step file
-                String secondaryFile = null;
-                Object run = workflowStep.getRun();
-
-                if (run instanceof String) {
-                    secondaryFile = (String) run;
-                } else if (run instanceof CommandLineTool) {
-                    CommandLineTool clTool = (CommandLineTool) run;
-                    stepDockerRequirement = getRequirementOrHint(clTool.getRequirements(), clTool.getHints(), gson, stepDockerRequirement);
-                } else if (run instanceof io.cwl.avro.Workflow) {
-                    io.cwl.avro.Workflow stepWorkflow = (io.cwl.avro.Workflow) run;
-                    stepDockerRequirement = getRequirementOrHint(stepWorkflow.getRequirements(), stepWorkflow.getHints(), gson, stepDockerRequirement);
-                } else if (run instanceof ExpressionTool) {
-                    ExpressionTool expressionTool = (ExpressionTool) run;
-                    stepDockerRequirement = getRequirementOrHint(expressionTool.getRequirements(), expressionTool.getHints(), gson, stepDockerRequirement);
-                } else if (run instanceof Map) {
-                    // must be import or include
-                    Object importVal = ((Map) run).get("import");
-                    if (importVal != null) {
-                        secondaryFile = importVal.toString();
-                    }
-
-                    Object includeVal = ((Map) run).get("include");
-                    if (includeVal != null) {
-                        secondaryFile = includeVal.toString();
-                    }
-                }
-
-                // Check secondary file for docker pull
-                if (secondaryFile != null) {
-                    stepDockerRequirement = parseSecondaryFile(stepDockerRequirement, secondaryDescContent.get(secondaryFile), gson,
-                            yaml);
-                }
-
-                String dockerUrl = getURLFromEntry(stepDockerRequirement);
-                if (type == Type.DAG) {
-                    nodePairs.add(new MutablePair<>(workflowStepId, dockerUrl));
+                    nodePairs.add(new MutablePair<>("UniqueBeginKey", ""));
+                    return setupJSONDAG(nodePairs, stepToDependencies);
                 } else {
-                    if (!Strings.isNullOrEmpty(stepDockerRequirement)) {
-                        toolID.put(workflowStepId, new MutablePair<>(workflowStepId, secondaryFile));
-                        toolDocker.put(workflowStepId, new MutablePair<>(stepDockerRequirement, dockerUrl));
-                    }
+                    return getJSONTableToolContentCWL(toolID, toolDocker);
                 }
-            }
-
-            if (type == Type.DAG) {
-                // Determine steps that point to end
-                ArrayList<String> endDependencies = new ArrayList<>();
-
-                for (WorkflowOutputParameter workflowOutputParameter : workflow.getOutputs()) {
-                    Object sources = workflowOutputParameter.getOutputSource();
-                    if (sources != null) {
-                        if (sources instanceof String) {
-                            String[] sourceSplit = ((String) sources).split("/");
-                            if (sourceSplit.length > 1) {
-                                endDependencies.add(sourceSplit[0].replaceFirst("#",""));
-                            }
-                        } else {
-                            ArrayList<String> filteredDependencies = filterDependent((ArrayList<String>) sources);
-                            endDependencies.addAll(filteredDependencies);
-                        }
-                    }
-                }
-
-                stepToDependencies.put("UniqueEndKey", endDependencies);
-                nodePairs.add(new MutablePair<>("UniqueEndKey", ""));
-
-                // connect start node with them
-                for (Pair<String, String> node : nodePairs) {
-                    if (stepToDependencies.get(node.getLeft()) == null) {
-                        ArrayList<String> dependencies = new ArrayList<>();
-                        dependencies.add("UniqueBeginKey");
-                        stepToDependencies.put(node.getLeft(), dependencies);
-                    }
-                }
-                nodePairs.add(new MutablePair<>("UniqueBeginKey", ""));
-                return setupJSONDAG(nodePairs, stepToDependencies);
-            } else {
-                return getJSONTableToolContentCWL(toolID, toolDocker);
+            } catch (JsonParseException ex) {
+                LOG.error("The JSON file provided is invalid.");
+                return null;
             }
         } else {
             return null;

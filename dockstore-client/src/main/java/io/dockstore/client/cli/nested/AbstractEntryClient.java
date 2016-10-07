@@ -24,6 +24,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import cromwell.Main;
 import io.cwl.avro.CWL;
@@ -508,6 +509,8 @@ public abstract class AbstractEntryClient {
                 out(gson.toJson(runJson));
             } catch (CWL.GsonBuildException ex) {
                 exceptionMessage(ex, "There was an error creating the CWL GSON instance.", API_ERROR);
+            } catch (JsonParseException ex) {
+                exceptionMessage(ex, "The JSON file provided is invalid.", API_ERROR);
             }
         }
     }
@@ -963,6 +966,8 @@ public abstract class AbstractEntryClient {
             }
         } catch (CWL.GsonBuildException ex) {
             exceptionMessage(ex, "There was an error creating the CWL GSON instance.", API_ERROR);
+        } catch (JsonParseException ex) {
+            exceptionMessage(ex, "The JSON file provided is invalid.", API_ERROR);
         }
 
     }
@@ -1143,6 +1148,8 @@ public abstract class AbstractEntryClient {
                     return gson.toJson(stringObjectMap);
                 } catch (CWL.GsonBuildException ex) {
                     exceptionMessage(ex, "There was an error creating the CWL GSON instance.", API_ERROR);
+                } catch (JsonParseException ex) {
+                    exceptionMessage(ex, "The JSON file provided is invalid.", API_ERROR);
                 }
             } else {
                 // re-arrange as rows and columns
