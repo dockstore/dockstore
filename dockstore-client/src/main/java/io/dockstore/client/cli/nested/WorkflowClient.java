@@ -114,7 +114,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
     @Override
     protected void printClientSpecificHelp() {
-        out("  manual_publish   :  registers a Github or Bitbucket workflow in the dockstore and then attempts to publish");
+        out("  manual_publish   :  registers a Github, Gitlab or Bitbucket workflow in the dockstore and then attempts to publish");
         out("");
         out("  " + UPDATE_WORKFLOW + "  :   updates certain fields of a workflow");
         out("");

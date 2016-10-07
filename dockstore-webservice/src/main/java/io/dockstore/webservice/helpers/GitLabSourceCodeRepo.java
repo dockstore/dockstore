@@ -200,9 +200,6 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
 
                     version.setWorkflowPath(calculatedPath);
 
-                    // Get relative path of main workflow descriptor to find relative paths
-                    String[] path = calculatedPath.split("/");
-
                     // Now grab source files
                     SourceFile sourceFile;
                     Set<SourceFile> sourceFileSet = new HashSet<>();

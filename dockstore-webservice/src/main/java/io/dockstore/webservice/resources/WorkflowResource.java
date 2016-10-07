@@ -680,6 +680,8 @@ public class WorkflowResource {
             registryURLPrefix = TokenType.BITBUCKET_ORG.toString();
         } else if (workflowRegistry.toLowerCase().equals("github")) {
             registryURLPrefix = TokenType.GITHUB_COM.toString();
+        } else if (workflowRegistry.toLowerCase().equals("gitlab")) {
+            registryURLPrefix = TokenType.GITLAB_COM.toString();
         } else {
             throw new CustomWebApplicationException("The given git registry is not supported.", HttpStatus.SC_BAD_REQUEST);
         }

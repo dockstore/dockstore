@@ -400,7 +400,7 @@ public final class Helper {
     }
 
     public static String convertHttpsToSsh(String url) {
-        Pattern p = Pattern.compile("^(https?:)?\\/\\/(www\\.)?(github\\.com|bitbucket\\.org)\\/([\\w-]+)\\/([\\w-]+)$");
+        Pattern p = Pattern.compile("^(https?:)?\\/\\/(www\\.)?(github\\.com|bitbucket\\.org|gitlab\\.com)\\/([\\w-]+)\\/([\\w-]+)$");
         Matcher m = p.matcher(url);
         if (!m.find()) {
             LOG.info("Cannot parse HTTPS url: " + url);

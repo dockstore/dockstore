@@ -339,7 +339,7 @@ public class BasicET {
 
         /*
          Test Quay and Bitbucket -
-         These tests are focused on testing entrys created from Quay and Bitbucket repositories
+         These tests are focused on testing entries created from Quay and Bitbucket repositories
           */
         /**
          * Checks that the two Quay/Bitbucket entrys were automatically found
