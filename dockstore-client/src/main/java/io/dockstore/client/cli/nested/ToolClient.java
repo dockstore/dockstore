@@ -701,7 +701,7 @@ public class ToolClient extends AbstractEntryClient {
         return file;
     }
 
-    public void downloadDescriptors(String entry, String descriptor, File tempDir) {
+    public List<SourceFile> downloadDescriptors(String entry, String descriptor, File tempDir) {
         // In the future, delete tmp files
         DockstoreTool tool = null;
         String[] parts = entry.split(":");
@@ -714,6 +714,7 @@ public class ToolClient extends AbstractEntryClient {
             exceptionMessage(e, "No match for entry", Client.API_ERROR);
         }
 
+        List<SourceFile> result = new ArrayList<>();
         if (tool != null) {
             try {
                 if (descriptor.toLowerCase().equals("cwl")) {
@@ -721,12 +722,14 @@ public class ToolClient extends AbstractEntryClient {
                     for (SourceFile sourceFile : files) {
                         File tempDescriptor = new File(tempDir.getAbsolutePath() + sourceFile.getPath());
                         Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
+                        result.add(sourceFile);
                     }
                 } else {
                     List<SourceFile> files = containersApi.secondaryWdl(tool.getId(), version);
                     for (SourceFile sourceFile : files) {
                         File tempDescriptor = File.createTempFile(FilenameUtils.removeExtension(sourceFile.getPath()), FilenameUtils.getExtension(sourceFile.getPath()), tempDir);
                         Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
+                        result.add(sourceFile);
                     }
                 }
             } catch (ApiException e) {
@@ -735,6 +738,7 @@ public class ToolClient extends AbstractEntryClient {
                 exceptionMessage(e, "Error writing to File", Client.IO_ERROR);
             }
         }
+        return result;
     }
 
     @Override

@@ -64,7 +64,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -338,7 +337,7 @@ public abstract class AbstractEntryClient {
      */
     protected abstract void manualPublish(final List<String> args);
 
-    protected abstract SourceFile getDescriptorFromServer(String entry, String descriptorType) throws
+    public abstract SourceFile getDescriptorFromServer(String entry, String descriptorType) throws
             ApiException, IOException;
 
     /** private helper methods */
@@ -438,7 +437,7 @@ public abstract class AbstractEntryClient {
     Generate label string given add set, remove set, and existing labels
       */
     String generateLabelString(Set<String> addsSet, Set<String> removesSet, List<Label> existingLabels) {
-        Set<String> newLabelSet = new HashSet<String>();
+        Set<String> newLabelSet = new HashSet<>();
 
         // Get existing labels and store in a List
         for (Label existingLabel : existingLabels) {
@@ -870,7 +869,7 @@ public abstract class AbstractEntryClient {
             errorMessage("One of  --json, --yaml, and --tsv is required", CLIENT_ERROR);
         }
 
-        handleCWLLaunch(entry, isLocalEntry, yamlRun, jsonRun, csvRuns, Optional.empty(), Optional.empty());
+        handleCWLLaunch(entry, isLocalEntry, yamlRun, jsonRun, csvRuns, null, null);
 
     }
 
@@ -884,7 +883,7 @@ public abstract class AbstractEntryClient {
      * @throws IOException
      * @throws ApiException
      */
-    public void handleCWLLaunch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns, Optional<OutputStream> stdoutStream, Optional<OutputStream> stderrStream)
+    public void handleCWLLaunch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns, OutputStream stdoutStream, OutputStream stderrStream)
             throws IOException, ApiException {
         final File tempDir = Files.createTempDir();
         File tempCWL;
@@ -1129,7 +1128,7 @@ public abstract class AbstractEntryClient {
         return tmp;
     }
 
-    protected abstract void downloadDescriptors(String entry, String descriptor, File tempDir);
+    public abstract List<SourceFile> downloadDescriptors(String entry, String descriptor, File tempDir);
 
     private String runString(List<String> args, final boolean json) throws
             ApiException, IOException {

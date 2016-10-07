@@ -20,6 +20,7 @@ import com.amazonaws.auth.SignerFactory;
 import com.amazonaws.services.s3.internal.S3Signer;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import io.cwl.avro.CWL;
@@ -63,7 +64,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -85,8 +85,8 @@ public class LauncherCWL {
     private final String configFilePath;
     private final String imageDescriptorPath;
     private final String runtimeDescriptorPath;
-    private final Optional<OutputStream> stdoutStream;
-    private final Optional<OutputStream> stderrStream;
+    private final OutputStream stdoutStream;
+    private final OutputStream stderrStream;
     private HierarchicalINIConfiguration config;
     private String globalWorkingDir;
     private final Yaml yaml = new Yaml(new SafeConstructor());
@@ -106,8 +106,8 @@ public class LauncherCWL {
         configFilePath = line.getOptionValue("config");
         imageDescriptorPath = line.getOptionValue("descriptor");
         runtimeDescriptorPath = line.getOptionValue("job");
-        this.stdoutStream = Optional.empty();
-        this.stderrStream = Optional.empty();
+        this.stdoutStream = null;
+        this.stderrStream = null;
         gson = CWL.getTypeSafeCWLToolDocument();
         fileProvisioning = new FileProvisioning(configFilePath);
     }
@@ -120,8 +120,8 @@ public class LauncherCWL {
      * @param stdoutStream
      * @param stderrStream
      */
-    public LauncherCWL(String configFilePath, String imageDescriptorPath, String runtimeDescriptorPath, Optional<OutputStream> stdoutStream,
-            Optional<OutputStream> stderrStream){
+    public LauncherCWL(String configFilePath, String imageDescriptorPath, String runtimeDescriptorPath, OutputStream stdoutStream,
+            OutputStream stderrStream){
         this.configFilePath = configFilePath;
         this.imageDescriptorPath = imageDescriptorPath;
         this.runtimeDescriptorPath = runtimeDescriptorPath;
@@ -433,7 +433,7 @@ public class LauncherCWL {
         return new File(workingDir + "/launcher-" + uuid).getAbsolutePath();
     }
 
-    private Map<String, Object> runCWLCommand(String cwlFile, String jsonSettings, String outputDir, String workingDir, Optional<OutputStream> stdoutStream, Optional<OutputStream> stderrStream) {
+    private Map<String, Object> runCWLCommand(String cwlFile, String jsonSettings, String outputDir, String workingDir, OutputStream stdoutStream, OutputStream stderrStream) {
         // Get extras from config file
         ArrayList<String> extraFlags = (ArrayList)config.getList("cwltool-extra-parameters");
 
@@ -453,7 +453,7 @@ public class LauncherCWL {
 
         final String joined = Joiner.on(" ").join(command);
         System.out.println("Executing: " + joined);
-        final ImmutablePair<String, String> execute = Utilities.executeCommand(joined, stdoutStream.orElse(System.out), stderrStream.orElse(System.err));
+        final ImmutablePair<String, String> execute = Utilities.executeCommand(joined, MoreObjects.firstNonNull(stdoutStream,System.out), MoreObjects.firstNonNull(stderrStream,System.err));
         // mutate stderr and stdout into format for output
 
         String stdout = execute.getLeft().replaceAll("(?m)^", "\t");
