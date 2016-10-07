@@ -54,6 +54,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -337,7 +338,7 @@ public abstract class AbstractEntryClient {
      */
     protected abstract void manualPublish(final List<String> args);
 
-    protected abstract SourceFile getDescriptorFromServer(String entry, String descriptorType) throws
+    public abstract SourceFile getDescriptorFromServer(String entry, String descriptorType) throws
             ApiException, IOException;
 
     /** private helper methods */
@@ -437,7 +438,7 @@ public abstract class AbstractEntryClient {
     Generate label string given add set, remove set, and existing labels
       */
     String generateLabelString(Set<String> addsSet, Set<String> removesSet, List<Label> existingLabels) {
-        Set<String> newLabelSet = new HashSet<String>();
+        Set<String> newLabelSet = new HashSet<>();
 
         // Get existing labels and store in a List
         for (Label existingLabel : existingLabels) {
@@ -875,6 +876,22 @@ public abstract class AbstractEntryClient {
             errorMessage("One of  --json, --yaml, and --tsv is required", CLIENT_ERROR);
         }
 
+        handleCWLLaunch(entry, isLocalEntry, yamlRun, jsonRun, csvRuns, null, null);
+
+    }
+
+    /**
+     *
+     * @param entry either a dockstore.cwl or a local file
+     * @param isLocalEntry is the descriptor a local file
+     * @param yamlRun runtime descriptor, one of these is required
+     * @param jsonRun runtime descriptor, one of these is required
+     * @param csvRuns runtime descriptor, one of these is required
+     * @throws IOException
+     * @throws ApiException
+     */
+    public void handleCWLLaunch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns, OutputStream stdoutStream, OutputStream stderrStream)
+            throws IOException, ApiException {
         final File tempDir = Files.createTempDir();
         File tempCWL;
         if (!isLocalEntry) {
@@ -902,7 +919,7 @@ public abstract class AbstractEntryClient {
                         final String finalString = gson.toJson(element);
                         final File tempJson = File.createTempFile("parameter", ".json", Files.createTempDir());
                         FileUtils.write(tempJson, finalString, StandardCharsets.UTF_8);
-                        final LauncherCWL cwlLauncher = new LauncherCWL(getConfigFile(), tempCWL.getAbsolutePath(), tempJson.getAbsolutePath());
+                        final LauncherCWL cwlLauncher = new LauncherCWL(getConfigFile(), tempCWL.getAbsolutePath(), tempJson.getAbsolutePath(), stdoutStream, stderrStream);
                         if (this instanceof WorkflowClient) {
                             cwlLauncher.run(Workflow.class);
                         } else {
@@ -910,7 +927,7 @@ public abstract class AbstractEntryClient {
                         }
                     }
                 } else {
-                    final LauncherCWL cwlLauncher = new LauncherCWL(getConfigFile(), tempCWL.getAbsolutePath(), jsonRun);
+                    final LauncherCWL cwlLauncher = new LauncherCWL(getConfigFile(), tempCWL.getAbsolutePath(), jsonRun, stdoutStream, stderrStream);
                     if (this instanceof WorkflowClient) {
                         cwlLauncher.run(Workflow.class);
                     } else {
@@ -953,7 +970,7 @@ public abstract class AbstractEntryClient {
 
                         // final String stringMapAsString = gson.toJson(stringMap);
                         // Files.write(stringMapAsString, tempJson, StandardCharsets.UTF_8);
-                        final LauncherCWL cwlLauncher = new LauncherCWL(this.getConfigFile(), tempCWL.getAbsolutePath(), tempJson.getAbsolutePath());
+                        final LauncherCWL cwlLauncher = new LauncherCWL(this.getConfigFile(), tempCWL.getAbsolutePath(), tempJson.getAbsolutePath(), stdoutStream, stderrStream);
                         if (this instanceof WorkflowClient) {
                             cwlLauncher.run(Workflow.class);
                         } else {
@@ -969,7 +986,6 @@ public abstract class AbstractEntryClient {
         } catch (JsonParseException ex) {
             exceptionMessage(ex, "The JSON file provided is invalid.", API_ERROR);
         }
-
     }
 
     private String convertYamlToJson(String yamlRun, String jsonRun) throws IOException {
@@ -1123,7 +1139,7 @@ public abstract class AbstractEntryClient {
         return tmp;
     }
 
-    protected abstract void downloadDescriptors(String entry, String descriptor, File tempDir);
+    public abstract List<SourceFile> downloadDescriptors(String entry, String descriptor, File tempDir);
 
     private String runString(List<String> args, final boolean json) throws
             ApiException, IOException {

@@ -67,7 +67,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static io.dockstore.client.cli.ArgumentUtility.Kill;
-import static io.dockstore.client.cli.ArgumentUtility.err;
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.ArgumentUtility.flag;
@@ -105,6 +104,8 @@ public class Client {
     public static final AtomicBoolean DEBUG = new AtomicBoolean(false);
     private static final AtomicBoolean SCRIPT = new AtomicBoolean(false);
     private static ObjectMapper objectMapper;
+    private ToolClient toolClient;
+    private WorkflowClient workflowClient;
 
     /*
      * Dockstore Client Functions for CLI
@@ -643,38 +644,8 @@ public class Client {
             SCRIPT.set(true);
         }
 
-        // user home dir
-        String userHome = System.getProperty("user.home");
-
         try {
-            this.setConfigFile(optVal(args, "--config", userHome + File.separator + ".dockstore" + File.separator + "config"));
-            HierarchicalINIConfiguration config = new HierarchicalINIConfiguration(getConfigFile());
-
-            // pull out the variables from the config
-            String token = config.getString("token");
-            String serverUrl = config.getString("server-url");
-
-            if (token == null) {
-                err("The token is missing from your config file.");
-                System.exit(GENERIC_ERROR);
-            }
-            if (serverUrl == null) {
-                err("The server-url is missing from your config file.");
-                System.exit(GENERIC_ERROR);
-            }
-
-            ApiClient defaultApiClient;
-            defaultApiClient = Configuration.getDefaultApiClient();
-            defaultApiClient.addDefaultHeader("Authorization", "Bearer " + token);
-            defaultApiClient.setBasePath(serverUrl);
-
-            this.containersApi = new ContainersApi(defaultApiClient);
-            this.ga4ghApi = new GAGHApi(defaultApiClient);
-
-            ToolClient toolClient = new ToolClient(containersApi, new ContainertagsApi(defaultApiClient), new UsersApi(defaultApiClient), this);
-            WorkflowClient workflowClient = new WorkflowClient(new WorkflowsApi(defaultApiClient), new UsersApi(defaultApiClient), this);
-
-            defaultApiClient.setDebugging(DEBUG.get());
+            setupClientEnvironment(args);
 
             // Check if updates are available
             if (!SCRIPT.get()) {
@@ -692,9 +663,9 @@ public class Client {
                     boolean handled = false;
                     AbstractEntryClient targetClient = null;
                     if (mode.equals("tool")) {
-                        targetClient = toolClient;
+                        targetClient = getToolClient();
                     } else if (mode.equals("workflow")) {
-                        targetClient = workflowClient;
+                        targetClient = getWorkflowClient();
                     }
 
                     if (targetClient != null) {
@@ -761,6 +732,29 @@ public class Client {
         }
     }
 
+    public void setupClientEnvironment(List<String> args) throws ConfigurationException {
+        String userHome = System.getProperty("user.home");
+        this.setConfigFile(optVal(args, "--config", userHome + File.separator + ".dockstore" + File.separator + "config"));
+        HierarchicalINIConfiguration config = new HierarchicalINIConfiguration(getConfigFile());
+
+        // pull out the variables from the config
+        String token = config.getString("token","");
+        String serverUrl = config.getString("server-url", "https://www.dockstore.org:8443");
+
+        ApiClient defaultApiClient;
+        defaultApiClient = Configuration.getDefaultApiClient();
+        defaultApiClient.addDefaultHeader("Authorization", "Bearer " + token);
+        defaultApiClient.setBasePath(serverUrl);
+
+        this.containersApi = new ContainersApi(defaultApiClient);
+        this.ga4ghApi = new GAGHApi(defaultApiClient);
+
+        this.toolClient = new ToolClient(containersApi, new ContainertagsApi(defaultApiClient), new UsersApi(defaultApiClient), this);
+        this.workflowClient = new WorkflowClient(new WorkflowsApi(defaultApiClient), new UsersApi(defaultApiClient), this);
+
+        defaultApiClient.setDebugging(DEBUG.get());
+    }
+
     public static void main(String[] argv) {
         Client client = new Client();
         client.run(argv);
@@ -772,5 +766,13 @@ public class Client {
 
     void setConfigFile(String configFile) {
         this.configFile = configFile;
+    }
+
+    public ToolClient getToolClient() {
+        return toolClient;
+    }
+
+    public WorkflowClient getWorkflowClient() {
+        return workflowClient;
     }
 }

@@ -78,7 +78,8 @@ public class LauncherTest {
             expectedEx.expect(AmazonClientException.class);
             expectedEx.expectMessage("Unable to load AWS credentials from any provider in the chain");
         }
-        final LauncherCWL launcherCWL = new LauncherCWL(iniFile.getAbsolutePath(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath());
+        final LauncherCWL launcherCWL = new LauncherCWL(iniFile.getAbsolutePath(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath(),
+                stdout, stderr);
         launcherCWL.run(CommandLineTool.class);
 
         assertTrue(!stdout.toString().isEmpty());
@@ -96,7 +97,8 @@ public class LauncherTest {
             expectedEx.expect(AmazonClientException.class);
             expectedEx.expectMessage("Unable to load AWS credentials from any provider in the chain");
         }
-        final LauncherCWL launcherCWL = new LauncherCWL(iniFile.getAbsolutePath(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath());
+        final LauncherCWL launcherCWL = new LauncherCWL(iniFile.getAbsolutePath(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath(),
+                stdout, stderr);
         launcherCWL.run(Workflow.class);
 
         assertTrue(!stdout.toString().isEmpty());
