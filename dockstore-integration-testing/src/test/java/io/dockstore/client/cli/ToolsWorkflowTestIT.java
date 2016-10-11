@@ -132,14 +132,14 @@ public class ToolsWorkflowTestIT {
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
         Assert.assertEquals("JSON should have two tools with docker image, has " + countNode, countNode, 2);
-        Assert.assertTrue("tool should not have untar since it has no docker image", !strings.get(0).contains("dockstore_untar"));
-        Assert.assertTrue("tool should have compile as id", strings.get(0).contains("dockstore_compile"));
-        Assert.assertTrue("tool should have wrkflow as id", strings.get(0).contains("dockstore_wrkflow"));
-        Assert.assertTrue("compile docker and link should not be blank", strings.get(0).contains("\"id\":\"dockstore_compile\"," +
+        Assert.assertTrue("tool should not have untar since it has no docker image", !strings.get(0).contains("untar"));
+        Assert.assertTrue("tool should have compile as id", strings.get(0).contains("compile"));
+        Assert.assertTrue("tool should have wrkflow as id", strings.get(0).contains("wrkflow"));
+        Assert.assertTrue("compile docker and link should not be blank", strings.get(0).contains("\"id\":\"compile\"," +
                 "\"file\":\"arguments.cwl\","+
                 "\"docker\":\"java:7\"," +
                 "\"link\":\"https://hub.docker.com/_/java\""));
-        Assert.assertTrue("compile docker and link should not be blank", strings.get(0).contains("\"id\":\"dockstore_wrkflow\"," +
+        Assert.assertTrue("compile docker and link should not be blank", strings.get(0).contains("\"id\":\"wrkflow\"," +
                 "\"file\":\"grep-and-count.cwl\","+
                 "\"docker\":\"java:7\"," +
                 "\"link\":\"https://hub.docker.com/_/java\""));
@@ -236,8 +236,8 @@ public class ToolsWorkflowTestIT {
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
         Assert.assertEquals("JSON should have one tool", countNode, 1);
-        Assert.assertTrue("tool data should have compile as id", strings.get(0).contains("dockstore_compile"));
-        Assert.assertTrue("compile docker and link should use default docker req from workflow", strings.get(0).contains("\"id\":\"dockstore_compile\","+
+        Assert.assertTrue("tool data should have compile as id", strings.get(0).contains("compile"));
+        Assert.assertTrue("compile docker and link should use default docker req from workflow", strings.get(0).contains("\"id\":\"compile\","+
                 "\"file\":\"arguments.cwl\","+
                 "\"docker\":\"java:7\"," +
                 "\"link\":\"https://hub.docker.com/_/java\""));
@@ -256,13 +256,13 @@ public class ToolsWorkflowTestIT {
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
         Assert.assertEquals("JSON should have 5 tools", countNode, 5);
-        Assert.assertTrue("tool data should have pass_filter as id", strings.get(0).contains("dockstore_pass_filter"));
-        Assert.assertTrue("tool data should have merge_vcfs as id", strings.get(0).contains("dockstore_merge_vcfs"));
-        Assert.assertTrue("pass_filter should not have docker link", strings.get(0).contains("\"id\":\"dockstore_pass_filter\","+
+        Assert.assertTrue("tool data should have pass_filter as id", strings.get(0).contains("pass_filter"));
+        Assert.assertTrue("tool data should have merge_vcfs as id", strings.get(0).contains("merge_vcfs"));
+        Assert.assertTrue("pass_filter should not have docker link", strings.get(0).contains("\"id\":\"pass_filter\","+
                 "\"file\":\"pass-filter.cwl\","+
                 "\"docker\":\"pancancer/pcawg-oxog-tools\"," +
                 "\"link\":\"https://hub.docker.com/r/pancancer/pcawg-oxog-tools\""));
-        Assert.assertTrue("merge_vcfs should not have docker link", strings.get(0).contains("\"id\":\"dockstore_merge_vcfs\"," +
+        Assert.assertTrue("merge_vcfs should not have docker link", strings.get(0).contains("\"id\":\"merge_vcfs\"," +
                 "\"file\":\"vcf_merge.cwl\","+
                 "\"docker\":\"pancancer/pcawg-oxog-tools\"," +
                 "\"link\":\"https://hub.docker.com/r/pancancer/pcawg-oxog-tools\""));
@@ -281,13 +281,13 @@ public class ToolsWorkflowTestIT {
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
         Assert.assertEquals("JSON should have 5 tools", countNode, 5);
-        Assert.assertTrue("tool data should have pass_filter as id", strings.get(0).contains("dockstore_pass_filter"));
-        Assert.assertTrue("tool data should have merge_vcfs as id", strings.get(0).contains("dockstore_merge_vcfs"));
-        Assert.assertTrue("pass_filter should not have docker link", strings.get(0).contains("\"id\":\"dockstore_pass_filter\","+
+        Assert.assertTrue("tool data should have pass_filter as id", strings.get(0).contains("pass_filter"));
+        Assert.assertTrue("tool data should have merge_vcfs as id", strings.get(0).contains("merge_vcfs"));
+        Assert.assertTrue("pass_filter should not have docker link", strings.get(0).contains("\"id\":\"pass_filter\","+
                 "\"file\":\"pass-filter.cwl\","+
                 "\"docker\":\"quay.io/pancancer/pcawg-oxog-tools\"," +
                 "\"link\":\"https://quay.io/repository/pancancer/pcawg-oxog-tools\""));
-        Assert.assertTrue("merge_vcfs should not have docker link", strings.get(0).contains("\"id\":\"dockstore_merge_vcfs\"," +
+        Assert.assertTrue("merge_vcfs should not have docker link", strings.get(0).contains("\"id\":\"merge_vcfs\"," +
                 "\"file\":\"vcf_merge.cwl\","+
                 "\"docker\":\"pancancer/pcawg-oxog-tools\"," +
                 "\"link\":\"https://hub.docker.com/r/pancancer/pcawg-oxog-tools\""));
