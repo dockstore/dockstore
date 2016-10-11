@@ -188,7 +188,7 @@ public class ToolClient extends AbstractEntryClient {
         try {
             List<DockstoreTool> containers = containersApi.search(pattern);
 
-            out("MATCHING CONTAINERS");
+            out("MATCHING TOOLS");
             out("-------------------");
             printToolList(containers);
         } catch (ApiException ex) {

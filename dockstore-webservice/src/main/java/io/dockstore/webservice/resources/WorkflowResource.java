@@ -1424,7 +1424,7 @@ public class WorkflowResource {
             Map<String, String> dataEntry = new HashMap<>();
             dataEntry.put("id", stepId);
             dataEntry.put("tool", dockerUrl);
-            dataEntry.put("name", stepId);
+            dataEntry.put("name", stepId.replaceFirst("dockstore\\_", ""));
             nodeEntry.put("data", dataEntry);
             nodes.add(nodeEntry);
 
@@ -1471,7 +1471,7 @@ public class WorkflowResource {
 
             //put everything into a map, then ArrayList
             Map<String, String> dataToolEntry = new LinkedHashMap<>();
-            dataToolEntry.put("id", toolName);
+            dataToolEntry.put("id", toolName.replaceFirst("dockstore\\_", ""));
             dataToolEntry.put("file", fileName);
             dataToolEntry.put("docker", dockerPullName);
             dataToolEntry.put("link",dockerLink);
