@@ -233,8 +233,6 @@ public class TokenResource {
             throw new CustomWebApplicationException("Could not retrieve gitlab.com token based on code", HttpStatus.SC_BAD_REQUEST);
         }
 
-        LOG.info("Access token is " + accessToken);
-
         String url = GITLAB_URL + "api/v3/user";
 
         Optional<String> asString = ResourceUtilities.asString(url, accessToken, client);
