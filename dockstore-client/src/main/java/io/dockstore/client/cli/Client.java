@@ -21,6 +21,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
+
+import io.cwl.avro.CWL;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.client.cli.nested.WorkflowClient;
@@ -64,7 +67,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static io.dockstore.client.cli.ArgumentUtility.Kill;
-import static io.dockstore.client.cli.ArgumentUtility.err;
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.ArgumentUtility.flag;
@@ -92,7 +94,7 @@ public class Client {
 
     public static final int PADDING = 3;
 
-    public static final int GENERIC_ERROR = 1; // General error, not yet descriped by an error type
+    public static final int GENERIC_ERROR = 1; // General error, not yet described by an error type
     public static final int CONNECTION_ERROR = 150; // Connection exception
     public static final int IO_ERROR = 3; // IO throws an exception
     public static final int API_ERROR = 6; // API throws an exception
@@ -102,6 +104,8 @@ public class Client {
     public static final AtomicBoolean DEBUG = new AtomicBoolean(false);
     private static final AtomicBoolean SCRIPT = new AtomicBoolean(false);
     private static ObjectMapper objectMapper;
+    private ToolClient toolClient;
+    private WorkflowClient workflowClient;
 
     /*
      * Dockstore Client Functions for CLI
@@ -119,6 +123,10 @@ public class Client {
             out(gson.toJson(metadata));
         } catch (ApiException ex) {
             exceptionMessage(ex, "", API_ERROR);
+        } catch (CWL.GsonBuildException ex) {
+            exceptionMessage(ex, "There was an error creating the CWL GSON instance.", API_ERROR);
+        } catch (JsonParseException ex) {
+            exceptionMessage(ex, "The JSON file provided is invalid.", API_ERROR);
         }
     }
 
@@ -636,38 +644,8 @@ public class Client {
             SCRIPT.set(true);
         }
 
-        // user home dir
-        String userHome = System.getProperty("user.home");
-
         try {
-            this.setConfigFile(optVal(args, "--config", userHome + File.separator + ".dockstore" + File.separator + "config"));
-            HierarchicalINIConfiguration config = new HierarchicalINIConfiguration(getConfigFile());
-
-            // pull out the variables from the config
-            String token = config.getString("token");
-            String serverUrl = config.getString("server-url");
-
-            if (token == null) {
-                err("The token is missing from your config file.");
-                System.exit(GENERIC_ERROR);
-            }
-            if (serverUrl == null) {
-                err("The server-url is missing from your config file.");
-                System.exit(GENERIC_ERROR);
-            }
-
-            ApiClient defaultApiClient;
-            defaultApiClient = Configuration.getDefaultApiClient();
-            defaultApiClient.addDefaultHeader("Authorization", "Bearer " + token);
-            defaultApiClient.setBasePath(serverUrl);
-
-            this.containersApi = new ContainersApi(defaultApiClient);
-            this.ga4ghApi = new GAGHApi(defaultApiClient);
-
-            ToolClient toolClient = new ToolClient(containersApi, new ContainertagsApi(defaultApiClient), new UsersApi(defaultApiClient), this);
-            WorkflowClient workflowClient = new WorkflowClient(new WorkflowsApi(defaultApiClient), new UsersApi(defaultApiClient), this);
-
-            defaultApiClient.setDebugging(DEBUG.get());
+            setupClientEnvironment(args);
 
             // Check if updates are available
             if (!SCRIPT.get()) {
@@ -685,9 +663,9 @@ public class Client {
                     boolean handled = false;
                     AbstractEntryClient targetClient = null;
                     if (mode.equals("tool")) {
-                        targetClient = toolClient;
+                        targetClient = getToolClient();
                     } else if (mode.equals("workflow")) {
-                        targetClient = workflowClient;
+                        targetClient = getWorkflowClient();
                     }
 
                     if (targetClient != null) {
@@ -754,6 +732,29 @@ public class Client {
         }
     }
 
+    public void setupClientEnvironment(List<String> args) throws ConfigurationException {
+        String userHome = System.getProperty("user.home");
+        this.setConfigFile(optVal(args, "--config", userHome + File.separator + ".dockstore" + File.separator + "config"));
+        HierarchicalINIConfiguration config = new HierarchicalINIConfiguration(getConfigFile());
+
+        // pull out the variables from the config
+        String token = config.getString("token","");
+        String serverUrl = config.getString("server-url", "https://www.dockstore.org:8443");
+
+        ApiClient defaultApiClient;
+        defaultApiClient = Configuration.getDefaultApiClient();
+        defaultApiClient.addDefaultHeader("Authorization", "Bearer " + token);
+        defaultApiClient.setBasePath(serverUrl);
+
+        this.containersApi = new ContainersApi(defaultApiClient);
+        this.ga4ghApi = new GAGHApi(defaultApiClient);
+
+        this.toolClient = new ToolClient(containersApi, new ContainertagsApi(defaultApiClient), new UsersApi(defaultApiClient), this);
+        this.workflowClient = new WorkflowClient(new WorkflowsApi(defaultApiClient), new UsersApi(defaultApiClient), this);
+
+        defaultApiClient.setDebugging(DEBUG.get());
+    }
+
     public static void main(String[] argv) {
         Client client = new Client();
         client.run(argv);
@@ -765,5 +766,13 @@ public class Client {
 
     void setConfigFile(String configFile) {
         this.configFile = configFile;
+    }
+
+    public ToolClient getToolClient() {
+        return toolClient;
+    }
+
+    public WorkflowClient getWorkflowClient() {
+        return workflowClient;
     }
 }

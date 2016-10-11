@@ -432,14 +432,13 @@ public class WorkflowClient extends AbstractEntryClient {
         out(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "On Dockstore?");
 
         for (Workflow workflow : workflows) {
-            String description = "";
             String gitUrl = "";
 
             if (workflow.getGitUrl() != null && !workflow.getGitUrl().isEmpty()) {
                 gitUrl = workflow.getGitUrl();
             }
 
-            description = getCleanedDescription(workflow.getDescription());
+            String description = getCleanedDescription(workflow.getDescription());
 
             out(format, workflow.getPath(), description, gitUrl, boolWord(workflow.getIsPublished()));
         }
@@ -645,7 +644,7 @@ public class WorkflowClient extends AbstractEntryClient {
         printHelpFooter();
     }
 
-    protected SourceFile getDescriptorFromServer(String entry, String descriptorType) throws ApiException {
+    public SourceFile getDescriptorFromServer(String entry, String descriptorType) throws ApiException {
         String[] parts = entry.split(":");
 
         String path = parts[0];
@@ -684,7 +683,7 @@ public class WorkflowClient extends AbstractEntryClient {
         return file;
     }
 
-    protected void downloadDescriptors(String entry, String descriptor, File tempDir) {
+    public List<SourceFile> downloadDescriptors(String entry, String descriptor, File tempDir) {
         // In the future, delete tmp files
         Workflow workflow = null;
         String[] parts = entry.split(":");
@@ -697,6 +696,7 @@ public class WorkflowClient extends AbstractEntryClient {
             exceptionMessage(e, "No match for entry", Client.API_ERROR);
         }
 
+        List<SourceFile> result = new ArrayList<>();
         if (workflow != null) {
             try {
                 if (descriptor.toLowerCase().equals("cwl")) {
@@ -704,12 +704,14 @@ public class WorkflowClient extends AbstractEntryClient {
                     for (SourceFile sourceFile : files) {
                         File tempDescriptor = new File(tempDir.getAbsolutePath(), sourceFile.getPath());
                         Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
+                        result.add(sourceFile);
                     }
                 } else {
                     List<SourceFile> files = workflowsApi.secondaryWdl(workflow.getId(), version);
                     for (SourceFile sourceFile : files) {
                         File tempDescriptor = new File(tempDir.getAbsolutePath(),  sourceFile.getPath());
                         Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
+                        result.add(sourceFile);
                     }
                 }
             } catch (ApiException e) {
@@ -718,6 +720,7 @@ public class WorkflowClient extends AbstractEntryClient {
                 exceptionMessage(e, "Error writing to File", Client.IO_ERROR);
             }
         }
+        return result;
     }
 
 }
