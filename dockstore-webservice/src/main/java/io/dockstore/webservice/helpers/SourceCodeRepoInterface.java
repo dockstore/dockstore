@@ -421,7 +421,7 @@ public abstract class SourceCodeRepoInterface {
         String calculatedExtension = FilenameUtils.getExtension(path);
         if (calculatedExtension.equalsIgnoreCase("cwl") || calculatedExtension.equalsIgnoreCase("yml") || calculatedExtension.equalsIgnoreCase("yaml")) {
             return SourceFile.FileType.DOCKSTORE_CWL;
-        } else if(calculatedExtension.equalsIgnoreCase(".wdl")) {
+        } else if(calculatedExtension.equalsIgnoreCase("wdl")) {
             return SourceFile.FileType.DOCKSTORE_WDL;
         } else{
             throw new CustomWebApplicationException("Invalid file type for import", HttpStatus.SC_BAD_REQUEST);
