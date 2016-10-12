@@ -44,10 +44,8 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -190,31 +188,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             LOG.info(gitUsername + ": Looking at reference: " + ref);
 
             // Initialize the workflow version
-            WorkflowVersion version = new WorkflowVersion();
-            version.setName(ref);
-            version.setReference(ref);
-            version.setValid(false);
+            WorkflowVersion version = initializeWorkflowVersion(ref, existingWorkflow, existingDefaults);
+            String calculatedPath = version.getWorkflowPath();
 
-            // Determine workflow version from previous
-
-            String calculatedPath;
-
-            // Set to false if new version
-            if (existingDefaults.get(ref) == null) {
-                version.setDirtyBit(false);
-                calculatedPath = existingWorkflow.get().getDefaultWorkflowPath();
-            } else {
-                // existing version
-                if (existingDefaults.get(ref).isDirtyBit()) {
-                    calculatedPath = existingDefaults.get(ref).getWorkflowPath();
-                } else {
-                    calculatedPath = existingWorkflow.get().getDefaultWorkflowPath();
-                }
-                version.setDirtyBit(existingDefaults.get(ref).isDirtyBit());
-            }
-
-            version.setWorkflowPath(calculatedPath);
-            Set<SourceFile> sourceFileSet = new HashSet<>();
             //TODO: is there a case-insensitive endsWith?
             String calculatedExtension = FilenameUtils.getExtension(calculatedPath);
 
@@ -239,20 +215,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     if (validWorkflow) {
                         // if we have a valid workflow document
                         SourceFile file = new SourceFile();
-                        if (calculatedExtension.equalsIgnoreCase("cwl") || calculatedExtension.equalsIgnoreCase("yml") || calculatedExtension.equalsIgnoreCase("yaml")) {
-                            file.setType(SourceFile.FileType.DOCKSTORE_CWL);
-                        } else {
-                            file.setType(SourceFile.FileType.DOCKSTORE_WDL);
-                        }
+                        SourceFile.FileType identifiedType = getFileType(calculatedPath);
                         file.setContent(content);
                         file.setPath(calculatedPath);
+                        file.setType(identifiedType);
                         version.getSourceFiles().add(file);
 
                         // try to use the FileImporter to re-use code for handling imports
-                        FileImporter importer = new FileImporter(this);
-                        final Map<String, SourceFile> stringSourceFileMap = importer
-                                .resolveImports(content, workflow, file.getType(), version);
-                        sourceFileSet.addAll(stringSourceFileMap.values());
+                        version = combineVersionAndSourcefile(file, workflow, identifiedType, version);
                     }
                 }
 
@@ -260,15 +230,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 LOG.info(gitUsername + ": Error getting contents of file.");
             } catch (Exception ex) {
                 LOG.info(gitUsername + ": " + workflow.getDefaultWorkflowPath() + " on " + ref + " was not valid CWL workflow");
-            }
-
-            if (version.getSourceFiles().size() > 0) {
-                version.setValid(true);
-            }
-
-            // add extra source files here (dependencies from "main" descriptor)
-            if (sourceFileSet.size() > 0) {
-                version.getSourceFiles().addAll(sourceFileSet);
             }
 
             workflow.addWorkflowVersion(version);

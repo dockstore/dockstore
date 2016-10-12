@@ -18,13 +18,10 @@ package io.dockstore.webservice.helpers;
 
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +32,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Workflow;
@@ -177,67 +173,19 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
                 for (JsonElement branch : jsonArray) {
                     JsonObject branchObject = branch.getAsJsonObject();
                     String branchName = branchObject.get("name").getAsString();
-                    WorkflowVersion version = new WorkflowVersion();
-                    version.setName(branchName);
-                    version.setReference(branchName);
-                    version.setValid(false);
 
-                    String calculatedPath;
-
-                    // Set to false if new version
-                    if (existingDefaults.get(branchName) == null) {
-                        version.setDirtyBit(false);
-                        calculatedPath = existingWorkflow.get().getDefaultWorkflowPath();
-                    } else {
-                        // existing version
-                        if (existingDefaults.get(branchName).isDirtyBit()) {
-                            calculatedPath = existingDefaults.get(branchName).getWorkflowPath();
-                        } else {
-                            calculatedPath = existingWorkflow.get().getDefaultWorkflowPath();
-                        }
-                        version.setDirtyBit(existingDefaults.get(branchName).isDirtyBit());
-                    }
-
-                    version.setWorkflowPath(calculatedPath);
+                    // Initialize workflow version
+                    WorkflowVersion version = initializeWorkflowVersion(branchName, existingWorkflow, existingDefaults);
+                    String calculatedPath = version.getWorkflowPath();
 
                     // Now grab source files
                     SourceFile sourceFile;
-                    Set<SourceFile> sourceFileSet = new HashSet<>();
-                    SourceFile.FileType identifiedType;
-                    if (calculatedPath.toLowerCase().endsWith(".cwl")) {
-                        identifiedType = SourceFile.FileType.DOCKSTORE_CWL;
-                    } else if(calculatedPath.toLowerCase().endsWith(".wdl")) {
-                        identifiedType = SourceFile.FileType.DOCKSTORE_WDL;
-                    } else{
-                        throw new CustomWebApplicationException("Invalid file type for import", HttpStatus.SC_BAD_REQUEST);
-                    }
+                    SourceFile.FileType identifiedType = getFileType(calculatedPath);
 
                     // TODO: No exceptions are caught here in the event of a failed call
                     sourceFile = getSourceFile(calculatedPath, id, branchName, identifiedType);
 
-                    // try to use the FileImporter to re-use code for handling imports
-                    if (sourceFile.getContent() != null) {
-                        FileImporter importer = new FileImporter(this);
-                        final Map<String, SourceFile> stringSourceFileMap = importer
-                                .resolveImports(sourceFile.getContent(), workflow, identifiedType, version);
-                        sourceFileSet.addAll(stringSourceFileMap.values());
-                    }
-
-                    // If source file is found and valid then add it
-                    if (sourceFile.getContent() != null) {
-                        version.getSourceFiles().add(sourceFile);
-                    }
-
-                    // The version is valid if source files are found
-                    if (version.getSourceFiles().size() > 0) {
-                        version.setValid(true);
-                    }
-
-                    // add extra source files here (dependencies from "main" descriptor)
-                    if (sourceFileSet.size() > 0) {
-                        version.getSourceFiles().addAll(sourceFileSet);
-                    }
-
+                    version = combineVersionAndSourcefile(sourceFile, workflow, identifiedType, version);
                     workflow.addWorkflowVersion(version);
                 }
             }
