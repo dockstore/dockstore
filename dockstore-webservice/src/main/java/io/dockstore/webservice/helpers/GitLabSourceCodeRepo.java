@@ -185,8 +185,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
                     // TODO: No exceptions are caught here in the event of a failed call
                     sourceFile = getSourceFile(calculatedPath, id, branchName, identifiedType);
 
-                    version = combineVersionAndSourcefile(sourceFile, workflow, identifiedType, version);
-                    workflow.addWorkflowVersion(version);
+                    workflow.addWorkflowVersion(combineVersionAndSourcefile(sourceFile, workflow, identifiedType, version));
                 }
             }
         }

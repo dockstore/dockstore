@@ -248,9 +248,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                     // TODO: No exceptions are caught here in the event of a failed call
                     sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, identifiedType);
 
-                    version = combineVersionAndSourcefile(sourceFile, workflow, identifiedType, version);
-
-                    workflow.addWorkflowVersion(version);
+                    workflow.addWorkflowVersion(combineVersionAndSourcefile(sourceFile, workflow, identifiedType, version));
                 }
             }
 

@@ -193,6 +193,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
             //TODO: is there a case-insensitive endsWith?
             String calculatedExtension = FilenameUtils.getExtension(calculatedPath);
+            boolean validWorkflow = false;
 
             // Grab workflow file from github
             try {
@@ -200,9 +201,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 final List<RepositoryContents> descriptorContents = cService.getContents(id, calculatedPath, ref);
                 if (descriptorContents != null && descriptorContents.size() > 0) {
                     String content = extractGitHubContents(descriptorContents);
-
-                    // Is workflow descriptor valid
-                    boolean validWorkflow;
 
                     // TODO: Is this the best way to determine file type? I don't think so
                     // Should be workflow.getDescriptorType().equals("cwl") - though enum is better!
@@ -219,11 +217,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                         file.setContent(content);
                         file.setPath(calculatedPath);
                         file.setType(identifiedType);
-                        version.getSourceFiles().add(file);
-
-                        // try to use the FileImporter to re-use code for handling imports
-                        version = combineVersionAndSourcefile(file, workflow, identifiedType, version);
+                        workflow.addWorkflowVersion(combineVersionAndSourcefile(file, workflow, identifiedType, version));
                     }
+
                 }
 
             } catch (IOException ex) {
@@ -232,7 +228,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 LOG.info(gitUsername + ": " + workflow.getDefaultWorkflowPath() + " on " + ref + " was not valid CWL workflow");
             }
 
-            workflow.addWorkflowVersion(version);
+            if (!validWorkflow) {
+                workflow.addWorkflowVersion(version);
+            }
+
         }
         return workflow;
     }
