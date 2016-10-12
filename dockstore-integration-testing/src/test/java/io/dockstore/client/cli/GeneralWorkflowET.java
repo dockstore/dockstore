@@ -60,7 +60,7 @@ public class GeneralWorkflowET {
         }
 
         /**
-         * This test checks that refresh all works (with a mix of stub and full) and refresh individual.  It then tries to publish them
+         * This test checks that refresh all workflows (with a mix of stub and full) and refresh individual.  It then tries to publish them
          */
         @Test
         public void testRefreshAndPublish() {
@@ -83,18 +83,20 @@ public class GeneralWorkflowET {
                 Assert.assertTrue("there should be 2 valid versions, there are " + count2, count2 == 2);
                 final long count3 = testingPostgres.runSelectStatement("select count(*) from workflow where mode='FULL'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 1 full workflows, there are " + count3, count3 == 1);
+                final long count4 = testingPostgres.runSelectStatement("select count(*) from workflowversion", new ScalarHandler<>());
+                Assert.assertTrue("there should be 4 versions, there are " + count4, count4 == 4);
 
                 // attempt to publish it
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--script" });
 
-                final long count4 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", new ScalarHandler<>());
-                Assert.assertTrue("there should be 1 published entry, there are " + count4, count4 == 1);
+                final long count5 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", new ScalarHandler<>());
+                Assert.assertTrue("there should be 1 published entry, there are " + count5, count5 == 1);
 
                 // unpublish
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry", "DockstoreTestUser2/hello-dockstore-workflow", "--unpub", "--script" });
 
-                final long count5 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", new ScalarHandler<>());
-                Assert.assertTrue("there should be 0 published entries, there are " + count5, count5 == 0);
+                final long count6 = testingPostgres.runSelectStatement("select count(*) from workflow where ispublished='t'", new ScalarHandler<>());
+                Assert.assertTrue("there should be 0 published entries, there are " + count6, count6 == 0);
 
         }
 
@@ -575,6 +577,93 @@ public class GeneralWorkflowET {
                 // There should be 3 versions with new cwl
                 final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion where workflowpath = '/Dockstoreclean.cwl'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 4 versions with workflow path /Dockstoreclean.cwl, there are " + count2, count2 == 4);
+
+        }
+
+    /**
+     * This is a high level test to ensure that gitlab basics are working for gitlab as a workflow repo
+     */
+    @Test
+    public void testGitlab() {
+            // Setup DB
+            final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+            // Refresh workflow
+            Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh",
+                    "--script" });
+            Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry", "dockstore.test.user2/dockstore-workflow-example",
+                    "--script" });
+
+            // Check a few things
+            final long count = testingPostgres.runSelectStatement("select count(*) from workflow where mode='FULL' and path='dockstore.test.user2/dockstore-workflow-example'", new ScalarHandler<>());
+            Assert.assertTrue("there should be 1 workflow, there are " + count, count == 1);
+
+            final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid='t'", new ScalarHandler<>());
+            Assert.assertTrue("there should be 2 valid version, there are " + count2, count2 == 2);
+
+            // Give nickname
+            Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry", "dockstore.test.user2/dockstore-workflow-example", "--workflow-name", "newname", "--script" });
+
+            final long count3 = testingPostgres.runSelectStatement("select count(*) from workflow where mode='FULL' and path='dockstore.test.user2/dockstore-workflow-example/newname'", new ScalarHandler<>());
+            Assert.assertTrue("there should be 1 workflow, there are " + count3, count3 == 1);
+
+            // publish
+            Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry", "dockstore.test.user2/dockstore-workflow-example/newname", "--script" });
+            final long count4 = testingPostgres.runSelectStatement("select count(*) from workflow where mode='FULL' and path='dockstore.test.user2/dockstore-workflow-example/newname' and ispublished='t'", new ScalarHandler<>());
+            Assert.assertTrue("there should be 1 published workflow, there are " + count4, count4 == 1);
+
+            // Should be able to get info since it is published
+            Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "info", "--entry", "dockstore.test.user2/dockstore-workflow-example/newname", "--script" });
+
+            // Should be able to grab descriptor
+            Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "cwl", "--entry", "dockstore.test.user2/dockstore-workflow-example/newname:master", "--script" });
+
+            // unpublish
+            Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry", "dockstore.test.user2/dockstore-workflow-example/newname", "--unpub", "--script" });
+            final long count5 = testingPostgres.runSelectStatement("select count(*) from workflow where mode='FULL' and path='dockstore.test.user2/dockstore-workflow-example/newname' and ispublished='t'", new ScalarHandler<>());
+            Assert.assertTrue("there should be 0 published workflows, there are " + count5, count5 == 0);
+
+            // change default branch
+            final long count6 = testingPostgres.runSelectStatement("select count(*) from workflow where path='dockstore.test.user2/dockstore-workflow-example/newname' and author is null and email is null and description is null", new ScalarHandler<>());
+            Assert.assertTrue("The given workflow shouldn't have any contact info", count6 == 1);
+
+            Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry", "dockstore.test.user2/dockstore-workflow-example/newname", "--default-version", "test", "--script" });
+
+            final long count7 = testingPostgres.runSelectStatement("select count(*) from workflow where defaultversion = 'test' and author is null and email is null and description is null", new ScalarHandler<>());
+            Assert.assertTrue("The given workflow should now have contact info and description", count7 == 0);
+
+            // restub
+            Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "restub", "--entry", "dockstore.test.user2/dockstore-workflow-example/newname", "--script" });
+            final long count8 = testingPostgres.runSelectStatement("select count(*) from workflow where mode='STUB' and path='dockstore.test.user2/dockstore-workflow-example/newname'", new ScalarHandler<>());
+            Assert.assertTrue("The workflow should now be a stub", count8 == 1);
+
+            // Convert to WDL workflow
+            Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry", "dockstore.test.user2/dockstore-workflow-example/newname", "--descriptor-type", "wdl", "--script" });
+
+            // Should now be a WDL workflow
+            final long count9 = testingPostgres.runSelectStatement("select count(*) from workflow where descriptortype='wdl'", new ScalarHandler<>());
+            Assert.assertTrue("there should be no 1 wdl workflow" + count9, count9 == 1);
+
+    }
+
+        /**
+         * This tests manually publishing a gitlab workflow
+         */
+        @Test
+        public void testManualPublishGitlab() {
+                // Setup DB
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+                // manual publish
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish", "--repository", "dockstore-workflow-example", "--organization", "dockstore.test.user2",
+                        "--git-version-control", "gitlab", "--workflow-name", "testname", "--workflow-path", "/Dockstore.wdl", "--descriptor-type", "wdl", "--script" });
+
+                // Check for one valid version
+                final long count = testingPostgres.runSelectStatement("select count(*) from workflowversion where valid='t'", new ScalarHandler<>());
+                Assert.assertTrue("there should be 1 valid version, there are " + count, count == 1);
+
+                // grab wdl file
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "wdl", "--entry", "dockstore.test.user2/dockstore-workflow-example/testname:master", "--script" });
 
         }
 

@@ -87,9 +87,19 @@ definitions:
       redirectURI: {type: string}
       view: {$ref: '#/definitions/GithubComView'}
     type: object
+  GitLabComAuthenticationResource:
+    properties:
+      clientID: {type: string}
+      redirectURI: {type: string}
+      view: {$ref: '#/definitions/GitlabComView'}
+    type: object
   GithubComView:
     properties:
       parent: {$ref: '#/definitions/GitHubComAuthenticationResource'}
+    type: object
+  GitlabComView:
+    properties:
+      parent: {$ref: '#/definitions/GitLabComAuthenticationResource'}
     type: object
   Group:
     description: This describes a grouping of end-users for the purposes of managing sharing. Implementation-specific.
@@ -643,6 +653,19 @@ paths:
           schema: {$ref: '#/definitions/Token'}
       summary: Add a new github.com token, used by quay.io redirect
       tags: [tokens]
+  /auth/tokens/gitlab.com:
+    get:
+      description: This is used as part of the OAuth 2 web flow. Once a user has approved permissions for CollaboratoryTheir browser will load the redirect URI which should resolve here
+      operationId: addGitlabToken
+      parameters:
+      - {in: query, name: code, required: false, type: string}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema: {$ref: '#/definitions/Token'}
+      summary: Add a new gitlab.com token
+      tags: [tokens]
   /auth/tokens/quay.io:
     get:
       description: This is used as part of the OAuth 2 web flow. Once a user has approved permissions for CollaboratoryTheir browser will load the redirect URI which should resolve here
@@ -1190,6 +1213,18 @@ paths:
           schema: {$ref: '#/definitions/GithubComView'}
       summary: Display an authorization link for github.com
       tags: [integration.github.com]
+  /integration.gitlab.com:
+    get:
+      description: This is a stop-gap GUI for displaying a link that allows a user to start the OAuth 2 web flow
+      operationId: getView
+      parameters: []
+      produces: [text/html]
+      responses:
+        200:
+          description: successful operation
+          schema: {$ref: '#/definitions/GitlabComView'}
+      summary: Display an authorization link for gitlab.com
+      tags: [integration.gitlab.com]
   /integration.quay.io:
     get:
       description: More notes about this method
@@ -1469,6 +1504,22 @@ paths:
             items: {$ref: '#/definitions/Token'}
             type: array
       summary: Get Github tokens with user id
+      tags: [users]
+  /users/{userId}/tokens/gitlab.com:
+    get:
+      description: ''
+      operationId: getGitlabUserTokens
+      parameters:
+      - {description: User to return, format: int64, in: path, name: userId, required: true,
+        type: integer}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema:
+            items: {$ref: '#/definitions/Token'}
+            type: array
+      summary: Get Gitlab tokens with user id
       tags: [users]
   /users/{userId}/tokens/quay.io:
     get:
@@ -1954,6 +2005,7 @@ tags:
   name: github.repo}
 - {description: stop-gap allowing developers to associate with bitbucket, name: integration.bitbucket.org}
 - {description: stop-gap allowing developers to associate with github, name: integration.github.com}
+- {description: stop-gap allowing developers to associate with gitlab, name: integration.gitlab.com}
 - {description: stop-gap allowing developers to associate with quay.io, name: integration.quay.io}
 - {description: 'List, modify, refresh, and delete tokens for external services',
   name: tokens}

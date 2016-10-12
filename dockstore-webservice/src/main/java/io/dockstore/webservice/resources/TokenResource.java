@@ -91,10 +91,14 @@ public class TokenResource {
 
     private static final String QUAY_URL = "https://quay.io/api/v1/";
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
+    private static final String GITLAB_URL = "https://gitlab.com/";
     private final String githubClientID;
     private final String githubClientSecret;
     private final String bitbucketClientID;
     private final String bitbucketClientSecret;
+    private final String gitlabClientID;
+    private final String gitlabRedirectUri;
+    private final String gitlabClientSecret;
     private final HttpClient client;
 
     private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
@@ -102,13 +106,16 @@ public class TokenResource {
 
     @SuppressWarnings("checkstyle:parameternumber")
     public TokenResource(TokenDAO tokenDAO, UserDAO enduserDAO, String githubClientID, String githubClientSecret, String bitbucketClientID,
-            String bitbucketClientSecret, HttpClient client, CachingAuthenticator<String, User> cachingAuthenticator) {
+            String bitbucketClientSecret, String gitlabClientID, String gitlabClientSecret, String gitlabRedirectUri, HttpClient client, CachingAuthenticator<String, User> cachingAuthenticator) {
         this.tokenDAO = tokenDAO;
         userDAO = enduserDAO;
         this.githubClientID = githubClientID;
         this.githubClientSecret = githubClientSecret;
         this.bitbucketClientID = bitbucketClientID;
         this.bitbucketClientSecret = bitbucketClientSecret;
+        this.gitlabClientID = gitlabClientID;
+        this.gitlabClientSecret = gitlabClientSecret;
+        this.gitlabRedirectUri = gitlabRedirectUri;
         this.client = client;
         this.cachingAuthenticator = cachingAuthenticator;
     }
@@ -201,6 +208,63 @@ public class TokenResource {
         } else {
             return Response.serverError().build();
         }
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/gitlab.com")
+    @ApiOperation(value = "Add a new gitlab.com token", notes = "This is used as part of the OAuth 2 web flow. "
+            + "Once a user has approved permissions for Collaboratory"
+            + "Their browser will load the redirect URI which should resolve here", response = Token.class)
+    public Token addGitlabToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("code") String code) {
+        final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
+                JSON_FACTORY, new GenericUrl(GITLAB_URL + "oauth/token"),
+                new ClientParametersAuthentication(gitlabClientID, gitlabClientSecret), gitlabClientID,
+                GITLAB_URL + "oauth/authorize").build();
+
+        LOG.info("About to try and grab access token");
+        String accessToken;
+        try {
+            TokenResponse tokenResponse = flow.newTokenRequest(code).setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).setGrantType("authorization_code").setRedirectUri(gitlabRedirectUri).execute();
+            accessToken = tokenResponse.getAccessToken();
+        } catch (IOException e) {
+            LOG.error("Retrieving accessToken was unsuccessful");
+            throw new CustomWebApplicationException("Could not retrieve gitlab.com token based on code", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        String url = GITLAB_URL + "api/v3/user";
+
+        Optional<String> asString = ResourceUtilities.asString(url, accessToken, client);
+        String username = getUserName(url, asString);
+
+        if (user != null) {
+            List<Token> tokens = tokenDAO.findGitlabByUserId(user.getId());
+
+            if (tokens.isEmpty()) {
+                Token token = new Token();
+                token.setTokenSource(TokenType.GITLAB_COM.toString());
+                token.setContent(accessToken);
+                token.setUserId(user.getId());
+                if (username != null) {
+                    token.setUsername(username);
+                } else {
+                    LOG.info("Gitlab.com tokenusername is null, did not create token");
+                    throw new CustomWebApplicationException("Username not found from resource call " + url, HttpStatus.SC_CONFLICT);
+                }
+                long create = tokenDAO.create(token);
+                LOG.info("Gitlab token created for {}", user.getUsername());
+                return tokenDAO.findById(create);
+            } else {
+                LOG.info("Gitlab token already exists for {}", user.getUsername());
+                throw new CustomWebApplicationException("Gitlab token already exists for " + user.getUsername(), HttpStatus.SC_CONFLICT);
+            }
+        } else {
+            LOG.info("Could not find user");
+            throw new CustomWebApplicationException("User not found", HttpStatus.SC_CONFLICT);
+        }
+
+
     }
 
     @GET

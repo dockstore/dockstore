@@ -46,6 +46,9 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     private String githubClientID;
 
     @NotEmpty
+    private String gitlabClientID;
+
+    @NotEmpty
     private String bitbucketClientID;
 
     @NotEmpty
@@ -59,6 +62,13 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     @NotEmpty
     private String githubClientSecret;
+
+    @NotEmpty
+
+    private String gitlabRedirectURI;
+
+    @NotEmpty
+    private String gitlabClientSecret;
 
     @NotNull
     private CacheBuilderSpec authenticationCachePolicy;
@@ -235,6 +245,30 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     public void setAuthenticationCachePolicy(CacheBuilderSpec authenticationCachePolicy) {
         this.authenticationCachePolicy = authenticationCachePolicy;
+    }
+
+    public String getGitlabClientID() {
+        return gitlabClientID;
+    }
+
+    public void setGitlabClientID(String gitlabClientID) {
+        this.gitlabClientID = gitlabClientID;
+    }
+
+    public String getGitlabRedirectURI() {
+        return gitlabRedirectURI;
+    }
+
+    public void setGitlabRedirectURI(String gitlabRedirectURI) {
+        this.gitlabRedirectURI = gitlabRedirectURI;
+    }
+
+    public String getGitlabClientSecret() {
+        return gitlabClientSecret;
+    }
+
+    public void setGitlabClientSecret(String gitlabClientSecret) {
+        this.gitlabClientSecret = gitlabClientSecret;
     }
 
     public String getHostname() {

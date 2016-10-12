@@ -41,6 +41,7 @@ import io.dockstore.webservice.resources.DockerRepoResource;
 import io.dockstore.webservice.resources.DockerRepoTagResource;
 import io.dockstore.webservice.resources.GitHubComAuthenticationResource;
 import io.dockstore.webservice.resources.GitHubRepoResource;
+import io.dockstore.webservice.resources.GitLabComAuthenticationResource;
 import io.dockstore.webservice.resources.QuayIOAuthenticationResource;
 import io.dockstore.webservice.resources.TemplateHealthCheck;
 import io.dockstore.webservice.resources.TokenResource;
@@ -222,9 +223,14 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final BitbucketOrgAuthenticationResource resource4 = new BitbucketOrgAuthenticationResource(configuration.getBitbucketClientID());
         environment.jersey().register(resource4);
 
+        final GitLabComAuthenticationResource resource5 = new GitLabComAuthenticationResource(configuration.getGitlabClientID(),
+                configuration.getGitlabRedirectURI());
+        environment.jersey().register(resource5);
+
         environment.jersey().register(
                 new TokenResource(tokenDAO, userDAO, configuration.getGithubClientID(), configuration.getGithubClientSecret(),
-                        configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), httpClient, cachingAuthenticator));
+                        configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), configuration.getGitlabClientID(),
+                        configuration.getGitlabClientSecret(), configuration.getGitlabRedirectURI(), httpClient, cachingAuthenticator));
 
         final WorkflowResource workflowResource = new WorkflowResource(httpClient, userDAO, tokenDAO, toolDAO, workflowDAO, workflowVersionDAO,
                 labelDAO, fileDAO, configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret());

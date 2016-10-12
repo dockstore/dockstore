@@ -75,6 +75,10 @@ public class TokenDAO extends AbstractDAO<Token> {
         return list(namedQuery("io.dockstore.webservice.core.Token.findBitbucketByUserId").setParameter("userId", userId));
     }
 
+    public List<Token> findGitlabByUserId(long userId) {
+        return list(namedQuery("io.dockstore.webservice.core.Token.findGitlabByUserId").setParameter("userId", userId));
+    }
+
     public List<Token> findBySource(String source) {
         return list(namedQuery("io.dockstore.webservice.core.Token.findBySource").setParameter("source", source));
     }

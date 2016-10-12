@@ -73,14 +73,14 @@ public final class Helper {
         }
     }
 
-    public static void updateFiles(Tool tool, final HttpClient client, final FileDAO fileDAO, final Token githubToken, final Token bitbucketToken) {
+    public static void updateFiles(Tool tool, final HttpClient client, final FileDAO fileDAO, final Token githubToken, final Token bitbucketToken, final Token gitlabToken) {
         Set<Tag> tags = tool.getTags();
 
         // For each tag, will download files to db and determine if the tag is valid
         for (Tag tag : tags) {
             LOG.info(githubToken.getUsername() + " : Updating files for tag {}", tag.getName());
 
-            List<SourceFile> newFiles = loadFiles(client, bitbucketToken, githubToken, tool, tag);
+            List<SourceFile> newFiles = loadFiles(client, bitbucketToken, githubToken, gitlabToken, tool, tag);
             tag.getSourceFiles().clear();
 
             // Add for new descriptor types
@@ -166,12 +166,13 @@ public final class Helper {
      * @param tag
      * @return list of SourceFiles containing cwl and dockerfile.
      */
-    private static List<SourceFile> loadFiles(HttpClient client, Token bitbucketToken, Token githubToken, Tool c, Tag tag) {
+    private static List<SourceFile> loadFiles(HttpClient client, Token bitbucketToken, Token githubToken, Token gitlabToken, Tool c, Tag tag) {
         List<SourceFile> files = new ArrayList<>();
 
         final String bitbucketTokenContent = bitbucketToken == null ? null : bitbucketToken.getContent();
+        final String gitlabTokenContent = gitlabToken == null ? null : gitlabToken.getContent();
         final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(c.getGitUrl(), client,
-                bitbucketTokenContent, githubToken.getContent());
+                bitbucketTokenContent, gitlabTokenContent, githubToken.getContent());
         FileImporter importer = new FileImporter(sourceCodeRepo);
 
         // Add for new descriptor types
@@ -221,9 +222,10 @@ public final class Helper {
         Token quayToken = extractToken(tokens, TokenType.QUAY_IO.toString());
         Token githubToken = extractToken(tokens, TokenType.GITHUB_COM.toString());
         Token bitbucketToken = extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
+        Token gitlabToken = extractToken(tokens, TokenType.GITLAB_COM.toString());
 
         // with Docker Hub support it is now possible that there is no quayToken
-        checkTokens(quayToken, githubToken, bitbucketToken);
+        checkTokens(quayToken, githubToken, bitbucketToken, gitlabToken);
 
         // Get a list of all image registries
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
@@ -240,7 +242,7 @@ public final class Helper {
             }
             updatedTools.addAll(abstractImageRegistry
                     .refreshTools(userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken,
-                            bitbucketToken));
+                            bitbucketToken, gitlabToken));
         }
         return updatedTools;
     }
@@ -264,10 +266,11 @@ public final class Helper {
         List<Token> tokens = tokenDAO.findByUserId(userId);
         Token quayToken = extractToken(tokens, TokenType.QUAY_IO.toString());
         Token githubToken = extractToken(tokens, TokenType.GITHUB_COM.toString());
+        Token gitlabToken = extractToken(tokens, TokenType.GITLAB_COM.toString());
         Token bitbucketToken = extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
 
         // with Docker Hub support it is now possible that there is no quayToken
-        checkTokens(quayToken, githubToken, bitbucketToken);
+        checkTokens(quayToken, githubToken, bitbucketToken, gitlabToken);
 
         // Get all registries
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
@@ -275,7 +278,7 @@ public final class Helper {
 
         return abstractImageRegistry
                 .refreshTool(containerId, userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken,
-                        bitbucketToken);
+                        bitbucketToken, gitlabToken);
 
     }
 
@@ -397,7 +400,7 @@ public final class Helper {
     }
 
     public static String convertHttpsToSsh(String url) {
-        Pattern p = Pattern.compile("^(https?:)?\\/\\/(www\\.)?(github\\.com|bitbucket\\.org)\\/([\\w-]+)\\/([\\w-]+)$");
+        Pattern p = Pattern.compile("^(https?:)?\\/\\/(www\\.)?(github\\.com|bitbucket\\.org|gitlab\\.com)\\/([\\w-\\.]+)\\/([\\w-\\.]+)$");
         Matcher m = p.matcher(url);
         if (!m.find()) {
             LOG.info("Cannot parse HTTPS url: " + url);
@@ -477,13 +480,16 @@ public final class Helper {
         return false;
     }
 
-    private static void checkTokens(final Token quayToken, final Token githubToken, final Token bitbucketToken) {
+    private static void checkTokens(final Token quayToken, final Token githubToken, final Token bitbucketToken, final Token gitlabToken) {
         if (githubToken == null) {
             LOG.info("GIT token not found!");
             throw new CustomWebApplicationException("Git token not found.", HttpStatus.SC_CONFLICT);
         }
         if (bitbucketToken == null) {
             LOG.info("WARNING: BITBUCKET token not found!");
+        }
+        if (gitlabToken == null) {
+            LOG.info("WARNING: GITLAB token not found!");
         }
         if (quayToken == null) {
             LOG.info("WARNING: QUAY token not found!");

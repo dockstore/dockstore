@@ -25,7 +25,7 @@ import io.swagger.annotations.ApiModel;
  */
 @ApiModel(description = "Enumerates the sources for access tokens for the dockstore")
 public enum TokenType {
-    QUAY_IO("quay.io"), GITHUB_COM("github.com"), DOCKSTORE("dockstore"), BITBUCKET_ORG("bitbucket.org");
+    QUAY_IO("quay.io"), GITHUB_COM("github.com"), DOCKSTORE("dockstore"), BITBUCKET_ORG("bitbucket.org"), GITLAB_COM("gitlab.com");
     private final String friendlyName;
 
     TokenType(String friendlyName) {
