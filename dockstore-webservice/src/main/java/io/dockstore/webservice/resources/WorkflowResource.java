@@ -953,6 +953,7 @@ public class WorkflowResource {
             // Initialize data structures for DAG
             Map<String, ArrayList<String>> stepToDependencies = new HashMap<>(); // Mapping of stepId -> array of dependencies for the step
             ArrayList<Pair<String, String>> nodePairs = new ArrayList<>();       // List of pairings of step id and dockerPull url
+            Map<String, String> stepToType = new HashMap<>();                    // Map of stepId -> type (expression tool, tool, workflow)
             String defaultDockerPath = "";
 
             // Initialize data structures for Tool table
@@ -965,6 +966,9 @@ public class WorkflowResource {
 
             // Other useful variables
             String nodePrefix = "dockstore_";
+            String toolType = "tool";
+            String workflowType = "workflow";
+            String expressionToolType = "expressionTool";
 
             // Set up GSON for JSON parsing
             Gson gson;
@@ -1035,21 +1039,25 @@ public class WorkflowResource {
                     // Check for docker requirement within workflow step file
                     String secondaryFile = null;
                     Object run = workflowStep.getRun();
+                    String runAsJson = gson.toJson(gson.toJsonTree(run));
 
                     if (run instanceof String) {
                         secondaryFile = (String) run;
-                    } else if (run instanceof CommandLineTool) {
-                        CommandLineTool clTool = (CommandLineTool) run;
+                    } else if (isTool(runAsJson, yaml)) {
+                        CommandLineTool clTool = gson.fromJson(runAsJson, CommandLineTool.class);
                         stepDockerRequirement = getRequirementOrHint(clTool.getRequirements(), clTool.getHints(), gson,
                                 stepDockerRequirement);
-                    } else if (run instanceof io.cwl.avro.Workflow) {
-                        io.cwl.avro.Workflow stepWorkflow = (io.cwl.avro.Workflow) run;
+                        stepToType.put(workflowStepId, toolType);
+                    } else if (isWorkflow(runAsJson, yaml)) {
+                        io.cwl.avro.Workflow stepWorkflow = gson.fromJson(runAsJson, io.cwl.avro.Workflow.class);
                         stepDockerRequirement = getRequirementOrHint(stepWorkflow.getRequirements(), stepWorkflow.getHints(), gson,
                                 stepDockerRequirement);
-                    } else if (run instanceof ExpressionTool) {
-                        ExpressionTool expressionTool = (ExpressionTool) run;
+                        stepToType.put(workflowStepId, workflowType);
+                    } else if (isExpressionTool(runAsJson, yaml)) {
+                        ExpressionTool expressionTool = gson.fromJson(runAsJson, ExpressionTool.class);
                         stepDockerRequirement = getRequirementOrHint(expressionTool.getRequirements(), expressionTool.getHints(), gson,
                                 stepDockerRequirement);
+                        stepToType.put(workflowStepId, expressionToolType);
                     } else if (run instanceof Map) {
                         // must be import or include
                         Object importVal = ((Map) run).get("import");
@@ -1067,6 +1075,15 @@ public class WorkflowResource {
                     if (secondaryFile != null) {
                         stepDockerRequirement = parseSecondaryFile(stepDockerRequirement, secondaryDescContent.get(secondaryFile), gson,
                                 yaml);
+                        if (isExpressionTool(secondaryDescContent.get(secondaryFile), yaml)) {
+                            stepToType.put(workflowStepId, expressionToolType);
+                        } else if (isTool(secondaryDescContent.get(secondaryFile), yaml)) {
+                            stepToType.put(workflowStepId, toolType);
+                        } else if (isWorkflow(secondaryDescContent.get(secondaryFile), yaml)) {
+                            stepToType.put(workflowStepId, workflowType);
+                        } else {
+                            stepToType.put(workflowStepId, nodePrefix);
+                        }
                     }
 
                     String dockerUrl = getURLFromEntry(stepDockerRequirement);
@@ -1111,7 +1128,8 @@ public class WorkflowResource {
                         }
                     }
                     nodePairs.add(new MutablePair<>("UniqueBeginKey", ""));
-                    return setupJSONDAG(nodePairs, stepToDependencies);
+
+                    return setupJSONDAG(nodePairs, stepToDependencies, stepToType);
                 } else {
                     return getJSONTableToolContentCWL(toolID, toolDocker);
                 }
@@ -1228,11 +1246,12 @@ public class WorkflowResource {
      * @return true if workflow, false otherwise
          */
     private boolean isWorkflow(String content, Yaml yaml) {
-        Map<String, Object> mapping = (Map<String, Object>) yaml.load(content);
-        String cwlClass = mapping.get("class").toString();
-
-        if (cwlClass != null) {
-            return cwlClass.equals("Workflow");
+        if (!Strings.isNullOrEmpty(content)) {
+            Map<String, Object> mapping = (Map<String, Object>) yaml.load(content);
+            if (mapping.get("class") != null) {
+                String cwlClass = mapping.get("class").toString();
+                return cwlClass.equals("Workflow");
+            }
         }
         return false;
     }
@@ -1243,11 +1262,12 @@ public class WorkflowResource {
      * @return true if expression tool, false otherwise
      */
     private boolean isExpressionTool(String content, Yaml yaml) {
-        Map<String, Object> mapping = (Map<String, Object>) yaml.load(content);
-        String cwlClass = mapping.get("class").toString();
-
-        if (cwlClass != null) {
-            return cwlClass.equals("ExpressionTool");
+        if (!Strings.isNullOrEmpty(content)) {
+            Map<String, Object> mapping = (Map<String, Object>) yaml.load(content);
+            if (mapping.get("class") != null) {
+                String cwlClass = mapping.get("class").toString();
+                return cwlClass.equals("ExpressionTool");
+            }
         }
         return false;
     }
@@ -1258,11 +1278,12 @@ public class WorkflowResource {
      * @return true if tool, false otherwise
          */
     private boolean isTool(String content, Yaml yaml) {
-        Map<String, Object> mapping = (Map<String, Object>) yaml.load(content);
-        String cwlClass = mapping.get("class").toString();
-
-        if (cwlClass != null) {
-            return cwlClass.equals("CommandLineTool");
+        if (!Strings.isNullOrEmpty(content)) {
+            Map<String, Object> mapping = (Map<String, Object>) yaml.load(content);
+            if (mapping.get("class") != null) {
+                String cwlClass = mapping.get("class").toString();
+                return cwlClass.equals("CommandLineTool");
+            }
         }
         return false;
     }
@@ -1390,7 +1411,7 @@ public class WorkflowResource {
      * @param stepToDependencies
          * @return Cytoscape compatible JSON with nodes and edges
          */
-    private String setupJSONDAG(ArrayList<Pair<String, String>> nodePairs, Map<String, ArrayList<String>> stepToDependencies) {
+    private String setupJSONDAG(ArrayList<Pair<String, String>> nodePairs, Map<String, ArrayList<String>> stepToDependencies, Map<String, String> stepToType) {
         ArrayList<Object> nodes = new ArrayList<>();
         ArrayList<Object> edges = new ArrayList<>();
         Map<String, ArrayList<Object>> dagJson = new LinkedHashMap<>();
@@ -1406,7 +1427,8 @@ public class WorkflowResource {
             Map<String, String> dataEntry = new HashMap<>();
             dataEntry.put("id", stepId);
             dataEntry.put("tool", dockerUrl);
-            dataEntry.put("name", stepId);
+            dataEntry.put("name", stepId.replaceFirst("^dockstore\\_", ""));
+            dataEntry.put("type", stepToType.get(stepId));
             nodeEntry.put("data", dataEntry);
             nodes.add(nodeEntry);
 
@@ -1453,7 +1475,7 @@ public class WorkflowResource {
 
             //put everything into a map, then ArrayList
             Map<String, String> dataToolEntry = new LinkedHashMap<>();
-            dataToolEntry.put("id", toolName);
+            dataToolEntry.put("id", toolName.replaceFirst("^dockstore\\_", ""));
             dataToolEntry.put("file", fileName);
             dataToolEntry.put("docker", dockerPullName);
             dataToolEntry.put("link",dockerLink);
