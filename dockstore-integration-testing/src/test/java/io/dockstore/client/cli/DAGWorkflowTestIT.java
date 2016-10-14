@@ -104,12 +104,14 @@ public class DAGWorkflowTestIT {
         int countNode = 0;
         int last = 0;
         String node = "id";
-        while(last !=-1){
-            last = strings.get(0).indexOf(node,last);
+        if (strings.size() > 0) {
+            while (last != -1) {
+                last = strings.get(0).indexOf(node, last);
 
-            if(last !=-1){
-                countNode++;
-                last += node.length();
+                if (last != -1) {
+                    countNode++;
+                    last += node.length();
+                }
             }
         }
 
@@ -252,7 +254,7 @@ public class DAGWorkflowTestIT {
         Assert.assertEquals("JSON should have 19 nodes", countNode, 19);
         Assert.assertTrue("should have end with gather_sanger_indels and merge_vcfs", strings.get(0).contains("\"source\":\"dockstore_gather_sanger_indels\",\"target\":\"dockstore_merge_vcfs\""));
         Assert.assertTrue("should have end with filter and normalize", strings.get(0).contains("\"source\":\"dockstore_filter\",\"target\":\"dockstore_normalize\""));
-        Assert.assertTrue("should have docker requirement for vcf_merge", strings.get(0).contains("\"name\":\"merge_vcfs\",\"id\":\"dockstore_merge_vcfs\",\"tool\":\"https://hub.docker.com/r/pancancer/pcawg-oxog-tools\""));
-        Assert.assertTrue("should have docker requirement for clean" + strings.get(0), strings.get(0).contains("\"name\":\"clean\",\"id\":\"dockstore_clean\",\"tool\":\"https://hub.docker.com/r/pancancer/pcawg-oxog-tools\""));
+        Assert.assertTrue("should have docker requirement for vcf_merge", strings.get(0).contains("\"name\":\"merge_vcfs\",\"run\":\"vcf_merge.cwl\",\"id\":\"dockstore_merge_vcfs\",\"type\":\"tool\",\"tool\":\"https://hub.docker.com/r/pancancer/pcawg-oxog-tools\",\"docker\":\"pancancer/pcawg-oxog-tools\""));
+        Assert.assertTrue("should have docker requirement for clean", strings.get(0).contains("\"name\":\"clean\",\"run\":\"clean_vcf.cwl\",\"id\":\"dockstore_clean\",\"type\":\"tool\",\"tool\":\"https://hub.docker.com/r/pancancer/pcawg-oxog-tools\",\"docker\":\"pancancer/pcawg-oxog-tools:1.0.0\""));
     }
 }

@@ -258,11 +258,11 @@ public class ToolsWorkflowTestIT {
         Assert.assertEquals("JSON should have 5 tools", countNode, 5);
         Assert.assertTrue("tool data should have pass_filter as id", strings.get(0).contains("pass_filter"));
         Assert.assertTrue("tool data should have merge_vcfs as id", strings.get(0).contains("merge_vcfs"));
-        Assert.assertTrue("pass_filter should not have docker link", strings.get(0).contains("\"id\":\"pass_filter\","+
+        Assert.assertTrue("pass_filter should have docker link", strings.get(0).contains("\"id\":\"pass_filter\","+
                 "\"file\":\"pass-filter.cwl\","+
                 "\"docker\":\"pancancer/pcawg-oxog-tools\"," +
                 "\"link\":\"https://hub.docker.com/r/pancancer/pcawg-oxog-tools\""));
-        Assert.assertTrue("merge_vcfs should not have docker link", strings.get(0).contains("\"id\":\"merge_vcfs\"," +
+        Assert.assertTrue("merge_vcfs should have docker link", strings.get(0).contains("\"id\":\"merge_vcfs\"," +
                 "\"file\":\"vcf_merge.cwl\","+
                 "\"docker\":\"pancancer/pcawg-oxog-tools\"," +
                 "\"link\":\"https://hub.docker.com/r/pancancer/pcawg-oxog-tools\""));
