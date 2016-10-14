@@ -24,6 +24,7 @@ import io.dockstore.client.Bridge;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
@@ -38,8 +39,10 @@ import wdl4s.parser.WdlParser;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * This defines the set of operations that is needed to interact with a particular
@@ -374,4 +377,91 @@ public abstract class SourceCodeRepoInterface {
          */
     public abstract String getFileContents(String filePath, String branch, String repositoryId);
 
+    /**
+     * Initializes workflow version for given branch
+     * @param branch
+     * @param existingWorkflow
+     * @param existingDefaults
+     * @return workflow version
+     */
+    public WorkflowVersion initializeWorkflowVersion(String branch, Optional<Workflow> existingWorkflow, Map<String, WorkflowVersion> existingDefaults) {
+        WorkflowVersion version = new WorkflowVersion();
+        version.setName(branch);
+        version.setReference(branch);
+        version.setValid(false);
+
+        // Determine workflow version from previous
+
+        String calculatedPath;
+
+        // Set to false if new version
+        if (existingDefaults.get(branch) == null) {
+            version.setDirtyBit(false);
+            calculatedPath = existingWorkflow.get().getDefaultWorkflowPath();
+        } else {
+            // existing version
+            if (existingDefaults.get(branch).isDirtyBit()) {
+                calculatedPath = existingDefaults.get(branch).getWorkflowPath();
+            } else {
+                calculatedPath = existingWorkflow.get().getDefaultWorkflowPath();
+            }
+            version.setDirtyBit(existingDefaults.get(branch).isDirtyBit());
+        }
+
+        version.setWorkflowPath(calculatedPath);
+        return version;
+    }
+
+    /**
+     * Determine descriptor type from file path
+     * @param path
+     * @return descriptor file type
+     */
+    public SourceFile.FileType getFileType(String path) {
+        String calculatedExtension = FilenameUtils.getExtension(path);
+        if (calculatedExtension.equalsIgnoreCase("cwl") || calculatedExtension.equalsIgnoreCase("yml") || calculatedExtension.equalsIgnoreCase("yaml")) {
+            return SourceFile.FileType.DOCKSTORE_CWL;
+        } else if(calculatedExtension.equalsIgnoreCase("wdl")) {
+            return SourceFile.FileType.DOCKSTORE_WDL;
+        } else{
+            throw new CustomWebApplicationException("Invalid file type for import", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Resolves imports for a sourcefile, associates with version
+     * @param sourceFile
+     * @param workflow
+     * @param identifiedType
+     * @param version
+     * @return workflow version
+     */
+    public WorkflowVersion combineVersionAndSourcefile(SourceFile sourceFile, Workflow workflow, SourceFile.FileType identifiedType, WorkflowVersion version) {
+        Set<SourceFile> sourceFileSet = new HashSet<>();
+
+        // try to use the FileImporter to re-use code for handling imports
+        if (sourceFile.getContent() != null) {
+            FileImporter importer = new FileImporter(this);
+            final Map<String, SourceFile> stringSourceFileMap = importer
+                    .resolveImports(sourceFile.getContent(), workflow, identifiedType, version);
+            sourceFileSet.addAll(stringSourceFileMap.values());
+        }
+
+        // If source file is found and valid then add it
+        if (sourceFile.getContent() != null) {
+            version.getSourceFiles().add(sourceFile);
+        }
+
+        // The version is valid if source files are found
+        if (version.getSourceFiles().size() > 0) {
+            version.setValid(true);
+        }
+
+        // add extra source files here (dependencies from "main" descriptor)
+        if (sourceFileSet.size() > 0) {
+            version.getSourceFiles().addAll(sourceFileSet);
+        }
+
+        return version;
+    }
 }

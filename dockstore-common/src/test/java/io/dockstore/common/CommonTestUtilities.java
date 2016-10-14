@@ -116,13 +116,13 @@ public class CommonTestUtilities {
             */
             // Add extra user with tool for testing user access
             runInsertStatement("insert into enduser(id, isAdmin, username) VALUES (2,true,'admin@admin.com');", new KeyedHandler<>("id"));
-            runInsertStatement("insert into token(id, content, tokensource, userid, username) VALUES (5, '" + DUMMY_TOKEN_1
+            runInsertStatement("insert into token(id, content, tokensource, userid, username) VALUES (6, '" + DUMMY_TOKEN_1
                     + "', 'dockstore', 2, 'admin@admin.com');", new KeyedHandler<>("id"));
 
             runInsertStatement(
-                    "insert into tool(id, name, namespace, registry, path, ispublished, toolname) VALUES (9, 'test1', 'test_org', 'QUAY_IO', 'quay.io/test_org/test1', false,'');",
+                    "insert into tool(id, name, namespace, registry, path, ispublished, toolname) VALUES (11, 'test1', 'test_org', 'QUAY_IO', 'quay.io/test_org/test1', false,'');",
                     new KeyedHandler<>("id"));
-            runInsertStatement("insert into user_entry(userid, entryid) VALUES (2, 9);", new KeyedHandler<>("entryid"));
+            runInsertStatement("insert into user_entry(userid, entryid) VALUES (2, 11);", new KeyedHandler<>("entryid"));
 
 
             // need to increment past manually entered ids above
