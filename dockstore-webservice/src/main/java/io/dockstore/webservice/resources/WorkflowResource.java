@@ -1089,12 +1089,12 @@ public class WorkflowResource {
                     String dockerUrl = getURLFromEntry(stepDockerRequirement);
                     if (type == Type.DAG) {
                         nodePairs.add(new MutablePair<>(workflowStepId, dockerUrl));
-                    } else {
-                        if (!Strings.isNullOrEmpty(stepDockerRequirement)) {
-                            toolID.put(workflowStepId, new MutablePair<>(workflowStepId, secondaryFile));
-                            toolDocker.put(workflowStepId, new MutablePair<>(stepDockerRequirement, dockerUrl));
-                        }
                     }
+                    if (!Strings.isNullOrEmpty(stepDockerRequirement)) {
+                        toolID.put(workflowStepId, new MutablePair<>(workflowStepId, secondaryFile));
+                        toolDocker.put(workflowStepId, new MutablePair<>(stepDockerRequirement, dockerUrl));
+                    }
+
                 }
 
                 if (type == Type.DAG) {
@@ -1129,7 +1129,7 @@ public class WorkflowResource {
                     }
                     nodePairs.add(new MutablePair<>("UniqueBeginKey", ""));
 
-                    return setupJSONDAG(nodePairs, stepToDependencies, stepToType);
+                    return setupJSONDAG(nodePairs, stepToDependencies, stepToType, toolID, toolDocker);
                 } else {
                     return getJSONTableToolContentCWL(toolID, toolDocker);
                 }
@@ -1411,7 +1411,8 @@ public class WorkflowResource {
      * @param stepToDependencies
          * @return Cytoscape compatible JSON with nodes and edges
          */
-    private String setupJSONDAG(ArrayList<Pair<String, String>> nodePairs, Map<String, ArrayList<String>> stepToDependencies, Map<String, String> stepToType) {
+    private String setupJSONDAG(ArrayList<Pair<String, String>> nodePairs, Map<String, ArrayList<String>> stepToDependencies, Map<String, String> stepToType,
+            Map<String, Pair<String, String>> toolID, Map<String, Pair<String, String>> toolDocker) {
         ArrayList<Object> nodes = new ArrayList<>();
         ArrayList<Object> edges = new ArrayList<>();
         Map<String, ArrayList<Object>> dagJson = new LinkedHashMap<>();
@@ -1429,6 +1430,12 @@ public class WorkflowResource {
             dataEntry.put("tool", dockerUrl);
             dataEntry.put("name", stepId.replaceFirst("^dockstore\\_", ""));
             dataEntry.put("type", stepToType.get(stepId));
+            if (toolDocker.get(stepId) != null) {
+                dataEntry.put("docker", toolDocker.get(stepId).getLeft());
+            }
+            if (toolID.get(stepId) != null) {
+                dataEntry.put("run", toolID.get(stepId).getRight());
+            }
             nodeEntry.put("data", dataEntry);
             nodes.add(nodeEntry);
 

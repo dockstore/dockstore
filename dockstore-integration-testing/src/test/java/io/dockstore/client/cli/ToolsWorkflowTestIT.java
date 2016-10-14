@@ -262,7 +262,7 @@ public class ToolsWorkflowTestIT {
                 "\"file\":\"pass-filter.cwl\","+
                 "\"docker\":\"pancancer/pcawg-oxog-tools\"," +
                 "\"link\":\"https://hub.docker.com/r/pancancer/pcawg-oxog-tools\""));
-        Assert.assertTrue("merge_vcfs should have docker link" + strings.get(0), strings.get(0).contains("\"id\":\"merge_vcfs\"," +
+        Assert.assertTrue("merge_vcfs should have docker link", strings.get(0).contains("\"id\":\"merge_vcfs\"," +
                 "\"file\":\"vcf_merge.cwl\","+
                 "\"docker\":\"pancancer/pcawg-oxog-tools\"," +
                 "\"link\":\"https://hub.docker.com/r/pancancer/pcawg-oxog-tools\""));
