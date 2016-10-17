@@ -47,7 +47,6 @@ import io.dockstore.client.Bridge;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.resources.WorkflowResource;
-import scala.collection.immutable.Seq;
 
 /**
  * A helper class for DAG and tool table creation
@@ -70,39 +69,43 @@ public class DAGHelper {
      * @return String
      * */
     public String getContentWDL(File tempMainDescriptor, WorkflowResource.Type type) {
+        // TODO: does this code work with imports
+        // Initialize general variables
         Bridge bridge = new Bridge();
-        Map<String, Seq> callToTask = (LinkedHashMap)bridge.getCallsAndDocker(tempMainDescriptor);
-        Map<String, Pair<String, String>> taskContent = new HashMap<>();
-        ArrayList<Pair<String, String>> nodePairs = new ArrayList<>();
+        String callType = "call"; // This may change later (ex. scatter)
         String result = null;
 
-        for (Map.Entry<String, Seq> entry : callToTask.entrySet()) {
-            String taskID = entry.getKey();
-            Seq taskDocker = entry.getValue();  //still in form of Seq, need to get first element or head of the list
-            if(type == WorkflowResource.Type.TOOLS){
-                if (taskDocker != null){
-                    String dockerName = taskDocker.head().toString();
-                    taskContent.put(taskID, new MutablePair<>(dockerName, getURLFromEntry(dockerName)));
-                } else{
-                    taskContent.put(taskID, new MutablePair<>("Not Specified", "Not Specified"));
-                }
-            }else{
-                if (taskDocker != null){
-                    String dockerName = taskDocker.head().toString();
-                    nodePairs.add(new MutablePair<>(taskID, getURLFromEntry(dockerName)));
-                } else{
-                    nodePairs.add(new MutablePair<>(taskID, ""));
-                }
+        // Initialize data structures for DAG
+        Map<String, ArrayList<String>> callToDependencies; // Mapping of stepId -> array of dependencies for the step
+        ArrayList<Pair<String, String>> nodePairs = new ArrayList<>();
+        Map<String, String> callToType = new HashMap<>();
 
-            }
+        // Initialize data structures for Tool table
+        Map<String, Pair<String, String>> toolID = new HashMap<>();     // map for stepID and toolName
+        Map<String, Pair<String, String>> toolDocker = new HashMap<>(); // map for docker
 
+        // Iterate over each call, grab docker containers
+        Map<String, String> callToTask = (LinkedHashMap)bridge.getCallsToDockerMap(tempMainDescriptor);
+
+        // Create nodePairs, callToType, toolID, and toolDocker
+        for (Map.Entry<String, String> entry : callToTask.entrySet()) {
+            String callId = entry.getKey();
+            String docker = entry.getValue();
+            nodePairs.add(new MutablePair<>(callId, docker));
+            callToType.put(callId, callType);
+            toolID.put(callId, new MutablePair<>(callId, "filepath"));
+            toolDocker.put(callId, new MutablePair<>(docker, getURLFromEntry(docker)));
         }
 
-        //call and return the Json string transformer
-        if(type == WorkflowResource.Type.TOOLS){
-            result = getJSONTableToolContentWDL(taskContent);
-        }else if(type == WorkflowResource.Type.DAG){
-            result = setupJSONDAG(nodePairs);
+        // Iterate over each call, determine dependencies
+        callToDependencies = (LinkedHashMap)bridge.getCallsToDependencies(tempMainDescriptor);
+
+        // Create JSON for DAG/table
+        if (type == WorkflowResource.Type.DAG) {
+            result = setupJSONDAG(nodePairs, callToDependencies, callToType, toolID, toolDocker);
+        } else if (type == WorkflowResource.Type.TOOLS) {
+//            result = getJSONTableToolContentWDL(toolID, toolDocker);
+            LOG.debug("Useless");
         }
 
         return result;

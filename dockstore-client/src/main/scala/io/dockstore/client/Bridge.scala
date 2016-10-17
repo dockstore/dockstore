@@ -102,7 +102,7 @@ class Bridge {
     val ns = NamespaceWithWorkflow.load(lines)
     val tasks = new util.LinkedHashMap[String, Seq[String]]()
 
-    // For each call (Assume ordering)
+    // For each call
     //ns.workflow.collectAllScatters foreach { scatter => print(scatter.collectAllCalls foreach(call => println(call.task.name)))}
     ns.workflow.collectAllCalls foreach { call =>
       // Find associated task (Should only be one)
@@ -110,6 +110,7 @@ class Bridge {
         try {
           // Get the list of docker images
           val dockerAttributes = task.runtimeAttributes.attrs.get("docker")
+          var name = call.alias.toString
           tasks.put(task.name, if (dockerAttributes.isDefined) dockerAttributes.get else null)
         } catch {
           // Throws error if task has no runtime section or a runtime section but no docker (we stop error from being thrown)
@@ -119,5 +120,34 @@ class Bridge {
     }
     return tasks
   }
+
+  def getCallsToDockerMap(file: JFile): util.LinkedHashMap[String, String] = {
+    val lines = scala.io.Source.fromFile(file).mkString
+    val ns = NamespaceWithWorkflow.load(lines)
+    val tasks = new util.LinkedHashMap[String, String]()
+    ns.workflow.calls foreach {call =>
+      val task = call.task
+      val dockerAttributes = task.runtimeAttributes.attrs.get("docker")
+      tasks.put("dockstore_" + call.unqualifiedName, if (dockerAttributes.isDefined) (dockerAttributes.get).mkString("") else null)
+    }
+    return tasks
+  }
+
+  def getCallsToDependencies(file: JFile): util.LinkedHashMap[String, util.ArrayList[String]] = {
+    val lines = scala.io.Source.fromFile(file).mkString
+    val ns = NamespaceWithWorkflow.load(lines)
+    val dependencyMap = new util.LinkedHashMap[String, util.ArrayList[String]]()
+   ns.workflow.calls foreach {call =>
+      var dependencies = new util.ArrayList[String]()
+      call.inputMappings foreach {case(key, value) =>
+          value.prerequisiteCallNames foreach { inputDependency =>
+            dependencies.add(inputDependency)
+          }
+      }
+      dependencyMap.put("dockstore_" + call.unqualifiedName, dependencies)
+    }
+    return dependencyMap
+  }
+
 
 }
