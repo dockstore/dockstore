@@ -141,7 +141,7 @@ class Bridge {
       var dependencies = new util.ArrayList[String]()
       call.inputMappings foreach {case(key, value) =>
           value.prerequisiteCallNames foreach { inputDependency =>
-            dependencies.add(inputDependency)
+            dependencies.add("dockstore_" + inputDependency)
           }
       }
       dependencyMap.put("dockstore_" + call.unqualifiedName, dependencies)

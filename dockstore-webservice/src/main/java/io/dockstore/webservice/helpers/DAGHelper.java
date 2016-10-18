@@ -17,16 +17,21 @@
 package io.dockstore.webservice.helpers;
 
 import java.io.File;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.validator.routines.UrlValidator;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,10 +74,9 @@ public class DAGHelper {
      * @return String
      * */
     public String getContentWDL(File tempMainDescriptor, WorkflowResource.Type type) {
-        // TODO: does this code work with imports
         // Initialize general variables
         Bridge bridge = new Bridge();
-        String callType = "call"; // This may change later (ex. scatter)
+        String callType = "call"; // This may change later (ex. tool, workflow)
         String result = null;
 
         // Initialize data structures for DAG
@@ -84,21 +88,62 @@ public class DAGHelper {
         Map<String, Pair<String, String>> toolID = new HashMap<>();     // map for stepID and toolName
         Map<String, Pair<String, String>> toolDocker = new HashMap<>(); // map for docker
 
+        // TODO: Need to merge secondary descriptors with main (into one big file)
+        // TODO: imports can be URIs, is this solved by WDL parser?
+
         // Iterate over each call, grab docker containers
-        Map<String, String> callToTask = (LinkedHashMap)bridge.getCallsToDockerMap(tempMainDescriptor);
+        Map<String, String> callToDockerMap = (LinkedHashMap)bridge.getCallsToDockerMap(tempMainDescriptor);
 
         // Create nodePairs, callToType, toolID, and toolDocker
-        for (Map.Entry<String, String> entry : callToTask.entrySet()) {
+        for (Map.Entry<String, String> entry : callToDockerMap.entrySet()) {
             String callId = entry.getKey();
             String docker = entry.getValue();
             nodePairs.add(new MutablePair<>(callId, docker));
             callToType.put(callId, callType);
-            toolID.put(callId, new MutablePair<>(callId, "filepath"));
-            toolDocker.put(callId, new MutablePair<>(docker, getURLFromEntry(docker)));
+            String dockerUrl = null;
+            if (docker != null) {
+                dockerUrl = getURLFromEntry(docker);
+            }
+            toolID.put(callId, new MutablePair<>(callId, null)); // TODO : currently don't know how to handle paths
+            toolDocker.put(callId, new MutablePair<>(docker, dockerUrl));
+
         }
 
         // Iterate over each call, determine dependencies
         callToDependencies = (LinkedHashMap)bridge.getCallsToDependencies(tempMainDescriptor);
+
+        // Determine start node edges
+        for (Pair<String, String> node : nodePairs) {
+            if (callToDependencies.get(node.getLeft()).size() == 0) {
+                ArrayList<String> dependencies = new ArrayList<>();
+                dependencies.add("UniqueBeginKey");
+                callToDependencies.put(node.getLeft(), dependencies);
+            }
+        }
+        nodePairs.add(new MutablePair<>("UniqueBeginKey", ""));
+
+        // Determine end node edges
+        Set<String> internalNodes = new HashSet<>(); // Nodes that are not leaf nodes
+        Set<String> leafNodes = new HashSet<>(); // Leaf nodes
+
+        for (Map.Entry<String, ArrayList<String>> entry : callToDependencies.entrySet()) {
+            ArrayList<String> dependencies = entry.getValue();
+            for (String dependency : dependencies) {
+                internalNodes.add(dependency);
+            }
+            leafNodes.add(entry.getKey());
+        }
+
+        // Find leaf nodes by removing internal nodes
+        leafNodes.removeAll(internalNodes);
+
+        ArrayList<String> endDependencies = new ArrayList<>();
+        for (String leafNode : leafNodes) {
+            endDependencies.add(leafNode);
+        }
+
+        callToDependencies.put("UniqueEndKey", endDependencies);
+        nodePairs.add(new MutablePair<>("UniqueEndKey", ""));
 
         // Create JSON for DAG/table
         if (type == WorkflowResource.Type.DAG) {
@@ -536,46 +581,27 @@ public class DAGHelper {
             } else {
                 // if the path looks like debian:8 or debian
                 url = dockerHubPathUnderscore + dockerEntry;
+
+                if (url.equals(dockerHubPathUnderscore)) {
+                    url = null;
+                }
             }
 
         }
+
+        // Ensure that URL is valid
+        try {
+            HttpURLConnection.setFollowRedirects(false);
+            HttpURLConnection httpURLConnection = (HttpURLConnection) new URL(url).openConnection();
+            httpURLConnection.setRequestMethod("HEAD");
+            if (httpURLConnection.getResponseCode() != HttpURLConnection.HTTP_NOT_FOUND) {
+                url = null;
+            }
+        } catch (Exception ex) {
+            url = null;
+        }
+
         return url;
-    }
-
-    /**
-     * This method will setup the JSON data from nodePairs of CWL/WDL workflow and return JSON string
-     * @param nodePairs has the list of nodes and its content
-     * @return String
-     */
-    private String setupJSONDAG(ArrayList<Pair<String, String>> nodePairs){
-        ArrayList<Object> nodes = new ArrayList<>();
-        ArrayList<Object> edges = new ArrayList<>();
-        Map<String, ArrayList<Object>> dagJson = new LinkedHashMap<>();
-        int idCount = 0;
-        for (Pair<String, String> node : nodePairs) {
-            Map<String, Object> nodeEntry = new HashMap<>();
-            Map<String, String> dataEntry = new HashMap<>();
-            dataEntry.put("id", idCount + "");
-            dataEntry.put("tool", node.getRight());
-            dataEntry.put("name", node.getLeft());
-            nodeEntry.put("data", dataEntry);
-            nodes.add(nodeEntry);
-
-            //TODO: edges are all currently pointing from idCount-1 to idCount, this is not always true
-            if (idCount > 0) {
-                Map<String, Object> edgeEntry = new HashMap<>();
-                Map<String, String> sourceTarget = new HashMap<>();
-                sourceTarget.put("source", (idCount - 1) + "");
-                sourceTarget.put("target", (idCount) + "");
-                edgeEntry.put("data", sourceTarget);
-                edges.add(edgeEntry);
-            }
-            idCount++;
-        }
-        dagJson.put("nodes", nodes);
-        dagJson.put("edges", edges);
-
-        return convertToJSONString(dagJson);
     }
 
     /**
@@ -591,12 +617,13 @@ public class DAGHelper {
         ArrayList<Object> edges = new ArrayList<>();
         Map<String, ArrayList<Object>> dagJson = new LinkedHashMap<>();
 
-        // TODO: still need to setup start and end nodes
-
         // Iterate over steps, make nodes and edges
         for (Pair<String, String> node : nodePairs) {
             String stepId = node.getLeft();
-            String dockerUrl = node.getRight();
+            String dockerUrl = null;
+            if (toolDocker.get(stepId) != null) {
+                dockerUrl = toolDocker.get(stepId).getRight();
+            }
 
             Map<String, Object> nodeEntry = new HashMap<>();
             Map<String, String> dataEntry = new HashMap<>();
