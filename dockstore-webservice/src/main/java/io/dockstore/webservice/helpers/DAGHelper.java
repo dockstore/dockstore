@@ -74,6 +74,8 @@ public class DAGHelper {
      * @return String
      * */
     public String getContentWDL(File tempMainDescriptor, WorkflowResource.Type type) {
+        // TODO: Need to implement resolver for WDL files, that given a local or remote URL can resolve it (put it in main WDL file)
+
         // Initialize general variables
         Bridge bridge = new Bridge();
         String callType = "call"; // This may change later (ex. tool, workflow)
@@ -87,9 +89,6 @@ public class DAGHelper {
         // Initialize data structures for Tool table
         Map<String, Pair<String, String>> toolID = new HashMap<>();     // map for stepID and toolName
         Map<String, Pair<String, String>> toolDocker = new HashMap<>(); // map for docker
-
-        // TODO: Need to merge secondary descriptors with main (into one big file)
-        // TODO: imports can be URIs, is this solved by WDL parser?
 
         // Iterate over each call, grab docker containers
         Map<String, String> callToDockerMap = (LinkedHashMap)bridge.getCallsToDockerMap(tempMainDescriptor);

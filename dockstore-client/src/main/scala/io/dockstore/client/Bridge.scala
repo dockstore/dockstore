@@ -138,7 +138,7 @@ class Bridge {
     val ns = NamespaceWithWorkflow.load(lines)
     val dependencyMap = new util.LinkedHashMap[String, util.ArrayList[String]]()
    ns.workflow.calls foreach {call =>
-      var dependencies = new util.ArrayList[String]()
+      val dependencies = new util.ArrayList[String]()
       call.inputMappings foreach {case(key, value) =>
           value.prerequisiteCallNames foreach { inputDependency =>
             dependencies.add("dockstore_" + inputDependency)
