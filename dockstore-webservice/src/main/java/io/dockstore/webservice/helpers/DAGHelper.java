@@ -595,7 +595,7 @@ public class DAGHelper {
                 HttpURLConnection.setFollowRedirects(false);
                 HttpURLConnection httpURLConnection = (HttpURLConnection) new URL(url).openConnection();
                 httpURLConnection.setRequestMethod("HEAD");
-                if (httpURLConnection.getResponseCode() != HttpURLConnection.HTTP_NOT_FOUND) {
+                if (httpURLConnection.getResponseCode() != HttpURLConnection.HTTP_OK) {
                     url = null;
                 }
             } catch (Exception ex) {
