@@ -79,6 +79,7 @@ public class DAGHelper {
 
         // Initialize general variables
         Bridge bridge = new Bridge();
+        bridge.setSecondaryFiles((HashMap<String, String>) secondaryDescContent);
         String callType = "call"; // This may change later (ex. tool, workflow)
         String result = null;
 

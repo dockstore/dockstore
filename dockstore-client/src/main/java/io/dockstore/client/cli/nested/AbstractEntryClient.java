@@ -47,6 +47,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.validator.routines.UrlValidator;
 import org.json.JSONObject;
 import org.yaml.snakeyaml.Yaml;
 
@@ -1130,9 +1131,12 @@ public abstract class AbstractEntryClient {
             if (!m.find()) {
                 FileUtils.writeStringToFile(tmp, line + "\n", StandardCharsets.UTF_8, true);
             } else {
-                if (!m.group(1).startsWith(File.separator)) {
-                    String newImportLine = "import \"" + tempDir + File.separator + m.group(1) + "\"" + m.group(2) + "\n";
-                    FileUtils.writeStringToFile(tmp, newImportLine, StandardCharsets.UTF_8, true);
+                UrlValidator urlValidator = new UrlValidator();
+                if (!urlValidator.isValid(m.group(1))) { // Don't resolve URLs
+                    if (!m.group(1).startsWith(File.separator)) {
+                        String newImportLine = "import \"" + tempDir + File.separator + m.group(1) + "\"" + m.group(2) + "\n";
+                        FileUtils.writeStringToFile(tmp, newImportLine, StandardCharsets.UTF_8, true);
+                    }
                 }
             }
         }

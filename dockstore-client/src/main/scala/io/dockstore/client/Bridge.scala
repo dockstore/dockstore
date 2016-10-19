@@ -31,11 +31,15 @@ import scala.util.{Failure, Success, Try}
   * until wdltool is released to artifactory.
   */
 class Bridge {
+  var secondaryWdlFiles = new util.HashMap[String,String]()
+
+  def setSecondaryFiles(secondaryFiles: util.HashMap[String,String]) = {
+    secondaryWdlFiles = secondaryFiles
+  }
+
   def main(args: Array[String]): Unit = {
     println("Hello, world!")
   }
-
-
 
   def inputs(args: Seq[String]): String = {
       loadWdl(args.head) { namespace =>
@@ -56,12 +60,14 @@ class Bridge {
   }
 
   def resolver(importString: String): WdlSource = {
-    val bridgeHelper = new BridgeHelper();
+    val bridgeHelper = new BridgeHelper()
     importString match {
       case s if s.startsWith("http://") =>
         bridgeHelper.resolveUrl(s)
       case s if s.startsWith("https://") =>
         bridgeHelper.resolveUrl(s)
+      case s =>
+        bridgeHelper.resolveLocalPath(s, secondaryWdlFiles)
     }
   }
 

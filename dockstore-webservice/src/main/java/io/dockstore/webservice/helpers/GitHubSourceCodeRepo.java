@@ -225,7 +225,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             } catch (IOException ex) {
                 LOG.info(gitUsername + ": Error getting contents of file.");
             } catch (Exception ex) {
-                LOG.info(gitUsername + ": " + workflow.getDefaultWorkflowPath() + " on " + ref + " was not valid CWL workflow");
+                LOG.info(gitUsername + ": " + workflow.getDefaultWorkflowPath() + " on " + ref + " was not valid workflow");
             }
 
             if (!validWorkflow) {
