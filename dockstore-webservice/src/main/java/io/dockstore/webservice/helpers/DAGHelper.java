@@ -17,8 +17,6 @@
 package io.dockstore.webservice.helpers;
 
 import java.io.File;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -149,8 +147,7 @@ public class DAGHelper {
         if (type == WorkflowResource.Type.DAG) {
             result = setupJSONDAG(nodePairs, callToDependencies, callToType, toolID, toolDocker);
         } else if (type == WorkflowResource.Type.TOOLS) {
-//            result = getJSONTableToolContentWDL(toolID, toolDocker);
-            LOG.debug("Useless");
+            result = getJSONTableToolContent(toolID, toolDocker);
         }
 
         return result;
@@ -350,7 +347,7 @@ public class DAGHelper {
 
                     return setupJSONDAG(nodePairs, stepToDependencies, stepToType, toolID, toolDocker);
                 } else {
-                    return getJSONTableToolContentCWL(toolID, toolDocker);
+                    return getJSONTableToolContent(toolID, toolDocker);
                 }
             } catch (JsonParseException ex) {
                 LOG.error("The JSON file provided is invalid.");
@@ -557,6 +554,7 @@ public class DAGHelper {
         }
 
         // TODO: How to deal with multiple entries of a tool? For now just grab the first
+        // TODO: How do we check that the URL is valid? If not then the entry is likely a local docker build
         if (dockerEntry.startsWith("quay.io/")) {
             List<Tool> byPath = toolDAO.findPublishedByPath(dockerEntry);
             if (byPath == null || byPath.isEmpty()){
@@ -587,20 +585,6 @@ public class DAGHelper {
                 }
             }
 
-        }
-
-        // Ensure that URL is valid
-        if (url != null) {
-            try {
-                HttpURLConnection.setFollowRedirects(false);
-                HttpURLConnection httpURLConnection = (HttpURLConnection) new URL(url).openConnection();
-                httpURLConnection.setRequestMethod("HEAD");
-                if (httpURLConnection.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                    url = null;
-                }
-            } catch (Exception ex) {
-                url = null;
-            }
         }
 
         return url;
@@ -667,7 +651,7 @@ public class DAGHelper {
      * @param toolDocker this is a map containing docker name and docker link
      * @return String
      * */
-    private String getJSONTableToolContentCWL(Map<String, Pair<String, String>> toolID, Map<String, Pair<String, String>> toolDocker) {
+    private String getJSONTableToolContent(Map<String, Pair<String, String>> toolID, Map<String, Pair<String, String>> toolDocker) {
         // set up JSON for Table Tool Content CWL
         ArrayList<Object> tools = new ArrayList<>();
 
@@ -689,40 +673,15 @@ public class DAGHelper {
             dataToolEntry.put("file", fileName);
             dataToolEntry.put("docker", dockerPullName);
             dataToolEntry.put("link",dockerLink);
-            tools.add(dataToolEntry);
+
+            // Only add if docker and link are present
+            if (dockerLink != null && dockerPullName != null) {
+                tools.add(dataToolEntry);
+            }
         }
 
         //call the gson to string transformer
         return convertToJSONString(tools);
-    }
-
-    /**
-     * This method will setup the tools of WDL workflow
-     * It will then call another method to transform it through Gson to a Json string
-     * @param taskContent has the content of task
-     * @return String
-     * */
-    private String getJSONTableToolContentWDL(Map<String, Pair<String, String>> taskContent){
-        // set up JSON for Table Task Content WDL
-        ArrayList<Object> tasks = new ArrayList<>();
-
-        //iterate through each task within workflow file
-        for(Map.Entry<String, Pair<String, String>> entry : taskContent.entrySet()){
-            String key = entry.getKey();
-            Pair<String, String> value = entry.getValue();
-            String dockerPull = value.getLeft();
-            String dockerLink = value.getRight();
-
-            //put everything into a map, then ArrayList
-            Map<String, String> dataTaskEntry = new LinkedHashMap<>();
-            dataTaskEntry.put("id", key);
-            dataTaskEntry.put("docker", dockerPull);
-            dataTaskEntry.put("link", dockerLink);
-            tasks.add(dataTaskEntry);
-        }
-
-        //call the gson to string transformer
-        return convertToJSONString(tasks);
     }
 
     /**

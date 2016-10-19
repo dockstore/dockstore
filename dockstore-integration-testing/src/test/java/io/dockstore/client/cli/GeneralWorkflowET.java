@@ -667,4 +667,23 @@ public class GeneralWorkflowET {
 
         }
 
+         /**
+         * This tests that WDL files are properly parsed for secondary WDL files
+         */
+        @Test
+        public void testWDLWithImports() {
+                // Setup DB
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+                // Refresh all
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
+
+                // Update workflow to be WDL with correct path
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry", "DockstoreTestUser2/test_workflow_wdl", "--descriptor-type", "wdl", "--workflow-path", "/hello.wdl", "--script" });
+
+                // Check for WDL files
+                final long count = testingPostgres.runSelectStatement("select count(*) from sourcefile where path='helper.wdl'", new ScalarHandler<>());
+                Assert.assertTrue("there should be 1 secondary file named helper.wdl, there are " + count, count == 1);
+
+        }
 }
