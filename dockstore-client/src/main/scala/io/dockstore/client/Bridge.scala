@@ -32,6 +32,7 @@ import scala.util.{Failure, Success, Try}
   */
 class Bridge {
   var secondaryWdlFiles = new util.HashMap[String,String]()
+  val bridgeHelper = new BridgeHelper()
 
   def setSecondaryFiles(secondaryFiles: util.HashMap[String,String]) = {
     secondaryWdlFiles = secondaryFiles
@@ -60,7 +61,6 @@ class Bridge {
   }
 
   def resolver(importString: String): WdlSource = {
-    val bridgeHelper = new BridgeHelper()
     importString match {
       case s if s.startsWith("http://") =>
         bridgeHelper.resolveUrl(s)

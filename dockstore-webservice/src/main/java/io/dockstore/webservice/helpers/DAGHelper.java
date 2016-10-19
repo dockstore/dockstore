@@ -71,13 +71,11 @@ public class DAGHelper {
      * @return String
      * */
     public String getContentWDL(File tempMainDescriptor,  Map<String, String> secondaryDescContent, WorkflowResource.Type type) {
-        /* TODO: Need to update resolver for WDL imports to work with local files (the secondary desc content)
-         If these are local files then they should have been taken from the Git repository when the main sourcefile was found */
-
         // Initialize general variables
         Bridge bridge = new Bridge();
         bridge.setSecondaryFiles((HashMap<String, String>) secondaryDescContent);
         String callType = "call"; // This may change later (ex. tool, workflow)
+        String toolType = "tool";
         String result = null;
 
         // Initialize data structures for DAG
@@ -86,7 +84,7 @@ public class DAGHelper {
         Map<String, String> callToType = new HashMap<>();
 
         // Initialize data structures for Tool table
-        Map<String, Pair<String, String>> toolID = new HashMap<>();     // map for stepID and toolName
+        Map<String, Pair<String, String>> toolID = new HashMap<>();     // map for stepID and run(filepate)
         Map<String, Pair<String, String>> toolDocker = new HashMap<>(); // map for docker
 
         // Iterate over each call, grab docker containers
@@ -97,7 +95,11 @@ public class DAGHelper {
             String callId = entry.getKey();
             String docker = entry.getValue();
             nodePairs.add(new MutablePair<>(callId, docker));
-            callToType.put(callId, callType);
+            if (Strings.isNullOrEmpty(docker)) {
+                callToType.put(callId, callType);
+            } else {
+                callToType.put(callId, toolType);
+            }
             String dockerUrl = null;
             if (docker != null) {
                 dockerUrl = getURLFromEntry(docker);
