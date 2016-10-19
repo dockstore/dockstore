@@ -31,7 +31,6 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.validator.routines.UrlValidator;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -591,15 +590,17 @@ public class DAGHelper {
         }
 
         // Ensure that URL is valid
-        try {
-            HttpURLConnection.setFollowRedirects(false);
-            HttpURLConnection httpURLConnection = (HttpURLConnection) new URL(url).openConnection();
-            httpURLConnection.setRequestMethod("HEAD");
-            if (httpURLConnection.getResponseCode() != HttpURLConnection.HTTP_NOT_FOUND) {
+        if (url != null) {
+            try {
+                HttpURLConnection.setFollowRedirects(false);
+                HttpURLConnection httpURLConnection = (HttpURLConnection) new URL(url).openConnection();
+                httpURLConnection.setRequestMethod("HEAD");
+                if (httpURLConnection.getResponseCode() != HttpURLConnection.HTTP_NOT_FOUND) {
+                    url = null;
+                }
+            } catch (Exception ex) {
                 url = null;
             }
-        } catch (Exception ex) {
-            url = null;
         }
 
         return url;

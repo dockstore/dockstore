@@ -70,6 +70,12 @@ public class BridgeHelper {
         return content;
     }
 
+    /**
+     * Resolves local imports
+     * @param importPath
+     * @param secondaryFileDesc
+     * @return content of local import
+     */
     public String resolveLocalPath(String importPath, Map<String, String> secondaryFileDesc) {
         String content = "";
 
