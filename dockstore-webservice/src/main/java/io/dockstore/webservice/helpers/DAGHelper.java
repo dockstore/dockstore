@@ -73,8 +73,9 @@ public class DAGHelper {
      * @param type either dag or tools
      * @return String
      * */
-    public String getContentWDL(File tempMainDescriptor, WorkflowResource.Type type) {
-        // TODO: Need to implement resolver for WDL files, that given a local or remote URL can resolve it (put it in main WDL file)
+    public String getContentWDL(File tempMainDescriptor,  Map<String, String> secondaryDescContent, WorkflowResource.Type type) {
+        /* TODO: Need to update resolver for WDL imports to work with local files (the secondary desc content)
+         If these are local files then they should have been taken from the Git repository when the main sourcefile was found */
 
         // Initialize general variables
         Bridge bridge = new Bridge();

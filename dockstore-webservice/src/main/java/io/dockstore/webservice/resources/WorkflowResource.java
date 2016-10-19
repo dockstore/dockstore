@@ -791,7 +791,7 @@ public class WorkflowResource {
 
             DAGHelper dagHelper = new DAGHelper(toolDAO);
             if (workflow.getDescriptorType().equals("wdl")) {
-                result = dagHelper.getContentWDL(tempMainDescriptor,Type.DAG);
+                result = dagHelper.getContentWDL(tempMainDescriptor, secondaryDescContent, Type.DAG);
             } else {
                 result = dagHelper.getContentCWL(descFileContent, secondaryDescContent, Type.DAG);
             }
@@ -842,7 +842,7 @@ public class WorkflowResource {
             DAGHelper dagHelper = new DAGHelper(toolDAO);
             if(workflow.getDescriptorType().equals("wdl")) {
                 //WDL workflow
-                result = dagHelper.getContentWDL(tempMainDescriptor, Type.TOOLS);
+                result = dagHelper.getContentWDL(tempMainDescriptor, secondaryDescContent, Type.TOOLS);
             } else{
                 //CWL workflow
                 result = dagHelper.getContentCWL(descFileContent, secondaryDescContent, Type.TOOLS);

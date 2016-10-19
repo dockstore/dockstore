@@ -55,9 +55,19 @@ class Bridge {
     }
   }
 
+  def resolver(importString: String): WdlSource = {
+    val bridgeHelper = new BridgeHelper();
+    importString match {
+      case s if s.startsWith("http://") =>
+        bridgeHelper.resolveUrl(s)
+      case s if s.startsWith("https://") =>
+        bridgeHelper.resolveUrl(s)
+    }
+  }
+
   def getInputFiles(file: JFile): util.Map[String, String] = {
     val lines = scala.io.Source.fromFile(file).mkString
-    val ns = NamespaceWithWorkflow.load(lines)
+    val ns = NamespaceWithWorkflow.load(lines, resolver)
 
     val inputList = new util.HashMap[String, String]()
 
@@ -73,7 +83,7 @@ class Bridge {
     val lines = scala.io.Source.fromFile(file).mkString
     val importList = new util.ArrayList[String]()
 
-    val ns = NamespaceWithWorkflow.load(lines, (s: String) => "")
+    val ns = NamespaceWithWorkflow.load(lines, resolver)
 
     ns.imports foreach { imported =>
       println(imported.uri)
@@ -85,7 +95,7 @@ class Bridge {
 
   def getOutputFiles(file: JFile): util.List[String] = {
     val lines = scala.io.Source.fromFile(file).mkString
-    val ns = NamespaceWithWorkflow.load(lines)
+    val ns = NamespaceWithWorkflow.load(lines, resolver)
 
     val outputList = new util.ArrayList[String]()
 
@@ -99,7 +109,7 @@ class Bridge {
 
   def getCallsAndDocker(file: JFile): util.LinkedHashMap[String, Seq[String]] = {
     val lines = scala.io.Source.fromFile(file).mkString
-    val ns = NamespaceWithWorkflow.load(lines)
+    val ns = NamespaceWithWorkflow.load(lines, resolver)
     val tasks = new util.LinkedHashMap[String, Seq[String]]()
 
     // For each call
@@ -123,7 +133,7 @@ class Bridge {
 
   def getCallsToDockerMap(file: JFile): util.LinkedHashMap[String, String] = {
     val lines = scala.io.Source.fromFile(file).mkString
-    val ns = NamespaceWithWorkflow.load(lines)
+    val ns = NamespaceWithWorkflow.load(lines, resolver)
     val tasks = new util.LinkedHashMap[String, String]()
     ns.workflow.calls foreach {call =>
       val task = call.task
@@ -135,7 +145,7 @@ class Bridge {
 
   def getCallsToDependencies(file: JFile): util.LinkedHashMap[String, util.ArrayList[String]] = {
     val lines = scala.io.Source.fromFile(file).mkString
-    val ns = NamespaceWithWorkflow.load(lines)
+    val ns = NamespaceWithWorkflow.load(lines, resolver)
     val dependencyMap = new util.LinkedHashMap[String, util.ArrayList[String]]()
    ns.workflow.calls foreach {call =>
       val dependencies = new util.ArrayList[String]()
