@@ -28,7 +28,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,7 +78,6 @@ public class DAGHelper {
         bridge.setSecondaryFiles((HashMap<String, String>) secondaryDescContent);
         String callType = "call"; // This may change later (ex. tool, workflow)
         String toolType = "tool";
-        String result = null;
 
         // Initialize data structures for DAG
         Map<String, ArrayList<String>> callToDependencies; // Mapping of stepId -> array of dependencies for the step
@@ -84,8 +85,7 @@ public class DAGHelper {
         Map<String, String> callToType = new HashMap<>();
 
         // Initialize data structures for Tool table
-        Map<String, Pair<String, String>> toolID = new HashMap<>();     // map for stepID and run(filepate)
-        Map<String, Pair<String, String>> toolDocker = new HashMap<>(); // map for docker
+        Map<String, Triple<String, String, String>> nodeDockerInfo = new HashMap<>(); // map of stepId -> (run path, docker image, docker url)
 
         // Iterate over each call, grab docker containers
         Map<String, String> callToDockerMap = (LinkedHashMap)bridge.getCallsToDockerMap(tempMainDescriptor);
@@ -104,9 +104,8 @@ public class DAGHelper {
             if (docker != null) {
                 dockerUrl = getURLFromEntry(docker);
             }
-            toolID.put(callId, new MutablePair<>(callId, null)); // TODO : currently don't know how to handle paths
-            toolDocker.put(callId, new MutablePair<>(docker, dockerUrl));
 
+            nodeDockerInfo.put(callId, new MutableTriple<>(null, docker, dockerUrl));
         }
 
         // Iterate over each call, determine dependencies
@@ -147,18 +146,18 @@ public class DAGHelper {
 
         // Create JSON for DAG/table
         if (type == WorkflowResource.Type.DAG) {
-            result = setupJSONDAG(nodePairs, callToDependencies, callToType, toolID, toolDocker);
+            return setupJSONDAG(nodePairs, callToDependencies, callToType, nodeDockerInfo);
         } else if (type == WorkflowResource.Type.TOOLS) {
-            result = getJSONTableToolContent(toolID, toolDocker);
+            return getJSONTableToolContent(nodeDockerInfo);
         }
 
-        return result;
+        return null;
     }
 
     /**
      * This method will get the content for tool tab or DAG tab with descriptor type = CWL
      * It will then call another method to transform the content into JSON string and return
-     * TODO: Currently only works for CWL 1.0, but should support at least draft 3 too.
+     * TODO: Currently only works for CWL 1.0
      * @param content has the content of main descriptor file
      * @param secondaryDescContent has the secondary files and the content
      * @param type either dag or tools
@@ -175,8 +174,7 @@ public class DAGHelper {
             String defaultDockerPath = "";
 
             // Initialize data structures for Tool table
-            Map<String, Pair<String, String>> toolID = new HashMap<>();     // map for stepID and toolName
-            Map<String, Pair<String, String>> toolDocker = new HashMap<>(); // map for docker
+            Map<String, Triple<String, String, String>> nodeDockerInfo = new HashMap<>(); // map of stepId -> (run path, docker image, docker url)
 
             // Convert YAML to JSON
             Map<String, Object> mapping = (Map<String, Object>) yaml.load(content);
@@ -309,8 +307,7 @@ public class DAGHelper {
                         nodePairs.add(new MutablePair<>(workflowStepId, dockerUrl));
                     }
                     if (!Strings.isNullOrEmpty(stepDockerRequirement)) {
-                        toolID.put(workflowStepId, new MutablePair<>(workflowStepId, secondaryFile));
-                        toolDocker.put(workflowStepId, new MutablePair<>(stepDockerRequirement, dockerUrl));
+                        nodeDockerInfo.put(workflowStepId, new MutableTriple<>(secondaryFile, stepDockerRequirement, dockerUrl));
                     }
 
                 }
@@ -347,9 +344,9 @@ public class DAGHelper {
                     }
                     nodePairs.add(new MutablePair<>("UniqueBeginKey", ""));
 
-                    return setupJSONDAG(nodePairs, stepToDependencies, stepToType, toolID, toolDocker);
+                    return setupJSONDAG(nodePairs, stepToDependencies, stepToType, nodeDockerInfo);
                 } else {
-                    return getJSONTableToolContent(toolID, toolDocker);
+                    return getJSONTableToolContent(nodeDockerInfo);
                 }
             } catch (JsonParseException ex) {
                 LOG.error("The JSON file provided is invalid.");
@@ -594,13 +591,14 @@ public class DAGHelper {
 
     /**
      * This method will setup the nodes (nodePairs) and edges (stepToDependencies) into Cytoscape compatible JSON
-     * Currently only works with CWL.
      * @param nodePairs
      * @param stepToDependencies
+     * @param stepToType
+     * @param nodeDockerInfo
      * @return Cytoscape compatible JSON with nodes and edges
      */
     private String setupJSONDAG(ArrayList<Pair<String, String>> nodePairs, Map<String, ArrayList<String>> stepToDependencies, Map<String, String> stepToType,
-            Map<String, Pair<String, String>> toolID, Map<String, Pair<String, String>> toolDocker) {
+            Map<String, Triple<String, String, String>> nodeDockerInfo) {
         ArrayList<Object> nodes = new ArrayList<>();
         ArrayList<Object> edges = new ArrayList<>();
         Map<String, ArrayList<Object>> dagJson = new LinkedHashMap<>();
@@ -609,8 +607,8 @@ public class DAGHelper {
         for (Pair<String, String> node : nodePairs) {
             String stepId = node.getLeft();
             String dockerUrl = null;
-            if (toolDocker.get(stepId) != null) {
-                dockerUrl = toolDocker.get(stepId).getRight();
+            if (nodeDockerInfo.get(stepId) != null) {
+                dockerUrl = nodeDockerInfo.get(stepId).getRight();
             }
 
             Map<String, Object> nodeEntry = new HashMap<>();
@@ -619,11 +617,11 @@ public class DAGHelper {
             dataEntry.put("tool", dockerUrl);
             dataEntry.put("name", stepId.replaceFirst("^dockstore\\_", ""));
             dataEntry.put("type", stepToType.get(stepId));
-            if (toolDocker.get(stepId) != null) {
-                dataEntry.put("docker", toolDocker.get(stepId).getLeft());
+            if (nodeDockerInfo.get(stepId) != null) {
+                dataEntry.put("docker", nodeDockerInfo.get(stepId).getMiddle());
             }
-            if (toolID.get(stepId) != null) {
-                dataEntry.put("run", toolID.get(stepId).getRight());
+            if (nodeDockerInfo.get(stepId) != null) {
+                dataEntry.put("run", nodeDockerInfo.get(stepId).getLeft());
             }
             nodeEntry.put("data", dataEntry);
             nodes.add(nodeEntry);
@@ -653,21 +651,27 @@ public class DAGHelper {
      * @param toolDocker this is a map containing docker name and docker link
      * @return String
      * */
-    private String getJSONTableToolContent(Map<String, Pair<String, String>> toolID, Map<String, Pair<String, String>> toolDocker) {
+    /**
+     * This method will setup the tools of CWL workflow
+     * It will then call another method to transform it through Gson to a Json string
+     * @param nodeDockerInfo map of stepId -> (run path, docker pull, docker url)
+     * @return
+     */
+    private String getJSONTableToolContent(Map<String, Triple<String, String, String>> nodeDockerInfo) {
         // set up JSON for Table Tool Content CWL
         ArrayList<Object> tools = new ArrayList<>();
 
         //iterate through each step within workflow file
-        for(Map.Entry<String, Pair<String, String>> entry : toolID.entrySet()){
+        for(Map.Entry<String, Triple<String, String, String>> entry : nodeDockerInfo.entrySet()){
             String key = entry.getKey();
-            Pair<String, String> value = entry.getValue();
+            Triple<String, String, String> value = entry.getValue();
             //get the idName and fileName
-            String toolName = value.getLeft();
-            String fileName = value.getRight();
+            String toolName = key;
+            String fileName = value.getLeft();
 
             //get the docker requirement
-            String dockerPullName = toolDocker.get(key).getLeft();
-            String dockerLink = toolDocker.get(key).getRight();
+            String dockerPullName = value.getMiddle();
+            String dockerLink = value.getRight();
 
             //put everything into a map, then ArrayList
             Map<String, String> dataToolEntry = new LinkedHashMap<>();
