@@ -90,6 +90,9 @@ public class DAGHelper {
         // Iterate over each call, grab docker containers
         Map<String, String> callToDockerMap = (LinkedHashMap)bridge.getCallsToDockerMap(tempMainDescriptor);
 
+        // Get import files
+        Map<String, String> namespaceToPath = bridge.getImportMap(tempMainDescriptor);
+
         // Create nodePairs, callToType, toolID, and toolDocker
         for (Map.Entry<String, String> entry : callToDockerMap.entrySet()) {
             String callId = entry.getKey();
@@ -105,7 +108,14 @@ public class DAGHelper {
                 dockerUrl = getURLFromEntry(docker);
             }
 
-            nodeDockerInfo.put(callId, new MutableTriple<>(null, docker, dockerUrl));
+            // Determine if call is imported
+            String[] callName = callId.replaceFirst("^dockstore\\_", "").split("\\.");
+
+            if (callName.length > 1) {
+                nodeDockerInfo.put(callId, new MutableTriple<>(namespaceToPath.get(callName[0]), docker, dockerUrl));
+            } else {
+                nodeDockerInfo.put(callId, new MutableTriple<>(null, docker, dockerUrl));
+            }
         }
 
         // Iterate over each call, determine dependencies

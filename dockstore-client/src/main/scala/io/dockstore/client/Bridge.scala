@@ -98,6 +98,22 @@ class Bridge {
 
     importList
   }
+  def getImportMap(file: JFile): util.LinkedHashMap[String, String] = {
+    val lines = scala.io.Source.fromFile(file).mkString
+    val importMap = new util.LinkedHashMap[String, String]()
+
+    val ns = NamespaceWithWorkflow.load(lines, resolver)
+
+    ns.imports foreach { imported =>
+      var importNamespace = imported.namespace.get
+      if (!importNamespace.isEmpty) {
+        importMap.put(importNamespace, imported.uri)
+      }
+    }
+
+    importMap
+  }
+
 
   def getOutputFiles(file: JFile): util.List[String] = {
     val lines = scala.io.Source.fromFile(file).mkString
