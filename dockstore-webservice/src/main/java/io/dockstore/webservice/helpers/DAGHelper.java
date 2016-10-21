@@ -72,7 +72,7 @@ public class DAGHelper {
      * @param type either dag or tools
      * @return String
      * */
-    public String getContentWDL(File tempMainDescriptor,  Map<String, String> secondaryDescContent, WorkflowResource.Type type) {
+    public String getContentWDL(String mainDescName, File tempMainDescriptor,  Map<String, String> secondaryDescContent, WorkflowResource.Type type) {
         // Initialize general variables
         Bridge bridge = new Bridge();
         bridge.setSecondaryFiles((HashMap<String, String>) secondaryDescContent);
@@ -104,7 +104,7 @@ public class DAGHelper {
                 callToType.put(callId, toolType);
             }
             String dockerUrl = null;
-            if (docker != null) {
+            if (!Strings.isNullOrEmpty(docker)) {
                 dockerUrl = getURLFromEntry(docker);
             }
 
@@ -114,7 +114,7 @@ public class DAGHelper {
             if (callName.length > 1) {
                 nodeDockerInfo.put(callId, new MutableTriple<>(namespaceToPath.get(callName[0]), docker, dockerUrl));
             } else {
-                nodeDockerInfo.put(callId, new MutableTriple<>(null, docker, dockerUrl));
+                nodeDockerInfo.put(callId, new MutableTriple<>(mainDescName, docker, dockerUrl));
             }
         }
 
@@ -174,14 +174,14 @@ public class DAGHelper {
      * @return String
      * */
     @SuppressWarnings("checkstyle:methodlength")
-    public String getContentCWL(String content, Map<String, String> secondaryDescContent, WorkflowResource.Type type) {
+    public String getContentCWL(String mainDescName, String content, Map<String, String> secondaryDescContent, WorkflowResource.Type type) {
         Yaml yaml = new Yaml();
         if (isValidCwl(content, yaml)) {
             // Initialize data structures for DAG
             Map<String, ArrayList<String>> stepToDependencies = new HashMap<>(); // Mapping of stepId -> array of dependencies for the step
             ArrayList<Pair<String, String>> nodePairs = new ArrayList<>();       // List of pairings of step id and dockerPull url
             Map<String, String> stepToType = new HashMap<>();                    // Map of stepId -> type (expression tool, tool, workflow)
-            String defaultDockerPath = "";
+            String defaultDockerPath = null;
 
             // Initialize data structures for Tool table
             Map<String, Triple<String, String, String>> nodeDockerInfo = new HashMap<>(); // map of stepId -> (run path, docker image, docker url)
@@ -312,12 +312,24 @@ public class DAGHelper {
                         }
                     }
 
-                    String dockerUrl = getURLFromEntry(stepDockerRequirement);
+                    String dockerUrl = null;
+                    if (!stepToType.get(workflowStepId).equals(workflowType) && !Strings.isNullOrEmpty(stepDockerRequirement)) {
+                        dockerUrl = getURLFromEntry(stepDockerRequirement);
+                    }
+
                     if (type == WorkflowResource.Type.DAG) {
                         nodePairs.add(new MutablePair<>(workflowStepId, dockerUrl));
                     }
-                    if (!Strings.isNullOrEmpty(stepDockerRequirement)) {
+
+                    // Workflows shouldn't have associated docker (they may have a default)
+                    if (stepToType.get(workflowStepId).equals(workflowType)) {
+                        stepDockerRequirement = null;
+                    }
+
+                    if (secondaryFile != null) {
                         nodeDockerInfo.put(workflowStepId, new MutableTriple<>(secondaryFile, stepDockerRequirement, dockerUrl));
+                    } else {
+                        nodeDockerInfo.put(workflowStepId, new MutableTriple<>(mainDescName, stepDockerRequirement, dockerUrl));
                     }
 
                 }
