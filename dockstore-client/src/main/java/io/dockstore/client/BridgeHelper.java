@@ -17,6 +17,7 @@
 package io.dockstore.client;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -27,6 +28,9 @@ import java.util.Map;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
 
 /**
  * Created by aduncan on 19/10/16.
@@ -50,7 +54,7 @@ public class BridgeHelper {
             try {
                 InputStream inputStream = new URL(importUrl).openStream();
                 try {
-                    InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+                    InputStreamReader inputStreamReader = new InputStreamReader(inputStream, "UTF-8");
                     BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
                     String line;
                     while ((line = bufferedReader.readLine()) != null) {
@@ -76,13 +80,31 @@ public class BridgeHelper {
      * @param secondaryFileDesc
      * @return content of local import
      */
-    public String resolveLocalPath(String importPath, Map<String, String> secondaryFileDesc) {
+    public String resolveSecondaryPath(String importPath, Map<String, String> secondaryFileDesc) {
         String content = "";
 
         // Check if local path has been imported
         if (secondaryFileDesc.get(importPath) != null) {
-            return secondaryFileDesc.get(importPath);
+            return secondaryFileDesc.get(importPath.replaceFirst("file://", ""));
         }
+        return content;
+    }
+
+    /**
+     * Resolves local imports (when files exist locally)
+     * @param importPath
+     * @return content of local import
+     */
+    public String resolveLocalPath(String importPath) {
+        String content = "";
+
+        // Get content of importPath
+        try {
+            content = Files.toString(new File(importPath.replaceFirst("file://", "")), Charsets.UTF_8);
+        } catch (IOException ex) {
+            LOG.debug("Invalid filepath: " + importPath);
+        }
+
         return content;
     }
 }

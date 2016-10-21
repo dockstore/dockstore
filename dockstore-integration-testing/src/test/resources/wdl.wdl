@@ -1,3 +1,4 @@
+import "hello.wdl" as importtest
 task ps {
   command {
     ps
@@ -36,4 +37,5 @@ workflow three_step {
   call wc {
     input: in_file=ps.procs
   }
+  call importtest.hello
 }

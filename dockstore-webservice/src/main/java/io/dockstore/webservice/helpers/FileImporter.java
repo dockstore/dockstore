@@ -139,7 +139,7 @@ public class FileImporter {
                         UrlValidator urlValidator = new UrlValidator();
                         String match = m.group(1);
                         if (!urlValidator.isValid(match)) { // Don't resolve URLs
-                            importPaths.add(match);
+                            importPaths.add(match.replaceFirst("file://", "")); // remove file:// from path
                         }
                     }
                 }
