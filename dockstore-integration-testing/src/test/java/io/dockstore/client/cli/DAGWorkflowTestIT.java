@@ -150,9 +150,9 @@ public class DAGWorkflowTestIT {
         int countNode = countNodeInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have three nodes (including start and end)", countNode,3);
+        Assert.assertEquals("JSON should have four nodes (including start and end)", countNode,4);
         Assert.assertTrue("node data should have hello as task", strings.get(0).contains("hello"));
-        Assert.assertTrue("should have two edges", strings.get(0).contains("\"edges\":[{\"data\":{\"source\":\"UniqueBeginKey\",\"target\":\"dockstore_hello\"}},{\"data\":{\"source\":\"dockstore_hello\",\"target\":\"UniqueEndKey\"}}]"));
+        Assert.assertTrue("should have four edges", strings.get(0).contains("\"edges\":[{\"data\":{\"source\":\"UniqueBeginKey\",\"target\":\"dockstore_hello\"}},{\"data\":{\"source\":\"UniqueBeginKey\",\"target\":\"dockstore_helperfile.helper\"}},{\"data\":{\"source\":\"dockstore_helperfile.helper\",\"target\":\"UniqueEndKey\"}},{\"data\":{\"source\":\"dockstore_hello\",\"target\":\"UniqueEndKey\"}}]"));
     }
 
     @Test
@@ -171,7 +171,7 @@ public class DAGWorkflowTestIT {
         Assert.assertTrue("node data should have ps as tool", strings.get(0).contains("ps"));
         Assert.assertTrue("node data should have cgrep as tool", strings.get(0).contains("cgrep"));
         Assert.assertTrue("node data should have wc as tool", strings.get(0).contains("wc"));
-        Assert.assertTrue("should have 5 edges" + strings.get(0), strings.get(0).contains("\"edges\":[{\"data\":{\"source\":\"UniqueBeginKey\",\"target\":\"dockstore_ps\"}},{\"data\":{\"source\":\"dockstore_ps\",\"target\":\"dockstore_cgrep\"}},{\"data\":{\"source\":\"dockstore_ps\",\"target\":\"dockstore_wc\"}},{\"data\":{\"source\":\"dockstore_wc\",\"target\":\"UniqueEndKey\"}},{\"data\":{\"source\":\"dockstore_cgrep\",\"target\":\"UniqueEndKey\"}}]"));
+        Assert.assertTrue("should have 5 edges", strings.get(0).contains("\"edges\":[{\"data\":{\"source\":\"UniqueBeginKey\",\"target\":\"dockstore_ps\"}},{\"data\":{\"source\":\"dockstore_ps\",\"target\":\"dockstore_cgrep\"}},{\"data\":{\"source\":\"dockstore_ps\",\"target\":\"dockstore_wc\"}},{\"data\":{\"source\":\"dockstore_wc\",\"target\":\"UniqueEndKey\"}},{\"data\":{\"source\":\"dockstore_cgrep\",\"target\":\"UniqueEndKey\"}}]"));
     }
 
     @Test
@@ -253,7 +253,7 @@ public class DAGWorkflowTestIT {
         Assert.assertEquals("JSON should have 19 nodes", countNode, 19);
         Assert.assertTrue("should have end with gather_sanger_indels and merge_vcfs", strings.get(0).contains("\"source\":\"dockstore_gather_sanger_indels\",\"target\":\"dockstore_merge_vcfs\""));
         Assert.assertTrue("should have end with filter and normalize", strings.get(0).contains("\"source\":\"dockstore_filter\",\"target\":\"dockstore_normalize\""));
-        Assert.assertTrue("should have docker requirement for vcf_merge"+ strings.get(0), strings.get(0).contains("\"name\":\"merge_vcfs\",\"run\":\"vcf_merge.cwl\",\"id\":\"dockstore_merge_vcfs\",\"type\":\"tool\",\"docker\":\"pancancer/pcawg-oxog-tools\""));
-        Assert.assertTrue("should have docker requirement for clean", strings.get(0).contains("\"name\":\"clean\",\"run\":\"clean_vcf.cwl\",\"id\":\"dockstore_clean\",\"type\":\"tool\",\"docker\":\"pancancer/pcawg-oxog-tools:1.0.0\""));
+        Assert.assertTrue("should have docker requirement for vcf_merge", strings.get(0).contains("\"name\":\"merge_vcfs\",\"run\":\"vcf_merge.cwl\",\"id\":\"dockstore_merge_vcfs\",\"type\":\"tool\",\"tool\":\"https://hub.docker.com/r/pancancer/pcawg-oxog-tools\",\"docker\":\"pancancer/pcawg-oxog-tools\""));
+        Assert.assertTrue("should have docker requirement for clean" +strings.get(0), strings.get(0).contains("\"name\":\"clean\",\"run\":\"clean_vcf.cwl\",\"id\":\"dockstore_clean\",\"type\":\"tool\",\"docker\":\"pancancer/pcawg-oxog-tools:1.0.0\""));
     }
 }

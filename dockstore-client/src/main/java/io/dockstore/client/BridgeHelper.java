@@ -83,9 +83,12 @@ public class BridgeHelper {
     public String resolveSecondaryPath(String importPath, Map<String, String> secondaryFileDesc) {
         String content = "";
 
+        // Remove file:// from import path
+        importPath = importPath.replaceFirst("file://", "");
+
         // Check if local path has been imported
         if (secondaryFileDesc.get(importPath) != null) {
-            return secondaryFileDesc.get(importPath.replaceFirst("file://", ""));
+            return secondaryFileDesc.get(importPath);
         }
         return content;
     }
@@ -98,9 +101,12 @@ public class BridgeHelper {
     public String resolveLocalPath(String importPath) {
         String content = "";
 
+        // Remove file:// from import path
+        importPath = importPath.replaceFirst("file://", "");
+
         // Get content of importPath
         try {
-            content = Files.toString(new File(importPath.replaceFirst("file://", "")), Charsets.UTF_8);
+            content = Files.toString(new File(importPath), Charsets.UTF_8);
         } catch (IOException ex) {
             LOG.debug("Invalid filepath: " + importPath);
         }
