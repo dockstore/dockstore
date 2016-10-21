@@ -158,7 +158,7 @@ public class ToolsWorkflowTestIT {
         int countNode = countToolInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have one tool", countNode,1);
+        Assert.assertEquals("JSON should have two tools", countNode,2);
         Assert.assertTrue("tool should have hello as id", strings.get(0).contains("hello"));
         Assert.assertTrue("hello docker and link should not be blank", strings.get(0).contains("\"id\":\"hello\","+
                 "\"docker\":\"ubuntu:latest\","+
