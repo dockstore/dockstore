@@ -52,7 +52,8 @@ class Bridge {
   }
 
   private[this] def loadWdl(path: String)(f: WdlNamespace => String): String = {
-    Try(WdlNamespace.load(new JFile(path))) match {
+    val lines = scala.io.Source.fromFile(new JFile(path)).mkString
+    Try(NamespaceWithWorkflow.load(lines, launchResolver)) match {
       case Success(namespace) => f(namespace)
       case Failure(t) =>
         println(t.getMessage)

@@ -47,7 +47,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.validator.routines.UrlValidator;
 import org.json.JSONObject;
 import org.yaml.snakeyaml.Yaml;
 
@@ -1070,6 +1069,7 @@ public abstract class AbstractEntryClient {
             ByteArrayOutputStream stderrCapture = new ByteArrayOutputStream();
             System.setErr(new PrintStream(stderrCapture, true, StandardCharsets.UTF_8.toString()));
 
+            // Currently Cromwell does not support HTTP(S) imports
             final int run = main.run(wdlRunList);
 
             System.out.flush();
@@ -1131,12 +1131,13 @@ public abstract class AbstractEntryClient {
             if (!m.find()) {
                 FileUtils.writeStringToFile(tmp, line + "\n", StandardCharsets.UTF_8, true);
             } else {
-                UrlValidator urlValidator = new UrlValidator();
-                if (!urlValidator.isValid(m.group(1))) { // Don't resolve URLs
-                    if (!m.group(1).startsWith(File.separator)) {
+                if (!m.group(1).startsWith("https://") && !m.group(1).startsWith("http://")) { // Don't resolve URLs
+                    if (!m.group(1).startsWith(File.separator)) { // what is the purpose of this line?
                         String newImportLine = "import \"" + tempDir + File.separator + m.group(1) + "\"" + m.group(2) + "\n";
                         FileUtils.writeStringToFile(tmp, newImportLine, StandardCharsets.UTF_8, true);
                     }
+                } else {
+                    FileUtils.writeStringToFile(tmp, line + "\n", StandardCharsets.UTF_8, true);
                 }
             }
         }

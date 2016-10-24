@@ -28,7 +28,6 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.WorkflowVersion;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.http.HttpStatus;
 
 import java.io.File;
@@ -136,9 +135,8 @@ public class FileImporter {
                     Matcher m = p.matcher(line);
 
                     while (m.find()) {
-                        UrlValidator urlValidator = new UrlValidator();
                         String match = m.group(1);
-                        if (!urlValidator.isValid(match)) { // Don't resolve URLs
+                        if (!match.startsWith("http://") && !match.startsWith("https://")) { // Don't resolve URLs
                             importPaths.add(match.replaceFirst("file://", "")); // remove file:// from path
                         }
                     }

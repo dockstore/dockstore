@@ -49,24 +49,29 @@ public class BridgeHelper {
         // Check if valid URL
         UrlValidator urlValidator = new UrlValidator();
         if (urlValidator.isValid(importUrl)) {
-
-            // Grab file located at URL
-            try {
-                InputStream inputStream = new URL(importUrl).openStream();
+            // Check that url is from GitHub, Bitbucket, or GitLab
+            if (importUrl.startsWith("https://raw.githubusercontent.com/") || importUrl.startsWith("https://bitbucket.org")
+                    || importUrl.startsWith("https://gitlab.com")) {
+                // Grab file located at URL
                 try {
-                    InputStreamReader inputStreamReader = new InputStreamReader(inputStream, "UTF-8");
-                    BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-                    String line;
-                    while ((line = bufferedReader.readLine()) != null) {
-                        content += line;
+                    InputStream inputStream = new URL(importUrl).openStream();
+                    try {
+                        InputStreamReader inputStreamReader = new InputStreamReader(inputStream, "UTF-8");
+                        BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+                        String line;
+                        while ((line = bufferedReader.readLine()) != null) {
+                            content += line;
+                        }
+                    } finally {
+                        inputStream.close();
                     }
-                } finally {
-                    inputStream.close();
+                } catch (MalformedURLException ex) {
+                    LOG.debug("Invalid URL: " + importUrl);
+                } catch (IOException ex) {
+                    LOG.debug("Error parsing contents of " + importUrl);
                 }
-            } catch (MalformedURLException ex) {
-                LOG.debug("Invalid URL: " + importUrl);
-            } catch (IOException ex) {
-                LOG.debug("Error parsing contents of " + importUrl);
+            } else {
+                LOG.debug("Only files from Github, GitLab and Bitbucket are supported for HTTP/HTTPS.");
             }
         } else {
             LOG.debug("Invalid URL: " + importUrl);

@@ -70,8 +70,6 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
         this.workflowPath = workflowPath;
     }
 
-
-
     @Override public int hashCode() {
         return 31 * super.hashCode() + Objects.hash(workflowPath);
     }
