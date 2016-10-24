@@ -375,6 +375,28 @@ public class GeneralWorkflowET {
                         ResourceHelpers.resourceFilePath("wdl.json"), "--descriptor", "wdl", "--script", "--local-entry" });
         }
 
+
+        /**
+         * Tests that a developer can launch a WDL workflow locally, with an HTTP/HTTPS URL
+         * TODO: cromwell needs to support HTTP/HTTPS file prov
+         */
+        @Ignore
+        public void testLocalLaunchWDLImportHTTP() {
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry", ResourceHelpers.resourceFilePath("wdlhttpimport.wdl") , "--json",
+                        ResourceHelpers.resourceFilePath("wdlhttp.json"), "--descriptor", "wdl", "--script", "--local-entry" });
+        }
+
+        /**
+         * Tests that a only Github, Gitlab and bitbucket http/https imports are valid
+         */
+        @Test
+        public void testLocalLaunchWDLImportIncorrectHTTP() {
+                systemExit.expectSystemExitWithStatus(1);
+
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry", ResourceHelpers.resourceFilePath("wdlincorrecthttp.wdl") , "--json",
+                        ResourceHelpers.resourceFilePath("wdl.json"), "--descriptor", "wdl", "--script", "--local-entry" });
+        }
+
         @Test
         public void testUpdateWorkflowPath() throws IOException, TimeoutException, ApiException {
                 // Set up webservice
