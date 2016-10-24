@@ -31,11 +31,16 @@ import scala.util.{Failure, Success, Try}
   * until wdltool is released to artifactory.
   */
 class Bridge {
+  var secondaryWdlFiles = new util.HashMap[String,String]()
+  val bridgeHelper = new BridgeHelper()
+
+  def setSecondaryFiles(secondaryFiles: util.HashMap[String,String]) = {
+    secondaryWdlFiles = secondaryFiles
+  }
+
   def main(args: Array[String]): Unit = {
     println("Hello, world!")
   }
-
-
 
   def inputs(args: Seq[String]): String = {
       loadWdl(args.head) { namespace =>
@@ -47,7 +52,8 @@ class Bridge {
   }
 
   private[this] def loadWdl(path: String)(f: WdlNamespace => String): String = {
-    Try(WdlNamespace.load(new JFile(path))) match {
+    val lines = scala.io.Source.fromFile(new JFile(path)).mkString
+    Try(NamespaceWithWorkflow.load(lines, launchResolver)) match {
       case Success(namespace) => f(namespace)
       case Failure(t) =>
         println(t.getMessage)
@@ -55,9 +61,27 @@ class Bridge {
     }
   }
 
+  def dagResolver(importString: String): WdlSource = {
+    importString match {
+      case s if (s.startsWith("http://") || s.startsWith("https://")) =>
+        bridgeHelper.resolveUrl(s)
+      case s =>
+        bridgeHelper.resolveSecondaryPath(s, secondaryWdlFiles)
+    }
+  }
+
+  def launchResolver(importString: String): WdlSource = {
+    importString match {
+      case s if (s.startsWith("http://") || s.startsWith("https://")) =>
+        bridgeHelper.resolveUrl(s)
+      case s =>
+        bridgeHelper.resolveLocalPath(s)
+    }
+  }
+
   def getInputFiles(file: JFile): util.Map[String, String] = {
     val lines = scala.io.Source.fromFile(file).mkString
-    val ns = NamespaceWithWorkflow.load(lines)
+    val ns = NamespaceWithWorkflow.load(lines, launchResolver)
 
     val inputList = new util.HashMap[String, String]()
 
@@ -73,7 +97,7 @@ class Bridge {
     val lines = scala.io.Source.fromFile(file).mkString
     val importList = new util.ArrayList[String]()
 
-    val ns = NamespaceWithWorkflow.load(lines, (s: String) => "")
+    val ns = NamespaceWithWorkflow.load(lines, dagResolver)
 
     ns.imports foreach { imported =>
       println(imported.uri)
@@ -82,10 +106,26 @@ class Bridge {
 
     importList
   }
+  def getImportMap(file: JFile): util.LinkedHashMap[String, String] = {
+    val lines = scala.io.Source.fromFile(file).mkString
+    val importMap = new util.LinkedHashMap[String, String]()
+
+    val ns = NamespaceWithWorkflow.load(lines, dagResolver)
+
+    ns.imports foreach { imported =>
+      val importNamespace = imported.namespace.get
+      if (!importNamespace.isEmpty) {
+        importMap.put(importNamespace, imported.uri)
+      }
+    }
+
+    importMap
+  }
+
 
   def getOutputFiles(file: JFile): util.List[String] = {
     val lines = scala.io.Source.fromFile(file).mkString
-    val ns = NamespaceWithWorkflow.load(lines)
+    val ns = NamespaceWithWorkflow.load(lines, launchResolver)
 
     val outputList = new util.ArrayList[String]()
 
@@ -99,10 +139,10 @@ class Bridge {
 
   def getCallsAndDocker(file: JFile): util.LinkedHashMap[String, Seq[String]] = {
     val lines = scala.io.Source.fromFile(file).mkString
-    val ns = NamespaceWithWorkflow.load(lines)
+    val ns = NamespaceWithWorkflow.load(lines, dagResolver)
     val tasks = new util.LinkedHashMap[String, Seq[String]]()
 
-    // For each call (Assume ordering)
+    // For each call
     //ns.workflow.collectAllScatters foreach { scatter => print(scatter.collectAllCalls foreach(call => println(call.task.name)))}
     ns.workflow.collectAllCalls foreach { call =>
       // Find associated task (Should only be one)
@@ -110,6 +150,7 @@ class Bridge {
         try {
           // Get the list of docker images
           val dockerAttributes = task.runtimeAttributes.attrs.get("docker")
+          var name = call.alias.toString
           tasks.put(task.name, if (dockerAttributes.isDefined) dockerAttributes.get else null)
         } catch {
           // Throws error if task has no runtime section or a runtime section but no docker (we stop error from being thrown)
@@ -119,5 +160,34 @@ class Bridge {
     }
     return tasks
   }
+
+  def getCallsToDockerMap(file: JFile): util.LinkedHashMap[String, String] = {
+    val lines = scala.io.Source.fromFile(file).mkString
+    val ns = NamespaceWithWorkflow.load(lines, dagResolver)
+    val tasks = new util.LinkedHashMap[String, String]()
+    ns.workflow.calls foreach {call =>
+      val task = call.task
+      val dockerAttributes = task.runtimeAttributes.attrs.get("docker")
+      tasks.put("dockstore_" + call.unqualifiedName, if (dockerAttributes.isDefined) (dockerAttributes.get).mkString("") else null)
+    }
+    return tasks
+  }
+
+  def getCallsToDependencies(file: JFile): util.LinkedHashMap[String, util.ArrayList[String]] = {
+    val lines = scala.io.Source.fromFile(file).mkString
+    val ns = NamespaceWithWorkflow.load(lines, dagResolver)
+    val dependencyMap = new util.LinkedHashMap[String, util.ArrayList[String]]()
+   ns.workflow.calls foreach {call =>
+      val dependencies = new util.ArrayList[String]()
+      call.inputMappings foreach {case(key, value) =>
+          value.prerequisiteCallNames foreach { inputDependency =>
+            dependencies.add("dockstore_" + inputDependency)
+          }
+      }
+      dependencyMap.put("dockstore_" + call.unqualifiedName, dependencies)
+    }
+    return dependencyMap
+  }
+
 
 }

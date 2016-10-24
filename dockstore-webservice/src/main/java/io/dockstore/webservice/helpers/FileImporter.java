@@ -26,14 +26,19 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.WorkflowVersion;
+
+import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Generically imports files in order to populate Tools and Workflows.
@@ -120,7 +125,23 @@ public class FileImporter {
             try {
                 tempDesc = File.createTempFile("temp", ".wdl", Files.createTempDir());
                 Files.write(content, tempDesc, StandardCharsets.UTF_8);
-                final List<String> importPaths = sourceCodeRepo.getWdlImports(tempDesc);
+
+                // Use matcher to get imports
+                List<String> lines = FileUtils.readLines(tempDesc);
+                ArrayList<String> importPaths = new ArrayList<>();
+                Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"");
+
+                for (String line : lines) {
+                    Matcher m = p.matcher(line);
+
+                    while (m.find()) {
+                        String match = m.group(1);
+                        if (!match.startsWith("http://") && !match.startsWith("https://")) { // Don't resolve URLs
+                            importPaths.add(match.replaceFirst("file://", "")); // remove file:// from path
+                        }
+                    }
+                }
+
                 for (String importPath : importPaths) {
                     SourceFile importFile = new SourceFile();
 

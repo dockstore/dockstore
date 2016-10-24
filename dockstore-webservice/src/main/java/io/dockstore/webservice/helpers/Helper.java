@@ -192,6 +192,9 @@ public final class Helper {
                     files.addAll(importedFiles.values());
                 } else if (f == FileType.DOCKSTORE_WDL) {
                     dockstoreFile.setPath(tag.getWdlPath());
+                    Map<String, SourceFile> importedFiles = importer
+                            .resolveImports(fileResponse, c, f, tag);
+                    files.addAll(importedFiles.values());
                 }
                 files.add(dockstoreFile);
             }

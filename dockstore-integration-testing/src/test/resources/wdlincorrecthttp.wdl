@@ -1,4 +1,4 @@
-import "hello.wdl" as importtest
+import "http://invalidurl.com/file.wdl" as httpimporttest
 task ps {
   command {
     ps
@@ -37,5 +37,5 @@ workflow three_step {
   call wc {
     input: in_file=ps.procs
   }
-  call importtest.hello
+  call httpimporttest.helper
 }

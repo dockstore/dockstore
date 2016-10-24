@@ -1069,6 +1069,8 @@ public abstract class AbstractEntryClient {
             ByteArrayOutputStream stderrCapture = new ByteArrayOutputStream();
             System.setErr(new PrintStream(stderrCapture, true, StandardCharsets.UTF_8.toString()));
 
+            // Currently Cromwell does not support HTTP(S) imports
+            // https://github.com/broadinstitute/cromwell/issues/1528
             final int run = main.run(wdlRunList);
 
             System.out.flush();
@@ -1130,9 +1132,13 @@ public abstract class AbstractEntryClient {
             if (!m.find()) {
                 FileUtils.writeStringToFile(tmp, line + "\n", StandardCharsets.UTF_8, true);
             } else {
-                if (!m.group(1).startsWith(File.separator)) {
-                    String newImportLine = "import \"" + tempDir + File.separator + m.group(1) + "\"" + m.group(2) + "\n";
-                    FileUtils.writeStringToFile(tmp, newImportLine, StandardCharsets.UTF_8, true);
+                if (!m.group(1).startsWith("https://") && !m.group(1).startsWith("http://")) { // Don't resolve URLs
+                    if (!m.group(1).startsWith(File.separator)) { // what is the purpose of this line?
+                        String newImportLine = "import \"" + tempDir + File.separator + m.group(1) + "\"" + m.group(2) + "\n";
+                        FileUtils.writeStringToFile(tmp, newImportLine, StandardCharsets.UTF_8, true);
+                    }
+                } else {
+                    FileUtils.writeStringToFile(tmp, line + "\n", StandardCharsets.UTF_8, true);
                 }
             }
         }
