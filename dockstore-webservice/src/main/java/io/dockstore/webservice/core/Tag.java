@@ -64,6 +64,16 @@ public class Tag extends Version<Tag> {
     @ApiModelProperty("Path for the WDL document")
     private String wdlPath = "/Dockstore.wdl";
 
+    @Column(columnDefinition = "text")
+    @JsonProperty("cwl_json_path")
+    @ApiModelProperty("Path for example inputs json for CWL")
+    private String cwlTestJsonPath = "/test.cwl.json";
+
+    @Column(columnDefinition = "text")
+    @JsonProperty("wdl_json_path")
+    @ApiModelProperty("Path for example inputs json for WDL")
+    private String wdlTestJsonPath = "/test.wdl.json";
+
     public Tag() {
         super();
     }
@@ -80,6 +90,8 @@ public class Tag extends Version<Tag> {
         // Add for new descriptor types
         cwlPath = tag.cwlPath;
         wdlPath = tag.wdlPath;
+        wdlTestJsonPath = tag.wdlTestJsonPath;
+        cwlTestJsonPath = tag.cwlTestJsonPath;
 
         dockerfilePath = tag.dockerfilePath;
     }
@@ -110,6 +122,8 @@ public class Tag extends Version<Tag> {
         // Add here for new descriptor types
         cwlPath = tag.cwlPath;
         wdlPath = tag.wdlPath;
+        wdlTestJsonPath = tag.wdlTestJsonPath;
+        cwlTestJsonPath = tag.cwlTestJsonPath;
 
         dockerfilePath = tag.dockerfilePath;
     }
@@ -169,6 +183,22 @@ public class Tag extends Version<Tag> {
 
     public void setAutomated(boolean automated) {
         this.automated = automated;
+    }
+
+    public String getWdlTestJsonPath() {
+        return wdlTestJsonPath;
+    }
+
+    public void setWdlTestJsonPath(String wdlTestJsonPath) {
+        this.wdlTestJsonPath = wdlTestJsonPath;
+    }
+
+    public String getCwlTestJsonPath() {
+        return cwlTestJsonPath;
+    }
+
+    public void setCwlTestJsonPath(String cwlTestJsonPath) {
+        this.cwlTestJsonPath = cwlTestJsonPath;
     }
 
     @Override

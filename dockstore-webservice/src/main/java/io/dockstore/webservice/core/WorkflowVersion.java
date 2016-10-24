@@ -40,6 +40,11 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     @ApiModelProperty("Path for the workflow")
     private String workflowPath;
 
+    @Column(columnDefinition = "text")
+    @JsonProperty("test_json_path")
+    @ApiModelProperty("Path for example inputs json for descriptor")
+    private String workflowTestJson = "/test.json";
+
     public WorkflowVersion() {
         super();
     }
@@ -47,12 +52,14 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     public void updateByUser(final WorkflowVersion workflowVersion) {
         super.updateByUser(workflowVersion);
         workflowPath = workflowVersion.workflowPath;
+        workflowTestJson = workflowVersion.workflowTestJson;
     }
 
     public void update(WorkflowVersion workflowVersion) {
         super.update(workflowVersion);
         super.setReference(workflowVersion.getReference());
         workflowPath = workflowVersion.getWorkflowPath();
+        workflowTestJson = workflowVersion.workflowTestJson;
     }
 
     public void clone(WorkflowVersion tag) {
