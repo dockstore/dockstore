@@ -1070,6 +1070,7 @@ public abstract class AbstractEntryClient {
             System.setErr(new PrintStream(stderrCapture, true, StandardCharsets.UTF_8.toString()));
 
             // Currently Cromwell does not support HTTP(S) imports
+            // https://github.com/broadinstitute/cromwell/issues/1528
             final int run = main.run(wdlRunList);
 
             System.out.flush();
