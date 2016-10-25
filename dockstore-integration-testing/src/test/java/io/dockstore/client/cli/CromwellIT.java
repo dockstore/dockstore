@@ -62,6 +62,7 @@ public class CromwellIT {
         final int run = main.run(wdlRunList);
         Assert.assertTrue(run == 0);
     }
+
     @Test
     public void fileProvisioning() {
         Main main = new Main();
@@ -72,7 +73,7 @@ public class CromwellIT {
 
         WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning(ResourceHelpers.resourceFilePath("config_file.txt"));
         Gson gson = new Gson();
-        String jsonString = null;
+        String jsonString;
         try {
             jsonString = FileUtils.readFileToString(parameterFile, StandardCharsets.UTF_8);
             Map<String, Object> inputJson = gson.fromJson(jsonString, HashMap.class);
@@ -90,4 +91,20 @@ public class CromwellIT {
         }
     }
 
+    @Test
+    public void testWDLResolver() {
+        // If resolver works, this should throw no errors
+        File sourceFile = new File(ResourceHelpers.resourceFilePath("wdl-sanger-workflow.wdl"));
+        Bridge bridge = new Bridge();
+        HashMap<String, String> secondaryFiles = new HashMap<>();
+        secondaryFiles.put("wdl.wdl","task ps {\n" + "  command {\n" + "    ps\n" + "  }\n" + "  output {\n" + "    File procs = stdout()\n"
+                + "  }\n" + "}\n" + "\n" + "task cgrep {\n" + "  String pattern\n" + "  File in_file\n" + "  command {\n"
+                + "    grep '${pattern}' ${in_file} | wc -l\n" + "  }\n" + "  output {\n" + "    Int count = read_int(stdout())\n" + "  }\n"
+                + "}\n" + "\n" + "task wc {\n" + "  File in_file\n" + "  command {\n" + "    cat ${in_file} | wc -l\n" + "  }\n"
+                + "  output {\n" + "    Int count = read_int(stdout())\n" + "  }\n" + "}\n" + "\n" + "workflow three_step {\n"
+                + "  call ps\n" + "  call cgrep {\n" + "    input: in_file=ps.procs\n" + "  }\n" + "  call wc {\n"
+                + "    input: in_file=ps.procs\n" + "  }\n" + "}\n");
+        bridge.setSecondaryFiles(secondaryFiles);
+        bridge.getInputFiles(sourceFile);
+    }
 }

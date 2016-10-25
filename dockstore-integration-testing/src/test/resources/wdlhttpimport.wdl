@@ -1,4 +1,5 @@
 import "hello.wdl" as importtest
+import "https://raw.githubusercontent.com/DockstoreTestUser2/test_workflow_wdl/master/helper.wdl" as httpimporttest
 task ps {
   command {
     ps
@@ -38,4 +39,5 @@ workflow three_step {
     input: in_file=ps.procs
   }
   call importtest.hello
+  call httpimporttest.helper
 }

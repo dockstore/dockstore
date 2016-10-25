@@ -375,6 +375,28 @@ public class GeneralWorkflowET {
                         ResourceHelpers.resourceFilePath("wdl.json"), "--descriptor", "wdl", "--script", "--local-entry" });
         }
 
+
+        /**
+         * Tests that a developer can launch a WDL workflow locally, with an HTTP/HTTPS URL
+         * TODO: cromwell needs to support HTTP/HTTPS file prov
+         */
+        @Ignore
+        public void testLocalLaunchWDLImportHTTP() {
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry", ResourceHelpers.resourceFilePath("wdlhttpimport.wdl") , "--json",
+                        ResourceHelpers.resourceFilePath("wdlhttp.json"), "--descriptor", "wdl", "--script", "--local-entry" });
+        }
+
+        /**
+         * Tests that a only Github, Gitlab and bitbucket http/https imports are valid
+         */
+        @Test
+        public void testLocalLaunchWDLImportIncorrectHTTP() {
+                systemExit.expectSystemExitWithStatus(1);
+
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry", ResourceHelpers.resourceFilePath("wdlincorrecthttp.wdl") , "--json",
+                        ResourceHelpers.resourceFilePath("wdl.json"), "--descriptor", "wdl", "--script", "--local-entry" });
+        }
+
         @Test
         public void testUpdateWorkflowPath() throws IOException, TimeoutException, ApiException {
                 // Set up webservice
@@ -667,4 +689,24 @@ public class GeneralWorkflowET {
 
         }
 
+         /**
+         * This tests that WDL files are properly parsed for secondary WDL files
+         */
+        @Test
+        public void testWDLWithImports() {
+                // Setup DB
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+                // Refresh all
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
+
+                // Update workflow to be WDL with correct path
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry", "DockstoreTestUser2/test_workflow_wdl", "--descriptor-type", "wdl", "--workflow-path",
+                        "/hello.wdl", "--script" });
+
+                // Check for WDL files
+                final long count = testingPostgres.runSelectStatement("select count(*) from sourcefile where path='helper.wdl'", new ScalarHandler<>());
+                Assert.assertTrue("there should be 1 secondary file named helper.wdl, there are " + count, count == 1);
+
+        }
 }

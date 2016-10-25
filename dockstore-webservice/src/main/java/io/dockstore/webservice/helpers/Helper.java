@@ -193,6 +193,9 @@ public final class Helper {
                     files.addAll(importedFiles.values());
                 } else if (f == FileType.DOCKSTORE_WDL) {
                     dockstoreFile.setPath(tag.getWdlPath());
+                    Map<String, SourceFile> importedFiles = importer
+                            .resolveImports(fileResponse, c, f, tag);
+                    files.addAll(importedFiles.values());
                 } else if (f == FileType.CWL_TEST_JSON) {
                     dockstoreFile.setPath(tag.getCwlTestJsonPath());
                 } else if (f == FileType.WDL_TEST_JSON) {

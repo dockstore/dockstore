@@ -143,16 +143,16 @@ public class DAGWorkflowTestIT {
         // Input: hello.wdl
         // Repo: test_workflow_wdl
         // Branch: master
-        // Test: normal wdl workflow DAG, single node
-        // Return: JSON with a node and no edge (nodes:{{hello}},edges:{}
+        // Test: normal wdl workflow DAG, three nodes
+        // Return: JSON with a three nodes and two edges
 
         final List<String> strings = getJSON("DockstoreTestUser2/test_workflow_wdl", "/hello.wdl", "wdl", "master");
         int countNode = countNodeInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have one node", countNode,1);
+        Assert.assertEquals("JSON should have four nodes (including start and end)", countNode,4);
         Assert.assertTrue("node data should have hello as task", strings.get(0).contains("hello"));
-        Assert.assertTrue("should have no edge", strings.get(0).contains("\"edges\":[]"));
+        Assert.assertTrue("should have four edges", strings.get(0).contains("\"edges\":[{\"data\":{\"source\":\"UniqueBeginKey\",\"target\":\"dockstore_hello\"}},{\"data\":{\"source\":\"UniqueBeginKey\",\"target\":\"dockstore_helperfile.helper\"}},{\"data\":{\"source\":\"dockstore_helperfile.helper\",\"target\":\"UniqueEndKey\"}},{\"data\":{\"source\":\"dockstore_hello\",\"target\":\"UniqueEndKey\"}}]"));
     }
 
     @Test
@@ -161,18 +161,17 @@ public class DAGWorkflowTestIT {
         // Repo: hello-dockstore-workflow
         // Branch: master
         // Test: normal wdl workflow DAG, multiple nodes
-        // Return: JSON with a node and no edge (nodes:{{ps},{cgrep},{wc}},edges:{ps->cgrep, cgrep->wc}
+        // Return: JSON with 5 nodes node and five edges
 
         final List<String> strings = getJSON("DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "wdl", "testWDL");
         int countNode = countNodeInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have three nodes", countNode,3);
+        Assert.assertEquals("JSON should have five nodes (including start and end)", countNode,5);
         Assert.assertTrue("node data should have ps as tool", strings.get(0).contains("ps"));
         Assert.assertTrue("node data should have cgrep as tool", strings.get(0).contains("cgrep"));
         Assert.assertTrue("node data should have wc as tool", strings.get(0).contains("wc"));
-        Assert.assertTrue("should have no edge", strings.get(0).contains("\"source\":\"0\",\"target\":\"1\""));
-        Assert.assertTrue("should have no edge", strings.get(0).contains("\"source\":\"1\",\"target\":\"2\""));
+        Assert.assertTrue("should have 5 edges", strings.get(0).contains("\"edges\":[{\"data\":{\"source\":\"UniqueBeginKey\",\"target\":\"dockstore_ps\"}},{\"data\":{\"source\":\"dockstore_ps\",\"target\":\"dockstore_cgrep\"}},{\"data\":{\"source\":\"dockstore_ps\",\"target\":\"dockstore_wc\"}},{\"data\":{\"source\":\"dockstore_wc\",\"target\":\"UniqueEndKey\"}},{\"data\":{\"source\":\"dockstore_cgrep\",\"target\":\"UniqueEndKey\"}}]"));
     }
 
     @Test

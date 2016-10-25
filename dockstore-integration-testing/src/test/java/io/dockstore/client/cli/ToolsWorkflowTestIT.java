@@ -131,16 +131,11 @@ public class ToolsWorkflowTestIT {
         int countNode = countToolInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have two tools with docker image, has " + countNode, countNode, 2);
+        Assert.assertEquals("JSON should have one tool with docker image, has " + countNode, countNode, 1);
         Assert.assertTrue("tool should not have untar since it has no docker image", !strings.get(0).contains("untar"));
         Assert.assertTrue("tool should have compile as id", strings.get(0).contains("compile"));
-        Assert.assertTrue("tool should have wrkflow as id", strings.get(0).contains("wrkflow"));
-        Assert.assertTrue("compile docker and link should not be blank", strings.get(0).contains("\"id\":\"compile\"," +
+        Assert.assertTrue("compile docker and link should not be blank" + strings.get(0), strings.get(0).contains("\"id\":\"compile\"," +
                 "\"file\":\"arguments.cwl\","+
-                "\"docker\":\"java:7\"," +
-                "\"link\":\"https://hub.docker.com/_/java\""));
-        Assert.assertTrue("compile docker and link should not be blank", strings.get(0).contains("\"id\":\"wrkflow\"," +
-                "\"file\":\"grep-and-count.cwl\","+
                 "\"docker\":\"java:7\"," +
                 "\"link\":\"https://hub.docker.com/_/java\""));
 
@@ -158,9 +153,10 @@ public class ToolsWorkflowTestIT {
         int countNode = countToolInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have one tool", countNode,1);
+        Assert.assertEquals("JSON should have two tools", countNode,2);
         Assert.assertTrue("tool should have hello as id", strings.get(0).contains("hello"));
         Assert.assertTrue("hello docker and link should not be blank", strings.get(0).contains("\"id\":\"hello\","+
+                "\"file\":\"/hello.wdl\"," +
                 "\"docker\":\"ubuntu:latest\","+
                 "\"link\":\"https://hub.docker.com/_/ubuntu\""));
 
@@ -178,19 +174,10 @@ public class ToolsWorkflowTestIT {
         int countNode = countToolInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have three tools", countNode,3);
-        Assert.assertTrue("tool should have ps as id", strings.get(0).contains("ps"));
-        Assert.assertTrue("tool should have cgrep as id", strings.get(0).contains("cgrep"));
-        Assert.assertTrue("tool should have have wc as id", strings.get(0).contains("wc"));
-        Assert.assertTrue("ps docker and link should be blank", strings.get(0).contains("\"id\":\"ps\","+
-                "\"docker\":\"Not Specified\","+
-                "\"link\":\"Not Specified\""));
-        Assert.assertTrue("cgrep docker and link should be blank", strings.get(0).contains("\"id\":\"cgrep\","+
-                "\"docker\":\"Not Specified\","+
-                "\"link\":\"Not Specified\""));
-        Assert.assertTrue("wc docker and link should be blank", strings.get(0).contains("\"id\":\"wc\","+
-                "\"docker\":\"Not Specified\","+
-                "\"link\":\"Not Specified\""));
+        Assert.assertEquals("JSON should have no tools", countNode,0);
+        Assert.assertTrue("ps should not exist", !strings.get(0).contains("\"id\":\"ps\""));
+        Assert.assertTrue("cgrep should not exist", !strings.get(0).contains("\"id\":\"cgrep\","));
+        Assert.assertTrue("wc should not exist", !strings.get(0).contains("\"id\":\"wc\""));
 
     }
 
