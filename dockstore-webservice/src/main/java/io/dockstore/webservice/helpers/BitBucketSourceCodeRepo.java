@@ -248,6 +248,19 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                     // TODO: No exceptions are caught here in the event of a failed call
                     sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, identifiedType);
 
+                    // Get test json file
+                    SourceFile testJson = new SourceFile();
+                    testJson.setContent(getFileContents(version.getWorkflowTestJson(), branchName, repositoryId));
+                    testJson.setPath(version.getWorkflowTestJson());
+                    if (identifiedType == SourceFile.FileType.DOCKSTORE_CWL) {
+                        testJson.setType(SourceFile.FileType.CWL_TEST_JSON);
+                    } else {
+                        testJson.setType(SourceFile.FileType.WDL_TEST_JSON);
+                    }
+                    if (testJson.getContent() != null) {
+                        version.addSourceFile(testJson);
+                    }
+
                     workflow.addWorkflowVersion(combineVersionAndSourcefile(sourceFile, workflow, identifiedType, version));
                 }
             }

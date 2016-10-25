@@ -91,6 +91,16 @@ public class Tool extends Entry<Tool, Tag> {
     @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the WDL document", required = true)
     private String defaultWdlPath = "/Dockstore.wdl";
 
+    @Column(columnDefinition = "text")
+    @JsonProperty("default_cwl_test_json_path")
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL example inputs json", required = true)
+    private String defaultCwlTestJsonPath = "/test.cwl.json";
+
+    @Column(columnDefinition = "text")
+    @JsonProperty("default_wdl_test_json_path")
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the WDL example inputs json", required = true)
+    private String defaultWdlTestJsonPath = "/test.wdl.json";
+
 
     @Column(nullable = false)
     @ApiModelProperty(value = "This is the tool name of the container, when not-present this will function just like 0.1 dockstore"
@@ -281,6 +291,23 @@ public class Tool extends Entry<Tool, Tag> {
         return getPath() + (toolname == null || toolname.isEmpty() ? "" : '/' + toolname);
     }
 
+    public String getDefaultCwlTestJsonPath() {
+        return defaultCwlTestJsonPath;
+    }
+
+    public void setDefaultCwlTestJsonPath(String defaultCwlTestJsonPath) {
+        this.defaultCwlTestJsonPath = defaultCwlTestJsonPath;
+    }
+
+    public String getDefaultWdlTestJsonPath() {
+        return defaultWdlTestJsonPath;
+    }
+
+    public void setDefaultWdlTestJsonPath(String defaultWdlTestJsonPath) {
+        this.defaultWdlTestJsonPath = defaultWdlTestJsonPath;
+    }
+
+
     /**
      * Updates information from given tool based on the new tool
      * @param tool
@@ -290,6 +317,8 @@ public class Tool extends Entry<Tool, Tag> {
         defaultCwlPath = tool.getDefaultCwlPath();
         defaultWdlPath = tool.getDefaultWdlPath();
         defaultDockerfilePath = tool.getDefaultDockerfilePath();
+        defaultCwlTestJsonPath = tool.getDefaultCwlTestJsonPath();
+        defaultWdlTestJsonPath = tool.getDefaultWdlTestJsonPath();
         this.setDefaultVersion(tool.getDefaultVersion());
 
         toolname = tool.getToolname();

@@ -758,6 +758,23 @@ public class WorkflowResource {
     @GET
     @Timed
     @UnitOfWork
+    @Path("/{workflowId}/testjson")
+    @ApiOperation(value = "Get the corresponding test.json file.", notes = "Does not need authentication", response = SourceFile.class)
+    public SourceFile testJsonPath(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
+            @QueryParam("version") String version){
+        Workflow workflow = workflowDAO.findById(workflowId);
+
+        if (workflow.getDescriptorType().toLowerCase().equals("cwl")) {
+            return entryVersionHelper.getSourceFile(workflowId, version, FileType.CWL_TEST_JSON);
+        } else {
+            // assume WDL
+            return entryVersionHelper.getSourceFile(workflowId, version, FileType.WDL_TEST_JSON);
+        }
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
     @Path("/{workflowId}/dag/{workflowVersionId}")
     @ApiOperation(value = "Get the DAG for a given workflow version", notes = "", response = String.class)
     public String getWorkflowDag(@ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId,

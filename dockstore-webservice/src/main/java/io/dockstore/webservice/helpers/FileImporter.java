@@ -84,6 +84,16 @@ public class FileImporter {
                     return null;
                 }
                 fileName = tag.getWdlPath();
+            } else if (fileType == SourceFile.FileType.CWL_TEST_JSON) {
+                if (Strings.isNullOrEmpty(tag.getCwlTestJsonPath())) {
+                    return null;
+                }
+                fileName = tag.getCwlTestJsonPath();
+            } else if (fileType == SourceFile.FileType.WDL_TEST_JSON) {
+                if (Strings.isNullOrEmpty(tag.getWdlTestJsonPath())) {
+                    return null;
+                }
+                fileName = tag.getWdlTestJsonPath();
             }
         } else if (version instanceof WorkflowVersion){
             WorkflowVersion workflowVersion = (WorkflowVersion)version;

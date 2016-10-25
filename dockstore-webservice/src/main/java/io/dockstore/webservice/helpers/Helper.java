@@ -171,8 +171,9 @@ public final class Helper {
 
         final String bitbucketTokenContent = bitbucketToken == null ? null : bitbucketToken.getContent();
         final String gitlabTokenContent = gitlabToken == null ? null : gitlabToken.getContent();
+        final String githubTokenContent = githubToken == null ? null : githubToken.getContent();
         final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(c.getGitUrl(), client,
-                bitbucketTokenContent, gitlabTokenContent, githubToken.getContent());
+                bitbucketTokenContent, gitlabTokenContent, githubTokenContent);
         FileImporter importer = new FileImporter(sourceCodeRepo);
 
         // Add for new descriptor types
@@ -192,6 +193,10 @@ public final class Helper {
                     files.addAll(importedFiles.values());
                 } else if (f == FileType.DOCKSTORE_WDL) {
                     dockstoreFile.setPath(tag.getWdlPath());
+                } else if (f == FileType.CWL_TEST_JSON) {
+                    dockstoreFile.setPath(tag.getCwlTestJsonPath());
+                } else if (f == FileType.WDL_TEST_JSON) {
+                    dockstoreFile.setPath(tag.getWdlTestJsonPath());
                 }
                 files.add(dockstoreFile);
             }

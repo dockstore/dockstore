@@ -393,22 +393,28 @@ public abstract class SourceCodeRepoInterface {
         // Determine workflow version from previous
 
         String calculatedPath;
+        String testJsonPath;
 
         // Set to false if new version
         if (existingDefaults.get(branch) == null) {
             version.setDirtyBit(false);
             calculatedPath = existingWorkflow.get().getDefaultWorkflowPath();
+            testJsonPath = existingWorkflow.get().getDefaultTestJsonPath();
         } else {
             // existing version
             if (existingDefaults.get(branch).isDirtyBit()) {
                 calculatedPath = existingDefaults.get(branch).getWorkflowPath();
+                testJsonPath = existingDefaults.get(branch).getWorkflowTestJson();
             } else {
                 calculatedPath = existingWorkflow.get().getDefaultWorkflowPath();
+                testJsonPath = existingWorkflow.get().getDefaultTestJsonPath();
             }
             version.setDirtyBit(existingDefaults.get(branch).isDirtyBit());
         }
 
         version.setWorkflowPath(calculatedPath);
+        version.setWorkflowTestJson(testJsonPath);
+
         return version;
     }
 

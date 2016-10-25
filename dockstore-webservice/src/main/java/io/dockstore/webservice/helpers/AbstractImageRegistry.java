@@ -243,6 +243,8 @@ public abstract class AbstractImageRegistry {
                             // Has not been modified => set paths
                             oldTag.setCwlPath(tool.getDefaultCwlPath());
                             oldTag.setWdlPath(tool.getDefaultWdlPath());
+                            oldTag.setCwlTestJsonPath(tool.getDefaultCwlTestJsonPath());
+                            oldTag.setWdlTestJsonPath(tool.getDefaultWdlTestJsonPath());
                             oldTag.setDockerfilePath(tool.getDefaultDockerfilePath());
                         }
 

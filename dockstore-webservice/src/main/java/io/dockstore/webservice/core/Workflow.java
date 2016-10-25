@@ -69,6 +69,10 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     @Column(columnDefinition = "text")
     @ApiModelProperty(value = "This is the name of the workflow, not needed when only one workflow in a repo", required = false)
     private String workflowName;
+    @Column(columnDefinition = "text")
+    @JsonProperty("default_test_json_path")
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the example inputs json", required = true)
+    private String defaultTestJsonPath = "/test.json";
 
     @Column(nullable = false)
     @ApiModelProperty(value = "This is a git organization for the workflow", required = true)
@@ -211,12 +215,21 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         return this.descriptorType;
     }
 
+    public String getDefaultTestJsonPath() {
+        return defaultTestJsonPath;
+    }
+
+    public void setDefaultTestJsonPath(String defaultTestJsonPath) {
+        this.defaultTestJsonPath = defaultTestJsonPath;
+    }
+
     // Used to update workflow manually (not refresh)
     public void updateInfo(Workflow workflow) {
         workflowName = workflow.getWorkflowName();
         path = workflow.getPath();
         descriptorType = workflow.getDescriptorType();
         defaultWorkflowPath = workflow.getDefaultWorkflowPath();
+        defaultTestJsonPath = workflow.getDefaultTestJsonPath();
         this.setDefaultVersion(workflow.getDefaultVersion());
     }
 }

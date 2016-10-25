@@ -77,7 +77,13 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
         this.workflowPath = workflowPath;
     }
 
+    public String getWorkflowTestJson() {
+        return workflowTestJson;
+    }
 
+    public void setWorkflowTestJson(String workflowTestJson) {
+        this.workflowTestJson = workflowTestJson;
+    }
 
     @Override public int hashCode() {
         return 31 * super.hashCode() + Objects.hash(workflowPath);

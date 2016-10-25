@@ -197,17 +197,20 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
             // Grab workflow file from github
             try {
-                // Get contents of CWL file and store
+                // Get contents of descriptor file and store
                 final List<RepositoryContents> descriptorContents = cService.getContents(id, calculatedPath, ref);
                 if (descriptorContents != null && descriptorContents.size() > 0) {
                     String content = extractGitHubContents(descriptorContents);
+                    SourceFile testJson = new SourceFile();
 
                     // TODO: Is this the best way to determine file type? I don't think so
                     // Should be workflow.getDescriptorType().equals("cwl") - though enum is better!
                     if (calculatedExtension.equalsIgnoreCase("cwl") || calculatedExtension.equalsIgnoreCase("yml") || calculatedExtension.equalsIgnoreCase("yaml")) {
                         validWorkflow = checkValidCWLWorkflow(content);
+                        testJson.setType(SourceFile.FileType.CWL_TEST_JSON);
                     } else {
                         validWorkflow = checkValidWDLWorkflow(content);
+                        testJson.setType(SourceFile.FileType.WDL_TEST_JSON);
                     }
 
                     if (validWorkflow) {
@@ -217,6 +220,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                         file.setContent(content);
                         file.setPath(calculatedPath);
                         file.setType(identifiedType);
+
+                        // Get test json file
+                        testJson.setContent(getFileContents(version.getWorkflowTestJson(), ref, repositoryId.split("/")[1]));
+                        testJson.setPath(version.getWorkflowTestJson());
+                        if (testJson.getContent() != null) {
+                            version.addSourceFile(testJson);
+                        }
+
                         workflow.addWorkflowVersion(combineVersionAndSourcefile(file, workflow, identifiedType, version));
                     }
 
@@ -301,4 +312,5 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
         return content;
     }
+
 }
