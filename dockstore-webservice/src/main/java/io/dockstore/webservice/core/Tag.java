@@ -65,7 +65,7 @@ public class Tag extends Version<Tag> {
     private String wdlPath = "/Dockstore.wdl";
 
     @Column(columnDefinition = "text")
-    @JsonProperty("cwl__test_json_path")
+    @JsonProperty("cwl_test_json_path")
     @ApiModelProperty("Path for example inputs json for CWL")
     private String cwlTestJsonPath = "/test.cwl.json";
 

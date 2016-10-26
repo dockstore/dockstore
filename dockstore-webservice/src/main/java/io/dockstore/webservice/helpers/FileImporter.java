@@ -29,6 +29,8 @@ import io.dockstore.webservice.core.WorkflowVersion;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,6 +47,7 @@ import java.util.regex.Pattern;
  */
 public class FileImporter {
 
+    public static final Logger LOG = LoggerFactory.getLogger(FileImporter.class);
     private final SourceCodeRepoInterface sourceCodeRepo;
 
     public FileImporter(SourceCodeRepoInterface sourceCodeRepo){
@@ -215,7 +218,7 @@ public class FileImporter {
         // create a new source file
         final String fileResponse = readGitRepositoryFile(fileType, version, mapValue);
         if (fileResponse == null){
-            SourceCodeRepoInterface.LOG.error("Could not read: " + mapValue);
+            FileImporter.LOG.error("Could not read: " + mapValue);
             return;
         }
         SourceFile sourceFile = new SourceFile();

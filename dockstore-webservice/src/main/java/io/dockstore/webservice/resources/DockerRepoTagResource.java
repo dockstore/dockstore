@@ -109,7 +109,8 @@ public class DockerRepoTagResource {
 
                 // If any paths have changed then set dirty bit to true
                 if (!existingTag.getCwlPath().equals(tag.getCwlPath()) || !existingTag.getWdlPath().equals(tag.getWdlPath())
-                        || !existingTag.getDockerfilePath().equals(tag.getDockerfilePath())) {
+                        || !existingTag.getDockerfilePath().equals(tag.getDockerfilePath()) || !existingTag.getCwlTestJsonPath().equals(tag.getCwlTestJsonPath())
+                        || !existingTag.getWdlTestJsonPath().equals(tag.getWdlTestJsonPath())) {
                     existingTag.setDirtyBit(true);
                 }
 

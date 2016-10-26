@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +33,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Workflow;
@@ -157,7 +159,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
 
         if (id == null) {
             LOG.error("Could not find Gitlab repository " + repositoryId + " for user.");
-            return workflow;
+            throw new CustomWebApplicationException("Could not reach GitLab", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
 
         // Look at each version, check for valid workflows

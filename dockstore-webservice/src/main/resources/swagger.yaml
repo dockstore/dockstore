@@ -167,8 +167,8 @@ definitions:
     properties:
       automated: {default: false, description: 'Implementation specific, indicates
           whether this is an automated build on quay.io', type: boolean}
-      cwl__test_json_path: {description: Path for example inputs json for CWL, type: string}
       cwl_path: {description: Path for the CWL document, type: string}
+      cwl_test_json_path: {description: Path for example inputs json for CWL, type: string}
       dirtyBit: {default: false, description: True if user has altered the tag, type: boolean}
       dockerfile_path: {description: Path for the Dockerfile, type: string}
       hidden: {default: false, description: 'Implementation specific, whether this
@@ -1640,6 +1640,8 @@ paths:
       - {description: Workflow name, in: query, name: workflowName, required: true,
         type: string}
       - {description: Descriptor type, in: query, name: descriptorType, required: true,
+        type: string}
+      - {description: Test.json path, in: query, name: testJsonPath, required: true,
         type: string}
       produces: [application/json]
       responses:

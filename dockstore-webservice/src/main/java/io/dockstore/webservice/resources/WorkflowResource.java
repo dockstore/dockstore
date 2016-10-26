@@ -343,6 +343,19 @@ public class WorkflowResource {
                     workflowVersionFromDB.getSourceFiles().add(fileFromDB);
                 }
             }
+            // Remove existing files that are no longer present
+            for (Map.Entry<String, SourceFile> entry : existingFileMap.entrySet()) {
+                boolean toDelete = true;
+                for (SourceFile file : version.getSourceFiles()) {
+                    if (entry.getKey().equals(file.getType().toString() + file.getPath())) {
+                        toDelete = false;
+                    }
+                }
+                if (toDelete) {
+                    workflowVersionFromDB.getSourceFiles().remove(entry.getValue());
+                }
+            }
+
             //TODO: this needs a strategy for dealing with content on our side that has since been deleted
         }
     }
@@ -647,7 +660,8 @@ public class WorkflowResource {
             @ApiParam(value = "Workflow repository", required = true) @QueryParam("workflowPath") String workflowPath,
             @ApiParam(value = "Workflow container new descriptor path (CWL or WDL) and/or name", required = true) @QueryParam("defaultWorkflowPath") String defaultWorkflowPath,
             @ApiParam(value = "Workflow name", required = true) @QueryParam("workflowName") String workflowName,
-            @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType) {
+            @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType,
+            @ApiParam(value = "Test.json path", required = true) @QueryParam("testJsonPath") String testJsonPath) {
 
         String completeWorkflowPath = workflowPath;
         // Check that no duplicate workflow (same WorkflowPath) exists
@@ -689,6 +703,7 @@ public class WorkflowResource {
         newWorkflow.setWorkflowName(workflowName);
         newWorkflow.setPath(completeWorkflowPath);
         newWorkflow.setDescriptorType(descriptorType);
+        newWorkflow.setDefaultTestJsonPath(testJsonPath);
 
         final long workflowID = workflowDAO.create(newWorkflow);
         // need to create nested data models
@@ -743,7 +758,7 @@ public class WorkflowResource {
                 WorkflowVersion existingTag = mapOfExistingWorkflowVersions.get(version.getId());
 
                 // If path changed then update dirty bit to true
-                if (!existingTag.getWorkflowPath().equals(version.getWorkflowPath())) {
+                if (!existingTag.getWorkflowPath().equals(version.getWorkflowPath()) || !existingTag.getWorkflowTestJson().equals(version.getWorkflowTestJson())) {
                     existingTag.setDirtyBit(true);
                 }
 

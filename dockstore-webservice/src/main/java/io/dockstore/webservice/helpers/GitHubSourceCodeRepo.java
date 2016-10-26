@@ -163,7 +163,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             // Why is the path not set here?
         } catch (IOException e) {
             LOG.info(gitUsername + ": Cannot getNewWorkflow {}");
-            return null;
+            throw new CustomWebApplicationException("Could not reach GitHub", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
 
         return workflow;
@@ -180,7 +180,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             service.getTags(id).forEach(tag -> references.add(tag.getName()));
         } catch (IOException e) {
             LOG.info(gitUsername + ": Cannot branches or tags for workflow {}");
-            return null;
+            throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
 
         // For each branch (reference) found, create a workflow version and find the associated descriptor files
