@@ -222,8 +222,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                         file.setType(identifiedType);
 
                         // Get test json file
-                        testJson.setContent(getFileContents(version.getWorkflowTestJson(), ref, repositoryId.split("/")[1]));
-                        testJson.setPath(version.getWorkflowTestJson());
+                        testJson.setContent(getFileContents(version.getTestParameterFile(), ref, repositoryId.split("/")[1]));
+                        testJson.setPath(version.getTestParameterFile());
                         if (testJson.getContent() != null) {
                             version.addSourceFile(testJson);
                         }

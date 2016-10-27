@@ -197,9 +197,9 @@ public final class Helper {
                             .resolveImports(fileResponse, c, f, tag);
                     files.addAll(importedFiles.values());
                 } else if (f == FileType.CWL_TEST_JSON) {
-                    dockstoreFile.setPath(tag.getCwlTestJsonPath());
+                    dockstoreFile.setPath(tag.getCwlTestParameterFile());
                 } else if (f == FileType.WDL_TEST_JSON) {
-                    dockstoreFile.setPath(tag.getWdlTestJsonPath());
+                    dockstoreFile.setPath(tag.getWdlTestParameterFile());
                 }
                 files.add(dockstoreFile);
             }

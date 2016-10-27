@@ -65,14 +65,14 @@ public class Tag extends Version<Tag> {
     private String wdlPath = "/Dockstore.wdl";
 
     @Column(columnDefinition = "text")
-    @JsonProperty("cwl_test_json_path")
+    @JsonProperty("cwl_test_parameter_file")
     @ApiModelProperty("Path for example inputs json for CWL")
-    private String cwlTestJsonPath = "/test.cwl.json";
+    private String cwlTestParameterFile = "/test.cwl.json";
 
     @Column(columnDefinition = "text")
-    @JsonProperty("wdl_test_json_path")
+    @JsonProperty("wdl_test_parameter_file")
     @ApiModelProperty("Path for example inputs json for WDL")
-    private String wdlTestJsonPath = "/test.wdl.json";
+    private String wdlTestParameterFile = "/test.wdl.json";
 
     public Tag() {
         super();
@@ -90,8 +90,8 @@ public class Tag extends Version<Tag> {
         // Add for new descriptor types
         cwlPath = tag.cwlPath;
         wdlPath = tag.wdlPath;
-        wdlTestJsonPath = tag.wdlTestJsonPath;
-        cwlTestJsonPath = tag.cwlTestJsonPath;
+        wdlTestParameterFile = tag.wdlTestParameterFile;
+        cwlTestParameterFile = tag.cwlTestParameterFile;
 
         dockerfilePath = tag.dockerfilePath;
     }
@@ -122,8 +122,8 @@ public class Tag extends Version<Tag> {
         // Add here for new descriptor types
         cwlPath = tag.cwlPath;
         wdlPath = tag.wdlPath;
-        wdlTestJsonPath = tag.wdlTestJsonPath;
-        cwlTestJsonPath = tag.cwlTestJsonPath;
+        wdlTestParameterFile = tag.wdlTestParameterFile;
+        cwlTestParameterFile = tag.cwlTestParameterFile;
 
         dockerfilePath = tag.dockerfilePath;
     }
@@ -185,20 +185,20 @@ public class Tag extends Version<Tag> {
         this.automated = automated;
     }
 
-    public String getWdlTestJsonPath() {
-        return wdlTestJsonPath;
+    public String getWdlTestParameterFile() {
+        return wdlTestParameterFile;
     }
 
-    public void setWdlTestJsonPath(String wdlTestJsonPath) {
-        this.wdlTestJsonPath = wdlTestJsonPath;
+    public void setWdlTestParameterFile(String wdlTestParameterFile) {
+        this.wdlTestParameterFile = wdlTestParameterFile;
     }
 
-    public String getCwlTestJsonPath() {
-        return cwlTestJsonPath;
+    public String getCwlTestParameterFile() {
+        return cwlTestParameterFile;
     }
 
-    public void setCwlTestJsonPath(String cwlTestJsonPath) {
-        this.cwlTestJsonPath = cwlTestJsonPath;
+    public void setCwlTestParameterFile(String cwlTestParameterFile) {
+        this.cwlTestParameterFile = cwlTestParameterFile;
     }
 
     @Override

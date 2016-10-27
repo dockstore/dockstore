@@ -399,21 +399,21 @@ public abstract class SourceCodeRepoInterface {
         if (existingDefaults.get(branch) == null) {
             version.setDirtyBit(false);
             calculatedPath = existingWorkflow.get().getDefaultWorkflowPath();
-            testJsonPath = existingWorkflow.get().getDefaultTestJsonPath();
+            testJsonPath = existingWorkflow.get().getDefaultTestParameterFile();
         } else {
             // existing version
             if (existingDefaults.get(branch).isDirtyBit()) {
                 calculatedPath = existingDefaults.get(branch).getWorkflowPath();
-                testJsonPath = existingDefaults.get(branch).getWorkflowTestJson();
+                testJsonPath = existingDefaults.get(branch).getTestParameterFile();
             } else {
                 calculatedPath = existingWorkflow.get().getDefaultWorkflowPath();
-                testJsonPath = existingWorkflow.get().getDefaultTestJsonPath();
+                testJsonPath = existingWorkflow.get().getDefaultTestParameterFile();
             }
             version.setDirtyBit(existingDefaults.get(branch).isDirtyBit());
         }
 
         version.setWorkflowPath(calculatedPath);
-        version.setWorkflowTestJson(testJsonPath);
+        version.setTestParameterFile(testJsonPath);
 
         return version;
     }

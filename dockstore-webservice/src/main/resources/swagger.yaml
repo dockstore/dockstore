@@ -20,13 +20,13 @@ definitions:
       defaultVersion: {description: This is the default version of the entry, type: string}
       default_cwl_path: {description: 'This indicates for the associated git repository,
           the default path to the CWL document, required: GA4GH', type: string}
-      default_cwl_test_json_path: {description: 'This indicates for the associated
+      default_cwl_test_parameter_file: {description: 'This indicates for the associated
           git repository, the default path to the CWL example inputs json', type: string}
       default_dockerfile_path: {description: 'This indicates for the associated git
           repository, the default path to the Dockerfile, required: GA4GH', type: string}
       default_wdl_path: {description: 'This indicates for the associated git repository,
           the default path to the WDL document', type: string}
-      default_wdl_test_json_path: {description: 'This indicates for the associated
+      default_wdl_test_parameter_file: {description: 'This indicates for the associated
           git repository, the default path to the WDL example inputs json', type: string}
       description: {description: 'This is a human-readable description of this container
           and what it is trying to accomplish, required GA4GH', type: string}
@@ -82,8 +82,8 @@ definitions:
         items: {$ref: '#/definitions/User'}
         type: array
         uniqueItems: true
-    required: [default_cwl_path, default_cwl_test_json_path, default_dockerfile_path,
-      default_wdl_path, default_wdl_test_json_path, gitUrl, mode, name, namespace,
+    required: [default_cwl_path, default_cwl_test_parameter_file, default_dockerfile_path,
+      default_wdl_path, default_wdl_test_parameter_file, gitUrl, mode, name, namespace,
       registry, toolname]
     type: object
   GitHubComAuthenticationResource:
@@ -168,7 +168,8 @@ definitions:
       automated: {default: false, description: 'Implementation specific, indicates
           whether this is an automated build on quay.io', type: boolean}
       cwl_path: {description: Path for the CWL document, type: string}
-      cwl_test_json_path: {description: Path for example inputs json for CWL, type: string}
+      cwl_test_parameter_file: {description: Path for example inputs json for CWL,
+        type: string}
       dirtyBit: {default: false, description: True if user has altered the tag, type: boolean}
       dockerfile_path: {description: Path for the Dockerfile, type: string}
       hidden: {default: false, description: 'Implementation specific, whether this
@@ -190,7 +191,8 @@ definitions:
       valid: {default: false, description: 'Implementation specific, whether this
           tag has valid files from source code repo', type: boolean}
       wdl_path: {description: Path for the WDL document, type: string}
-      wdl_test_json_path: {description: Path for example inputs json for WDL, type: string}
+      wdl_test_parameter_file: {description: Path for example inputs json for WDL,
+        type: string}
     required: [image_id, name, reference]
     type: object
   Token:
@@ -316,8 +318,8 @@ definitions:
       author: {description: This is the name of the author stated in the Dockstore.cwl,
         type: string}
       defaultVersion: {description: This is the default version of the entry, type: string}
-      default_test_json_path: {description: 'This indicates for the associated git
-          repository, the default path to the example inputs json', type: string}
+      default_test_parameter_file: {description: 'This indicates for the associated
+          git repository, the default path to the example inputs json', type: string}
       description: {description: 'This is a human-readable description of this container
           and what it is trying to accomplish, required GA4GH', type: string}
       descriptorType: {description: 'This is a descriptor type for the workflow, either
@@ -360,7 +362,7 @@ definitions:
         uniqueItems: true
       workflow_path: {description: 'This indicates for the associated git repository,
           the default path to the CWL document', type: string}
-    required: [default_test_json_path, descriptorType, gitUrl, mode, organization,
+    required: [default_test_parameter_file, descriptorType, gitUrl, mode, organization,
       repository, workflow_path]
     type: object
   WorkflowVersion:
@@ -381,7 +383,8 @@ definitions:
         items: {$ref: '#/definitions/SourceFile'}
         type: array
         uniqueItems: true
-      test_json_path: {description: Path for example inputs json for descriptor, type: string}
+      test_parameter_file: {description: Path for example inputs json for descriptor,
+        type: string}
       valid: {default: false, description: 'Implementation specific, whether this
           tag has valid files from source code repo', type: boolean}
       workflow_path: {description: Path for the workflow, type: string}
@@ -1118,10 +1121,10 @@ paths:
         default: {description: successful operation}
       summary: Delete tag linked to a container
       tags: [containertags]
-  /containers/{containerId}/testjson:
+  /containers/{containerId}/testparameter:
     get:
       description: Does not need authentication
-      operationId: testJsonPath
+      operationId: testParameterPath
       parameters:
       - {description: Tool id, format: int64, in: path, name: containerId, required: true,
         type: integer}
@@ -1132,7 +1135,7 @@ paths:
         200:
           description: successful operation
           schema: {$ref: '#/definitions/SourceFile'}
-      summary: Get the corresponding test.json file.
+      summary: Get the corresponding test parameter file.
       tags: [containers]
   /containers/{containerId}/updateTagPaths:
     put:
@@ -1641,7 +1644,7 @@ paths:
         type: string}
       - {description: Descriptor type, in: query, name: descriptorType, required: true,
         type: string}
-      - {description: Test.json path, in: query, name: testJsonPath, required: true,
+      - {description: Test.json path, in: query, name: testParameterPath, required: true,
         type: string}
       produces: [application/json]
       responses:

@@ -93,15 +93,15 @@ public class FileImporter {
                 }
                 fileName = tag.getWdlPath();
             } else if (fileType == SourceFile.FileType.CWL_TEST_JSON) {
-                if (Strings.isNullOrEmpty(tag.getCwlTestJsonPath())) {
+                if (Strings.isNullOrEmpty(tag.getCwlTestParameterFile())) {
                     return null;
                 }
-                fileName = tag.getCwlTestJsonPath();
+                fileName = tag.getCwlTestParameterFile();
             } else if (fileType == SourceFile.FileType.WDL_TEST_JSON) {
-                if (Strings.isNullOrEmpty(tag.getWdlTestJsonPath())) {
+                if (Strings.isNullOrEmpty(tag.getWdlTestParameterFile())) {
                     return null;
                 }
-                fileName = tag.getWdlTestJsonPath();
+                fileName = tag.getWdlTestParameterFile();
             }
         } else if (version instanceof WorkflowVersion){
             WorkflowVersion workflowVersion = (WorkflowVersion)version;

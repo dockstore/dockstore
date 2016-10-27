@@ -253,8 +253,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
                     // Get test json file
                     SourceFile testJson = new SourceFile();
-                    testJson.setContent(getFileContents(version.getWorkflowTestJson(), branchName, repositoryId));
-                    testJson.setPath(version.getWorkflowTestJson());
+                    testJson.setContent(getFileContents(version.getTestParameterFile(), branchName, repositoryId));
+                    testJson.setPath(version.getTestParameterFile());
                     if (identifiedType == SourceFile.FileType.DOCKSTORE_CWL) {
                         testJson.setType(SourceFile.FileType.CWL_TEST_JSON);
                     } else {

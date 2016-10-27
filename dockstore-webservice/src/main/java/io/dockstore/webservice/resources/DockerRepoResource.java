@@ -661,9 +661,9 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/{containerId}/testjson")
-    @ApiOperation(value = "Get the corresponding test.json file.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class)
-    public SourceFile testJsonPath(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
+    @Path("/{containerId}/testparameter")
+    @ApiOperation(value = "Get the corresponding test parameter file.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class)
+    public SourceFile testParameterPath(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag, @QueryParam("type") String type){
         if (type.toLowerCase().equals("cwl")) {
             return entryVersionHelper.getSourceFile(containerId, tag, FileType.CWL_TEST_JSON);

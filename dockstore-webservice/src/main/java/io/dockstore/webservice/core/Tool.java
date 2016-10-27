@@ -92,14 +92,14 @@ public class Tool extends Entry<Tool, Tag> {
     private String defaultWdlPath = "/Dockstore.wdl";
 
     @Column(columnDefinition = "text")
-    @JsonProperty("default_cwl_test_json_path")
+    @JsonProperty("default_cwl_test_parameter_file")
     @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL example inputs json", required = true)
-    private String defaultCwlTestJsonPath = "/test.cwl.json";
+    private String defaultCwlTestParameterFile = "/test.cwl.json";
 
     @Column(columnDefinition = "text")
-    @JsonProperty("default_wdl_test_json_path")
+    @JsonProperty("default_wdl_test_parameter_file")
     @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the WDL example inputs json", required = true)
-    private String defaultWdlTestJsonPath = "/test.wdl.json";
+    private String defaultWdlTestParameterFile = "/test.wdl.json";
 
 
     @Column(nullable = false)
@@ -291,20 +291,20 @@ public class Tool extends Entry<Tool, Tag> {
         return getPath() + (toolname == null || toolname.isEmpty() ? "" : '/' + toolname);
     }
 
-    public String getDefaultCwlTestJsonPath() {
-        return defaultCwlTestJsonPath;
+    public String getDefaultCwlTestParameterFile() {
+        return defaultCwlTestParameterFile;
     }
 
-    public void setDefaultCwlTestJsonPath(String defaultCwlTestJsonPath) {
-        this.defaultCwlTestJsonPath = defaultCwlTestJsonPath;
+    public void setDefaultCwlTestParameterFile(String defaultCwlTestParameterFile) {
+        this.defaultCwlTestParameterFile = defaultCwlTestParameterFile;
     }
 
-    public String getDefaultWdlTestJsonPath() {
-        return defaultWdlTestJsonPath;
+    public String getDefaultWdlTestParameterFile() {
+        return defaultWdlTestParameterFile;
     }
 
-    public void setDefaultWdlTestJsonPath(String defaultWdlTestJsonPath) {
-        this.defaultWdlTestJsonPath = defaultWdlTestJsonPath;
+    public void setDefaultWdlTestParameterFile(String defaultWdlTestParameterFile) {
+        this.defaultWdlTestParameterFile = defaultWdlTestParameterFile;
     }
 
 
@@ -317,8 +317,8 @@ public class Tool extends Entry<Tool, Tag> {
         defaultCwlPath = tool.getDefaultCwlPath();
         defaultWdlPath = tool.getDefaultWdlPath();
         defaultDockerfilePath = tool.getDefaultDockerfilePath();
-        defaultCwlTestJsonPath = tool.getDefaultCwlTestJsonPath();
-        defaultWdlTestJsonPath = tool.getDefaultWdlTestJsonPath();
+        defaultCwlTestParameterFile = tool.getDefaultCwlTestParameterFile();
+        defaultWdlTestParameterFile = tool.getDefaultWdlTestParameterFile();
         this.setDefaultVersion(tool.getDefaultVersion());
 
         toolname = tool.getToolname();
