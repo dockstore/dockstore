@@ -258,7 +258,7 @@ public class BasicET {
         public void testQuayGithubAutoRegistration(){
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
                 final long count = testingPostgres.runSelectStatement("select count(*) from tool where path like \'" + Registry.QUAY_IO.toString() + "%\' and giturl like 'git@github.com%'", new ScalarHandler<>());
-                Assert.assertTrue("there should be 4 registered from Quay and Github, there are " + count, count == 4);
+                Assert.assertTrue("there should be 5 registered from Quay and Github, there are " + count, count == 5);
         }
 
         /**
