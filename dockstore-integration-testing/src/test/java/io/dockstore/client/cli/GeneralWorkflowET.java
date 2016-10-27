@@ -413,7 +413,7 @@ public class GeneralWorkflowET {
                 // Get workflows
                 usersApi.refreshWorkflows(userId);
 
-                Workflow githubWorkflow = workflowApi.manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/Dockstore.cwl", "test-update-workflow", "cwl");
+                Workflow githubWorkflow = workflowApi.manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/Dockstore.cwl", "test-update-workflow", "cwl", "test.json");
 
                 // Publish github workflow
                 Workflow workflow = workflowApi.refresh(githubWorkflow.getId());
