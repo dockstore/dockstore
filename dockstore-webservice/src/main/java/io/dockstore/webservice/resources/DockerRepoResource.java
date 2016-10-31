@@ -263,6 +263,8 @@ public class DockerRepoResource {
                 tag.setCwlPath(tool.getDefaultCwlPath());
                 tag.setWdlPath(tool.getDefaultWdlPath());
                 tag.setDockerfilePath(tool.getDefaultDockerfilePath());
+                tag.setCwlTestParameterFile(tool.getDefaultCwlTestParameterFile());
+                tag.setWdlTestParameterFile(tool.getDefaultWdlTestParameterFile());
             }
         }
 

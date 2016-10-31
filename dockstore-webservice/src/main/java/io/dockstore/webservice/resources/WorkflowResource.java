@@ -448,6 +448,7 @@ public class WorkflowResource {
         for(WorkflowVersion version : versions){
             if (!version.isDirtyBit()) {
                 version.setWorkflowPath(workflow.getDefaultWorkflowPath());
+                version.setTestParameterFile(workflow.getDefaultTestParameterFile());
             }
         }
 
@@ -773,9 +774,9 @@ public class WorkflowResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/{workflowId}/testjson")
+    @Path("/{workflowId}/testparameter")
     @ApiOperation(value = "Get the corresponding test.json file.", notes = "Does not need authentication", response = SourceFile.class)
-    public SourceFile testJsonPath(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
+    public SourceFile testParameterPath(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("version") String version){
         Workflow workflow = workflowDAO.findById(workflowId);
 

@@ -184,7 +184,7 @@ public abstract class AbstractImageRegistry {
         updateTags(toolTags, tool, githubToken, bitbucketToken, gitlabToken, tagDAO, fileDAO, toolDAO, client);
 
         // Return the updated tool
-        return toolDAO.findById(tool.getId());
+        return newDBTools.get(0);
     }
 
     /**

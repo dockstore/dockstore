@@ -80,7 +80,10 @@ public final class Helper {
         for (Tag tag : tags) {
             LOG.info(githubToken.getUsername() + " : Updating files for tag {}", tag.getName());
 
+            // Get all of the required sourcefiles for the given tag
             List<SourceFile> newFiles = loadFiles(client, bitbucketToken, githubToken, gitlabToken, tool, tag);
+
+            // Remove all existing sourcefiles
             tag.getSourceFiles().clear();
 
             // Add for new descriptor types

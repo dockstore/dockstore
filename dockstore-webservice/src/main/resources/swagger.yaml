@@ -1938,10 +1938,10 @@ paths:
             type: array
       summary: Get the corresponding Dockstore.wdl file on Github.
       tags: [workflows]
-  /workflows/{workflowId}/testjson:
+  /workflows/{workflowId}/testparameter:
     get:
       description: Does not need authentication
-      operationId: testJsonPath
+      operationId: testParameterPath
       parameters:
       - {description: Workflow id, format: int64, in: path, name: workflowId, required: true,
         type: integer}
