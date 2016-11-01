@@ -667,7 +667,7 @@ public class DockerRepoResource {
     @ApiOperation(value = "Get the corresponding test parameter file.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile testParameterPath(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag, @QueryParam("type") String type){
-        if (type.toLowerCase().equals("cwl")) {
+        if (type.toLowerCase().equals(DescriptorType.CWL.toString())) {
             return entryVersionHelper.getSourceFile(containerId, tag, FileType.CWL_TEST_JSON);
         } else {
             // assume WDL

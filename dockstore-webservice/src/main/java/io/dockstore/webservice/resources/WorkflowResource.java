@@ -780,7 +780,8 @@ public class WorkflowResource {
             @QueryParam("version") String version){
         Workflow workflow = workflowDAO.findById(workflowId);
 
-        if (workflow.getDescriptorType().toLowerCase().equals("cwl")) {
+
+        if (workflow.getDescriptorType().toLowerCase().equals(DescriptorType.CWL.toString())) {
             return entryVersionHelper.getSourceFile(workflowId, version, FileType.CWL_TEST_JSON);
         } else {
             // assume WDL
