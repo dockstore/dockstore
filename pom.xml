@@ -964,15 +964,6 @@
                 <groupId>org.eluder.coveralls</groupId>
                 <artifactId>coveralls-maven-plugin</artifactId>
             </plugin>
-            <plugin>
-                <groupId>com.versioneye</groupId>
-                <artifactId>versioneye-maven-plugin</artifactId>
-                <version>3.10.0</version>
-                <configuration>
-                    <updatePropertiesAfterCreate>false</updatePropertiesAfterCreate>
-                    <projectId>576bfc12f04578000a6809a1</projectId>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
 
