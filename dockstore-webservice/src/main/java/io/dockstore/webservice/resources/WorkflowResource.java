@@ -662,7 +662,7 @@ public class WorkflowResource {
             @ApiParam(value = "Workflow container new descriptor path (CWL or WDL) and/or name", required = true) @QueryParam("defaultWorkflowPath") String defaultWorkflowPath,
             @ApiParam(value = "Workflow name", required = true) @QueryParam("workflowName") String workflowName,
             @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType,
-            @ApiParam(value = "Test.json path", required = true) @QueryParam("testParameterPath") String testJsonPath) {
+            @ApiParam(value = "Test parameter path", required = true) @QueryParam("testParameterPath") String testJsonPath) {
 
         String completeWorkflowPath = workflowPath;
         // Check that no duplicate workflow (same WorkflowPath) exists

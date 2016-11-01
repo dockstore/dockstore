@@ -1644,7 +1644,7 @@ paths:
         type: string}
       - {description: Descriptor type, in: query, name: descriptorType, required: true,
         type: string}
-      - {description: Test.json path, in: query, name: testParameterPath, required: true,
+      - {description: Test parameter path, in: query, name: testParameterPath, required: true,
         type: string}
       produces: [application/json]
       responses:
