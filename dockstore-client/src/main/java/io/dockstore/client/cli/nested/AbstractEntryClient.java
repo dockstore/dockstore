@@ -26,13 +26,13 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
-import cromwell.Main;
 import io.cwl.avro.CWL;
 import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.Workflow;
 import io.dockstore.client.Bridge;
 import io.dockstore.client.cli.Client;
 import io.dockstore.common.FileProvisioning;
+import io.dockstore.common.Utilities;
 import io.dockstore.common.WDLFileProvisioning;
 import io.github.collaboratory.LauncherCWL;
 import io.swagger.client.ApiException;
@@ -45,7 +45,6 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.csv.QuoteMode;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.json.JSONObject;
 import org.yaml.snakeyaml.Yaml;
@@ -55,11 +54,14 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.PrintStream;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -103,6 +105,8 @@ import static io.dockstore.client.cli.Client.IO_ERROR;
  */
 public abstract class AbstractEntryClient {
     private final CWL cwlUtil = new CWL();
+
+    public static final String CROMWELL_LOCATION = "https://github.com/broadinstitute/cromwell/releases/download/0.21/cromwell-0.21.jar";
 
     public enum Type {
         CWL("cwl"), WDL("wdl"), NONE("none");
@@ -1015,8 +1019,27 @@ public abstract class AbstractEntryClient {
         }
         final String json = reqVal(args, "--json");
 
-        Main main = new Main();
         File parameterFile = new File(json);
+
+        // grab the cromwell jar
+        String libraryLocation = System.getProperty("user.home") + File.separator + ".dockstore" + File.separator + "libraries" + File.separator;
+        URL cromwellURL;
+        String cromwellFileName;
+        try {
+            cromwellURL = new URL(CROMWELL_LOCATION);
+            cromwellFileName = new File(cromwellURL.toURI().getPath()).getName();
+        } catch (MalformedURLException | URISyntaxException e) {
+            throw new RuntimeException("Could not create cromwell location", e);
+        }
+        String cromwellTarget = libraryLocation + cromwellFileName;
+        File cromwellTargetFile = new File(cromwellTarget);
+        if (!cromwellTargetFile.exists()) {
+            try {
+                FileUtils.copyURLToFile(cromwellURL, cromwellTargetFile);
+            } catch (IOException e) {
+                throw new RuntimeException("Could not download cromwell location", e);
+            }
+        }
 
         final SourceFile wdlFromServer;
         try {
@@ -1054,41 +1077,49 @@ public abstract class AbstractEntryClient {
             String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
 
             final List<String> wdlRun = Lists.newArrayList(tmp.getAbsolutePath(), newJsonPath);
-            final scala.collection.immutable.List<String> wdlRunList = scala.collection.JavaConversions.asScalaBuffer(wdlRun).toList();
 
             // run a workflow
             System.out.println("Calling out to Cromwell to run your workflow");
 
-            // save the output stream
-            PrintStream savedOut = System.out;
-            PrintStream savedErr = System.err;
-
-            // capture system.out and system.err
-            ByteArrayOutputStream stdoutCapture = new ByteArrayOutputStream();
-            System.setOut(new PrintStream(stdoutCapture, true, StandardCharsets.UTF_8.toString()));
-            ByteArrayOutputStream stderrCapture = new ByteArrayOutputStream();
-            System.setErr(new PrintStream(stderrCapture, true, StandardCharsets.UTF_8.toString()));
 
             // Currently Cromwell does not support HTTP(S) imports
             // https://github.com/broadinstitute/cromwell/issues/1528
-            final int run = main.run(wdlRunList);
 
-            System.out.flush();
-            System.err.flush();
-            String stdout = stdoutCapture.toString(StandardCharsets.UTF_8);
-            String stderr = stderrCapture.toString(StandardCharsets.UTF_8);
+            final String[] s = { "java", "-jar", cromwellTargetFile.getAbsolutePath(), "run" };
+            List<String> arguments = new ArrayList<>();
+            arguments.addAll(Arrays.asList(s));
+            arguments.addAll(wdlRun);
 
-            System.setOut(savedOut);
-            System.setErr(savedErr);
-            System.out.println("Cromwell exit code: " + run);
+            int exitCode = 0;
+            String stdout = "";
+            String stderr = "";
+            try {
+                // TODO: probably want to make a new library call so that we can stream output
+                final String join = Joiner.on(" ").join(arguments);
+                System.out.println(join);
+                final ImmutablePair<String, String> execute = Utilities.executeCommand(join);
+                stdout = execute.getLeft();
+                stderr = execute.getRight();
+            } catch(RuntimeException e){
+                // TODO: do something smarter here, like get back the actual exit code
+                throw(e);
+            }
+
+            System.out.println("Cromwell exit code: " + exitCode);
 
             LauncherCWL.outputIntegrationOutput(workingDir, ImmutablePair.of(stdout, stderr), stdout.replaceAll("\n", "\t"), stderr.replaceAll("\n", "\t"), "Cromwell");
 
             // capture the output and provision it
             final String wdlOutputTarget = optVal(args, "--wdl-output-target", null);
             if (wdlOutputTarget != null) {
+
+                String bracketContents = stdout.substring(stdout.lastIndexOf("{")+1,stdout.lastIndexOf("}"));
+                if (bracketContents.isEmpty()){
+                    throw new RuntimeException("No cromwell output");
+                }
+
                 // grab values from output JSON
-                Map<String, String> outputJson = gson.fromJson(stdout, HashMap.class);
+                Map<String, String> outputJson = gson.fromJson(bracketContents, HashMap.class);
                 System.out.println("Provisioning your output files to their final destinations");
                 final List<String> outputFiles = bridge.getOutputFiles(tmp);
                 for (String outFile : outputFiles) {

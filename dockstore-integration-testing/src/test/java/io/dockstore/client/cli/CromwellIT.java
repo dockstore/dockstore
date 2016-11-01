@@ -17,22 +17,15 @@
 package io.dockstore.client.cli;
 
 import com.google.common.collect.Lists;
-import com.google.gson.Gson;
-import cromwell.Main;
 import io.dockstore.client.Bridge;
-import io.dockstore.common.WDLFileProvisioning;
 import io.dropwizard.testing.ResourceHelpers;
-import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import scala.collection.JavaConversions;
 import scala.collection.immutable.List;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
-import java.util.Map;
 
 
 /**
@@ -51,45 +44,45 @@ public class CromwellIT {
         Assert.assertTrue(inputs.contains("three_step.cgrep.pattern"));
     }
 
-    @Test
-    public void runWDLWorkflow(){
-        Main main = new Main();
-        File workflowFile = new File(ResourceHelpers.resourceFilePath("wdl.wdl"));
-        File parameterFile = new File(ResourceHelpers.resourceFilePath("wdl.json"));
-        final java.util.List<String> wdlRun = Lists.newArrayList(workflowFile.getAbsolutePath(), parameterFile.getAbsolutePath());
-        final List<String> wdlRunList = JavaConversions.asScalaBuffer(wdlRun).toList();
-        // run a workflow
-        final int run = main.run(wdlRunList);
-        Assert.assertTrue(run == 0);
-    }
-
-    @Test
-    public void fileProvisioning() {
-        Main main = new Main();
-        File workflowFile = new File(ResourceHelpers.resourceFilePath("wdlfileprov.wdl"));
-        File parameterFile = new File(ResourceHelpers.resourceFilePath("wdlfileprov.json"));
-        Bridge bridge = new Bridge();
-        Map<String,String> wdlInputs = bridge.getInputFiles(workflowFile);
-
-        WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning(ResourceHelpers.resourceFilePath("config_file.txt"));
-        Gson gson = new Gson();
-        String jsonString;
-        try {
-            jsonString = FileUtils.readFileToString(parameterFile, StandardCharsets.UTF_8);
-            Map<String, Object> inputJson = gson.fromJson(jsonString, HashMap.class);
-
-            Map<String,Object> fileMap = wdlFileProvisioning.pullFiles(inputJson, wdlInputs);
-
-            String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
-            final java.util.List<String> wdlRun = Lists.newArrayList(workflowFile.getAbsolutePath(), newJsonPath);
-            final List<String> wdlRunList = JavaConversions.asScalaBuffer(wdlRun).toList();
-            // run a workflow
-            final int run = main.run(wdlRunList);
-            Assert.assertTrue(run == 0);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+//    @Test
+//    public void runWDLWorkflow(){
+//        Main main = new Main();
+//        File workflowFile = new File(ResourceHelpers.resourceFilePath("wdl.wdl"));
+//        File parameterFile = new File(ResourceHelpers.resourceFilePath("wdl.json"));
+//        final java.util.List<String> wdlRun = Lists.newArrayList(workflowFile.getAbsolutePath(), parameterFile.getAbsolutePath());
+//        final List<String> wdlRunList = JavaConversions.asScalaBuffer(wdlRun).toList();
+//        // run a workflow
+//        final int run = main.run(wdlRunList);
+//        Assert.assertTrue(run == 0);
+//    }
+//
+//    @Test
+//    public void fileProvisioning() {
+//        Main main = new Main();
+//        File workflowFile = new File(ResourceHelpers.resourceFilePath("wdlfileprov.wdl"));
+//        File parameterFile = new File(ResourceHelpers.resourceFilePath("wdlfileprov.json"));
+//        Bridge bridge = new Bridge();
+//        Map<String,String> wdlInputs = bridge.getInputFiles(workflowFile);
+//
+//        WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning(ResourceHelpers.resourceFilePath("config_file.txt"));
+//        Gson gson = new Gson();
+//        String jsonString;
+//        try {
+//            jsonString = FileUtils.readFileToString(parameterFile, StandardCharsets.UTF_8);
+//            Map<String, Object> inputJson = gson.fromJson(jsonString, HashMap.class);
+//
+//            Map<String,Object> fileMap = wdlFileProvisioning.pullFiles(inputJson, wdlInputs);
+//
+//            String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
+//            final java.util.List<String> wdlRun = Lists.newArrayList(workflowFile.getAbsolutePath(), newJsonPath);
+//            final List<String> wdlRunList = JavaConversions.asScalaBuffer(wdlRun).toList();
+//            // run a workflow
+//            final int run = main.run(wdlRunList);
+//            Assert.assertTrue(run == 0);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//    }
 
     @Test
     public void testWDLResolver() {
