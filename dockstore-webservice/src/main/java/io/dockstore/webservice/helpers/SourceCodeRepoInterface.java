@@ -18,8 +18,8 @@ package io.dockstore.webservice.helpers;
 
 import com.esotericsoftware.yamlbeans.YamlException;
 import com.esotericsoftware.yamlbeans.YamlReader;
-import com.google.api.client.repackaged.com.google.common.base.Strings;
 import com.google.common.base.Optional;
+import com.google.common.base.Strings;
 import io.dockstore.client.Bridge;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -28,13 +28,12 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowMode;
+import io.dockstore.webservice.core.WorkflowVersion;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import io.dockstore.webservice.core.WorkflowMode;
-import io.dockstore.webservice.core.WorkflowVersion;
 import wdl4s.parser.WdlParser;
 
 import java.io.File;
