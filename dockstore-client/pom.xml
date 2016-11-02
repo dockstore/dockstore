@@ -36,6 +36,11 @@
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
+            <artifactId>dockstore-common</artifactId>
+            <version>1.1-alpha.1-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-client</artifactId>
             <version>1.1-alpha.1-SNAPSHOT</version>
         </dependency>
@@ -117,15 +122,6 @@
         <!-- broad - cromwell stuff -->
         <dependency>
             <groupId>org.broadinstitute</groupId>
-            <artifactId>cromwell_2.11</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>libjavalib_v1</groupId>
-            <artifactId>libjavalib_v1</artifactId>
-            <version>1.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.broadinstitute</groupId>
             <artifactId>wdl4s_2.11</artifactId>
             <version>0.2</version>
         </dependency>
@@ -173,7 +169,10 @@
             <artifactId>json</artifactId>
         </dependency>
 
-
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-exec</artifactId>
+        </dependency>
     </dependencies>
 
 
@@ -271,8 +270,6 @@
 
                             <usedDependencies>
                                 <usedDependency>org.apache.httpcomponents:httpcore</usedDependency>
-                                <usedDependency>libjavalib_v1:libjavalib_v1</usedDependency>
-                                <!--<usedDependency>org.broadinstitute:cromwell_2.11</usedDependency>-->
                             </usedDependencies>
 
                         </configuration>
