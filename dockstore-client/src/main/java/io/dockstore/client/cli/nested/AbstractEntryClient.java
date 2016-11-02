@@ -1056,9 +1056,6 @@ public abstract class AbstractEntryClient {
             final List<String> wdlRun = Lists.newArrayList(tmp.getAbsolutePath(), newJsonPath);
             final scala.collection.immutable.List<String> wdlRunList = scala.collection.JavaConversions.asScalaBuffer(wdlRun).toList();
 
-            // run a workflow
-            System.out.println("Calling out to Cromwell to run your workflow");
-
             // save the output stream
             PrintStream savedOut = System.out;
             PrintStream savedErr = System.err;
@@ -1071,6 +1068,9 @@ public abstract class AbstractEntryClient {
 
             // Currently Cromwell does not support HTTP(S) imports
             // https://github.com/broadinstitute/cromwell/issues/1528
+
+            // run a workflow
+            savedOut.println("Calling out to Cromwell to run your workflow");
             final int run = main.run(wdlRunList);
 
             System.out.flush();
