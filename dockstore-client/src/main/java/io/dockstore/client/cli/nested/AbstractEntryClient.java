@@ -43,10 +43,13 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.csv.QuoteMode;
+import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
@@ -106,6 +109,7 @@ import static io.dockstore.client.cli.Client.IO_ERROR;
 public abstract class AbstractEntryClient {
     private final CWL cwlUtil = new CWL();
 
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractEntryClient.class);
     public static final String CROMWELL_LOCATION = "https://github.com/broadinstitute/cromwell/releases/download/0.21/cromwell-0.21.jar";
 
     public enum Type {
@@ -729,7 +733,7 @@ public abstract class AbstractEntryClient {
      * Type.WDL if file content is WDL
      * Type.NONE if file content is neither WDL nor CWL
      */
-    public Type checkFileContent(File content){
+    private Type checkFileContent(File content){
         if(checkCWL(content)){
             return Type.CWL;
         }else if(checkWDL(content)){
@@ -745,7 +749,7 @@ public abstract class AbstractEntryClient {
      * Type.WDL if file extension is WDL
      * Type.NONE if file extension is neither WDL nor CWL, could be no extension or some other random extension(e.g .txt)
      */
-    public Type checkFileExtension(String path){
+    private Type checkFileExtension(String path){
         if(FilenameUtils.getExtension(path).toLowerCase().equals(CWL_STRING)){
             return Type.CWL;
         } else if(FilenameUtils.getExtension(path).toLowerCase().equals(WDL_STRING)){
@@ -1018,6 +1022,20 @@ public abstract class AbstractEntryClient {
             isLocalEntry = true;
         }
         final String json = reqVal(args, "--json");
+        final String wdlOutputTarget = optVal(args, "--wdl-output-target", null);
+
+        launchWdlInternal(entry, isLocalEntry, json, wdlOutputTarget);
+    }
+
+    /**
+     *
+     * @param entry file path for tthe wdl file or a dockstore id
+     * @param isLocalEntry
+     * @param json file path for the json parameter file
+     * @param wdlOutputTarget
+     * @return an exit code for the run
+     */
+    public long launchWdlInternal(String entry, boolean isLocalEntry, String json, String wdlOutputTarget) {
 
         File parameterFile = new File(json);
 
@@ -1091,18 +1109,21 @@ public abstract class AbstractEntryClient {
             arguments.addAll(wdlRun);
 
             int exitCode = 0;
-            String stdout = "";
-            String stderr = "";
+            String stdout;
+            String stderr;
             try {
-                // TODO: probably want to make a new library call so that we can stream output
+                // TODO: probably want to make a new library call so that we can stream output properly and get this exit code
                 final String join = Joiner.on(" ").join(arguments);
                 System.out.println(join);
                 final ImmutablePair<String, String> execute = Utilities.executeCommand(join);
                 stdout = execute.getLeft();
                 stderr = execute.getRight();
             } catch(RuntimeException e){
-                // TODO: do something smarter here, like get back the actual exit code
-                throw(e);
+                LOG.error("Problem running cromwell: ", e);
+                if (e.getCause() instanceof ExecuteException) {
+                    return ((ExecuteException)e.getCause()).getExitValue();
+                }
+                throw new RuntimeException("Could not run Cromwell", e);
             }
 
             System.out.println("Cromwell exit code: " + exitCode);
@@ -1110,10 +1131,12 @@ public abstract class AbstractEntryClient {
             LauncherCWL.outputIntegrationOutput(workingDir, ImmutablePair.of(stdout, stderr), stdout.replaceAll("\n", "\t"), stderr.replaceAll("\n", "\t"), "Cromwell");
 
             // capture the output and provision it
-            final String wdlOutputTarget = optVal(args, "--wdl-output-target", null);
             if (wdlOutputTarget != null) {
-
-                String bracketContents = stdout.substring(stdout.lastIndexOf("{")+1,stdout.lastIndexOf("}"));
+                // TODO: this is very hacky, look for a runtime option or start cromwell as a server and communicate via REST
+                String outputPrefix = "Final Outputs:";
+                int startIndex = stdout.indexOf("\n{\n", stdout.indexOf(outputPrefix));
+                int endIndex = stdout.indexOf("\n}\n", startIndex)+2;
+                String bracketContents = stdout.substring(startIndex,endIndex).trim();
                 if (bracketContents.isEmpty()){
                     throw new RuntimeException("No cromwell output");
                 }
@@ -1127,7 +1150,7 @@ public abstract class AbstractEntryClient {
                     final File resultFile = new File(outputJson.get(outFile));
                     FileProvisioning.FileInfo new1 = new FileProvisioning.FileInfo();
 
-                    new1.setUrl(wdlOutputTarget + "/" + resultFile.getParentFile().getName() + "/" + resultFile.getName());
+                    new1.setUrl(wdlOutputTarget + "/" + outFile);
                     new1.setLocalPath(resultFile.getAbsolutePath());
                     System.out.println("Uploading: " + outFile + " from " + resultFile + " to : " + new1.getUrl());
                     FileProvisioning fileProvisioning = new FileProvisioning(this.getConfigFile());
@@ -1141,6 +1164,7 @@ public abstract class AbstractEntryClient {
         } catch (IOException ex) {
             exceptionMessage(ex, "", IO_ERROR);
         }
+        return 0;
     }
 
     /**
