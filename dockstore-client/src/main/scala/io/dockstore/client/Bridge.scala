@@ -156,7 +156,7 @@ class Bridge {
         try {
           // Get the list of docker images
           val dockerAttributes = task.runtimeAttributes.attrs.get("docker")
-          val attributes = if (dockerAttributes.isDefined) dockerAttributes.get.collectAsSeq(passthrough) else null
+          val attributes = if (dockerAttributes.isDefined) dockerAttributes.get.collectAsSeq(passthrough).map(x => x.toWdlString.replaceAll("\"","")) else null
           var name = call.alias.toString
           tasks.put(task.name, attributes)
         } catch {
@@ -177,7 +177,7 @@ class Bridge {
     ns.workflow.calls foreach {call =>
       val task = call.task
       val dockerAttributes = task.runtimeAttributes.attrs.get("docker")
-      tasks.put("dockstore_" + call.unqualifiedName, if (dockerAttributes.isDefined) dockerAttributes.get.collectAsSeq(passthrough).mkString("") else null)
+      tasks.put("dockstore_" + call.unqualifiedName, if (dockerAttributes.isDefined) dockerAttributes.get.collectAsSeq(passthrough).map(x => x.toWdlString.replaceAll("\"","")).mkString("") else null)
     }
     tasks
   }

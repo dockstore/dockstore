@@ -47,7 +47,7 @@ import java.util.concurrent.TimeoutException;
 import static io.dockstore.common.CommonTestUtilities.clearStateMakePrivate2;
 
 /**
- * Created by jpatricia on 04/07/16.
+ * @author jpatricia on 04/07/16.
  */
 public class ToolsWorkflowTestIT {
 
