@@ -184,7 +184,7 @@ public abstract class AbstractImageRegistry {
         updateTags(toolTags, tool, githubToken, bitbucketToken, gitlabToken, tagDAO, fileDAO, toolDAO, client);
 
         // Return the updated tool
-        return toolDAO.findById(tool.getId());
+        return newDBTools.get(0);
     }
 
     /**
@@ -243,6 +243,8 @@ public abstract class AbstractImageRegistry {
                             // Has not been modified => set paths
                             oldTag.setCwlPath(tool.getDefaultCwlPath());
                             oldTag.setWdlPath(tool.getDefaultWdlPath());
+                            oldTag.setCwlTestParameterFile(tool.getDefaultCwlTestParameterFile());
+                            oldTag.setWdlTestParameterFile(tool.getDefaultWdlTestParameterFile());
                             oldTag.setDockerfilePath(tool.getDefaultDockerfilePath());
                         }
 

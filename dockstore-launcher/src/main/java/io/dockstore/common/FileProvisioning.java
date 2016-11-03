@@ -245,11 +245,12 @@ public class FileProvisioning {
                 // create link
                 Files.createLink(localPath, actualTargetPath);
             } catch (IOException e) {
-                LOG.error("Could not link " + targetPath + " to " + localPath + " , copying instead", e);
+                LOG.info("Could not link " + targetPath + " to " + localPath + " , copying instead", e);
                 try {
                     Files.copy(actualTargetPath, localPath);
                 } catch (IOException e1) {
-                    throw new RuntimeException("Could not copy " + targetPath + " to " + localPath, e);
+                    LOG.error("Could not copy " + targetPath + " to " + localPath, e);
+                    throw new RuntimeException("Could not copy " + targetPath + " to " + localPath, e1);
                 }
             }
         }

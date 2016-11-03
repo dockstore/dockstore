@@ -149,17 +149,27 @@ public class EntryVersionHelper<T extends Entry> {
             if (tagInstance instanceof WorkflowVersion) {
                 final WorkflowVersion workflowVersion = (WorkflowVersion) tagInstance;
                 for (SourceFile file : workflowVersion.getSourceFiles()) {
-                    final String workflowPath = workflowVersion.getWorkflowPath();
-                    final String workflowVersionPath = workflowVersion.getWorkflowPath();
-                    final String actualPath =
-                            workflowVersionPath == null || workflowVersionPath.isEmpty() ? workflowPath : workflowVersionPath;
-                    boolean isPrimary = file.getType() == fileType && file.getPath().equalsIgnoreCase(actualPath);
-                    resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(isPrimary)));
+                    if (fileType == SourceFile.FileType.CWL_TEST_JSON) {
+                        if (file.getType() == SourceFile.FileType.CWL_TEST_JSON) {
+                            resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(true)));
+                        }
+                    } else if (fileType == SourceFile.FileType.WDL_TEST_JSON) {
+                        if (file.getType() == SourceFile.FileType.WDL_TEST_JSON) {
+                            resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(true)));
+                        }
+                    } else {
+                        final String workflowPath = workflowVersion.getWorkflowPath();
+                        final String workflowVersionPath = workflowVersion.getWorkflowPath();
+                        final String actualPath =
+                                workflowVersionPath == null || workflowVersionPath.isEmpty() ? workflowPath : workflowVersionPath;
+                        boolean isPrimary = file.getType() == fileType && file.getPath().equalsIgnoreCase(actualPath);
+                        resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(isPrimary)));
+                    }
                 }
             } else {
                 final Tool tool = (Tool) entry;
-                final Tag workflowVersion = (Tag) tagInstance;
-                for (SourceFile file : workflowVersion.getSourceFiles()) {
+                final Tag toolTag = (Tag) tagInstance;
+                for (SourceFile file : toolTag.getSourceFiles()) {
                     // dockerfile is a special case since there always is only a max of one
                     if (fileType == SourceFile.FileType.DOCKERFILE){
                         if (file.getType() == SourceFile.FileType.DOCKERFILE) {
@@ -168,26 +178,38 @@ public class EntryVersionHelper<T extends Entry> {
                         continue;
                     }
 
-                    final String workflowPath;
+                    if (fileType == SourceFile.FileType.CWL_TEST_JSON) {
+                        if (file.getType() == SourceFile.FileType.CWL_TEST_JSON) {
+                            resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(true)));
+                        }
+                        continue;
+                    } else if (fileType == SourceFile.FileType.WDL_TEST_JSON) {
+                        if (file.getType() == SourceFile.FileType.WDL_TEST_JSON) {
+                            resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(true)));
+                        }
+                        continue;
+                    }
+
+                    final String toolPath;
                     if (fileType == SourceFile.FileType.DOCKSTORE_CWL) {
-                        workflowPath = tool.getDefaultCwlPath();
+                        toolPath = tool.getDefaultCwlPath();
                     } else if (fileType == SourceFile.FileType.DOCKSTORE_WDL) {
-                        workflowPath = tool.getDefaultWdlPath();
+                        toolPath = tool.getDefaultWdlPath();
                     } else{
                         throw new CustomWebApplicationException("Format " + fileType + " not valid", HttpStatus.SC_BAD_REQUEST);
                     }
 
-                    String workflowVersionPath;
+                    String toolVersionPath;
                     if (fileType == SourceFile.FileType.DOCKSTORE_CWL) {
-                        workflowVersionPath = workflowVersion.getCwlPath();
+                        toolVersionPath = toolTag.getCwlPath();
                     } else if (fileType == SourceFile.FileType.DOCKSTORE_WDL) {
-                        workflowVersionPath = workflowVersion.getWdlPath();
+                        toolVersionPath = toolTag.getWdlPath();
                     } else{
                         throw new CustomWebApplicationException("Format " + fileType + " not valid", HttpStatus.SC_BAD_REQUEST);
                     }
 
                     final String actualPath =
-                            (workflowVersionPath == null || workflowVersionPath.isEmpty()) ? workflowPath : workflowVersionPath;
+                            (toolVersionPath == null || toolVersionPath.isEmpty()) ? toolPath : toolVersionPath;
                     boolean isPrimary = file.getType() == fileType && actualPath.equalsIgnoreCase(file.getPath());
                     if (fileType == file.getType()) {
                         resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(isPrimary)));

@@ -29,6 +29,8 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+
+import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -108,8 +110,15 @@ public class DockerRepoTagResource {
                 Tag existingTag = mapOfExistingTags.get(tag.getId());
 
                 // If any paths have changed then set dirty bit to true
-                if (!existingTag.getCwlPath().equals(tag.getCwlPath()) || !existingTag.getWdlPath().equals(tag.getWdlPath())
-                        || !existingTag.getDockerfilePath().equals(tag.getDockerfilePath())) {
+                boolean dirtyBitCheck = new EqualsBuilder()
+                        .append(existingTag.getCwlPath(), tag.getCwlPath())
+                        .append(existingTag.getWdlPath(), tag.getWdlPath())
+                        .append(existingTag.getDockerfilePath(), tag.getDockerfilePath())
+                        .append(existingTag.getCwlTestParameterFile(), tag.getCwlTestParameterFile())
+                        .append(existingTag.getWdlTestParameterFile(), tag.getWdlTestParameterFile())
+                        .isEquals();
+
+                if (!dirtyBitCheck) {
                     existingTag.setDirtyBit(true);
                 }
 

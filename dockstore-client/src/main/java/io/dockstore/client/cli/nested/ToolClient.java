@@ -287,22 +287,26 @@ public class ToolClient extends AbstractEntryClient {
             final String dockerfilePath = optVal(args, "--dockerfile-path", "/Dockerfile");
             final String cwlPath = optVal(args, "--cwl-path", "/Dockstore.cwl");
             final String wdlPath = optVal(args, "--wdl-path", "/Dockstore.wdl");
+            final String cwlTestParameterFile = optVal(args, "--cwl-test-parameter-file", "/test.cwl.json");
+            final String wdlTestParameterFile = optVal(args, "--wdl-test-parameter-file", "/test.wdl.json");
             final String gitReference = reqVal(args, "--git-reference");
             final String toolname = optVal(args, "--toolname", null);
             final String registry = optVal(args, "--registry", Registry.DOCKER_HUB.toString());
 
-            DockstoreTool container = new DockstoreTool();
-            container.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
-            container.setName(name);
-            container.setNamespace(namespace);
-            container.setRegistry("quay.io".equals(registry) ? DockstoreTool.RegistryEnum.QUAY_IO : DockstoreTool.RegistryEnum.DOCKER_HUB);
-            container.setDefaultDockerfilePath(dockerfilePath);
-            container.setDefaultCwlPath(cwlPath);
-            container.setDefaultWdlPath(wdlPath);
-            container.setIsPublished(false);
-            container.setGitUrl(gitURL);
-            container.setToolname(toolname);
-            container.setPath(Joiner.on("/").skipNulls().join(registry, namespace, name));
+            DockstoreTool tool = new DockstoreTool();
+            tool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
+            tool.setName(name);
+            tool.setNamespace(namespace);
+            tool.setRegistry("quay.io".equals(registry) ? DockstoreTool.RegistryEnum.QUAY_IO : DockstoreTool.RegistryEnum.DOCKER_HUB);
+            tool.setDefaultDockerfilePath(dockerfilePath);
+            tool.setDefaultCwlPath(cwlPath);
+            tool.setDefaultWdlPath(wdlPath);
+            tool.setDefaultCwlTestParameterFile(cwlTestParameterFile);
+            tool.setDefaultWdlTestParameterFile(wdlTestParameterFile);
+            tool.setIsPublished(false);
+            tool.setGitUrl(gitURL);
+            tool.setToolname(toolname);
+            tool.setPath(Joiner.on("/").skipNulls().join(registry, namespace, name));
 
             // Check that tool has at least one default path
             if (Strings.isNullOrEmpty(cwlPath) && Strings.isNullOrEmpty(wdlPath)) {
@@ -317,16 +321,18 @@ public class ToolClient extends AbstractEntryClient {
                 tag.setCwlPath(cwlPath);
                 tag.setWdlPath(wdlPath);
                 tag.setName(versionName);
-                container.getTags().add(tag);
+                tag.setCwlTestParameterFile(cwlTestParameterFile);
+                tag.setWdlTestParameterFile(wdlTestParameterFile);
+                tool.getTags().add(tag);
             }
 
             // Register new tool
             final String fullName = Joiner.on("/").skipNulls().join(registry, namespace, name, toolname);
             try {
-                container = containersApi.registerManual(container);
-                if (container != null) {
+                tool = containersApi.registerManual(tool);
+                if (tool != null) {
                     // Refresh to update validity
-                    containersApi.refresh(container.getId());
+                    containersApi.refresh(tool.getId());
                 } else {
                     errorMessage("Unable to register " + fullName, Client.COMMAND_ERROR);
                 }
@@ -335,12 +341,12 @@ public class ToolClient extends AbstractEntryClient {
             }
 
             // If registration is successful then attempt to publish it
-            if (container != null) {
+            if (tool != null) {
                 PublishRequest pub = new PublishRequest();
                 pub.setPublish(true);
                 DockstoreTool publishedTool;
                 try {
-                    publishedTool = containersApi.publish(container.getId(), pub);
+                    publishedTool = containersApi.publish(tool.getId(), pub);
                     if (publishedTool.getIsPublished()) {
                         out("Successfully published " + fullName);
                     } else {
@@ -511,8 +517,9 @@ public class ToolClient extends AbstractEntryClient {
                         final String cwlPath = optVal(args, "--cwl-path", "/Dockstore.cwl");
                         final String wdlPath = optVal(args, "--wdl-path", "/Dockstore.wdl");
                         final String dockerfilePath = optVal(args, "--dockerfile-path", "/Dockerfile");
+                        final String cwlTestParameterFile = optVal(args, " --cwl-test-parameter-file", "/test.cwl.json");
+                        final String wdlTestParameterFile = optVal(args, " --wdl-test-parameter-file", "/test.wdl.json");
                         final String imageId = reqVal(args, "--image-id");
-
                         final Tag tag = new Tag();
                         tag.setName(tagName);
                         tag.setHidden(hidden);
@@ -521,10 +528,11 @@ public class ToolClient extends AbstractEntryClient {
                         tag.setDockerfilePath(dockerfilePath);
                         tag.setImageId(imageId);
                         tag.setReference(gitReference);
+                        tag.setCwlTestParameterFile(cwlTestParameterFile);
+                        tag.setWdlTestParameterFile(wdlTestParameterFile);
 
                         List<Tag> tags = new ArrayList<>();
                         tags.add(tag);
-
                         List<Tag> updatedTags = containerTagsApi.addTags(containerId, tags);
                         containersApi.refresh(container.getId());
 
@@ -549,12 +557,16 @@ public class ToolClient extends AbstractEntryClient {
                                 final String cwlPath = optVal(args, "--cwl-path", tag.getCwlPath());
                                 final String wdlPath = optVal(args, "--wdl-path", tag.getWdlPath());
                                 final String dockerfilePath = optVal(args, "--dockerfile-path", tag.getDockerfilePath());
+                                final String cwlTestParameterFile = optVal(args, "--cwl-test-parameter-file", "/test.cwl.json");
+                                final String wdlTestParameterFile = optVal(args, "--wdl-test-parameter-file", "/test.wdl.json");
                                 final String imageId = optVal(args, "--image-id", tag.getImageId());
 
                                 tag.setName(tagName);
                                 tag.setHidden(hidden);
                                 tag.setCwlPath(cwlPath);
                                 tag.setWdlPath(wdlPath);
+                                tag.setCwlTestParameterFile(cwlTestParameterFile);
+                                tag.setWdlTestParameterFile(wdlTestParameterFile);
                                 tag.setDockerfilePath(dockerfilePath);
                                 tag.setImageId(imageId);
                                 List<Tag> newTags = new ArrayList<>();
@@ -579,7 +591,6 @@ public class ToolClient extends AbstractEntryClient {
                         if (container.getMode() != DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH) {
                             errorMessage("Only manually added images can add version tags.", Client.CLIENT_ERROR);
                         }
-
                         final String tagName = reqVal(args, "--name");
                         List<Tag> tags = containerTagsApi.getTagsByPath(containerId);
                         long tagId;
@@ -621,21 +632,25 @@ public class ToolClient extends AbstractEntryClient {
         } else {
             final String toolpath = reqVal(args, "--entry");
             try {
-                DockstoreTool container = containersApi.getContainerByToolPath(toolpath);
-                long containerId = container.getId();
+                DockstoreTool tool = containersApi.getContainerByToolPath(toolpath);
+                long containerId = tool.getId();
 
-                final String cwlPath = optVal(args, "--cwl-path", container.getDefaultCwlPath());
-                final String wdlPath = optVal(args, "--wdl-path", container.getDefaultWdlPath());
-                final String dockerfilePath = optVal(args, "--dockerfile-path", container.getDefaultDockerfilePath());
-                final String toolname = optVal(args, "--toolname", container.getToolname());
-                final String gitUrl = optVal(args, "--git-url", container.getGitUrl());
-                final String defaultTag = optVal(args, "--default-version", container.getDefaultVersion());
+                final String cwlPath = optVal(args, "--cwl-path", tool.getDefaultCwlPath());
+                final String wdlPath = optVal(args, "--wdl-path", tool.getDefaultWdlPath());
+                final String cwlTestParameterFile = optVal(args, "--cwl-test-parameter-file", tool.getDefaultCwlTestParameterFile());
+                final String wdlTestParameterFile = optVal(args, "--wdl-test-parameter-file", tool.getDefaultWdlTestParameterFile());
+                final String dockerfilePath = optVal(args, "--dockerfile-path", tool.getDefaultDockerfilePath());
+                final String toolname = optVal(args, "--toolname", tool.getToolname());
+                final String gitUrl = optVal(args, "--git-url", tool.getGitUrl());
+                final String defaultTag = optVal(args, "--default-version", tool.getDefaultVersion());
 
-                container.setDefaultCwlPath(cwlPath);
-                container.setDefaultWdlPath(wdlPath);
-                container.setDefaultDockerfilePath(dockerfilePath);
-                container.setToolname(toolname);
-                container.setGitUrl(gitUrl);
+                tool.setDefaultCwlPath(cwlPath);
+                tool.setDefaultWdlPath(wdlPath);
+                tool.setDefaultDockerfilePath(dockerfilePath);
+                tool.setToolname(toolname);
+                tool.setGitUrl(gitUrl);
+                tool.setDefaultCwlTestParameterFile(cwlTestParameterFile);
+                tool.setDefaultWdlTestParameterFile(wdlTestParameterFile);
 
                 // Check that tool has at least one default path
                 if (Strings.isNullOrEmpty(cwlPath) && Strings.isNullOrEmpty(wdlPath)) {
@@ -645,9 +660,9 @@ public class ToolClient extends AbstractEntryClient {
                 // if valid version
                 boolean updateVersionSuccess = false;
 
-                for (Tag tag : container.getTags()) {
+                for (Tag tag : tool.getTags()) {
                     if (tag.getName().equals(defaultTag)) {
-                        container.setDefaultVersion(defaultTag);
+                        tool.setDefaultVersion(defaultTag);
                         updateVersionSuccess = true;
                         break;
                     }
@@ -656,13 +671,13 @@ public class ToolClient extends AbstractEntryClient {
                 if (!updateVersionSuccess && defaultTag != null) {
                     out("Not a valid version.");
                     out("Valid versions include:");
-                    for (Tag tag : container.getTags()) {
+                    for (Tag tag : tool.getTags()) {
                         out(tag.getReference());
                     }
                     errorMessage("Please enter a valid version.", Client.CLIENT_ERROR);
                 }
 
-                containersApi.updateContainer(containerId, container);
+                containersApi.updateContainer(containerId, tool);
                 containersApi.refresh(containerId);
                 out("The tool has been updated.");
             } catch (ApiException ex) {
@@ -765,15 +780,17 @@ public class ToolClient extends AbstractEntryClient {
         out("  Update certain fields for a given tool.");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>             Complete tool path in the Dockstore");
+        out("  --entry <entry>                                              Complete tool path in the Dockstore");
         out("");
         out("Optional Parameters");
-        out("  --cwl-path <cwl-path>                       Path to default cwl location");
-        out("  --wdl-path <wdl-path>                       Path to default wdl location");
-        out("  --dockerfile-path <dockerfile-path>         Path to default dockerfile location");
-        out("  --toolname <toolname>                       Toolname for the given tool");
-        out("  --git-url <git-url>                         Git url");
-        out("  --default-version <default-version>         Default branch name");
+        out("  --cwl-path <cwl-path>                                        Path to default cwl location");
+        out("  --wdl-path <wdl-path>                                        Path to default wdl location");
+        out("  --cwl-test-parameter-file <cwl-test-parameter-file>          Path to default cwl test parameter location");
+        out("  --wdl-test-parameter-file <wdl-test-parameter-file>          Path to default wdl test parameter location");
+        out("  --dockerfile-path <dockerfile-path>                          Path to default dockerfile location");
+        out("  --toolname <toolname>                                        Toolname for the given tool");
+        out("  --git-url <git-url>                                          Git url");
+        out("  --default-version <default-version>                          Default branch name");
         printHelpFooter();
     }
 
@@ -818,15 +835,17 @@ public class ToolClient extends AbstractEntryClient {
         out("  Update an existing version tag of a tool.");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>         Complete tool path in the Dockstore");
-        out("  --name <name>           Name of the version tag to update");
+        out("  --entry <entry>                                              Complete tool path in the Dockstore");
+        out("  --name <name>                                                Name of the version tag to update");
         out("");
         out("Optional Parameters:");
-        out("  --hidden <true/false>                       Hide the tag from public viewing, default false");
-        out("  --cwl-path <cwl-path>                       Path to default cwl location, defaults to tool default");
-        out("  --wdl-path <wdl-path>                       Path to default wdl location, defaults to tool default");
-        out("  --dockerfile-path <dockerfile-path>         Path to default dockerfile location, defaults to tool default");
-        out("  --image-id <image-id>                       Docker image ID");
+        out("  --hidden <true/false>                                        Hide the tag from public viewing, default false");
+        out("  --cwl-path <cwl-path>                                        Path to cwl location, defaults to tool default");
+        out("  --wdl-path <wdl-path>                                        Path to wdl location, defaults to tool default");
+        out("  --dockerfile-path <dockerfile-path>                          Path to dockerfile location, defaults to tool default");
+        out("  --cwl-test-parameter-file <cwl-test-parameter-file>          Path to cwl test parameter file, defaults to tool default");
+        out("  --wdl-test-parameter-file <wdl-test-parameter-file>          Path to wdl test parameter file, defaults to tool default");
+        out("  --image-id <image-id>                                        Docker image ID");
         printHelpFooter();
     }
 
@@ -839,16 +858,18 @@ public class ToolClient extends AbstractEntryClient {
         out("  Add a new version tag to a manually added tool.");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>         Complete tool path in the Dockstore");
-        out("  --name <name>           Name of the version tag to add");
+        out("  --entry <entry>                                          Complete tool path in the Dockstore");
+        out("  --name <name>                                            Name of the version tag to add");
         out("");
         out("Optional Parameters:");
-        out("  --git-reference <git-reference>             Git reference for the version tag");
-        out("  --hidden <true/false>                       Hide the tag from public viewing, default false");
-        out("  --cwl-path <cwl-path>                       Path to default cwl location, defaults to tool default");
-        out("  --wdl-path <wdl-path>                       Path to default wdl location, defaults to tool default");
-        out("  --dockerfile-path <dockerfile-path>         Path to default dockerfile location, defaults to tool default");
-        out("  --image-id <image-id>                       Docker image ID");
+        out("  --git-reference <git-reference>                          Git reference for the version tag");
+        out("  --hidden <true/false>                                    Hide the tag from public viewing, default false");
+        out("  --cwl-path <cwl-path>                                    Path to cwl location, defaults to tool default");
+        out("  --wdl-path <wdl-path>                                    Path to wdl location, defaults to tool default");
+        out("  --dockerfile-path <dockerfile-path>                      Path to dockerfile location, defaults to tool default");
+        out("  --cwl-test-parameter-file <cwl-test-parameter-file>      Path to cwl test parameter file, defaults to tool default");
+        out("  --wdl-test-parameter-file <wdl-test-parameter-file>      Path to wdl test parameter file, defaults to tool default");
+        out("  --image-id <image-id>                                    Docker image ID");
         printHelpFooter();
     }
 
@@ -861,18 +882,20 @@ public class ToolClient extends AbstractEntryClient {
         out("  Manually register an tool in the dockstore. Currently this is used to register entries for images on Docker Hub.");
         out("");
         out("Required parameters:");
-        out("  --name <name>                Name for the docker container");
-        out("  --namespace <namespace>      Organization for the docker container");
-        out("  --git-url <url>              Reference to the git repo holding descriptor(s) and Dockerfile ex: \"git@github.com:user/test1.git\"");
-        out("  --git-reference <reference>  Reference to git branch or tag where the CWL and Dockerfile is checked-in");
+        out("  --name <name>                                            Name for the docker container");
+        out("  --namespace <namespace>                                  Organization for the docker container");
+        out("  --git-url <url>                                          Reference to the git repo holding descriptor(s) and Dockerfile ex: \"git@github.com:user/test1.git\"");
+        out("  --git-reference <reference>                              Reference to git branch or tag where the CWL and Dockerfile is checked-in");
         out("");
         out("Optional parameters:");
-        out("  --dockerfile-path <file>     Path for the dockerfile, defaults to /Dockerfile");
-        out("  --cwl-path <file>            Path for the CWL document, defaults to /Dockstore.cwl");
-        out("  --wdl-path <file>            Path for the WDL document, defaults to /Dockstore.wdl");
-        out("  --toolname <toolname>        Name of the tool, can be omitted, defaults to null");
-        out("  --registry <registry>        Docker registry, can be omitted, defaults to registry.hub.docker.com");
-        out("  --version-name <version>     Version tag name for Dockerhub containers only, defaults to latest");
+        out("  --dockerfile-path <file>                                 Path for the dockerfile, defaults to /Dockerfile");
+        out("  --cwl-path <file>                                        Path for the CWL document, defaults to /Dockstore.cwl");
+        out("  --wdl-path <file>                                        Path for the WDL document, defaults to /Dockstore.wdl");
+        out("  --cwl-test-parameter-file <cwl-test-parameter-file>      Path for the CWL test parameter document, defaults to /test.cwl.json");
+        out("  --wdl-test-parameter-file <wdl-test-parameter-file>      Path for the WDL test parameter document, defaults to /test.wdl.json");
+        out("  --toolname <toolname>                                    Name of the tool, can be omitted, defaults to null");
+        out("  --registry <registry>                                    Docker registry, can be omitted, defaults to registry.hub.docker.com");
+        out("  --version-name <version>                                 Version tag name for Dockerhub containers only, defaults to latest");
         printHelpFooter();
     }
 
