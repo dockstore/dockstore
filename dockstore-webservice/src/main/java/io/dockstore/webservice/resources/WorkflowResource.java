@@ -343,6 +343,19 @@ public class WorkflowResource {
                     workflowVersionFromDB.getSourceFiles().add(fileFromDB);
                 }
             }
+            // Remove existing files that are no longer present
+            for (Map.Entry<String, SourceFile> entry : existingFileMap.entrySet()) {
+                boolean toDelete = true;
+                for (SourceFile file : version.getSourceFiles()) {
+                    if (entry.getKey().equals(file.getType().toString() + file.getPath())) {
+                        toDelete = false;
+                    }
+                }
+                if (toDelete) {
+                    workflowVersionFromDB.getSourceFiles().remove(entry.getValue());
+                }
+            }
+
             //TODO: this needs a strategy for dealing with content on our side that has since been deleted
         }
     }
@@ -435,6 +448,7 @@ public class WorkflowResource {
         for(WorkflowVersion version : versions){
             if (!version.isDirtyBit()) {
                 version.setWorkflowPath(workflow.getDefaultWorkflowPath());
+                version.setTestParameterFile(workflow.getDefaultTestParameterFile());
             }
         }
 
@@ -647,7 +661,8 @@ public class WorkflowResource {
             @ApiParam(value = "Workflow repository", required = true) @QueryParam("workflowPath") String workflowPath,
             @ApiParam(value = "Workflow container new descriptor path (CWL or WDL) and/or name", required = true) @QueryParam("defaultWorkflowPath") String defaultWorkflowPath,
             @ApiParam(value = "Workflow name", required = true) @QueryParam("workflowName") String workflowName,
-            @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType) {
+            @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType,
+            @ApiParam(value = "Test parameter path", required = true) @QueryParam("testParameterPath") String testJsonPath) {
 
         String completeWorkflowPath = workflowPath;
         // Check that no duplicate workflow (same WorkflowPath) exists
@@ -689,6 +704,7 @@ public class WorkflowResource {
         newWorkflow.setWorkflowName(workflowName);
         newWorkflow.setPath(completeWorkflowPath);
         newWorkflow.setDescriptorType(descriptorType);
+        newWorkflow.setDefaultTestParameterFile(testJsonPath);
 
         final long workflowID = workflowDAO.create(newWorkflow);
         // need to create nested data models
@@ -743,7 +759,7 @@ public class WorkflowResource {
                 WorkflowVersion existingTag = mapOfExistingWorkflowVersions.get(version.getId());
 
                 // If path changed then update dirty bit to true
-                if (!existingTag.getWorkflowPath().equals(version.getWorkflowPath())) {
+                if (!existingTag.getWorkflowPath().equals(version.getWorkflowPath()) || !existingTag.getTestParameterFile().equals(version.getTestParameterFile())) {
                     existingTag.setDirtyBit(true);
                 }
 
@@ -753,6 +769,24 @@ public class WorkflowResource {
         Workflow result = workflowDAO.findById(workflowId);
         Helper.checkEntry(result);
         return result.getVersions();
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{workflowId}/testparameter")
+    @ApiOperation(value = "Get the corresponding test.json file.", notes = "Does not need authentication", response = SourceFile.class)
+    public SourceFile testParameterPath(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
+            @QueryParam("version") String version){
+        Workflow workflow = workflowDAO.findById(workflowId);
+
+
+        if (workflow.getDescriptorType().toLowerCase().equals(DescriptorType.CWL.toString())) {
+            return entryVersionHelper.getSourceFile(workflowId, version, FileType.CWL_TEST_JSON);
+        } else {
+            // assume WDL
+            return entryVersionHelper.getSourceFile(workflowId, version, FileType.WDL_TEST_JSON);
+        }
     }
 
     @GET

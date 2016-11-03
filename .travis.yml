@@ -30,7 +30,7 @@ before_script:
 script: mvn -B clean install -DskipITs=false -Pconfidential-tests
 before_install:
 - mvn dependency:get -Dartifact=org.eluder.coveralls:coveralls-maven-plugin:4.2.0
-- openssl aes-256-cbc -K $encrypted_af05b4ab2f0e_key -iv $encrypted_af05b4ab2f0e_iv -in dockstore-integration-testing/src/test/resources/secrets.tar.enc -out dockstore-integration-testing/src/test/resources/secrets.tar -d
+- openssl aes-256-cbc -K $encrypted_f01a77b028dd_key -iv $encrypted_f01a77b028dd_iv -in dockstore-integration-testing/src/test/resources/secrets.tar.enc -out dockstore-integration-testing/src/test/resources/secrets.tar -d
 - tar xvf dockstore-integration-testing/src/test/resources/secrets.tar
 
 after_success:

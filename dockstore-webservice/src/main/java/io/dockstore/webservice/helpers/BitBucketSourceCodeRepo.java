@@ -23,11 +23,14 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.resources.ResourceUtilities;
+
+import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -248,10 +251,26 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                     // TODO: No exceptions are caught here in the event of a failed call
                     sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, identifiedType);
 
+                    // Get test json file
+                    SourceFile testJson = new SourceFile();
+                    testJson.setContent(getFileContents(version.getTestParameterFile(), branchName, repositoryId));
+                    testJson.setPath(version.getTestParameterFile());
+                    if (identifiedType == SourceFile.FileType.DOCKSTORE_CWL) {
+                        testJson.setType(SourceFile.FileType.CWL_TEST_JSON);
+                    } else {
+                        testJson.setType(SourceFile.FileType.WDL_TEST_JSON);
+                    }
+                    if (testJson.getContent() != null) {
+                        version.addSourceFile(testJson);
+                    }
+
                     workflow.addWorkflowVersion(combineVersionAndSourcefile(sourceFile, workflow, identifiedType, version));
                 }
             }
 
+        } else {
+            LOG.error("Could not find Bitbucket repository " + repositoryId + " for user.");
+            throw new CustomWebApplicationException("Could not reach Bitbucket", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
 
         return workflow;

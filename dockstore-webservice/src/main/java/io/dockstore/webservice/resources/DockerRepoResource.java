@@ -263,6 +263,8 @@ public class DockerRepoResource {
                 tag.setCwlPath(tool.getDefaultCwlPath());
                 tag.setWdlPath(tool.getDefaultWdlPath());
                 tag.setDockerfilePath(tool.getDefaultDockerfilePath());
+                tag.setCwlTestParameterFile(tool.getDefaultCwlTestParameterFile());
+                tag.setWdlTestParameterFile(tool.getDefaultWdlTestParameterFile());
             }
         }
 
@@ -658,7 +660,20 @@ public class DockerRepoResource {
         return entryVersionHelper.getSourceFileByPath(containerId, tag, FileType.DOCKSTORE_WDL, path);
     }
 
-
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}/testparameter")
+    @ApiOperation(value = "Get the corresponding test parameter file.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class)
+    public SourceFile testParameterPath(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
+            @QueryParam("tag") String tag, @QueryParam("type") String type){
+        if (type.toLowerCase().equals(DescriptorType.CWL.toString())) {
+            return entryVersionHelper.getSourceFile(containerId, tag, FileType.CWL_TEST_JSON);
+        } else {
+            // assume WDL
+            return entryVersionHelper.getSourceFile(containerId, tag, FileType.WDL_TEST_JSON);
+        }
+    }
 
     @GET
     @Timed

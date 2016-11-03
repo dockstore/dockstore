@@ -80,7 +80,10 @@ public final class Helper {
         for (Tag tag : tags) {
             LOG.info(githubToken.getUsername() + " : Updating files for tag {}", tag.getName());
 
+            // Get all of the required sourcefiles for the given tag
             List<SourceFile> newFiles = loadFiles(client, bitbucketToken, githubToken, gitlabToken, tool, tag);
+
+            // Remove all existing sourcefiles
             tag.getSourceFiles().clear();
 
             // Add for new descriptor types
@@ -171,8 +174,9 @@ public final class Helper {
 
         final String bitbucketTokenContent = bitbucketToken == null ? null : bitbucketToken.getContent();
         final String gitlabTokenContent = gitlabToken == null ? null : gitlabToken.getContent();
+        final String githubTokenContent = githubToken == null ? null : githubToken.getContent();
         final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(c.getGitUrl(), client,
-                bitbucketTokenContent, gitlabTokenContent, githubToken.getContent());
+                bitbucketTokenContent, gitlabTokenContent, githubTokenContent);
         FileImporter importer = new FileImporter(sourceCodeRepo);
 
         // Add for new descriptor types
@@ -195,6 +199,10 @@ public final class Helper {
                     Map<String, SourceFile> importedFiles = importer
                             .resolveImports(fileResponse, c, f, tag);
                     files.addAll(importedFiles.values());
+                } else if (f == FileType.CWL_TEST_JSON) {
+                    dockstoreFile.setPath(tag.getCwlTestParameterFile());
+                } else if (f == FileType.WDL_TEST_JSON) {
+                    dockstoreFile.setPath(tag.getWdlTestParameterFile());
                 }
                 files.add(dockstoreFile);
             }

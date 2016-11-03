@@ -279,4 +279,32 @@
         <addDefaultValue tableName="workflowversion" columnName="dirtybit" defaultValueBoolean="false"/>
     </changeSet>
 
+    <changeSet id="testjson" author="agduncan" context="adds_testjson">
+        <addColumn tableName="tag">
+            <column name="cwltestparameterfile" type="varchar(255)"></column>
+        </addColumn>
+        <addDefaultValue tableName="tag" columnName="cwltestparameterfile" defaultValue="/test.cwl.json"/>
+        <addColumn tableName="tag">
+            <column name="wdltestparameterfile" type="varchar(255)"></column>
+        </addColumn>
+        <addDefaultValue tableName="tag" columnName="wdltestparameterfile" defaultValue="/test.wdl.json"/>
+        <addColumn tableName="tool">
+            <column name="defaultcwltestparameterfile" type="varchar(255)"></column>
+        </addColumn>
+        <addDefaultValue tableName="tool" columnName="defaultcwltestparameterfile" defaultValue="/test.cwl.json"/>
+        <addColumn tableName="tool">
+            <column name="defaultwdltestparameterfile" type="varchar(255)"></column>
+        </addColumn>
+        <addDefaultValue tableName="tool" columnName="defaultwdltestparameterfile" defaultValue="/test.wdl.json"/>
+
+        <addColumn tableName="workflowversion">
+            <column name="testparameterfile" type="varchar(255)"></column>
+        </addColumn>
+        <addDefaultValue tableName="workflowversion" columnName="testparameterfile" defaultValue="/test.json"/>
+        <addColumn tableName="workflow">
+            <column name="defaulttestparameterfile" type="varchar(255)"></column>
+        </addColumn>
+        <addDefaultValue tableName="workflow" columnName="defaulttestparameterfile" defaultValue="/test.json"/>
+    </changeSet>
+
 </databaseChangeLog>
