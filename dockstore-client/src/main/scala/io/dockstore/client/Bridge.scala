@@ -22,6 +22,7 @@ import java.util
 import spray.json._
 import wdl4s._
 import wdl4s.types.{WdlArrayType, WdlFileType}
+import wdl4s.values.WdlValue
 
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
@@ -137,6 +138,11 @@ class Bridge {
     outputList
   }
 
+  val passthrough = new PartialFunction[WdlValue,WdlValue] {
+    def apply(x: WdlValue) = x
+    def isDefinedAt(x: WdlValue) = true
+  }
+
   def getCallsAndDocker(file: JFile): util.LinkedHashMap[String, Seq[String]] = {
     val lines = scala.io.Source.fromFile(file).mkString
     val ns = NamespaceWithWorkflow.load(lines, dagResolver)
@@ -150,27 +156,30 @@ class Bridge {
         try {
           // Get the list of docker images
           val dockerAttributes = task.runtimeAttributes.attrs.get("docker")
+          val attributes = if (dockerAttributes.isDefined) dockerAttributes.get.collectAsSeq(passthrough).map(x => x.toWdlString.replaceAll("\"","")) else null
           var name = call.alias.toString
-          tasks.put(task.name, if (dockerAttributes.isDefined) dockerAttributes.get else null)
+          tasks.put(task.name, attributes)
         } catch {
           // Throws error if task has no runtime section or a runtime section but no docker (we stop error from being thrown)
           case e: NoSuchElementException =>
         }
       }
     }
-    return tasks
+    tasks
   }
 
   def getCallsToDockerMap(file: JFile): util.LinkedHashMap[String, String] = {
     val lines = scala.io.Source.fromFile(file).mkString
     val ns = NamespaceWithWorkflow.load(lines, dagResolver)
     val tasks = new util.LinkedHashMap[String, String]()
+
+
     ns.workflow.calls foreach {call =>
       val task = call.task
       val dockerAttributes = task.runtimeAttributes.attrs.get("docker")
-      tasks.put("dockstore_" + call.unqualifiedName, if (dockerAttributes.isDefined) (dockerAttributes.get).mkString("") else null)
+      tasks.put("dockstore_" + call.unqualifiedName, if (dockerAttributes.isDefined) dockerAttributes.get.collectAsSeq(passthrough).map(x => x.toWdlString.replaceAll("\"","")).mkString("") else null)
     }
-    return tasks
+    tasks
   }
 
   def getCallsToDependencies(file: JFile): util.LinkedHashMap[String, util.ArrayList[String]] = {
@@ -186,7 +195,7 @@ class Bridge {
       }
       dependencyMap.put("dockstore_" + call.unqualifiedName, dependencies)
     }
-    return dependencyMap
+    dependencyMap
   }
 
 
