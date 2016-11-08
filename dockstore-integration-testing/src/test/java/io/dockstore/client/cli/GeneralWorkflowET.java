@@ -810,4 +810,44 @@ public class GeneralWorkflowET {
                 Assert.assertTrue("there should be one source file that is a test parameter files, there are " + count2, count2 == 1);
 
         }
+
+        /**
+        * This tests that you can verify and unverify a workflow
+        */
+        @Test
+        public void testVerify() {
+                // Setup DB
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+                // Workflow should be unverified
+                final long count = testingPostgres.runSelectStatement("select count(*) from workflow where verified='true'", new ScalarHandler<>());
+                Assert.assertTrue("there should be no verified workflow, there are " + count, count == 0);
+
+                // Refresh workflows
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
+
+                // Verify workflow
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "verify", "--entry", "DockstoreTestUser2/parameter_test_workflow",
+                        "--verified-source", "Docker testing group", "--script" });
+
+                // Workflow should be verified
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from workflow where verified='true' and verifiedSource='Docker testing group'", new ScalarHandler<>());
+                Assert.assertTrue("there should be one verified workflow, there are " + count2, count2 == 1);
+
+                // Update workflow to have new verified source
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "verify", "--entry", "DockstoreTestUser2/parameter_test_workflow",
+                        "--verified-source", "Docker testing group2", "--script" });
+
+                // Workflow should have new verified source
+                final long count3 = testingPostgres.runSelectStatement("select count(*) from workflow where verified='true' and verifiedSource='Docker testing group2'", new ScalarHandler<>());
+                Assert.assertTrue("there should be one verified workflow, there are " + count3, count3 == 1);
+
+                // Unverify workflow
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "verify", "--entry", "DockstoreTestUser2/parameter_test_workflow",
+                        "--unverify", "--script" });
+
+                // Workflow should be unverified
+                final long count4 = testingPostgres.runSelectStatement("select count(*) from workflow where verified='true'", new ScalarHandler<>());
+                Assert.assertTrue("there should be no verified workflow, there are " + count4, count4 == 0);
+        }
 }

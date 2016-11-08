@@ -92,6 +92,7 @@ import static io.dockstore.client.cli.ArgumentUtility.reqVal;
 import static io.dockstore.client.cli.Client.API_ERROR;
 import static io.dockstore.client.cli.Client.CLIENT_ERROR;
 import static io.dockstore.client.cli.Client.IO_ERROR;
+import static io.dockstore.client.cli.Client.SCRIPT;
 
 /**
  * Handles the commands for a particular type of entry. (e.g. Workflows, Tools) Not a great abstraction, but enforces some structure for
@@ -159,8 +160,8 @@ public abstract class AbstractEntryClient {
         out("  " + CONVERT + "          :  utilities that allow you to convert file types");
         out("");
         out("  " + LAUNCH + "           :  launch " + getEntryType() + "s (locally)");
-        out("");
         printClientSpecificHelp();
+        printAdminHelp();
         out("------------------");
         out("");
         out("Flags:");
@@ -742,9 +743,9 @@ public abstract class AbstractEntryClient {
             verifyHelp();
         } else if (!args.isEmpty()) {
             String entry = reqVal(args, "--entry");
-            String verifySource = optVal(args, "--verify-source", null);
+            String verifySource = optVal(args, "--verified-source", null);
             final boolean unverifyRequest = isUnverifyRequest(args);
-            final boolean isScript = isScript(args);
+            final boolean isScript = SCRIPT.get();
             handleVerifyUnverify(entry, verifySource, unverifyRequest, isScript);
         }
     }
@@ -757,16 +758,6 @@ public abstract class AbstractEntryClient {
             }
         }
         return unverify;
-    }
-
-    private static boolean isScript(List<String> args) {
-        boolean script = false;
-        for (String arg : args) {
-            if ("--script".equals(arg)) {
-                script = true;
-            }
-        }
-        return script;
     }
 
     /**
@@ -1514,11 +1505,18 @@ public abstract class AbstractEntryClient {
         out("  Verify/unverify a " + getEntryType() + ".");
         out("");
         out("Required parameters:");
-        out("  --entry <entry>                     Complete entry path in the Dockstore");
+        out("  --entry <entry>                          Complete entry path in the Dockstore");
         out("");
         out("Optional Parameters:");
-        out("  --verify-source <verify-source>     Source of verification (Required to verify).");
+        out("  --verified-source <verify-source>        Source of verification (Required to verify).");
         printHelpFooter();
+    }
+
+    private void printAdminHelp() {
+        out("Admin Only Commands:");
+        out("");
+        out("  verify           :  Verify/unverify a " + getEntryType());
+        out("");
     }
 
     protected static String getCleanedDescription(String description) {

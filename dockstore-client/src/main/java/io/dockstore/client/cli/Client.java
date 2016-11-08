@@ -102,7 +102,7 @@ public class Client {
     public static final int COMMAND_ERROR = 10; // Command is not successful, but not due to errors
 
     public static final AtomicBoolean DEBUG = new AtomicBoolean(false);
-    private static final AtomicBoolean SCRIPT = new AtomicBoolean(false);
+    public static final AtomicBoolean SCRIPT = new AtomicBoolean(false);
     private static ObjectMapper objectMapper;
     private ToolClient toolClient;
     private WorkflowClient workflowClient;
@@ -619,7 +619,7 @@ public class Client {
         out("                       Default: false");
         out("  --config <file>      Override config file");
         out("                       Default: ~/.dockstore/config");
-        out("  --script             Will not check Github for newer versions of Dockstore");
+        out("  --script             Will not check Github for newer versions of Dockstore, or ask for user input");
         out("                       Default: false");
         out("  --clean-cache        Delete the Dockstore launcher cache to save space");
         printHelpFooter();
