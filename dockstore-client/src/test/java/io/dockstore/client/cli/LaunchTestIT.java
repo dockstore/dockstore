@@ -61,7 +61,7 @@ public class LaunchTestIT {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
 
-        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(helloWDL.getAbsolutePath(), args, null);
 
         Assert.assertTrue("output should include a successful cromwell run",systemOutRule.getLog().contains("Cromwell exit code: 0") );
@@ -128,7 +128,7 @@ public class LaunchTestIT {
     private void runTool(File cwlFile, ArrayList<String> args, ContainersApi api, UsersApi usersApi, Client client, boolean useCache) {
         client.setConfigFile(ResourceHelpers.resourceFilePath(useCache ? "config.withCache" : "config"));
 
-        ToolClient toolClient = new ToolClient(api, null, usersApi, client);
+        ToolClient toolClient = new ToolClient(api, null, usersApi, client, false);
         toolClient.checkEntryFile(cwlFile.getAbsolutePath(), args, null);
 
         Assert.assertTrue("output should include a successful cwltool run",systemOutRule.getLog().contains("Final process status is success") );
@@ -137,7 +137,7 @@ public class LaunchTestIT {
     private void runWorkflow(File cwlFile, ArrayList<String> args, WorkflowsApi api, UsersApi usersApi, Client client, boolean useCache) {
         client.setConfigFile(ResourceHelpers.resourceFilePath(useCache ? "config.withCache" : "config"));
 
-        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(cwlFile.getAbsolutePath(), args, null);
 
         Assert.assertTrue("output should include a successful cwltool run",systemOutRule.getLog().contains("Final process status is success") );
@@ -161,7 +161,7 @@ public class LaunchTestIT {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
 
-        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
         Assert.assertTrue("output should include a successful cromwell run",systemOutRule.getLog().contains("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end") );
@@ -189,7 +189,7 @@ public class LaunchTestIT {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
 
-        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, CWL_STRING);
 
         Assert.assertTrue("output should include a successful cromwell run",systemOutRule.getLog().contains("This is a CWL file.. Please put the correct extension to the entry file name.") );
@@ -213,7 +213,7 @@ public class LaunchTestIT {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
 
-        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
         Assert.assertTrue("output should include a successful cromwell run",systemOutRule.getLog().contains("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end") );
@@ -236,7 +236,7 @@ public class LaunchTestIT {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
 
-        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
         Assert.assertTrue("output should include a successful cromwell run",systemOutRule.getLog().contains("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end") );
@@ -259,7 +259,7 @@ public class LaunchTestIT {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
 
-        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
         Assert.assertTrue("output should include a successful cromwell run",systemOutRule.getLog().contains("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end") );
@@ -287,7 +287,7 @@ public class LaunchTestIT {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
 
-        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, WDL_STRING);
 
         Assert.assertTrue("output should include a successful cromwell run",systemOutRule.getLog().contains("This is a WDL file.. Please put the correct extension to the entry file name.") );
@@ -317,7 +317,7 @@ public class LaunchTestIT {
 
         exit.expectSystemExit();
 
-        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, WDL_STRING);
     }
 
@@ -345,7 +345,7 @@ public class LaunchTestIT {
 
         exit.expectSystemExit();
 
-        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, CWL_STRING);
     }
 
@@ -369,7 +369,7 @@ public class LaunchTestIT {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
 
-        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
         Assert.assertTrue("output should contain a validation issue",systemOutRule.getLog().contains("This is a CWL file.. Please put an extension to the entry file name.") );
@@ -395,7 +395,7 @@ public class LaunchTestIT {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
 
-        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
         Assert.assertTrue("output should include a successful cromwell run",systemOutRule.getLog().contains("This is a WDL file.. Please put an extension to the entry file name.") );
@@ -424,7 +424,7 @@ public class LaunchTestIT {
 
         exit.expectSystemExit();
 
-        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
         Assert.assertTrue("output should include an error message of invalid file",systemOutRule.getLog().contains("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name."));
@@ -453,7 +453,7 @@ public class LaunchTestIT {
 
         exit.expectSystemExit();
 
-        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
         Assert.assertTrue("output should include an error message of invalid file",systemOutRule.getLog().contains("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name."));
@@ -482,7 +482,7 @@ public class LaunchTestIT {
 
         exit.expectSystemExit();
 
-        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
         Assert.assertTrue("output should include an error message and exit",systemOutRule.getLog().contains("Required fields that are missing from WDL file : 'task'"));
@@ -511,7 +511,7 @@ public class LaunchTestIT {
 
         exit.expectSystemExit();
 
-        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
         Assert.assertTrue("output should include an error message and exit",systemOutRule.getLog().contains("Required fields that are missing from WDL file : 'command'"));
@@ -540,7 +540,7 @@ public class LaunchTestIT {
 
         exit.expectSystemExit();
 
-        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
         Assert.assertTrue("output should include an error message and exit",systemOutRule.getLog().contains("Required fields that are missing from WDL file : 'workflow' 'call'"));
@@ -569,7 +569,7 @@ public class LaunchTestIT {
 
         exit.expectSystemExit();
 
-        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client);
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
         Assert.assertTrue("output should include an error message and exit",systemOutRule.getLog().contains("Required fields that are missing from CWL file : 'inputs'"));

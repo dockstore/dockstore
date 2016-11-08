@@ -80,11 +80,12 @@ public class ToolClient extends AbstractEntryClient {
         this.client = client;
     }
 
-    public ToolClient(ContainersApi containersApi, ContainertagsApi containerTagsApi, UsersApi usersApi, Client client) {
+    public ToolClient(ContainersApi containersApi, ContainertagsApi containerTagsApi, UsersApi usersApi, Client client, boolean isAdmin) {
         this.containersApi = containersApi;
         this.containerTagsApi = containerTagsApi;
         this.usersApi = usersApi;
         this.client = client;
+        this.isAdmin = isAdmin;
     }
 
     @Override

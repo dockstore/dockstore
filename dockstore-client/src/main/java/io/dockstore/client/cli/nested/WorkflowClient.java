@@ -71,10 +71,11 @@ public class WorkflowClient extends AbstractEntryClient {
     private final UsersApi usersApi;
     private final Client client;
 
-    public WorkflowClient(WorkflowsApi workflowApi, UsersApi usersApi, Client client) {
+    public WorkflowClient(WorkflowsApi workflowApi, UsersApi usersApi, Client client, boolean isAdmin) {
         this.workflowsApi = workflowApi;
         this.usersApi = usersApi;
         this.client = client;
+        this.isAdmin = isAdmin;
     }
 
     @Override

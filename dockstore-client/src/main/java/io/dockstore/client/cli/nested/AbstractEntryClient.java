@@ -112,6 +112,7 @@ public abstract class AbstractEntryClient {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractEntryClient.class);
     public static final String CROMWELL_LOCATION = "https://github.com/broadinstitute/cromwell/releases/download/0.21/cromwell-0.21.jar";
+    public boolean isAdmin = false;
 
     public enum Type {
         CWL("cwl"), WDL("wdl"), NONE("none");
@@ -161,7 +162,9 @@ public abstract class AbstractEntryClient {
         out("");
         out("  " + LAUNCH + "           :  launch " + getEntryType() + "s (locally)");
         printClientSpecificHelp();
-        printAdminHelp();
+        if (isAdmin) {
+            printAdminHelp();
+        }
         out("------------------");
         out("");
         out("Flags:");

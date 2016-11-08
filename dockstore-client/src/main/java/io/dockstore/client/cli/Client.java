@@ -90,7 +90,10 @@ public class Client {
 
     private String configFile = null;
     private ContainersApi containersApi;
+    private UsersApi usersApi;
     private GAGHApi ga4ghApi;
+
+    public boolean isAdmin = false;
 
     public static final int PADDING = 3;
 
@@ -747,10 +750,16 @@ public class Client {
         defaultApiClient.setBasePath(serverUrl);
 
         this.containersApi = new ContainersApi(defaultApiClient);
+        this.usersApi = new UsersApi(defaultApiClient);
         this.ga4ghApi = new GAGHApi(defaultApiClient);
 
-        this.toolClient = new ToolClient(containersApi, new ContainertagsApi(defaultApiClient), new UsersApi(defaultApiClient), this);
-        this.workflowClient = new WorkflowClient(new WorkflowsApi(defaultApiClient), new UsersApi(defaultApiClient), this);
+        try {
+            isAdmin = usersApi.getUser().getIsAdmin().booleanValue();
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "Could not connect to Dockstore web service", CONNECTION_ERROR);
+        }
+        this.toolClient = new ToolClient(containersApi, new ContainertagsApi(defaultApiClient), usersApi, this, isAdmin);
+        this.workflowClient = new WorkflowClient(new WorkflowsApi(defaultApiClient), usersApi, this, isAdmin);
 
         defaultApiClient.setDebugging(DEBUG.get());
     }
