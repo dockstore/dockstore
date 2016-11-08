@@ -20,9 +20,11 @@ import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
+import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
+import io.dockstore.webservice.api.VerifyRequest;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Registry;
 import io.dockstore.webservice.core.SourceFile;
@@ -423,6 +425,34 @@ public class DockerRepoResource {
         return c;
     }
 
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}/verify")
+    @RolesAllowed("admin")
+    @ApiOperation(value = "Verify or unverify a tool. ADMIN ONLY", response = Tool.class)
+    public Tool verifyTool(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
+            @ApiParam(value = "Object containing verification information.", required = true) VerifyRequest verifyRequest) {
+        Tool tool = toolDAO.findById(containerId);
+        Helper.checkEntry(tool);
+        Helper.checkUser(user, tool);
+
+        if (verifyRequest.getVerify()) {
+            if (Strings.isNullOrEmpty(verifyRequest.getVerifiedSource())) {
+                throw new CustomWebApplicationException("A source must be included to verify a tool.", HttpStatus.SC_BAD_REQUEST);
+            }
+            tool.updateVerified(true, verifyRequest.getVerifiedSource());
+        } else {
+            tool.updateVerified(false, null);
+        }
+
+        Tool result = toolDAO.findById(containerId);
+        Helper.checkEntry(result);
+
+        return result;
+    }
+
     @GET
     @Timed
     @UnitOfWork
@@ -696,5 +726,7 @@ public class DockerRepoResource {
 
         return entryVersionHelper.getAllSecondaryFiles(containerId, tag, FileType.DOCKSTORE_WDL);
     }
+
+
 
 }

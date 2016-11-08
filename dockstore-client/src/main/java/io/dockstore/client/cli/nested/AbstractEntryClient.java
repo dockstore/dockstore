@@ -239,6 +239,9 @@ public abstract class AbstractEntryClient {
             case LAUNCH:
                 launch(args);
                 break;
+            case "verify":
+                verify(args);
+                break;
             default:
                 return false;
             }
@@ -319,6 +322,15 @@ public abstract class AbstractEntryClient {
      * @param unpublishRequest true to publish, false to unpublish
      */
     protected abstract void handlePublishUnpublish(String entryPath, String newName, boolean unpublishRequest);
+
+    /**
+     * Verify/Unverify an entry
+     * @param entry a unique identifier for an entry, called a path for workflows and tools
+     * @param verifySource source of entry verification
+     * @param unverifyRequest true to unverify, false to verify
+     * @param isScript true if called by script, false otherwise
+     */
+    protected abstract void handleVerifyUnverify(String entry, String verifySource, boolean unverifyRequest, boolean isScript);
 
     /**
      * List all of the entries published and unpublished for this user
@@ -725,6 +737,37 @@ public abstract class AbstractEntryClient {
         return false;
     }
 
+    private void verify(List<String> args) {
+        if (containsHelpRequest(args)) {
+            verifyHelp();
+        } else if (!args.isEmpty()) {
+            String entry = reqVal(args, "--entry");
+            String verifySource = optVal(args, "--verify-source", null);
+            final boolean unverifyRequest = isUnverifyRequest(args);
+            final boolean isScript = isScript(args);
+            handleVerifyUnverify(entry, verifySource, unverifyRequest, isScript);
+        }
+    }
+
+    private static boolean isUnverifyRequest(List<String> args) {
+        boolean unverify = false;
+        for (String arg : args) {
+            if ("--unverify".equals(arg)) {
+                unverify = true;
+            }
+        }
+        return unverify;
+    }
+
+    private static boolean isScript(List<String> args) {
+        boolean script = false;
+        for (String arg : args) {
+            if ("--script".equals(arg)) {
+                script = true;
+            }
+        }
+        return script;
+    }
 
     /**
      * this function will check the content of the entry file if it's a valid cwl/wdl file
@@ -1458,6 +1501,23 @@ public abstract class AbstractEntryClient {
         out("  --descriptor <descriptor type>      Descriptor type used to launch workflow. Defaults to " + CWL_STRING);
         out("  --local-entry                       Allows you to specify a full path to a local descriptor for --entry instead of an entry path");
         out("  --wdl-output-target                 Allows you to specify a remote path to provision output files to ex: s3://oicr.temp/testing-launcher/");
+        printHelpFooter();
+    }
+
+    private void verifyHelp() {
+        printHelpHeader();
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " verify --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " verify [parameters]");
+        out("       dockstore " + getEntryType().toLowerCase() + " verify --unverify [parameters]");
+        out("");
+        out("Description:");
+        out("  Verify/unverify a " + getEntryType() + ".");
+        out("");
+        out("Required parameters:");
+        out("  --entry <entry>                     Complete entry path in the Dockstore");
+        out("");
+        out("Optional Parameters:");
+        out("  --verify-source <verify-source>     Source of verification (Required to verify).");
         printHelpFooter();
     }
 
