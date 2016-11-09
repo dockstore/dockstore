@@ -168,6 +168,8 @@ public class WorkflowResource {
         newWorkflow.setLastUpdated(workflow.getLastUpdated());
         newWorkflow.setWorkflowName(workflow.getWorkflowName());
         newWorkflow.setDescriptorType(workflow.getDescriptorType());
+        newWorkflow.setVerified(workflow.isVerified());
+        newWorkflow.setVerifiedSource(workflow.getVerifiedSource());
 
         // Copy Labels
         SortedSet<Label> labels = (SortedSet) workflow.getLabels();
