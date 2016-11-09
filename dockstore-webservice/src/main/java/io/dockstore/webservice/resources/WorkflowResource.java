@@ -443,6 +443,8 @@ public class WorkflowResource {
             @ApiParam(value = "Object containing verification information.", required = true) VerifyRequest verifyRequest) {
         Workflow workflow = workflowDAO.findById(workflowId);
         Helper.checkEntry(workflow);
+        // Note: if you set someone as an admin, they are not actually admin right away. Users must wait until after the
+        // expireAfterAccess time in the authenticationCachePolicy expires (10m by default)
         Helper.checkUser(user, workflow);
 
         if (verifyRequest.getVerify()) {
