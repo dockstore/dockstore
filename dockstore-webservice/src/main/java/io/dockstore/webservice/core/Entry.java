@@ -273,9 +273,6 @@ public abstract class Entry<S extends Entry, T extends Version> {
         if (!entry.getGitUrl().isEmpty()) {
             gitUrl = entry.getGitUrl();
         }
-
-        this.verifiedSource = entry.getVerifiedSource();
-        this.verified = entry.isVerified();
     }
 
     public void updateVerified(boolean verified, String verifiedSource) {
