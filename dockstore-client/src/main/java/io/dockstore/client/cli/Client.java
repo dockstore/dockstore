@@ -754,7 +754,9 @@ public class Client {
         this.ga4ghApi = new GAGHApi(defaultApiClient);
 
         try {
-            isAdmin = usersApi.getUser().getIsAdmin().booleanValue();
+            if (this.usersApi.getApiClient() != null) {
+                this.isAdmin = this.usersApi.getUser().getIsAdmin().booleanValue();
+            }
         } catch (ApiException ex) {
             exceptionMessage(ex, "Could not connect to Dockstore web service", CONNECTION_ERROR);
         }

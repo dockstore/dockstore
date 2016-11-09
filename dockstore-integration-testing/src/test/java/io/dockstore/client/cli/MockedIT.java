@@ -75,7 +75,7 @@ public class MockedIT {
     public void clearDB() throws Exception {
         clearState();
         Client client = mock(Client.class);
-        ToolClient toolClient = spy(new ToolClient(client));
+        ToolClient toolClient = spy(new ToolClient(client, false));
 
         final UsersApi userApiMock = mock(UsersApi.class);
         when(client.getConfigFile()).thenReturn(TestUtility.getConfigFileLocation(true));
@@ -119,7 +119,7 @@ public class MockedIT {
     @Test
     public void runLaunchOneJson() throws IOException, ApiException {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--entry",
-            "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testOneRun.json") });
+            "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testOneRun.json"), "--script" });
 
         Assert.assertTrue("output should contain cwltool command",systemOutRule.getLog().contains("Executing: cwltool"));
     }

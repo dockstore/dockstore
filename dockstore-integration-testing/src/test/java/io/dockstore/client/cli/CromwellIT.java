@@ -57,7 +57,7 @@ public class CromwellIT {
     public void runWDLWorkflow() throws IOException {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
-        AbstractEntryClient main = new ToolClient(client);
+        AbstractEntryClient main = new ToolClient(client, false);
         File workflowFile = new File(ResourceHelpers.resourceFilePath("wdl.wdl"));
         File parameterFile = new File(ResourceHelpers.resourceFilePath("wdl.json"));
         // run a workflow
@@ -69,7 +69,7 @@ public class CromwellIT {
     public void failRunWDLWorkflow() throws IOException {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
-        AbstractEntryClient main = new ToolClient(client);
+        AbstractEntryClient main = new ToolClient(client, false);
         File workflowFile = new File(ResourceHelpers.resourceFilePath("wdl.wdl"));
         File parameterFile = new File(ResourceHelpers.resourceFilePath("wdl_wrong.json"));
         // run a workflow
@@ -81,7 +81,7 @@ public class CromwellIT {
     public void fileProvisioning() throws IOException {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
-        AbstractEntryClient main = new ToolClient(client);
+        AbstractEntryClient main = new ToolClient(client, false);
 
         File workflowFile = new File(ResourceHelpers.resourceFilePath("wdlfileprov.wdl"));
         File parameterFile = new File(ResourceHelpers.resourceFilePath("wdlfileprov.json"));

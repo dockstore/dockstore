@@ -742,14 +742,18 @@ public abstract class AbstractEntryClient {
     }
 
     private void verify(List<String> args) {
-        if (containsHelpRequest(args)) {
-            verifyHelp();
-        } else if (!args.isEmpty()) {
-            String entry = reqVal(args, "--entry");
-            String verifySource = optVal(args, "--verified-source", null);
-            final boolean unverifyRequest = isUnverifyRequest(args);
-            final boolean isScript = SCRIPT.get();
-            handleVerifyUnverify(entry, verifySource, unverifyRequest, isScript);
+        if (isAdmin) {
+            if (containsHelpRequest(args)) {
+                verifyHelp();
+            } else if (!args.isEmpty()) {
+                String entry = reqVal(args, "--entry");
+                String verifySource = optVal(args, "--verified-source", null);
+                final boolean unverifyRequest = isUnverifyRequest(args);
+                final boolean isScript = SCRIPT.get();
+                handleVerifyUnverify(entry, verifySource, unverifyRequest, isScript);
+            }
+        } else {
+            out("This command is only accessible to Admins.");
         }
     }
 
@@ -1511,7 +1515,7 @@ public abstract class AbstractEntryClient {
         out("  --entry <entry>                          Complete entry path in the Dockstore");
         out("");
         out("Optional Parameters:");
-        out("  --verified-source <verify-source>        Source of verification (Required to verify).");
+        out("  --verified-source <verified-source>      Source of verification (Required to verify).");
         printHelpFooter();
     }
 

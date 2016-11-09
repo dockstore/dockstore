@@ -75,9 +75,10 @@ public class ToolClient extends AbstractEntryClient {
     private ContainertagsApi containerTagsApi;
     private UsersApi usersApi;
 
-    public ToolClient(Client client){
+    public ToolClient(Client client, boolean isAdmin){
         /** for testing */
         this.client = client;
+        this.isAdmin = isAdmin;
     }
 
     public ToolClient(ContainersApi containersApi, ContainertagsApi containerTagsApi, UsersApi usersApi, Client client, boolean isAdmin) {
