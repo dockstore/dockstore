@@ -375,19 +375,9 @@ public abstract class AbstractEntryClient {
         } else {
             String first = reqVal(args, "--entry");
             String entryname = optVal(args, "--entryname", null);
-            final boolean unpublishRequest = isUnpublishRequest(args);
+            final boolean unpublishRequest = args.contains("--unpub");
             handlePublishUnpublish(first, entryname, unpublishRequest);
         }
-    }
-
-    private static boolean isUnpublishRequest(List<String> args) {
-        boolean unpublish = false;
-        for (String arg : args) {
-            if ("--unpub".equals(arg)) {
-                unpublish = true;
-            }
-        }
-        return unpublish;
     }
 
     private void list(List<String> args) {
@@ -748,23 +738,13 @@ public abstract class AbstractEntryClient {
             } else if (!args.isEmpty()) {
                 String entry = reqVal(args, "--entry");
                 String verifySource = optVal(args, "--verified-source", null);
-                final boolean unverifyRequest = isUnverifyRequest(args);
+                final boolean unverifyRequest = args.contains("--unverify");
                 final boolean isScript = SCRIPT.get();
                 handleVerifyUnverify(entry, verifySource, unverifyRequest, isScript);
             }
         } else {
             out("This command is only accessible to Admins.");
         }
-    }
-
-    private static boolean isUnverifyRequest(List<String> args) {
-        boolean unverify = false;
-        for (String arg : args) {
-            if ("--unverify".equals(arg)) {
-                unverify = true;
-            }
-        }
-        return unverify;
     }
 
     /**

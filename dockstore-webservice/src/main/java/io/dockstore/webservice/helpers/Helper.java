@@ -368,8 +368,8 @@ public final class Helper {
      * @param entry
      */
     public static void checkUser(User user, Entry entry) {
-        if (!user.getIsAdmin() && !checkUserHelper(user, entry.getUsers())) {
-            throw new CustomWebApplicationException("Forbidden: please check your credentials.", HttpStatus.SC_FORBIDDEN);
+        if (!user.getIsAdmin() && (entry.getUsers()).stream().noneMatch(u -> ((User)(u)).getId() == user.getId())) {
+            throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.", HttpStatus.SC_FORBIDDEN);
         }
     }
 
@@ -381,19 +381,10 @@ public final class Helper {
      */
     public static void checkUser(User user, List<? extends Entry> list) {
         for (Entry entry : list) {
-            if (!user.getIsAdmin() && !checkUserHelper(user, entry.getUsers())) {
-                throw new CustomWebApplicationException("Forbidden: please check your credentials.", HttpStatus.SC_FORBIDDEN);
+            if (!user.getIsAdmin() && (entry.getUsers()).stream().noneMatch(u -> ((User)(u)).getId() == user.getId())) {
+                throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.", HttpStatus.SC_FORBIDDEN);
             }
         }
-    }
-
-    private static boolean checkUserHelper(User user, Set<User> users) {
-        for (User u : users) {
-            if (user.getId() == u.getId()) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**
