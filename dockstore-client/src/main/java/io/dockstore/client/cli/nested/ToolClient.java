@@ -31,6 +31,8 @@ import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.User;
+import io.swagger.client.model.VerifyRequest;
+
 import org.apache.commons.io.FilenameUtils;
 import org.apache.http.HttpStatus;
 
@@ -42,6 +44,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Scanner;
 import java.util.Set;
 
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
@@ -72,16 +75,18 @@ public class ToolClient extends AbstractEntryClient {
     private ContainertagsApi containerTagsApi;
     private UsersApi usersApi;
 
-    public ToolClient(Client client){
+    public ToolClient(Client client, boolean isAdmin){
         /** for testing */
         this.client = client;
+        this.isAdmin = isAdmin;
     }
 
-    public ToolClient(ContainersApi containersApi, ContainertagsApi containerTagsApi, UsersApi usersApi, Client client) {
+    public ToolClient(ContainersApi containersApi, ContainertagsApi containerTagsApi, UsersApi usersApi, Client client, boolean isAdmin) {
         this.containersApi = containersApi;
         this.containerTagsApi = containerTagsApi;
         this.usersApi = usersApi;
         this.client = client;
+        this.isAdmin = isAdmin;
     }
 
     @Override
@@ -415,6 +420,54 @@ public class ToolClient extends AbstractEntryClient {
 
         } catch (ApiException ex) {
             exceptionMessage(ex, "", Client.API_ERROR);
+        }
+    }
+
+    @Override
+    protected void handleVerifyUnverify(String entry, String verifySource, boolean unverifyRequest, boolean isScript) {
+        String action = "verify";
+        if (unverifyRequest) {
+            action = "unverify";
+        }
+
+        boolean toOverwrite = true;
+
+        try {
+            DockstoreTool tool = containersApi.getContainerByToolPath(entry);
+            VerifyRequest verifyRequest = new VerifyRequest();
+            if (unverifyRequest) {
+                verifyRequest.setVerify(false);
+                verifyRequest.setVerifiedSource(null);
+            } else {
+                // Check if already has been verified
+                if (tool.getVerified() && !isScript) {
+                    Scanner scanner = new Scanner(System.in, "utf-8");
+                    out("The tool " + tool.getPath() + " has already been verified by \'" + tool.getVerifiedSource() + "\'");
+                    out("Would you like to overwrite this with \'" + verifySource + "\'? (y/n)");
+                    String overwrite = scanner.nextLine();
+                    if (overwrite.toLowerCase().equals("y")) {
+                        verifyRequest.setVerify(true);
+                        verifyRequest.setVerifiedSource(verifySource);
+                    } else {
+                        toOverwrite = false;
+                    }
+                } else {
+                    verifyRequest.setVerify(true);
+                    verifyRequest.setVerifiedSource(verifySource);
+                }
+            }
+
+            if (toOverwrite) {
+                DockstoreTool result = containersApi.verifyTool(tool.getId(), verifyRequest);
+
+                if (unverifyRequest) {
+                    out("Tool " + tool.getPath() + " has been unverified.");
+                } else {
+                    out("Tool " + tool.getPath() + " has been verified by " + verifySource);
+                }
+            }
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "Unable to " + action + " tool " + entry, Client.API_ERROR);
         }
     }
 

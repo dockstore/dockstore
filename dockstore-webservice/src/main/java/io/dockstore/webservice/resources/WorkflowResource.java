@@ -18,10 +18,12 @@ package io.dockstore.webservice.resources;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Optional;
+import com.google.common.base.Strings;
 import com.google.common.io.Files;
 
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
+import io.dockstore.webservice.api.VerifyRequest;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
@@ -166,6 +168,8 @@ public class WorkflowResource {
         newWorkflow.setLastUpdated(workflow.getLastUpdated());
         newWorkflow.setWorkflowName(workflow.getWorkflowName());
         newWorkflow.setDescriptorType(workflow.getDescriptorType());
+        newWorkflow.setVerified(workflow.isVerified());
+        newWorkflow.setVerifiedSource(workflow.getVerifiedSource());
 
         // Copy Labels
         SortedSet<Label> labels = (SortedSet) workflow.getLabels();
@@ -421,6 +425,37 @@ public class WorkflowResource {
         }
 
         c.updateInfo(workflow);
+        Workflow result = workflowDAO.findById(workflowId);
+        Helper.checkEntry(result);
+
+        return result;
+
+    }
+
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/{workflowId}/verify")
+    @RolesAllowed("admin")
+    @ApiOperation(value = "Verify or unverify a workflow. ADMIN ONLY", response = Workflow.class)
+    public Workflow verifyWorkflow(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
+            @ApiParam(value = "Object containing verification information.", required = true) VerifyRequest verifyRequest) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        Helper.checkEntry(workflow);
+        // Note: if you set someone as an admin, they are not actually admin right away. Users must wait until after the
+        // expireAfterAccess time in the authenticationCachePolicy expires (10m by default)
+        Helper.checkUser(user, workflow);
+
+        if (verifyRequest.getVerify()) {
+            if (Strings.isNullOrEmpty(verifyRequest.getVerifiedSource())) {
+                throw new CustomWebApplicationException("A source must be included to verify a workflow.", HttpStatus.SC_BAD_REQUEST);
+            }
+            workflow.updateVerified(true, verifyRequest.getVerifiedSource());
+        } else {
+            workflow.updateVerified(false, null);
+        }
+
         Workflow result = workflowDAO.findById(workflowId);
         Helper.checkEntry(result);
 

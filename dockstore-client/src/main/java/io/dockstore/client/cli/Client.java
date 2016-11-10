@@ -90,7 +90,10 @@ public class Client {
 
     private String configFile = null;
     private ContainersApi containersApi;
+    private UsersApi usersApi;
     private GAGHApi ga4ghApi;
+
+    public boolean isAdmin = false;
 
     public static final int PADDING = 3;
 
@@ -102,7 +105,7 @@ public class Client {
     public static final int COMMAND_ERROR = 10; // Command is not successful, but not due to errors
 
     public static final AtomicBoolean DEBUG = new AtomicBoolean(false);
-    private static final AtomicBoolean SCRIPT = new AtomicBoolean(false);
+    public static final AtomicBoolean SCRIPT = new AtomicBoolean(false);
     private static ObjectMapper objectMapper;
     private ToolClient toolClient;
     private WorkflowClient workflowClient;
@@ -619,7 +622,7 @@ public class Client {
         out("                       Default: false");
         out("  --config <file>      Override config file");
         out("                       Default: ~/.dockstore/config");
-        out("  --script             Will not check Github for newer versions of Dockstore");
+        out("  --script             Will not check Github for newer versions of Dockstore, or ask for user input");
         out("                       Default: false");
         out("  --clean-cache        Delete the Dockstore launcher cache to save space");
         printHelpFooter();
@@ -747,10 +750,18 @@ public class Client {
         defaultApiClient.setBasePath(serverUrl);
 
         this.containersApi = new ContainersApi(defaultApiClient);
+        this.usersApi = new UsersApi(defaultApiClient);
         this.ga4ghApi = new GAGHApi(defaultApiClient);
 
-        this.toolClient = new ToolClient(containersApi, new ContainertagsApi(defaultApiClient), new UsersApi(defaultApiClient), this);
-        this.workflowClient = new WorkflowClient(new WorkflowsApi(defaultApiClient), new UsersApi(defaultApiClient), this);
+        try {
+            if (this.usersApi.getApiClient() != null) {
+                this.isAdmin = this.usersApi.getUser().getIsAdmin().booleanValue();
+            }
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "Could not connect to Dockstore web service", CONNECTION_ERROR);
+        }
+        this.toolClient = new ToolClient(containersApi, new ContainertagsApi(defaultApiClient), usersApi, this, isAdmin);
+        this.workflowClient = new WorkflowClient(new WorkflowsApi(defaultApiClient), usersApi, this, isAdmin);
 
         defaultApiClient.setDebugging(DEBUG.get());
     }

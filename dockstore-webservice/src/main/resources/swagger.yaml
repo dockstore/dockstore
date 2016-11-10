@@ -82,6 +82,9 @@ definitions:
         items: {$ref: '#/definitions/User'}
         type: array
         uniqueItems: true
+      verified: {default: false, description: Whether this entry has been verified or not,
+        type: boolean}
+      verifiedSource: {description: Verified source of the entry, type: string}
     required: [default_cwl_path, default_cwl_test_parameter_file, default_dockerfile_path,
       default_wdl_path, default_wdl_test_parameter_file, gitUrl, mode, name, namespace,
       registry, toolname]
@@ -312,6 +315,11 @@ definitions:
       username: {description: Username on dockstore, type: string}
     required: [isAdmin]
     type: object
+  VerifyRequest:
+    properties:
+      verifiedSource: {readOnly: true, type: string}
+      verify: {default: false, readOnly: true, type: boolean}
+    type: object
   Workflow:
     description: This describes one workflow in the dockstore
     properties:
@@ -353,6 +361,9 @@ definitions:
         items: {$ref: '#/definitions/User'}
         type: array
         uniqueItems: true
+      verified: {default: false, description: Whether this entry has been verified or not,
+        type: boolean}
+      verifiedSource: {description: Verified source of the entry, type: string}
       workflowName: {description: 'This is the name of the workflow, not needed when
           only one workflow in a repo', type: string}
       workflowVersions:
@@ -1172,6 +1183,25 @@ paths:
             type: array
       summary: Get users of a container
       tags: [containers]
+  /containers/{containerId}/verify:
+    put:
+      description: ''
+      operationId: verifyTool
+      parameters:
+      - {description: Tool to modify., format: int64, in: path, name: containerId,
+        required: true, type: integer}
+      - description: Object containing verification information.
+        in: body
+        name: body
+        required: true
+        schema: {$ref: '#/definitions/VerifyRequest'}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema: {$ref: '#/definitions/DockstoreTool'}
+      summary: Verify or unverify a tool. ADMIN ONLY
+      tags: [containers]
   /containers/{containerId}/wdl:
     get:
       description: Does not need authentication
@@ -1984,6 +2014,25 @@ paths:
             items: {$ref: '#/definitions/User'}
             type: array
       summary: Get users of a workflow
+      tags: [workflows]
+  /workflows/{workflowId}/verify:
+    put:
+      description: ''
+      operationId: verifyWorkflow
+      parameters:
+      - {description: Workflow to modify., format: int64, in: path, name: workflowId,
+        required: true, type: integer}
+      - description: Object containing verification information.
+        in: body
+        name: body
+        required: true
+        schema: {$ref: '#/definitions/VerifyRequest'}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema: {$ref: '#/definitions/Workflow'}
+      summary: Verify or unverify a workflow. ADMIN ONLY
       tags: [workflows]
   /workflows/{workflowId}/wdl:
     get:

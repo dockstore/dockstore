@@ -92,6 +92,7 @@ import static io.dockstore.client.cli.ArgumentUtility.reqVal;
 import static io.dockstore.client.cli.Client.API_ERROR;
 import static io.dockstore.client.cli.Client.CLIENT_ERROR;
 import static io.dockstore.client.cli.Client.IO_ERROR;
+import static io.dockstore.client.cli.Client.SCRIPT;
 
 /**
  * Handles the commands for a particular type of entry. (e.g. Workflows, Tools) Not a great abstraction, but enforces some structure for
@@ -111,6 +112,7 @@ public abstract class AbstractEntryClient {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractEntryClient.class);
     public static final String CROMWELL_LOCATION = "https://github.com/broadinstitute/cromwell/releases/download/0.21/cromwell-0.21.jar";
+    public boolean isAdmin = false;
 
     public enum Type {
         CWL("cwl"), WDL("wdl"), NONE("none");
@@ -159,8 +161,10 @@ public abstract class AbstractEntryClient {
         out("  " + CONVERT + "          :  utilities that allow you to convert file types");
         out("");
         out("  " + LAUNCH + "           :  launch " + getEntryType() + "s (locally)");
-        out("");
         printClientSpecificHelp();
+        if (isAdmin) {
+            printAdminHelp();
+        }
         out("------------------");
         out("");
         out("Flags:");
@@ -238,6 +242,9 @@ public abstract class AbstractEntryClient {
                 break;
             case LAUNCH:
                 launch(args);
+                break;
+            case "verify":
+                verify(args);
                 break;
             default:
                 return false;
@@ -321,6 +328,15 @@ public abstract class AbstractEntryClient {
     protected abstract void handlePublishUnpublish(String entryPath, String newName, boolean unpublishRequest);
 
     /**
+     * Verify/Unverify an entry
+     * @param entry a unique identifier for an entry, called a path for workflows and tools
+     * @param verifySource source of entry verification
+     * @param unverifyRequest true to unverify, false to verify
+     * @param isScript true if called by script, false otherwise
+     */
+    protected abstract void handleVerifyUnverify(String entry, String verifySource, boolean unverifyRequest, boolean isScript);
+
+    /**
      * List all of the entries published and unpublished for this user
      */
     protected abstract void handleListNonpublishedEntries();
@@ -359,19 +375,9 @@ public abstract class AbstractEntryClient {
         } else {
             String first = reqVal(args, "--entry");
             String entryname = optVal(args, "--entryname", null);
-            final boolean unpublishRequest = isUnpublishRequest(args);
+            final boolean unpublishRequest = args.contains("--unpub");
             handlePublishUnpublish(first, entryname, unpublishRequest);
         }
-    }
-
-    private static boolean isUnpublishRequest(List<String> args) {
-        boolean unpublish = false;
-        for (String arg : args) {
-            if ("--unpub".equals(arg)) {
-                unpublish = true;
-            }
-        }
-        return unpublish;
     }
 
     private void list(List<String> args) {
@@ -725,6 +731,21 @@ public abstract class AbstractEntryClient {
         return false;
     }
 
+    private void verify(List<String> args) {
+        if (isAdmin) {
+            if (containsHelpRequest(args)) {
+                verifyHelp();
+            } else if (!args.isEmpty()) {
+                String entry = reqVal(args, "--entry");
+                String verifySource = optVal(args, "--verified-source", null);
+                final boolean unverifyRequest = args.contains("--unverify");
+                final boolean isScript = SCRIPT.get();
+                handleVerifyUnverify(entry, verifySource, unverifyRequest, isScript);
+            }
+        } else {
+            out("This command is only accessible to Admins.");
+        }
+    }
 
     /**
      * this function will check the content of the entry file if it's a valid cwl/wdl file
@@ -1459,6 +1480,30 @@ public abstract class AbstractEntryClient {
         out("  --local-entry                       Allows you to specify a full path to a local descriptor for --entry instead of an entry path");
         out("  --wdl-output-target                 Allows you to specify a remote path to provision output files to ex: s3://oicr.temp/testing-launcher/");
         printHelpFooter();
+    }
+
+    private void verifyHelp() {
+        printHelpHeader();
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " verify --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " verify [parameters]");
+        out("       dockstore " + getEntryType().toLowerCase() + " verify --unverify [parameters]");
+        out("");
+        out("Description:");
+        out("  Verify/unverify a " + getEntryType() + ".");
+        out("");
+        out("Required parameters:");
+        out("  --entry <entry>                          Complete entry path in the Dockstore");
+        out("");
+        out("Optional Parameters:");
+        out("  --verified-source <verified-source>      Source of verification (Required to verify).");
+        printHelpFooter();
+    }
+
+    private void printAdminHelp() {
+        out("Admin Only Commands:");
+        out("");
+        out("  verify           :  Verify/unverify a " + getEntryType());
+        out("");
     }
 
     protected static String getCleanedDescription(String description) {

@@ -75,7 +75,7 @@ public class ClientIT {
 
     @Test
     public void testListEntriesWithoutCreds() throws IOException, TimeoutException, ApiException {
-        systemExit.expectSystemExitWithStatus(Client.API_ERROR);
+        systemExit.expectSystemExitWithStatus(Client.CONNECTION_ERROR);
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(false), "tool", "list" });
     }
 

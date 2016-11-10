@@ -932,4 +932,41 @@ public class BasicET {
                 
         }
 
+        /**
+         * This tests that you can verify and unverify a tool
+         */
+        @Test
+        public void testVerify() {
+                // Setup DB
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+                // Tool should be unverified
+                final long count = testingPostgres.runSelectStatement("select count(*) from tool where verified='true'", new ScalarHandler<>());
+                Assert.assertTrue("there should be no verified tools, there are " + count, count == 0);
+
+                // Verify tool
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "verify", "--entry", "quay.io/dockstoretestuser/quayandbitbucket",
+                        "--verified-source", "Docker testing group", "--script" });
+
+                // Tool should be verified
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where verified='true' and verifiedSource='Docker testing group'", new ScalarHandler<>());
+                Assert.assertTrue("there should be one verified tool, there are " + count2, count2 == 1);
+
+                // Update tool to have new verified source
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "verify", "--entry", "quay.io/dockstoretestuser/quayandbitbucket",
+                        "--verified-source", "Docker testing group2", "--script" });
+
+                // Tool should have new verified source
+                final long count3 = testingPostgres.runSelectStatement("select count(*) from tool where verified='true' and verifiedSource='Docker testing group2'", new ScalarHandler<>());
+                Assert.assertTrue("there should be one verified tool, there are " + count3, count3 == 1);
+
+                // Unverify tool
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "verify", "--entry", "quay.io/dockstoretestuser/quayandbitbucket",
+                        "--unverify", "--script" });
+
+                // Tool should be unverified
+                final long count4 = testingPostgres.runSelectStatement("select count(*) from tool where verified='true'", new ScalarHandler<>());
+                Assert.assertTrue("there should be no verified tools, there are " + count4, count4 == 0);
+        }
+
 }

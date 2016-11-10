@@ -27,6 +27,7 @@ import io.swagger.client.model.Label;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.User;
+import io.swagger.client.model.VerifyRequest;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.apache.http.HttpStatus;
@@ -37,6 +38,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Scanner;
 import java.util.Set;
 
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
@@ -69,10 +71,11 @@ public class WorkflowClient extends AbstractEntryClient {
     private final UsersApi usersApi;
     private final Client client;
 
-    public WorkflowClient(WorkflowsApi workflowApi, UsersApi usersApi, Client client) {
+    public WorkflowClient(WorkflowsApi workflowApi, UsersApi usersApi, Client client, boolean isAdmin) {
         this.workflowsApi = workflowApi;
         this.usersApi = usersApi;
         this.client = client;
+        this.isAdmin = isAdmin;
     }
 
     @Override
@@ -257,6 +260,55 @@ public class WorkflowClient extends AbstractEntryClient {
             }
         }
     }
+
+    @Override
+    protected void handleVerifyUnverify(String entry, String verifySource, boolean unverifyRequest, boolean isScript) {
+        String action = "verify";
+        if (unverifyRequest) {
+            action = "unverify";
+        }
+
+        boolean toOverwrite = true;
+
+        try {
+            Workflow workflow = workflowsApi.getWorkflowByPath(entry);
+            VerifyRequest verifyRequest = new VerifyRequest();
+            if (unverifyRequest) {
+                verifyRequest.setVerify(false);
+                verifyRequest.setVerifiedSource(null);
+            } else {
+                // Check if already has been verified
+                if (workflow.getVerified() && !isScript) {
+                    Scanner scanner = new Scanner(System.in, "utf-8");
+                    out("The workflow " + workflow.getPath() + " has already been verified by \'" + workflow.getVerifiedSource() + "\'");
+                    out("Would you like to overwrite this with \'" + verifySource + "\'? (y/n)");
+                    String overwrite = scanner.nextLine();
+                    if (overwrite.toLowerCase().equals("y")) {
+                        verifyRequest.setVerify(true);
+                        verifyRequest.setVerifiedSource(verifySource);
+                    } else {
+                        toOverwrite = false;
+                    }
+                } else {
+                    verifyRequest.setVerify(true);
+                    verifyRequest.setVerifiedSource(verifySource);
+                }
+            }
+
+            if (toOverwrite) {
+                Workflow result = workflowsApi.verifyWorkflow(workflow.getId(), verifyRequest);
+
+                if (unverifyRequest) {
+                    out("Workflow " + workflow.getPath() + " has been unverified.");
+                } else {
+                    out("Workflow " + workflow.getPath() + " has been verified by " + verifySource);
+                }
+            }
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "Unable to " + action + " workflow " + entry, Client.API_ERROR);
+        }
+    }
+
 
     @Override
     protected void handleListNonpublishedEntries() {
