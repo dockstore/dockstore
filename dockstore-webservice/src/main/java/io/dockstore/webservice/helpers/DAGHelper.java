@@ -20,7 +20,6 @@ import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
-import io.cwl.avro.Any;
 import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.ExpressionTool;
 import io.cwl.avro.WorkflowOutputParameter;
@@ -383,7 +382,7 @@ public class DAGHelper {
      * @param hints
      * @return
      */
-    private String getRequirementOrHint(List<Object> requirements, List<Any> hints, Gson gsonWorkflow, String dockerPull) {
+    private String getRequirementOrHint(List<Object> requirements, List<Object> hints, Gson gsonWorkflow, String dockerPull) {
         dockerPull = getDockerHint(hints, gsonWorkflow, dockerPull);
         dockerPull = getDockerRequirement(requirements, dockerPull);
         return dockerPull;
@@ -403,7 +402,7 @@ public class DAGHelper {
             JSONObject entryJson = new JSONObject(entryMapping);
 
             List<Object> cltRequirements = null;
-            List<Any> cltHints = null;
+            List<Object> cltHints = null;
 
             if (isExpressionTool(secondaryFileContents, yaml)) {
                 final ExpressionTool expressionTool = gson.fromJson(entryJson.toString(), io.cwl.avro.ExpressionTool.class);
@@ -459,7 +458,7 @@ public class DAGHelper {
      * @param currentDefault
      * @return
      */
-    private String getDockerHint(List<Any> hints, Gson gsonWorkflow, String currentDefault) {
+    private String getDockerHint(List<Object> hints, Gson gsonWorkflow, String currentDefault) {
         if (hints != null) {
             String hintsJson = gsonWorkflow.toJson(hints);
             List<Object> hintsList = gsonWorkflow.fromJson(hintsJson, new TypeToken<List<Object>>() {}.getType());
