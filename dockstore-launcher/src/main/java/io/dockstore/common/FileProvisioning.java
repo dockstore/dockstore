@@ -211,6 +211,14 @@ public class FileProvisioning {
                     linked = true;
                 } catch (IOException e) {
                     LOG.error("Cannot create hard link to cached file, you may want to move your cache", e.getMessage());
+                    try {
+                        Files.copy(potentialCachedFile, localPath);
+                    } catch (IOException e1) {
+                        LOG.error("Could not copy " + targetPath + " to " + localPath, e);
+                        throw new RuntimeException("Could not copy " + targetPath + " to " + localPath, e1);
+                    }
+                    System.out.println("Found file " + targetPath + " in cache, copied");
+                    return;
                 }
                 if (linked) {
                     return;
