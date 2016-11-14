@@ -359,6 +359,9 @@ public class LauncherCWL {
                 JSONObject newRecord = new JSONObject();
                 newRecord.put("class", param.get("class"));
                 newRecord.put("path", param.get("path"));
+                if (param.containsKey("format")){
+                    newRecord.put("format", param.get("format"));
+                }
                 newJSON.put(paramName, newRecord);
 
                 // TODO: fill in for all possible types
@@ -457,7 +460,7 @@ public class LauncherCWL {
                 .collect(Collectors.toList());
 
         // Create cwltool command
-        ArrayList<String> command = new ArrayList<>(Arrays.asList("cwltool","--enable-dev","--non-strict","--enable-net","--outdir", outputDir, "--tmpdir-prefix", workingDir, cwlFile, jsonSettings));
+        ArrayList<String> command = new ArrayList<>(Arrays.asList("cwltool","--enable-dev","--non-strict","--outdir", outputDir, "--tmpdir-prefix", workingDir, cwlFile, jsonSettings));
         command.addAll(1, extraFlags);
 
         final String joined = Joiner.on(" ").join(command);

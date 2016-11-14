@@ -758,7 +758,7 @@ public class Client {
                 this.isAdmin = this.usersApi.getUser().getIsAdmin().booleanValue();
             }
         } catch (ApiException ex) {
-            exceptionMessage(ex, "Could not connect to Dockstore web service", CONNECTION_ERROR);
+            this.isAdmin = false;
         }
         this.toolClient = new ToolClient(containersApi, new ContainertagsApi(defaultApiClient), usersApi, this, isAdmin);
         this.workflowClient = new WorkflowClient(new WorkflowsApi(defaultApiClient), usersApi, this, isAdmin);
