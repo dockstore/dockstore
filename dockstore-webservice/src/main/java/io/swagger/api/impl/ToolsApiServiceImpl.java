@@ -134,8 +134,8 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         tool.setToolclass(type);
         tool.setId(newID);
         tool.setUrl(globalId);
-        tool.setVerified(false);
-        tool.setVerifiedSource("");
+        tool.setVerified(container.isVerified());
+        tool.setVerifiedSource(container.getVerifiedSource() == null ? "" : container.getVerifiedSource());
         // tool specific
         if (container instanceof Tool) {
             Tool inputTool = (Tool) container;
