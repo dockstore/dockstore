@@ -24,7 +24,6 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
-
 import io.cwl.avro.CWL;
 import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.CommandOutputParameter;
@@ -130,8 +129,6 @@ public class LauncherCWL {
         fileProvisioning = new FileProvisioning(configFilePath);
         this.stdoutStream = stdoutStream;
         this.stderrStream = stderrStream;
-
-
         gson = CWL.getTypeSafeCWLToolDocument();
     }
 
@@ -140,7 +137,7 @@ public class LauncherCWL {
      * @param cwlFile
      * @return
      */
-    public ImmutablePair<String, String> parseCWL(final String cwlFile) {
+    private ImmutablePair<String, String> parseCWL(final String cwlFile) {
         // update seems to just output the JSON version without checking file links
         final String[] s = { "cwltool", "--non-strict", "--print-pre", cwlFile };
         final ImmutablePair<String, String> execute = io.cwl.avro.Utilities
@@ -447,7 +444,7 @@ public class LauncherCWL {
 
     private Map<String, Object> runCWLCommand(String cwlFile, String jsonSettings, String outputDir, String workingDir, OutputStream stdoutStream, OutputStream stderrStream) {
         // Get extras from config file
-        ArrayList<String> extraFlags = (ArrayList)config.getList("cwltool-extra-parameters");
+        List<String> extraFlags = (List)config.getList("cwltool-extra-parameters");
 
         if (extraFlags.size() > 0) {
             System.out.println("########### WARNING ###########");
@@ -455,12 +452,10 @@ public class LauncherCWL {
         }
 
         // Trim the input
-        extraFlags = (ArrayList)extraFlags.stream()
-                .map(flag -> trimAndPrintInput(flag))
-                .collect(Collectors.toList());
+        extraFlags = extraFlags.stream().map(this::trimAndPrintInput).collect(Collectors.toList());
 
         // Create cwltool command
-        ArrayList<String> command = new ArrayList<>(Arrays.asList("cwltool","--enable-dev","--non-strict","--outdir", outputDir, "--tmpdir-prefix", workingDir, cwlFile, jsonSettings));
+        List<String> command = new ArrayList<>(Arrays.asList("cwltool","--enable-dev","--non-strict","--outdir", outputDir, "--tmpdir-prefix", workingDir, cwlFile, jsonSettings));
         command.addAll(1, extraFlags);
 
         final String joined = Joiner.on(" ").join(command);
