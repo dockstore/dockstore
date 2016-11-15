@@ -921,6 +921,11 @@ public abstract class AbstractEntryClient {
      */
     public void handleCWLLaunch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns, OutputStream stdoutStream, OutputStream stderrStream)
             throws IOException, ApiException {
+
+        if (!SCRIPT.get()) {
+            Client.checkForCWLDependencies();
+        }
+
         final File tempDir = Files.createTempDir();
         File tempCWL;
         if (!isLocalEntry) {
@@ -1506,7 +1511,7 @@ public abstract class AbstractEntryClient {
         out("");
     }
 
-    protected static String getCleanedDescription(String description) {
+    static String getCleanedDescription(String description) {
         if (description != null) {
             // strip control characters
             description = CharMatcher.JAVA_ISO_CONTROL.removeFrom(description);

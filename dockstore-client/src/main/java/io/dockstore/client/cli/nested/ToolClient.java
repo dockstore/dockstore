@@ -76,7 +76,7 @@ public class ToolClient extends AbstractEntryClient {
     private UsersApi usersApi;
 
     public ToolClient(Client client, boolean isAdmin){
-        /** for testing */
+        /* for testing */
         this.client = client;
         this.isAdmin = isAdmin;
     }
