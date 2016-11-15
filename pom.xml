@@ -693,6 +693,29 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-clean-plugin</artifactId>
                     <version>3.0.0</version>
+                    <configuration>
+                        <filesets>
+                            <fileset>
+                                <directory>datastore</directory>
+                            </fileset>
+                            <fileset>
+                                <directory>cromwell-executions</directory>
+                            </fileset>
+                            <fileset>
+                                <directory>cromwell-input</directory>
+                            </fileset>
+                            <fileset>
+                                <directory>cromwell-workflow-logs</directory>
+                            </fileset>
+                            <fileset>
+                                <directory>.</directory>
+                                <includes>
+                                    <include>Cromwell.stderr.txt</include>
+                                    <include>Cromwell.stdout.txt</include>
+                                </includes>
+                            </fileset>
+                        </filesets>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
