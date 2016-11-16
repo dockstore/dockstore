@@ -50,6 +50,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
@@ -492,7 +493,10 @@ public abstract class AbstractEntryClient {
             if (null != cmd) {
                 switch (cmd) {
                 case "cwl2json":
-                    cwl2json(args);
+                    cwl2json(args, true);
+                    break;
+                case "cwl2yaml":
+                    cwl2json(args, false);
                     break;
                 case "wdl2json":
                     wdl2json(args);
@@ -511,17 +515,26 @@ public abstract class AbstractEntryClient {
         }
     }
 
-    private void cwl2json(final List<String> args) throws ApiException, IOException {
+    private void cwl2json(final List<String> args, boolean json) throws ApiException, IOException {
         if (args.isEmpty() || containsHelpRequest(args)) {
-            cwl2jsonHelp();
+            if (json) {
+                cwl2jsonHelp();
+            } else{
+                cwl2yamlHelp();
+            }
         } else {
             final String cwlPath = reqVal(args, "--cwl");
             final ImmutablePair<String, String> output = cwlUtil.parseCWL(cwlPath);
 
             try {
-                final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
                 final Map<String, Object> runJson = cwlUtil.extractRunJson(output.getLeft());
-                out(gson.toJson(runJson));
+                if (json) {
+                    final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
+                    out(gson.toJson(runJson));
+                } else{
+                    Yaml yaml = new Yaml();
+                    out(yaml.dumpAs(runJson, null, DumperOptions.FlowStyle.BLOCK));
+                }
             } catch (CWL.GsonBuildException ex) {
                 exceptionMessage(ex, "There was an error creating the CWL GSON instance.", API_ERROR);
             } catch (JsonParseException ex) {
@@ -1396,6 +1409,19 @@ public abstract class AbstractEntryClient {
         out("");
         out("Required Parameters:");
         out("  --pattern <pattern>         Pattern to search Dockstore with.");
+        printHelpFooter();
+    }
+
+    private void cwl2yamlHelp() {
+        printHelpHeader();
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " " + CONVERT + " --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " " + CONVERT + " cwl2yaml [parameters]");
+        out("");
+        out("Description:");
+        out("  Spit out a yaml run file for a given cwl document.");
+        out("");
+        out("Required parameters:");
+        out("  --cwl <file>                Path to cwl file");
         printHelpFooter();
     }
 
