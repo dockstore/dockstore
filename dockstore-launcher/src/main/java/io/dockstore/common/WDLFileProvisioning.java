@@ -111,14 +111,23 @@ public class WDLFileProvisioning {
                 LOG.info("PATH TO DOWNLOAD FROM: {} FOR {}", path, key);
 
                 // Setup local paths
-                String downloadDir = "cromwell-input/" + uniqueHash;
-                Utilities.executeCommand("mkdir -p " + downloadDir);
-                File downloadDirFileObject = new File(downloadDir);
-                final Path targetFilePath = Paths.get(downloadDirFileObject.getAbsolutePath(), filename);
+                String downloadDirPath = "cromwell-input/" + uniqueHash;
 
+                // Check if download dir exists
+                File downloadDir = new File(downloadDirPath);
+                if (!downloadDir.exists()) {
+                    Utilities.executeCommand("mkdir -p " + downloadDirPath);
+                }
+
+                final Path targetFilePath = Paths.get(downloadDir.getAbsolutePath(), filename);
+
+                File targetFile = new File(targetFilePath.toString());
                 System.out.println("Downloading: " + key + " from " + path + " to: " + targetFilePath);
-                fileProvisioning.provisionInputFile(path, targetFilePath, pathInfo);
-
+                if (targetFile.isDirectory()) {
+                    Utilities.executeCommand("mkdir -p " + targetFile);
+                } else {
+                    fileProvisioning.provisionInputFile(path, targetFilePath, pathInfo);
+                }
                 jsonEntry.put(key, targetFilePath);
                 LOG.info("DOWNLOADED FILE: LOCAL: {} URL: {} => {}", key, path, targetFilePath);
                 return jsonEntry;
