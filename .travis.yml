@@ -32,7 +32,7 @@ env:
    - EXTRA_MAVEN_VAR=""
    - EXTRA_MAVEN_VAR="cobertura:cobertura-integration-test coveralls:report"
 
-script: mvn -B clean install -DskipITs=false -Pconfidential-tests $EXTRA_MAVEN_VAR
+script: ./scripts/run-tests.sh
 
 before_install:
 - export JAVA_HOME=/usr/lib/jvm/java-8-oracle/jre
