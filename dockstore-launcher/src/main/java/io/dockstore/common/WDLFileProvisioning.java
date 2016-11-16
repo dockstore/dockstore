@@ -121,9 +121,9 @@ public class WDLFileProvisioning {
 
                 final Path targetFilePath = Paths.get(downloadDir.getAbsolutePath(), filename);
 
-                File targetFile = new File(targetFilePath.toString());
+                File originalFile = new File(path);
                 System.out.println("Downloading: " + key + " from " + path + " to: " + targetFilePath);
-                if (targetFile.isDirectory()) {
+                if (originalFile.isDirectory()) {
                     Utilities.executeCommand("mkdir -p " + targetFilePath.toString());
                 } else {
                     fileProvisioning.provisionInputFile(path, targetFilePath, pathInfo);
