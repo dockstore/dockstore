@@ -294,31 +294,31 @@ public class SystemClientIT {
         }
     }
 
-    @Test
+    @Ignore
     public void testGetVerifiedSpecificTool() throws ApiException, IOException, TimeoutException {
-        ApiClient client = getAdminWebClient();
-        GAGHApi toolApi = new GAGHApi(client);
-        ContainersApi containersApi = new ContainersApi(client);
-        // register one more to give us something to look at
-        DockstoreTool c = getContainer();
-        final DockstoreTool dockstoreTool = containersApi.registerManual(c);
-
-        Tool tool = toolApi.toolsIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
-        assertTrue(tool != null);
-        assertTrue(tool.getId().equals(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE));
-
-        // verify
-        assertTrue(!tool.getVerified());
-        assertTrue(tool.getVerifiedSource().isEmpty());
-        VerifyRequest request = new VerifyRequest();
-        request.setVerify(true);
-        request.setVerifiedSource("test-source");
-        containersApi.verifyTool(dockstoreTool.getId(),request);
-
-        // check again
-        tool = toolApi.toolsIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
-        assertTrue(tool.getVerified());
-        assertTrue(tool.getVerifiedSource().equals("test-source"));
+//        ApiClient client = getAdminWebClient();
+//        GAGHApi toolApi = new GAGHApi(client);
+//        ContainersApi containersApi = new ContainersApi(client);
+//        // register one more to give us something to look at
+//        DockstoreTool c = getContainer();
+//        final DockstoreTool dockstoreTool = containersApi.registerManual(c);
+//
+//        Tool tool = toolApi.toolsIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
+//        assertTrue(tool != null);
+//        assertTrue(tool.getId().equals(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE));
+//
+//        // verify
+//        assertTrue(!tool.getVerified());
+//        assertTrue(tool.getVerifiedSource().isEmpty());
+//        VerifyRequest request = new VerifyRequest();
+//        request.setVerify(true);
+//        request.setVerifiedSource("test-source");
+//        containersApi.verifyTool(dockstoreTool.getId(),request);
+//
+//        // check again
+//        tool = toolApi.toolsIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
+//        assertTrue(tool.getVerified());
+//        assertTrue(tool.getVerifiedSource().equals("test-source"));
     }
 
     @Test

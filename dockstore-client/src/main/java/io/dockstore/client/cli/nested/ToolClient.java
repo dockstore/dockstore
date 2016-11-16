@@ -424,7 +424,7 @@ public class ToolClient extends AbstractEntryClient {
     }
 
     @Override
-    protected void handleVerifyUnverify(String entry, String verifySource, boolean unverifyRequest, boolean isScript) {
+    protected void handleVerifyUnverify(String entry, String versionName, String verifySource, boolean unverifyRequest, boolean isScript) {
         String action = "verify";
         if (unverifyRequest) {
             action = "unverify";
@@ -434,15 +434,28 @@ public class ToolClient extends AbstractEntryClient {
 
         try {
             DockstoreTool tool = containersApi.getContainerByToolPath(entry);
+            List<Tag> tags = tool.getTags();
+            Tag tagToUpdate = null;
+            for (Tag tag : tags) {
+                if (tag.getName().equals(versionName)) {
+                    tagToUpdate = tag;
+                    break;
+                }
+            }
+
+            if (tagToUpdate == null) {
+                errorMessage(versionName + " is not a valid tag for " + entry, Client.CLIENT_ERROR);
+            }
+
             VerifyRequest verifyRequest = new VerifyRequest();
             if (unverifyRequest) {
                 verifyRequest.setVerify(false);
                 verifyRequest.setVerifiedSource(null);
             } else {
                 // Check if already has been verified
-                if (tool.getVerified() && !isScript) {
+                if (tagToUpdate.getVerified() && !isScript) {
                     Scanner scanner = new Scanner(System.in, "utf-8");
-                    out("The tool " + tool.getPath() + " has already been verified by \'" + tool.getVerifiedSource() + "\'");
+                    out("The tag " + versionName + " has already been verified by \'" + tagToUpdate.getVerifiedSource() + "\'");
                     out("Would you like to overwrite this with \'" + verifySource + "\'? (y/n)");
                     String overwrite = scanner.nextLine();
                     if (overwrite.toLowerCase().equals("y")) {
@@ -458,16 +471,16 @@ public class ToolClient extends AbstractEntryClient {
             }
 
             if (toOverwrite) {
-                DockstoreTool result = containersApi.verifyTool(tool.getId(), verifyRequest);
+                List<Tag> result = containerTagsApi.verifyToolTag(tool.getId(), tagToUpdate.getId(), verifyRequest);
 
                 if (unverifyRequest) {
-                    out("Tool " + tool.getPath() + " has been unverified.");
+                    out("Tag " + versionName + " has been unverified.");
                 } else {
-                    out("Tool " + tool.getPath() + " has been verified by " + verifySource);
+                    out("Tag " + versionName + " has been verified by " + verifySource);
                 }
             }
         } catch (ApiException ex) {
-            exceptionMessage(ex, "Unable to " + action + " tool " + entry, Client.API_ERROR);
+            exceptionMessage(ex, "Unable to " + action + " tag " + versionName, Client.API_ERROR);
         }
     }
 

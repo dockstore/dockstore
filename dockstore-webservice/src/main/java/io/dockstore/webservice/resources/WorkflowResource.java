@@ -168,8 +168,6 @@ public class WorkflowResource {
         newWorkflow.setLastUpdated(workflow.getLastUpdated());
         newWorkflow.setWorkflowName(workflow.getWorkflowName());
         newWorkflow.setDescriptorType(workflow.getDescriptorType());
-        newWorkflow.setVerified(workflow.isVerified());
-        newWorkflow.setVerifiedSource(workflow.getVerifiedSource());
 
         // Copy Labels
         SortedSet<Label> labels = (SortedSet) workflow.getLabels();
@@ -435,11 +433,12 @@ public class WorkflowResource {
     @PUT
     @Timed
     @UnitOfWork
-    @Path("/{workflowId}/verify")
+    @Path("/{workflowId}/verify/{workflowVersionId}")
     @RolesAllowed("admin")
-    @ApiOperation(value = "Verify or unverify a workflow. ADMIN ONLY", response = Workflow.class)
-    public Workflow verifyWorkflow(@ApiParam(hidden = true) @Auth User user,
+    @ApiOperation(value = "Verify or unverify a workflow. ADMIN ONLY", response = WorkflowVersion.class, responseContainer = "List")
+    public Set<WorkflowVersion> verifyWorkflowVersion(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
+            @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId,
             @ApiParam(value = "Object containing verification information.", required = true) VerifyRequest verifyRequest) {
         Workflow workflow = workflowDAO.findById(workflowId);
         Helper.checkEntry(workflow);
@@ -447,19 +446,25 @@ public class WorkflowResource {
         // expireAfterAccess time in the authenticationCachePolicy expires (10m by default)
         Helper.checkUser(user, workflow);
 
+        WorkflowVersion workflowVersion = workflowVersionDAO.findById(workflowVersionId);
+        if (workflowVersion == null) {
+            LOG.error(user.getUsername() + ": could not find version: " + workflow.getPath());
+            throw new CustomWebApplicationException("Version not found.", HttpStatus.SC_BAD_REQUEST);
+
+        }
+
         if (verifyRequest.getVerify()) {
             if (Strings.isNullOrEmpty(verifyRequest.getVerifiedSource())) {
                 throw new CustomWebApplicationException("A source must be included to verify a workflow.", HttpStatus.SC_BAD_REQUEST);
             }
-            workflow.updateVerified(true, verifyRequest.getVerifiedSource());
+            workflowVersion.updateVerified(true, verifyRequest.getVerifiedSource());
         } else {
-            workflow.updateVerified(false, null);
+            workflowVersion.updateVerified(false, null);
         }
 
         Workflow result = workflowDAO.findById(workflowId);
         Helper.checkEntry(result);
-
-        return result;
+        return result.getWorkflowVersions();
 
     }
 
