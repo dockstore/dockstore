@@ -1,0 +1,10 @@
+{
+  "indir": {
+    "path": "/home/dyuen/testing/cwl_directories",
+    "class": "Directory"
+  },
+  "outdir": {
+    "path": "/home/dyuen/testing/cwl_directories/output",
+    "class": "Directory"
+  }
+}
