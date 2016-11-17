@@ -19,7 +19,6 @@ package io.dockstore.common;
 import com.amazonaws.util.json.JSONException;
 import com.amazonaws.util.json.JSONObject;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -106,8 +105,6 @@ public class WDLFileProvisioning {
                 FileProvisioning.PathInfo pathInfo = new FileProvisioning.PathInfo(path);
                 Map<String, Object> jsonEntry = new HashMap<>();
 
-                String filename = FilenameUtils.getName(path);
-
                 LOG.info("PATH TO DOWNLOAD FROM: {} FOR {}", path, key);
 
                 // Setup local paths
@@ -119,11 +116,12 @@ public class WDLFileProvisioning {
                     Utilities.executeCommand("mkdir -p " + downloadDirPath);
                 }
 
-                final Path targetFilePath = Paths.get(downloadDir.getAbsolutePath(), filename);
+                final Path targetFilePath = Paths.get(downloadDir.getAbsolutePath(), path);
 
                 File originalFile = new File(path);
                 System.out.println("Downloading: " + key + " from " + path + " to: " + targetFilePath);
                 if (originalFile.isDirectory()) {
+                    // If directory we will create a copy of it, but not of the content
                     Utilities.executeCommand("mkdir -p " + targetFilePath.toString());
                 } else {
                     fileProvisioning.provisionInputFile(path, targetFilePath, pathInfo);
