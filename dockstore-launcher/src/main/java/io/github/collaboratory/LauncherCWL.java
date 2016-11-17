@@ -289,11 +289,16 @@ public class LauncherCWL {
 
     /**
      * Handles one output for upload
-     * @param fileMap
+     * @param fileMap output map
      * @param cwlID
+     * @param param the paramter from the json input file ()
      * @param key
      */
     private void handleOutputFile(Map<String, List<FileProvisioning.FileInfo>> fileMap, final String cwlID, Map<String, Object> param, final String key) {
+        if (param.containsKey("class") && param.get("class").toString().equalsIgnoreCase("Directory")){
+            // ignore directory output
+            return;
+        }
         String path = (String) param.get("path");
         // if it's the current one
         LOG.info("PATH TO UPLOAD TO: {} FOR {} FOR {}", path, cwlID, key);
@@ -615,6 +620,12 @@ public class LauncherCWL {
                 }
                 // in this case the input is a single instance and not an array
             } else if (stringObjectEntry.getValue() instanceof HashMap) {
+                Map value = (Map)stringObjectEntry.getValue();
+
+                // ignore local directories when doing file provisioning
+                if (value.containsKey("class") && (("Directory").equalsIgnoreCase(value.get("class").toString()))){
+                    return;
+                }
 
                 HashMap param = (HashMap) stringObjectEntry.getValue();
                 String path = (String) param.get("path");
