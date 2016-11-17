@@ -155,6 +155,7 @@ public class LaunchTestIT {
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("1st-workflow-job.json"));
 
         ArrayList<String> args = new ArrayList<String>() {{
+            add("--local-entry");
             add("--json");
             add(cwlJSON.getAbsolutePath());
         }};
