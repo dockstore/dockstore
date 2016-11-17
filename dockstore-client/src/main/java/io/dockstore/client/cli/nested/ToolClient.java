@@ -425,23 +425,16 @@ public class ToolClient extends AbstractEntryClient {
 
     @Override
     protected void handleVerifyUnverify(String entry, String versionName, String verifySource, boolean unverifyRequest, boolean isScript) {
-        String action = "verify";
-        if (unverifyRequest) {
-            action = "unverify";
-        }
-
         boolean toOverwrite = true;
 
         try {
             DockstoreTool tool = containersApi.getContainerByToolPath(entry);
             List<Tag> tags = tool.getTags();
-            Tag tagToUpdate = null;
-            for (Tag tag : tags) {
-                if (tag.getName().equals(versionName)) {
-                    tagToUpdate = tag;
-                    break;
-                }
-            }
+            Tag tagToUpdate = tags
+                    .stream()
+                    .filter((Tag u) -> u.getName().equals(versionName))
+                    .findFirst()
+                    .get();
 
             if (tagToUpdate == null) {
                 errorMessage(versionName + " is not a valid tag for " + entry, Client.CLIENT_ERROR);
@@ -480,7 +473,7 @@ public class ToolClient extends AbstractEntryClient {
                 }
             }
         } catch (ApiException ex) {
-            exceptionMessage(ex, "Unable to " + action + " tag " + versionName, Client.API_ERROR);
+            exceptionMessage(ex, "Unable to " + (unverifyRequest ? "unverify" : "verify") + " tag " + versionName, Client.API_ERROR);
         }
     }
 

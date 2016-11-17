@@ -627,18 +627,16 @@ public class DockerRepoResource {
         Helper.checkEntry(tool);
 
         Set<String> verifiedSourcesArray = new HashSet<>();
+        tool.getTags()
+                .stream()
+                .filter((Tag u) -> u.isVerified())
+                .forEach((Tag v) -> verifiedSourcesArray.add(v.getVerifiedSource()));
 
-        for (Tag tag : tool.getTags()) {
-            if (tag.isVerified()) {
-                verifiedSourcesArray.add(tag.getVerifiedSource());
-            }
-        }
-
-        JSONArray jsonArray = new JSONArray();
+        JSONArray jsonArray;
         try {
             jsonArray = new JSONArray(verifiedSourcesArray.toArray());
         } catch (JSONException ex) {
-            ex.printStackTrace();
+            throw new CustomWebApplicationException("There was an error converting the array of verified sources to a JSON array.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
 
         return jsonArray.toString();

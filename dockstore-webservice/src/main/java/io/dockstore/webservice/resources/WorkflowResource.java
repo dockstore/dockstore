@@ -637,18 +637,16 @@ public class WorkflowResource {
         Helper.checkEntry(workflow);
 
         Set<String> verifiedSourcesArray = new HashSet<>();
+        workflow.getWorkflowVersions()
+                .stream()
+                .filter((WorkflowVersion u) -> u.isVerified())
+                .forEach((WorkflowVersion v) -> verifiedSourcesArray.add(v.getVerifiedSource()));
 
-        for (WorkflowVersion workflowVersion : workflow.getWorkflowVersions()) {
-            if (workflowVersion.isVerified()) {
-                verifiedSourcesArray.add(workflowVersion.getVerifiedSource());
-            }
-        }
-
-        JSONArray jsonArray = new JSONArray();
+        JSONArray jsonArray;
         try {
             jsonArray = new JSONArray(verifiedSourcesArray.toArray());
         } catch (JSONException ex) {
-            ex.printStackTrace();
+            throw new CustomWebApplicationException("There was an error converting the array of verified sources to a JSON array.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
 
         return jsonArray.toString();

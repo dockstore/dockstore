@@ -263,23 +263,16 @@ public class WorkflowClient extends AbstractEntryClient {
 
     @Override
     protected void handleVerifyUnverify(String entry, String versionName, String verifySource, boolean unverifyRequest, boolean isScript) {
-        String action = "verify";
-        if (unverifyRequest) {
-            action = "unverify";
-        }
-
         boolean toOverwrite = true;
 
         try {
             Workflow workflow = workflowsApi.getWorkflowByPath(entry);
             List<WorkflowVersion> versions = workflow.getWorkflowVersions();
-            WorkflowVersion versionToUpdate = null;
-            for (WorkflowVersion workflowVersion : versions) {
-                if (workflowVersion.getName().equals(versionName)) {
-                    versionToUpdate = workflowVersion;
-                    break;
-                }
-            }
+            WorkflowVersion versionToUpdate = versions
+                    .stream()
+                    .filter((WorkflowVersion u) -> u.getName().equals(versionName))
+                    .findFirst()
+                    .get();
 
             if (versionToUpdate == null) {
                 errorMessage(versionName + " is not a valid version for " + entry, Client.CLIENT_ERROR);
@@ -318,7 +311,7 @@ public class WorkflowClient extends AbstractEntryClient {
                 }
             }
         } catch (ApiException ex) {
-            exceptionMessage(ex, "Unable to " + action + " version " + versionName, Client.API_ERROR);
+            exceptionMessage(ex, "Unable to " + (unverifyRequest ? "unverify" : "verify") + " version " + versionName, Client.API_ERROR);
         }
     }
 
