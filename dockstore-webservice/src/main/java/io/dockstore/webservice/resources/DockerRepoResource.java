@@ -49,8 +49,11 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -614,6 +617,32 @@ public class DockerRepoResource {
         return entryVersionHelper.getSourceFile(containerId, tag, FileType.DOCKERFILE);
     }
 
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}/verifiedSources")
+    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "containers" }, notes = "Does not need authentication", response = String.class)
+    public String verifiedSources(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId) {
+        Tool tool = toolDAO.findById(containerId);
+        Helper.checkEntry(tool);
+
+        Set<String> verifiedSourcesArray = new HashSet<>();
+
+        for (Tag tag : tool.getTags()) {
+            if (tag.isVerified()) {
+                verifiedSourcesArray.add(tag.getVerifiedSource());
+            }
+        }
+
+        JSONArray jsonArray = new JSONArray();
+        try {
+            jsonArray = new JSONArray(verifiedSourcesArray.toArray());
+        } catch (JSONException ex) {
+            ex.printStackTrace();
+        }
+
+        return jsonArray.toString();
+    }
 
     // Add for new descriptor types
     @GET

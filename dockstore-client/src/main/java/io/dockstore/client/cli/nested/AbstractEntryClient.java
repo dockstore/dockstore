@@ -740,6 +740,7 @@ public abstract class AbstractEntryClient {
                 String entry = reqVal(args, "--entry");
                 String version = reqVal(args, "--version");
                 String verifySource = optVal(args, "--verified-source", null);
+
                 final boolean unverifyRequest = args.contains("--unverify");
                 final boolean isScript = SCRIPT.get();
                 handleVerifyUnverify(entry, version, verifySource, unverifyRequest, isScript);
@@ -1510,7 +1511,7 @@ public abstract class AbstractEntryClient {
     private void printAdminHelp() {
         out("Admin Only Commands:");
         out("");
-        out("  verify           :  Verify/unverify a " + getEntryType());
+        out("  verify           :  Verify/unverify a version");
         out("");
     }
 

@@ -476,7 +476,7 @@ public class ToolClient extends AbstractEntryClient {
                 if (unverifyRequest) {
                     out("Tag " + versionName + " has been unverified.");
                 } else {
-                    out("Tag " + versionName + " has been verified by " + verifySource);
+                    out("Tag " + versionName + " has been verified by \'" + verifySource + "\'");
                 }
             }
         } catch (ApiException ex) {

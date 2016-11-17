@@ -57,6 +57,8 @@ import io.swagger.annotations.ApiParam;
 
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,6 +77,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -627,9 +630,36 @@ public class WorkflowResource {
     @GET
     @Timed
     @UnitOfWork
+    @Path("/{workflowId}/verifiedSources")
+    @ApiOperation(value = "Get a semicolon delimited list of verified sources", tags = { "workflows" }, notes = "Does not need authentication", response = String.class)
+    public String verifiedSources(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId)  {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        Helper.checkEntry(workflow);
+
+        Set<String> verifiedSourcesArray = new HashSet<>();
+
+        for (WorkflowVersion workflowVersion : workflow.getWorkflowVersions()) {
+            if (workflowVersion.isVerified()) {
+                verifiedSourcesArray.add(workflowVersion.getVerifiedSource());
+            }
+        }
+
+        JSONArray jsonArray = new JSONArray();
+        try {
+            jsonArray = new JSONArray(verifiedSourcesArray.toArray());
+        } catch (JSONException ex) {
+            ex.printStackTrace();
+        }
+
+        return jsonArray.toString();
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
     @Path("/{workflowId}/cwl")
     @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
-    public SourceFile cwl(@ApiParam(value = "Tool id", required = true) @PathParam("workflowId") Long workflowId,
+    public SourceFile cwl(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag)  {
         return entryVersionHelper.getSourceFile(workflowId, tag, FileType.DOCKSTORE_CWL);
     }
@@ -639,7 +669,7 @@ public class WorkflowResource {
     @UnitOfWork
     @Path("/{workflowId}/wdl")
     @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
-    public SourceFile wdl(@ApiParam(value = "Tool id", required = true) @PathParam("workflowId") Long workflowId,
+    public SourceFile wdl(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag) {
         return entryVersionHelper.getSourceFile(workflowId, tag, FileType.DOCKSTORE_WDL);
     }
@@ -649,7 +679,7 @@ public class WorkflowResource {
     @UnitOfWork
     @Path("/{workflowId}/cwl/{relative-path}")
     @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
-    public SourceFile secondaryCwlPath(@ApiParam(value = "Tool id", required = true) @PathParam("workflowId") Long workflowId,
+    public SourceFile secondaryCwlPath(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag, @PathParam("relative-path") String path){
 
         return entryVersionHelper.getSourceFileByPath(workflowId, tag, FileType.DOCKSTORE_CWL, path);
@@ -660,7 +690,7 @@ public class WorkflowResource {
     @UnitOfWork
     @Path("/{workflowId}/wdl/{relative-path}")
     @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
-    public SourceFile secondaryWdlPath(@ApiParam(value = "Tool id", required = true) @PathParam("workflowId") Long workflowId,
+    public SourceFile secondaryWdlPath(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag, @PathParam("relative-path") String path){
 
         return entryVersionHelper.getSourceFileByPath(workflowId, tag, FileType.DOCKSTORE_WDL, path);
@@ -672,7 +702,7 @@ public class WorkflowResource {
     @UnitOfWork
     @Path("/{workflowId}/secondaryCwl")
     @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
-    public List<SourceFile> secondaryCwl(@ApiParam(value = "Tool id", required = true) @PathParam("workflowId") Long workflowId,
+    public List<SourceFile> secondaryCwl(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag)  {
         return entryVersionHelper.getAllSecondaryFiles(workflowId, tag, FileType.DOCKSTORE_CWL);
     }
@@ -682,7 +712,7 @@ public class WorkflowResource {
     @UnitOfWork
     @Path("/{workflowId}/secondaryWdl")
     @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
-    public List<SourceFile> secondaryWdl(@ApiParam(value = "Tool id", required = true) @PathParam("workflowId") Long workflowId,
+    public List<SourceFile> secondaryWdl(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag) {
         return entryVersionHelper.getAllSecondaryFiles(workflowId, tag, FileType.DOCKSTORE_WDL);
     }

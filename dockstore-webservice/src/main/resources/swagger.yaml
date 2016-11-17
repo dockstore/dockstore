@@ -1183,6 +1183,20 @@ paths:
             type: array
       summary: Get users of a container
       tags: [containers]
+  /containers/{containerId}/verifiedSources:
+    get:
+      description: Does not need authentication
+      operationId: verifiedSources
+      parameters:
+      - {description: Tool id, format: int64, in: path, name: containerId, required: true,
+        type: integer}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema: {type: string}
+      summary: Get the corresponding Dockstore.cwl file on Github.
+      tags: [containers]
   /containers/{containerId}/verify/{tagId}:
     put:
       description: ''
@@ -1809,7 +1823,7 @@ paths:
       description: Does not need authentication
       operationId: cwl
       parameters:
-      - {description: Tool id, format: int64, in: path, name: workflowId, required: true,
+      - {description: Workflow id, format: int64, in: path, name: workflowId, required: true,
         type: integer}
       - {in: query, name: tag, required: false, type: string}
       produces: [application/json]
@@ -1824,7 +1838,7 @@ paths:
       description: Does not need authentication
       operationId: secondaryCwlPath
       parameters:
-      - {description: Tool id, format: int64, in: path, name: workflowId, required: true,
+      - {description: Workflow id, format: int64, in: path, name: workflowId, required: true,
         type: integer}
       - {in: query, name: tag, required: false, type: string}
       - {in: path, name: relative-path, required: true, type: string}
@@ -1943,7 +1957,7 @@ paths:
       description: Does not need authentication
       operationId: secondaryCwl
       parameters:
-      - {description: Tool id, format: int64, in: path, name: workflowId, required: true,
+      - {description: Workflow id, format: int64, in: path, name: workflowId, required: true,
         type: integer}
       - {in: query, name: tag, required: false, type: string}
       produces: [application/json]
@@ -1960,7 +1974,7 @@ paths:
       description: Does not need authentication
       operationId: secondaryWdl
       parameters:
-      - {description: Tool id, format: int64, in: path, name: workflowId, required: true,
+      - {description: Workflow id, format: int64, in: path, name: workflowId, required: true,
         type: integer}
       - {in: query, name: tag, required: false, type: string}
       produces: [application/json]
@@ -2019,6 +2033,20 @@ paths:
             type: array
       summary: Get users of a workflow
       tags: [workflows]
+  /workflows/{workflowId}/verifiedSources:
+    get:
+      description: Does not need authentication
+      operationId: verifiedSources
+      parameters:
+      - {description: Workflow id, format: int64, in: path, name: workflowId, required: true,
+        type: integer}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema: {type: string}
+      summary: Get a semicolon delimited list of verified sources
+      tags: [workflows]
   /workflows/{workflowId}/verify/{workflowVersionId}:
     put:
       description: ''
@@ -2047,7 +2075,7 @@ paths:
       description: Does not need authentication
       operationId: wdl
       parameters:
-      - {description: Tool id, format: int64, in: path, name: workflowId, required: true,
+      - {description: Workflow id, format: int64, in: path, name: workflowId, required: true,
         type: integer}
       - {in: query, name: tag, required: false, type: string}
       produces: [application/json]
@@ -2062,7 +2090,7 @@ paths:
       description: Does not need authentication
       operationId: secondaryWdlPath
       parameters:
-      - {description: Tool id, format: int64, in: path, name: workflowId, required: true,
+      - {description: Workflow id, format: int64, in: path, name: workflowId, required: true,
         type: integer}
       - {in: query, name: tag, required: false, type: string}
       - {in: path, name: relative-path, required: true, type: string}

@@ -314,7 +314,7 @@ public class WorkflowClient extends AbstractEntryClient {
                 if (unverifyRequest) {
                     out("Version " + versionName + " has been unverified.");
                 } else {
-                    out("Version " + versionName + " has been verified by " + verifySource);
+                    out("Version " + versionName + " has been verified by \'" + verifySource + "\'");
                 }
             }
         } catch (ApiException ex) {
