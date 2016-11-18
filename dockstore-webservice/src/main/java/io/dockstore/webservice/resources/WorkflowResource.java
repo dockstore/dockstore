@@ -57,6 +57,8 @@ import io.swagger.annotations.ApiParam;
 
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,6 +77,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -168,8 +171,6 @@ public class WorkflowResource {
         newWorkflow.setLastUpdated(workflow.getLastUpdated());
         newWorkflow.setWorkflowName(workflow.getWorkflowName());
         newWorkflow.setDescriptorType(workflow.getDescriptorType());
-        newWorkflow.setVerified(workflow.isVerified());
-        newWorkflow.setVerifiedSource(workflow.getVerifiedSource());
 
         // Copy Labels
         SortedSet<Label> labels = (SortedSet) workflow.getLabels();
@@ -435,11 +436,12 @@ public class WorkflowResource {
     @PUT
     @Timed
     @UnitOfWork
-    @Path("/{workflowId}/verify")
+    @Path("/{workflowId}/verify/{workflowVersionId}")
     @RolesAllowed("admin")
-    @ApiOperation(value = "Verify or unverify a workflow. ADMIN ONLY", response = Workflow.class)
-    public Workflow verifyWorkflow(@ApiParam(hidden = true) @Auth User user,
+    @ApiOperation(value = "Verify or unverify a workflow. ADMIN ONLY", response = WorkflowVersion.class, responseContainer = "List")
+    public Set<WorkflowVersion> verifyWorkflowVersion(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
+            @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId,
             @ApiParam(value = "Object containing verification information.", required = true) VerifyRequest verifyRequest) {
         Workflow workflow = workflowDAO.findById(workflowId);
         Helper.checkEntry(workflow);
@@ -447,19 +449,25 @@ public class WorkflowResource {
         // expireAfterAccess time in the authenticationCachePolicy expires (10m by default)
         Helper.checkUser(user, workflow);
 
+        WorkflowVersion workflowVersion = workflowVersionDAO.findById(workflowVersionId);
+        if (workflowVersion == null) {
+            LOG.error(user.getUsername() + ": could not find version: " + workflow.getPath());
+            throw new CustomWebApplicationException("Version not found.", HttpStatus.SC_BAD_REQUEST);
+
+        }
+
         if (verifyRequest.getVerify()) {
             if (Strings.isNullOrEmpty(verifyRequest.getVerifiedSource())) {
                 throw new CustomWebApplicationException("A source must be included to verify a workflow.", HttpStatus.SC_BAD_REQUEST);
             }
-            workflow.updateVerified(true, verifyRequest.getVerifiedSource());
+            workflowVersion.updateVerified(true, verifyRequest.getVerifiedSource());
         } else {
-            workflow.updateVerified(false, null);
+            workflowVersion.updateVerified(false, null);
         }
 
         Workflow result = workflowDAO.findById(workflowId);
         Helper.checkEntry(result);
-
-        return result;
+        return result.getWorkflowVersions();
 
     }
 
@@ -622,9 +630,34 @@ public class WorkflowResource {
     @GET
     @Timed
     @UnitOfWork
+    @Path("/{workflowId}/verifiedSources")
+    @ApiOperation(value = "Get a semicolon delimited list of verified sources", tags = { "workflows" }, notes = "Does not need authentication", response = String.class)
+    public String verifiedSources(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId)  {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        Helper.checkEntry(workflow);
+
+        Set<String> verifiedSourcesArray = new HashSet<>();
+        workflow.getWorkflowVersions()
+                .stream()
+                .filter((WorkflowVersion u) -> u.isVerified())
+                .forEach((WorkflowVersion v) -> verifiedSourcesArray.add(v.getVerifiedSource()));
+
+        JSONArray jsonArray;
+        try {
+            jsonArray = new JSONArray(verifiedSourcesArray.toArray());
+        } catch (JSONException ex) {
+            throw new CustomWebApplicationException("There was an error converting the array of verified sources to a JSON array.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+
+        return jsonArray.toString();
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
     @Path("/{workflowId}/cwl")
     @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
-    public SourceFile cwl(@ApiParam(value = "Tool id", required = true) @PathParam("workflowId") Long workflowId,
+    public SourceFile cwl(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag)  {
         return entryVersionHelper.getSourceFile(workflowId, tag, FileType.DOCKSTORE_CWL);
     }
@@ -634,7 +667,7 @@ public class WorkflowResource {
     @UnitOfWork
     @Path("/{workflowId}/wdl")
     @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
-    public SourceFile wdl(@ApiParam(value = "Tool id", required = true) @PathParam("workflowId") Long workflowId,
+    public SourceFile wdl(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag) {
         return entryVersionHelper.getSourceFile(workflowId, tag, FileType.DOCKSTORE_WDL);
     }
@@ -644,7 +677,7 @@ public class WorkflowResource {
     @UnitOfWork
     @Path("/{workflowId}/cwl/{relative-path}")
     @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
-    public SourceFile secondaryCwlPath(@ApiParam(value = "Tool id", required = true) @PathParam("workflowId") Long workflowId,
+    public SourceFile secondaryCwlPath(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag, @PathParam("relative-path") String path){
 
         return entryVersionHelper.getSourceFileByPath(workflowId, tag, FileType.DOCKSTORE_CWL, path);
@@ -655,7 +688,7 @@ public class WorkflowResource {
     @UnitOfWork
     @Path("/{workflowId}/wdl/{relative-path}")
     @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
-    public SourceFile secondaryWdlPath(@ApiParam(value = "Tool id", required = true) @PathParam("workflowId") Long workflowId,
+    public SourceFile secondaryWdlPath(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag, @PathParam("relative-path") String path){
 
         return entryVersionHelper.getSourceFileByPath(workflowId, tag, FileType.DOCKSTORE_WDL, path);
@@ -667,7 +700,7 @@ public class WorkflowResource {
     @UnitOfWork
     @Path("/{workflowId}/secondaryCwl")
     @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
-    public List<SourceFile> secondaryCwl(@ApiParam(value = "Tool id", required = true) @PathParam("workflowId") Long workflowId,
+    public List<SourceFile> secondaryCwl(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag)  {
         return entryVersionHelper.getAllSecondaryFiles(workflowId, tag, FileType.DOCKSTORE_CWL);
     }
@@ -677,7 +710,7 @@ public class WorkflowResource {
     @UnitOfWork
     @Path("/{workflowId}/secondaryWdl")
     @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
-    public List<SourceFile> secondaryWdl(@ApiParam(value = "Tool id", required = true) @PathParam("workflowId") Long workflowId,
+    public List<SourceFile> secondaryWdl(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag) {
         return entryVersionHelper.getAllSecondaryFiles(workflowId, tag, FileType.DOCKSTORE_WDL);
     }

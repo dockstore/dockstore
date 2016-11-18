@@ -940,33 +940,33 @@ public class BasicET {
                 // Setup DB
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
 
-                // Tool should be unverified
-                final long count = testingPostgres.runSelectStatement("select count(*) from tool where verified='true'", new ScalarHandler<>());
-                Assert.assertTrue("there should be no verified tools, there are " + count, count == 0);
+                // Versions should be unverified
+                final long count = testingPostgres.runSelectStatement("select count(*) from tag where verified='true'", new ScalarHandler<>());
+                Assert.assertTrue("there should be no verified tags, there are " + count, count == 0);
 
-                // Verify tool
+                // Verify tag
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "verify", "--entry", "quay.io/dockstoretestuser/quayandbitbucket",
-                        "--verified-source", "Docker testing group", "--script" });
+                        "--verified-source", "Docker testing group", "--version", "master", "--script" });
 
-                // Tool should be verified
-                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where verified='true' and verifiedSource='Docker testing group'", new ScalarHandler<>());
-                Assert.assertTrue("there should be one verified tool, there are " + count2, count2 == 1);
+                // Tag should be verified
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from tag where verified='true' and verifiedSource='Docker testing group'", new ScalarHandler<>());
+                Assert.assertTrue("there should be one verified tag, there are " + count2, count2 == 1);
 
-                // Update tool to have new verified source
+                // Update tag to have new verified source
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "verify", "--entry", "quay.io/dockstoretestuser/quayandbitbucket",
-                        "--verified-source", "Docker testing group2", "--script" });
+                        "--verified-source", "Docker testing group2", "--version", "master", "--script" });
 
-                // Tool should have new verified source
-                final long count3 = testingPostgres.runSelectStatement("select count(*) from tool where verified='true' and verifiedSource='Docker testing group2'", new ScalarHandler<>());
-                Assert.assertTrue("there should be one verified tool, there are " + count3, count3 == 1);
+                // Tag should have new verified source
+                final long count3 = testingPostgres.runSelectStatement("select count(*) from tag where verified='true' and verifiedSource='Docker testing group2'", new ScalarHandler<>());
+                Assert.assertTrue("there should be one verified tag, there are " + count3, count3 == 1);
 
-                // Unverify tool
+                // Unverify tag
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "verify", "--entry", "quay.io/dockstoretestuser/quayandbitbucket",
-                        "--unverify", "--script" });
+                        "--unverify", "--version", "master", "--script" });
 
-                // Tool should be unverified
-                final long count4 = testingPostgres.runSelectStatement("select count(*) from tool where verified='true'", new ScalarHandler<>());
-                Assert.assertTrue("there should be no verified tools, there are " + count4, count4 == 0);
+                // Tag should be unverified
+                final long count5 = testingPostgres.runSelectStatement("select count(*) from tag where verified='true'", new ScalarHandler<>());
+                Assert.assertTrue("there should be no verified tags, there are " + count5, count5 == 0);
         }
 
 }

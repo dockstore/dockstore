@@ -262,25 +262,31 @@ public class WorkflowClient extends AbstractEntryClient {
     }
 
     @Override
-    protected void handleVerifyUnverify(String entry, String verifySource, boolean unverifyRequest, boolean isScript) {
-        String action = "verify";
-        if (unverifyRequest) {
-            action = "unverify";
-        }
-
+    protected void handleVerifyUnverify(String entry, String versionName, String verifySource, boolean unverifyRequest, boolean isScript) {
         boolean toOverwrite = true;
 
         try {
             Workflow workflow = workflowsApi.getWorkflowByPath(entry);
+            List<WorkflowVersion> versions = workflow.getWorkflowVersions();
+            WorkflowVersion versionToUpdate = versions
+                    .stream()
+                    .filter((WorkflowVersion u) -> u.getName().equals(versionName))
+                    .findFirst()
+                    .get();
+
+            if (versionToUpdate == null) {
+                errorMessage(versionName + " is not a valid version for " + entry, Client.CLIENT_ERROR);
+            }
+
             VerifyRequest verifyRequest = new VerifyRequest();
             if (unverifyRequest) {
                 verifyRequest.setVerify(false);
                 verifyRequest.setVerifiedSource(null);
             } else {
                 // Check if already has been verified
-                if (workflow.getVerified() && !isScript) {
+                if (versionToUpdate.getVerified() && !isScript) {
                     Scanner scanner = new Scanner(System.in, "utf-8");
-                    out("The workflow " + workflow.getPath() + " has already been verified by \'" + workflow.getVerifiedSource() + "\'");
+                    out("The version " + versionName + " has already been verified by \'" + versionToUpdate.getVerifiedSource() + "\'");
                     out("Would you like to overwrite this with \'" + verifySource + "\'? (y/n)");
                     String overwrite = scanner.nextLine();
                     if (overwrite.toLowerCase().equals("y")) {
@@ -296,16 +302,16 @@ public class WorkflowClient extends AbstractEntryClient {
             }
 
             if (toOverwrite) {
-                Workflow result = workflowsApi.verifyWorkflow(workflow.getId(), verifyRequest);
+                List<WorkflowVersion> result = workflowsApi.verifyWorkflowVersion(workflow.getId(), versionToUpdate.getId(), verifyRequest);
 
                 if (unverifyRequest) {
-                    out("Workflow " + workflow.getPath() + " has been unverified.");
+                    out("Version " + versionName + " has been unverified.");
                 } else {
-                    out("Workflow " + workflow.getPath() + " has been verified by " + verifySource);
+                    out("Version " + versionName + " has been verified by \'" + verifySource + "\'");
                 }
             }
         } catch (ApiException ex) {
-            exceptionMessage(ex, "Unable to " + action + " workflow " + entry, Client.API_ERROR);
+            exceptionMessage(ex, "Unable to " + (unverifyRequest ? "unverify" : "verify") + " version " + versionName, Client.API_ERROR);
         }
     }
 

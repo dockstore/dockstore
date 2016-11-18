@@ -307,20 +307,20 @@
         <addDefaultValue tableName="workflow" columnName="defaulttestparameterfile" defaultValue="/test.json"/>
     </changeSet>
 
-    <changeSet id="verified" author="agduncan" context="adds_verified_to_entries">
-        <addColumn tableName="tool">
+    <changeSet id="verified_versions" author="agduncan" context="adds_verified_to_versions">
+        <addColumn tableName="tag">
             <column name="verified" type="boolean"></column>
         </addColumn>
-        <addDefaultValue tableName="tool" columnName="verified" defaultValueBoolean="false"/>
-        <addColumn tableName="tool">
+        <addDefaultValue tableName="tag" columnName="verified" defaultValueBoolean="false"/>
+        <addColumn tableName="tag">
             <column name="verifiedsource" type="varchar(255)"></column>
         </addColumn>
 
-        <addColumn tableName="workflow">
+        <addColumn tableName="workflowversion">
             <column name="verified" type="boolean"></column>
         </addColumn>
-        <addDefaultValue tableName="workflow" columnName="verified" defaultValueBoolean="false"/>
-        <addColumn tableName="workflow">
+        <addDefaultValue tableName="workflowversion" columnName="verified" defaultValueBoolean="false"/>
+        <addColumn tableName="workflowversion">
             <column name="verifiedsource" type="varchar(255)"></column>
         </addColumn>
     </changeSet>

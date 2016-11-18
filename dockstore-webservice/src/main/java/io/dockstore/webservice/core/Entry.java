@@ -92,12 +92,6 @@ public abstract class Entry<S extends Entry, T extends Version> {
     @Column
     @ApiModelProperty(value = "This is a link to the associated repo with a descriptor, required GA4GH", required = true)
     private String gitUrl;
-    @Column
-    @ApiModelProperty("Whether this entry has been verified or not")
-    private boolean verified;
-    @Column
-    @ApiModelProperty("Verified source of the entry")
-    private String verifiedSource;
 
     @JsonProperty
     public String getAuthor() {
@@ -238,22 +232,6 @@ public abstract class Entry<S extends Entry, T extends Version> {
         this.lastUpdated = lastUpdated;
     }
 
-    public boolean isVerified() {
-        return verified;
-    }
-
-    public void setVerified(boolean verified) {
-        this.verified = verified;
-    }
-
-    public String getVerifiedSource() {
-        return verifiedSource;
-    }
-
-    public void setVerifiedSource(String verifiedSource) {
-        this.verifiedSource = verifiedSource;
-    }
-
 
     /**
      * Used during refresh to update containers
@@ -273,11 +251,6 @@ public abstract class Entry<S extends Entry, T extends Version> {
         if (!entry.getGitUrl().isEmpty()) {
             gitUrl = entry.getGitUrl();
         }
-    }
-
-    public void updateVerified(boolean verified, String verifiedSource) {
-        this.verified = verified;
-        this.verifiedSource = verifiedSource;
     }
 
     /**

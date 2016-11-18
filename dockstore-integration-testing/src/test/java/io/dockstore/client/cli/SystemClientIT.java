@@ -27,6 +27,7 @@ import io.dropwizard.testing.junit.DropwizardAppRule;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
+import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.GAGHApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.DockstoreTool;
@@ -198,6 +199,8 @@ public class SystemClientIT {
         tag.setReference("refs/heads/master");
         tag.setValid(true);
         tag.setImageId("123456");
+        tag.setVerified(false);
+        tag.setVerifiedSource(null);
         // construct source files
         SourceFile fileCWL = new SourceFile();
         fileCWL.setContent("cwlstuff");
@@ -299,6 +302,7 @@ public class SystemClientIT {
         ApiClient client = getAdminWebClient();
         GAGHApi toolApi = new GAGHApi(client);
         ContainersApi containersApi = new ContainersApi(client);
+        ContainertagsApi containertagsApi = new ContainertagsApi(client);
         // register one more to give us something to look at
         DockstoreTool c = getContainer();
         final DockstoreTool dockstoreTool = containersApi.registerManual(c);
@@ -306,19 +310,24 @@ public class SystemClientIT {
         Tool tool = toolApi.toolsIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
         assertTrue(tool != null);
         assertTrue(tool.getId().equals(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE));
+        List<Tag> tags = containertagsApi.getTagsByPath(dockstoreTool.getId());
+        assertTrue(tags.size() == 1);
+        Tag tag = tags.get(0);
 
-        // verify
-        assertTrue(!tool.getVerified());
-        assertTrue(tool.getVerifiedSource().isEmpty());
+
+        // verify master branch
+        assertTrue(!tag.getVerified());
+        assertTrue(tag.getVerifiedSource() == null);
         VerifyRequest request = new VerifyRequest();
         request.setVerify(true);
         request.setVerifiedSource("test-source");
-        containersApi.verifyTool(dockstoreTool.getId(),request);
+        containertagsApi.verifyToolTag(dockstoreTool.getId(), tag.getId(),request);
 
         // check again
-        tool = toolApi.toolsIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
-        assertTrue(tool.getVerified());
-        assertTrue(tool.getVerifiedSource().equals("test-source"));
+        tags = containertagsApi.getTagsByPath(dockstoreTool.getId());
+        tag = tags.get(0);
+        assertTrue(tag.getVerified());
+        assertTrue(tag.getVerifiedSource().equals("test-source"));
     }
 
     @Test

@@ -331,11 +331,12 @@ public abstract class AbstractEntryClient {
     /**
      * Verify/Unverify an entry
      * @param entry a unique identifier for an entry, called a path for workflows and tools
+     * @param versionName the name of the version
      * @param verifySource source of entry verification
      * @param unverifyRequest true to unverify, false to verify
      * @param isScript true if called by script, false otherwise
      */
-    protected abstract void handleVerifyUnverify(String entry, String verifySource, boolean unverifyRequest, boolean isScript);
+    protected abstract void handleVerifyUnverify(String entry, String versionName, String verifySource, boolean unverifyRequest, boolean isScript);
 
     /**
      * List all of the entries published and unpublished for this user
@@ -746,14 +747,16 @@ public abstract class AbstractEntryClient {
 
     private void verify(List<String> args) {
         if (isAdmin) {
-            if (containsHelpRequest(args)) {
+            if (containsHelpRequest(args) || args.isEmpty()) {
                 verifyHelp();
             } else if (!args.isEmpty()) {
                 String entry = reqVal(args, "--entry");
+                String version = reqVal(args, "--version");
                 String verifySource = optVal(args, "--verified-source", null);
+
                 final boolean unverifyRequest = args.contains("--unverify");
                 final boolean isScript = SCRIPT.get();
-                handleVerifyUnverify(entry, verifySource, unverifyRequest, isScript);
+                handleVerifyUnverify(entry, version, verifySource, unverifyRequest, isScript);
             }
         } else {
             out("This command is only accessible to Admins.");
@@ -1520,20 +1523,21 @@ public abstract class AbstractEntryClient {
         out("       dockstore " + getEntryType().toLowerCase() + " verify --unverify [parameters]");
         out("");
         out("Description:");
-        out("  Verify/unverify a " + getEntryType() + ".");
+        out("  Verify/unverify a version.");
         out("");
         out("Required parameters:");
-        out("  --entry <entry>                          Complete entry path in the Dockstore");
+        out("  --entry <entry>                              Complete entry path in the Dockstore");
+        out("  --version <version>                          Version name");
         out("");
         out("Optional Parameters:");
-        out("  --verified-source <verified-source>      Source of verification (Required to verify).");
+        out("  --verified-source <verified-source>          Source of verification (Required to verify).");
         printHelpFooter();
     }
 
     private void printAdminHelp() {
         out("Admin Only Commands:");
         out("");
-        out("  verify           :  Verify/unverify a " + getEntryType());
+        out("  verify           :  Verify/unverify a version");
         out("");
     }
 

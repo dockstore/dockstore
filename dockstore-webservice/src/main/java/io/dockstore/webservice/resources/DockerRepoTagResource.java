@@ -17,7 +17,10 @@
 package io.dockstore.webservice.resources;
 
 import com.codahale.metrics.annotation.Timed;
+import com.google.common.base.Strings;
+
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.api.VerifyRequest;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
@@ -35,6 +38,7 @@ import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -193,5 +197,39 @@ public class DockerRepoTagResource {
             LOG.error(user.getUsername() + ": could not find tag: " + tagId + " in " + c.getToolPath());
             throw new CustomWebApplicationException("Tag not found.", HttpStatus.SC_BAD_REQUEST);
         }
+    }
+
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}/verify/{tagId}")
+    @RolesAllowed("admin")
+    @ApiOperation(value = "Verify or unverify a version . ADMIN ONLY", response = Tag.class, responseContainer = "List")
+    public Set<Tag> verifyToolTag(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
+            @ApiParam(value = "Tag to verify.", required = true) @PathParam("tagId") Long tagId,
+            @ApiParam(value = "Object containing verification information.", required = true) VerifyRequest verifyRequest) {
+        Tool tool = toolDAO.findById(containerId);
+        Helper.checkEntry(tool);
+        Helper.checkUser(user, tool);
+
+        Tag tag = tagDAO.findById(tagId);
+        if (tag == null) {
+            LOG.error(user.getUsername() + ": could not find tag: " + tool.getToolPath());
+            throw new CustomWebApplicationException("Tag not found.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (verifyRequest.getVerify()) {
+            if (Strings.isNullOrEmpty(verifyRequest.getVerifiedSource())) {
+                throw new CustomWebApplicationException("A source must be included to verify a tag.", HttpStatus.SC_BAD_REQUEST);
+            }
+            tag.updateVerified(true, verifyRequest.getVerifiedSource());
+        } else {
+            tag.updateVerified(false, null);
+        }
+
+        Tool result = toolDAO.findById(containerId);
+        Helper.checkEntry(result);
+        return result.getTags();
     }
 }

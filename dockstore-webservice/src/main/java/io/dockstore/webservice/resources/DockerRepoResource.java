@@ -20,11 +20,9 @@ import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
-import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
-import io.dockstore.webservice.api.VerifyRequest;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Registry;
 import io.dockstore.webservice.core.SourceFile;
@@ -51,8 +49,11 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -425,34 +426,6 @@ public class DockerRepoResource {
         return c;
     }
 
-    @PUT
-    @Timed
-    @UnitOfWork
-    @Path("/{containerId}/verify")
-    @RolesAllowed("admin")
-    @ApiOperation(value = "Verify or unverify a tool. ADMIN ONLY", response = Tool.class)
-    public Tool verifyTool(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
-            @ApiParam(value = "Object containing verification information.", required = true) VerifyRequest verifyRequest) {
-        Tool tool = toolDAO.findById(containerId);
-        Helper.checkEntry(tool);
-        Helper.checkUser(user, tool);
-
-        if (verifyRequest.getVerify()) {
-            if (Strings.isNullOrEmpty(verifyRequest.getVerifiedSource())) {
-                throw new CustomWebApplicationException("A source must be included to verify a tool.", HttpStatus.SC_BAD_REQUEST);
-            }
-            tool.updateVerified(true, verifyRequest.getVerifiedSource());
-        } else {
-            tool.updateVerified(false, null);
-        }
-
-        Tool result = toolDAO.findById(containerId);
-        Helper.checkEntry(result);
-
-        return result;
-    }
-
     @GET
     @Timed
     @UnitOfWork
@@ -644,6 +617,30 @@ public class DockerRepoResource {
         return entryVersionHelper.getSourceFile(containerId, tag, FileType.DOCKERFILE);
     }
 
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}/verifiedSources")
+    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "containers" }, notes = "Does not need authentication", response = String.class)
+    public String verifiedSources(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId) {
+        Tool tool = toolDAO.findById(containerId);
+        Helper.checkEntry(tool);
+
+        Set<String> verifiedSourcesArray = new HashSet<>();
+        tool.getTags()
+                .stream()
+                .filter((Tag u) -> u.isVerified())
+                .forEach((Tag v) -> verifiedSourcesArray.add(v.getVerifiedSource()));
+
+        JSONArray jsonArray;
+        try {
+            jsonArray = new JSONArray(verifiedSourcesArray.toArray());
+        } catch (JSONException ex) {
+            throw new CustomWebApplicationException("There was an error converting the array of verified sources to a JSON array.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+
+        return jsonArray.toString();
+    }
 
     // Add for new descriptor types
     @GET

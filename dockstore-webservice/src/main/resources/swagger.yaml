@@ -82,9 +82,6 @@ definitions:
         items: {$ref: '#/definitions/User'}
         type: array
         uniqueItems: true
-      verified: {default: false, description: Whether this entry has been verified or not,
-        type: boolean}
-      verifiedSource: {description: Verified source of the entry, type: string}
     required: [default_cwl_path, default_cwl_test_parameter_file, default_dockerfile_path,
       default_wdl_path, default_wdl_test_parameter_file, gitUrl, mode, name, namespace,
       registry, toolname]
@@ -193,6 +190,9 @@ definitions:
         uniqueItems: true
       valid: {default: false, description: 'Implementation specific, whether this
           tag has valid files from source code repo', type: boolean}
+      verified: {default: false, description: Whether this version has been verified or not,
+        type: boolean}
+      verifiedSource: {description: Verified source for the version, type: string}
       wdl_path: {description: Path for the WDL document, type: string}
       wdl_test_parameter_file: {description: Path for example inputs json for WDL,
         type: string}
@@ -361,9 +361,6 @@ definitions:
         items: {$ref: '#/definitions/User'}
         type: array
         uniqueItems: true
-      verified: {default: false, description: Whether this entry has been verified or not,
-        type: boolean}
-      verifiedSource: {description: Verified source of the entry, type: string}
       workflowName: {description: 'This is the name of the workflow, not needed when
           only one workflow in a repo', type: string}
       workflowVersions:
@@ -398,6 +395,9 @@ definitions:
         type: string}
       valid: {default: false, description: 'Implementation specific, whether this
           tag has valid files from source code repo', type: boolean}
+      verified: {default: false, description: Whether this version has been verified or not,
+        type: boolean}
+      verifiedSource: {description: Verified source for the version, type: string}
       workflow_path: {description: Path for the workflow, type: string}
     required: [name, reference]
     type: object
@@ -1183,13 +1183,29 @@ paths:
             type: array
       summary: Get users of a container
       tags: [containers]
-  /containers/{containerId}/verify:
+  /containers/{containerId}/verifiedSources:
+    get:
+      description: Does not need authentication
+      operationId: verifiedSources
+      parameters:
+      - {description: Tool id, format: int64, in: path, name: containerId, required: true,
+        type: integer}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema: {type: string}
+      summary: Get the corresponding Dockstore.cwl file on Github.
+      tags: [containers]
+  /containers/{containerId}/verify/{tagId}:
     put:
       description: ''
-      operationId: verifyTool
+      operationId: verifyToolTag
       parameters:
       - {description: Tool to modify., format: int64, in: path, name: containerId,
         required: true, type: integer}
+      - {description: Tag to verify., format: int64, in: path, name: tagId, required: true,
+        type: integer}
       - description: Object containing verification information.
         in: body
         name: body
@@ -1199,9 +1215,11 @@ paths:
       responses:
         200:
           description: successful operation
-          schema: {$ref: '#/definitions/DockstoreTool'}
-      summary: Verify or unverify a tool. ADMIN ONLY
-      tags: [containers]
+          schema:
+            items: {$ref: '#/definitions/Tag'}
+            type: array
+      summary: Verify or unverify a version . ADMIN ONLY
+      tags: [containertags]
   /containers/{containerId}/wdl:
     get:
       description: Does not need authentication
@@ -1805,7 +1823,7 @@ paths:
       description: Does not need authentication
       operationId: cwl
       parameters:
-      - {description: Tool id, format: int64, in: path, name: workflowId, required: true,
+      - {description: Workflow id, format: int64, in: path, name: workflowId, required: true,
         type: integer}
       - {in: query, name: tag, required: false, type: string}
       produces: [application/json]
@@ -1820,7 +1838,7 @@ paths:
       description: Does not need authentication
       operationId: secondaryCwlPath
       parameters:
-      - {description: Tool id, format: int64, in: path, name: workflowId, required: true,
+      - {description: Workflow id, format: int64, in: path, name: workflowId, required: true,
         type: integer}
       - {in: query, name: tag, required: false, type: string}
       - {in: path, name: relative-path, required: true, type: string}
@@ -1939,7 +1957,7 @@ paths:
       description: Does not need authentication
       operationId: secondaryCwl
       parameters:
-      - {description: Tool id, format: int64, in: path, name: workflowId, required: true,
+      - {description: Workflow id, format: int64, in: path, name: workflowId, required: true,
         type: integer}
       - {in: query, name: tag, required: false, type: string}
       produces: [application/json]
@@ -1956,7 +1974,7 @@ paths:
       description: Does not need authentication
       operationId: secondaryWdl
       parameters:
-      - {description: Tool id, format: int64, in: path, name: workflowId, required: true,
+      - {description: Workflow id, format: int64, in: path, name: workflowId, required: true,
         type: integer}
       - {in: query, name: tag, required: false, type: string}
       produces: [application/json]
@@ -2015,12 +2033,28 @@ paths:
             type: array
       summary: Get users of a workflow
       tags: [workflows]
-  /workflows/{workflowId}/verify:
+  /workflows/{workflowId}/verifiedSources:
+    get:
+      description: Does not need authentication
+      operationId: verifiedSources
+      parameters:
+      - {description: Workflow id, format: int64, in: path, name: workflowId, required: true,
+        type: integer}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema: {type: string}
+      summary: Get a semicolon delimited list of verified sources
+      tags: [workflows]
+  /workflows/{workflowId}/verify/{workflowVersionId}:
     put:
       description: ''
-      operationId: verifyWorkflow
+      operationId: verifyWorkflowVersion
       parameters:
       - {description: Workflow to modify., format: int64, in: path, name: workflowId,
+        required: true, type: integer}
+      - {description: workflowVersionId, format: int64, in: path, name: workflowVersionId,
         required: true, type: integer}
       - description: Object containing verification information.
         in: body
@@ -2031,7 +2065,9 @@ paths:
       responses:
         200:
           description: successful operation
-          schema: {$ref: '#/definitions/Workflow'}
+          schema:
+            items: {$ref: '#/definitions/WorkflowVersion'}
+            type: array
       summary: Verify or unverify a workflow. ADMIN ONLY
       tags: [workflows]
   /workflows/{workflowId}/wdl:
@@ -2039,7 +2075,7 @@ paths:
       description: Does not need authentication
       operationId: wdl
       parameters:
-      - {description: Tool id, format: int64, in: path, name: workflowId, required: true,
+      - {description: Workflow id, format: int64, in: path, name: workflowId, required: true,
         type: integer}
       - {in: query, name: tag, required: false, type: string}
       produces: [application/json]
@@ -2054,7 +2090,7 @@ paths:
       description: Does not need authentication
       operationId: secondaryWdlPath
       parameters:
-      - {description: Tool id, format: int64, in: path, name: workflowId, required: true,
+      - {description: Workflow id, format: int64, in: path, name: workflowId, required: true,
         type: integer}
       - {in: query, name: tag, required: false, type: string}
       - {in: path, name: relative-path, required: true, type: string}
