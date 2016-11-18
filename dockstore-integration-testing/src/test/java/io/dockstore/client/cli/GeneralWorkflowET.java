@@ -375,6 +375,14 @@ public class GeneralWorkflowET {
                         ResourceHelpers.resourceFilePath("wdl.json"), "--descriptor", "wdl", "--script", "--local-entry" });
         }
 
+        /**
+         * Tests that a developer can launch a WDL workflow with a File input being a directory
+         */
+        @Test
+        public void testLocalLaunchWDLWithDir() {
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry", ResourceHelpers.resourceFilePath("directorytest.wdl") , "--json",
+                        ResourceHelpers.resourceFilePath("directorytest.json"), "--descriptor", "wdl", "--script", "--local-entry" });
+        }
 
         /**
          * Tests that a developer can launch a WDL workflow locally, with an HTTP/HTTPS URL
