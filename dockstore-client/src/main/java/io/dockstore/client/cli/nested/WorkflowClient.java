@@ -23,6 +23,7 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Body2;
+import io.swagger.client.model.Body3;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
@@ -604,6 +605,22 @@ public class WorkflowClient extends AbstractEntryClient {
         out("  --workflow-path <workflow-path>                          Path to default workflow descriptor location");
         out("  --default-version <default-version>                      Default branch name");
         printHelpFooter();
+    }
+
+    @Override protected void handleTestParameter(String entry, String versionName, List<String> adds, List<String> removes, String descriptorType) {
+        try {
+            Workflow workflow = workflowsApi.getWorkflowByPath(entry);
+            long workflowId = workflow.getId();
+
+            workflowsApi.addTestParameterFiles(workflowId, adds, new Body3(), versionName);
+            workflowsApi.deleteTestParameterFiles(workflowId, removes, versionName);
+            workflowsApi.refresh(workflow.getId());
+
+            out("The test parameter files for version " + versionName + " of workflow " + entry + " have been updated.");
+
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "There was an error updating the test parameter files for " + entry + " version " + versionName, Client.API_ERROR);
+        }
     }
 
     private void versionTag(List<String> args) {

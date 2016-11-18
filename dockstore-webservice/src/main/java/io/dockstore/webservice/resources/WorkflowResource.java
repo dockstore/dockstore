@@ -721,7 +721,7 @@ public class WorkflowResource {
     @UnitOfWork
     @Path("/{workflowId}/testParameterFiles")
     @ApiOperation(value = "Get the corresponding test parameter files.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
-    public List<SourceFile> testParameterFiles(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
+    public List<SourceFile> getTestParameterFiles(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("version") String version) {
 
         Workflow workflow = workflowDAO.findById(workflowId);
@@ -739,7 +739,7 @@ public class WorkflowResource {
     @UnitOfWork
     @Path("/{workflowId}/testParameterFiles")
     @ApiOperation(value = "Add test parameter files for a given version.", response = SourceFile.class, responseContainer = "Set")
-    public Set<SourceFile> testParameterFiles(@ApiParam(hidden = true) @Auth User user,
+    public Set<SourceFile> addTestParameterFiles(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
             @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
             @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", defaultValue = "") String emptyBody,
@@ -775,7 +775,7 @@ public class WorkflowResource {
     @UnitOfWork
     @Path("/{workflowId}/testParameterFiles")
     @ApiOperation(value = "Delete test parameter files for a given version.", response = SourceFile.class, responseContainer = "Set")
-    public Set<SourceFile> testParameterFiles(@ApiParam(hidden = true) @Auth User user,
+    public Set<SourceFile> deleteTestParameterFiles(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
             @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
             @QueryParam("version") String version) {

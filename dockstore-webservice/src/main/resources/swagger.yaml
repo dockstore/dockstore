@@ -1121,7 +1121,7 @@ paths:
   /containers/{containerId}/testParameterFiles:
     delete:
       description: ''
-      operationId: testParameterFiles
+      operationId: deleteTestParameterFiles
       parameters:
       - {description: Tool to modify., format: int64, in: path, name: containerId,
         required: true, type: integer}
@@ -1146,7 +1146,7 @@ paths:
       tags: [containers]
     get:
       description: Does not need authentication
-      operationId: testParameterFiles
+      operationId: getTestParameterFiles
       parameters:
       - {description: Tool id, format: int64, in: path, name: containerId, required: true,
         type: integer}
@@ -1163,7 +1163,7 @@ paths:
       tags: [containers]
     put:
       description: ''
-      operationId: testParameterFiles
+      operationId: addTestParameterFiles
       parameters:
       - {description: Tool to modify., format: int64, in: path, name: containerId,
         required: true, type: integer}
@@ -2030,7 +2030,7 @@ paths:
   /workflows/{workflowId}/testParameterFiles:
     delete:
       description: ''
-      operationId: testParameterFiles
+      operationId: deleteTestParameterFiles
       parameters:
       - {description: Workflow to modify., format: int64, in: path, name: workflowId,
         required: true, type: integer}
@@ -2054,7 +2054,7 @@ paths:
       tags: [workflows]
     get:
       description: Does not need authentication
-      operationId: testParameterFiles
+      operationId: getTestParameterFiles
       parameters:
       - {description: Workflow id, format: int64, in: path, name: workflowId, required: true,
         type: integer}
@@ -2070,7 +2070,7 @@ paths:
       tags: [workflows]
     put:
       description: ''
-      operationId: testParameterFiles
+      operationId: addTestParameterFiles
       parameters:
       - {description: Workflow to modify., format: int64, in: path, name: workflowId,
         required: true, type: integer}

@@ -25,6 +25,7 @@ import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.Body;
+import io.swagger.client.model.Body1;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.PublishRequest;
@@ -238,6 +239,21 @@ public class ToolClient extends AbstractEntryClient {
                     exceptionMessage(ex, "Unable to publish " + newName, Client.API_ERROR);
                 }
             }
+        }
+    }
+
+    @Override protected void handleTestParameter(String entry, String versionName, List<String> adds, List<String> removes, String descriptorType) {
+        try {
+            DockstoreTool container = containersApi.getContainerByToolPath(entry);
+            long containerId = container.getId();
+
+            containersApi.addTestParameterFiles(containerId, adds, new Body1(), versionName, descriptorType);
+            containersApi.deleteTestParameterFiles(containerId, removes, versionName, descriptorType);
+            containersApi.refresh(container.getId());
+            out("The test parameter files for tag " + versionName + " of tool " + entry + " have been updated.");
+
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "There was an error updating the test parameter files for " + entry + " version " + versionName, Client.API_ERROR);
         }
     }
 

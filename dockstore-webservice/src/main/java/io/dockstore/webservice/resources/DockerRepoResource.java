@@ -713,7 +713,7 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/{containerId}/testParameterFiles")
     @ApiOperation(value = "Get the corresponding wdl test parameter files.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
-    public List<SourceFile> testParameterFiles(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
+    public List<SourceFile> getTestParameterFiles(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag,
             @QueryParam("descriptorType") String descriptorType) {
         if (descriptorType.toUpperCase().equals(ToolDescriptor.TypeEnum.WDL.toString())) {
@@ -728,7 +728,7 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/{containerId}/testParameterFiles")
     @ApiOperation(value = "Add test parameter files for a given tag.", response = SourceFile.class, responseContainer = "Set")
-    public Set<SourceFile> testParameterFiles(@ApiParam(hidden = true) @Auth User user,
+    public Set<SourceFile> addTestParameterFiles(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
             @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", defaultValue = "") String emptyBody,
@@ -765,7 +765,7 @@ public class DockerRepoResource {
     @UnitOfWork
     @Path("/{containerId}/testParameterFiles")
     @ApiOperation(value = "Delete test parameter files for a given tag.", response = SourceFile.class, responseContainer = "Set")
-    public Set<SourceFile> testParameterFiles(@ApiParam(hidden = true) @Auth User user,
+    public Set<SourceFile> deleteTestParameterFiles(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
             @QueryParam("tagName") String tagName,
