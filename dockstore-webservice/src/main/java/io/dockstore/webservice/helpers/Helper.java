@@ -49,6 +49,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -181,30 +182,53 @@ public final class Helper {
 
         // Add for new descriptor types
         for (FileType f : FileType.values()) {
-            String fileResponse = importer.readGitRepositoryFile(f, tag, null);
-            if (fileResponse != null) {
-                SourceFile dockstoreFile = new SourceFile();
-                dockstoreFile.setType(f);
-                dockstoreFile.setContent(fileResponse);
-                if (f == FileType.DOCKERFILE) {
-                    dockstoreFile.setPath(tag.getDockerfilePath());
-                } else if (f == FileType.DOCKSTORE_CWL) {
-                    dockstoreFile.setPath(tag.getCwlPath());
-                    // see if there are imported files and resolve them
-                    Map<String, SourceFile> importedFiles = importer
-                            .resolveImports(fileResponse, c, f, tag);
-                    files.addAll(importedFiles.values());
-                } else if (f == FileType.DOCKSTORE_WDL) {
-                    dockstoreFile.setPath(tag.getWdlPath());
-                    Map<String, SourceFile> importedFiles = importer
-                            .resolveImports(fileResponse, c, f, tag);
-                    files.addAll(importedFiles.values());
-                } else if (f == FileType.CWL_TEST_JSON) {
-                    dockstoreFile.setPath(tag.getCwlTestParameterFile());
-                } else if (f == FileType.WDL_TEST_JSON) {
-                    dockstoreFile.setPath(tag.getWdlTestParameterFile());
+            if (f != FileType.CWL_TEST_JSON && f != FileType.WDL_TEST_JSON) {
+                String fileResponse = importer.readGitRepositoryFile(f, tag, null);
+                if (fileResponse != null) {
+                    SourceFile dockstoreFile = new SourceFile();
+                    dockstoreFile.setType(f);
+                    dockstoreFile.setContent(fileResponse);
+                    if (f == FileType.DOCKERFILE) {
+                        dockstoreFile.setPath(tag.getDockerfilePath());
+                    } else if (f == FileType.DOCKSTORE_CWL) {
+                        dockstoreFile.setPath(tag.getCwlPath());
+                        // see if there are imported files and resolve them
+                        Map<String, SourceFile> importedFiles = importer.resolveImports(fileResponse, c, f, tag);
+                        files.addAll(importedFiles.values());
+                    } else if (f == FileType.DOCKSTORE_WDL) {
+                        dockstoreFile.setPath(tag.getWdlPath());
+                        Map<String, SourceFile> importedFiles = importer.resolveImports(fileResponse, c, f, tag);
+                        files.addAll(importedFiles.values());
+                    }
+                    files.add(dockstoreFile);
                 }
-                files.add(dockstoreFile);
+            } else {
+                // If test json, must grab all
+                if (f == FileType.CWL_TEST_JSON) {
+                    List<SourceFile> cwlTestJson = tag.getSourceFiles().stream().filter((SourceFile u) -> u.getType() == FileType.CWL_TEST_JSON).collect(Collectors.toList());
+                    for (SourceFile testJson : cwlTestJson) {
+                        String fileResponse = importer.readGitRepositoryFile(f, tag, testJson.getPath());
+                        if (fileResponse != null) {
+                            SourceFile dockstoreFile = new SourceFile();
+                            dockstoreFile.setType(f);
+                            dockstoreFile.setContent(fileResponse);
+                            dockstoreFile.setPath(testJson.getPath());
+                            files.add(dockstoreFile);
+                        }
+                    }
+                } else if (f == FileType.WDL_TEST_JSON) {
+                    List<SourceFile> cwlTestJson = tag.getSourceFiles().stream().filter((SourceFile u) -> u.getType() == FileType.WDL_TEST_JSON).collect(Collectors.toList());
+                    for (SourceFile testJson : cwlTestJson) {
+                        String fileResponse = importer.readGitRepositoryFile(f, tag, testJson.getPath());
+                        if (fileResponse != null) {
+                            SourceFile dockstoreFile = new SourceFile();
+                            dockstoreFile.setType(f);
+                            dockstoreFile.setContent(fileResponse);
+                            dockstoreFile.setPath(testJson.getPath());
+                            files.add(dockstoreFile);
+                        }
+                    }
+                }
             }
 
         }

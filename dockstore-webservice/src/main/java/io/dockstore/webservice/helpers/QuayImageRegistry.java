@@ -276,8 +276,6 @@ public class QuayImageRegistry extends AbstractImageRegistry {
                 // Set up default descriptor paths
                 tag.setCwlPath(tool.getDefaultCwlPath());
                 tag.setWdlPath(tool.getDefaultWdlPath());
-                tag.setCwlTestParameterFile(tool.getDefaultCwlTestParameterFile());
-                tag.setWdlTestParameterFile(tool.getDefaultWdlTestParameterFile());
 
                 // Set up default dockerfile path
                 tag.setDockerfilePath(tool.getDefaultDockerfilePath());

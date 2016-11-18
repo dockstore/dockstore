@@ -22,7 +22,7 @@ import io.dockstore.client.cli.Client;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.Body1;
+import io.swagger.client.model.Body2;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
@@ -93,7 +93,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
             String combinedLabelString = generateLabelString(addsSet, removesSet, existingLabels);
 
-            Workflow updatedWorkflow = workflowsApi.updateLabels(workflowId, combinedLabelString, new Body1());
+            Workflow updatedWorkflow = workflowsApi.updateLabels(workflowId, combinedLabelString, new Body2());
 
             List<Label> newLabels = updatedWorkflow.getLabels();
             if (!newLabels.isEmpty()) {
@@ -245,7 +245,7 @@ public class WorkflowClient extends AbstractEntryClient {
                     Workflow newWorkflow = new Workflow();
                     String registry = getGitRegistry(workflow.getGitUrl());
 
-                    newWorkflow = workflowsApi.manualRegister(registry, workflow.getPath(), workflow.getWorkflowPath(), newWorkflow.getWorkflowName(), workflow.getDescriptorType(), workflow.getDefaultTestParameterFile());
+                    newWorkflow = workflowsApi.manualRegister(registry, workflow.getPath(), workflow.getWorkflowPath(), newWorkflow.getWorkflowName(), workflow.getDescriptorType());
 
                     if (newWorkflow != null) {
                         out("Successfully registered " + entryPath + "/" + newName);
@@ -415,7 +415,6 @@ public class WorkflowClient extends AbstractEntryClient {
             final String gitVersionControl = reqVal(args, "--git-version-control");
 
             final String workflowPath = optVal(args, "--workflow-path", "/Dockstore.cwl");
-            final String testJsonPath = optVal(args, "--test-parameter-file", "/test.json");
             final String descriptorType = optVal(args, "--descriptor-type", "cwl");
 
             // Check if valid input
@@ -440,7 +439,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
             // Try and register
             try {
-                workflow = workflowsApi.manualRegister(gitVersionControl, organization + "/" + repository, workflowPath, workflowname, descriptorType, testJsonPath);
+                workflow = workflowsApi.manualRegister(gitVersionControl, organization + "/" + repository, workflowPath, workflowname, descriptorType);
                 if (workflow != null) {
                     workflow = workflowsApi.refresh(workflow.getId());
                 } else {
@@ -518,7 +517,6 @@ public class WorkflowClient extends AbstractEntryClient {
         out("");
         out("Optional parameters:");
         out("  --workflow-path <workflow-path>                      Path for the descriptor file, defaults to /Dockstore.cwl");
-        out("  --test-parameter-file <test-parameter-file>          Path for the test parameter file, defaults to /test.json");
         out("  --workflow-name <workflow-name>                      Workflow name, defaults to null");
         out("  --descriptor-type <workflow-name>                    Descriptor type, defaults to cwl");
 
@@ -537,7 +535,6 @@ public class WorkflowClient extends AbstractEntryClient {
                 String workflowName = optVal(args, "--workflow-name", workflow.getWorkflowName());
                 String descriptorType = optVal(args, "--descriptor-type", workflow.getDescriptorType());
                 String workflowDescriptorPath = optVal(args, "--workflow-path", workflow.getWorkflowPath());
-                String workflowTestJsonPath = optVal(args, "--test-parameter-file", workflow.getDefaultTestParameterFile());
                 String defaultVersion = optVal(args, "--default-version", workflow.getDefaultVersion());
 
                 if (workflow.getMode() == io.swagger.client.model.Workflow.ModeEnum.STUB) {
@@ -558,7 +555,6 @@ public class WorkflowClient extends AbstractEntryClient {
 
                 workflow.setWorkflowName(workflowName);
                 workflow.setWorkflowPath(workflowDescriptorPath);
-                workflow.setDefaultTestParameterFile(workflowTestJsonPath);
 
                 String path = Joiner.on("/").skipNulls().join(workflow.getOrganization(), workflow.getRepository(), workflow.getWorkflowName());
                 workflow.setPath(path);
@@ -606,7 +602,6 @@ public class WorkflowClient extends AbstractEntryClient {
         out("  --workflow-name <workflow-name>                          Name for the given workflow");
         out("  --descriptor-type <descriptor-type>                      Descriptor type of the given workflow.  Can only be altered if workflow is a STUB.");
         out("  --workflow-path <workflow-path>                          Path to default workflow descriptor location");
-        out("  --test-parameter-file <test-parameter-file>              Path to default workflow test parameter file");
         out("  --default-version <default-version>                      Default branch name");
         printHelpFooter();
     }
@@ -626,7 +621,6 @@ public class WorkflowClient extends AbstractEntryClient {
                     if (workflowVersion.getName().equals(name)) {
                         final Boolean hidden = Boolean.valueOf(optVal(args, "--hidden", workflowVersion.getHidden().toString()));
                         final String workflowPath = optVal(args, "--workflow-path", workflowVersion.getWorkflowPath());
-                        final String workflowTestJson = optVal(args, "--test-parameter-file", workflowVersion.getTestParameterFile());
 
                         // Check that workflow path matches with the workflow descriptor type
                         if (!workflowPath.toLowerCase().endsWith(workflow.getDescriptorType())) {
@@ -635,7 +629,6 @@ public class WorkflowClient extends AbstractEntryClient {
 
                         workflowVersion.setHidden(hidden);
                         workflowVersion.setWorkflowPath(workflowPath);
-                        workflowVersion.setTestParameterFile(workflowTestJson);
 
                         List<WorkflowVersion> newVersions = new ArrayList<>();
                         newVersions.add(workflowVersion);
@@ -668,7 +661,6 @@ public class WorkflowClient extends AbstractEntryClient {
         out("Optional Parameters");
         out("  --workflow-path <workflow-path>                      Path to workflow descriptor");
         out("  --hidden <true/false>                                Hide the tag from public viewing, default false");
-        out("  --test-parameter-file <test-parameter-file>          Path to workflow test parameter file");
         printHelpFooter();
     }
 

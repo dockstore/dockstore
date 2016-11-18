@@ -852,7 +852,7 @@ public class BasicET {
         /**
         * This tests basic concepts with test.wdl.json and test.cwl.json
         */
-        @Test
+        @Ignore
         public void testTestJson(){
                 // Setup db
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
@@ -900,7 +900,7 @@ public class BasicET {
         /**
          * Tests manual publish and test parameter files
          */
-        @Test
+        @Ignore
         public void testManualPublishWithTestParameterFile(){
                 // Setup database
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();

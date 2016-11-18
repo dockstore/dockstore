@@ -221,14 +221,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                         file.setPath(calculatedPath);
                         file.setType(identifiedType);
 
-                        // Get test json file
-                        testJson.setContent(getFileContents(version.getTestParameterFile(), ref, repositoryId.split("/")[1]));
-                        testJson.setPath(version.getTestParameterFile());
-                        if (testJson.getContent() != null) {
-                            version.addSourceFile(testJson);
-                        }
-
-                        workflow.addWorkflowVersion(combineVersionAndSourcefile(file, workflow, identifiedType, version));
+                        workflow.addWorkflowVersion(combineVersionAndSourcefile(file, workflow, identifiedType, version, existingDefaults));
                     }
 
                 }

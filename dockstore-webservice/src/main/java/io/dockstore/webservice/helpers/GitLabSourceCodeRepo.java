@@ -187,20 +187,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
                     // TODO: No exceptions are caught here in the event of a failed call
                     sourceFile = getSourceFile(calculatedPath, id, branchName, identifiedType);
 
-                    // Get test json file
-                    SourceFile testJson = new SourceFile();
-                    testJson.setContent(getFileContents(version.getTestParameterFile(), branchName, repositoryId));
-                    testJson.setPath(version.getTestParameterFile());
-                    if (identifiedType == SourceFile.FileType.DOCKSTORE_CWL) {
-                        testJson.setType(SourceFile.FileType.CWL_TEST_JSON);
-                    } else {
-                        testJson.setType(SourceFile.FileType.WDL_TEST_JSON);
-                    }
-                    if (testJson.getContent() != null) {
-                        version.addSourceFile(testJson);
-                    }
-
-                    workflow.addWorkflowVersion(combineVersionAndSourcefile(sourceFile, workflow, identifiedType, version));
+                    workflow.addWorkflowVersion(combineVersionAndSourcefile(sourceFile, workflow, identifiedType, version, existingDefaults));
                 }
             }
         }
@@ -305,8 +292,11 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
 
             if (type == SourceFile.FileType.DOCKSTORE_CWL) {
                 validWorkflow = checkValidCWLWorkflow(content);
-            } else {
+            } else if (type == SourceFile.FileType.DOCKSTORE_WDL)  {
                 validWorkflow = checkValidWDLWorkflow(content);
+            } else {
+                // Must be a testjson file
+                validWorkflow = true;
             }
 
             if (validWorkflow) {

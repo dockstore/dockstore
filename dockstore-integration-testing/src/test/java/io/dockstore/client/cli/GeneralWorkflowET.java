@@ -413,7 +413,7 @@ public class GeneralWorkflowET {
                 // Get workflows
                 usersApi.refreshWorkflows(userId);
 
-                Workflow githubWorkflow = workflowApi.manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/Dockstore.cwl", "test-update-workflow", "cwl", "test.json");
+                Workflow githubWorkflow = workflowApi.manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/Dockstore.cwl", "test-update-workflow", "cwl");
 
                 // Publish github workflow
                 Workflow workflow = workflowApi.refresh(githubWorkflow.getId());
@@ -713,7 +713,7 @@ public class GeneralWorkflowET {
         /**
          * This tests basic concepts with test.wdl.json and test.cwl.json
          */
-        @Test
+        @Ignore
         public void testTestParameterFile() {
                 // Setup DB
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
@@ -783,7 +783,7 @@ public class GeneralWorkflowET {
         /**
         * Tests manual publish and test parameter files
         */
-        @Test
+        @Ignore
         public void testManualPublishTestParameterFile() {
                 // Setup DB
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();

@@ -40,11 +40,6 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     @ApiModelProperty("Path for the workflow")
     private String workflowPath;
 
-    @Column(columnDefinition = "text")
-    @JsonProperty("test_parameter_file")
-    @ApiModelProperty("Path for example inputs json for descriptor")
-    private String testParameterFile = "/test.json";
-
     public WorkflowVersion() {
         super();
     }
@@ -52,14 +47,12 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     public void updateByUser(final WorkflowVersion workflowVersion) {
         super.updateByUser(workflowVersion);
         workflowPath = workflowVersion.workflowPath;
-        testParameterFile = workflowVersion.testParameterFile;
     }
 
     public void update(WorkflowVersion workflowVersion) {
         super.update(workflowVersion);
         super.setReference(workflowVersion.getReference());
         workflowPath = workflowVersion.getWorkflowPath();
-        testParameterFile = workflowVersion.testParameterFile;
     }
 
     public void clone(WorkflowVersion tag) {
@@ -75,14 +68,6 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     public void setWorkflowPath(String workflowPath) {
         this.workflowPath = workflowPath;
-    }
-
-    public String getTestParameterFile() {
-        return testParameterFile;
-    }
-
-    public void setTestParameterFile(String testParameterFile) {
-        this.testParameterFile = testParameterFile;
     }
 
     @Override public int hashCode() {

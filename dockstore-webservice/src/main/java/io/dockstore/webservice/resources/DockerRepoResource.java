@@ -266,8 +266,6 @@ public class DockerRepoResource {
                 tag.setCwlPath(tool.getDefaultCwlPath());
                 tag.setWdlPath(tool.getDefaultWdlPath());
                 tag.setDockerfilePath(tool.getDefaultDockerfilePath());
-                tag.setCwlTestParameterFile(tool.getDefaultCwlTestParameterFile());
-                tag.setWdlTestParameterFile(tool.getDefaultWdlTestParameterFile());
             }
         }
 
@@ -690,21 +688,6 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/{containerId}/testparameter")
-    @ApiOperation(value = "Get the corresponding test parameter file.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class)
-    public SourceFile testParameterPath(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
-            @QueryParam("tag") String tag, @QueryParam("type") String type){
-        if (type.toLowerCase().equals(DescriptorType.CWL.toString())) {
-            return entryVersionHelper.getSourceFile(containerId, tag, FileType.CWL_TEST_JSON);
-        } else {
-            // assume WDL
-            return entryVersionHelper.getSourceFile(containerId, tag, FileType.WDL_TEST_JSON);
-        }
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork
     @Path("/{containerId}/secondaryCwl")
     @ApiOperation(value = "Get a list of secondary CWL files from Git.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
     public List<SourceFile> secondaryCwl(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
@@ -724,6 +707,96 @@ public class DockerRepoResource {
         return entryVersionHelper.getAllSecondaryFiles(containerId, tag, FileType.DOCKSTORE_WDL);
     }
 
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}/cwlTestParameterFiles")
+    @ApiOperation(value = "Get the corresponding cwl test parameter files.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
+    public List<SourceFile> cwlTestParameterFiles(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
+            @QueryParam("tag") String tag) {
 
+        return entryVersionHelper.getAllSourceFiles(containerId, tag, FileType.CWL_TEST_JSON);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}/wdlTestParameterFiles")
+    @ApiOperation(value = "Get the corresponding wdl test parameter files.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
+    public List<SourceFile> wdlTestParameterFiles(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
+            @QueryParam("tag") String tag) {
+
+        return entryVersionHelper.getAllSourceFiles(containerId, tag, FileType.WDL_TEST_JSON);
+    }
+
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}/testParameterFiles")
+    @ApiOperation(value = "Add test parameter files for a given tag.", response = SourceFile.class, responseContainer = "Set")
+    public Set<SourceFile> testParameterFiles(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
+            @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
+            @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", defaultValue = "") String emptyBody,
+            @QueryParam("tagName") String tagName,
+            @QueryParam("descriptorType") String descriptorType) {
+        Tool tool = toolDAO.findById(containerId);
+        Helper.checkEntry(tool);
+
+        Tag tag = tool.getTags()
+                .stream()
+                .filter((Tag v) -> v.getName().equals(tagName))
+                .findFirst()
+                .get();
+
+        Set<SourceFile> sourceFiles = tag.getSourceFiles();
+
+        // Add new test parameter files
+        FileType fileType = (descriptorType.equals("cwl")) ? FileType.CWL_TEST_JSON : FileType.WDL_TEST_JSON;
+        for (String path : testParameterPaths) {
+            if (sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType).count() == 0) {
+                // Sourcefile doesn't exist, add a stub which will have it's content filled on refresh
+                SourceFile sourceFile = new SourceFile();
+                sourceFile.setPath(path);
+                sourceFile.setType(fileType);
+                tag.addSourceFile(sourceFile);
+            }
+        }
+
+        return tag.getSourceFiles();
+    }
+
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}/testParameterFiles")
+    @ApiOperation(value = "Delete test parameter files for a given tag.", response = SourceFile.class, responseContainer = "Set")
+    public Set<SourceFile> testParameterFiles(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
+            @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
+            @QueryParam("tagName") String tagName,
+            @QueryParam("descriptorType") String descriptorType) {
+        Tool tool = toolDAO.findById(containerId);
+        Helper.checkEntry(tool);
+
+        Tag tag = tool.getTags()
+                .stream()
+                .filter((Tag v) -> v.getName().equals(tagName))
+                .findFirst()
+                .get();
+
+        Set<SourceFile> sourceFiles = tag.getSourceFiles();
+
+        // Remove test parameter files
+        FileType fileType = (descriptorType.equals("cwl")) ? FileType.CWL_TEST_JSON : FileType.WDL_TEST_JSON;
+        for (String path : testParameterPaths) {
+            if (sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType).count() > 0) {
+                SourceFile toRemove = sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType).findFirst().get();
+                sourceFiles.remove(toRemove);
+            }
+        }
+
+        return tag.getSourceFiles();
+    }
 
 }
