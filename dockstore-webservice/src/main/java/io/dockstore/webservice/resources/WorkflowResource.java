@@ -726,7 +726,7 @@ public class WorkflowResource {
         Workflow workflow = workflowDAO.findById(workflowId);
         Helper.checkEntry(workflow);
 
-        if (workflow.getDescriptorType().toLowerCase().equals("WDL")) {
+        if (workflow.getDescriptorType().toLowerCase().equals("wdl")) {
             return entryVersionHelper.getAllSourceFiles(workflowId, version, FileType.WDL_TEST_JSON);
         } else {
             return entryVersionHelper.getAllSourceFiles(workflowId, version, FileType.CWL_TEST_JSON);
@@ -757,7 +757,7 @@ public class WorkflowResource {
         // Add new test parameter files
         FileType fileType = (workflow.getDescriptorType().toLowerCase().equals("cwl")) ? FileType.CWL_TEST_JSON : FileType.WDL_TEST_JSON;
         for (String path : testParameterPaths) {
-            if (sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path)).count() == 0) {
+            if (sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType).count() == 0) {
                 // Sourcefile doesn't exist, add a stub which will have it's content filled on refresh
                 SourceFile sourceFile = new SourceFile();
                 sourceFile.setPath(path);
