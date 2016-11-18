@@ -54,6 +54,7 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import io.swagger.model.ToolDescriptor;
 
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -726,7 +727,7 @@ public class WorkflowResource {
         Workflow workflow = workflowDAO.findById(workflowId);
         Helper.checkEntry(workflow);
 
-        if (workflow.getDescriptorType().toLowerCase().equals("wdl")) {
+        if (workflow.getDescriptorType().toUpperCase().equals(ToolDescriptor.TypeEnum.WDL.toString())) {
             return entryVersionHelper.getAllSourceFiles(workflowId, version, FileType.WDL_TEST_JSON);
         } else {
             return entryVersionHelper.getAllSourceFiles(workflowId, version, FileType.CWL_TEST_JSON);
@@ -755,7 +756,7 @@ public class WorkflowResource {
         Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
 
         // Add new test parameter files
-        FileType fileType = (workflow.getDescriptorType().toLowerCase().equals("cwl")) ? FileType.CWL_TEST_JSON : FileType.WDL_TEST_JSON;
+        FileType fileType = (workflow.getDescriptorType().toUpperCase().equals(ToolDescriptor.TypeEnum.CWL.toString())) ? FileType.CWL_TEST_JSON : FileType.WDL_TEST_JSON;
         for (String path : testParameterPaths) {
             if (sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType).count() == 0) {
                 // Sourcefile doesn't exist, add a stub which will have it's content filled on refresh
@@ -790,7 +791,7 @@ public class WorkflowResource {
         Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
 
         // Remove test parameter files
-        FileType fileType = (workflow.getDescriptorType().toLowerCase().equals("cwl")) ? FileType.CWL_TEST_JSON : FileType.WDL_TEST_JSON;
+        FileType fileType = (workflow.getDescriptorType().toUpperCase().equals(ToolDescriptor.TypeEnum.CWL.toString())) ? FileType.CWL_TEST_JSON : FileType.WDL_TEST_JSON;
         for (String path : testParameterPaths) {
             if (sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType).count() > 0) {
                 SourceFile toRemove = sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType).findFirst().get();

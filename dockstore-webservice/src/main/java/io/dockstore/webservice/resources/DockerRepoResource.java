@@ -49,6 +49,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.model.ToolDescriptor;
 
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -710,23 +711,16 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/{containerId}/cwlTestParameterFiles")
-    @ApiOperation(value = "Get the corresponding cwl test parameter files.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
-    public List<SourceFile> cwlTestParameterFiles(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
-            @QueryParam("tag") String tag) {
-
-        return entryVersionHelper.getAllSourceFiles(containerId, tag, FileType.CWL_TEST_JSON);
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork
-    @Path("/{containerId}/wdlTestParameterFiles")
+    @Path("/{containerId}/testParameterFiles")
     @ApiOperation(value = "Get the corresponding wdl test parameter files.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
-    public List<SourceFile> wdlTestParameterFiles(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
-            @QueryParam("tag") String tag) {
-
-        return entryVersionHelper.getAllSourceFiles(containerId, tag, FileType.WDL_TEST_JSON);
+    public List<SourceFile> testParameterFiles(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
+            @QueryParam("tag") String tag,
+            @QueryParam("descriptorType") String descriptorType) {
+        if (descriptorType.toUpperCase().equals(ToolDescriptor.TypeEnum.WDL.toString())) {
+            return entryVersionHelper.getAllSourceFiles(containerId, tag, FileType.WDL_TEST_JSON);
+        } else {
+            return entryVersionHelper.getAllSourceFiles(containerId, tag, FileType.CWL_TEST_JSON);
+        }
     }
 
     @PUT
@@ -752,7 +746,7 @@ public class DockerRepoResource {
         Set<SourceFile> sourceFiles = tag.getSourceFiles();
 
         // Add new test parameter files
-        FileType fileType = (descriptorType.equals("cwl")) ? FileType.CWL_TEST_JSON : FileType.WDL_TEST_JSON;
+        FileType fileType = (descriptorType.toUpperCase().equals(ToolDescriptor.TypeEnum.CWL.toString())) ? FileType.CWL_TEST_JSON : FileType.WDL_TEST_JSON;
         for (String path : testParameterPaths) {
             if (sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType).count() == 0) {
                 // Sourcefile doesn't exist, add a stub which will have it's content filled on refresh
@@ -788,7 +782,7 @@ public class DockerRepoResource {
         Set<SourceFile> sourceFiles = tag.getSourceFiles();
 
         // Remove test parameter files
-        FileType fileType = (descriptorType.equals("cwl")) ? FileType.CWL_TEST_JSON : FileType.WDL_TEST_JSON;
+        FileType fileType = (descriptorType.toUpperCase().equals(ToolDescriptor.TypeEnum.CWL.toString())) ? FileType.CWL_TEST_JSON : FileType.WDL_TEST_JSON;
         for (String path : testParameterPaths) {
             if (sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType).count() > 0) {
                 SourceFile toRemove = sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType).findFirst().get();
