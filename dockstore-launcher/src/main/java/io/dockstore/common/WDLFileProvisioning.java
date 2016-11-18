@@ -116,8 +116,8 @@ public class WDLFileProvisioning {
                     Utilities.executeCommand("mkdir -p " + downloadDirPath);
                 }
 
+                // Handle provisioning of file
                 final Path targetFilePath = Paths.get(downloadDir.getAbsolutePath(), path);
-
                 File originalFile = new File(path);
                 System.out.println("Downloading: " + key + " from " + path + " to: " + targetFilePath);
                 if (originalFile.isDirectory()) {
@@ -126,10 +126,10 @@ public class WDLFileProvisioning {
                 } else {
                     fileProvisioning.provisionInputFile(path, targetFilePath, pathInfo);
                 }
+
                 jsonEntry.put(key, targetFilePath);
                 LOG.info("DOWNLOADED FILE: LOCAL: {} URL: {} => {}", key, path, targetFilePath);
                 return jsonEntry;
-
         }
 
     /**
