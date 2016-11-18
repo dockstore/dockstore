@@ -484,7 +484,7 @@ public class Client {
                 .executeCommand(Joiner.on(" ").join(Arrays.asList(s2)), false,  com.google.common.base.Optional.absent(), com.google.common.base.Optional.absent());
         final String schemaSaladVersion = pair2.getKey().split(" ")[1].trim();
 
-        final String expectedCwltoolVersion = "1.0.20161115095848";
+        final String expectedCwltoolVersion = "1.0.20161114152756";
         if (!cwlToolVersion.equals(expectedCwltoolVersion)){
             errorMessage("cwltool version is " + cwlToolVersion + " , Dockstore is tested with " + expectedCwltoolVersion + "\nOverride and run with `--script`", COMMAND_ERROR);
         }
