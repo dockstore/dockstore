@@ -247,10 +247,20 @@ public class ToolClient extends AbstractEntryClient {
             DockstoreTool container = containersApi.getContainerByToolPath(entry);
             long containerId = container.getId();
 
-            containersApi.addTestParameterFiles(containerId, adds, new Body1(), versionName, descriptorType);
-            containersApi.deleteTestParameterFiles(containerId, removes, versionName, descriptorType);
-            containersApi.refresh(container.getId());
-            out("The test parameter files for tag " + versionName + " of tool " + entry + " have been updated.");
+            if (adds.size() > 0) {
+                containersApi.addTestParameterFiles(containerId, adds, new Body1(), versionName, descriptorType.toUpperCase());
+            }
+
+            if (removes.size() > 0) {
+                containersApi.deleteTestParameterFiles(containerId, removes, versionName, descriptorType.toUpperCase());
+            }
+
+            if (adds.size() > 0 || removes.size() > 0) {
+                containersApi.refresh(container.getId());
+                out("The test parameter files for tag " + versionName + " of tool " + entry + " have been updated.");
+            } else {
+                out("Please provide at least one test parameter file to add or remove.");
+            }
 
         } catch (ApiException ex) {
             exceptionMessage(ex, "There was an error updating the test parameter files for " + entry + " version " + versionName, Client.API_ERROR);

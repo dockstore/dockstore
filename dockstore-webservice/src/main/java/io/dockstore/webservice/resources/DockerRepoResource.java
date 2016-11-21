@@ -743,17 +743,26 @@ public class DockerRepoResource {
                 .findFirst()
                 .get();
 
+        if (tag == null) {
+            LOG.info("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.");
+            throw new CustomWebApplicationException("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.", HttpStatus.SC_BAD_REQUEST);
+        }
+
         Set<SourceFile> sourceFiles = tag.getSourceFiles();
 
         // Add new test parameter files
         FileType fileType = (descriptorType.toUpperCase().equals(ToolDescriptor.TypeEnum.CWL.toString())) ? FileType.CWL_TEST_JSON : FileType.WDL_TEST_JSON;
         for (String path : testParameterPaths) {
-            if (sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType).count() == 0) {
+            long sourcefileDuplicate = sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType).count();
+            if (sourcefileDuplicate == 0) {
                 // Sourcefile doesn't exist, add a stub which will have it's content filled on refresh
                 SourceFile sourceFile = new SourceFile();
                 sourceFile.setPath(path);
                 sourceFile.setType(fileType);
-                tag.addSourceFile(sourceFile);
+
+                long id = fileDAO.create(sourceFile);
+                SourceFile sourceFileWithId = fileDAO.findById(id);
+                tag.addSourceFile(sourceFileWithId);
             }
         }
 
@@ -778,6 +787,11 @@ public class DockerRepoResource {
                 .filter((Tag v) -> v.getName().equals(tagName))
                 .findFirst()
                 .get();
+
+        if (tag == null) {
+            LOG.info("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.");
+            throw new CustomWebApplicationException("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.", HttpStatus.SC_BAD_REQUEST);
+        }
 
         Set<SourceFile> sourceFiles = tag.getSourceFiles();
 

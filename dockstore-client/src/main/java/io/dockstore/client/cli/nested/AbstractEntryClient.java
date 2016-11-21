@@ -784,9 +784,17 @@ public abstract class AbstractEntryClient {
         } else if (!args.isEmpty()) {
             String entry = reqVal(args, "--entry");
             String version = reqVal(args, "--version");
-            String descriptorType = reqVal(args, "--descriptor-type");
+            String descriptorType = null;
             final List<String> adds = optVals(args, "--add");
             final List<String> removes = optVals(args, "--remove");
+
+            if (getEntryType().toLowerCase().equals("tool")) {
+                descriptorType = reqVal(args, "--descriptor-type");
+                if (!descriptorType.toUpperCase().equals("CWL") && !descriptorType.toUpperCase().equals("WDL")) {
+                    errorMessage("Only \'CWL\' and \'WDL\' are valid descriptor types", CLIENT_ERROR);
+                }
+            }
+
 
             handleTestParameter(entry, version, adds, removes, descriptorType);
         }
@@ -1401,7 +1409,9 @@ public abstract class AbstractEntryClient {
         out("Required Parameters:");
         out("  --entry <entry>                                                          Complete " + getEntryType() + " path in the Dockstore");
         out("  --version <version>                                                      " + getEntryType() + " version name.");
-        out("  --descriptor-type <descriptor-type>                                      CWL/WDL");
+        if (getEntryType().toLowerCase().equals("tool")) {
+            out("  --descriptor-type <descriptor-type>                                      CWL/WDL");
+        }
         out("");
         out("Optional Parameters:");
         out("  --add <test parameter file> (--add <test parameter file>)               Path in Git repository of test parameter file(s) to add.");

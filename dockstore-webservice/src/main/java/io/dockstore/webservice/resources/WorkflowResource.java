@@ -747,23 +747,37 @@ public class WorkflowResource {
         Workflow workflow = workflowDAO.findById(workflowId);
         Helper.checkEntry(workflow);
 
+        if (workflow.getMode() == WorkflowMode.STUB) {
+            LOG.info("The workflow \'" + workflow.getPath() + "\' is a STUB. Refresh the workflow if you want to add test parameter files");
+            throw new CustomWebApplicationException("The workflow \'" + workflow.getPath() + "\' is a STUB. Refresh the workflow if you want to add test parameter files", HttpStatus.SC_BAD_REQUEST);
+        }
+
         WorkflowVersion workflowVersion = workflow.getWorkflowVersions()
                 .stream()
                 .filter((WorkflowVersion v) -> v.getName().equals(version))
                 .findFirst()
                 .get();
 
+        if (workflowVersion == null) {
+            LOG.info("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' does not exist.");
+            throw new CustomWebApplicationException("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' does not exist.", HttpStatus.SC_BAD_REQUEST);
+        }
+
         Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
 
         // Add new test parameter files
         FileType fileType = (workflow.getDescriptorType().toUpperCase().equals(ToolDescriptor.TypeEnum.CWL.toString())) ? FileType.CWL_TEST_JSON : FileType.WDL_TEST_JSON;
         for (String path : testParameterPaths) {
-            if (sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType).count() == 0) {
+            long sourcefileDuplicate = sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType).count();
+            if (sourcefileDuplicate == 0) {
                 // Sourcefile doesn't exist, add a stub which will have it's content filled on refresh
                 SourceFile sourceFile = new SourceFile();
                 sourceFile.setPath(path);
                 sourceFile.setType(fileType);
-                workflowVersion.addSourceFile(sourceFile);
+
+                long id = fileDAO.create(sourceFile);
+                SourceFile sourceFileWithId = fileDAO.findById(id);
+                workflowVersion.addSourceFile(sourceFileWithId);
             }
         }
 
@@ -787,6 +801,11 @@ public class WorkflowResource {
                 .filter((WorkflowVersion v) -> v.getName().equals(version))
                 .findFirst()
                 .get();
+
+        if (workflowVersion == null) {
+            LOG.info("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' does not exist.");
+            throw new CustomWebApplicationException("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' does not exist.", HttpStatus.SC_BAD_REQUEST);
+        }
 
         Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
 

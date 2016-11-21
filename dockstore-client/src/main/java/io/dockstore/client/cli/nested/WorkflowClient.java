@@ -612,11 +612,21 @@ public class WorkflowClient extends AbstractEntryClient {
             Workflow workflow = workflowsApi.getWorkflowByPath(entry);
             long workflowId = workflow.getId();
 
-            workflowsApi.addTestParameterFiles(workflowId, adds, new Body3(), versionName);
-            workflowsApi.deleteTestParameterFiles(workflowId, removes, versionName);
-            workflowsApi.refresh(workflow.getId());
+            if (adds.size() > 0) {
+                workflowsApi.addTestParameterFiles(workflowId, adds, new Body3(), versionName);
+            }
 
-            out("The test parameter files for version " + versionName + " of workflow " + entry + " have been updated.");
+            if (removes.size() > 0) {
+                workflowsApi.deleteTestParameterFiles(workflowId, removes, versionName);
+            }
+
+            if (adds.size() > 0 || removes.size() > 0) {
+                workflowsApi.refresh(workflow.getId());
+                out("The test parameter files for version " + versionName + " of workflow " + entry + " have been updated.");
+            } else {
+                out("Please provide at least one test parameter file to add or remove.");
+            }
+
 
         } catch (ApiException ex) {
             exceptionMessage(ex, "There was an error updating the test parameter files for " + entry + " version " + versionName, Client.API_ERROR);
