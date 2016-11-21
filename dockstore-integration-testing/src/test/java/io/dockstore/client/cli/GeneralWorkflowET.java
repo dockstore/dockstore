@@ -744,7 +744,7 @@ public class GeneralWorkflowET {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "test_parameter", "--entry", "DockstoreTestUser2/parameter_test_workflow",
                         "--version", "wdltest", "--add", "test.wdl.json", "--script" });
                 final long count4 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type='CWL_TEST_JSON'", new ScalarHandler<>());
-                Assert.assertTrue("there should be one sourcefile that is a wdl test parameter file, there are " + count4, count4 == 1);
+                Assert.assertTrue("there should be two sourcefiles that are cwl test parameter files, there are " + count4, count4 == 2);
 
                 // Restub
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "restub", "--entry", "DockstoreTestUser2/parameter_test_workflow", "--script" });
