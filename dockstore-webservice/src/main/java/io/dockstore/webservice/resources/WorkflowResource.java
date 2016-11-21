@@ -763,6 +763,11 @@ public class WorkflowResource {
             throw new CustomWebApplicationException("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' does not exist.", HttpStatus.SC_BAD_REQUEST);
         }
 
+        if (!workflowVersion.isValid()) {
+            LOG.info("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' is invalid.");
+            throw new CustomWebApplicationException("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' is invalid.", HttpStatus.SC_BAD_REQUEST);
+        }
+
         Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
 
         // Add new test parameter files
@@ -805,6 +810,11 @@ public class WorkflowResource {
         if (workflowVersion == null) {
             LOG.info("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' does not exist.");
             throw new CustomWebApplicationException("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' does not exist.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (!workflowVersion.isValid()) {
+            LOG.info("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' is invalid.");
+            throw new CustomWebApplicationException("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' is invalid.", HttpStatus.SC_BAD_REQUEST);
         }
 
         Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
