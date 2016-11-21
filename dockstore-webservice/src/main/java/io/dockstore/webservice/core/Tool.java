@@ -91,17 +91,6 @@ public class Tool extends Entry<Tool, Tag> {
     @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the WDL document", required = true)
     private String defaultWdlPath = "/Dockstore.wdl";
 
-    @Column(columnDefinition = "text")
-    @JsonProperty("default_cwl_test_parameter_file")
-    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL example inputs json", required = true)
-    private String defaultCwlTestParameterFile = "/test.cwl.json";
-
-    @Column(columnDefinition = "text")
-    @JsonProperty("default_wdl_test_parameter_file")
-    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the WDL example inputs json", required = true)
-    private String defaultWdlTestParameterFile = "/test.wdl.json";
-
-
     @Column(nullable = false)
     @ApiModelProperty(value = "This is the tool name of the container, when not-present this will function just like 0.1 dockstore"
             + "when present, this can be used to distinguish between two containers based on the same image, but associated with different "
@@ -290,23 +279,7 @@ public class Tool extends Entry<Tool, Tag> {
     public String getToolPath() {
         return getPath() + (toolname == null || toolname.isEmpty() ? "" : '/' + toolname);
     }
-
-    public String getDefaultCwlTestParameterFile() {
-        return defaultCwlTestParameterFile;
-    }
-
-    public void setDefaultCwlTestParameterFile(String defaultCwlTestParameterFile) {
-        this.defaultCwlTestParameterFile = defaultCwlTestParameterFile;
-    }
-
-    public String getDefaultWdlTestParameterFile() {
-        return defaultWdlTestParameterFile;
-    }
-
-    public void setDefaultWdlTestParameterFile(String defaultWdlTestParameterFile) {
-        this.defaultWdlTestParameterFile = defaultWdlTestParameterFile;
-    }
-
+    
 
     /**
      * Updates information from given tool based on the new tool
@@ -317,8 +290,6 @@ public class Tool extends Entry<Tool, Tag> {
         defaultCwlPath = tool.getDefaultCwlPath();
         defaultWdlPath = tool.getDefaultWdlPath();
         defaultDockerfilePath = tool.getDefaultDockerfilePath();
-        defaultCwlTestParameterFile = tool.getDefaultCwlTestParameterFile();
-        defaultWdlTestParameterFile = tool.getDefaultWdlTestParameterFile();
         this.setDefaultVersion(tool.getDefaultVersion());
 
         toolname = tool.getToolname();

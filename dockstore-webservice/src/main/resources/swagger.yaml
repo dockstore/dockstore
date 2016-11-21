@@ -20,14 +20,10 @@ definitions:
       defaultVersion: {description: This is the default version of the entry, type: string}
       default_cwl_path: {description: 'This indicates for the associated git repository,
           the default path to the CWL document, required: GA4GH', type: string}
-      default_cwl_test_parameter_file: {description: 'This indicates for the associated
-          git repository, the default path to the CWL example inputs json', type: string}
       default_dockerfile_path: {description: 'This indicates for the associated git
           repository, the default path to the Dockerfile, required: GA4GH', type: string}
       default_wdl_path: {description: 'This indicates for the associated git repository,
           the default path to the WDL document', type: string}
-      default_wdl_test_parameter_file: {description: 'This indicates for the associated
-          git repository, the default path to the WDL example inputs json', type: string}
       description: {description: 'This is a human-readable description of this container
           and what it is trying to accomplish, required GA4GH', type: string}
       email: {description: This is the email of the git organization, type: string}
@@ -82,9 +78,8 @@ definitions:
         items: {$ref: '#/definitions/User'}
         type: array
         uniqueItems: true
-    required: [default_cwl_path, default_cwl_test_parameter_file, default_dockerfile_path,
-      default_wdl_path, default_wdl_test_parameter_file, gitUrl, mode, name, namespace,
-      registry, toolname]
+    required: [default_cwl_path, default_dockerfile_path, default_wdl_path, gitUrl,
+      mode, name, namespace, registry, toolname]
     type: object
   GitHubComAuthenticationResource:
     properties:
@@ -168,8 +163,6 @@ definitions:
       automated: {default: false, description: 'Implementation specific, indicates
           whether this is an automated build on quay.io', type: boolean}
       cwl_path: {description: Path for the CWL document, type: string}
-      cwl_test_parameter_file: {description: Path for example inputs json for CWL,
-        type: string}
       dirtyBit: {default: false, description: True if user has altered the tag, type: boolean}
       dockerfile_path: {description: Path for the Dockerfile, type: string}
       hidden: {default: false, description: 'Implementation specific, whether this
@@ -194,8 +187,6 @@ definitions:
         type: boolean}
       verifiedSource: {description: Verified source for the version, type: string}
       wdl_path: {description: Path for the WDL document, type: string}
-      wdl_test_parameter_file: {description: Path for example inputs json for WDL,
-        type: string}
     required: [image_id, name, reference]
     type: object
   Token:
@@ -326,8 +317,6 @@ definitions:
       author: {description: This is the name of the author stated in the Dockstore.cwl,
         type: string}
       defaultVersion: {description: This is the default version of the entry, type: string}
-      default_test_parameter_file: {description: 'This indicates for the associated
-          git repository, the default path to the example inputs json', type: string}
       description: {description: 'This is a human-readable description of this container
           and what it is trying to accomplish, required GA4GH', type: string}
       descriptorType: {description: 'This is a descriptor type for the workflow, either
@@ -370,8 +359,7 @@ definitions:
         uniqueItems: true
       workflow_path: {description: 'This indicates for the associated git repository,
           the default path to the CWL document', type: string}
-    required: [default_test_parameter_file, descriptorType, gitUrl, mode, organization,
-      repository, workflow_path]
+    required: [descriptorType, gitUrl, mode, organization, repository, workflow_path]
     type: object
   WorkflowVersion:
     description: This describes one workflow version associated with a workflow.
@@ -391,8 +379,6 @@ definitions:
         items: {$ref: '#/definitions/SourceFile'}
         type: array
         uniqueItems: true
-      test_parameter_file: {description: Path for example inputs json for descriptor,
-        type: string}
       valid: {default: false, description: 'Implementation specific, whether this
           tag has valid files from source code repo', type: boolean}
       verified: {default: false, description: Whether this version has been verified or not,
@@ -1132,21 +1118,78 @@ paths:
         default: {description: successful operation}
       summary: Delete tag linked to a container
       tags: [containertags]
-  /containers/{containerId}/testparameter:
-    get:
-      description: Does not need authentication
-      operationId: testParameterPath
+  /containers/{containerId}/testParameterFiles:
+    delete:
+      description: ''
+      operationId: deleteTestParameterFiles
       parameters:
-      - {description: Tool id, format: int64, in: path, name: containerId, required: true,
-        type: integer}
-      - {in: query, name: tag, required: false, type: string}
-      - {in: query, name: type, required: false, type: string}
+      - {description: Tool to modify., format: int64, in: path, name: containerId,
+        required: true, type: integer}
+      - collectionFormat: multi
+        description: List of paths.
+        in: query
+        items: {type: string}
+        name: testParameterPaths
+        required: true
+        type: array
+      - {in: query, name: tagName, required: false, type: string}
+      - {in: query, name: descriptorType, required: false, type: string}
       produces: [application/json]
       responses:
         200:
           description: successful operation
-          schema: {$ref: '#/definitions/SourceFile'}
-      summary: Get the corresponding test parameter file.
+          schema:
+            items: {$ref: '#/definitions/SourceFile'}
+            type: array
+            uniqueItems: true
+      summary: Delete test parameter files for a given tag.
+      tags: [containers]
+    get:
+      description: Does not need authentication
+      operationId: getTestParameterFiles
+      parameters:
+      - {description: Tool id, format: int64, in: path, name: containerId, required: true,
+        type: integer}
+      - {in: query, name: tag, required: false, type: string}
+      - {in: query, name: descriptorType, required: false, type: string}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema:
+            items: {$ref: '#/definitions/SourceFile'}
+            type: array
+      summary: Get the corresponding wdl test parameter files.
+      tags: [containers]
+    put:
+      description: ''
+      operationId: addTestParameterFiles
+      parameters:
+      - {description: Tool to modify., format: int64, in: path, name: containerId,
+        required: true, type: integer}
+      - collectionFormat: multi
+        description: List of paths.
+        in: query
+        items: {type: string}
+        name: testParameterPaths
+        required: true
+        type: array
+      - description: This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.
+        in: body
+        name: body
+        required: false
+        schema: {type: string}
+      - {in: query, name: tagName, required: false, type: string}
+      - {in: query, name: descriptorType, required: false, type: string}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema:
+            items: {$ref: '#/definitions/SourceFile'}
+            type: array
+            uniqueItems: true
+      summary: Add test parameter files for a given tag.
       tags: [containers]
   /containers/{containerId}/updateTagPaths:
     put:
@@ -1692,8 +1735,6 @@ paths:
         type: string}
       - {description: Descriptor type, in: query, name: descriptorType, required: true,
         type: string}
-      - {description: Test parameter path, in: query, name: testParameterPath, required: true,
-        type: string}
       produces: [application/json]
       responses:
         200:
@@ -1986,10 +2027,34 @@ paths:
             type: array
       summary: Get the corresponding Dockstore.wdl file on Github.
       tags: [workflows]
-  /workflows/{workflowId}/testparameter:
+  /workflows/{workflowId}/testParameterFiles:
+    delete:
+      description: ''
+      operationId: deleteTestParameterFiles
+      parameters:
+      - {description: Workflow to modify., format: int64, in: path, name: workflowId,
+        required: true, type: integer}
+      - collectionFormat: multi
+        description: List of paths.
+        in: query
+        items: {type: string}
+        name: testParameterPaths
+        required: true
+        type: array
+      - {in: query, name: version, required: false, type: string}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema:
+            items: {$ref: '#/definitions/SourceFile'}
+            type: array
+            uniqueItems: true
+      summary: Delete test parameter files for a given version.
+      tags: [workflows]
     get:
       description: Does not need authentication
-      operationId: testParameterPath
+      operationId: getTestParameterFiles
       parameters:
       - {description: Workflow id, format: int64, in: path, name: workflowId, required: true,
         type: integer}
@@ -1998,8 +2063,39 @@ paths:
       responses:
         200:
           description: successful operation
-          schema: {$ref: '#/definitions/SourceFile'}
-      summary: Get the corresponding test.json file.
+          schema:
+            items: {$ref: '#/definitions/SourceFile'}
+            type: array
+      summary: Get the corresponding test parameter files.
+      tags: [workflows]
+    put:
+      description: ''
+      operationId: addTestParameterFiles
+      parameters:
+      - {description: Workflow to modify., format: int64, in: path, name: workflowId,
+        required: true, type: integer}
+      - collectionFormat: multi
+        description: List of paths.
+        in: query
+        items: {type: string}
+        name: testParameterPaths
+        required: true
+        type: array
+      - description: This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.
+        in: body
+        name: body
+        required: false
+        schema: {type: string}
+      - {in: query, name: version, required: false, type: string}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema:
+            items: {$ref: '#/definitions/SourceFile'}
+            type: array
+            uniqueItems: true
+      summary: Add test parameter files for a given version.
       tags: [workflows]
   /workflows/{workflowId}/tools/{workflowVersionId}:
     get:

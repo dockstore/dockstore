@@ -159,6 +159,8 @@ public abstract class AbstractEntryClient {
         out("");
         out("  label            :  updates labels for an individual " + getEntryType() + "");
         out("");
+        out("  test_parameter            :  updates test parameter files for a version of a " + getEntryType() + "");
+        out("");
         out("  " + CONVERT + "          :  utilities that allow you to convert file types");
         out("");
         out("  " + LAUNCH + "           :  launch " + getEntryType() + "s (locally)");
@@ -246,6 +248,9 @@ public abstract class AbstractEntryClient {
                 break;
             case "verify":
                 verify(args);
+                break;
+            case "test_parameter":
+                testParameter(args);
                 break;
             default:
                 return false;
@@ -337,6 +342,16 @@ public abstract class AbstractEntryClient {
      * @param isScript true if called by script, false otherwise
      */
     protected abstract void handleVerifyUnverify(String entry, String versionName, String verifySource, boolean unverifyRequest, boolean isScript);
+
+    /**
+     * Adds/removes supplied test parameter paths for a given entry version
+     * @param entry a unique identifier for an entry, called a path for workflows and tools
+     * @param versionName the name of the version
+     * @param adds set of test parameter paths to add (from git)
+     * @param removes set of test parameter paths to remove (from git)
+     * @param descriptorType CWL or WDL
+     */
+    protected abstract void handleTestParameter(String entry, String versionName, List<String> adds, List<String> removes, String descriptorType);
 
     /**
      * List all of the entries published and unpublished for this user
@@ -760,6 +775,35 @@ public abstract class AbstractEntryClient {
             }
         } else {
             out("This command is only accessible to Admins.");
+        }
+    }
+
+    private void testParameter(List<String> args) {
+        if (containsHelpRequest(args) || args.isEmpty()) {
+             testParameterHelp();
+        } else if (!args.isEmpty()) {
+            String entry = reqVal(args, "--entry");
+            String version = reqVal(args, "--version");
+            String descriptorType = null;
+            final List<String> adds = optVals(args, "--add");
+            final List<String> removes = optVals(args, "--remove");
+
+            if (getEntryType().toLowerCase().equals("tool")) {
+                descriptorType = reqVal(args, "--descriptor-type");
+                descriptorType = descriptorType.toLowerCase();
+                boolean validType = false;
+                for (Type type : Type.values()) {
+                    if (type.toString().equals(descriptorType) && !descriptorType.equals("none")) {
+                        validType = true;
+                        break;
+                    }
+                }
+                if (!validType) {
+                    errorMessage("Only \'CWL\' and \'WDL\' are valid descriptor types", CLIENT_ERROR);
+                }
+            }
+
+            handleTestParameter(entry, version, adds, removes, descriptorType);
         }
     }
 
@@ -1358,6 +1402,27 @@ public abstract class AbstractEntryClient {
         out("Optional Parameters:");
         out("  --add <label> (--add <label>)               Add given label(s)");
         out("  --remove <label> (--remove <label>)         Remove given label(s)");
+        printHelpFooter();
+    }
+
+    private void testParameterHelp() {
+        printHelpHeader();
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " test_parameter --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " test_parameter [parameters]");
+        out("");
+        out("Description:");
+        out("  Add or remove test parameter files from a given Dockstore " + getEntryType() + " version");
+        out("");
+        out("Required Parameters:");
+        out("  --entry <entry>                                                          Complete " + getEntryType() + " path in the Dockstore");
+        out("  --version <version>                                                      " + getEntryType() + " version name.");
+        if (getEntryType().toLowerCase().equals("tool")) {
+            out("  --descriptor-type <descriptor-type>                                      CWL/WDL");
+        }
+        out("");
+        out("Optional Parameters:");
+        out("  --add <test parameter file> (--add <test parameter file>)               Path in Git repository of test parameter file(s) to add.");
+        out("  --remove <test parameter file> (--remove <test parameter file>)         Path in Git repository of test parameter file(s) to remove.");
         printHelpFooter();
     }
 

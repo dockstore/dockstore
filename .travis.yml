@@ -37,7 +37,7 @@ script: ./scripts/run-tests.sh
 before_install:
 - export JAVA_HOME=/usr/lib/jvm/java-8-oracle/jre
 - mvn dependency:get -Dartifact=org.eluder.coveralls:coveralls-maven-plugin:4.2.0
-- openssl aes-256-cbc -K $encrypted_cd8767ea0b10_key -iv $encrypted_cd8767ea0b10_iv -in dockstore-integration-testing/src/test/resources/secrets.tar.enc -out dockstore-integration-testing/src/test/resources/secrets.tar -d
+- openssl aes-256-cbc -K $encrypted_46c132010f04_key -iv $encrypted_46c132010f04_iv -in dockstore-integration-testing/src/test/resources/secrets.tar.enc -out dockstore-integration-testing/src/test/resources/secrets.tar -d
 - tar xvf dockstore-integration-testing/src/test/resources/secrets.tar
 
 

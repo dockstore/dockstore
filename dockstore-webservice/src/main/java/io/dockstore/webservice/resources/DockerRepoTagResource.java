@@ -118,8 +118,6 @@ public class DockerRepoTagResource {
                         .append(existingTag.getCwlPath(), tag.getCwlPath())
                         .append(existingTag.getWdlPath(), tag.getWdlPath())
                         .append(existingTag.getDockerfilePath(), tag.getDockerfilePath())
-                        .append(existingTag.getCwlTestParameterFile(), tag.getCwlTestParameterFile())
-                        .append(existingTag.getWdlTestParameterFile(), tag.getWdlTestParameterFile())
                         .isEquals();
 
                 if (!dirtyBitCheck) {

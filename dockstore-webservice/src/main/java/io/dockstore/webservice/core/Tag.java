@@ -23,6 +23,7 @@ import io.swagger.annotations.ApiModelProperty;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
+
 import java.util.Objects;
 
 /**
@@ -64,16 +65,6 @@ public class Tag extends Version<Tag> {
     @ApiModelProperty("Path for the WDL document")
     private String wdlPath = "/Dockstore.wdl";
 
-    @Column(columnDefinition = "text")
-    @JsonProperty("cwl_test_parameter_file")
-    @ApiModelProperty("Path for example inputs json for CWL")
-    private String cwlTestParameterFile = "/test.cwl.json";
-
-    @Column(columnDefinition = "text")
-    @JsonProperty("wdl_test_parameter_file")
-    @ApiModelProperty("Path for example inputs json for WDL")
-    private String wdlTestParameterFile = "/test.wdl.json";
-
     public Tag() {
         super();
     }
@@ -90,9 +81,6 @@ public class Tag extends Version<Tag> {
         // Add for new descriptor types
         cwlPath = tag.cwlPath;
         wdlPath = tag.wdlPath;
-        wdlTestParameterFile = tag.wdlTestParameterFile;
-        cwlTestParameterFile = tag.cwlTestParameterFile;
-
         dockerfilePath = tag.dockerfilePath;
     }
 
@@ -122,12 +110,9 @@ public class Tag extends Version<Tag> {
         // Add here for new descriptor types
         cwlPath = tag.cwlPath;
         wdlPath = tag.wdlPath;
-        wdlTestParameterFile = tag.wdlTestParameterFile;
-        cwlTestParameterFile = tag.cwlTestParameterFile;
 
         dockerfilePath = tag.dockerfilePath;
     }
-
 
 
     @JsonProperty
@@ -183,22 +168,6 @@ public class Tag extends Version<Tag> {
 
     public void setAutomated(boolean automated) {
         this.automated = automated;
-    }
-
-    public String getWdlTestParameterFile() {
-        return wdlTestParameterFile;
-    }
-
-    public void setWdlTestParameterFile(String wdlTestParameterFile) {
-        this.wdlTestParameterFile = wdlTestParameterFile;
-    }
-
-    public String getCwlTestParameterFile() {
-        return cwlTestParameterFile;
-    }
-
-    public void setCwlTestParameterFile(String cwlTestParameterFile) {
-        this.cwlTestParameterFile = cwlTestParameterFile;
     }
 
     @Override

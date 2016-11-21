@@ -850,86 +850,43 @@ public class BasicET {
         }
 
         /**
-        * This tests basic concepts with test.wdl.json and test.cwl.json
+        * This tests basic concepts with tool test parameter files
         */
         @Test
         public void testTestJson(){
                 // Setup db
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
 
-                // Check that no WDL or CWL test json
-                final long count = testingPostgres.runSelectStatement("select count(*) from sourcefile where type='WDL_TEST_JSON' or type='CWL_TEST_JSON'", new ScalarHandler<>());
-                Assert.assertTrue("there should be no sourcefiles with a test json, there are " + count, count == 0);
-
-                // Refresh tool
+                // Refresh
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--entry", "quay.io/dockstoretestuser/test_input_json" });
 
-                // Should now have CWL and WDL test json
-                final long count2 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type='WDL_TEST_JSON' or type='CWL_TEST_JSON'", new ScalarHandler<>());
-                Assert.assertTrue("there should be three sourcefiles that are test json, there are " + count2, count2 == 3);
+                // Check that no WDL or CWL test files
+                final long count = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", new ScalarHandler<>());
+                Assert.assertTrue("there should be no sourcefiles that are test parameter files, there are " + count, count == 0);
 
-                // No tags should have dirty bit
-                final long count3 = testingPostgres.runSelectStatement("select count(*) from tag where dirtybit = true", new ScalarHandler<>());
-                Assert.assertTrue("there should be no tags with dirty bit, there are " + count3, count3 == 0);
+                // Update tag with test parameters
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "test_parameter", "--entry", "quay.io/dockstoretestuser/test_input_json",
+                        "--version", "master", "--descriptor-type", "cwl", "--add", "test.cwl.json", "--add", "test2.cwl.json", "--add", "fake.cwl.json", "--remove", "notreal.cwl.json", "--script" });
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", new ScalarHandler<>());
+                Assert.assertTrue("there should be two sourcefiles that are test parameter files, there are " + count2, count2 == 2);
 
-                // Alter WDL branch test json so that it is no longer valid
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "version_tag", "update", "--entry", "quay.io/dockstoretestuser/test_input_json",
-                        "--name", "wdltest", "--wdl-test-parameter-file", "/test.wdlll.json", "--script" });
+                // Update tag with test parameters
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "test_parameter", "--entry", "quay.io/dockstoretestuser/test_input_json",
+                        "--version", "master", "--descriptor-type", "cwl", "--add", "test.cwl.json", "--remove", "test2.cwl.json", "--script" });
+                final long count3 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", new ScalarHandler<>());
+                Assert.assertTrue("there should be one sourcefile that is a test parameter file, there are " + count3, count3 == 1);
 
-                // Should now be dirty bit
-                final long count4 = testingPostgres.runSelectStatement("select count(*) from tag where dirtybit = true", new ScalarHandler<>());
-                Assert.assertTrue("there should be one tag with dirty bit, there are " + count4, count4 == 1);
+                // Update tag wdltest with test parameters
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "test_parameter", "--entry", "quay.io/dockstoretestuser/test_input_json",
+                        "--version", "wdltest", "--descriptor-type", "wdl", "--add", "test.wdl.json", "--script" });
+                final long count4 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type='WDL_TEST_JSON'", new ScalarHandler<>());
+                Assert.assertTrue("there should be one sourcefile that is a wdl test parameter file, there are " + count4, count4 == 1);
 
-                // Should only be three correct sourcefiles
-                final long count5 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type='WDL_TEST_JSON' or type='CWL_TEST_JSON'", new ScalarHandler<>());
-                Assert.assertTrue("there should be two sourcefiles that are test json, there are " + count5, count5 == 2);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "test_parameter", "--entry", "quay.io/dockstoretestuser/test_input_json",
+                        "--version", "wdltest", "--descriptor-type", "cwl", "--add", "test.cwl.json", "--script" });
+                final long count5 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type='CWL_TEST_JSON'", new ScalarHandler<>());
+                Assert.assertTrue("there should be three sourcefiles that are test parameter files, there are " + count5, count5 == 2);
 
-                // Now update tool wdl path, should only update master and latest and not wdl branch
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry", "quay.io/dockstoretestuser/test_input_json",
-                        "--wdl-test-parameter-file", "/test.wdl2.json", "--script" });
-
-                // There should be two tags where default wdl path is /test.wdl2.json
-                final long count6 = testingPostgres.runSelectStatement("select count(*) from tag where wdltestparameterfile='/test.wdl2.json'", new ScalarHandler<>());
-                Assert.assertTrue("there should be two tags with the given wdl test json, there are " + count6, count6 == 2);
-
-                // There should be one tag where wdl path is still /test.wdlll.json (Because of the dirty bit)
-                final long count7 = testingPostgres.runSelectStatement("select count(*) from tag where wdltestparameterfile='/test.wdlll.json'", new ScalarHandler<>());
-                Assert.assertTrue("there should be one tag with the given wdl test json, there are " + count7, count7 == 1);
-        }
-
-        /**
-         * Tests manual publish and test parameter files
-         */
-        @Test
-        public void testManualPublishWithTestParameterFile(){
-                // Setup database
-                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-
-                // Manual publish
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.toString(),
-                        "--namespace", "dockstoretestuser", "--name", "dockerhubandgithub", "--git-url", "git@github.com:DockstoreTestUser/dockstore_parameter_test.git", "--git-reference",
-                        "master", "--script" });
-
-                // Add a tag for master
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "version_tag","add", "--entry", "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub",
-                        "--name", "master", "--image-id", "4728f8f5ce1709ec8b8a5282e274e63de3c67b95f03a519191e6ea675c5d34e8", "--git-reference", "master", "--script" });
-
-                // Add a tag for wdltest
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "version_tag","add", "--entry", "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub",
-                        "--name", "wdltest", "--image-id", "4728f8f5ce1709ec8b8a5282e274e63de3c67b95f03a519191e6ea675c5d34e8", "--git-reference", "wdltest", "--script" });
-
-                // There should be two parameter files
-                final long count = testingPostgres.runSelectStatement("select count(*) from sourcefile where type='WDL_TEST_JSON' or type='CWL_TEST_JSON'", new ScalarHandler<>());
-                Assert.assertTrue("there should be three sourcefiles that are test json, there are " + count, count == 3);
-
-                // Update tag to have incorrect parameter path
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "version_tag", "update", "--entry", "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub",
-                        "--name", "wdltest", "--wdl-test-parameter-file", "/incorrect.json", "--script" });
-
-                // There should now be only one parameter file
-                final long count2 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type='WDL_TEST_JSON' or type='CWL_TEST_JSON'", new ScalarHandler<>());
-                Assert.assertTrue("there should be two sourcefiles that are test json, there are " + count2, count2 == 2);
-                
         }
 
         /**

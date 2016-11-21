@@ -42,6 +42,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * This defines the set of operations that is needed to interact with a particular
@@ -398,21 +399,17 @@ public abstract class SourceCodeRepoInterface {
         if (existingDefaults.get(branch) == null) {
             version.setDirtyBit(false);
             calculatedPath = existingWorkflow.get().getDefaultWorkflowPath();
-            testJsonPath = existingWorkflow.get().getDefaultTestParameterFile();
         } else {
             // existing version
             if (existingDefaults.get(branch).isDirtyBit()) {
                 calculatedPath = existingDefaults.get(branch).getWorkflowPath();
-                testJsonPath = existingDefaults.get(branch).getTestParameterFile();
             } else {
                 calculatedPath = existingWorkflow.get().getDefaultWorkflowPath();
-                testJsonPath = existingWorkflow.get().getDefaultTestParameterFile();
             }
             version.setDirtyBit(existingDefaults.get(branch).isDirtyBit());
         }
 
         version.setWorkflowPath(calculatedPath);
-        version.setTestParameterFile(testJsonPath);
 
         return version;
     }
@@ -441,7 +438,7 @@ public abstract class SourceCodeRepoInterface {
      * @param version
      * @return workflow version
      */
-    public WorkflowVersion combineVersionAndSourcefile(SourceFile sourceFile, Workflow workflow, SourceFile.FileType identifiedType, WorkflowVersion version) {
+    public WorkflowVersion combineVersionAndSourcefile(SourceFile sourceFile, Workflow workflow, SourceFile.FileType identifiedType, WorkflowVersion version, Map<String, WorkflowVersion> existingDefaults) {
         Set<SourceFile> sourceFileSet = new HashSet<>();
 
         // try to use the FileImporter to re-use code for handling imports
@@ -450,6 +447,27 @@ public abstract class SourceCodeRepoInterface {
             final Map<String, SourceFile> stringSourceFileMap = importer
                     .resolveImports(sourceFile.getContent(), workflow, identifiedType, version);
             sourceFileSet.addAll(stringSourceFileMap.values());
+        }
+
+        // Look for test parameter files if existing workflow
+        if (existingDefaults.get(version.getName()) != null) {
+            WorkflowVersion existingVersion = existingDefaults.get(version.getName());
+            SourceFile.FileType workflowDescriptorType = (workflow.getDescriptorType().toLowerCase().equals("cwl")) ? SourceFile.FileType.CWL_TEST_JSON : SourceFile.FileType.WDL_TEST_JSON;
+
+            List<SourceFile> testParameterFiles = existingVersion.getSourceFiles().stream().filter((SourceFile u) -> u.getType() == workflowDescriptorType).collect(
+                    Collectors.toList());
+
+            FileImporter importer = new FileImporter(this);
+            for (SourceFile testJson : testParameterFiles) {
+                String fileResponse = importer.readGitRepositoryFile(workflowDescriptorType, existingVersion, testJson.getPath());
+                if (fileResponse != null) {
+                    SourceFile dockstoreFile = new SourceFile();
+                    dockstoreFile.setType(workflowDescriptorType);
+                    dockstoreFile.setContent(fileResponse);
+                    dockstoreFile.setPath(testJson.getPath());
+                    sourceFileSet.add(dockstoreFile);
+                }
+            }
         }
 
         // If source file is found and valid then add it

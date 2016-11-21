@@ -421,7 +421,7 @@ public class GeneralWorkflowET {
                 // Get workflows
                 usersApi.refreshWorkflows(userId);
 
-                Workflow githubWorkflow = workflowApi.manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/Dockstore.cwl", "test-update-workflow", "cwl", "test.json");
+                Workflow githubWorkflow = workflowApi.manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/Dockstore.cwl", "test-update-workflow", "cwl");
 
                 // Publish github workflow
                 Workflow workflow = workflowApi.refresh(githubWorkflow.getId());
@@ -719,17 +719,12 @@ public class GeneralWorkflowET {
         }
 
         /**
-         * This tests basic concepts with test.wdl.json and test.cwl.json
+         * This tests basic concepts with workflow test parameter files
          */
         @Test
         public void testTestParameterFile() {
                 // Setup DB
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-
-                // Common query
-                String sqlParameterFiles = "select count(*) from sourcefile,version_sourcefile,workflowversion,workflow_workflowversion,workflow "
-                        + "where (sourcefile.id=version_sourcefile.sourcefileid and version_sourcefile.versionid=workflowversion.id and workflowversion.id=workflow_workflowversion.workflowversionid "
-                        + "and workflow_workflowversion.workflowid=workflow.id and workflow.path='DockstoreTestUser2/parameter_test_workflow') and (sourcefile.type='WDL_TEST_JSON' or sourcefile.type='CWL_TEST_JSON')";
 
                 // Refresh all
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
@@ -738,86 +733,44 @@ public class GeneralWorkflowET {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry", "DockstoreTestUser2/parameter_test_workflow", "--script" });
 
                 // There should be no sourcefiles
-                final long count = testingPostgres.runSelectStatement(sqlParameterFiles, new ScalarHandler<>());
+                final long count = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", new ScalarHandler<>());
                 Assert.assertTrue("there should be no source files that are test parameter files, there are " + count, count == 0);
 
-                // Change default path for cwl, should have one valid
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry", "DockstoreTestUser2/parameter_test_workflow", "--test-parameter-file",
-                        "/test.cwl.json", "--script" });
+                // Update version master with test parameters
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "test_parameter", "--entry", "DockstoreTestUser2/parameter_test_workflow",
+                        "--version", "master", "--add", "test.cwl.json", "--add", "test2.cwl.json", "--add", "fake.cwl.json", "--remove", "notreal.cwl.json", "--script" });
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", new ScalarHandler<>());
+                Assert.assertTrue("there should be two sourcefiles that are test parameter files, there are " + count2, count2 == 2);
 
-                // There should be two sourcefiles which are test parameter files
-                final long count2 = testingPostgres.runSelectStatement(sqlParameterFiles, new ScalarHandler<>());
-                Assert.assertTrue("there should be 1 source files that is a test parameter files, there are " + count2, count2 == 1);
+                // Update version with test parameters
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "test_parameter", "--entry", "DockstoreTestUser2/parameter_test_workflow",
+                        "--version", "master", "--add", "test.cwl.json", "--remove", "test2.cwl.json", "--script" });
+                final long count3 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", new ScalarHandler<>());
+                Assert.assertTrue("there should be one sourcefile that is a test parameter file, there are " + count3, count3 == 1);
 
-                // Now restub
+                // Update other version with test parameters
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "test_parameter", "--entry", "DockstoreTestUser2/parameter_test_workflow",
+                        "--version", "wdltest", "--add", "test.wdl.json", "--script" });
+                final long count4 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type='CWL_TEST_JSON'", new ScalarHandler<>());
+                Assert.assertTrue("there should be two sourcefiles that are cwl test parameter files, there are " + count4, count4 == 2);
+
+                // Restub
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "restub", "--entry", "DockstoreTestUser2/parameter_test_workflow", "--script" });
 
-                // Change to wdl
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry", "DockstoreTestUser2/parameter_test_workflow",
-                        "--descriptor-type", "wdl", "--workflow-path", "/Dockstore.wdl", "--script"});
+                // Change to WDL
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry", "DockstoreTestUser2/parameter_test_workflow", "--descriptor-type", "wdl", "--workflow-path", "Dockstore.wdl", "--script"});
 
-                // There should be no sourcefiles
-                final long count3 = testingPostgres.runSelectStatement(sqlParameterFiles, new ScalarHandler<>());
-                Assert.assertTrue("there should be no source files that are test parameter files, there are " + count3, count3 == 0);
+                // Should be no sourcefiles
+                final long count5 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", new ScalarHandler<>());
+                Assert.assertTrue("there should be no source files that are test parameter files, there are " + count5, count5 == 0);
 
-                // Refresh
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry", "DockstoreTestUser2/parameter_test_workflow", "--script" });
-
-                // Update master branch to have new cwl default
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "version_tag", "--entry", "DockstoreTestUser2/parameter_test_workflow",
-                        "--name", "master", "--test-parameter-file", "/test.cwlnew.json", "--script" });
-
-                // update workflow default wdl
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry", "DockstoreTestUser2/parameter_test_workflow",
-                        "--test-parameter-file", "/test.wdl.json", "--script"});
-
-                // The dirty version should not change
-                final long count4 = testingPostgres.runSelectStatement("select count(*) from workflowversion where dirtybit='t'", new ScalarHandler<>());
-                Assert.assertTrue("there should be one version with dirtybit, there are " + count4, count4 == 1);
-
-                // Now the tags should have the correct parameter file paths
-                final long count5 = testingPostgres.runSelectStatement("select count(*) from workflowversion where testparameterfile='/test.cwlnew.json'", new ScalarHandler<>());
-                Assert.assertTrue("there should be one source file that matches the given path, there are " + count5, count5 == 1);
-
-                final long count6 = testingPostgres.runSelectStatement("select count(*) from workflowversion where testparameterfile='/test.wdl.json'", new ScalarHandler<>());
-                Assert.assertTrue("there should be one source file that matches the given path, there are " + count6, count6 == 1);
-
-                // Now there should be a wdl parameter file
-                final long count7 = testingPostgres.runSelectStatement(sqlParameterFiles, new ScalarHandler<>());
-                Assert.assertTrue("there should be one source file that is a test parameter files, there are " + count7, count7 == 1);
-
+                // Update version wdltest with test parameters
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "test_parameter", "--entry", "DockstoreTestUser2/parameter_test_workflow",
+                        "--version", "wdltest", "--add", "test.wdl.json", "--script" });
+                final long count6 = testingPostgres.runSelectStatement("select count(*) from sourcefile where type='WDL_TEST_JSON'", new ScalarHandler<>());
+                Assert.assertTrue("there should be one sourcefile that is a wdl test parameter file, there are " + count6, count6 == 1);
         }
 
-        /**
-        * Tests manual publish and test parameter files
-        */
-        @Test
-        public void testManualPublishTestParameterFile() {
-                // Setup DB
-                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-
-                // Common sql call
-                String sqlParameterFiles = "select count(*) from sourcefile,version_sourcefile,workflowversion,workflow_workflowversion,workflow "
-                        + "where (sourcefile.id=version_sourcefile.sourcefileid and version_sourcefile.versionid=workflowversion.id and workflowversion.id=workflow_workflowversion.workflowversionid "
-                        + "and workflow_workflowversion.workflowid=workflow.id and workflow.path='DockstoreTestUser2/parameter_test_workflow/testname') and (sourcefile.type='WDL_TEST_JSON' or sourcefile.type='CWL_TEST_JSON')";
-
-                // Manual publish
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish", "--repository", "parameter_test_workflow", "--organization", "DockstoreTestUser2",
-                        "--git-version-control", "github", "--workflow-name", "testname", "--workflow-path", "/Dockstore.wdl", "--descriptor-type", "wdl", "--script" });
-
-                // There should be no parameter files
-                final long count = testingPostgres.runSelectStatement(sqlParameterFiles, new ScalarHandler<>());
-                Assert.assertTrue("there should be no source files that are test parameter files, there are " + count, count == 0);
-
-                // Update workflow parameter file path
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry", "DockstoreTestUser2/parameter_test_workflow/testname", "--test-parameter-file",
-                        "/test.wdl.json", "--script" });
-
-                // There should be one parameter file
-                final long count2 = testingPostgres.runSelectStatement(sqlParameterFiles, new ScalarHandler<>());
-                Assert.assertTrue("there should be one source file that is a test parameter files, there are " + count2, count2 == 1);
-
-        }
 
         /**
         * This tests that you can verify and unverify a workflow

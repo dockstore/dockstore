@@ -325,4 +325,12 @@
         </addColumn>
     </changeSet>
 
+    <changeSet id="multitestjson" author="agduncan" context="adds_multi_testjson">
+        <dropColumn tableName="tag" columnName="cwltestparameterfile"></dropColumn>
+        <dropColumn tableName="tag" columnName="wdltestparameterfile"></dropColumn>
+        <dropColumn tableName="tool" columnName="defaultcwltestparameterfile"></dropColumn>
+        <dropColumn tableName="tool" columnName="defaultwdltestparameterfile"></dropColumn>
+        <dropColumn tableName="workflowversion" columnName="testparameterfile"></dropColumn>
+        <dropColumn tableName="workflow" columnName="defaulttestparameterfile"></dropColumn>
+    </changeSet>
 </databaseChangeLog>
