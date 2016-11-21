@@ -791,7 +791,14 @@ public abstract class AbstractEntryClient {
             if (getEntryType().toLowerCase().equals("tool")) {
                 descriptorType = reqVal(args, "--descriptor-type");
                 descriptorType = descriptorType.toLowerCase();
-                if (!descriptorType.equals(CWL_STRING) && !descriptorType.equals(WDL_STRING)) {
+                boolean validType = false;
+                for (Type type : Type.values()) {
+                    if (type.toString().equals(descriptorType) && !descriptorType.equals("none")) {
+                        validType = true;
+                        break;
+                    }
+                }
+                if (!validType) {
                     errorMessage("Only \'CWL\' and \'WDL\' are valid descriptor types", CLIENT_ERROR);
                 }
             }
