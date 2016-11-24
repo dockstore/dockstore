@@ -199,8 +199,8 @@ public class SystemClientIT {
         tag.setReference("refs/heads/master");
         tag.setValid(true);
         tag.setImageId("123456");
-        tag.setVerified(true);
-        tag.setVerifiedSource("funky source");
+        tag.setVerified(false);
+        tag.setVerifiedSource(null);
         // construct source files
         SourceFile fileCWL = new SourceFile();
         fileCWL.setContent("cwlstuff");
@@ -361,11 +361,13 @@ public class SystemClientIT {
     @Test
     public void testVerifiedToolsViaGA4GH() throws IOException, TimeoutException, ApiException {
         ApiClient client = getAdminWebClient();
-        GAGHApi toolApi = new GAGHApi(client);
         ContainersApi containersApi = new ContainersApi(client);
         // register one more to give us something to look at
         DockstoreTool c = getContainer();
         c.setIsPublished(true);
+        final Tag tag = c.getTags().get(0);
+        tag.setVerified(true);
+        tag.setVerifiedSource("funky source");
         containersApi.registerManual(c);
 
         // hit up the plain text versions
