@@ -45,6 +45,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
 
@@ -450,15 +451,12 @@ public class ToolClient extends AbstractEntryClient {
         try {
             DockstoreTool tool = containersApi.getContainerByToolPath(entry);
             List<Tag> tags = tool.getTags();
-            Tag tagToUpdate = tags
-                    .stream()
-                    .filter((Tag u) -> u.getName().equals(versionName))
-                    .findFirst()
-                    .get();
+            final Optional<Tag> first = tags.stream().filter((Tag u) -> u.getName().equals(versionName)).findFirst();
 
-            if (tagToUpdate == null) {
+            if (!first.isPresent()) {
                 errorMessage(versionName + " is not a valid tag for " + entry, Client.CLIENT_ERROR);
             }
+            Tag tagToUpdate = first.get();
 
             VerifyRequest verifyRequest = new VerifyRequest();
             if (unverifyRequest) {
@@ -484,8 +482,7 @@ public class ToolClient extends AbstractEntryClient {
             }
 
             if (toOverwrite) {
-                List<Tag> result = containerTagsApi.verifyToolTag(tool.getId(), tagToUpdate.getId(), verifyRequest);
-
+                containerTagsApi.verifyToolTag(tool.getId(), tagToUpdate.getId(), verifyRequest);
                 if (unverifyRequest) {
                     out("Tag " + versionName + " has been unverified.");
                 } else {

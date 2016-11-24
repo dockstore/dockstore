@@ -39,6 +39,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
 
@@ -269,15 +270,15 @@ public class WorkflowClient extends AbstractEntryClient {
         try {
             Workflow workflow = workflowsApi.getWorkflowByPath(entry);
             List<WorkflowVersion> versions = workflow.getWorkflowVersions();
-            WorkflowVersion versionToUpdate = versions
-                    .stream()
-                    .filter((WorkflowVersion u) -> u.getName().equals(versionName))
-                    .findFirst()
-                    .get();
 
-            if (versionToUpdate == null) {
+            final Optional<WorkflowVersion> first = versions.stream().filter((WorkflowVersion u) -> u.getName().equals(versionName))
+                    .findFirst();
+
+            WorkflowVersion versionToUpdate;
+            if (!first.isPresent()) {
                 errorMessage(versionName + " is not a valid version for " + entry, Client.CLIENT_ERROR);
             }
+            versionToUpdate = first.get();
 
             VerifyRequest verifyRequest = new VerifyRequest();
             if (unverifyRequest) {

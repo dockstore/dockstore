@@ -159,7 +159,7 @@ public abstract class AbstractEntryClient {
         out("");
         out("  label            :  updates labels for an individual " + getEntryType() + "");
         out("");
-        out("  test_parameter            :  updates test parameter files for a version of a " + getEntryType() + "");
+        out("  test_parameter   :  updates test parameter files for a version of a " + getEntryType() + "");
         out("");
         out("  " + CONVERT + "          :  utilities that allow you to convert file types");
         out("");
