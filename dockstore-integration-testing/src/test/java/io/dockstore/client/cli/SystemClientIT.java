@@ -199,8 +199,8 @@ public class SystemClientIT {
         tag.setReference("refs/heads/master");
         tag.setValid(true);
         tag.setImageId("123456");
-        tag.setVerified(false);
-        tag.setVerifiedSource(null);
+        tag.setVerified(true);
+        tag.setVerifiedSource("funky source");
         // construct source files
         SourceFile fileCWL = new SourceFile();
         fileCWL.setContent("cwlstuff");
@@ -356,6 +356,42 @@ public class SystemClientIT {
         url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/"+encodedID+"/versions/master/cwl-plain/descriptor/"+encodedPath);
         strings = Resources.readLines(url, Charset.forName("UTF-8"));
         assertTrue(strings.size() == 1 && strings.get(0).equals("cwlstuff"));
+    }
+
+    @Test
+    public void testVerifiedToolsViaGA4GH() throws IOException, TimeoutException, ApiException {
+        ApiClient client = getAdminWebClient();
+        GAGHApi toolApi = new GAGHApi(client);
+        ContainersApi containersApi = new ContainersApi(client);
+        // register one more to give us something to look at
+        DockstoreTool c = getContainer();
+        c.setIsPublished(true);
+        containersApi.registerManual(c);
+
+        // hit up the plain text versions
+        final String basePath = client.getBasePath();
+        String encodedID = "registry.hub.docker.com%2Fseqware%2Fseqware%2Ftest5";
+        URL url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/"+encodedID);
+        List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
+        // test root version
+        assertTrue(strings.size() == 1 && strings.get(0).contains("\"verified\":true,\"verified-source\":\"[\\\"funky source\\\"]\""));
+
+        // TODO: really, we should be using deserialized versions, but this is not currently working
+//        ObjectMapper mapper = new ObjectMapper();
+//        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+//        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+//        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+//        mapper.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
+//        mapper.enable(DeserializationFeature.READ_ENUMS_USING_TO_STRING);
+//        mapper.registerModule(new JodaModule());
+//        final DockstoreTool dockstoreTool = mapper.readValue(strings.get(0), DockstoreTool.class);
+
+        // hit up a specific version
+        url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/"+encodedID+"/versions/master");
+        strings = Resources.readLines(url, Charset.forName("UTF-8"));
+        // test nested version
+        assertTrue(strings.size() == 1 && strings.get(0).contains("\"verified\":true,\"verified-source\":\"funky source\""));
+
     }
 
     // Can't test publish repos that don't exist
