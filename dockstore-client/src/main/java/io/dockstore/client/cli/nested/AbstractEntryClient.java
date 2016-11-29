@@ -159,7 +159,7 @@ public abstract class AbstractEntryClient {
         out("");
         out("  label            :  updates labels for an individual " + getEntryType() + "");
         out("");
-        out("  test_parameter            :  updates test parameter files for a version of a " + getEntryType() + "");
+        out("  test_parameter   :  updates test parameter files for a version of a " + getEntryType() + "");
         out("");
         out("  " + CONVERT + "          :  utilities that allow you to convert file types");
         out("");
@@ -1523,6 +1523,7 @@ public abstract class AbstractEntryClient {
         printHelpHeader();
         out("Usage: dockstore " + getEntryType().toLowerCase() + " " + CONVERT + " --help");
         out("       dockstore " + getEntryType().toLowerCase() + " " + CONVERT + " cwl2json [parameters]");
+        out("       dockstore " + getEntryType().toLowerCase() + " " + CONVERT + " cwl2yaml [parameters]");
         out("       dockstore " + getEntryType().toLowerCase() + " " + CONVERT + " wdl2json [parameters]");
         out("       dockstore " + getEntryType().toLowerCase() + " " + CONVERT + " entry2json [parameters]");
         out("       dockstore " + getEntryType().toLowerCase() + " " + CONVERT + " entry2tsv [parameters]");

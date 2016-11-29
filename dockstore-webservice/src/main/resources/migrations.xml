@@ -273,10 +273,16 @@
             <column name="dirtybit" type="boolean"></column>
         </addColumn>
         <addDefaultValue tableName="tag" columnName="dirtybit" defaultValueBoolean="false"/>
+        <sql dbms="postgresql">
+            update tag set dirtybit=false;
+        </sql>
         <addColumn tableName="workflowversion">
             <column name="dirtybit" type="boolean"></column>
         </addColumn>
         <addDefaultValue tableName="workflowversion" columnName="dirtybit" defaultValueBoolean="false"/>
+        <sql dbms="postgresql">
+            update workflowversion set dirtybit=false;
+        </sql>
     </changeSet>
 
     <changeSet id="testjson" author="agduncan" context="adds_testjson">
@@ -312,6 +318,9 @@
             <column name="verified" type="boolean"></column>
         </addColumn>
         <addDefaultValue tableName="tag" columnName="verified" defaultValueBoolean="false"/>
+        <sql dbms="postgresql">
+            update tag set verified=false;
+        </sql>
         <addColumn tableName="tag">
             <column name="verifiedsource" type="varchar(255)"></column>
         </addColumn>
@@ -320,6 +329,9 @@
             <column name="verified" type="boolean"></column>
         </addColumn>
         <addDefaultValue tableName="workflowversion" columnName="verified" defaultValueBoolean="false"/>
+        <sql dbms="postgresql">
+            update workflowversion set verified=false;
+        </sql>
         <addColumn tableName="workflowversion">
             <column name="verifiedsource" type="varchar(255)"></column>
         </addColumn>
