@@ -397,16 +397,11 @@ public class DockerRepoResource {
         if (request.getPublish()) {
             boolean validTag = false;
 
-            // Why are manual images always valid?
-            if (c.getMode() == ToolMode.MANUAL_IMAGE_PATH) {
-                validTag = true;
-            } else {
-                Set<Tag> tags = c.getTags();
-                for (Tag tag : tags) {
-                    if (tag.isValid()) {
-                        validTag = true;
-                        break;
-                    }
+            Set<Tag> tags = c.getTags();
+            for (Tag tag : tags) {
+                if (tag.isValid()) {
+                    validTag = true;
+                    break;
                 }
             }
 

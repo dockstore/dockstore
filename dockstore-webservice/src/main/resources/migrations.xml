@@ -345,4 +345,18 @@
         <dropColumn tableName="workflowversion" columnName="testparameterfile"></dropColumn>
         <dropColumn tableName="workflow" columnName="defaulttestparameterfile"></dropColumn>
     </changeSet>
+
+    <changeSet id="privatetools" author="agduncan" context="adds_private_tools">
+        <addColumn tableName="tool">
+            <column name="isprivate" type="boolean"></column>
+        </addColumn>
+        <addDefaultValue tableName="tool" columnName="isprivate" defaultValueBoolean="false"/>
+        <sql dbms="postgresql">
+            update tool set isprivate=false;
+        </sql>
+        <addColumn tableName="tool">
+            <column name="toolmaintainer" type="varchar(255)"></column>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

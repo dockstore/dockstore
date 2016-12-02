@@ -35,6 +35,7 @@ import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.validator.routines.EmailValidator;
 import org.apache.http.HttpStatus;
 
 import java.io.File;
@@ -321,7 +322,24 @@ public class ToolClient extends AbstractEntryClient {
             final String wdlPath = optVal(args, "--wdl-path", "/Dockstore.wdl");
             final String gitReference = reqVal(args, "--git-reference");
             final String toolname = optVal(args, "--toolname", null);
+            final String toolMaintainerEmail = optVal(args, "--tool-maintainer-email", null);
             final String registry = optVal(args, "--registry", Registry.DOCKER_HUB.toString());
+            boolean isPrivate = args.contains("--private");
+
+            // Check that tool maintainer email is given if the tool is private
+            if (isPrivate) {
+                if (toolMaintainerEmail == null) {
+                    errorMessage("For a private tool, the tool maintainer email is required.", Client.CLIENT_ERROR);
+                }
+            }
+
+            // Check validity of email
+            if (toolMaintainerEmail != null) {
+                EmailValidator emailValidator = EmailValidator.getInstance();
+                if (!emailValidator.isValid(toolMaintainerEmail)) {
+                    errorMessage("The email address that you entered is invalid.", Client.CLIENT_ERROR);
+                }
+            }
 
             DockstoreTool tool = new DockstoreTool();
             tool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
@@ -335,6 +353,8 @@ public class ToolClient extends AbstractEntryClient {
             tool.setGitUrl(gitURL);
             tool.setToolname(toolname);
             tool.setPath(Joiner.on("/").skipNulls().join(registry, namespace, name));
+            tool.setIsPrivate(isPrivate);
+            tool.setToolMaintainerEmail(toolMaintainerEmail);
 
             // Check that tool has at least one default path
             if (Strings.isNullOrEmpty(cwlPath) && Strings.isNullOrEmpty(wdlPath)) {
@@ -952,6 +972,8 @@ public class ToolClient extends AbstractEntryClient {
         out("  --toolname <toolname>                                    Name of the tool, can be omitted, defaults to null");
         out("  --registry <registry>                                    Docker registry, can be omitted, defaults to registry.hub.docker.com");
         out("  --version-name <version>                                 Version tag name for Dockerhub containers only, defaults to latest");
+        out("  --private <true/false>                                   Is the tool private or not, defaults to false");
+        out("  --tool-maintainer-email <tool maintainer email>          The contact email for the tool maintainer. Required for private repositories.");
         printHelpFooter();
     }
 

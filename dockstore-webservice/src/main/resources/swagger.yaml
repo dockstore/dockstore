@@ -31,6 +31,8 @@ definitions:
           required GA4GH', type: string}
       id: {description: Implementation specific ID for the container in this web service,
         format: int64, type: integer}
+      is_private: {default: false, description: Is the docker image private or not.,
+        type: boolean}
       is_published: {default: false, description: Implementation specific visibility in this web service,
         type: boolean}
       labels:
@@ -54,6 +56,7 @@ definitions:
           GA4GH', type: string}
       path: {description: 'This is a generated full docker path including registry
           and namespace, used for docker pull commands', readOnly: true, type: string}
+      private: {default: false, type: boolean}
       registry:
         description: 'This is a specific docker provider like quay.io or dockerhub
           or n/a?, required: GA4GH'
@@ -64,6 +67,8 @@ definitions:
         items: {$ref: '#/definitions/Tag'}
         type: array
         uniqueItems: true
+      tool_maintainer_email: {description: The email address of the tool maintainer. Required for private repositories,
+        type: string}
       tool_path: {readOnly: true, type: string}
       toolname: {description: 'This is the tool name of the container, when not-present
           this will function just like 0.1 dockstorewhen present, this can be used
@@ -79,7 +84,7 @@ definitions:
         type: array
         uniqueItems: true
     required: [default_cwl_path, default_dockerfile_path, default_wdl_path, gitUrl,
-      mode, name, namespace, registry, toolname]
+      is_private, mode, name, namespace, registry, toolname]
     type: object
   GitHubComAuthenticationResource:
     properties:

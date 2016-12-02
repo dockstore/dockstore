@@ -97,8 +97,6 @@ public final class Helper {
                 SourceFile file = fileDAO.findById(id);
                 tag.addSourceFile(file);
 
-                // oldFiles.add(newFile);
-                // }
                 if (file.getType() == FileType.DOCKERFILE) {
                     hasDockerfile = true;
                     LOG.info(githubToken.getUsername() + " : HAS Dockerfile");
@@ -114,8 +112,12 @@ public final class Helper {
                 }
             }
 
-            // Add for new descriptor types
-            tag.setValid((hasCwl || hasWdl) && hasDockerfile);
+            // Private tools don't require a dockerfile
+            if (tool.isPrivate()) {
+                tag.setValid((hasCwl || hasWdl));
+            } else {
+                tag.setValid((hasCwl || hasWdl) && hasDockerfile);
+            }
         }
     }
 
