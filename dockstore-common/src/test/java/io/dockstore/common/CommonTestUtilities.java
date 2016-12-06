@@ -65,27 +65,27 @@ public class CommonTestUtilities {
 
             //TODO: this stuff should probably use JPA statements
             runInsertStatement(
-                    "insert into tool(id, name, namespace, registry, path, ispublished, toolname) VALUES (1, 'test1', 'test_org', 'QUAY_IO', 'quay.io/test_org/test1', false,'');",
+                    "insert into tool(id, name, namespace, registry, path, ispublished, toolname, privateaccess) VALUES (1, 'test1', 'test_org', 'QUAY_IO', 'quay.io/test_org/test1', false,'', false);",
                     new KeyedHandler<>("id"));
             runInsertStatement("insert into user_entry(userid, entryid) VALUES (1, 1);", new KeyedHandler<>("entryid"));
             runInsertStatement(
-                    "insert into tool(id, name, namespace, registry, path, ispublished,toolname) VALUES (2, 'test2', 'test_org', 'QUAY_IO', 'quay.io/test_org/test2', false,'');",
+                    "insert into tool(id, name, namespace, registry, path, ispublished,toolname, privateaccess) VALUES (2, 'test2', 'test_org', 'QUAY_IO', 'quay.io/test_org/test2', false,'', false);",
                     new KeyedHandler<>("id"));
             runInsertStatement("insert into user_entry(userid, entryid) VALUES (2, 2);", new KeyedHandler<>("entryid"));
             runInsertStatement(
-                    "insert into tool(id, name, namespace, registry, path, ispublished,toolname) VALUES (3, 'test3', 'test_org', 'QUAY_IO', 'quay.io/test_org/test3', false,'');",
+                    "insert into tool(id, name, namespace, registry, path, ispublished,toolname, privateaccess) VALUES (3, 'test3', 'test_org', 'QUAY_IO', 'quay.io/test_org/test3', false,'', false);",
                     new KeyedHandler<>("id"));
             runInsertStatement("insert into user_entry(userid, entryid) VALUES (2, 3);", new KeyedHandler<>("entryid"));
             runInsertStatement(
-                    "insert into tool(id, name, namespace, registry, path, ispublished, giturl,toolname) VALUES (4, 'test4', 'test_org', 'QUAY_IO', 'quay.io/test_org/test4', false, 'git@github.com:test/test4.git','');",
+                    "insert into tool(id, name, namespace, registry, path, ispublished, giturl,toolname, privateaccess) VALUES (4, 'test4', 'test_org', 'QUAY_IO', 'quay.io/test_org/test4', false, 'git@github.com:test/test4.git','', false);",
                     new KeyedHandler<>("id"));
             runInsertStatement("insert into user_entry(userid, entryid) VALUES (2, 4);", new KeyedHandler<>("entryid"));
             runInsertStatement(
-                    "insert into tool(id, name, namespace, registry, path, ispublished, giturl,toolname) VALUES (5, 'test5', 'test_org', 'QUAY_IO', 'quay.io/test_org/test5', false, 'git@github.com:test/test5.git','');",
+                    "insert into tool(id, name, namespace, registry, path, ispublished, giturl,toolname, privateaccess) VALUES (5, 'test5', 'test_org', 'QUAY_IO', 'quay.io/test_org/test5', false, 'git@github.com:test/test5.git','', false);",
                     new KeyedHandler<>("id"));
             runInsertStatement("insert into user_entry(userid, entryid) VALUES (2, 5);", new KeyedHandler<>("entryid"));
             runInsertStatement(
-                    "insert into tool(id, name, namespace, registry, path, ispublished, giturl,toolname) VALUES (6, 'test6', 'test_org', 'QUAY_IO', 'quay.io/test_org/test6', true, 'git@github.com:test/test6.git','');",
+                    "insert into tool(id, name, namespace, registry, path, ispublished, giturl,toolname, privateaccess) VALUES (6, 'test6', 'test_org', 'QUAY_IO', 'quay.io/test_org/test6', true, 'git@github.com:test/test6.git','', false);",
                     new KeyedHandler<>("id"));
 
             runInsertStatement("insert into user_entry(userid, entryid) VALUES (1, 6);", new KeyedHandler<>("entryid"));
@@ -120,7 +120,7 @@ public class CommonTestUtilities {
                     + "', 'dockstore', 2, 'admin@admin.com');", new KeyedHandler<>("id"));
 
             runInsertStatement(
-                    "insert into tool(id, name, namespace, registry, path, ispublished, toolname) VALUES (12, 'test1', 'test_org', 'QUAY_IO', 'quay.io/test_org/test1', false,'');",
+                    "insert into tool(id, name, namespace, registry, path, ispublished, toolname, privateaccess) VALUES (12, 'test1', 'test_org', 'QUAY_IO', 'quay.io/test_org/test1', false,'', false);",
                     new KeyedHandler<>("id"));
             runInsertStatement("insert into user_entry(userid, entryid) VALUES (2, 12);", new KeyedHandler<>("entryid"));
 
