@@ -355,7 +355,7 @@
             update tool set isprivate=false;
         </sql>
         <addColumn tableName="tool">
-            <column name="toolmaintainer" type="varchar(255)"></column>
+            <column name="toolmaintaineremail" type="varchar(255)"></column>
         </addColumn>
     </changeSet>
 

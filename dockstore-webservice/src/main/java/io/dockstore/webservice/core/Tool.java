@@ -97,9 +97,9 @@ public class Tool extends Entry<Tool, Tag> {
     private String toolMaintainerEmail = "";
 
     @Column
-    @JsonProperty("is_private")
+    @JsonProperty("private_access")
     @ApiModelProperty(value = "Is the docker image private or not.", required = true)
-    private boolean isPrivate;
+    private boolean privateAccess = false;
 
     @Column(nullable = false)
     @ApiModelProperty(value = "This is the tool name of the container, when not-present this will function just like 0.1 dockstore"
@@ -155,7 +155,7 @@ public class Tool extends Entry<Tool, Tag> {
         this.setDescription(tool.getDescription());
         lastBuild = tool.getLastBuild();
         this.toolMaintainerEmail = tool.getToolMaintainerEmail();
-        this.isPrivate = tool.isPrivate();
+        this.privateAccess = tool.isPrivateAccess();
     }
 
 
@@ -300,12 +300,12 @@ public class Tool extends Entry<Tool, Tag> {
         this.toolMaintainerEmail = toolMaintainerEmail;
     }
 
-    public boolean isPrivate() {
-        return isPrivate;
+    public boolean isPrivateAccess() {
+        return privateAccess;
     }
 
-    public void setPrivate(boolean aPrivate) {
-        isPrivate = aPrivate;
+    public void setPrivateAccess(boolean privateAccess) {
+        this.privateAccess = privateAccess;
     }
 
     /**
@@ -321,5 +321,10 @@ public class Tool extends Entry<Tool, Tag> {
 
         toolname = tool.getToolname();
         this.setGitUrl(tool.getGitUrl());
+
+        if (mode == ToolMode.MANUAL_IMAGE_PATH) {
+            toolMaintainerEmail = tool.getToolMaintainerEmail();
+            privateAccess = tool.isPrivateAccess();
+        }
     }
 }

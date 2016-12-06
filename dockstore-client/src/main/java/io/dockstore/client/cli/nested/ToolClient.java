@@ -326,15 +326,15 @@ public class ToolClient extends AbstractEntryClient {
             final String registry = optVal(args, "--registry", Registry.DOCKER_HUB.toString());
             boolean isPrivate = args.contains("--private");
 
-            // Check that tool maintainer email is given if the tool is private
+            // Check that tool maintainer email is given if the tool is private with no email setup
             if (isPrivate) {
-                if (toolMaintainerEmail == null) {
+                if (Strings.isNullOrEmpty(toolMaintainerEmail)) {
                     errorMessage("For a private tool, the tool maintainer email is required.", Client.CLIENT_ERROR);
                 }
             }
 
             // Check validity of email
-            if (toolMaintainerEmail != null) {
+            if (!Strings.isNullOrEmpty(toolMaintainerEmail)) {
                 EmailValidator emailValidator = EmailValidator.getInstance();
                 if (!emailValidator.isValid(toolMaintainerEmail)) {
                     errorMessage("The email address that you entered is invalid.", Client.CLIENT_ERROR);
@@ -353,7 +353,7 @@ public class ToolClient extends AbstractEntryClient {
             tool.setGitUrl(gitURL);
             tool.setToolname(toolname);
             tool.setPath(Joiner.on("/").skipNulls().join(registry, namespace, name));
-            tool.setIsPrivate(isPrivate);
+            tool.setPrivateAccess(isPrivate);
             tool.setToolMaintainerEmail(toolMaintainerEmail);
 
             // Check that tool has at least one default path
@@ -730,11 +730,58 @@ public class ToolClient extends AbstractEntryClient {
                 final String gitUrl = optVal(args, "--git-url", tool.getGitUrl());
                 final String defaultTag = optVal(args, "--default-version", tool.getDefaultVersion());
 
+                // Check that user did not use manual only attributes for an auto tool
+                if (tool.getMode() != DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH && (args.contains("--access") || args.contains("--tool-maintainer-email"))) {
+                    out("--access and --tool-maintainer-email are only available for use with manually registered tools.");
+                }
+
+                final String accessPrivate = "private";
+                final String accessPublic = "public";
+
+                final String toolMaintainerEmail = optVal(args, "--tool-maintainer-email", tool.getToolMaintainerEmail());
+                final String access = optVal(args, "--access", tool.getPrivateAccess() ? accessPrivate : accessPublic);
+
+                if (tool.getMode() == DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH && !toolMaintainerEmail.equals(tool.getToolMaintainerEmail()) && !Strings.isNullOrEmpty(toolMaintainerEmail)) {
+                    // Check that the tool maintainer email is valid
+                    EmailValidator emailValidator = EmailValidator.getInstance();
+                    if (!emailValidator.isValid(toolMaintainerEmail)) {
+                        errorMessage("The email address that you entered is invalid.", Client.CLIENT_ERROR);
+                    }
+                }
+
                 tool.setDefaultCwlPath(cwlPath);
                 tool.setDefaultWdlPath(wdlPath);
                 tool.setDefaultDockerfilePath(dockerfilePath);
                 tool.setToolname(toolname);
                 tool.setGitUrl(gitUrl);
+
+                // the following is only for manual tools as only they can be private tools
+                if (tool.getMode() == DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH) {
+                    // Can't set tool maintainer null for private, published repos unless tool author email exists
+                    if (tool.getIsPublished() && tool.getPrivateAccess()) {
+                        if (Strings.isNullOrEmpty(toolMaintainerEmail) && Strings.isNullOrEmpty(tool.getEmail())) {
+                            errorMessage("A published, private tool must have either an tool author email or tool maintainer email set up.",
+                                    Client.CLIENT_ERROR);
+                        }
+                    }
+
+                    tool.setToolMaintainerEmail(toolMaintainerEmail);
+
+                    // When changing public tool to private and the tool is published, either tool author email or tool maintainer email must be set up
+                    if (access.equalsIgnoreCase(accessPrivate) && !tool.getPrivateAccess() && tool.getIsPublished()) {
+                        if (Strings.isNullOrEmpty(toolMaintainerEmail) && Strings.isNullOrEmpty(tool.getEmail())) {
+                            errorMessage("A published, private tool must have either an tool author email or tool maintainer email set up.",
+                                    Client.CLIENT_ERROR);
+                        }
+                    }
+
+                    if (access.equalsIgnoreCase(accessPrivate)) {
+                        tool.setPrivateAccess(true);
+                    } else if (access.equalsIgnoreCase(accessPublic)) {
+                        tool.setPrivateAccess(false);
+                    }
+
+                }
 
                 // Check that tool has at least one default path
                 if (Strings.isNullOrEmpty(cwlPath) && Strings.isNullOrEmpty(wdlPath)) {
@@ -847,6 +894,7 @@ public class ToolClient extends AbstractEntryClient {
 
     // Help Commands
     protected void printClientSpecificHelp() {
+        out("");
         out("  version_tag      :  updates version tags for an individual tool");
         out("");
         out("  " + ToolClient.UPDATE_TOOL + "      :  updates certain fields of a tool");
@@ -873,6 +921,8 @@ public class ToolClient extends AbstractEntryClient {
         out("  --toolname <toolname>                                        Toolname for the given tool");
         out("  --git-url <git-url>                                          Git url");
         out("  --default-version <default-version>                          Default branch name");
+        out("  --tool-maintainer-email <tool-maintainer-email>              Email of tool maintainer (Used for private tools). Manual tools only.");
+        out("  --access <public/private>                                    Private tools have private docker images, public tools do not. Manual tools only.");
         printHelpFooter();
     }
 

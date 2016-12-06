@@ -113,7 +113,7 @@ public final class Helper {
             }
 
             // Private tools don't require a dockerfile
-            if (tool.isPrivate()) {
+            if (tool.isPrivateAccess()) {
                 tag.setValid((hasCwl || hasWdl));
             } else {
                 tag.setValid((hasCwl || hasWdl) && hasDockerfile);
@@ -530,10 +530,6 @@ public final class Helper {
         }
         if (quayToken == null) {
             LOG.info("WARNING: QUAY token not found!");
-            //            if (dbTools.stream().filter(tool -> tool.getRegistry().equals(Registry.QUAY_IO)).count() > 0){
-            //                throw new CustomWebApplicationException("quay.io tools found, but quay.io token not found. Please link your quay.io account before refreshing.", HttpStatus.SC_BAD_REQUEST);
-            throw new CustomWebApplicationException("quay.io token not found. Please link your quay.io account before refreshing.", HttpStatus.SC_BAD_REQUEST);
-            //            }
         }
     }
 }
