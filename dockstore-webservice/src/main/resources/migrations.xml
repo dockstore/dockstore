@@ -348,11 +348,11 @@
 
     <changeSet id="privatetools" author="agduncan" context="adds_private_tools">
         <addColumn tableName="tool">
-            <column name="isprivate" type="boolean"></column>
+            <column name="privateaccess" type="boolean"></column>
         </addColumn>
-        <addDefaultValue tableName="tool" columnName="isprivate" defaultValueBoolean="false"/>
+        <addDefaultValue tableName="tool" columnName="privateaccess" defaultValueBoolean="false"/>
         <sql dbms="postgresql">
-            update tool set isprivate=false;
+            update tool set privateaccess=false;
         </sql>
         <addColumn tableName="tool">
             <column name="toolmaintaineremail" type="varchar(255)"></column>
