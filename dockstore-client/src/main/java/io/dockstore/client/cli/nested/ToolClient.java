@@ -740,12 +740,16 @@ public class ToolClient extends AbstractEntryClient {
                     out("--private and --tool-maintainer-email are only available for use with manually registered tools.");
                 }
 
-
                 final String toolMaintainerEmail = optVal(args, "--tool-maintainer-email", tool.getToolMaintainerEmail());
                 final String privateAccess = optVal(args, "--private", tool.getPrivateAccess().toString());
 
+                // Check for correct private access
+                if (!(privateAccess.equalsIgnoreCase("false") || privateAccess.equalsIgnoreCase("true"))) {
+                    errorMessage("The possible values for --private are 'true' and 'false'.", Client.CLIENT_ERROR);
+                }
+
+                // Check that the tool maintainer email is valid
                 if (tool.getMode() == DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH && !toolMaintainerEmail.equals(tool.getToolMaintainerEmail()) && !Strings.isNullOrEmpty(toolMaintainerEmail)) {
-                    // Check that the tool maintainer email is valid
                     EmailValidator emailValidator = EmailValidator.getInstance();
                     if (!emailValidator.isValid(toolMaintainerEmail)) {
                         errorMessage("The email address that you entered is invalid.", Client.CLIENT_ERROR);
@@ -758,7 +762,7 @@ public class ToolClient extends AbstractEntryClient {
                 tool.setToolname(toolname);
                 tool.setGitUrl(gitUrl);
 
-                // the following is only for manual tools as only they can be private tools
+                // The following is only for manual tools as only they can be private tools
                 if (tool.getMode() == DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH) {
                     // Can't set tool maintainer null for private, published repos unless tool author email exists
                     if (tool.getIsPublished() && tool.getPrivateAccess()) {
