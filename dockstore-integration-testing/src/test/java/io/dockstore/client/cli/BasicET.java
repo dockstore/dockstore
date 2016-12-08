@@ -73,7 +73,6 @@ public class BasicET {
                 // delete quay.io token
                 testingPostgres.runUpdateStatement("delete from token where tokensource = 'quay.io'");
                 // refresh
-                systemExit.expectSystemExitWithStatus(Client.API_ERROR);
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--script" });
                 // should not delete tools
                 final long thirdToolCount = testingPostgres.runSelectStatement("select count(*) from tool", new ScalarHandler<>());
@@ -160,16 +159,15 @@ public class BasicET {
 
         /**
          * Tests the case where a manually registered quay tool does not have any automated builds set up, though a manual build was run (see issue 107)
+         * UPDATE: Should fail because you can't publish a tool with no valid tags
          */
         @Test
         public void testManualQuayManualBuild() {
+                systemExit.expectSystemExitWithStatus(Client.API_ERROR);
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.toString(),
                         "--namespace", "dockstoretestuser", "--name", "noautobuild", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
                         "master", "--toolname", "alternate", "--script" });
 
-                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from tool,tool_tag,tag where tool.id=tool_tag.toolid and tool_tag.tagid=tag.id and tag.reference is null and tool.path = 'quay.io/dockstoretestuser/noautobuild' and tool.toolname = 'alternate' and tool.lastbuild is not null", new ScalarHandler<>());
-                Assert.assertTrue("the tool should have build information, but no associated git references", count == 1);
         }
 
         /**
@@ -465,7 +463,7 @@ public class BasicET {
         public void testQuayGitlabManualPublishAndUnpublishAlternateStructure(){
                 // Manual Publish
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.toString(),
-                        "--namespace", "dockstoretestuser", "--name", "quayandgitlabalternate", "--git-url", "git@gitlab.com:DockstoreTestUser/quayandgitlabalternate.git", "--git-reference",
+                        "--namespace", "dockstoretestuser", "--name", "quayandgitlabalternate", "--git-url", "git@gitlab.com:dockstore.test.user/quayandgitlabalternate.git", "--git-reference",
                         "master", "--toolname", "alternate", "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
@@ -937,7 +935,7 @@ public class BasicET {
                 // Manual publish private repo with tool maintainer email
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.toString(),
                         "--namespace", "dockstoretestuser", "--name", "private_test_repo", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
-                        "master", "--toolname", "tool1", "--tool-maintainer-email", "testemail@domain.com", "--private", "--script" });
+                        "master", "--toolname", "tool1", "--tool-maintainer-email", "testemail@domain.com", "--private", "true", "--script" });
 
                 // The tool should be private, published and have the correct email
                 final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='true' and privateaccess='true' and toolmaintaineremail='testemail@domain.com'", new ScalarHandler<>());
@@ -953,11 +951,11 @@ public class BasicET {
                 // Should not be able to convert to a private repo since it is published and has no email
                 systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry", "registry.hub.docker.com/dockstoretestuser/private_test_repo/tool2",
-                        "--access", "private", "--script" });
+                        "--private", "true", "--script" });
 
                 // Give the tool a tool maintainer email
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry", "registry.hub.docker.com/dockstoretestuser/private_test_repo/tool2",
-                        "--access", "private", "--tool-maintainer-email", "testemail@domain.com", "--script" });
+                        "--private", "true", "--tool-maintainer-email", "testemail@domain.com", "--script" });
         }
 
         /**
@@ -977,7 +975,7 @@ public class BasicET {
 
                 // Give the tool a tool maintainer email and make private
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry", "registry.hub.docker.com/dockstoretestuser/private_test_repo/tool1",
-                        "--access", "private", "--tool-maintainer-email", "testemail@domain.com", "--script" });
+                        "--private", "true", "--tool-maintainer-email", "testemail@domain.com", "--script" });
 
                 // The tool should be private, published and have the correct email
                 final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='true' and privateaccess='true' and toolmaintaineremail='testemail@domain.com'", new ScalarHandler<>());
@@ -985,7 +983,7 @@ public class BasicET {
 
                 // Convert the tool back to public
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry", "registry.hub.docker.com/dockstoretestuser/private_test_repo/tool1",
-                        "--access", "public", "--script" });
+                        "--private", "false", "--script" });
 
                 // Check that the tool is no longer private
                 final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='true' and privateaccess='true' and toolmaintaineremail='testemail@domain.com'", new ScalarHandler<>());
@@ -1010,7 +1008,7 @@ public class BasicET {
 
                 // Make the tool private
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry", "registry.hub.docker.com/dockstoretestuser/private_test_repo/tool1",
-                        "--access", "private", "--script" });
+                        "--private", "true", "--script" });
 
                 // The tool should be private, published and not have a maintainer email
                 final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='true' and privateaccess='true' and toolmaintaineremail=''", new ScalarHandler<>());
@@ -1018,7 +1016,7 @@ public class BasicET {
 
                 // Convert the tool back to public
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry", "registry.hub.docker.com/dockstoretestuser/private_test_repo/tool1",
-                        "--access", "public", "--script" });
+                        "--private", "false", "--script" });
 
                 // Check that the tool is no longer private
                 final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='true' and privateaccess='true' and toolmaintaineremail='testemail@domain.com'", new ScalarHandler<>());
@@ -1026,7 +1024,7 @@ public class BasicET {
 
                 // Make the tool private but this time define a tool maintainer
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry", "registry.hub.docker.com/dockstoretestuser/private_test_repo/tool1",
-                        "--access", "private", "--tool-maintainer-email", "testemail2@domain.com", "--script" });
+                        "--private", "true", "--tool-maintainer-email", "testemail2@domain.com", "--script" });
 
                 // Check that the tool is no longer private
                 final long count3 = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='true' and privateaccess='true' and toolmaintaineremail='testemail2@domain.com'", new ScalarHandler<>());
@@ -1043,7 +1041,7 @@ public class BasicET {
                 // Manual publish private repo without tool maintainer email
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.toString(),
                         "--namespace", "dockstoretestuser", "--name", "private_test_repo", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
-                        "master", "--private", "--script" });
+                        "master", "--private", "true", "--script" });
 
         }
 
