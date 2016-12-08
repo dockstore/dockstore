@@ -146,6 +146,26 @@ public class LaunchTestIT {
         assertTrue(map.get("indir").get("class").equals("Directory"));
     }
 
+    @Test
+    public void runWorkflowConvert() throws IOException {
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("smcFusionQuant-INTEGRATE-workflow.cwl"));
+
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("workflow");
+            add("convert");
+            add("cwl2json");
+            add("--cwl");
+            add(cwlFile.getAbsolutePath());
+        }};
+        runClientCommand(args, false);
+        final String log = systemOutRule.getLog();
+        Gson gson = new Gson();
+        final Map<String, Map<String, Object>> map = gson.fromJson(log, Map.class);
+        assertTrue(map.size() == 4);
+        assertTrue(map.containsKey("TUMOR_FASTQ_1") && map.containsKey("TUMOR_FASTQ_2") && map.containsKey("index") && map
+                .containsKey("OUTPUT"));
+    }
+
 
     @Test
     public void cwlCorrectWithCache() throws IOException{
