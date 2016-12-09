@@ -56,6 +56,7 @@ import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.ArgumentUtility.getGitRegistry;
 import static io.dockstore.client.cli.ArgumentUtility.optVal;
 import static io.dockstore.client.cli.ArgumentUtility.out;
+import static io.dockstore.client.cli.ArgumentUtility.printLineBreak;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
 import static io.dockstore.client.cli.ArgumentUtility.reqVal;
@@ -194,7 +195,7 @@ public class WorkflowClient extends AbstractEntryClient {
             List<Workflow> workflows = usersApi.refreshWorkflows(user.getId());
 
             out("YOUR UPDATED WORKFLOWS");
-            out("-------------------");
+            printLineBreak();
             printWorkflowList(workflows);
         } catch (ApiException ex) {
             exceptionMessage(ex, "", Client.API_ERROR);
@@ -210,7 +211,7 @@ public class WorkflowClient extends AbstractEntryClient {
             List<Workflow> workflowList = new ArrayList<>();
             workflowList.add(updatedWorkflow);
             out("YOUR UPDATED WORKFLOW");
-            out("-------------------");
+            printLineBreak();
             printWorkflowList(workflowList);
         } catch (ApiException ex) {
             exceptionMessage(ex, "", Client.API_ERROR);
@@ -329,7 +330,7 @@ public class WorkflowClient extends AbstractEntryClient {
             List<Workflow> workflows = usersApi.userWorkflows(user.getId());
 
             out("YOUR AVAILABLE WORKFLOWS");
-            out("-------------------");
+            printLineBreak();
             printWorkflowList(workflows);
         } catch (ApiException ex) {
             exceptionMessage(ex, "", Client.API_ERROR);
@@ -364,7 +365,7 @@ public class WorkflowClient extends AbstractEntryClient {
             List<Workflow> workflows = workflowsApi.search(pattern);
 
             out("MATCHING WORKFLOWS");
-            out("-------------------");
+            printLineBreak();
             printWorkflowList(workflows);
         } catch (ApiException ex) {
             exceptionMessage(ex, "", Client.API_ERROR);
@@ -598,7 +599,7 @@ public class WorkflowClient extends AbstractEntryClient {
         out("  Update certain fields for a given workflow.");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>                                          Complete workflow path in the Dockstore");
+        out("  --entry <entry>                                          Complete workflow path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
         out("");
         out("Optional Parameters");
         out("  --workflow-name <workflow-name>                          Name for the given workflow");
@@ -683,7 +684,7 @@ public class WorkflowClient extends AbstractEntryClient {
         out("  Update certain fields for a given workflow version.");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>                                      Complete workflow path in the Dockstore");
+        out("  --entry <entry>                                      Complete workflow path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
         out("  --name <name>                                        Name of the workflow version.");
         out("");
         out("Optional Parameters");
@@ -725,7 +726,7 @@ public class WorkflowClient extends AbstractEntryClient {
         out("  Converts a full, unpublished workflow back to a stub.");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>                       Complete workflow path in the Dockstore");
+        out("  --entry <entry>                       Complete workflow path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
         out("");
         printHelpFooter();
     }
@@ -764,7 +765,7 @@ public class WorkflowClient extends AbstractEntryClient {
                 }
             }
         } else {
-            errorMessage("No " + descriptorType + " file found.", Client.COMMAND_ERROR);
+            errorMessage("No workflow found with path " + entry, Client.API_ERROR);
         }
         return file;
     }

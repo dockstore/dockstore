@@ -75,6 +75,7 @@ import static io.dockstore.client.cli.ArgumentUtility.invalid;
 import static io.dockstore.client.cli.ArgumentUtility.isHelpRequest;
 import static io.dockstore.client.cli.ArgumentUtility.optVal;
 import static io.dockstore.client.cli.ArgumentUtility.out;
+import static io.dockstore.client.cli.ArgumentUtility.printLineBreak;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
 import static io.dockstore.common.FileProvisioning.getCacheDirectory;
@@ -628,7 +629,7 @@ public class Client {
         out("   tool                Puts dockstore into tool mode.");
         out("   workflow            Puts dockstore into workflow mode.");
         out("");
-        out("------------------");
+        printLineBreak();
         out("");
         out("Flags:");
         out("  --help               Print help information");

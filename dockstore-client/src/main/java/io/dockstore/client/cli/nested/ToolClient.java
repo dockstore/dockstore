@@ -62,6 +62,7 @@ import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.ArgumentUtility.optVal;
 import static io.dockstore.client.cli.ArgumentUtility.out;
+import static io.dockstore.client.cli.ArgumentUtility.printLineBreak;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
 import static io.dockstore.client.cli.ArgumentUtility.reqVal;
@@ -196,7 +197,7 @@ public class ToolClient extends AbstractEntryClient {
             List<DockstoreTool> containers = containersApi.search(pattern);
 
             out("MATCHING TOOLS");
-            out("-------------------");
+            printLineBreak();
             printToolList(containers);
         } catch (ApiException ex) {
             exceptionMessage(ex, "", Client.API_ERROR);
@@ -278,7 +279,7 @@ public class ToolClient extends AbstractEntryClient {
             List<DockstoreTool> containers = usersApi.userContainers(user.getId());
 
             out("YOUR AVAILABLE CONTAINERS");
-            out("-------------------");
+            printLineBreak();
             printToolList(containers);
         } catch (ApiException ex) {
             exceptionMessage(ex, "", Client.API_ERROR);
@@ -396,7 +397,7 @@ public class ToolClient extends AbstractEntryClient {
             List<DockstoreTool> containers = usersApi.refresh(user.getId());
 
             out("YOUR UPDATED TOOLS");
-            out("-------------------");
+            printLineBreak();
             printToolList(containers);
         } catch (ApiException ex) {
             exceptionMessage(ex, "", Client.API_ERROR);
@@ -411,7 +412,7 @@ public class ToolClient extends AbstractEntryClient {
             List<DockstoreTool> containerList = new ArrayList<>();
             containerList.add(updatedContainer);
             out("YOUR UPDATED TOOLS");
-            out("-------------------");
+            printLineBreak();
             printToolList(containerList);
         } catch (ApiException ex) {
             exceptionMessage(ex, "", Client.API_ERROR);
@@ -775,7 +776,7 @@ public class ToolClient extends AbstractEntryClient {
                 }
             }
         } else {
-            errorMessage("No " + descriptorType + " file found.", Client.COMMAND_ERROR);
+            errorMessage("No tool found with path " + entry, Client.API_ERROR);
         }
         return file;
     }
@@ -827,11 +828,12 @@ public class ToolClient extends AbstractEntryClient {
 
     // Help Commands
     protected void printClientSpecificHelp() {
+        out("");
         out("  version_tag      :  updates version tags for an individual tool");
         out("");
         out("  " + ToolClient.UPDATE_TOOL + "      :  updates certain fields of a tool");
         out("");
-        out("  manual_publish   :  registers a Docker Hub (or manual Quay) tool in the dockstore and then attempt to publish");
+        out("  manual_publish   :  manually registers a Docker Hub (or manual Quay) tool in the dockstore and then attempt to publish");
         out("");
     }
 
@@ -844,7 +846,7 @@ public class ToolClient extends AbstractEntryClient {
         out("  Update certain fields for a given tool.");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>                                              Complete tool path in the Dockstore");
+        out("  --entry <entry>                                              Complete tool path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
         out("");
         out("Optional Parameters");
         out("  --cwl-path <cwl-path>                                        Path to default cwl location");
@@ -883,7 +885,7 @@ public class ToolClient extends AbstractEntryClient {
         out("  Remove an existing version tag of a tool.");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>         Complete tool path in the Dockstore");
+        out("  --entry <entry>         Complete tool path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
         out("  --name <name>           Name of the version tag to remove");
         printHelpFooter();
     }
@@ -897,7 +899,7 @@ public class ToolClient extends AbstractEntryClient {
         out("  Update an existing version tag of a tool.");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>                                              Complete tool path in the Dockstore");
+        out("  --entry <entry>                                              Complete tool path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
         out("  --name <name>                                                Name of the version tag to update");
         out("");
         out("Optional Parameters:");
@@ -918,7 +920,7 @@ public class ToolClient extends AbstractEntryClient {
         out("  Add a new version tag to a manually added tool.");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>                                          Complete tool path in the Dockstore");
+        out("  --entry <entry>                                          Complete tool path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
         out("  --name <name>                                            Name of the version tag to add");
         out("");
         out("Optional Parameters:");
