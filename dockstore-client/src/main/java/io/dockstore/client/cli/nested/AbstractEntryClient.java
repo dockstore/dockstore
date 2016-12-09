@@ -851,7 +851,7 @@ public abstract class AbstractEntryClient {
         File file = new File(localFilePath);
         Type ext = checkFileExtension(file.getPath());     //file extension could be cwl,wdl or ""
 
-        if (!file.exists()) {
+        if (!file.exists() || file.isDirectory()) {
             errorMessage("The file " + file.getPath() + "does not exist. Did you mean to use --entry instead of --local-entry?", CLIENT_ERROR);
         }
 
@@ -962,15 +962,15 @@ public abstract class AbstractEntryClient {
                     } catch (ApiException e) {
                         exceptionMessage(e, "API error launching workflow. Did you mean to use --local-entry instead of --entry?", Client.API_ERROR);
                     } catch (IOException e) {
-                        exceptionMessage(e, "IO error launching workflow", IO_ERROR);
+                        exceptionMessage(e, "IO error launching workflow. Did you mean to use --local-entry instead of --entry?", IO_ERROR);
                     }
                 } else if (descriptor.equals(WDL_STRING)) {
                     try {
                         launchWdl(args, false);
                     } catch (ApiException e) {
-                        exceptionMessage(e, "API error launching workflow.  Did you mean to use --local-entry instead of --entry?", Client.API_ERROR);
+                        exceptionMessage(e, "API error launching workflow. Did you mean to use --local-entry instead of --entry?", Client.API_ERROR);
                     } catch (IOException e) {
-                        exceptionMessage(e, "IO error launching workflow", IO_ERROR);
+                        exceptionMessage(e, "IO error launching workflow. Did you mean to use --local-entry instead of --entry?", IO_ERROR);
                     }
                 }
             }
