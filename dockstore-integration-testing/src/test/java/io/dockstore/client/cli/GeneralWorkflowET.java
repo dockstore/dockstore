@@ -362,8 +362,8 @@ public class GeneralWorkflowET {
          */
         @Ignore
         public void testLocalLaunchCWL() {
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry", ResourceHelpers.resourceFilePath("filtercount.cwl.yaml") , "--json",
-                        ResourceHelpers.resourceFilePath("filtercount-job.json"), "--script", "--local-entry" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--local-entry", ResourceHelpers.resourceFilePath("filtercount.cwl.yaml") , "--json",
+                        ResourceHelpers.resourceFilePath("filtercount-job.json"), "--script" });
         }
 
         /**
@@ -371,8 +371,8 @@ public class GeneralWorkflowET {
          */
         @Test
         public void testLocalLaunchWDL() {
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry", ResourceHelpers.resourceFilePath("wdl.wdl") , "--json",
-                        ResourceHelpers.resourceFilePath("wdl.json"), "--descriptor", "wdl", "--script", "--local-entry" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--local-entry", ResourceHelpers.resourceFilePath("wdl.wdl") , "--json",
+                        ResourceHelpers.resourceFilePath("wdl.json"), "--descriptor", "wdl", "--script" });
         }
 
         /**
@@ -380,8 +380,8 @@ public class GeneralWorkflowET {
          */
         @Test
         public void testLocalLaunchWDLWithDir() {
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry", ResourceHelpers.resourceFilePath("directorytest.wdl") , "--json",
-                        ResourceHelpers.resourceFilePath("directorytest.json"), "--descriptor", "wdl", "--script", "--local-entry" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--local-entry", ResourceHelpers.resourceFilePath("directorytest.wdl") , "--json",
+                        ResourceHelpers.resourceFilePath("directorytest.json"), "--descriptor", "wdl", "--script" });
         }
 
         /**
@@ -390,8 +390,8 @@ public class GeneralWorkflowET {
          */
         @Ignore
         public void testLocalLaunchWDLImportHTTP() {
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry", ResourceHelpers.resourceFilePath("wdlhttpimport.wdl") , "--json",
-                        ResourceHelpers.resourceFilePath("wdlhttp.json"), "--descriptor", "wdl", "--script", "--local-entry" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--local-entry", ResourceHelpers.resourceFilePath("wdlhttpimport.wdl") , "--json",
+                        ResourceHelpers.resourceFilePath("wdlhttp.json"), "--descriptor", "wdl", "--script" });
         }
 
         /**
@@ -401,8 +401,8 @@ public class GeneralWorkflowET {
         public void testLocalLaunchWDLImportIncorrectHTTP() {
                 systemExit.expectSystemExitWithStatus(1);
 
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry", ResourceHelpers.resourceFilePath("wdlincorrecthttp.wdl") , "--json",
-                        ResourceHelpers.resourceFilePath("wdl.json"), "--descriptor", "wdl", "--script", "--local-entry" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--local-entry", ResourceHelpers.resourceFilePath("wdlincorrecthttp.wdl") , "--json",
+                        ResourceHelpers.resourceFilePath("wdl.json"), "--descriptor", "wdl", "--script" });
         }
 
         @Test
