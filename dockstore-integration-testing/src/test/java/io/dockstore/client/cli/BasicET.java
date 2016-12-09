@@ -73,7 +73,6 @@ public class BasicET {
                 // delete quay.io token
                 testingPostgres.runUpdateStatement("delete from token where tokensource = 'quay.io'");
                 // refresh
-                systemExit.expectSystemExitWithStatus(Client.API_ERROR);
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--script" });
                 // should not delete tools
                 final long thirdToolCount = testingPostgres.runSelectStatement("select count(*) from tool", new ScalarHandler<>());
@@ -160,16 +159,15 @@ public class BasicET {
 
         /**
          * Tests the case where a manually registered quay tool does not have any automated builds set up, though a manual build was run (see issue 107)
+         * UPDATE: Should fail because you can't publish a tool with no valid tags
          */
         @Test
         public void testManualQuayManualBuild() {
+                systemExit.expectSystemExitWithStatus(Client.API_ERROR);
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.toString(),
                         "--namespace", "dockstoretestuser", "--name", "noautobuild", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
                         "master", "--toolname", "alternate", "--script" });
 
-                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from tool,tool_tag,tag where tool.id=tool_tag.toolid and tool_tag.tagid=tag.id and tag.reference is null and tool.path = 'quay.io/dockstoretestuser/noautobuild' and tool.toolname = 'alternate' and tool.lastbuild is not null", new ScalarHandler<>());
-                Assert.assertTrue("the tool should have build information, but no associated git references", count == 1);
         }
 
         /**
@@ -465,7 +463,7 @@ public class BasicET {
         public void testQuayGitlabManualPublishAndUnpublishAlternateStructure(){
                 // Manual Publish
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.toString(),
-                        "--namespace", "dockstoretestuser", "--name", "quayandgitlabalternate", "--git-url", "git@gitlab.com:DockstoreTestUser/quayandgitlabalternate.git", "--git-reference",
+                        "--namespace", "dockstoretestuser", "--name", "quayandgitlabalternate", "--git-url", "git@gitlab.com:dockstore.test.user/quayandgitlabalternate.git", "--git-reference",
                         "master", "--toolname", "alternate", "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
 
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
@@ -924,6 +922,127 @@ public class BasicET {
                 // Tag should be unverified
                 final long count5 = testingPostgres.runSelectStatement("select count(*) from tag where verified='true'", new ScalarHandler<>());
                 Assert.assertTrue("there should be no verified tags, there are " + count5, count5 == 0);
+        }
+
+        /**
+         * This tests some cases for private tools
+         */
+        @Test
+        public void testPrivateManualPublish() {
+                // Setup DB
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+                // Manual publish private repo with tool maintainer email
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.toString(),
+                        "--namespace", "dockstoretestuser", "--name", "private_test_repo", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
+                        "master", "--toolname", "tool1", "--tool-maintainer-email", "testemail@domain.com", "--private", "true", "--script" });
+
+                // The tool should be private, published and have the correct email
+                final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='true' and privateaccess='true' and toolmaintaineremail='testemail@domain.com'", new ScalarHandler<>());
+                Assert.assertTrue("one tool should be private and published, there are " + count, count == 1);
+
+                // Manual publish public repo
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.toString(),
+                        "--namespace", "dockstoretestuser", "--name", "private_test_repo", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
+                        "master", "--toolname", "tool2", "--script" });
+
+                // NOTE: The tool should not have an associated email
+
+                // Should not be able to convert to a private repo since it is published and has no email
+                systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry", "registry.hub.docker.com/dockstoretestuser/private_test_repo/tool2",
+                        "--private", "true", "--script" });
+
+                // Give the tool a tool maintainer email
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry", "registry.hub.docker.com/dockstoretestuser/private_test_repo/tool2",
+                        "--private", "true", "--tool-maintainer-email", "testemail@domain.com", "--script" });
+        }
+
+        /**
+         * This tests that you can convert a published public tool to private if it has a tool maintainer email set
+         */
+        @Test
+        public void testPublicToPrivateToPublicTool() {
+                // Setup DB
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+                // Manual publish public repo
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.toString(),
+                        "--namespace", "dockstoretestuser", "--name", "private_test_repo", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
+                        "master", "--toolname", "tool1", "--script" });
+
+                // NOTE: The tool should not have an associated email
+
+                // Give the tool a tool maintainer email and make private
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry", "registry.hub.docker.com/dockstoretestuser/private_test_repo/tool1",
+                        "--private", "true", "--tool-maintainer-email", "testemail@domain.com", "--script" });
+
+                // The tool should be private, published and have the correct email
+                final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='true' and privateaccess='true' and toolmaintaineremail='testemail@domain.com'", new ScalarHandler<>());
+                Assert.assertTrue("one tool should be private and published, there are " + count, count == 1);
+
+                // Convert the tool back to public
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry", "registry.hub.docker.com/dockstoretestuser/private_test_repo/tool1",
+                        "--private", "false", "--script" });
+
+                // Check that the tool is no longer private
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='true' and privateaccess='true' and toolmaintaineremail='testemail@domain.com'", new ScalarHandler<>());
+                Assert.assertTrue("no tool should be private, but there are " + count2, count2 == 0);
+
+        }
+
+        /**
+         * This tests that you can change a tool from public to private without a tool maintainer email, as long as an email is found in the descriptor
+         */
+        @Test
+        public void testDefaultToEmailInDescriptorForPrivateRepos() {
+                // Setup DB
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+                // Manual publish public repo
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.toString(),
+                        "--namespace", "dockstoretestuser", "--name", "private_test_repo", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay-2.git", "--git-reference",
+                        "master", "--toolname", "tool1", "--script" });
+
+                // NOTE: The tool should have an associated email
+
+                // Make the tool private
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry", "registry.hub.docker.com/dockstoretestuser/private_test_repo/tool1",
+                        "--private", "true", "--script" });
+
+                // The tool should be private, published and not have a maintainer email
+                final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='true' and privateaccess='true' and toolmaintaineremail=''", new ScalarHandler<>());
+                Assert.assertTrue("one tool should be private and published, there are " + count, count == 1);
+
+                // Convert the tool back to public
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry", "registry.hub.docker.com/dockstoretestuser/private_test_repo/tool1",
+                        "--private", "false", "--script" });
+
+                // Check that the tool is no longer private
+                final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='true' and privateaccess='true' and toolmaintaineremail='testemail@domain.com'", new ScalarHandler<>());
+                Assert.assertTrue("no tool should be private, but there are " + count2, count2 == 0);
+
+                // Make the tool private but this time define a tool maintainer
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry", "registry.hub.docker.com/dockstoretestuser/private_test_repo/tool1",
+                        "--private", "true", "--tool-maintainer-email", "testemail2@domain.com", "--script" });
+
+                // Check that the tool is no longer private
+                final long count3 = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='true' and privateaccess='true' and toolmaintaineremail='testemail2@domain.com'", new ScalarHandler<>());
+                Assert.assertTrue("one tool should be private and published, there are " + count3, count3 == 1);
+        }
+
+        /**
+         * This tests that you cannot manually publish a private tool unless it has a tool maintainer email
+         */
+        @Test
+        public void testPrivateManualPublishNoToolMaintainerEmail() {
+                systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
+
+                // Manual publish private repo without tool maintainer email
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.toString(),
+                        "--namespace", "dockstoretestuser", "--name", "private_test_repo", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
+                        "master", "--private", "true", "--script" });
+
         }
 
 }

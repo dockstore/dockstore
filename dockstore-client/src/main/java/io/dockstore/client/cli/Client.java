@@ -326,7 +326,7 @@ public class Client {
                     }
                 }
                 return false;
-            } catch (IOException e) {
+            } catch (IOException | NullPointerException e) {
             }
 
         } catch (MalformedURLException e) {

@@ -91,6 +91,16 @@ public class Tool extends Entry<Tool, Tag> {
     @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the WDL document", required = true)
     private String defaultWdlPath = "/Dockstore.wdl";
 
+    @Column
+    @JsonProperty("tool_maintainer_email")
+    @ApiModelProperty(value = "The email address of the tool maintainer. Required for private repositories", required = false)
+    private String toolMaintainerEmail = "";
+
+    @Column
+    @JsonProperty("private_access")
+    @ApiModelProperty(value = "Is the docker image private or not.", required = true)
+    private boolean privateAccess = false;
+
     @Column(nullable = false)
     @ApiModelProperty(value = "This is the tool name of the container, when not-present this will function just like 0.1 dockstore"
             + "when present, this can be used to distinguish between two containers based on the same image, but associated with different "
@@ -137,13 +147,15 @@ public class Tool extends Entry<Tool, Tag> {
     }
 
     /**
-     * Used during refresh to update containers
+     * Used during refresh to update tools
      * @param tool
      */
     public void update(Tool tool) {
         super.update(tool);
         this.setDescription(tool.getDescription());
         lastBuild = tool.getLastBuild();
+        this.toolMaintainerEmail = tool.getToolMaintainerEmail();
+        this.privateAccess = tool.isPrivateAccess();
     }
 
 
@@ -279,7 +291,22 @@ public class Tool extends Entry<Tool, Tag> {
     public String getToolPath() {
         return getPath() + (toolname == null || toolname.isEmpty() ? "" : '/' + toolname);
     }
-    
+
+    public String getToolMaintainerEmail() {
+        return toolMaintainerEmail;
+    }
+
+    public void setToolMaintainerEmail(String toolMaintainerEmail) {
+        this.toolMaintainerEmail = toolMaintainerEmail;
+    }
+
+    public boolean isPrivateAccess() {
+        return privateAccess;
+    }
+
+    public void setPrivateAccess(boolean privateAccess) {
+        this.privateAccess = privateAccess;
+    }
 
     /**
      * Updates information from given tool based on the new tool
@@ -294,5 +321,10 @@ public class Tool extends Entry<Tool, Tag> {
 
         toolname = tool.getToolname();
         this.setGitUrl(tool.getGitUrl());
+
+        if (mode == ToolMode.MANUAL_IMAGE_PATH) {
+            toolMaintainerEmail = tool.getToolMaintainerEmail();
+            privateAccess = tool.isPrivateAccess();
+        }
     }
 }

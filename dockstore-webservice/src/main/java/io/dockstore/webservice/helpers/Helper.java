@@ -97,8 +97,6 @@ public final class Helper {
                 SourceFile file = fileDAO.findById(id);
                 tag.addSourceFile(file);
 
-                // oldFiles.add(newFile);
-                // }
                 if (file.getType() == FileType.DOCKERFILE) {
                     hasDockerfile = true;
                     LOG.info(githubToken.getUsername() + " : HAS Dockerfile");
@@ -114,8 +112,12 @@ public final class Helper {
                 }
             }
 
-            // Add for new descriptor types
-            tag.setValid((hasCwl || hasWdl) && hasDockerfile);
+            // Private tools don't require a dockerfile
+            if (tool.isPrivateAccess()) {
+                tag.setValid((hasCwl || hasWdl));
+            } else {
+                tag.setValid((hasCwl || hasWdl) && hasDockerfile);
+            }
         }
     }
 
@@ -528,10 +530,6 @@ public final class Helper {
         }
         if (quayToken == null) {
             LOG.info("WARNING: QUAY token not found!");
-            //            if (dbTools.stream().filter(tool -> tool.getRegistry().equals(Registry.QUAY_IO)).count() > 0){
-            //                throw new CustomWebApplicationException("quay.io tools found, but quay.io token not found. Please link your quay.io account before refreshing.", HttpStatus.SC_BAD_REQUEST);
-            throw new CustomWebApplicationException("quay.io token not found. Please link your quay.io account before refreshing.", HttpStatus.SC_BAD_REQUEST);
-            //            }
         }
     }
 }
