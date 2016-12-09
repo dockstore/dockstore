@@ -643,8 +643,10 @@ public abstract class AbstractEntryClient {
                         classWfFound = true;
                     } else if(getEntryType().toLowerCase().equals("tool") && matchTool.find()){
                         classToolFound = true;
-                    } else if((getEntryType().toLowerCase().equals("tool") && matchWf.find()) || (getEntryType().toLowerCase().equals("workflow") && matchTool.find())){
-                        errorMessage("Entry type does not match the class specified in CWL file.",CLIENT_ERROR);
+                    } else if((getEntryType().toLowerCase().equals("tool") && matchWf.find())) {
+                        errorMessage("Entry type does not match the class specified in CWL file.", CLIENT_ERROR);
+                    } else if (getEntryType().toLowerCase().equals("workflow") && matchTool.find()){
+                        errorMessage("Entry type does not match the class specified in CWL file.", CLIENT_ERROR);
                     }
                 }
             }
@@ -879,7 +881,7 @@ public abstract class AbstractEntryClient {
                 } catch (ApiException e) {
                     exceptionMessage(e, "API error launching workflow", Client.API_ERROR);
                 } catch (IOException e) {
-                    exceptionMessage(e, "io error launching workflow", IO_ERROR);
+                    exceptionMessage(e, "IO error launching workflow", IO_ERROR);
                 }
             } else{
                 errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
@@ -891,7 +893,7 @@ public abstract class AbstractEntryClient {
                 } catch (ApiException e) {
                     exceptionMessage(e, "API error launching workflow", Client.API_ERROR);
                 } catch (IOException e) {
-                    exceptionMessage(e, "io error launching workflow", IO_ERROR);
+                    exceptionMessage(e, "IO error launching workflow", IO_ERROR);
                 }
             }else if(!content.equals(Type.WDL) && descriptor==null){
                 //extension is wdl but the content is not wdl
@@ -919,9 +921,9 @@ public abstract class AbstractEntryClient {
                 try {
                     launchCwl(localFilePath, argsList, true);
                 } catch (ApiException e) {
-                    exceptionMessage(e, "api error launching workflow", Client.API_ERROR);
+                    exceptionMessage(e, "API error launching workflow", Client.API_ERROR);
                 } catch (IOException e) {
-                    exceptionMessage(e, "io error launching workflow", IO_ERROR);
+                    exceptionMessage(e, "IO error launching workflow", IO_ERROR);
                 }
             }else if(content.equals(Type.WDL)){
                 out("This is a WDL file.. Please put an extension to the entry file name.");
@@ -931,7 +933,7 @@ public abstract class AbstractEntryClient {
                 } catch (ApiException e) {
                     exceptionMessage(e, "API error launching workflow", Client.API_ERROR);
                 } catch (IOException e) {
-                    exceptionMessage(e, "io error launching workflow", IO_ERROR);
+                    exceptionMessage(e, "IO error launching workflow", IO_ERROR);
                 }
             } else{
                 errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
