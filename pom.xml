@@ -987,6 +987,22 @@
                 <groupId>org.eluder.coveralls</groupId>
                 <artifactId>coveralls-maven-plugin</artifactId>
             </plugin>
+            <!-- identify and fail if we use problematic Java dependencies for Java 9 -->
+            <plugin>
+                <groupId>org.codefx.mvn</groupId>
+                <artifactId>jdeps-maven-plugin</artifactId>
+                <version>0.2</version>
+                <configuration>
+                    <defaultSeverity>FAIL</defaultSeverity>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>jdkinternals</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
