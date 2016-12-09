@@ -171,6 +171,11 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-exec</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+        </dependency>
     </dependencies>
 
 
@@ -251,6 +256,7 @@
 
                             <usedDependencies>
                                 <usedDependency>org.apache.httpcomponents:httpcore</usedDependency>
+                                <usedDependency>javax.annotation:javax.annotation-api</usedDependency>
                             </usedDependencies>
 
                         </configuration>
