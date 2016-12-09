@@ -119,7 +119,9 @@ public abstract class SourceCodeRepoInterface {
                     String author = (String) map.get("foaf:name");
                     entry.setAuthor(author);
                     String email = (String) map.get("foaf:mbox");
-                    entry.setEmail(email.replaceFirst("^mailto:", ""));
+                    if (!Strings.isNullOrEmpty(email)) {
+                        entry.setEmail(email.replaceFirst("^mailto:", ""));
+                    }
                 } else {
                     LOG.info("Creator not found!");
                 }
