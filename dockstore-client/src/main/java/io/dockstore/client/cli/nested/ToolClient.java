@@ -331,11 +331,15 @@ public class ToolClient extends AbstractEntryClient {
                 errorMessage("The possible values for --private are 'true' and 'false'.", Client.CLIENT_ERROR);
             }
 
+            // Private access defaults to false
+            boolean setPrivateAccess = false;
+
             // Check that tool maintainer email is given if the tool is private with no email setup
             if (privateAccess.equalsIgnoreCase("true")) {
                 if (Strings.isNullOrEmpty(toolMaintainerEmail)) {
                     errorMessage("For a private tool, the tool maintainer email is required.", Client.CLIENT_ERROR);
                 }
+                setPrivateAccess = true;
             }
 
             // Check validity of email
@@ -358,7 +362,7 @@ public class ToolClient extends AbstractEntryClient {
             tool.setGitUrl(gitURL);
             tool.setToolname(toolname);
             tool.setPath(Joiner.on("/").skipNulls().join(registry, namespace, name));
-            tool.setPrivateAccess(privateAccess.equalsIgnoreCase("true"));
+            tool.setPrivateAccess(setPrivateAccess);
             tool.setToolMaintainerEmail(toolMaintainerEmail);
 
             // Check that tool has at least one default path
@@ -774,20 +778,18 @@ public class ToolClient extends AbstractEntryClient {
 
                     tool.setToolMaintainerEmail(toolMaintainerEmail);
 
+                    // privateAccess should be either 'true' or 'false'
+                    boolean setPrivateAccess = Boolean.parseBoolean(privateAccess);
+
                     // When changing public tool to private and the tool is published, either tool author email or tool maintainer email must be set up
-                    if (privateAccess.equalsIgnoreCase("true") && !tool.getPrivateAccess() && tool.getIsPublished()) {
+                    if (setPrivateAccess && !tool.getPrivateAccess() && tool.getIsPublished()) {
                         if (Strings.isNullOrEmpty(toolMaintainerEmail) && Strings.isNullOrEmpty(tool.getEmail())) {
                             errorMessage("A published, private tool must have either an tool author email or tool maintainer email set up.",
                                     Client.CLIENT_ERROR);
                         }
                     }
 
-                    if (privateAccess.equalsIgnoreCase("true")) {
-                        tool.setPrivateAccess(true);
-                    } else if (privateAccess.equalsIgnoreCase("false")) {
-                        tool.setPrivateAccess(false);
-                    }
-
+                    tool.setPrivateAccess(setPrivateAccess);
                 }
 
                 // Check that tool has at least one default path
