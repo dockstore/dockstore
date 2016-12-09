@@ -35,6 +35,7 @@ import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.validator.routines.EmailValidator;
 import org.apache.http.HttpStatus;
 
 import java.io.File;
@@ -321,7 +322,33 @@ public class ToolClient extends AbstractEntryClient {
             final String wdlPath = optVal(args, "--wdl-path", "/Dockstore.wdl");
             final String gitReference = reqVal(args, "--git-reference");
             final String toolname = optVal(args, "--toolname", null);
+            final String toolMaintainerEmail = optVal(args, "--tool-maintainer-email", null);
             final String registry = optVal(args, "--registry", Registry.DOCKER_HUB.toString());
+            final String privateAccess = optVal(args, "--private", "false");
+
+            // Check for correct private access
+            if (!(privateAccess.equalsIgnoreCase("false") || privateAccess.equalsIgnoreCase("true"))) {
+                errorMessage("The possible values for --private are 'true' and 'false'.", Client.CLIENT_ERROR);
+            }
+
+            // Private access defaults to false
+            boolean setPrivateAccess = false;
+
+            // Check that tool maintainer email is given if the tool is private with no email setup
+            if (privateAccess.equalsIgnoreCase("true")) {
+                if (Strings.isNullOrEmpty(toolMaintainerEmail)) {
+                    errorMessage("For a private tool, the tool maintainer email is required.", Client.CLIENT_ERROR);
+                }
+                setPrivateAccess = true;
+            }
+
+            // Check validity of email
+            if (!Strings.isNullOrEmpty(toolMaintainerEmail)) {
+                EmailValidator emailValidator = EmailValidator.getInstance();
+                if (!emailValidator.isValid(toolMaintainerEmail)) {
+                    errorMessage("The email address that you entered is invalid.", Client.CLIENT_ERROR);
+                }
+            }
 
             DockstoreTool tool = new DockstoreTool();
             tool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
@@ -335,6 +362,8 @@ public class ToolClient extends AbstractEntryClient {
             tool.setGitUrl(gitURL);
             tool.setToolname(toolname);
             tool.setPath(Joiner.on("/").skipNulls().join(registry, namespace, name));
+            tool.setPrivateAccess(setPrivateAccess);
+            tool.setToolMaintainerEmail(toolMaintainerEmail);
 
             // Check that tool has at least one default path
             if (Strings.isNullOrEmpty(cwlPath) && Strings.isNullOrEmpty(wdlPath)) {
@@ -710,11 +739,58 @@ public class ToolClient extends AbstractEntryClient {
                 final String gitUrl = optVal(args, "--git-url", tool.getGitUrl());
                 final String defaultTag = optVal(args, "--default-version", tool.getDefaultVersion());
 
+                // Check that user did not use manual only attributes for an auto tool
+                if (tool.getMode() != DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH && (args.contains("--private") || args.contains("--tool-maintainer-email"))) {
+                    out("--private and --tool-maintainer-email are only available for use with manually registered tools.");
+                }
+
+                final String toolMaintainerEmail = optVal(args, "--tool-maintainer-email", tool.getToolMaintainerEmail());
+                final String privateAccess = optVal(args, "--private", tool.getPrivateAccess().toString());
+
+                // Check for correct private access
+                if (!(privateAccess.equalsIgnoreCase("false") || privateAccess.equalsIgnoreCase("true"))) {
+                    errorMessage("The possible values for --private are 'true' and 'false'.", Client.CLIENT_ERROR);
+                }
+
+                // Check that the tool maintainer email is valid
+                if (tool.getMode() == DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH && !toolMaintainerEmail.equals(tool.getToolMaintainerEmail()) && !Strings.isNullOrEmpty(toolMaintainerEmail)) {
+                    EmailValidator emailValidator = EmailValidator.getInstance();
+                    if (!emailValidator.isValid(toolMaintainerEmail)) {
+                        errorMessage("The email address that you entered is invalid.", Client.CLIENT_ERROR);
+                    }
+                }
+
                 tool.setDefaultCwlPath(cwlPath);
                 tool.setDefaultWdlPath(wdlPath);
                 tool.setDefaultDockerfilePath(dockerfilePath);
                 tool.setToolname(toolname);
                 tool.setGitUrl(gitUrl);
+
+                // The following is only for manual tools as only they can be private tools
+                if (tool.getMode() == DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH) {
+                    // Can't set tool maintainer null for private, published repos unless tool author email exists
+                    if (tool.getIsPublished() && tool.getPrivateAccess()) {
+                        if (Strings.isNullOrEmpty(toolMaintainerEmail) && Strings.isNullOrEmpty(tool.getEmail())) {
+                            errorMessage("A published, private tool must have either an tool author email or tool maintainer email set up.",
+                                    Client.CLIENT_ERROR);
+                        }
+                    }
+
+                    tool.setToolMaintainerEmail(toolMaintainerEmail);
+
+                    // privateAccess should be either 'true' or 'false'
+                    boolean setPrivateAccess = Boolean.parseBoolean(privateAccess);
+
+                    // When changing public tool to private and the tool is published, either tool author email or tool maintainer email must be set up
+                    if (setPrivateAccess && !tool.getPrivateAccess() && tool.getIsPublished()) {
+                        if (Strings.isNullOrEmpty(toolMaintainerEmail) && Strings.isNullOrEmpty(tool.getEmail())) {
+                            errorMessage("A published, private tool must have either an tool author email or tool maintainer email set up.",
+                                    Client.CLIENT_ERROR);
+                        }
+                    }
+
+                    tool.setPrivateAccess(setPrivateAccess);
+                }
 
                 // Check that tool has at least one default path
                 if (Strings.isNullOrEmpty(cwlPath) && Strings.isNullOrEmpty(wdlPath)) {
@@ -827,6 +903,7 @@ public class ToolClient extends AbstractEntryClient {
 
     // Help Commands
     protected void printClientSpecificHelp() {
+        out("");
         out("  version_tag      :  updates version tags for an individual tool");
         out("");
         out("  " + ToolClient.UPDATE_TOOL + "      :  updates certain fields of a tool");
@@ -853,6 +930,8 @@ public class ToolClient extends AbstractEntryClient {
         out("  --toolname <toolname>                                        Toolname for the given tool");
         out("  --git-url <git-url>                                          Git url");
         out("  --default-version <default-version>                          Default branch name");
+        out("  --tool-maintainer-email <tool-maintainer-email>              Email of tool maintainer (Used for private tools). Manual tools only.");
+        out("  --private <true/false>                                    Private tools have private docker images, public tools do not. Manual tools only.");
         printHelpFooter();
     }
 
@@ -952,6 +1031,8 @@ public class ToolClient extends AbstractEntryClient {
         out("  --toolname <toolname>                                    Name of the tool, can be omitted, defaults to null");
         out("  --registry <registry>                                    Docker registry, can be omitted, defaults to registry.hub.docker.com");
         out("  --version-name <version>                                 Version tag name for Dockerhub containers only, defaults to latest");
+        out("  --private <true/false>                                   Is the tool private or not, defaults to false");
+        out("  --tool-maintainer-email <tool maintainer email>          The contact email for the tool maintainer. Required for private repositories.");
         printHelpFooter();
     }
 

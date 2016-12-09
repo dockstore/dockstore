@@ -18,6 +18,7 @@ package io.dockstore.webservice.resources;
 
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.repackaged.com.google.common.base.Strings;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
@@ -397,16 +398,18 @@ public class DockerRepoResource {
         if (request.getPublish()) {
             boolean validTag = false;
 
-            // Why are manual images always valid?
-            if (c.getMode() == ToolMode.MANUAL_IMAGE_PATH) {
-                validTag = true;
-            } else {
-                Set<Tag> tags = c.getTags();
-                for (Tag tag : tags) {
-                    if (tag.isValid()) {
-                        validTag = true;
-                        break;
-                    }
+            Set<Tag> tags = c.getTags();
+            for (Tag tag : tags) {
+                if (tag.isValid()) {
+                    validTag = true;
+                    break;
+                }
+            }
+
+            if (c.isPrivateAccess()) {
+                // Check that either tool maintainer email or author email is not null
+                if (Strings.isNullOrEmpty(c.getToolMaintainerEmail()) && Strings.isNullOrEmpty(c.getEmail())) {
+                    throw new CustomWebApplicationException("Either a tool email or tool maintainer email is required to publish private tools.", HttpStatus.SC_BAD_REQUEST);
                 }
             }
 
