@@ -25,7 +25,7 @@ import org.apache.http.client.HttpClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.Registry;
+import io.dockstore.common.Registry;
 import io.dockstore.webservice.core.Token;
 
 /**

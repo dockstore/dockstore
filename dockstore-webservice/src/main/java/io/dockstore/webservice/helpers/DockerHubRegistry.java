@@ -21,7 +21,7 @@ import java.util.List;
 
 import org.apache.http.client.HttpClient;
 
-import io.dockstore.webservice.core.Registry;
+import io.dockstore.common.Registry;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Tag;
 

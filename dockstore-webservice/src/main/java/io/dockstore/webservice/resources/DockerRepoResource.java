@@ -25,7 +25,7 @@ import com.google.gson.Gson;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.core.Label;
-import io.dockstore.webservice.core.Registry;
+import io.dockstore.common.Registry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
 import io.dockstore.webservice.core.Tag;
@@ -824,7 +824,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/dockerRegistryList")
-    @ApiOperation(value = "Get the list of corresponding docker registries supported on Dockstore.", notes = "Does not need authentication", response = Map.class, responseContainer = "List")
+    @ApiOperation(value = "Get the list of docker registries supported on Dockstore.", notes = "Does not need authentication", response = Map.class, responseContainer = "List")
     public List<Map<String, String>> getTestParameterFiles() {
         ArrayList<Map<String, String>> registryList = new ArrayList<>();
         for (Registry r : Registry.values()) {

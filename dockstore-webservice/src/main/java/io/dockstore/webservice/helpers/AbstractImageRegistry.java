@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.Registry;
+import io.dockstore.common.Registry;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Tag;
