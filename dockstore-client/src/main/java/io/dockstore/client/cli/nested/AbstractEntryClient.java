@@ -644,9 +644,9 @@ public abstract class AbstractEntryClient {
                     } else if(getEntryType().toLowerCase().equals("tool") && matchTool.find()){
                         classToolFound = true;
                     } else if((getEntryType().toLowerCase().equals("tool") && matchWf.find())) {
-                        errorMessage("Entry type does not match the class specified in CWL file.", CLIENT_ERROR);
+                        errorMessage("Expected a tool but the CWL file specified a workflow. Use 'dockstore workflow launch ...' instead.", CLIENT_ERROR);
                     } else if (getEntryType().toLowerCase().equals("workflow") && matchTool.find()){
-                        errorMessage("Entry type does not match the class specified in CWL file.", CLIENT_ERROR);
+                        errorMessage("Expected a workflow but the CWL file specified a tool. Use 'dockstore tool launch ...' instead.", CLIENT_ERROR);
                     }
                 }
             }
