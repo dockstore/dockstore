@@ -815,6 +815,18 @@ public class BasicET {
         }
 
         /**
+         * This tests that a tool cannot be manually published if it has an incorrect registry
+         */
+        @Test
+        public void testManualPublishToolIncorrectRegistry() {
+                // Manual publish, should fail
+                systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", "thisisafakeregistry",
+                        "--namespace", "dockstoretestuser", "--name", "quayandgithubalternate", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git", "--git-reference",
+                        "master", "--toolname", "alternate", "--script" });
+        }
+
+        /**
          * This tests the dirty bit attribute for tool tags with quay
          */
         @Test
