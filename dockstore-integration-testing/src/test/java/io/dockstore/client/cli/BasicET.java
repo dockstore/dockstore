@@ -1057,4 +1057,20 @@ public class BasicET {
 
         }
 
+        @Test
+        public void testManualPublishGitlabDocker() {
+                // Setup database
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+                // Manual publish
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.GITLAB.toString(),
+                        "--namespace", "dockstore.test.user", "--name", "dockstore-whalesay", "--git-url", "git@gitlab.com:dockstore.test.user/dockstore-whalesay.git", "--git-reference",
+                        "master", "--toolname", "alternate", "--private", "true", "--tool-maintainer-email", "duncan.andrew.g@gmail.com", "--script" });
+
+                // Check that tool exists and is published
+                final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='true' and privateaccess='true'", new ScalarHandler<>());
+                Assert.assertTrue("one tool should be private and published, there are " + count, count == 1);
+
+        }
+
 }
