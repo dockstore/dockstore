@@ -179,11 +179,7 @@ public class Tool extends Entry<Tool, Tag> {
         String repositoryPath;
         if (path == null) {
             StringBuilder builder = new StringBuilder();
-            if (registry == Registry.QUAY_IO) {
-                builder.append("quay.io/");
-            } else {
-                builder.append("registry.hub.docker.com/");
-            }
+            builder.append(registry.toString() + '/');
             builder.append(namespace).append('/').append(name);
             repositoryPath = builder.toString();
         } else {

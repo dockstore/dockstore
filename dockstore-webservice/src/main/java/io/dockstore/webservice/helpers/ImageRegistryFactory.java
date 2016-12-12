@@ -57,14 +57,20 @@ public class ImageRegistryFactory {
     }
 
     public AbstractImageRegistry createImageRegistry(Registry registry) {
+        boolean validRegistry = false;
+        for (Registry r : Registry.values()) {
+            if (r.toString().equals(registry.toString())) {
+                validRegistry = true;
+                break;
+            }
+        }
         if (registry == Registry.QUAY_IO) {
             if (quayToken == null) {
                 return null;
             }
-
             return new QuayImageRegistry(client, objectMapper, quayToken);
-        } else if (registry == Registry.DOCKER_HUB) {
-            return new DockerHubRegistry(client);
+        } else if (validRegistry) {
+            return new ManualRegistry(client, registry);
         } else {
             throw new CustomWebApplicationException("Sorry, we do not support " + registry + ".", HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE);
         }

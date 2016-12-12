@@ -820,4 +820,22 @@ public class DockerRepoResource {
         return tag.getSourceFiles();
     }
 
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/dockerRegistryList")
+    @ApiOperation(value = "Get the list of corresponding docker registries supported on Dockstore.", notes = "Does not need authentication", response = Map.class, responseContainer = "List")
+    public List<Map<String, String>> getTestParameterFiles() {
+        ArrayList<Map<String, String>> registryList = new ArrayList<>();
+        for (Registry r : Registry.values()) {
+            Map<String, String> registry = new HashMap<>();
+            registry.put("enum", r.name());
+            registry.put("friendlyName", r.getFriendlyName());
+            registry.put("dockerCommand", r.toString());
+            registry.put("url", r.getUrl());
+            registryList.add(registry);
+        }
+        return registryList;
+    }
+
 }
