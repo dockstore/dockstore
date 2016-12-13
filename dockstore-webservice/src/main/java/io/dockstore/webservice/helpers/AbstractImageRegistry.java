@@ -100,9 +100,9 @@ public abstract class AbstractImageRegistry {
         if (this.getClass().equals(QuayImageRegistry.class)) {
             manualTools.removeIf(test -> !test.getUsers().contains(user) || !test.getRegistry().equals(Registry.QUAY_IO));
             dbTools.removeIf(test -> !test.getRegistry().equals(Registry.QUAY_IO));
-        } else if (this.getClass().equals(DockerHubRegistry.class)) {
-            manualTools.removeIf(test -> !test.getUsers().contains(user) || !test.getRegistry().equals(Registry.DOCKER_HUB));
-            dbTools.removeIf(test -> !test.getRegistry().equals(Registry.DOCKER_HUB));
+        } else { // Deal with manual
+            manualTools.removeIf(test -> !test.getUsers().contains(user) || test.getRegistry().equals(Registry.QUAY_IO));
+            dbTools.removeIf(test -> test.getRegistry().equals(Registry.QUAY_IO));
         }
         apiTools.addAll(manualTools);
 
