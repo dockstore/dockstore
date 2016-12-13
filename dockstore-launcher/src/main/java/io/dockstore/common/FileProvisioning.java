@@ -40,7 +40,9 @@ import org.apache.commons.net.io.CopyStreamListener;
 import org.apache.commons.net.io.Util;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemManager;
+import org.apache.commons.vfs2.FileSystemOptions;
 import org.apache.commons.vfs2.VFS;
+import org.apache.commons.vfs2.provider.ftp.FtpFileSystemConfigBuilder;
 import org.sagebionetworks.client.SynapseClient;
 import org.sagebionetworks.client.SynapseClientImpl;
 import org.slf4j.Logger;
@@ -162,9 +164,13 @@ public class FileProvisioning {
         // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
         // https://commons.apache.org/proper/commons-vfs/filesystems.html
         try {
+            // force passive mode for FTP (see emails from Keiran)
+            FileSystemOptions opts = new FileSystemOptions();
+            FtpFileSystemConfigBuilder.getInstance().setPassiveMode(opts, true);
+
             // trigger a copy from the URL to a local file path that's a UUID to avoid collision
             FileSystemManager fsManager = VFS.getManager();
-            org.apache.commons.vfs2.FileObject src = fsManager.resolveFile(path);
+            org.apache.commons.vfs2.FileObject src = fsManager.resolveFile(path, opts);
             org.apache.commons.vfs2.FileObject dest = fsManager.resolveFile(new File(targetFilePath).getAbsolutePath());
             InputStream inputStream = src.getContent().getInputStream();
             long inputSize = src.getContent().getSize();
