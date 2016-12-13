@@ -854,7 +854,11 @@ public abstract class AbstractEntryClient {
         Type ext = checkFileExtension(file.getPath());     //file extension could be cwl,wdl or ""
 
         if (!file.exists() || file.isDirectory()) {
-            errorMessage("The file " + file.getPath() + "does not exist. Did you mean to use --entry instead of --local-entry?", CLIENT_ERROR);
+            if (getEntryType().toLowerCase().equals("tool")) {
+                errorMessage("The tool file " + file.getPath() + " does not exist. Did you mean to launch a remote tool or a workflow?", IO_ERROR);
+            } else {
+                errorMessage("The workflow file " + file.getPath() + " does not exist. Did you mean to launch a remote workflow or a tool?", IO_ERROR);
+            }
         }
 
         Type content = checkFileContent(file);             //check the file content (wdl,cwl or "")
@@ -864,9 +868,9 @@ public abstract class AbstractEntryClient {
                 try {
                     launchCwl(localFilePath, argsList, true);
                 } catch (ApiException e) {
-                    exceptionMessage(e, "API error launching workflow", Client.API_ERROR);
+                    exceptionMessage(e, "API error launching entry", Client.API_ERROR);
                 } catch (IOException e) {
-                    exceptionMessage(e, "IO error launching workflow", IO_ERROR);
+                    exceptionMessage(e, "IO error launching entry", IO_ERROR);
                 }
             }else if(!content.equals(Type.CWL) && descriptor==null){
                 //extension is cwl but the content is not cwl
@@ -879,9 +883,9 @@ public abstract class AbstractEntryClient {
                 try {
                     launchWdl(argsList, true);
                 } catch (ApiException e) {
-                    exceptionMessage(e, "API error launching workflow", Client.API_ERROR);
+                    exceptionMessage(e, "API error launching entry", Client.API_ERROR);
                 } catch (IOException e) {
-                    exceptionMessage(e, "IO error launching workflow", IO_ERROR);
+                    exceptionMessage(e, "IO error launching entry", IO_ERROR);
                 }
             } else{
                 errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
@@ -891,9 +895,9 @@ public abstract class AbstractEntryClient {
                 try {
                     launchWdl(localFilePath, argsList, true);
                 } catch (ApiException e) {
-                    exceptionMessage(e, "API error launching workflow", Client.API_ERROR);
+                    exceptionMessage(e, "API error launching entry", Client.API_ERROR);
                 } catch (IOException e) {
-                    exceptionMessage(e, "IO error launching workflow", IO_ERROR);
+                    exceptionMessage(e, "IO error launching entry", IO_ERROR);
                 }
             }else if(!content.equals(Type.WDL) && descriptor==null){
                 //extension is wdl but the content is not wdl
@@ -906,9 +910,9 @@ public abstract class AbstractEntryClient {
                 try {
                     launchCwl(localFilePath, argsList, true);
                 } catch (ApiException e) {
-                    exceptionMessage(e, "API error launching workflow", Client.API_ERROR);
+                    exceptionMessage(e, "API error launching entry", Client.API_ERROR);
                 } catch (IOException e) {
-                    exceptionMessage(e, "IO error launching workflow", IO_ERROR);
+                    exceptionMessage(e, "IO error launching entry", IO_ERROR);
                 }
             } else{
                 errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
@@ -921,9 +925,9 @@ public abstract class AbstractEntryClient {
                 try {
                     launchCwl(localFilePath, argsList, true);
                 } catch (ApiException e) {
-                    exceptionMessage(e, "API error launching workflow", Client.API_ERROR);
+                    exceptionMessage(e, "API error launching entry", Client.API_ERROR);
                 } catch (IOException e) {
-                    exceptionMessage(e, "IO error launching workflow", IO_ERROR);
+                    exceptionMessage(e, "IO error launching entry", IO_ERROR);
                 }
             }else if(content.equals(Type.WDL)){
                 out("This is a WDL file.. Please put an extension to the entry file name.");
@@ -931,9 +935,9 @@ public abstract class AbstractEntryClient {
                 try {
                     launchWdl(localFilePath, argsList, true);
                 } catch (ApiException e) {
-                    exceptionMessage(e, "API error launching workflow", Client.API_ERROR);
+                    exceptionMessage(e, "API error launching entry", Client.API_ERROR);
                 } catch (IOException e) {
-                    exceptionMessage(e, "IO error launching workflow", IO_ERROR);
+                    exceptionMessage(e, "IO error launching entry", IO_ERROR);
                 }
             } else{
                 errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
@@ -964,7 +968,7 @@ public abstract class AbstractEntryClient {
                     } catch (ApiException e) {
                         exceptionMessage(e, "API error launching workflow. Did you mean to use --local-entry instead of --entry?", Client.API_ERROR);
                     } catch (IOException e) {
-                        exceptionMessage(e, "IO error launching workflow. Did you mean to use --local-entry instead of --entry?", IO_ERROR);
+                        exceptionMessage(e, "IO error launching workflow. Did you mean to use --local-entry instead of --entry?", Client.IO_ERROR);
                     }
                 } else if (descriptor.equals(WDL_STRING)) {
                     try {
@@ -972,7 +976,7 @@ public abstract class AbstractEntryClient {
                     } catch (ApiException e) {
                         exceptionMessage(e, "API error launching workflow. Did you mean to use --local-entry instead of --entry?", Client.API_ERROR);
                     } catch (IOException e) {
-                        exceptionMessage(e, "IO error launching workflow. Did you mean to use --local-entry instead of --entry?", IO_ERROR);
+                        exceptionMessage(e, "IO error launching workflow. Did you mean to use --local-entry instead of --entry?", Client.IO_ERROR);
                     }
                 }
             }
@@ -1024,9 +1028,17 @@ public abstract class AbstractEntryClient {
         }
 
         if (!isLocalEntry) {
-            final SourceFile cwlFromServer = getDescriptorFromServer(entry, "cwl");
-            Files.write(cwlFromServer.getContent(), tempCWL, StandardCharsets.UTF_8);
-            downloadDescriptors(entry, "cwl", tempDir);
+            try {
+                final SourceFile cwlFromServer = getDescriptorFromServer(entry, "cwl");
+                Files.write(cwlFromServer.getContent(), tempCWL, StandardCharsets.UTF_8);
+                downloadDescriptors(entry, "cwl", tempDir);
+            } catch (ApiException e) {
+                if (getEntryType().toLowerCase().equals("tool")) {
+                    exceptionMessage(e, "The tool entry does not exist. Did you mean to launch a local tool or a workflow?", API_ERROR);
+                } else {
+                    exceptionMessage(e, "The workflow entry does not exist. Did you mean to launch a local workflow or a tool?", API_ERROR);
+                }
+            }
         }
         jsonRun = convertYamlToJson(yamlRun, jsonRun);
 
@@ -1140,7 +1152,7 @@ public abstract class AbstractEntryClient {
 
     /**
      *
-     * @param entry file path for tthe wdl file or a dockstore id
+     * @param entry file path for the wdl file or a dockstore id
      * @param isLocalEntry
      * @param json file path for the json parameter file
      * @param wdlOutputTarget
@@ -1271,7 +1283,11 @@ public abstract class AbstractEntryClient {
                 System.out.println("Output files left in place");
             }
         } catch (ApiException ex) {
-            exceptionMessage(ex, "", API_ERROR);
+            if (getEntryType().toLowerCase().equals("tool")) {
+                exceptionMessage(ex, "The tool entry does not exist. Did you mean to launch a local tool or a workflow?", API_ERROR);
+            } else {
+                exceptionMessage(ex, "The workflow entry does not exist. Did you mean to launch a local workflow or a tool?", API_ERROR);
+            }
         } catch (IOException ex) {
             exceptionMessage(ex, "", IO_ERROR);
         }
