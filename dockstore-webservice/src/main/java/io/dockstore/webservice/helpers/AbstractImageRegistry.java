@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.Registry;
+import io.dockstore.common.Registry;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Tag;
@@ -100,9 +100,9 @@ public abstract class AbstractImageRegistry {
         if (this.getClass().equals(QuayImageRegistry.class)) {
             manualTools.removeIf(test -> !test.getUsers().contains(user) || !test.getRegistry().equals(Registry.QUAY_IO));
             dbTools.removeIf(test -> !test.getRegistry().equals(Registry.QUAY_IO));
-        } else if (this.getClass().equals(DockerHubRegistry.class)) {
-            manualTools.removeIf(test -> !test.getUsers().contains(user) || !test.getRegistry().equals(Registry.DOCKER_HUB));
-            dbTools.removeIf(test -> !test.getRegistry().equals(Registry.DOCKER_HUB));
+        } else { // Deal with manual
+            manualTools.removeIf(test -> !test.getUsers().contains(user) || test.getRegistry().equals(Registry.QUAY_IO));
+            dbTools.removeIf(test -> test.getRegistry().equals(Registry.QUAY_IO));
         }
         apiTools.addAll(manualTools);
 

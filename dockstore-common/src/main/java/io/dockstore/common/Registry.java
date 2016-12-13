@@ -14,32 +14,50 @@
  *    limitations under the License.
  */
 
-package io.dockstore.webservice.core;
-
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+package io.dockstore.common;
 
 /**
  * This enumerates the types of docker registry that we can associate an entry with.
  * 
  * @author dyuen
  */
-@ApiModel(description = "This enumerates the types of docker registry that we can associate an entry with. ")
 public enum Registry {
-    QUAY_IO("quay.io"), DOCKER_HUB("registry.hub.docker.com");
+    // Add new registries here
+    QUAY_IO("quay.io", "Quay.io", "https://quay.io/repository/"), DOCKER_HUB("registry.hub.docker.com", "Docker Hub", "https://hub.docker.com/"),
+    GITLAB("registry.gitlab.com", "GitLab", "https://gitlab.com/");
 
     /**
      * this name is what is actually used in commands like docker pull
      */
-    @ApiModelProperty(value = "A friendly name which can be used when web browsing", required = true)
+    private final String dockerCommand;
+
+    /**
+     * this name is what is displayed to users to name the registry
+     */
     private final String friendlyName;
 
-    Registry(final String friendlyName) {
+    /**
+     * this url is what is used for creating links to the registry website.
+     * A value of 'empty' means that there are no ways to directly link to the image
+     */
+    private final String url;
+
+    Registry(final String dockerCommand, final String friendlyName, final String url) {
         this.friendlyName = friendlyName;
+        this.dockerCommand = dockerCommand;
+        this.url = url;
     }
 
     @Override
     public String toString() {
+        return dockerCommand;
+    }
+
+    public String getFriendlyName() {
         return friendlyName;
+    }
+
+    public String getUrl() {
+        return url;
     }
 }
