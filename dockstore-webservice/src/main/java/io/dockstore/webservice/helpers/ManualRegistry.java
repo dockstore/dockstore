@@ -22,21 +22,19 @@ import java.util.List;
 import org.apache.http.client.HttpClient;
 
 import io.dockstore.common.Registry;
-import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Tag;
+import io.dockstore.webservice.core.Tool;
 
 /**
- * A no-op interface intended as a place-holder for where we will implement docker hub functionality when they get around to exposing and
- * implementing their API.
- *
- * @author dyuen
+ * Created by aduncan on 09/12/16.
  */
-public class DockerHubRegistry extends AbstractImageRegistry {
-
+public class ManualRegistry extends AbstractImageRegistry {
     private final HttpClient client;
+    private final Registry registry;
 
-    public DockerHubRegistry(HttpClient client) {
+    public ManualRegistry(HttpClient client, Registry registry) {
         this.client = client;
+        this.registry = registry;
     }
 
     @Override public List<Tag> getTags(Tool tool) {
@@ -53,8 +51,7 @@ public class DockerHubRegistry extends AbstractImageRegistry {
 
     @Override public void updateAPIToolsWithBuildInformation(List<Tool> apiTools) {
         for (Tool tool : apiTools) {
-            tool.setRegistry(Registry.DOCKER_HUB);
+            tool.setRegistry(registry);
         }
     }
-
 }

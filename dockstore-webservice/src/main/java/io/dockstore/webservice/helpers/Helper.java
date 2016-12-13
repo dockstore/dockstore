@@ -22,7 +22,7 @@ import com.google.gson.Gson;
 
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.Registry;
+import io.dockstore.common.Registry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
 import io.dockstore.webservice.core.Tag;

@@ -20,6 +20,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.io.Files;
 import io.dockstore.client.cli.Client;
+import io.dockstore.common.Registry;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
@@ -49,6 +50,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.DESCRIPTION_HEADER;
@@ -310,8 +312,10 @@ public class ToolClient extends AbstractEntryClient {
 
     @Override
     public void manualPublish(final List<String> args) {
-        if (args.isEmpty() || containsHelpRequest(args)) {
+        if (containsHelpRequest(args)) {
             manualPublishHelp();
+        } else if (args.isEmpty()) {
+            printRegistriesAvailable();
         } else {
             final String name = reqVal(args, "--name");
             final String namespace = reqVal(args, "--namespace");
@@ -325,6 +329,15 @@ public class ToolClient extends AbstractEntryClient {
             final String toolMaintainerEmail = optVal(args, "--tool-maintainer-email", null);
             final String registry = optVal(args, "--registry", Registry.DOCKER_HUB.toString());
             final String privateAccess = optVal(args, "--private", "false");
+
+            // Check that registry is valid
+            boolean validRegistry = Stream.of(Registry.values()).anyMatch(r -> r.toString().equals(registry));
+
+            if (!validRegistry) {
+                out("The registry \'" + registry + "\' is not available.");
+                printRegistriesAvailable();
+                errorMessage("Invalid Docker registry.", Client.CLIENT_ERROR);
+            }
 
             // Check for correct private access
             if (!(privateAccess.equalsIgnoreCase("false") || privateAccess.equalsIgnoreCase("true"))) {
@@ -908,7 +921,7 @@ public class ToolClient extends AbstractEntryClient {
         out("");
         out("  " + ToolClient.UPDATE_TOOL + "      :  updates certain fields of a tool");
         out("");
-        out("  manual_publish   :  registers a Docker Hub (or manual Quay) tool in the dockstore and then attempt to publish");
+        out("  manual_publish   :  registers a manual tool in the dockstore and then attempt to publish");
         out("");
     }
 
@@ -931,7 +944,7 @@ public class ToolClient extends AbstractEntryClient {
         out("  --git-url <git-url>                                          Git url");
         out("  --default-version <default-version>                          Default branch name");
         out("  --tool-maintainer-email <tool-maintainer-email>              Email of tool maintainer (Used for private tools). Manual tools only.");
-        out("  --private <true/false>                                    Private tools have private docker images, public tools do not. Manual tools only.");
+        out("  --private <true/false>                                       Private tools have private docker images, public tools do not. Manual tools only.");
         printHelpFooter();
     }
 
@@ -1017,6 +1030,7 @@ public class ToolClient extends AbstractEntryClient {
         out("");
         out("Description:");
         out("  Manually register an tool in the dockstore. Currently this is used to register entries for images on Docker Hub.");
+        out("  No parameters will show the list of available registries.");
         out("");
         out("Required parameters:");
         out("  --name <name>                                            Name for the docker container");
@@ -1037,20 +1051,6 @@ public class ToolClient extends AbstractEntryClient {
     }
 
 
-    // This should be linked to common, but we won't do this now because we don't want dependencies changing during testing
-    public enum Registry {
-        QUAY_IO("quay.io"), DOCKER_HUB("registry.hub.docker.com");
-        private String value;
-
-        Registry(String value) {
-            this.value = value;
-        }
-
-        @Override
-        public String toString() {
-            return value;
-        }
-    }
 
     private static class ToolComparator implements Comparator<DockstoreTool> {
         @Override
@@ -1059,6 +1059,13 @@ public class ToolClient extends AbstractEntryClient {
             String path2 = c2.getPath();
 
             return path1.compareToIgnoreCase(path2);
+        }
+    }
+
+    private static void printRegistriesAvailable() {
+        out("The available Docker Registries are:");
+        for (Registry r : Registry.values()) {
+            out(" *" + r.toString());
         }
     }
 }

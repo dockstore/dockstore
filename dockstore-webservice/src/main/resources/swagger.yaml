@@ -735,6 +735,22 @@ paths:
             type: array
       summary: List all docker containers cached in database
       tags: [containers]
+  /containers/dockerRegistryList:
+    get:
+      description: Does not need authentication
+      operationId: getTestParameterFiles
+      parameters: []
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema:
+            items:
+              additionalProperties: {type: object}
+              type: object
+            type: array
+      summary: Get the list of docker registries supported on Dockstore.
+      tags: [containers]
   /containers/path/tool/{repository}:
     get:
       description: Lists info of container. Enter full path (include quay.io in path).

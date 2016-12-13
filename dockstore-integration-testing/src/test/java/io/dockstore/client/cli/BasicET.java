@@ -20,7 +20,7 @@ import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dockstore.webservice.core.Registry;
+import io.dockstore.common.Registry;
 import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit.DropwizardAppRule;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
@@ -815,6 +815,18 @@ public class BasicET {
         }
 
         /**
+         * This tests that a tool cannot be manually published if it has an incorrect registry
+         */
+        @Test
+        public void testManualPublishToolIncorrectRegistry() {
+                // Manual publish, should fail
+                systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", "thisisafakeregistry",
+                        "--namespace", "dockstoretestuser", "--name", "quayandgithubalternate", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git", "--git-reference",
+                        "master", "--toolname", "alternate", "--script" });
+        }
+
+        /**
          * This tests the dirty bit attribute for tool tags with quay
          */
         @Test
@@ -1042,6 +1054,22 @@ public class BasicET {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.toString(),
                         "--namespace", "dockstoretestuser", "--name", "private_test_repo", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
                         "master", "--private", "true", "--script" });
+
+        }
+
+        @Test
+        public void testManualPublishGitlabDocker() {
+                // Setup database
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+                // Manual publish
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.GITLAB.toString(),
+                        "--namespace", "dockstore.test.user", "--name", "dockstore-whalesay", "--git-url", "git@gitlab.com:dockstore.test.user/dockstore-whalesay.git", "--git-reference",
+                        "master", "--toolname", "alternate", "--private", "true", "--tool-maintainer-email", "duncan.andrew.g@gmail.com", "--script" });
+
+                // Check that tool exists and is published
+                final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='true' and privateaccess='true'", new ScalarHandler<>());
+                Assert.assertTrue("one tool should be private and published, there are " + count, count == 1);
 
         }
 

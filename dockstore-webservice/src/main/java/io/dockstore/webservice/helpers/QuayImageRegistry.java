@@ -19,7 +19,7 @@ package io.dockstore.webservice.helpers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
-import io.dockstore.webservice.core.Registry;
+import io.dockstore.common.Registry;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
