@@ -18,6 +18,7 @@ package io.dockstore.webservice.helpers;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -57,13 +58,7 @@ public class ImageRegistryFactory {
     }
 
     public AbstractImageRegistry createImageRegistry(Registry registry) {
-        boolean validRegistry = false;
-        for (Registry r : Registry.values()) {
-            if (r.toString().equals(registry.toString())) {
-                validRegistry = true;
-                break;
-            }
-        }
+        boolean validRegistry = Stream.of(Registry.values()).anyMatch(r -> r.toString().equals(registry.toString()));
         if (registry == Registry.QUAY_IO) {
             if (quayToken == null) {
                 return null;

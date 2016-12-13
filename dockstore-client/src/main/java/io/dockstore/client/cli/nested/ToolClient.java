@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.DESCRIPTION_HEADER;
@@ -330,13 +331,7 @@ public class ToolClient extends AbstractEntryClient {
             final String privateAccess = optVal(args, "--private", "false");
 
             // Check that registry is valid
-            boolean validRegistry = false;
-            for (Registry r : Registry.values()) {
-                if (registry.equals(r.toString())) {
-                    validRegistry = true;
-                    break;
-                }
-            }
+            boolean validRegistry = Stream.of(Registry.values()).anyMatch(r -> r.toString().equals(registry));
 
             if (!validRegistry) {
                 out("The registry \'" + registry + "\' is not available.");
