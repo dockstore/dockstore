@@ -1240,7 +1240,7 @@ public abstract class AbstractEntryClient {
                     new1.setLocalPath(resultFile.getAbsolutePath());
                     System.out.println("Uploading: " + outFile + " from " + resultFile + " to : " + new1.getUrl());
                     FileProvisioning fileProvisioning = new FileProvisioning(this.getConfigFile());
-                    fileProvisioning.provisionOutputFile(new1, resultFile.getAbsolutePath());
+                    fileProvisioning.provisionOutputFile(resultFile.getAbsolutePath(), new1.getUrl());
                 }
             } else{
                 System.out.println("Output files left in place");
