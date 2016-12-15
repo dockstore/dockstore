@@ -23,6 +23,8 @@ import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -125,6 +127,61 @@ public class LaunchTestIT {
         Client client = new Client();
         // do not use a cache
         runTool(cwlFile, args, api, usersApi, client, false);
+    }
+
+    @Test
+    public void runToolWithSecondaryFilesOnOutput() throws IOException{
+
+        FileUtils.deleteDirectory(new File("/tmp/provision_out_with_files"));
+
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("split.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("split.json"));
+
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("--local-entry");
+            add("--cwl");
+            add(cwlFile.getAbsolutePath());
+            add("--json");
+            add(cwlJSON.getAbsolutePath());
+        }};
+
+        ContainersApi api = mock(ContainersApi.class);
+        UsersApi usersApi = mock(UsersApi.class);
+        Client client = new Client();
+        // do not use a cache
+        runTool(cwlFile, args, api, usersApi, client, true);
+
+        final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Uploading");
+        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
+        for(char y = 'a'; y <= 'f'; y++){
+            assertTrue("output should provision out to correct locations", systemOutRule.getLog().contains("/tmp/provision_out_with_files/test.a" + y));
+        }
+    }
+
+    @Test
+    public void runToolWithoutProvisionOnOutput() throws IOException{
+
+        FileUtils.deleteDirectory(new File("/tmp/provision_out_with_files"));
+
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("split.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("split_no_provision_out.json"));
+
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("--local-entry");
+            add("--cwl");
+            add(cwlFile.getAbsolutePath());
+            add("--json");
+            add(cwlJSON.getAbsolutePath());
+        }};
+
+        ContainersApi api = mock(ContainersApi.class);
+        UsersApi usersApi = mock(UsersApi.class);
+        Client client = new Client();
+        // do not use a cache
+        runTool(cwlFile, args, api, usersApi, client, true);
+
+        final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Uploading");
+        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 0);
     }
 
     @Test
