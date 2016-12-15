@@ -54,4 +54,8 @@ public class ManualRegistry extends AbstractImageRegistry {
             tool.setRegistry(registry);
         }
     }
+
+    @Override public Registry getRegistry() {
+        return registry;
+    }
 }

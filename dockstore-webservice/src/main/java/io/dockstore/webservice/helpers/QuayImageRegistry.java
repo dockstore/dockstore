@@ -330,5 +330,8 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         return reference;
     }
 
-
+    @Override
+    public Registry getRegistry() {
+        return Registry.QUAY_IO;
+    }
 }

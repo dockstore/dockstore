@@ -23,8 +23,8 @@ package io.dockstore.common;
  */
 public enum Registry {
     // Add new registries here
-    QUAY_IO("quay.io", "Quay.io", "https://quay.io/repository/"), DOCKER_HUB("registry.hub.docker.com", "Docker Hub", "https://hub.docker.com/"),
-    GITLAB("registry.gitlab.com", "GitLab", "https://gitlab.com/");
+    QUAY_IO("quay.io", "Quay.io", "https://quay.io/repository/", false), DOCKER_HUB("registry.hub.docker.com", "Docker Hub", "https://hub.docker.com/", false),
+    GITLAB("registry.gitlab.com", "GitLab", "https://gitlab.com/", false), AMAZON_ECR(null, "Amazon ECR", null, true);
 
     /**
      * this name is what is actually used in commands like docker pull
@@ -42,10 +42,17 @@ public enum Registry {
      */
     private final String url;
 
-    Registry(final String dockerCommand, final String friendlyName, final String url) {
+    /**
+     * if set to true, then the registry has no public facing site and is only available through an authorized docker pull (the docker registry path is not set)
+     * if set to false, then the registry has a public facing site which can be linked to
+     */
+    private final boolean privateOnly;
+
+    Registry(final String dockerCommand, final String friendlyName, final String url, final boolean privateOnly) {
         this.friendlyName = friendlyName;
         this.dockerCommand = dockerCommand;
         this.url = url;
+        this.privateOnly = privateOnly;
     }
 
     @Override
@@ -59,5 +66,9 @@ public enum Registry {
 
     public String getUrl() {
         return url;
+    }
+
+    public boolean isPrivateOnly() {
+        return privateOnly;
     }
 }

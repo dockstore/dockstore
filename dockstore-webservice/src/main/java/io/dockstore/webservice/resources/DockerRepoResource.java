@@ -833,6 +833,7 @@ public class DockerRepoResource {
             registry.put("friendlyName", r.getFriendlyName());
             registry.put("dockerCommand", r.toString());
             registry.put("url", r.getUrl());
+            registry.put("privateOnly", Boolean.toString(r.isPrivateOnly()));
             registryList.add(registry);
         }
         return registryList;

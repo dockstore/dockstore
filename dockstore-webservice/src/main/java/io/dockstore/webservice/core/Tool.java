@@ -115,7 +115,7 @@ public class Tool extends Entry<Tool, Tag> {
     private String namespace;
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    @ApiModelProperty(value = "This is a specific docker provider like quay.io or dockerhub or n/a?, required: GA4GH", required = true, allowableValues = "QUAY_IO,DOCKER_HUB")
+    @ApiModelProperty(value = "This is a specific docker provider like quay.io or dockerhub or n/a?, required: GA4GH", required = true)
     private Registry registry;
     @Column
     @ApiModelProperty(value = "This is a generated full docker path including registry and namespace, used for docker pull commands", readOnly = true)
