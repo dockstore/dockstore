@@ -1133,7 +1133,7 @@ public class ToolClient extends AbstractEntryClient {
             if (!r.isPrivateOnly()) {
                 out(" *" + r.name() + " (" + r.toString() + ")");
             } else {
-                out(" *" + r.name() + " (Custom)");
+                out(" *" + r.name() + " (PRIVATE)");
             }
         }
     }
