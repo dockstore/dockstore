@@ -87,9 +87,19 @@ definitions:
       redirectURI: {type: string}
       view: {$ref: '#/definitions/GithubComView'}
     type: object
+  GitLabComAuthenticationResource:
+    properties:
+      clientID: {type: string}
+      redirectURI: {type: string}
+      view: {$ref: '#/definitions/GitlabComView'}
+    type: object
   GithubComView:
     properties:
       parent: {$ref: '#/definitions/GitHubComAuthenticationResource'}
+    type: object
+  GitlabComView:
+    properties:
+      parent: {$ref: '#/definitions/GitLabComAuthenticationResource'}
     type: object
   Group:
     description: This describes a grouping of end-users for the purposes of managing sharing. Implementation-specific.
@@ -143,7 +153,7 @@ definitions:
       path: {description: Path to source file in git repo, type: string}
       type:
         description: Enumerates the type of file
-        enum: [DOCKSTORE_CWL, DOCKSTORE_WDL, DOCKERFILE]
+        enum: [DOCKSTORE_CWL, DOCKSTORE_WDL, DOCKERFILE, CWL_TEST_JSON, WDL_TEST_JSON]
         type: string
     required: [path, type]
     type: object
@@ -153,6 +163,7 @@ definitions:
       automated: {default: false, description: 'Implementation specific, indicates
           whether this is an automated build on quay.io', type: boolean}
       cwl_path: {description: Path for the CWL document, type: string}
+      dirtyBit: {default: false, description: True if user has altered the tag, type: boolean}
       dockerfile_path: {description: Path for the Dockerfile, type: string}
       hidden: {default: false, description: 'Implementation specific, whether this
           row is visible to other users aside from the owner', type: boolean}
@@ -172,6 +183,9 @@ definitions:
         uniqueItems: true
       valid: {default: false, description: 'Implementation specific, whether this
           tag has valid files from source code repo', type: boolean}
+      verified: {default: false, description: Whether this version has been verified or not,
+        type: boolean}
+      verifiedSource: {description: Verified source for the version, type: string}
       wdl_path: {description: Path for the WDL document, type: string}
     required: [image_id, name, reference]
     type: object
@@ -292,6 +306,11 @@ definitions:
       username: {description: Username on dockstore, type: string}
     required: [isAdmin]
     type: object
+  VerifyRequest:
+    properties:
+      verifiedSource: {readOnly: true, type: string}
+      verify: {default: false, readOnly: true, type: boolean}
+    type: object
   Workflow:
     description: This describes one workflow in the dockstore
     properties:
@@ -345,6 +364,7 @@ definitions:
   WorkflowVersion:
     description: This describes one workflow version associated with a workflow.
     properties:
+      dirtyBit: {default: false, description: True if user has altered the tag, type: boolean}
       hidden: {default: false, description: 'Implementation specific, whether this
           row is visible to other users aside from the owner', type: boolean}
       id: {description: Implementation specific ID for the tag in this web service,
@@ -361,6 +381,9 @@ definitions:
         uniqueItems: true
       valid: {default: false, description: 'Implementation specific, whether this
           tag has valid files from source code repo', type: boolean}
+      verified: {default: false, description: Whether this version has been verified or not,
+        type: boolean}
+      verifiedSource: {description: Verified source for the version, type: string}
       workflow_path: {description: Path for the workflow, type: string}
     required: [name, reference]
     type: object
@@ -640,6 +663,19 @@ paths:
           description: successful operation
           schema: {$ref: '#/definitions/Token'}
       summary: Add a new github.com token, used by quay.io redirect
+      tags: [tokens]
+  /auth/tokens/gitlab.com:
+    get:
+      description: This is used as part of the OAuth 2 web flow. Once a user has approved permissions for CollaboratoryTheir browser will load the redirect URI which should resolve here
+      operationId: addGitlabToken
+      parameters:
+      - {in: query, name: code, required: false, type: string}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema: {$ref: '#/definitions/Token'}
+      summary: Add a new gitlab.com token
       tags: [tokens]
   /auth/tokens/quay.io:
     get:
@@ -1082,6 +1118,79 @@ paths:
         default: {description: successful operation}
       summary: Delete tag linked to a container
       tags: [containertags]
+  /containers/{containerId}/testParameterFiles:
+    delete:
+      description: ''
+      operationId: deleteTestParameterFiles
+      parameters:
+      - {description: Tool to modify., format: int64, in: path, name: containerId,
+        required: true, type: integer}
+      - collectionFormat: multi
+        description: List of paths.
+        in: query
+        items: {type: string}
+        name: testParameterPaths
+        required: true
+        type: array
+      - {in: query, name: tagName, required: false, type: string}
+      - {in: query, name: descriptorType, required: false, type: string}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema:
+            items: {$ref: '#/definitions/SourceFile'}
+            type: array
+            uniqueItems: true
+      summary: Delete test parameter files for a given tag.
+      tags: [containers]
+    get:
+      description: Does not need authentication
+      operationId: getTestParameterFiles
+      parameters:
+      - {description: Tool id, format: int64, in: path, name: containerId, required: true,
+        type: integer}
+      - {in: query, name: tag, required: false, type: string}
+      - {in: query, name: descriptorType, required: false, type: string}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema:
+            items: {$ref: '#/definitions/SourceFile'}
+            type: array
+      summary: Get the corresponding wdl test parameter files.
+      tags: [containers]
+    put:
+      description: ''
+      operationId: addTestParameterFiles
+      parameters:
+      - {description: Tool to modify., format: int64, in: path, name: containerId,
+        required: true, type: integer}
+      - collectionFormat: multi
+        description: List of paths.
+        in: query
+        items: {type: string}
+        name: testParameterPaths
+        required: true
+        type: array
+      - description: This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.
+        in: body
+        name: body
+        required: false
+        schema: {type: string}
+      - {in: query, name: tagName, required: false, type: string}
+      - {in: query, name: descriptorType, required: false, type: string}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema:
+            items: {$ref: '#/definitions/SourceFile'}
+            type: array
+            uniqueItems: true
+      summary: Add test parameter files for a given tag.
+      tags: [containers]
   /containers/{containerId}/updateTagPaths:
     put:
       description: Tag correspond to each row of the versions table listing all information for a docker repo tag
@@ -1117,6 +1226,43 @@ paths:
             type: array
       summary: Get users of a container
       tags: [containers]
+  /containers/{containerId}/verifiedSources:
+    get:
+      description: Does not need authentication
+      operationId: verifiedSources
+      parameters:
+      - {description: Tool id, format: int64, in: path, name: containerId, required: true,
+        type: integer}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema: {type: string}
+      summary: Get the corresponding Dockstore.cwl file on Github.
+      tags: [containers]
+  /containers/{containerId}/verify/{tagId}:
+    put:
+      description: ''
+      operationId: verifyToolTag
+      parameters:
+      - {description: Tool to modify., format: int64, in: path, name: containerId,
+        required: true, type: integer}
+      - {description: Tag to verify., format: int64, in: path, name: tagId, required: true,
+        type: integer}
+      - description: Object containing verification information.
+        in: body
+        name: body
+        required: true
+        schema: {$ref: '#/definitions/VerifyRequest'}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema:
+            items: {$ref: '#/definitions/Tag'}
+            type: array
+      summary: Verify or unverify a version . ADMIN ONLY
+      tags: [containertags]
   /containers/{containerId}/wdl:
     get:
       description: Does not need authentication
@@ -1188,6 +1334,18 @@ paths:
           schema: {$ref: '#/definitions/GithubComView'}
       summary: Display an authorization link for github.com
       tags: [integration.github.com]
+  /integration.gitlab.com:
+    get:
+      description: This is a stop-gap GUI for displaying a link that allows a user to start the OAuth 2 web flow
+      operationId: getView
+      parameters: []
+      produces: [text/html]
+      responses:
+        200:
+          description: successful operation
+          schema: {$ref: '#/definitions/GitlabComView'}
+      summary: Display an authorization link for gitlab.com
+      tags: [integration.gitlab.com]
   /integration.quay.io:
     get:
       description: More notes about this method
@@ -1468,6 +1626,22 @@ paths:
             type: array
       summary: Get Github tokens with user id
       tags: [users]
+  /users/{userId}/tokens/gitlab.com:
+    get:
+      description: ''
+      operationId: getGitlabUserTokens
+      parameters:
+      - {description: User to return, format: int64, in: path, name: userId, required: true,
+        type: integer}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema:
+            items: {$ref: '#/definitions/Token'}
+            type: array
+      summary: Get Gitlab tokens with user id
+      tags: [users]
   /users/{userId}/tokens/quay.io:
     get:
       description: ''
@@ -1690,7 +1864,7 @@ paths:
       description: Does not need authentication
       operationId: cwl
       parameters:
-      - {description: Tool id, format: int64, in: path, name: workflowId, required: true,
+      - {description: Workflow id, format: int64, in: path, name: workflowId, required: true,
         type: integer}
       - {in: query, name: tag, required: false, type: string}
       produces: [application/json]
@@ -1705,7 +1879,7 @@ paths:
       description: Does not need authentication
       operationId: secondaryCwlPath
       parameters:
-      - {description: Tool id, format: int64, in: path, name: workflowId, required: true,
+      - {description: Workflow id, format: int64, in: path, name: workflowId, required: true,
         type: integer}
       - {in: query, name: tag, required: false, type: string}
       - {in: path, name: relative-path, required: true, type: string}
@@ -1824,7 +1998,7 @@ paths:
       description: Does not need authentication
       operationId: secondaryCwl
       parameters:
-      - {description: Tool id, format: int64, in: path, name: workflowId, required: true,
+      - {description: Workflow id, format: int64, in: path, name: workflowId, required: true,
         type: integer}
       - {in: query, name: tag, required: false, type: string}
       produces: [application/json]
@@ -1841,7 +2015,7 @@ paths:
       description: Does not need authentication
       operationId: secondaryWdl
       parameters:
-      - {description: Tool id, format: int64, in: path, name: workflowId, required: true,
+      - {description: Workflow id, format: int64, in: path, name: workflowId, required: true,
         type: integer}
       - {in: query, name: tag, required: false, type: string}
       produces: [application/json]
@@ -1852,6 +2026,76 @@ paths:
             items: {$ref: '#/definitions/SourceFile'}
             type: array
       summary: Get the corresponding Dockstore.wdl file on Github.
+      tags: [workflows]
+  /workflows/{workflowId}/testParameterFiles:
+    delete:
+      description: ''
+      operationId: deleteTestParameterFiles
+      parameters:
+      - {description: Workflow to modify., format: int64, in: path, name: workflowId,
+        required: true, type: integer}
+      - collectionFormat: multi
+        description: List of paths.
+        in: query
+        items: {type: string}
+        name: testParameterPaths
+        required: true
+        type: array
+      - {in: query, name: version, required: false, type: string}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema:
+            items: {$ref: '#/definitions/SourceFile'}
+            type: array
+            uniqueItems: true
+      summary: Delete test parameter files for a given version.
+      tags: [workflows]
+    get:
+      description: Does not need authentication
+      operationId: getTestParameterFiles
+      parameters:
+      - {description: Workflow id, format: int64, in: path, name: workflowId, required: true,
+        type: integer}
+      - {in: query, name: version, required: false, type: string}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema:
+            items: {$ref: '#/definitions/SourceFile'}
+            type: array
+      summary: Get the corresponding test parameter files.
+      tags: [workflows]
+    put:
+      description: ''
+      operationId: addTestParameterFiles
+      parameters:
+      - {description: Workflow to modify., format: int64, in: path, name: workflowId,
+        required: true, type: integer}
+      - collectionFormat: multi
+        description: List of paths.
+        in: query
+        items: {type: string}
+        name: testParameterPaths
+        required: true
+        type: array
+      - description: This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.
+        in: body
+        name: body
+        required: false
+        schema: {type: string}
+      - {in: query, name: version, required: false, type: string}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema:
+            items: {$ref: '#/definitions/SourceFile'}
+            type: array
+            uniqueItems: true
+      summary: Add test parameter files for a given version.
       tags: [workflows]
   /workflows/{workflowId}/tools/{workflowVersionId}:
     get:
@@ -1885,12 +2129,49 @@ paths:
             type: array
       summary: Get users of a workflow
       tags: [workflows]
+  /workflows/{workflowId}/verifiedSources:
+    get:
+      description: Does not need authentication
+      operationId: verifiedSources
+      parameters:
+      - {description: Workflow id, format: int64, in: path, name: workflowId, required: true,
+        type: integer}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema: {type: string}
+      summary: Get a semicolon delimited list of verified sources
+      tags: [workflows]
+  /workflows/{workflowId}/verify/{workflowVersionId}:
+    put:
+      description: ''
+      operationId: verifyWorkflowVersion
+      parameters:
+      - {description: Workflow to modify., format: int64, in: path, name: workflowId,
+        required: true, type: integer}
+      - {description: workflowVersionId, format: int64, in: path, name: workflowVersionId,
+        required: true, type: integer}
+      - description: Object containing verification information.
+        in: body
+        name: body
+        required: true
+        schema: {$ref: '#/definitions/VerifyRequest'}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema:
+            items: {$ref: '#/definitions/WorkflowVersion'}
+            type: array
+      summary: Verify or unverify a workflow. ADMIN ONLY
+      tags: [workflows]
   /workflows/{workflowId}/wdl:
     get:
       description: Does not need authentication
       operationId: wdl
       parameters:
-      - {description: Tool id, format: int64, in: path, name: workflowId, required: true,
+      - {description: Workflow id, format: int64, in: path, name: workflowId, required: true,
         type: integer}
       - {in: query, name: tag, required: false, type: string}
       produces: [application/json]
@@ -1905,7 +2186,7 @@ paths:
       description: Does not need authentication
       operationId: secondaryWdlPath
       parameters:
-      - {description: Tool id, format: int64, in: path, name: workflowId, required: true,
+      - {description: Workflow id, format: int64, in: path, name: workflowId, required: true,
         type: integer}
       - {in: query, name: tag, required: false, type: string}
       - {in: path, name: relative-path, required: true, type: string}
@@ -1952,6 +2233,7 @@ tags:
   name: github.repo}
 - {description: stop-gap allowing developers to associate with bitbucket, name: integration.bitbucket.org}
 - {description: stop-gap allowing developers to associate with github, name: integration.github.com}
+- {description: stop-gap allowing developers to associate with gitlab, name: integration.gitlab.com}
 - {description: stop-gap allowing developers to associate with quay.io, name: integration.quay.io}
 - {description: 'List, modify, refresh, and delete tokens for external services',
   name: tokens}

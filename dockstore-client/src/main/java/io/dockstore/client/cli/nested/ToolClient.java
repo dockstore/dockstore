@@ -17,6 +17,7 @@
 package io.dockstore.client.cli.nested;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Strings;
 import com.google.common.io.Files;
 import io.dockstore.client.cli.Client;
 import io.swagger.client.ApiException;
@@ -24,12 +25,15 @@ import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.Body;
+import io.swagger.client.model.Body1;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.User;
+import io.swagger.client.model.VerifyRequest;
+
 import org.apache.commons.io.FilenameUtils;
 import org.apache.http.HttpStatus;
 
@@ -41,6 +45,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
+import java.util.Scanner;
 import java.util.Set;
 
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
@@ -71,16 +77,18 @@ public class ToolClient extends AbstractEntryClient {
     private ContainertagsApi containerTagsApi;
     private UsersApi usersApi;
 
-    public ToolClient(Client client){
-        /** for testing */
+    public ToolClient(Client client, boolean isAdmin){
+        /* for testing */
         this.client = client;
+        this.isAdmin = isAdmin;
     }
 
-    public ToolClient(ContainersApi containersApi, ContainertagsApi containerTagsApi, UsersApi usersApi, Client client) {
+    public ToolClient(ContainersApi containersApi, ContainertagsApi containerTagsApi, UsersApi usersApi, Client client, boolean isAdmin) {
         this.containersApi = containersApi;
         this.containerTagsApi = containerTagsApi;
         this.usersApi = usersApi;
         this.client = client;
+        this.isAdmin = isAdmin;
     }
 
     @Override
@@ -187,7 +195,7 @@ public class ToolClient extends AbstractEntryClient {
         try {
             List<DockstoreTool> containers = containersApi.search(pattern);
 
-            out("MATCHING CONTAINERS");
+            out("MATCHING TOOLS");
             out("-------------------");
             printToolList(containers);
         } catch (ApiException ex) {
@@ -232,6 +240,31 @@ public class ToolClient extends AbstractEntryClient {
                     exceptionMessage(ex, "Unable to publish " + newName, Client.API_ERROR);
                 }
             }
+        }
+    }
+
+    @Override protected void handleTestParameter(String entry, String versionName, List<String> adds, List<String> removes, String descriptorType) {
+        try {
+            DockstoreTool container = containersApi.getContainerByToolPath(entry);
+            long containerId = container.getId();
+
+            if (adds.size() > 0) {
+                containersApi.addTestParameterFiles(containerId, adds, new Body1(), versionName, descriptorType);
+            }
+
+            if (removes.size() > 0) {
+                containersApi.deleteTestParameterFiles(containerId, removes, versionName, descriptorType);
+            }
+
+            if (adds.size() > 0 || removes.size() > 0) {
+                containersApi.refresh(container.getId());
+                out("The test parameter files for tag " + versionName + " of tool " + entry + " have been updated.");
+            } else {
+                out("Please provide at least one test parameter file to add or remove.");
+            }
+
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "There was an error updating the test parameter files for " + entry + " version " + versionName, Client.API_ERROR);
         }
     }
 
@@ -290,18 +323,23 @@ public class ToolClient extends AbstractEntryClient {
             final String toolname = optVal(args, "--toolname", null);
             final String registry = optVal(args, "--registry", Registry.DOCKER_HUB.toString());
 
-            DockstoreTool container = new DockstoreTool();
-            container.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
-            container.setName(name);
-            container.setNamespace(namespace);
-            container.setRegistry("quay.io".equals(registry) ? DockstoreTool.RegistryEnum.QUAY_IO : DockstoreTool.RegistryEnum.DOCKER_HUB);
-            container.setDefaultDockerfilePath(dockerfilePath);
-            container.setDefaultCwlPath(cwlPath);
-            container.setDefaultWdlPath(wdlPath);
-            container.setIsPublished(false);
-            container.setGitUrl(gitURL);
-            container.setToolname(toolname);
-            container.setPath(Joiner.on("/").skipNulls().join(registry, namespace, name));
+            DockstoreTool tool = new DockstoreTool();
+            tool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
+            tool.setName(name);
+            tool.setNamespace(namespace);
+            tool.setRegistry("quay.io".equals(registry) ? DockstoreTool.RegistryEnum.QUAY_IO : DockstoreTool.RegistryEnum.DOCKER_HUB);
+            tool.setDefaultDockerfilePath(dockerfilePath);
+            tool.setDefaultCwlPath(cwlPath);
+            tool.setDefaultWdlPath(wdlPath);
+            tool.setIsPublished(false);
+            tool.setGitUrl(gitURL);
+            tool.setToolname(toolname);
+            tool.setPath(Joiner.on("/").skipNulls().join(registry, namespace, name));
+
+            // Check that tool has at least one default path
+            if (Strings.isNullOrEmpty(cwlPath) && Strings.isNullOrEmpty(wdlPath)) {
+                errorMessage("A tool must have at least one descriptor default path.", Client.CLIENT_ERROR);
+            }
 
             if (!Registry.QUAY_IO.toString().equals(registry)) {
                 final String versionName = optVal(args, "--version-name", "latest");
@@ -311,16 +349,16 @@ public class ToolClient extends AbstractEntryClient {
                 tag.setCwlPath(cwlPath);
                 tag.setWdlPath(wdlPath);
                 tag.setName(versionName);
-                container.getTags().add(tag);
+                tool.getTags().add(tag);
             }
 
             // Register new tool
             final String fullName = Joiner.on("/").skipNulls().join(registry, namespace, name, toolname);
             try {
-                container = containersApi.registerManual(container);
-                if (container != null) {
+                tool = containersApi.registerManual(tool);
+                if (tool != null) {
                     // Refresh to update validity
-                    containersApi.refresh(container.getId());
+                    containersApi.refresh(tool.getId());
                 } else {
                     errorMessage("Unable to register " + fullName, Client.COMMAND_ERROR);
                 }
@@ -329,12 +367,12 @@ public class ToolClient extends AbstractEntryClient {
             }
 
             // If registration is successful then attempt to publish it
-            if (container != null) {
+            if (tool != null) {
                 PublishRequest pub = new PublishRequest();
                 pub.setPublish(true);
                 DockstoreTool publishedTool;
                 try {
-                    publishedTool = containersApi.publish(container.getId(), pub);
+                    publishedTool = containersApi.publish(tool.getId(), pub);
                     if (publishedTool.getIsPublished()) {
                         out("Successfully published " + fullName);
                     } else {
@@ -403,6 +441,56 @@ public class ToolClient extends AbstractEntryClient {
 
         } catch (ApiException ex) {
             exceptionMessage(ex, "", Client.API_ERROR);
+        }
+    }
+
+    @Override
+    protected void handleVerifyUnverify(String entry, String versionName, String verifySource, boolean unverifyRequest, boolean isScript) {
+        boolean toOverwrite = true;
+
+        try {
+            DockstoreTool tool = containersApi.getContainerByToolPath(entry);
+            List<Tag> tags = tool.getTags();
+            final Optional<Tag> first = tags.stream().filter((Tag u) -> u.getName().equals(versionName)).findFirst();
+
+            if (!first.isPresent()) {
+                errorMessage(versionName + " is not a valid tag for " + entry, Client.CLIENT_ERROR);
+            }
+            Tag tagToUpdate = first.get();
+
+            VerifyRequest verifyRequest = new VerifyRequest();
+            if (unverifyRequest) {
+                verifyRequest.setVerify(false);
+                verifyRequest.setVerifiedSource(null);
+            } else {
+                // Check if already has been verified
+                if (tagToUpdate.getVerified() && !isScript) {
+                    Scanner scanner = new Scanner(System.in, "utf-8");
+                    out("The tag " + versionName + " has already been verified by \'" + tagToUpdate.getVerifiedSource() + "\'");
+                    out("Would you like to overwrite this with \'" + verifySource + "\'? (y/n)");
+                    String overwrite = scanner.nextLine();
+                    if (overwrite.toLowerCase().equals("y")) {
+                        verifyRequest.setVerify(true);
+                        verifyRequest.setVerifiedSource(verifySource);
+                    } else {
+                        toOverwrite = false;
+                    }
+                } else {
+                    verifyRequest.setVerify(true);
+                    verifyRequest.setVerifiedSource(verifySource);
+                }
+            }
+
+            if (toOverwrite) {
+                containerTagsApi.verifyToolTag(tool.getId(), tagToUpdate.getId(), verifyRequest);
+                if (unverifyRequest) {
+                    out("Tag " + versionName + " has been unverified.");
+                } else {
+                    out("Tag " + versionName + " has been verified by \'" + verifySource + "\'");
+                }
+            }
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "Unable to " + (unverifyRequest ? "unverify" : "verify") + " tag " + versionName, Client.API_ERROR);
         }
     }
 
@@ -506,7 +594,6 @@ public class ToolClient extends AbstractEntryClient {
                         final String wdlPath = optVal(args, "--wdl-path", "/Dockstore.wdl");
                         final String dockerfilePath = optVal(args, "--dockerfile-path", "/Dockerfile");
                         final String imageId = reqVal(args, "--image-id");
-
                         final Tag tag = new Tag();
                         tag.setName(tagName);
                         tag.setHidden(hidden);
@@ -518,11 +605,10 @@ public class ToolClient extends AbstractEntryClient {
 
                         List<Tag> tags = new ArrayList<>();
                         tags.add(tag);
-
                         List<Tag> updatedTags = containerTagsApi.addTags(containerId, tags);
                         containersApi.refresh(container.getId());
 
-                        out("The container now has the following tags:");
+                        out("The tool now has the following tags:");
                         for (Tag newTag : updatedTags) {
                             out(newTag.getName());
                         }
@@ -573,7 +659,6 @@ public class ToolClient extends AbstractEntryClient {
                         if (container.getMode() != DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH) {
                             errorMessage("Only manually added images can add version tags.", Client.CLIENT_ERROR);
                         }
-
                         final String tagName = reqVal(args, "--name");
                         List<Tag> tags = containerTagsApi.getTagsByPath(containerId);
                         long tagId;
@@ -615,28 +700,33 @@ public class ToolClient extends AbstractEntryClient {
         } else {
             final String toolpath = reqVal(args, "--entry");
             try {
-                DockstoreTool container = containersApi.getContainerByToolPath(toolpath);
-                long containerId = container.getId();
+                DockstoreTool tool = containersApi.getContainerByToolPath(toolpath);
+                long containerId = tool.getId();
 
-                final String cwlPath = optVal(args, "--cwl-path", container.getDefaultCwlPath());
-                final String wdlPath = optVal(args, "--wdl-path", container.getDefaultWdlPath());
-                final String dockerfilePath = optVal(args, "--dockerfile-path", container.getDefaultDockerfilePath());
-                final String toolname = optVal(args, "--toolname", container.getToolname());
-                final String gitUrl = optVal(args, "--git-url", container.getGitUrl());
-                final String defaultTag = optVal(args, "--default-version", container.getDefaultVersion());
+                final String cwlPath = optVal(args, "--cwl-path", tool.getDefaultCwlPath());
+                final String wdlPath = optVal(args, "--wdl-path", tool.getDefaultWdlPath());
+                final String dockerfilePath = optVal(args, "--dockerfile-path", tool.getDefaultDockerfilePath());
+                final String toolname = optVal(args, "--toolname", tool.getToolname());
+                final String gitUrl = optVal(args, "--git-url", tool.getGitUrl());
+                final String defaultTag = optVal(args, "--default-version", tool.getDefaultVersion());
 
-                container.setDefaultCwlPath(cwlPath);
-                container.setDefaultWdlPath(wdlPath);
-                container.setDefaultDockerfilePath(dockerfilePath);
-                container.setToolname(toolname);
-                container.setGitUrl(gitUrl);
+                tool.setDefaultCwlPath(cwlPath);
+                tool.setDefaultWdlPath(wdlPath);
+                tool.setDefaultDockerfilePath(dockerfilePath);
+                tool.setToolname(toolname);
+                tool.setGitUrl(gitUrl);
+
+                // Check that tool has at least one default path
+                if (Strings.isNullOrEmpty(cwlPath) && Strings.isNullOrEmpty(wdlPath)) {
+                    errorMessage("A tool must have at least one descriptor default path.", Client.CLIENT_ERROR);
+                }
 
                 // if valid version
                 boolean updateVersionSuccess = false;
 
-                for (Tag tag : container.getTags()) {
+                for (Tag tag : tool.getTags()) {
                     if (tag.getName().equals(defaultTag)) {
-                        container.setDefaultVersion(defaultTag);
+                        tool.setDefaultVersion(defaultTag);
                         updateVersionSuccess = true;
                         break;
                     }
@@ -645,15 +735,15 @@ public class ToolClient extends AbstractEntryClient {
                 if (!updateVersionSuccess && defaultTag != null) {
                     out("Not a valid version.");
                     out("Valid versions include:");
-                    for (Tag tag : container.getTags()) {
+                    for (Tag tag : tool.getTags()) {
                         out(tag.getReference());
                     }
                     errorMessage("Please enter a valid version.", Client.CLIENT_ERROR);
                 }
 
-                containersApi.updateContainer(containerId, container);
+                containersApi.updateContainer(containerId, tool);
                 containersApi.refresh(containerId);
-                out("The container has been updated.");
+                out("The tool has been updated.");
             } catch (ApiException ex) {
                 exceptionMessage(ex, "", Client.API_ERROR);
             }
@@ -690,7 +780,7 @@ public class ToolClient extends AbstractEntryClient {
         return file;
     }
 
-    public void downloadDescriptors(String entry, String descriptor, File tempDir) {
+    public List<SourceFile> downloadDescriptors(String entry, String descriptor, File tempDir) {
         // In the future, delete tmp files
         DockstoreTool tool = null;
         String[] parts = entry.split(":");
@@ -703,6 +793,7 @@ public class ToolClient extends AbstractEntryClient {
             exceptionMessage(e, "No match for entry", Client.API_ERROR);
         }
 
+        List<SourceFile> result = new ArrayList<>();
         if (tool != null) {
             try {
                 if (descriptor.toLowerCase().equals("cwl")) {
@@ -710,12 +801,14 @@ public class ToolClient extends AbstractEntryClient {
                     for (SourceFile sourceFile : files) {
                         File tempDescriptor = new File(tempDir.getAbsolutePath() + sourceFile.getPath());
                         Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
+                        result.add(sourceFile);
                     }
                 } else {
                     List<SourceFile> files = containersApi.secondaryWdl(tool.getId(), version);
                     for (SourceFile sourceFile : files) {
                         File tempDescriptor = File.createTempFile(FilenameUtils.removeExtension(sourceFile.getPath()), FilenameUtils.getExtension(sourceFile.getPath()), tempDir);
                         Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
+                        result.add(sourceFile);
                     }
                 }
             } catch (ApiException e) {
@@ -724,6 +817,7 @@ public class ToolClient extends AbstractEntryClient {
                 exceptionMessage(e, "Error writing to File", Client.IO_ERROR);
             }
         }
+        return result;
     }
 
     @Override
@@ -750,15 +844,15 @@ public class ToolClient extends AbstractEntryClient {
         out("  Update certain fields for a given tool.");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>             Complete tool path in the Dockstore");
+        out("  --entry <entry>                                              Complete tool path in the Dockstore");
         out("");
         out("Optional Parameters");
-        out("  --cwl-path <cwl-path>                       Path to default cwl location");
-        out("  --wdl-path <wdl-path>                       Path to default wdl location");
-        out("  --dockerfile-path <dockerfile-path>         Path to default dockerfile location");
-        out("  --toolname <toolname>                       Toolname for the given tool");
-        out("  --git-url <git-url>                         Git url");
-        out("  --default-version <default-version>         Default branch name");
+        out("  --cwl-path <cwl-path>                                        Path to default cwl location");
+        out("  --wdl-path <wdl-path>                                        Path to default wdl location");
+        out("  --dockerfile-path <dockerfile-path>                          Path to default dockerfile location");
+        out("  --toolname <toolname>                                        Toolname for the given tool");
+        out("  --git-url <git-url>                                          Git url");
+        out("  --default-version <default-version>                          Default branch name");
         printHelpFooter();
     }
 
@@ -803,15 +897,15 @@ public class ToolClient extends AbstractEntryClient {
         out("  Update an existing version tag of a tool.");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>         Complete tool path in the Dockstore");
-        out("  --name <name>           Name of the version tag to update");
+        out("  --entry <entry>                                              Complete tool path in the Dockstore");
+        out("  --name <name>                                                Name of the version tag to update");
         out("");
         out("Optional Parameters:");
-        out("  --hidden <true/false>                       Hide the tag from public viewing, default false");
-        out("  --cwl-path <cwl-path>                       Path to default cwl location, defaults to tool default");
-        out("  --wdl-path <wdl-path>                       Path to default wdl location, defaults to tool default");
-        out("  --dockerfile-path <dockerfile-path>         Path to default dockerfile location, defaults to tool default");
-        out("  --image-id <image-id>                       Docker image ID");
+        out("  --hidden <true/false>                                        Hide the tag from public viewing, default false");
+        out("  --cwl-path <cwl-path>                                        Path to cwl location, defaults to tool default");
+        out("  --wdl-path <wdl-path>                                        Path to wdl location, defaults to tool default");
+        out("  --dockerfile-path <dockerfile-path>                          Path to dockerfile location, defaults to tool default");
+        out("  --image-id <image-id>                                        Docker image ID");
         printHelpFooter();
     }
 
@@ -824,16 +918,16 @@ public class ToolClient extends AbstractEntryClient {
         out("  Add a new version tag to a manually added tool.");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>         Complete tool path in the Dockstore");
-        out("  --name <name>           Name of the version tag to add");
+        out("  --entry <entry>                                          Complete tool path in the Dockstore");
+        out("  --name <name>                                            Name of the version tag to add");
         out("");
         out("Optional Parameters:");
-        out("  --git-reference <git-reference>             Git reference for the version tag");
-        out("  --hidden <true/false>                       Hide the tag from public viewing, default false");
-        out("  --cwl-path <cwl-path>                       Path to default cwl location, defaults to tool default");
-        out("  --wdl-path <wdl-path>                       Path to default wdl location, defaults to tool default");
-        out("  --dockerfile-path <dockerfile-path>         Path to default dockerfile location, defaults to tool default");
-        out("  --image-id <image-id>                       Docker image ID");
+        out("  --git-reference <git-reference>                          Git reference for the version tag");
+        out("  --hidden <true/false>                                    Hide the tag from public viewing, default false");
+        out("  --cwl-path <cwl-path>                                    Path to cwl location, defaults to tool default");
+        out("  --wdl-path <wdl-path>                                    Path to wdl location, defaults to tool default");
+        out("  --dockerfile-path <dockerfile-path>                      Path to dockerfile location, defaults to tool default");
+        out("  --image-id <image-id>                                    Docker image ID");
         printHelpFooter();
     }
 
@@ -846,18 +940,18 @@ public class ToolClient extends AbstractEntryClient {
         out("  Manually register an tool in the dockstore. Currently this is used to register entries for images on Docker Hub.");
         out("");
         out("Required parameters:");
-        out("  --name <name>                Name for the docker container");
-        out("  --namespace <namespace>      Organization for the docker container");
-        out("  --git-url <url>              Reference to the git repo holding descriptor(s) and Dockerfile ex: \"git@github.com:user/test1.git\"");
-        out("  --git-reference <reference>  Reference to git branch or tag where the CWL and Dockerfile is checked-in");
+        out("  --name <name>                                            Name for the docker container");
+        out("  --namespace <namespace>                                  Organization for the docker container");
+        out("  --git-url <url>                                          Reference to the git repo holding descriptor(s) and Dockerfile ex: \"git@github.com:user/test1.git\"");
+        out("  --git-reference <reference>                              Reference to git branch or tag where the CWL and Dockerfile is checked-in");
         out("");
         out("Optional parameters:");
-        out("  --dockerfile-path <file>     Path for the dockerfile, defaults to /Dockerfile");
-        out("  --cwl-path <file>            Path for the CWL document, defaults to /Dockstore.cwl");
-        out("  --wdl-path <file>            Path for the WDL document, defaults to /Dockstore.wdl");
-        out("  --toolname <toolname>        Name of the tool, can be omitted, defaults to null");
-        out("  --registry <registry>        Docker registry, can be omitted, defaults to registry.hub.docker.com");
-        out("  --version-name <version>     Version tag name for Dockerhub containers only, defaults to latest");
+        out("  --dockerfile-path <file>                                 Path for the dockerfile, defaults to /Dockerfile");
+        out("  --cwl-path <file>                                        Path for the CWL document, defaults to /Dockstore.cwl");
+        out("  --wdl-path <file>                                        Path for the WDL document, defaults to /Dockstore.wdl");
+        out("  --toolname <toolname>                                    Name of the tool, can be omitted, defaults to null");
+        out("  --registry <registry>                                    Docker registry, can be omitted, defaults to registry.hub.docker.com");
+        out("  --version-name <version>                                 Version tag name for Dockerhub containers only, defaults to latest");
         printHelpFooter();
     }
 

@@ -49,8 +49,12 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.model.ToolDescriptor;
+
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -259,9 +263,11 @@ public class DockerRepoResource {
         //update the workflow path in all workflowVersions
         Set<Tag> tags = c.getTags();
         for(Tag tag : tags){
-            tag.setCwlPath(tool.getDefaultCwlPath());
-            tag.setWdlPath(tool.getDefaultWdlPath());
-            tag.setDockerfilePath(tool.getDefaultDockerfilePath());
+            if (!tag.isDirtyBit()) {
+                tag.setCwlPath(tool.getDefaultCwlPath());
+                tag.setWdlPath(tool.getDefaultWdlPath());
+                tag.setDockerfilePath(tool.getDefaultDockerfilePath());
+            }
         }
 
         return c;
@@ -610,6 +616,30 @@ public class DockerRepoResource {
         return entryVersionHelper.getSourceFile(containerId, tag, FileType.DOCKERFILE);
     }
 
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}/verifiedSources")
+    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "containers" }, notes = "Does not need authentication", response = String.class)
+    public String verifiedSources(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId) {
+        Tool tool = toolDAO.findById(containerId);
+        Helper.checkEntry(tool);
+
+        Set<String> verifiedSourcesArray = new HashSet<>();
+        tool.getTags()
+                .stream()
+                .filter((Tag u) -> u.isVerified())
+                .forEach((Tag v) -> verifiedSourcesArray.add(v.getVerifiedSource()));
+
+        JSONArray jsonArray;
+        try {
+            jsonArray = new JSONArray(verifiedSourcesArray.toArray());
+        } catch (JSONException ex) {
+            throw new CustomWebApplicationException("There was an error converting the array of verified sources to a JSON array.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+
+        return jsonArray.toString();
+    }
 
     // Add for new descriptor types
     @GET
@@ -656,8 +686,6 @@ public class DockerRepoResource {
         return entryVersionHelper.getSourceFileByPath(containerId, tag, FileType.DOCKSTORE_WDL, path);
     }
 
-
-
     @GET
     @Timed
     @UnitOfWork
@@ -678,6 +706,115 @@ public class DockerRepoResource {
             @QueryParam("tag") String tag) {
 
         return entryVersionHelper.getAllSecondaryFiles(containerId, tag, FileType.DOCKSTORE_WDL);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}/testParameterFiles")
+    @ApiOperation(value = "Get the corresponding wdl test parameter files.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
+    public List<SourceFile> getTestParameterFiles(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
+            @QueryParam("tag") String tag,
+            @QueryParam("descriptorType") String descriptorType) {
+        if (descriptorType.toUpperCase().equals(ToolDescriptor.TypeEnum.WDL.toString())) {
+            return entryVersionHelper.getAllSourceFiles(containerId, tag, FileType.WDL_TEST_JSON);
+        } else {
+            return entryVersionHelper.getAllSourceFiles(containerId, tag, FileType.CWL_TEST_JSON);
+        }
+    }
+
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}/testParameterFiles")
+    @ApiOperation(value = "Add test parameter files for a given tag.", response = SourceFile.class, responseContainer = "Set")
+    public Set<SourceFile> addTestParameterFiles(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
+            @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
+            @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", defaultValue = "") String emptyBody,
+            @QueryParam("tagName") String tagName,
+            @QueryParam("descriptorType") String descriptorType) {
+        Tool tool = toolDAO.findById(containerId);
+        Helper.checkEntry(tool);
+
+        Tag tag = tool.getTags()
+                .stream()
+                .filter((Tag v) -> v.getName().equals(tagName))
+                .findFirst()
+                .get();
+
+        if (tag == null) {
+            LOG.info("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.");
+            throw new CustomWebApplicationException("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (!tag.isValid()) {
+            LOG.info("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' is invalid.");
+            throw new CustomWebApplicationException("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' is invalid.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        Set<SourceFile> sourceFiles = tag.getSourceFiles();
+
+        // Add new test parameter files
+        FileType fileType = (descriptorType.toUpperCase().equals(ToolDescriptor.TypeEnum.CWL.toString())) ? FileType.CWL_TEST_JSON : FileType.WDL_TEST_JSON;
+        for (String path : testParameterPaths) {
+            long sourcefileDuplicate = sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType).count();
+            if (sourcefileDuplicate == 0) {
+                // Sourcefile doesn't exist, add a stub which will have it's content filled on refresh
+                SourceFile sourceFile = new SourceFile();
+                sourceFile.setPath(path);
+                sourceFile.setType(fileType);
+
+                long id = fileDAO.create(sourceFile);
+                SourceFile sourceFileWithId = fileDAO.findById(id);
+                tag.addSourceFile(sourceFileWithId);
+            }
+        }
+
+        return tag.getSourceFiles();
+    }
+
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}/testParameterFiles")
+    @ApiOperation(value = "Delete test parameter files for a given tag.", response = SourceFile.class, responseContainer = "Set")
+    public Set<SourceFile> deleteTestParameterFiles(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
+            @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
+            @QueryParam("tagName") String tagName,
+            @QueryParam("descriptorType") String descriptorType) {
+        Tool tool = toolDAO.findById(containerId);
+        Helper.checkEntry(tool);
+
+        Tag tag = tool.getTags()
+                .stream()
+                .filter((Tag v) -> v.getName().equals(tagName))
+                .findFirst()
+                .get();
+
+        if (tag == null) {
+            LOG.info("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.");
+            throw new CustomWebApplicationException("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (!tag.isValid()) {
+            LOG.info("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' is invalid.");
+            throw new CustomWebApplicationException("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' is invalid.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        Set<SourceFile> sourceFiles = tag.getSourceFiles();
+
+        // Remove test parameter files
+        FileType fileType = (descriptorType.toUpperCase().equals(ToolDescriptor.TypeEnum.CWL.toString())) ? FileType.CWL_TEST_JSON : FileType.WDL_TEST_JSON;
+        for (String path : testParameterPaths) {
+            if (sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType).count() > 0) {
+                SourceFile toRemove = sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType).findFirst().get();
+                sourceFiles.remove(toRemove);
+            }
+        }
+
+        return tag.getSourceFiles();
     }
 
 }

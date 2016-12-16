@@ -20,7 +20,10 @@ import ch.qos.logback.classic.Level;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
+import com.google.common.base.Joiner;
 import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
+import io.cwl.avro.CWL;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.client.cli.nested.WorkflowClient;
@@ -36,6 +39,7 @@ import io.swagger.client.model.Metadata;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalINIConfiguration;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,7 +68,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static io.dockstore.client.cli.ArgumentUtility.Kill;
-import static io.dockstore.client.cli.ArgumentUtility.err;
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.ArgumentUtility.flag;
@@ -88,11 +91,14 @@ public class Client {
 
     private String configFile = null;
     private ContainersApi containersApi;
+    private UsersApi usersApi;
     private GAGHApi ga4ghApi;
+
+    private boolean isAdmin = false;
 
     public static final int PADDING = 3;
 
-    public static final int GENERIC_ERROR = 1; // General error, not yet descriped by an error type
+    public static final int GENERIC_ERROR = 1; // General error, not yet described by an error type
     public static final int CONNECTION_ERROR = 150; // Connection exception
     public static final int IO_ERROR = 3; // IO throws an exception
     public static final int API_ERROR = 6; // API throws an exception
@@ -100,8 +106,10 @@ public class Client {
     public static final int COMMAND_ERROR = 10; // Command is not successful, but not due to errors
 
     public static final AtomicBoolean DEBUG = new AtomicBoolean(false);
-    private static final AtomicBoolean SCRIPT = new AtomicBoolean(false);
+    public static final AtomicBoolean SCRIPT = new AtomicBoolean(false);
     private static ObjectMapper objectMapper;
+    private ToolClient toolClient;
+    private WorkflowClient workflowClient;
 
     /*
      * Dockstore Client Functions for CLI
@@ -119,6 +127,10 @@ public class Client {
             out(gson.toJson(metadata));
         } catch (ApiException ex) {
             exceptionMessage(ex, "", API_ERROR);
+        } catch (CWL.GsonBuildException ex) {
+            exceptionMessage(ex, "There was an error creating the CWL GSON instance.", API_ERROR);
+        } catch (JsonParseException ex) {
+            exceptionMessage(ex, "The JSON file provided is invalid.", API_ERROR);
         }
     }
 
@@ -277,7 +289,7 @@ public class Client {
      *
      * @return
      */
-    public static String getLatestVersion() {
+    static String getLatestVersion() {
         try {
             URL url = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/latest");
             ObjectMapper mapper = getObjectMapper();
@@ -446,7 +458,7 @@ public class Client {
                         }
                         break;
                     default:
-                        /** do nothing */
+                        /* do nothing */
                     }
 
                 }
@@ -455,6 +467,30 @@ public class Client {
             }
         } catch (MalformedURLException e) {
             exceptionMessage(e, "Issue with URL : " + latestPath, IO_ERROR);
+        }
+    }
+
+    /**
+     * Check our dependencies and warn if they are not what we tested with
+     */
+    public static void checkForCWLDependencies(){
+        final String[] s1 = { "cwltool", "--version" };
+        final ImmutablePair<String, String> pair1 = io.cwl.avro.Utilities
+                .executeCommand(Joiner.on(" ").join(Arrays.asList(s1)), false,  com.google.common.base.Optional.absent(), com.google.common.base.Optional.absent());
+        final String cwlToolVersion = pair1.getKey().split(" ")[1].trim();
+
+        final String[] s2 = { "schema-salad-tool", "--version", "schema" };
+        final ImmutablePair<String, String> pair2 = io.cwl.avro.Utilities
+                .executeCommand(Joiner.on(" ").join(Arrays.asList(s2)), false,  com.google.common.base.Optional.absent(), com.google.common.base.Optional.absent());
+        final String schemaSaladVersion = pair2.getKey().split(" ")[1].trim();
+
+        final String expectedCwltoolVersion = "1.0.20161114152756";
+        if (!cwlToolVersion.equals(expectedCwltoolVersion)){
+            errorMessage("cwltool version is " + cwlToolVersion + " , Dockstore is tested with " + expectedCwltoolVersion + "\nOverride and run with `--script`", COMMAND_ERROR);
+        }
+        final String expectedSchemaSaladVersion = "1.18.20161005190847";
+        if (!schemaSaladVersion.equals(expectedSchemaSaladVersion)){
+            errorMessage("schema-salad version is " + cwlToolVersion + " , Dockstore is tested with " + expectedSchemaSaladVersion + "\nOverride and run with `--script`", COMMAND_ERROR);
         }
     }
 
@@ -611,7 +647,7 @@ public class Client {
         out("                       Default: false");
         out("  --config <file>      Override config file");
         out("                       Default: ~/.dockstore/config");
-        out("  --script             Will not check Github for newer versions of Dockstore");
+        out("  --script             Will not check Github for newer versions of Dockstore, or ask for user input");
         out("                       Default: false");
         out("  --clean-cache        Delete the Dockstore launcher cache to save space");
         printHelpFooter();
@@ -636,38 +672,8 @@ public class Client {
             SCRIPT.set(true);
         }
 
-        // user home dir
-        String userHome = System.getProperty("user.home");
-
         try {
-            this.setConfigFile(optVal(args, "--config", userHome + File.separator + ".dockstore" + File.separator + "config"));
-            HierarchicalINIConfiguration config = new HierarchicalINIConfiguration(getConfigFile());
-
-            // pull out the variables from the config
-            String token = config.getString("token");
-            String serverUrl = config.getString("server-url");
-
-            if (token == null) {
-                err("The token is missing from your config file.");
-                System.exit(GENERIC_ERROR);
-            }
-            if (serverUrl == null) {
-                err("The server-url is missing from your config file.");
-                System.exit(GENERIC_ERROR);
-            }
-
-            ApiClient defaultApiClient;
-            defaultApiClient = Configuration.getDefaultApiClient();
-            defaultApiClient.addDefaultHeader("Authorization", "Bearer " + token);
-            defaultApiClient.setBasePath(serverUrl);
-
-            this.containersApi = new ContainersApi(defaultApiClient);
-            this.ga4ghApi = new GAGHApi(defaultApiClient);
-
-            ToolClient toolClient = new ToolClient(containersApi, new ContainertagsApi(defaultApiClient), new UsersApi(defaultApiClient), this);
-            WorkflowClient workflowClient = new WorkflowClient(new WorkflowsApi(defaultApiClient), new UsersApi(defaultApiClient), this);
-
-            defaultApiClient.setDebugging(DEBUG.get());
+            setupClientEnvironment(args);
 
             // Check if updates are available
             if (!SCRIPT.get()) {
@@ -685,9 +691,9 @@ public class Client {
                     boolean handled = false;
                     AbstractEntryClient targetClient = null;
                     if (mode.equals("tool")) {
-                        targetClient = toolClient;
+                        targetClient = getToolClient();
                     } else if (mode.equals("workflow")) {
-                        targetClient = workflowClient;
+                        targetClient = getWorkflowClient();
                     }
 
                     if (targetClient != null) {
@@ -754,6 +760,37 @@ public class Client {
         }
     }
 
+    private void setupClientEnvironment(List<String> args) throws ConfigurationException {
+        String userHome = System.getProperty("user.home");
+        this.setConfigFile(optVal(args, "--config", userHome + File.separator + ".dockstore" + File.separator + "config"));
+        HierarchicalINIConfiguration config = new HierarchicalINIConfiguration(getConfigFile());
+
+        // pull out the variables from the config
+        String token = config.getString("token","");
+        String serverUrl = config.getString("server-url", "https://www.dockstore.org:8443");
+
+        ApiClient defaultApiClient;
+        defaultApiClient = Configuration.getDefaultApiClient();
+        defaultApiClient.addDefaultHeader("Authorization", "Bearer " + token);
+        defaultApiClient.setBasePath(serverUrl);
+
+        this.containersApi = new ContainersApi(defaultApiClient);
+        this.usersApi = new UsersApi(defaultApiClient);
+        this.ga4ghApi = new GAGHApi(defaultApiClient);
+
+        try {
+            if (this.usersApi.getApiClient() != null) {
+                this.isAdmin = this.usersApi.getUser().getIsAdmin();
+            }
+        } catch (ApiException ex) {
+            this.isAdmin = false;
+        }
+        this.toolClient = new ToolClient(containersApi, new ContainertagsApi(defaultApiClient), usersApi, this, isAdmin);
+        this.workflowClient = new WorkflowClient(new WorkflowsApi(defaultApiClient), usersApi, this, isAdmin);
+
+        defaultApiClient.setDebugging(DEBUG.get());
+    }
+
     public static void main(String[] argv) {
         Client client = new Client();
         client.run(argv);
@@ -765,5 +802,13 @@ public class Client {
 
     void setConfigFile(String configFile) {
         this.configFile = configFile;
+    }
+
+    private ToolClient getToolClient() {
+        return toolClient;
+    }
+
+    private WorkflowClient getWorkflowClient() {
+        return workflowClient;
     }
 }

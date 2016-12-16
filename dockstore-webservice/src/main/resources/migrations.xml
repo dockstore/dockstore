@@ -268,4 +268,81 @@
        </addColumn>
     </changeSet>
 
+    <changeSet id="dirtybit" author="agduncan" context="adds_dirtybit_to_track_version_mods">
+        <addColumn tableName="tag">
+            <column name="dirtybit" type="boolean"></column>
+        </addColumn>
+        <addDefaultValue tableName="tag" columnName="dirtybit" defaultValueBoolean="false"/>
+        <sql dbms="postgresql">
+            update tag set dirtybit=false;
+        </sql>
+        <addColumn tableName="workflowversion">
+            <column name="dirtybit" type="boolean"></column>
+        </addColumn>
+        <addDefaultValue tableName="workflowversion" columnName="dirtybit" defaultValueBoolean="false"/>
+        <sql dbms="postgresql">
+            update workflowversion set dirtybit=false;
+        </sql>
+    </changeSet>
+
+    <changeSet id="testjson" author="agduncan" context="adds_testjson">
+        <addColumn tableName="tag">
+            <column name="cwltestparameterfile" type="varchar(255)"></column>
+        </addColumn>
+        <addDefaultValue tableName="tag" columnName="cwltestparameterfile" defaultValue="/test.cwl.json"/>
+        <addColumn tableName="tag">
+            <column name="wdltestparameterfile" type="varchar(255)"></column>
+        </addColumn>
+        <addDefaultValue tableName="tag" columnName="wdltestparameterfile" defaultValue="/test.wdl.json"/>
+        <addColumn tableName="tool">
+            <column name="defaultcwltestparameterfile" type="varchar(255)"></column>
+        </addColumn>
+        <addDefaultValue tableName="tool" columnName="defaultcwltestparameterfile" defaultValue="/test.cwl.json"/>
+        <addColumn tableName="tool">
+            <column name="defaultwdltestparameterfile" type="varchar(255)"></column>
+        </addColumn>
+        <addDefaultValue tableName="tool" columnName="defaultwdltestparameterfile" defaultValue="/test.wdl.json"/>
+
+        <addColumn tableName="workflowversion">
+            <column name="testparameterfile" type="varchar(255)"></column>
+        </addColumn>
+        <addDefaultValue tableName="workflowversion" columnName="testparameterfile" defaultValue="/test.json"/>
+        <addColumn tableName="workflow">
+            <column name="defaulttestparameterfile" type="varchar(255)"></column>
+        </addColumn>
+        <addDefaultValue tableName="workflow" columnName="defaulttestparameterfile" defaultValue="/test.json"/>
+    </changeSet>
+
+    <changeSet id="verified_versions" author="agduncan" context="adds_verified_to_versions">
+        <addColumn tableName="tag">
+            <column name="verified" type="boolean"></column>
+        </addColumn>
+        <addDefaultValue tableName="tag" columnName="verified" defaultValueBoolean="false"/>
+        <sql dbms="postgresql">
+            update tag set verified=false;
+        </sql>
+        <addColumn tableName="tag">
+            <column name="verifiedsource" type="varchar(255)"></column>
+        </addColumn>
+
+        <addColumn tableName="workflowversion">
+            <column name="verified" type="boolean"></column>
+        </addColumn>
+        <addDefaultValue tableName="workflowversion" columnName="verified" defaultValueBoolean="false"/>
+        <sql dbms="postgresql">
+            update workflowversion set verified=false;
+        </sql>
+        <addColumn tableName="workflowversion">
+            <column name="verifiedsource" type="varchar(255)"></column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="multitestjson" author="agduncan" context="adds_multi_testjson">
+        <dropColumn tableName="tag" columnName="cwltestparameterfile"></dropColumn>
+        <dropColumn tableName="tag" columnName="wdltestparameterfile"></dropColumn>
+        <dropColumn tableName="tool" columnName="defaultcwltestparameterfile"></dropColumn>
+        <dropColumn tableName="tool" columnName="defaultwdltestparameterfile"></dropColumn>
+        <dropColumn tableName="workflowversion" columnName="testparameterfile"></dropColumn>
+        <dropColumn tableName="workflow" columnName="defaulttestparameterfile"></dropColumn>
+    </changeSet>
 </databaseChangeLog>

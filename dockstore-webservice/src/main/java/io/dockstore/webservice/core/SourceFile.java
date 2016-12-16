@@ -40,7 +40,7 @@ import java.util.Objects;
 public class SourceFile {
     public enum FileType {
         // Add supported descriptor types here
-        DOCKSTORE_CWL, DOCKSTORE_WDL, DOCKERFILE
+        DOCKSTORE_CWL, DOCKSTORE_WDL, DOCKERFILE, CWL_TEST_JSON, WDL_TEST_JSON
     }
 
     @Id

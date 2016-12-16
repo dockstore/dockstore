@@ -22,11 +22,13 @@ import io.dockstore.client.cli.Client;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.Body1;
+import io.swagger.client.model.Body2;
+import io.swagger.client.model.Body3;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.User;
+import io.swagger.client.model.VerifyRequest;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.apache.http.HttpStatus;
@@ -37,6 +39,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
+import java.util.Scanner;
 import java.util.Set;
 
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
@@ -69,10 +73,11 @@ public class WorkflowClient extends AbstractEntryClient {
     private final UsersApi usersApi;
     private final Client client;
 
-    public WorkflowClient(WorkflowsApi workflowApi, UsersApi usersApi, Client client) {
+    public WorkflowClient(WorkflowsApi workflowApi, UsersApi usersApi, Client client, boolean isAdmin) {
         this.workflowsApi = workflowApi;
         this.usersApi = usersApi;
         this.client = client;
+        this.isAdmin = isAdmin;
     }
 
     @Override
@@ -90,7 +95,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
             String combinedLabelString = generateLabelString(addsSet, removesSet, existingLabels);
 
-            Workflow updatedWorkflow = workflowsApi.updateLabels(workflowId, combinedLabelString, new Body1());
+            Workflow updatedWorkflow = workflowsApi.updateLabels(workflowId, combinedLabelString, new Body2());
 
             List<Label> newLabels = updatedWorkflow.getLabels();
             if (!newLabels.isEmpty()) {
@@ -114,7 +119,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
     @Override
     protected void printClientSpecificHelp() {
-        out("  manual_publish   :  registers a Github or Bitbucket workflow in the dockstore and then attempts to publish");
+        out("  manual_publish   :  registers a Github, Gitlab or Bitbucket workflow in the dockstore and then attempts to publish");
         out("");
         out("  " + UPDATE_WORKFLOW + "  :   updates certain fields of a workflow");
         out("");
@@ -257,6 +262,61 @@ public class WorkflowClient extends AbstractEntryClient {
             }
         }
     }
+
+    @Override
+    protected void handleVerifyUnverify(String entry, String versionName, String verifySource, boolean unverifyRequest, boolean isScript) {
+        boolean toOverwrite = true;
+
+        try {
+            Workflow workflow = workflowsApi.getWorkflowByPath(entry);
+            List<WorkflowVersion> versions = workflow.getWorkflowVersions();
+
+            final Optional<WorkflowVersion> first = versions.stream().filter((WorkflowVersion u) -> u.getName().equals(versionName))
+                    .findFirst();
+
+            WorkflowVersion versionToUpdate;
+            if (!first.isPresent()) {
+                errorMessage(versionName + " is not a valid version for " + entry, Client.CLIENT_ERROR);
+            }
+            versionToUpdate = first.get();
+
+            VerifyRequest verifyRequest = new VerifyRequest();
+            if (unverifyRequest) {
+                verifyRequest.setVerify(false);
+                verifyRequest.setVerifiedSource(null);
+            } else {
+                // Check if already has been verified
+                if (versionToUpdate.getVerified() && !isScript) {
+                    Scanner scanner = new Scanner(System.in, "utf-8");
+                    out("The version " + versionName + " has already been verified by \'" + versionToUpdate.getVerifiedSource() + "\'");
+                    out("Would you like to overwrite this with \'" + verifySource + "\'? (y/n)");
+                    String overwrite = scanner.nextLine();
+                    if (overwrite.toLowerCase().equals("y")) {
+                        verifyRequest.setVerify(true);
+                        verifyRequest.setVerifiedSource(verifySource);
+                    } else {
+                        toOverwrite = false;
+                    }
+                } else {
+                    verifyRequest.setVerify(true);
+                    verifyRequest.setVerifiedSource(verifySource);
+                }
+            }
+
+            if (toOverwrite) {
+                List<WorkflowVersion> result = workflowsApi.verifyWorkflowVersion(workflow.getId(), versionToUpdate.getId(), verifyRequest);
+
+                if (unverifyRequest) {
+                    out("Version " + versionName + " has been unverified.");
+                } else {
+                    out("Version " + versionName + " has been verified by \'" + verifySource + "\'");
+                }
+            }
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "Unable to " + (unverifyRequest ? "unverify" : "verify") + " version " + versionName, Client.API_ERROR);
+        }
+    }
+
 
     @Override
     protected void handleListNonpublishedEntries() {
@@ -432,14 +492,13 @@ public class WorkflowClient extends AbstractEntryClient {
         out(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "On Dockstore?");
 
         for (Workflow workflow : workflows) {
-            String description = "";
             String gitUrl = "";
 
             if (workflow.getGitUrl() != null && !workflow.getGitUrl().isEmpty()) {
                 gitUrl = workflow.getGitUrl();
             }
 
-            description = getCleanedDescription(workflow.getDescription());
+            String description = getCleanedDescription(workflow.getDescription());
 
             out(format, workflow.getPath(), description, gitUrl, boolWord(workflow.getIsPublished()));
         }
@@ -454,14 +513,14 @@ public class WorkflowClient extends AbstractEntryClient {
         out("  Manually register an workflow in the dockstore. If this is successful and the workflow is valid, then publish.");
         out("");
         out("Required parameters:");
-        out("  --repository <repository>                        Name for the git repository");
-        out("  --organization <organization>                    Organization for the git repo");
-        out("  --git-version-control <git version control>      Either github or bitbucket");
+        out("  --repository <repository>                            Name for the git repository");
+        out("  --organization <organization>                        Organization for the git repo");
+        out("  --git-version-control <git version control>          Either github, gitlab, or bitbucket");
         out("");
         out("Optional parameters:");
-        out("  --workflow-path <workflow-path>     Path for the descriptor file, defaults to /Dockstore.cwl");
-        out("  --workflow-name <workflow-name>     Workflow name, defaults to null");
-        out("  --descriptor-type <workflow-name>   Descriptor type, defaults to cwl");
+        out("  --workflow-path <workflow-path>                      Path for the descriptor file, defaults to /Dockstore.cwl");
+        out("  --workflow-name <workflow-name>                      Workflow name, defaults to null");
+        out("  --descriptor-type <workflow-name>                    Descriptor type, defaults to cwl");
 
         printHelpFooter();
     }
@@ -539,14 +598,40 @@ public class WorkflowClient extends AbstractEntryClient {
         out("  Update certain fields for a given workflow.");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>                              Complete workflow path in the Dockstore");
+        out("  --entry <entry>                                          Complete workflow path in the Dockstore");
         out("");
         out("Optional Parameters");
-        out("  --workflow-name <workflow-name>              Name for the given workflow");
-        out("  --descriptor-type <descriptor-type>          Descriptor type of the given workflow.  Can only be altered if workflow is a STUB.");
-        out("  --workflow-path <workflow-path>              Path to default workflow location");
-        out("  --default-version <default-version>          Default branch name");
+        out("  --workflow-name <workflow-name>                          Name for the given workflow");
+        out("  --descriptor-type <descriptor-type>                      Descriptor type of the given workflow.  Can only be altered if workflow is a STUB.");
+        out("  --workflow-path <workflow-path>                          Path to default workflow descriptor location");
+        out("  --default-version <default-version>                      Default branch name");
         printHelpFooter();
+    }
+
+    @Override protected void handleTestParameter(String entry, String versionName, List<String> adds, List<String> removes, String descriptorType) {
+        try {
+            Workflow workflow = workflowsApi.getWorkflowByPath(entry);
+            long workflowId = workflow.getId();
+
+            if (adds.size() > 0) {
+                workflowsApi.addTestParameterFiles(workflowId, adds, new Body3(), versionName);
+            }
+
+            if (removes.size() > 0) {
+                workflowsApi.deleteTestParameterFiles(workflowId, removes, versionName);
+            }
+
+            if (adds.size() > 0 || removes.size() > 0) {
+                workflowsApi.refresh(workflow.getId());
+                out("The test parameter files for version " + versionName + " of workflow " + entry + " have been updated.");
+            } else {
+                out("Please provide at least one test parameter file to add or remove.");
+            }
+
+
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "There was an error updating the test parameter files for " + entry + " version " + versionName, Client.API_ERROR);
+        }
     }
 
     private void versionTag(List<String> args) {
@@ -598,12 +683,12 @@ public class WorkflowClient extends AbstractEntryClient {
         out("  Update certain fields for a given workflow version.");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>                       Complete workflow path in the Dockstore");
-        out("  --name <name>                         Name of the workflow version.");
+        out("  --entry <entry>                                      Complete workflow path in the Dockstore");
+        out("  --name <name>                                        Name of the workflow version.");
         out("");
         out("Optional Parameters");
-        out("  --workflow-path <workflow-path>       Path to default workflow location");
-        out("  --hidden <true/false>                 Hide the tag from public viewing, default false");
+        out("  --workflow-path <workflow-path>                      Path to workflow descriptor");
+        out("  --hidden <true/false>                                Hide the tag from public viewing, default false");
         printHelpFooter();
     }
 
@@ -645,7 +730,7 @@ public class WorkflowClient extends AbstractEntryClient {
         printHelpFooter();
     }
 
-    protected SourceFile getDescriptorFromServer(String entry, String descriptorType) throws ApiException {
+    public SourceFile getDescriptorFromServer(String entry, String descriptorType) throws ApiException {
         String[] parts = entry.split(":");
 
         String path = parts[0];
@@ -684,7 +769,7 @@ public class WorkflowClient extends AbstractEntryClient {
         return file;
     }
 
-    protected void downloadDescriptors(String entry, String descriptor, File tempDir) {
+    public List<SourceFile> downloadDescriptors(String entry, String descriptor, File tempDir) {
         // In the future, delete tmp files
         Workflow workflow = null;
         String[] parts = entry.split(":");
@@ -697,6 +782,7 @@ public class WorkflowClient extends AbstractEntryClient {
             exceptionMessage(e, "No match for entry", Client.API_ERROR);
         }
 
+        List<SourceFile> result = new ArrayList<>();
         if (workflow != null) {
             try {
                 if (descriptor.toLowerCase().equals("cwl")) {
@@ -704,12 +790,14 @@ public class WorkflowClient extends AbstractEntryClient {
                     for (SourceFile sourceFile : files) {
                         File tempDescriptor = new File(tempDir.getAbsolutePath(), sourceFile.getPath());
                         Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
+                        result.add(sourceFile);
                     }
                 } else {
                     List<SourceFile> files = workflowsApi.secondaryWdl(workflow.getId(), version);
                     for (SourceFile sourceFile : files) {
                         File tempDescriptor = new File(tempDir.getAbsolutePath(),  sourceFile.getPath());
                         Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
+                        result.add(sourceFile);
                     }
                 }
             } catch (ApiException e) {
@@ -718,6 +806,7 @@ public class WorkflowClient extends AbstractEntryClient {
                 exceptionMessage(e, "Error writing to File", Client.IO_ERROR);
             }
         }
+        return result;
     }
 
 }

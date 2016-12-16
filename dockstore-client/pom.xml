@@ -20,7 +20,7 @@
     <parent>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
-        <version>1.0.1</version>
+        <version>1.1</version>
     </parent>
     <artifactId>dockstore-client</artifactId>
     <packaging>jar</packaging>
@@ -36,13 +36,18 @@
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
+            <artifactId>dockstore-common</artifactId>
+            <version>1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-client</artifactId>
-            <version>1.0.1</version>
+            <version>1.1</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-launcher</artifactId>
-            <version>1.0.1</version>
+            <version>1.1</version>
         </dependency>
         
         <dependency>
@@ -57,7 +62,8 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        
+
+
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore</artifactId>
@@ -116,27 +122,16 @@
         <!-- broad - cromwell stuff -->
         <dependency>
             <groupId>org.broadinstitute</groupId>
-            <artifactId>cromwell_2.11</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>libjavalib_v1</groupId>
-            <artifactId>libjavalib_v1</artifactId>
-            <version>1.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.broadinstitute</groupId>
             <artifactId>wdl4s_2.11</artifactId>
-            <version>0.2</version>
+            <version>0.6</version>
         </dependency>
         <dependency>
             <groupId>io.spray</groupId>
             <artifactId>spray-json_2.11</artifactId>
-            <version>1.3.1</version>
         </dependency>
         <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
-            <version>2.11.7</version>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
@@ -146,6 +141,11 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-validator</groupId>
+            <artifactId>commons-validator</artifactId>
+            <version>1.4.0</version>
         </dependency>
 
 
@@ -167,30 +167,16 @@
             <artifactId>json</artifactId>
         </dependency>
 
-
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-exec</artifactId>
+        </dependency>
     </dependencies>
 
 
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-clean-plugin</artifactId>
-                <configuration>
-                    <filesets>
-                        <fileset>
-                            <directory>datastore</directory>
-                        </fileset>
-                        <fileset>
-                            <directory>cromwell-executions</directory>
-                        </fileset>
-                        <fileset>
-                            <directory>cromwell-input</directory>
-                        </fileset>
-                    </filesets>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -265,8 +251,6 @@
 
                             <usedDependencies>
                                 <usedDependency>org.apache.httpcomponents:httpcore</usedDependency>
-                                <usedDependency>libjavalib_v1:libjavalib_v1</usedDependency>
-                                <!--<usedDependency>org.broadinstitute:cromwell_2.11</usedDependency>-->
                             </usedDependencies>
 
                         </configuration>

@@ -23,6 +23,7 @@ import io.swagger.annotations.ApiModelProperty;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
+
 import java.util.Objects;
 
 /**
@@ -64,7 +65,6 @@ public class Tag extends Version<Tag> {
     @ApiModelProperty("Path for the WDL document")
     private String wdlPath = "/Dockstore.wdl";
 
-
     public Tag() {
         super();
     }
@@ -81,7 +81,6 @@ public class Tag extends Version<Tag> {
         // Add for new descriptor types
         cwlPath = tag.cwlPath;
         wdlPath = tag.wdlPath;
-
         dockerfilePath = tag.dockerfilePath;
     }
 
@@ -114,7 +113,6 @@ public class Tag extends Version<Tag> {
 
         dockerfilePath = tag.dockerfilePath;
     }
-
 
 
     @JsonProperty

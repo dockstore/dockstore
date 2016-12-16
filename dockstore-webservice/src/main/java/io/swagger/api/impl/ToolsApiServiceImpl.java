@@ -21,6 +21,7 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
+import com.google.gson.Gson;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -62,6 +63,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static io.dockstore.webservice.core.SourceFile.FileType.DOCKERFILE;
 import static io.dockstore.webservice.core.SourceFile.FileType.DOCKSTORE_CWL;
@@ -134,8 +136,6 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         tool.setToolclass(type);
         tool.setId(newID);
         tool.setUrl(globalId);
-        tool.setVerified(false);
-        tool.setVerifiedSource("");
         // tool specific
         if (container instanceof Tool) {
             Tool inputTool = (Tool) container;
@@ -159,6 +159,14 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         } else {
             inputVersions = ((Workflow) container).getWorkflowVersions();
         }
+
+        // handle verified information
+        tool.setVerified(((Set<Version>)inputVersions).stream().anyMatch(Version::isVerified));
+        final List<String> collect = ((Set<Version>) inputVersions).stream().filter(Version::isVerified).map(Version::getVerifiedSource)
+                .collect(Collectors.toList());
+        Gson gson = new Gson();
+        tool.setVerifiedSource(gson.toJson(collect));
+
 
         for (Version inputVersion : (Set<Version>) inputVersions) {
 
@@ -186,8 +194,8 @@ public class ToolsApiServiceImpl extends ToolsApiService {
 
             version.setName(inputVersion.getName());
 
-            version.setVerified(false);
-            version.setVerifiedSource("");
+            version.setVerified(inputVersion.isVerified());
+            version.setVerifiedSource(inputVersion.getVerifiedSource());
             version.setDockerfile(false);
 
             String urlBuilt;

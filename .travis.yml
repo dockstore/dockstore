@@ -21,22 +21,26 @@ jdk:
 install:
 - docker version
 - pip2.7 install --user setuptools==24.0.3
-- pip2.7 install --user cwl-runner cwltool==1.0.20160712154127 schema-salad==1.14.20160708181155 avro==1.8.1
+- pip2.7 install --user cwl-runner cwltool==1.0.20161114152756 schema-salad==1.18.20161005190847 avro==1.8.1
 before_script:
 - psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
 - psql -c "ALTER USER dockstore WITH superuser;" -U postgres
 - psql -c 'create database webservice_test with owner = dockstore;' -U postgres
 - export PATH=$PATH:$PWD/dockstore-client/target
-script: mvn -B clean install -DskipITs=false -Pconfidential-tests
+
+env:
+   - EXTRA_MAVEN_VAR=""
+   - EXTRA_MAVEN_VAR="cobertura:cobertura-integration-test coveralls:report"
+
+script: ./scripts/run-tests.sh
+
 before_install:
+- export JAVA_HOME=/usr/lib/jvm/java-8-oracle/jre
 - mvn dependency:get -Dartifact=org.eluder.coveralls:coveralls-maven-plugin:4.2.0
-- openssl aes-256-cbc -K $encrypted_75863573eba8_key -iv $encrypted_75863573eba8_iv -in dockstore-integration-testing/src/test/resources/secrets.tar.enc -out dockstore-integration-testing/src/test/resources/secrets.tar -d
+- openssl aes-256-cbc -K $encrypted_46c132010f04_key -iv $encrypted_46c132010f04_iv -in dockstore-integration-testing/src/test/resources/secrets.tar.enc -out dockstore-integration-testing/src/test/resources/secrets.tar -d
 - tar xvf dockstore-integration-testing/src/test/resources/secrets.tar
 
-after_success:
-- mvn -B clean install -DskipITs=false -Pconfidential-tests cobertura:cobertura-integration-test
-- mvn -B coveralls:report
-- mvn -B versioneye:update
+
 
 notifications:
   webhooks:

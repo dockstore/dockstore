@@ -36,6 +36,7 @@ import io.swagger.annotations.Tag;
         @Tag(name = "github.repo", description = "List source code repositories (should be generalized from github)"),
         @Tag(name = "integration.bitbucket.org", description = "stop-gap allowing developers to associate with bitbucket"),
         @Tag(name = "integration.github.com", description = "stop-gap allowing developers to associate with github"),
+        @Tag(name = "integration.gitlab.com", description = "stop-gap allowing developers to associate with gitlab"),
         @Tag(name = "integration.quay.io", description = "stop-gap allowing developers to associate with quay.io"),
         @Tag(name = "tokens", description = "List, modify, refresh, and delete tokens for external services"),
         @Tag(name = "workflows", description = "List and register workflows in the dockstore (CWL or WDL)"),

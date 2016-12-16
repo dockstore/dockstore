@@ -89,6 +89,41 @@ public abstract class Version<T extends Version> implements Comparable<T>{
     @ApiModelProperty(value = "Implementation specific, can be a quay.io or docker hub tag name", required = true)
     private String name;
 
+    @Column
+    @ApiModelProperty(value = "True if user has altered the tag")
+    private boolean dirtyBit = false;
+
+    @Column
+    @ApiModelProperty("Whether this version has been verified or not")
+    private boolean verified;
+    @Column
+    @ApiModelProperty("Verified source for the version")
+    private String verifiedSource;
+
+    public boolean isVerified() {
+        return verified;
+    }
+
+    public void setVerified(boolean verified) {
+        this.verified = verified;
+    }
+
+    public String getVerifiedSource() {
+        return verifiedSource;
+    }
+
+    public void setVerifiedSource(String verifiedSource) {
+        this.verifiedSource = verifiedSource;
+    }
+
+    public boolean isDirtyBit() {
+        return dirtyBit;
+    }
+
+    public void setDirtyBit(boolean dirtyBit) {
+        this.dirtyBit = dirtyBit;
+    }
+
     public void updateByUser(final Version version) {
         reference = version.reference;
         hidden = version.hidden;
@@ -191,5 +226,10 @@ public abstract class Version<T extends Version> implements Comparable<T>{
                 .compare(this.lastModified, that.getLastModified(), Ordering.natural().nullsLast())
                 .compare(this.reference, that.getReference(), Ordering.natural().nullsLast())
                 .compare(this.name, that.getName(), Ordering.natural().nullsLast()).result();
+    }
+
+    public void updateVerified(boolean verified, String verifiedSource) {
+        this.verified = verified;
+        this.verifiedSource = verifiedSource;
     }
 }

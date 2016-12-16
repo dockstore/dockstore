@@ -20,9 +20,10 @@ import com.amazonaws.auth.SignerFactory;
 import com.amazonaws.services.s3.internal.S3Signer;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
 import io.cwl.avro.CWL;
 import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.CommandOutputParameter;
@@ -51,6 +52,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
@@ -79,11 +81,12 @@ public class LauncherCWL {
 
     private static final Logger LOG = LoggerFactory.getLogger(LauncherCWL.class);
 
-    private static final String S3_ENDPOINT = "s3.endpoint";
     private static final String WORKING_DIRECTORY = "working-directory";
     private final String configFilePath;
     private final String imageDescriptorPath;
     private final String runtimeDescriptorPath;
+    private final OutputStream stdoutStream;
+    private final OutputStream stderrStream;
     private HierarchicalINIConfiguration config;
     private String globalWorkingDir;
     private final Yaml yaml = new Yaml(new SafeConstructor());
@@ -95,7 +98,7 @@ public class LauncherCWL {
      * Constructor for shell-based launch
      * @param args raw arguments from the command-line
      */
-    public LauncherCWL(String[] args) {
+    public LauncherCWL(String[] args) throws CWL.GsonBuildException {
         // create the command line parser
         CommandLineParser parser = new DefaultParser();
         // parse command line
@@ -103,7 +106,8 @@ public class LauncherCWL {
         configFilePath = line.getOptionValue("config");
         imageDescriptorPath = line.getOptionValue("descriptor");
         runtimeDescriptorPath = line.getOptionValue("job");
-
+        this.stdoutStream = null;
+        this.stderrStream = null;
         gson = CWL.getTypeSafeCWLToolDocument();
         fileProvisioning = new FileProvisioning(configFilePath);
     }
@@ -113,28 +117,18 @@ public class LauncherCWL {
      * @param configFilePath configuration for this launcher
      * @param imageDescriptorPath descriptor for the tool itself
      * @param runtimeDescriptorPath descriptor for this run of the tool
+     * @param stdoutStream pass a stream in order to capture stdout from the run tool
+     * @param stderrStream pass a stream in order to capture stderr from the run tool
      */
-    public LauncherCWL(String configFilePath, String imageDescriptorPath, String runtimeDescriptorPath){
+    public LauncherCWL(String configFilePath, String imageDescriptorPath, String runtimeDescriptorPath, OutputStream stdoutStream,
+            OutputStream stderrStream){
         this.configFilePath = configFilePath;
         this.imageDescriptorPath = imageDescriptorPath;
         this.runtimeDescriptorPath = runtimeDescriptorPath;
         fileProvisioning = new FileProvisioning(configFilePath);
-
-
+        this.stdoutStream = stdoutStream;
+        this.stderrStream = stderrStream;
         gson = CWL.getTypeSafeCWLToolDocument();
-    }
-
-    /**
-     * Work around for https://github.com/common-workflow-language/cwltool/issues/87
-     * @param cwlFile
-     * @return
-     */
-    public ImmutablePair<String, String> parseCWL(final String cwlFile) {
-        // update seems to just output the JSON version without checking file links
-        final String[] s = { "cwltool", "--non-strict", "--print-pre", cwlFile };
-        final ImmutablePair<String, String> execute = io.cwl.avro.Utilities
-                .executeCommand(Joiner.on(" ").join(Arrays.asList(s)), false,  Optional.absent(), Optional.absent());
-        return execute;
     }
 
     public void run(Class cwlClassTarget){
@@ -146,9 +140,16 @@ public class LauncherCWL {
         }
 
         // parse the CWL tool definition without validation
-        // final String imageDescriptorContent = cwlUtil.parseCWL(imageDescriptorPath, false).getLeft();
-        final String imageDescriptorContent = this.parseCWL(imageDescriptorPath).getLeft();
-        final Object cwlObject = gson.fromJson(imageDescriptorContent, cwlClassTarget);
+        CWL cwlUtil = new CWL();
+        final String imageDescriptorContent = cwlUtil.parseCWL(imageDescriptorPath).getLeft();
+        Object cwlObject;
+        try {
+            cwlObject = gson.fromJson(imageDescriptorContent, cwlClassTarget);
+        } catch (JsonParseException ex) {
+            LOG.error("The JSON file provided is invalid.");
+            return;
+        }
+
 
         if (cwlObject == null) {
             LOG.info("CWL Workflow was null");
@@ -193,7 +194,7 @@ public class LauncherCWL {
 
         // run command
         System.out.println("Calling out to cwltool to run your " + (cwlObject instanceof Workflow ? "workflow" : "tool"));
-        Map<String, Object> outputObj = runCWLCommand(imageDescriptorPath, newJsonPath, globalWorkingDir + "/outputs/", globalWorkingDir + "/working/");
+        Map<String, Object> outputObj = runCWLCommand(imageDescriptorPath, newJsonPath, globalWorkingDir + "/outputs/", globalWorkingDir + "/working/", stdoutStream, stderrStream);
         System.out.println();
 
         // push output files
@@ -274,11 +275,16 @@ public class LauncherCWL {
 
     /**
      * Handles one output for upload
-     * @param fileMap
+     * @param fileMap output map
      * @param cwlID
+     * @param param the paramter from the json input file ()
      * @param key
      */
     private void handleOutputFile(Map<String, List<FileProvisioning.FileInfo>> fileMap, final String cwlID, Map<String, Object> param, final String key) {
+        if (param.containsKey("class") && param.get("class").toString().equalsIgnoreCase("Directory")){
+            // ignore directory output
+            return;
+        }
         String path = (String) param.get("path");
         // if it's the current one
         LOG.info("PATH TO UPLOAD TO: {} FOR {} FOR {}", path, cwlID, key);
@@ -341,6 +347,9 @@ public class LauncherCWL {
                 JSONObject newRecord = new JSONObject();
                 newRecord.put("class", param.get("class"));
                 newRecord.put("path", param.get("path"));
+                if (param.containsKey("format")){
+                    newRecord.put("format", param.get("format"));
+                }
                 newJSON.put(paramName, newRecord);
 
                 // TODO: fill in for all possible types
@@ -424,9 +433,9 @@ public class LauncherCWL {
         return new File(workingDir + "/launcher-" + uuid).getAbsolutePath();
     }
 
-    private Map<String, Object> runCWLCommand(String cwlFile, String jsonSettings, String outputDir, String workingDir) {
+    private Map<String, Object> runCWLCommand(String cwlFile, String jsonSettings, String outputDir, String workingDir, OutputStream stdoutStream, OutputStream stderrStream) {
         // Get extras from config file
-        ArrayList<String> extraFlags = (ArrayList)config.getList("cwltool-extra-parameters");
+        List<String> extraFlags = (List)config.getList("cwltool-extra-parameters");
 
         if (extraFlags.size() > 0) {
             System.out.println("########### WARNING ###########");
@@ -434,17 +443,15 @@ public class LauncherCWL {
         }
 
         // Trim the input
-        extraFlags = (ArrayList)extraFlags.stream()
-                .map(flag -> trimAndPrintInput(flag))
-                .collect(Collectors.toList());
+        extraFlags = extraFlags.stream().map(this::trimAndPrintInput).collect(Collectors.toList());
 
         // Create cwltool command
-        ArrayList<String> command = new ArrayList<>(Arrays.asList("cwltool","--enable-dev","--non-strict","--enable-net","--outdir", outputDir, "--tmpdir-prefix", workingDir, cwlFile, jsonSettings));
+        List<String> command = new ArrayList<>(Arrays.asList("cwltool","--enable-dev","--non-strict","--outdir", outputDir, "--tmpdir-prefix", workingDir, cwlFile, jsonSettings));
         command.addAll(1, extraFlags);
 
         final String joined = Joiner.on(" ").join(command);
         System.out.println("Executing: " + joined);
-        final ImmutablePair<String, String> execute = Utilities.executeCommand(joined);
+        final ImmutablePair<String, String> execute = Utilities.executeCommand(joined, MoreObjects.firstNonNull(stdoutStream,System.out), MoreObjects.firstNonNull(stderrStream,System.err));
         // mutate stderr and stdout into format for output
 
         String stdout = execute.getLeft().replaceAll("(?m)^", "\t");
@@ -599,6 +606,12 @@ public class LauncherCWL {
                 }
                 // in this case the input is a single instance and not an array
             } else if (stringObjectEntry.getValue() instanceof HashMap) {
+                Map value = (Map)stringObjectEntry.getValue();
+
+                // ignore local directories when doing file provisioning
+                if (value.containsKey("class") && (("Directory").equalsIgnoreCase(value.get("class").toString()))){
+                    return;
+                }
 
                 HashMap param = (HashMap) stringObjectEntry.getValue();
                 String path = (String) param.get("path");
@@ -693,8 +706,12 @@ public class LauncherCWL {
     }
 
     public static void main(String[] args) {
-        final LauncherCWL launcherCWL = new LauncherCWL(args);
-        launcherCWL.run(CommandLineTool.class);
+        try {
+            final LauncherCWL launcherCWL = new LauncherCWL(args);
+            launcherCWL.run(CommandLineTool.class);
+        } catch (CWL.GsonBuildException ex) {
+            LOG.error("There was an error creating the CWL GSON instance.");
+        }
     }
 
     private String trimAndPrintInput(String input) {

@@ -16,6 +16,7 @@
 
 package io.dockstore.client.cli;
 
+import avro.shaded.com.google.common.collect.Lists;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.TestUtility;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -50,7 +51,6 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.doNothing;
 import static org.powermock.api.mockito.PowerMockito.spy;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
@@ -75,7 +75,7 @@ public class MockedIT {
     public void clearDB() throws Exception {
         clearState();
         Client client = mock(Client.class);
-        ToolClient toolClient = spy(new ToolClient(client));
+        ToolClient toolClient = spy(new ToolClient(client, false));
 
         final UsersApi userApiMock = mock(UsersApi.class);
         when(client.getConfigFile()).thenReturn(TestUtility.getConfigFileLocation(true));
@@ -89,7 +89,7 @@ public class MockedIT {
         SourceFile file = mock(SourceFile.class);
         when(file.getContent()).thenReturn(sourceFileContents);
         doReturn(file).when(toolClient).getDescriptorFromServer("quay.io/collaboratory/dockstore-tool-linux-sort", "cwl");
-        doNothing().when(toolClient).downloadDescriptors(anyString(),anyString(),anyObject());
+        doReturn(Lists.newArrayList()).when(toolClient).downloadDescriptors(anyString(),anyString(),anyObject());
 
         // mock return of a more complicated CWL file
         File sourceFileArrays = new File(ResourceHelpers.resourceFilePath("arrays.cwl"));
@@ -119,7 +119,7 @@ public class MockedIT {
     @Test
     public void runLaunchOneJson() throws IOException, ApiException {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--entry",
-            "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testOneRun.json") });
+            "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testOneRun.json"), "--script" });
 
         Assert.assertTrue("output should contain cwltool command",systemOutRule.getLog().contains("Executing: cwltool"));
     }

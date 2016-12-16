@@ -1,0 +1,6 @@
+{
+  "indir": {
+    "path": "../../../scripts",
+    "class": "Directory"
+  }
+}

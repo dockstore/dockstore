@@ -18,6 +18,7 @@ package io.dockstore.webservice.helpers;
 
 import com.esotericsoftware.yamlbeans.YamlException;
 import com.esotericsoftware.yamlbeans.YamlReader;
+import com.google.common.base.Strings;
 import com.google.common.io.Files;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
@@ -25,20 +26,28 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.WorkflowVersion;
+
+import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Generically imports files in order to populate Tools and Workflows.
  */
 public class FileImporter {
 
+    public static final Logger LOG = LoggerFactory.getLogger(FileImporter.class);
     private final SourceCodeRepoInterface sourceCodeRepo;
 
     public FileImporter(SourceCodeRepoInterface sourceCodeRepo){
@@ -74,8 +83,14 @@ public class FileImporter {
             if (fileType == SourceFile.FileType.DOCKERFILE) {
                 fileName = tag.getDockerfilePath();
             } else if (fileType == SourceFile.FileType.DOCKSTORE_CWL) {
+                if (Strings.isNullOrEmpty(tag.getCwlPath())) {
+                    return null;
+                }
                 fileName = tag.getCwlPath();
             } else if (fileType == SourceFile.FileType.DOCKSTORE_WDL) {
+                if (Strings.isNullOrEmpty(tag.getWdlPath())) {
+                    return null;
+                }
                 fileName = tag.getWdlPath();
             }
         } else if (version instanceof WorkflowVersion){
@@ -113,7 +128,23 @@ public class FileImporter {
             try {
                 tempDesc = File.createTempFile("temp", ".wdl", Files.createTempDir());
                 Files.write(content, tempDesc, StandardCharsets.UTF_8);
-                final List<String> importPaths = sourceCodeRepo.getWdlImports(tempDesc);
+
+                // Use matcher to get imports
+                List<String> lines = FileUtils.readLines(tempDesc);
+                ArrayList<String> importPaths = new ArrayList<>();
+                Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"");
+
+                for (String line : lines) {
+                    Matcher m = p.matcher(line);
+
+                    while (m.find()) {
+                        String match = m.group(1);
+                        if (!match.startsWith("http://") && !match.startsWith("https://")) { // Don't resolve URLs
+                            importPaths.add(match.replaceFirst("file://", "")); // remove file:// from path
+                        }
+                    }
+                }
+
                 for (String importPath : importPaths) {
                     SourceFile importFile = new SourceFile();
 
@@ -177,7 +208,7 @@ public class FileImporter {
         // create a new source file
         final String fileResponse = readGitRepositoryFile(fileType, version, mapValue);
         if (fileResponse == null){
-            SourceCodeRepoInterface.LOG.error("Could not read: " + mapValue);
+            FileImporter.LOG.error("Could not read: " + mapValue);
             return;
         }
         SourceFile sourceFile = new SourceFile();

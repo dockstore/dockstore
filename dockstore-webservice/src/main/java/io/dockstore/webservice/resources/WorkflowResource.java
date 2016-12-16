@@ -18,24 +18,27 @@ package io.dockstore.webservice.resources;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Optional;
+import com.google.common.base.Strings;
 import com.google.common.io.Files;
-import com.google.gson.Gson;
-import io.dockstore.client.Bridge;
+
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
+import io.dockstore.webservice.api.VerifyRequest;
+import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
-import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.BitBucketSourceCodeRepo;
+import io.dockstore.webservice.helpers.DAGHelper;
 import io.dockstore.webservice.helpers.EntryLabelHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
+import io.dockstore.webservice.helpers.GitLabSourceCodeRepo;
 import io.dockstore.webservice.helpers.Helper;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
@@ -51,17 +54,17 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.tuple.MutablePair;
-import org.apache.commons.lang3.tuple.Pair;
+import io.swagger.model.ToolDescriptor;
+
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.Yaml;
-import scala.collection.immutable.Seq;
 
 import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -73,16 +76,14 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.SortedSet;
 
 
 /**
@@ -110,7 +111,7 @@ public class WorkflowResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
 
-    private enum Type {
+    public enum Type {
         DAG, TOOLS
     }
 
@@ -173,6 +174,10 @@ public class WorkflowResource {
         newWorkflow.setWorkflowName(workflow.getWorkflowName());
         newWorkflow.setDescriptorType(workflow.getDescriptorType());
 
+        // Copy Labels
+        SortedSet<Label> labels = (SortedSet) workflow.getLabels();
+        newWorkflow.setLabels(labels);
+
         // copy to new object
         workflowDAO.delete(workflow);
 
@@ -185,12 +190,14 @@ public class WorkflowResource {
     }
 
     /**
-     * Refresh workflows for one user
+     * For each valid token for a git hosting service, refresh all workflows
      * @param user a user to refresh workflows for
      */
     public void refreshStubWorkflowsForUser(User user) {
         try {
             List<Token> tokens = checkOnBitbucketToken(user);
+
+            // Check if tokens for git hosting services are valid and refresh corresponding workflows
 
             // Refresh Bitbucket
             Token bitbucketToken = Helper.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
@@ -210,38 +217,63 @@ public class WorkflowResource {
                 // get workflows from github for a user and updates db
                 refreshHelper(new GitHubSourceCodeRepo(user.getUsername(), githubToken.getContent(), null), user);
             }
+
+            // Refresh Gitlab
+            Token gitlabToken = Helper.extractToken(tokens, TokenType.GITLAB_COM.toString());
+
+            // Update gitlab workflows if token exists
+            if (gitlabToken != null && gitlabToken.getContent() != null) {
+                // get workflows from gitlab for a user and updates db
+                refreshHelper(new GitLabSourceCodeRepo(user.getUsername(), client, gitlabToken.getContent(), null), user);
+            }
+
+
             // when 3) no data is found for a workflow in the db, we may want to create a warning, note, or label
         } catch (WebApplicationException ex) {
             LOG.info(user.getUsername() + ": " + "Failed to refresh user {}", user.getId());
         }
     }
 
+    /**
+     * Gets a mapping of all workflows from git host, and updates/adds as appropriate
+     * @param sourceCodeRepoInterface
+     * @param user
+         */
     private void refreshHelper(final SourceCodeRepoInterface sourceCodeRepoInterface, User user) {
         // Mapping of git url to repository name (owner/repo)
         final Map<String, String> workflowGitUrl2Name = sourceCodeRepoInterface.getWorkflowGitUrl2RepositoryId();
 
+        // For each entry found of the associated git hosting service
         for(Map.Entry<String, String> entry : workflowGitUrl2Name.entrySet()) {
+            // Get all workflows with the same giturl
             final List<Workflow> byGitUrl = workflowDAO.findByGitUrl(entry.getKey());
-            if (byGitUrl.size() > 0) {
-                // Workflows exist
-                for (Workflow workflow : byGitUrl) {
-                    // when 1) workflows are already known, update the copy in the db
-                    // update the one workflow from github
-                    final Workflow newWorkflow = sourceCodeRepoInterface.getNewWorkflow(entry.getValue(), Optional.of(workflow));
 
-                    // take ownership of these workflows
+            if (byGitUrl.size() > 0) {
+                // Workflows exist with the given git url
+                for (Workflow workflow : byGitUrl) {
+                    // Update existing workflows with new information from the repository
+                    // Note we pass the existing workflow as a base for the updated version of the workflow
+                    final Workflow newWorkflow = sourceCodeRepoInterface.getWorkflow(entry.getValue(), Optional.of(workflow));
+
+                    // Take ownership of these workflows
                     workflow.getUsers().add(user);
+
+                    // Update the existing matching workflows based off of the new information
                     updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow);
                 }
             } else {
-                // Workflows are not registered, add them
-                final Workflow newWorkflow = sourceCodeRepoInterface.getNewWorkflow(entry.getValue(), Optional.absent());
+                // Workflows are not registered for the given git url, add one
+                final Workflow newWorkflow = sourceCodeRepoInterface.getWorkflow(entry.getValue(), Optional.absent());
 
+                // The workflow was successfully created
                 if (newWorkflow != null) {
                     final long workflowID = workflowDAO.create(newWorkflow);
+
                     // need to create nested data models
                     final Workflow workflowFromDB = workflowDAO.findById(workflowID);
                     workflowFromDB.getUsers().add(user);
+
+                    // Update newly created template workflow (workflowFromDB) with found data from the repository
                     updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow);
                 }
             }
@@ -277,7 +309,7 @@ public class WorkflowResource {
 
         // do a full refresh when targeted like this
         workflow.setMode(WorkflowMode.FULL);
-        final Workflow newWorkflow = sourceCodeRepo.getNewWorkflow(workflow.getOrganization() + '/' + workflow.getRepository(), Optional.of(workflow));
+        final Workflow newWorkflow = sourceCodeRepo.getWorkflow(workflow.getOrganization() + '/' + workflow.getRepository(), Optional.of(workflow));
         workflow.getUsers().add(user);
         updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow);
 
@@ -318,6 +350,19 @@ public class WorkflowResource {
                     workflowVersionFromDB.getSourceFiles().add(fileFromDB);
                 }
             }
+            // Remove existing files that are no longer present
+            for (Map.Entry<String, SourceFile> entry : existingFileMap.entrySet()) {
+                boolean toDelete = true;
+                for (SourceFile file : version.getSourceFiles()) {
+                    if (entry.getKey().equals(file.getType().toString() + file.getPath())) {
+                        toDelete = false;
+                    }
+                }
+                if (toDelete) {
+                    workflowVersionFromDB.getSourceFiles().remove(entry.getValue());
+                }
+            }
+
             //TODO: this needs a strategy for dealing with content on our side that has since been deleted
         }
     }
@@ -393,6 +438,44 @@ public class WorkflowResource {
     @PUT
     @Timed
     @UnitOfWork
+    @Path("/{workflowId}/verify/{workflowVersionId}")
+    @RolesAllowed("admin")
+    @ApiOperation(value = "Verify or unverify a workflow. ADMIN ONLY", response = WorkflowVersion.class, responseContainer = "List")
+    public Set<WorkflowVersion> verifyWorkflowVersion(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
+            @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId,
+            @ApiParam(value = "Object containing verification information.", required = true) VerifyRequest verifyRequest) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        Helper.checkEntry(workflow);
+        // Note: if you set someone as an admin, they are not actually admin right away. Users must wait until after the
+        // expireAfterAccess time in the authenticationCachePolicy expires (10m by default)
+        Helper.checkUser(user, workflow);
+
+        WorkflowVersion workflowVersion = workflowVersionDAO.findById(workflowVersionId);
+        if (workflowVersion == null) {
+            LOG.error(user.getUsername() + ": could not find version: " + workflow.getPath());
+            throw new CustomWebApplicationException("Version not found.", HttpStatus.SC_BAD_REQUEST);
+
+        }
+
+        if (verifyRequest.getVerify()) {
+            if (Strings.isNullOrEmpty(verifyRequest.getVerifiedSource())) {
+                throw new CustomWebApplicationException("A source must be included to verify a workflow.", HttpStatus.SC_BAD_REQUEST);
+            }
+            workflowVersion.updateVerified(true, verifyRequest.getVerifiedSource());
+        } else {
+            workflowVersion.updateVerified(false, null);
+        }
+
+        Workflow result = workflowDAO.findById(workflowId);
+        Helper.checkEntry(result);
+        return result.getWorkflowVersions();
+
+    }
+
+    @PUT
+    @Timed
+    @UnitOfWork
     @Path("/{workflowId}/resetVersionPaths")
     @ApiOperation(value = "Change the workflow paths", notes = "Workflow version correspond to each row of the versions table listing all information for a workflow", response = Workflow.class)
     public Workflow updateWorkflowPath(@ApiParam(hidden = true) @Auth User user,
@@ -408,7 +491,9 @@ public class WorkflowResource {
         //update the workflow path in all workflowVersions
         Set<WorkflowVersion> versions = c.getVersions();
         for(WorkflowVersion version : versions){
-            version.setWorkflowPath(workflow.getDefaultWorkflowPath());
+            if (!version.isDirtyBit()) {
+                version.setWorkflowPath(workflow.getDefaultWorkflowPath());
+            }
         }
 
         return c;
@@ -546,9 +631,34 @@ public class WorkflowResource {
     @GET
     @Timed
     @UnitOfWork
+    @Path("/{workflowId}/verifiedSources")
+    @ApiOperation(value = "Get a semicolon delimited list of verified sources", tags = { "workflows" }, notes = "Does not need authentication", response = String.class)
+    public String verifiedSources(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId)  {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        Helper.checkEntry(workflow);
+
+        Set<String> verifiedSourcesArray = new HashSet<>();
+        workflow.getWorkflowVersions()
+                .stream()
+                .filter((WorkflowVersion u) -> u.isVerified())
+                .forEach((WorkflowVersion v) -> verifiedSourcesArray.add(v.getVerifiedSource()));
+
+        JSONArray jsonArray;
+        try {
+            jsonArray = new JSONArray(verifiedSourcesArray.toArray());
+        } catch (JSONException ex) {
+            throw new CustomWebApplicationException("There was an error converting the array of verified sources to a JSON array.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+
+        return jsonArray.toString();
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
     @Path("/{workflowId}/cwl")
     @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
-    public SourceFile cwl(@ApiParam(value = "Tool id", required = true) @PathParam("workflowId") Long workflowId,
+    public SourceFile cwl(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag)  {
         return entryVersionHelper.getSourceFile(workflowId, tag, FileType.DOCKSTORE_CWL);
     }
@@ -558,7 +668,7 @@ public class WorkflowResource {
     @UnitOfWork
     @Path("/{workflowId}/wdl")
     @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
-    public SourceFile wdl(@ApiParam(value = "Tool id", required = true) @PathParam("workflowId") Long workflowId,
+    public SourceFile wdl(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag) {
         return entryVersionHelper.getSourceFile(workflowId, tag, FileType.DOCKSTORE_WDL);
     }
@@ -568,7 +678,7 @@ public class WorkflowResource {
     @UnitOfWork
     @Path("/{workflowId}/cwl/{relative-path}")
     @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
-    public SourceFile secondaryCwlPath(@ApiParam(value = "Tool id", required = true) @PathParam("workflowId") Long workflowId,
+    public SourceFile secondaryCwlPath(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag, @PathParam("relative-path") String path){
 
         return entryVersionHelper.getSourceFileByPath(workflowId, tag, FileType.DOCKSTORE_CWL, path);
@@ -579,7 +689,7 @@ public class WorkflowResource {
     @UnitOfWork
     @Path("/{workflowId}/wdl/{relative-path}")
     @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
-    public SourceFile secondaryWdlPath(@ApiParam(value = "Tool id", required = true) @PathParam("workflowId") Long workflowId,
+    public SourceFile secondaryWdlPath(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag, @PathParam("relative-path") String path){
 
         return entryVersionHelper.getSourceFileByPath(workflowId, tag, FileType.DOCKSTORE_WDL, path);
@@ -591,7 +701,7 @@ public class WorkflowResource {
     @UnitOfWork
     @Path("/{workflowId}/secondaryCwl")
     @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
-    public List<SourceFile> secondaryCwl(@ApiParam(value = "Tool id", required = true) @PathParam("workflowId") Long workflowId,
+    public List<SourceFile> secondaryCwl(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag)  {
         return entryVersionHelper.getAllSecondaryFiles(workflowId, tag, FileType.DOCKSTORE_CWL);
     }
@@ -601,14 +711,125 @@ public class WorkflowResource {
     @UnitOfWork
     @Path("/{workflowId}/secondaryWdl")
     @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
-    public List<SourceFile> secondaryWdl(@ApiParam(value = "Tool id", required = true) @PathParam("workflowId") Long workflowId,
+    public List<SourceFile> secondaryWdl(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag) {
         return entryVersionHelper.getAllSecondaryFiles(workflowId, tag, FileType.DOCKSTORE_WDL);
     }
 
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{workflowId}/testParameterFiles")
+    @ApiOperation(value = "Get the corresponding test parameter files.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
+    public List<SourceFile> getTestParameterFiles(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
+            @QueryParam("version") String version) {
 
+        Workflow workflow = workflowDAO.findById(workflowId);
+        Helper.checkEntry(workflow);
 
+        if (workflow.getDescriptorType().toUpperCase().equals(ToolDescriptor.TypeEnum.WDL.toString())) {
+            return entryVersionHelper.getAllSourceFiles(workflowId, version, FileType.WDL_TEST_JSON);
+        } else {
+            return entryVersionHelper.getAllSourceFiles(workflowId, version, FileType.CWL_TEST_JSON);
+        }
+    }
 
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/{workflowId}/testParameterFiles")
+    @ApiOperation(value = "Add test parameter files for a given version.", response = SourceFile.class, responseContainer = "Set")
+    public Set<SourceFile> addTestParameterFiles(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
+            @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
+            @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", defaultValue = "") String emptyBody,
+            @QueryParam("version") String version) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        Helper.checkEntry(workflow);
+
+        if (workflow.getMode() == WorkflowMode.STUB) {
+            LOG.info("The workflow \'" + workflow.getPath() + "\' is a STUB. Refresh the workflow if you want to add test parameter files");
+            throw new CustomWebApplicationException("The workflow \'" + workflow.getPath() + "\' is a STUB. Refresh the workflow if you want to add test parameter files", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        WorkflowVersion workflowVersion = workflow.getWorkflowVersions()
+                .stream()
+                .filter((WorkflowVersion v) -> v.getName().equals(version))
+                .findFirst()
+                .get();
+
+        if (workflowVersion == null) {
+            LOG.info("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' does not exist.");
+            throw new CustomWebApplicationException("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' does not exist.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (!workflowVersion.isValid()) {
+            LOG.info("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' is invalid.");
+            throw new CustomWebApplicationException("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' is invalid.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
+
+        // Add new test parameter files
+        FileType fileType = (workflow.getDescriptorType().toUpperCase().equals(ToolDescriptor.TypeEnum.CWL.toString())) ? FileType.CWL_TEST_JSON : FileType.WDL_TEST_JSON;
+        for (String path : testParameterPaths) {
+            long sourcefileDuplicate = sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType).count();
+            if (sourcefileDuplicate == 0) {
+                // Sourcefile doesn't exist, add a stub which will have it's content filled on refresh
+                SourceFile sourceFile = new SourceFile();
+                sourceFile.setPath(path);
+                sourceFile.setType(fileType);
+
+                long id = fileDAO.create(sourceFile);
+                SourceFile sourceFileWithId = fileDAO.findById(id);
+                workflowVersion.addSourceFile(sourceFileWithId);
+            }
+        }
+
+        return workflowVersion.getSourceFiles();
+    }
+
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("/{workflowId}/testParameterFiles")
+    @ApiOperation(value = "Delete test parameter files for a given version.", response = SourceFile.class, responseContainer = "Set")
+    public Set<SourceFile> deleteTestParameterFiles(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
+            @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
+            @QueryParam("version") String version) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        Helper.checkEntry(workflow);
+
+        WorkflowVersion workflowVersion = workflow.getWorkflowVersions()
+                .stream()
+                .filter((WorkflowVersion v) -> v.getName().equals(version))
+                .findFirst()
+                .get();
+
+        if (workflowVersion == null) {
+            LOG.info("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' does not exist.");
+            throw new CustomWebApplicationException("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' does not exist.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (!workflowVersion.isValid()) {
+            LOG.info("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' is invalid.");
+            throw new CustomWebApplicationException("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' is invalid.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
+
+        // Remove test parameter files
+        FileType fileType = (workflow.getDescriptorType().toUpperCase().equals(ToolDescriptor.TypeEnum.CWL.toString())) ? FileType.CWL_TEST_JSON : FileType.WDL_TEST_JSON;
+        for (String path : testParameterPaths) {
+            if (sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType).count() > 0) {
+                SourceFile toRemove = sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType).findFirst().get();
+                sourceFiles.remove(toRemove);
+            }
+        }
+
+        return workflowVersion.getSourceFiles();
+    }
 
     @POST
     @Timed
@@ -644,6 +865,8 @@ public class WorkflowResource {
             registryURLPrefix = TokenType.BITBUCKET_ORG.toString();
         } else if (workflowRegistry.toLowerCase().equals("github")) {
             registryURLPrefix = TokenType.GITHUB_COM.toString();
+        } else if (workflowRegistry.toLowerCase().equals("gitlab")) {
+            registryURLPrefix = TokenType.GITLAB_COM.toString();
         } else {
             throw new CustomWebApplicationException("The given git registry is not supported.", HttpStatus.SC_BAD_REQUEST);
         }
@@ -651,7 +874,7 @@ public class WorkflowResource {
         final SourceCodeRepoInterface sourceCodeRepo = getSourceCodeRepoInterface(gitURL, user);
 
         // Create workflow
-        Workflow newWorkflow = sourceCodeRepo.getNewWorkflow(completeWorkflowPath, Optional.absent());
+        Workflow newWorkflow = sourceCodeRepo.getWorkflow(completeWorkflowPath, Optional.absent());
 
         if (newWorkflow == null) {
             throw new CustomWebApplicationException("Please enter a valid repository.", HttpStatus.SC_BAD_REQUEST);
@@ -674,10 +897,14 @@ public class WorkflowResource {
         List<Token> tokens = checkOnBitbucketToken(user);
         Token bitbucketToken = Helper.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
         Token githubToken = Helper.extractToken(tokens, TokenType.GITHUB_COM.toString());
+        Token gitlabToken = Helper.extractToken(tokens, TokenType.GITLAB_COM.toString());
+
         final String bitbucketTokenContent = bitbucketToken == null ? null : bitbucketToken.getContent();
         final String gitHubTokenContent = githubToken == null ? null : githubToken.getContent();
+        final String gitlabTokenContent = gitlabToken == null ? null : gitlabToken.getContent();
+
         final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(gitUrl, client,
-                bitbucketTokenContent, gitHubTokenContent);
+                bitbucketTokenContent, gitlabTokenContent, gitHubTokenContent);
         if (sourceCodeRepo == null) {
             throw new CustomWebApplicationException("Git tokens invalid, please re-link your git accounts.", HttpStatus.SC_BAD_REQUEST);
         }
@@ -707,7 +934,13 @@ public class WorkflowResource {
         for (WorkflowVersion version : workflowVersions) {
             if (mapOfExistingWorkflowVersions.containsKey(version.getId())) {
                 // remove existing copy and add the new one
-                final WorkflowVersion existingTag = mapOfExistingWorkflowVersions.get(version.getId());
+                WorkflowVersion existingTag = mapOfExistingWorkflowVersions.get(version.getId());
+
+                // If path changed then update dirty bit to true
+                if (!existingTag.getWorkflowPath().equals(version.getWorkflowPath())) {
+                    existingTag.setDirtyBit(true);
+                }
+
                 existingTag.updateByUser(version);
             }
         }
@@ -750,10 +983,11 @@ public class WorkflowResource {
                 e.printStackTrace();
             }
 
+            DAGHelper dagHelper = new DAGHelper(toolDAO);
             if (workflow.getDescriptorType().equals("wdl")) {
-                result = getContentWDL(tempMainDescriptor,Type.DAG);
+                result = dagHelper.getContentWDL(workflowVersion.getWorkflowPath(), tempMainDescriptor, secondaryDescContent, Type.DAG);
             } else {
-                result = getContentCWL(descFileContent, secondaryDescContent, Type.DAG);
+                result = dagHelper.getContentCWL(workflowVersion.getWorkflowPath(), descFileContent, secondaryDescContent, Type.DAG);
             }
         }
         return result;
@@ -799,12 +1033,13 @@ public class WorkflowResource {
             }
 
             String result; // will have the JSON string after done calling the method
+            DAGHelper dagHelper = new DAGHelper(toolDAO);
             if(workflow.getDescriptorType().equals("wdl")) {
                 //WDL workflow
-                result = getContentWDL(tempMainDescriptor, Type.TOOLS);
+                result = dagHelper.getContentWDL(workflowVersion.getWorkflowPath(), tempMainDescriptor, secondaryDescContent, Type.TOOLS);
             } else{
                 //CWL workflow
-                result = getContentCWL(descFileContent, secondaryDescContent, Type.TOOLS);
+                result = dagHelper.getContentCWL(workflowVersion.getWorkflowPath(), descFileContent, secondaryDescContent, Type.TOOLS);
             }
             return result;
         }
@@ -850,427 +1085,4 @@ public class WorkflowResource {
         return mainDescriptor;
     }
 
-    /**
-     * This method will get the content for tool tab with descriptor type = WDL
-     * It will then call another method to transform the content into JSON string and return
-     * @param tempMainDescriptor
-     * @param type either dag or tools
-     * @return String
-     * */
-    private String getContentWDL(File tempMainDescriptor, Type type) {
-        Bridge bridge = new Bridge();
-        Map<String, Seq> callToTask = (LinkedHashMap)bridge.getCallsAndDocker(tempMainDescriptor);
-        Map<String, Pair<String, String>> taskContent = new HashMap<>();
-        ArrayList<Pair<String, String>> nodePairs = new ArrayList<>();
-        String result = null;
-
-        for (Map.Entry<String, Seq> entry : callToTask.entrySet()) {
-            String taskID = entry.getKey();
-            Seq taskDocker = entry.getValue();  //still in form of Seq, need to get first element or head of the list
-            if(type == Type.TOOLS){
-                if (taskDocker != null){
-                    String dockerName = taskDocker.head().toString();
-                    taskContent.put(taskID, new MutablePair<>(dockerName, getURLFromEntry(dockerName)));
-                } else{
-                    taskContent.put(taskID, new MutablePair<>("Not Specified", "Not Specified"));
-                }
-            }else{
-                if (taskDocker != null){
-                    String dockerName = taskDocker.head().toString();
-                    nodePairs.add(new MutablePair<>(taskID, getURLFromEntry(dockerName)));
-                } else{
-                    nodePairs.add(new MutablePair<>(taskID, ""));
-                }
-
-            }
-
-        }
-
-        //call and return the Json string transformer
-        if(type == Type.TOOLS){
-            result = getJSONTableToolContentWDL(taskContent);
-        }else if(type == Type.DAG){
-            result = setupJSONDAG(nodePairs);
-        }
-
-        return result;
-    }
-
-    /**
-     * This method will get the content for tool tab with descriptor type = CWL
-     * It will then call another method to transform the content into JSON string and return
-     * @param content has the content of main descriptor file
-     * @param secondaryDescContent has the secondary files and the content
-     * @param type either dag or tools
-     * @return String
-     * */
-    private String getContentCWL(String content, Map<String, String> secondaryDescContent, Type type) {
-        Yaml yaml = new Yaml();
-        Map <String, Object> sections;
-        String defaultDockerEnv = "", dockerEnv = "", dockerPullURL = "";
-        Integer index = 0;
-        Map<String, Pair<String, String>> toolID = new HashMap<>();     // map for toolID and toolName
-        Map<String, Pair<String, String>> toolDocker = new HashMap<>(); // map for docker
-        ArrayList<Pair<String, String>> nodePairs = new ArrayList<>();  // array for dag nodes
-        String result = null;
-
-        InputStream is = IOUtils.toInputStream(content, StandardCharsets.UTF_8);
-        sections = (Map<String, Object>) yaml.load(is);
-        for (Map.Entry<String, Object> entry : sections.entrySet()) {
-            String section = entry.getKey();
-            defaultDockerEnv = getDefaultDockerEnv(section,entry,defaultDockerEnv);
-            if (section.equals("steps")) {
-                List<Map <String, Object>> steps = getStepsArray(entry);
-                for (Map <String, Object> step : steps) {
-                    Object file=null;
-                    String fileName="", stepIdValue="";
-                    boolean expressionTool = false;
-                    Set<Map.Entry<String, Object>> stepEntrySet = step.entrySet();
-                    for (Map.Entry<String, Object> stepEntryValues : stepEntrySet){
-                        if(stepEntryValues.getValue() instanceof Map){ //{pass_filter->{in->..., out->..., ...}}
-                            Map<String, Object> valueOfStep;
-                            if(stepEntryValues.getKey().equals("run")){ //run:{import:<filename>.cwl}, run:{include:<filename>.cwl}
-                                valueOfStep = (Map<String, Object>)stepEntryValues.getValue();
-                                if(valueOfStep.containsKey("import")){
-                                    file = valueOfStep.get("import");
-                                } else if(valueOfStep.containsKey("include")){
-                                    file = valueOfStep.get("include");
-                                }
-                            }else{ //run:<filename>.cwl but id is the key (CWL 1.0)
-                                stepIdValue = stepEntryValues.getKey();
-                                valueOfStep = (Map<String, Object>)stepEntryValues.getValue();
-                                file = valueOfStep.get("run");
-                            }
-                        }else{ //{id->..., in->..., out-> ..., run->...}
-                            if(stepEntryValues.getKey().equals("run")){
-                                file = stepEntryValues.getValue();
-                            }else if(stepEntryValues.getKey().equals("id")){
-                                stepIdValue = stepEntryValues.getValue().toString();
-                            }
-                        }
-                    }
-                    if(file instanceof String){ // run: <filename>.cwl
-                        fileName = file.toString();
-                    } else{ //run: expression-> ..... in->.....
-                        Map<String, Object> fileMap = (Map<String, Object>) file;
-                        if(fileMap.get("class").equals("ExpressionTool")){
-                            expressionTool = true; //ExpressionTool means that this id is not a tool
-                            if(fileMap.containsKey("requirement") || fileMap.containsKey("hints")){
-                                dockerEnv = getDockerEnvExprTool(fileMap);
-                                dockerPullURL = getURLFromEntry(dockerEnv);
-                            }else{ //run is a map but does not have any hints/requirements
-                                dockerPullURL = "";
-                            }
-                        }
-                    }
-                    //get the tool file based on "run" command
-                    String secondaryDescriptor;
-                    InputStream secondaryIS;
-                    Yaml helperYaml = new Yaml();
-                    Map<String, Object> helperGroups;
-                    if(secondaryDescContent.size() != 0){
-                        boolean defaultDocker = true;
-                        if(!expressionTool){
-                            //run:<filename>.cwl, run:{import:<filename>.cwl}, run:{include:<filename>.cwl}
-                            secondaryDescriptor = secondaryDescContent.get(fileName); //get the file content
-                            secondaryIS = IOUtils.toInputStream(secondaryDescriptor, StandardCharsets.UTF_8); //convert to InputStream
-                            helperGroups = (Map<String, Object>) helperYaml.load(secondaryIS);
-                            for (Map.Entry<String, Object> helperGroupEntry : helperGroups.entrySet()) {
-                                String helperGroup = helperGroupEntry.getKey();
-                                // find the docker requirement inside the tool file
-                                if (helperGroup.equals("requirements") || helperGroup.equals("hints")) {
-                                    ArrayList<Map<String, Object>> requirements = (ArrayList<Map<String, Object>>) helperGroupEntry.getValue();
-                                    for (Map<String, Object> requirement : requirements) {
-                                        if (requirement.get("class").equals("DockerRequirement")) {
-                                            dockerEnv = requirement.get("dockerPull").toString();
-                                            if(type == Type.TOOLS){
-                                                dockerPullURL = getURLFromEntry(dockerEnv);
-                                                //put the tool ID and docker information into two different maps
-                                                toolID.put(index.toString(), new MutablePair<>(stepIdValue, fileName));
-                                                toolDocker.put(index.toString(),new MutablePair<>(dockerEnv, dockerPullURL));
-                                                index++;
-                                            }else{
-                                                nodePairs.add(new MutablePair<>(stepIdValue.replaceFirst("#", ""), getURLFromEntry(requirement.get("dockerPull").toString())));
-                                            }
-                                            defaultDocker = false;
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                            if (defaultDocker) {
-                                if(type == Type.TOOLS) {
-                                    if(defaultDockerEnv.equals("")){ // no docker requirement found in the workflow
-                                        dockerEnv = "Not Specified";
-                                        dockerPullURL = "Not Specified";
-                                    }else{ //docker requirement is specified in the workflow
-                                        dockerEnv = defaultDockerEnv;
-                                        dockerPullURL = getURLFromEntry(defaultDockerEnv); //get default docker requirement from workflow
-                                    }
-                                    toolID.put(index.toString(), new MutablePair<>(stepIdValue, fileName));
-                                    toolDocker.put(index.toString(), new MutablePair<>(dockerEnv, dockerPullURL));
-                                    index++;
-                                }else{
-                                    nodePairs.add(new MutablePair<>(stepIdValue.replaceFirst("#", ""), getURLFromEntry(defaultDockerEnv)));
-                                }
-                            }
-                        }else{
-                            if(type.equals(Type.DAG)){ //IFF it is has ExpressionTool and Type is DAG
-                                nodePairs.add(new MutablePair<>(stepIdValue.replaceFirst("#", ""), dockerPullURL));
-                            }
-                        }
-
-                    }
-                }
-            }
-        }
-        //call and return the Json string transformer
-        if(type == Type.TOOLS){
-            result = getJSONTableToolContentCWL(toolID, toolDocker);
-        }else if(type == Type.DAG){
-            result = setupJSONDAG(nodePairs);
-        }
-        return result;
-    }
-
-    /**
-     * This method will get the docker environment inside an expressionTool
-     * @param fileMap
-     * @return dockerEnv
-     */
-    private String getDockerEnvExprTool(Map<String, Object> fileMap){
-        Map<String, Object> reqInsideRun = new HashMap<>();
-        String dockerEnv="";
-        boolean hasReq = false;
-        if(fileMap.containsKey("requirements")){
-            hasReq = true;
-            reqInsideRun = (Map<String, Object>)fileMap.get("requirements");
-        } else if(fileMap.containsKey("hints")){
-            hasReq = true;
-            reqInsideRun = (Map<String, Object>)fileMap.get("hints");
-        }
-        if(hasReq){ //if expression tool has requirements/hints
-            if(reqInsideRun.get("class").equals("DockerRequirement")){
-                dockerEnv = reqInsideRun.get("dockerPull").toString();
-            }
-        }
-        return dockerEnv;
-    }
-
-    /**
-     * This method is to get the steps of CWL workflow in form of array
-     * @param entry
-     * @return steps
-     */
-    private List<Map<String,Object>> getStepsArray(Map.Entry<String, Object> entry){
-        List<Map<String,Object>> steps = new ArrayList<>();
-        if (entry.getValue() instanceof Map) {
-            Map<Map.Entry<String, Object>,Object> stepsMap = (Map<Map.Entry<String,Object>,Object>) entry.getValue();
-            for(Object stepMap : stepsMap.keySet()){
-                String keyStep = stepMap.toString();
-                Object valueStep = stepsMap.get(stepMap);
-                Map<String, Object> stepMapValue = new HashMap<>();
-                stepMapValue.put(keyStep,valueStep);
-                steps.add(stepMapValue);
-            }
-        }else {
-            steps = (ArrayList<Map <String, Object>>) entry.getValue();
-        }
-        return steps;
-    }
-
-    /**
-     * This method will check for the docker environment of the workflow by looking for "hints" and "requirements"
-     * and make it as default docker environment (if available, else return "")
-     * @param section
-     * @param entry
-     * @param defaultDockerEnv
-     * @return defaultDockerEnv
-     */
-    private String getDefaultDockerEnv(String section,Map.Entry<String, Object> entry, String defaultDockerEnv){
-        if (section.equals("hints")) {
-            //docker requirement of the workflow
-            ArrayList<Map<String, Object>> requirements = (ArrayList<Map<String, Object>>) entry.getValue();
-            for (Map <String, Object> requirement : requirements) {
-                if (requirement.get("class").equals("DockerRequirement")) {
-                    defaultDockerEnv = requirement.get("dockerPull").toString();
-                }
-            }
-        } else if(section.equals("requirements")){
-            List<Map<Map<String, Object>,Object>> requirements = (List<Map<Map<String, Object>,Object>>) entry.getValue();
-            for (Map<Map<String, Object>,Object> requirement : requirements) {
-                if (requirement.get("class").equals("DockerRequirement")) {
-                    defaultDockerEnv = requirement.get("dockerPull").toString();
-                }
-            }
-        }
-        return defaultDockerEnv;
-    }
-
-    /**
-     * Given a docker entry (quay or dockerhub), return a URL to the given entry
-     * @param dockerEntry has the docker name
-     * @return URL
-     */
-    private String getURLFromEntry(String dockerEntry) {
-        // For now ignore tag, later on it may be more useful
-        String quayIOPath = "https://quay.io/repository/";
-        String dockerHubPathR = "https://hub.docker.com/r/"; // For type repo/subrepo:tag
-        String dockerHubPathUnderscore = "https://hub.docker.com/_/"; // For type repo:tag
-        String dockstorePath = "https://www.dockstore.org/containers/"; // Update to tools once UI is updated to use /tools instead of /containers
-
-        String url = "";
-
-        // Remove tag if exists
-        Pattern p = Pattern.compile("([^:]+):?(\\S+)?");
-        Matcher m = p.matcher(dockerEntry);
-        if (m.matches()) {
-            dockerEntry = m.group(1);
-        }
-
-        // TODO: How to deal with multiple entries of a tool? For now just grab the first
-        if (dockerEntry.startsWith("quay.io/")) {
-            List<Tool> byPath = toolDAO.findPublishedByPath(dockerEntry);
-            if (byPath == null || byPath.isEmpty()){
-                // when we cannot find a published tool on Dockstore, link to quay.io
-                url = dockerEntry.replaceFirst("quay\\.io/", quayIOPath);
-            } else{
-                // when we found a published tool, link to the tool on Dockstore
-                url = dockstorePath + dockerEntry;
-            }
-        } else {
-            String[] parts = dockerEntry.split("/");
-            if (parts.length == 2) {
-                // if the path looks like pancancer/pcawg-oxog-tools
-                List<Tool> publishedByPath = toolDAO.findPublishedByPath("registry.hub.docker.com/" + dockerEntry);
-                if (publishedByPath == null || publishedByPath.isEmpty()) {
-                    // when we cannot find a published tool on Dockstore, link to docker hub
-                    url = dockerHubPathR + dockerEntry;
-                } else {
-                    // when we found a published tool, link to the tool on Dockstore
-                    url = dockstorePath + "registry.hub.docker.com/" + dockerEntry;
-                }
-            } else {
-                // if the path looks like debian:8 or debian
-                url = dockerHubPathUnderscore + dockerEntry;
-            }
-
-        }
-        return url;
-    }
-
-    /**
-     * This method will setup the JSON data from nodePairs of CWL/WDL workflow and return JSON string
-     * @param nodePairs has the list of nodes and its content
-     * @return String
-     */
-    private String setupJSONDAG(ArrayList<Pair<String, String>> nodePairs){
-        ArrayList<Object> nodes = new ArrayList<>();
-        ArrayList<Object> edges = new ArrayList<>();
-        Map<String, ArrayList<Object>> dagJson = new LinkedHashMap<>();
-        int idCount = 0;
-        for (Pair<String, String> node : nodePairs) {
-            Map<String, Object> nodeEntry = new HashMap<>();
-            Map<String, String> dataEntry = new HashMap<>();
-            dataEntry.put("id", idCount + "");
-            dataEntry.put("tool", node.getRight());
-            dataEntry.put("name", node.getLeft());
-            nodeEntry.put("data", dataEntry);
-            nodes.add(nodeEntry);
-
-            //TODO: edges are all currently pointing from idCount-1 to idCount, this is not always true
-            if (idCount > 0) {
-                Map<String, Object> edgeEntry = new HashMap<>();
-                Map<String, String> sourceTarget = new HashMap<>();
-                sourceTarget.put("source", (idCount - 1) + "");
-                sourceTarget.put("target", (idCount) + "");
-                edgeEntry.put("data", sourceTarget);
-                edges.add(edgeEntry);
-            }
-            idCount++;
-        }
-        dagJson.put("nodes", nodes);
-        dagJson.put("edges", edges);
-
-        return convertToJSONString(dagJson);
-    }
-
-    /**
-     * This method will setup the tools of CWL workflow
-     * It will then call another method to transform it through Gson to a Json string
-     * @param toolID this is a map containing id name and file name of the tool
-     * @param toolDocker this is a map containing docker name and docker link
-     * @return String
-     * */
-    private String getJSONTableToolContentCWL(Map<String, Pair<String, String>> toolID, Map<String, Pair<String, String>> toolDocker) {
-        // set up JSON for Table Tool Content CWL
-        ArrayList<Object> tools = new ArrayList<>();
-
-        //iterate through each step within workflow file
-        for(Map.Entry<String, Pair<String, String>> entry : toolID.entrySet()){
-            String key = entry.getKey();
-            Pair<String, String> value = entry.getValue();
-            //get the idName and fileName
-            String toolName = value.getLeft();
-            String fileName = value.getRight();
-
-            //get the docker requirement
-            String dockerPullName = toolDocker.get(key).getLeft();
-            String dockerLink = toolDocker.get(key).getRight();
-
-            //put everything into a map, then ArrayList
-            Map<String, String> dataToolEntry = new LinkedHashMap<>();
-            dataToolEntry.put("id", toolName);
-            dataToolEntry.put("file", fileName);
-            dataToolEntry.put("docker", dockerPullName);
-            dataToolEntry.put("link",dockerLink);
-            tools.add(dataToolEntry);
-        }
-
-        //call the gson to string transformer
-        return convertToJSONString(tools);
-    }
-
-    /**
-     * This method will setup the tools of WDL workflow
-     * It will then call another method to transform it through Gson to a Json string
-     * @param taskContent has the content of task
-     * @return String
-     * */
-    private String getJSONTableToolContentWDL(Map<String, Pair<String, String>> taskContent){
-        // set up JSON for Table Task Content WDL
-        ArrayList<Object> tasks = new ArrayList<>();
-
-        //iterate through each task within workflow file
-        for(Map.Entry<String, Pair<String, String>> entry : taskContent.entrySet()){
-            String key = entry.getKey();
-            Pair<String, String> value = entry.getValue();
-            String dockerPull = value.getLeft();
-            String dockerLink = value.getRight();
-
-            //put everything into a map, then ArrayList
-            Map<String, String> dataTaskEntry = new LinkedHashMap<>();
-            dataTaskEntry.put("id", key);
-            dataTaskEntry.put("docker", dockerPull);
-            dataTaskEntry.put("link", dockerLink);
-            tasks.add(dataTaskEntry);
-        }
-
-        //call the gson to string transformer
-        return convertToJSONString(tasks);
-    }
-
-    /**
-     * This method will transform object containing the tools/dag of a workflow to Json string
-     * @param content has the final content of task/tool/node
-     * @return String
-     * */
-    private String convertToJSONString(Object content){
-        //create json string and return
-        Gson gson = new Gson();
-        String json = gson.toJson(content);
-        LOG.debug(json);
-
-        return json;
-    }
 }

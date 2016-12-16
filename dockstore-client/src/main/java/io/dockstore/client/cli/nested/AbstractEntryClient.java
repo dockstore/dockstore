@@ -24,14 +24,15 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
-import cromwell.Main;
 import io.cwl.avro.CWL;
 import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.Workflow;
 import io.dockstore.client.Bridge;
 import io.dockstore.client.cli.Client;
 import io.dockstore.common.FileProvisioning;
+import io.dockstore.common.Utilities;
 import io.dockstore.common.WDLFileProvisioning;
 import io.github.collaboratory.LauncherCWL;
 import io.swagger.client.ApiException;
@@ -42,22 +43,29 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.csv.QuoteMode;
+import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintStream;
+import java.io.OutputStream;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -85,6 +93,7 @@ import static io.dockstore.client.cli.ArgumentUtility.reqVal;
 import static io.dockstore.client.cli.Client.API_ERROR;
 import static io.dockstore.client.cli.Client.CLIENT_ERROR;
 import static io.dockstore.client.cli.Client.IO_ERROR;
+import static io.dockstore.client.cli.Client.SCRIPT;
 
 /**
  * Handles the commands for a particular type of entry. (e.g. Workflows, Tools) Not a great abstraction, but enforces some structure for
@@ -102,8 +111,24 @@ import static io.dockstore.client.cli.Client.IO_ERROR;
 public abstract class AbstractEntryClient {
     private final CWL cwlUtil = new CWL();
 
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractEntryClient.class);
+    public static final String CROMWELL_LOCATION = "https://github.com/broadinstitute/cromwell/releases/download/0.21/cromwell-0.21.jar";
+    public boolean isAdmin = false;
+
     public enum Type {
-        CWL, WDL, NONE
+        CWL("cwl"), WDL("wdl"), NONE("none");
+        private final String desc;
+
+        Type(String name) {
+            desc = name;
+        }
+
+        @Override
+        public String toString() {
+            return desc;
+        }
+
+
     }
 
     public abstract String getConfigFile();
@@ -134,11 +159,15 @@ public abstract class AbstractEntryClient {
         out("");
         out("  label            :  updates labels for an individual " + getEntryType() + "");
         out("");
+        out("  test_parameter   :  updates test parameter files for a version of a " + getEntryType() + "");
+        out("");
         out("  " + CONVERT + "          :  utilities that allow you to convert file types");
         out("");
         out("  " + LAUNCH + "           :  launch " + getEntryType() + "s (locally)");
-        out("");
         printClientSpecificHelp();
+        if (isAdmin) {
+            printAdminHelp();
+        }
         out("------------------");
         out("");
         out("Flags:");
@@ -216,6 +245,12 @@ public abstract class AbstractEntryClient {
                 break;
             case LAUNCH:
                 launch(args);
+                break;
+            case "verify":
+                verify(args);
+                break;
+            case "test_parameter":
+                testParameter(args);
                 break;
             default:
                 return false;
@@ -299,6 +334,26 @@ public abstract class AbstractEntryClient {
     protected abstract void handlePublishUnpublish(String entryPath, String newName, boolean unpublishRequest);
 
     /**
+     * Verify/Unverify an entry
+     * @param entry a unique identifier for an entry, called a path for workflows and tools
+     * @param versionName the name of the version
+     * @param verifySource source of entry verification
+     * @param unverifyRequest true to unverify, false to verify
+     * @param isScript true if called by script, false otherwise
+     */
+    protected abstract void handleVerifyUnverify(String entry, String versionName, String verifySource, boolean unverifyRequest, boolean isScript);
+
+    /**
+     * Adds/removes supplied test parameter paths for a given entry version
+     * @param entry a unique identifier for an entry, called a path for workflows and tools
+     * @param versionName the name of the version
+     * @param adds set of test parameter paths to add (from git)
+     * @param removes set of test parameter paths to remove (from git)
+     * @param descriptorType CWL or WDL
+     */
+    protected abstract void handleTestParameter(String entry, String versionName, List<String> adds, List<String> removes, String descriptorType);
+
+    /**
      * List all of the entries published and unpublished for this user
      */
     protected abstract void handleListNonpublishedEntries();
@@ -324,7 +379,7 @@ public abstract class AbstractEntryClient {
      */
     protected abstract void manualPublish(final List<String> args);
 
-    protected abstract SourceFile getDescriptorFromServer(String entry, String descriptorType) throws
+    public abstract SourceFile getDescriptorFromServer(String entry, String descriptorType) throws
             ApiException, IOException;
 
     /** private helper methods */
@@ -337,19 +392,9 @@ public abstract class AbstractEntryClient {
         } else {
             String first = reqVal(args, "--entry");
             String entryname = optVal(args, "--entryname", null);
-            final boolean unpublishRequest = isUnpublishRequest(args);
+            final boolean unpublishRequest = args.contains("--unpub");
             handlePublishUnpublish(first, entryname, unpublishRequest);
         }
-    }
-
-    private static boolean isUnpublishRequest(List<String> args) {
-        boolean unpublish = false;
-        for (String arg : args) {
-            if ("--unpub".equals(arg)) {
-                unpublish = true;
-            }
-        }
-        return unpublish;
     }
 
     private void list(List<String> args) {
@@ -424,7 +469,7 @@ public abstract class AbstractEntryClient {
     Generate label string given add set, remove set, and existing labels
       */
     String generateLabelString(Set<String> addsSet, Set<String> removesSet, List<Label> existingLabels) {
-        Set<String> newLabelSet = new HashSet<String>();
+        Set<String> newLabelSet = new HashSet<>();
 
         // Get existing labels and store in a List
         for (Label existingLabel : existingLabels) {
@@ -464,7 +509,10 @@ public abstract class AbstractEntryClient {
             if (null != cmd) {
                 switch (cmd) {
                 case "cwl2json":
-                    cwl2json(args);
+                    cwl2json(args, true);
+                    break;
+                case "cwl2yaml":
+                    cwl2json(args, false);
                     break;
                 case "wdl2json":
                     wdl2json(args);
@@ -483,16 +531,31 @@ public abstract class AbstractEntryClient {
         }
     }
 
-    private void cwl2json(final List<String> args) throws ApiException, IOException {
+    private void cwl2json(final List<String> args, boolean json) throws ApiException, IOException {
         if (args.isEmpty() || containsHelpRequest(args)) {
-            cwl2jsonHelp();
+            if (json) {
+                cwl2jsonHelp();
+            } else{
+                cwl2yamlHelp();
+            }
         } else {
             final String cwlPath = reqVal(args, "--cwl");
-            final ImmutablePair<String, String> output = cwlUtil.parseCWL(cwlPath, true);
+            final ImmutablePair<String, String> output = cwlUtil.parseCWL(cwlPath);
 
-            final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
-            final Map<String, Object> runJson = cwlUtil.extractRunJson(output.getLeft());
-            out(gson.toJson(runJson));
+            try {
+                final Map<String, Object> runJson = cwlUtil.extractRunJson(output.getLeft());
+                if (json) {
+                    final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
+                    out(gson.toJson(runJson));
+                } else{
+                    Yaml yaml = new Yaml();
+                    out(yaml.dumpAs(runJson, null, DumperOptions.FlowStyle.BLOCK));
+                }
+            } catch (CWL.GsonBuildException ex) {
+                exceptionMessage(ex, "There was an error creating the CWL GSON instance.", API_ERROR);
+            } catch (JsonParseException ex) {
+                exceptionMessage(ex, "The JSON file provided is invalid.", API_ERROR);
+            }
         }
     }
 
@@ -697,6 +760,52 @@ public abstract class AbstractEntryClient {
         return false;
     }
 
+    private void verify(List<String> args) {
+        if (isAdmin) {
+            if (containsHelpRequest(args) || args.isEmpty()) {
+                verifyHelp();
+            } else if (!args.isEmpty()) {
+                String entry = reqVal(args, "--entry");
+                String version = reqVal(args, "--version");
+                String verifySource = optVal(args, "--verified-source", null);
+
+                final boolean unverifyRequest = args.contains("--unverify");
+                final boolean isScript = SCRIPT.get();
+                handleVerifyUnverify(entry, version, verifySource, unverifyRequest, isScript);
+            }
+        } else {
+            out("This command is only accessible to Admins.");
+        }
+    }
+
+    private void testParameter(List<String> args) {
+        if (containsHelpRequest(args) || args.isEmpty()) {
+             testParameterHelp();
+        } else if (!args.isEmpty()) {
+            String entry = reqVal(args, "--entry");
+            String version = reqVal(args, "--version");
+            String descriptorType = null;
+            final List<String> adds = optVals(args, "--add");
+            final List<String> removes = optVals(args, "--remove");
+
+            if (getEntryType().toLowerCase().equals("tool")) {
+                descriptorType = reqVal(args, "--descriptor-type");
+                descriptorType = descriptorType.toLowerCase();
+                boolean validType = false;
+                for (Type type : Type.values()) {
+                    if (type.toString().equals(descriptorType) && !descriptorType.equals("none")) {
+                        validType = true;
+                        break;
+                    }
+                }
+                if (!validType) {
+                    errorMessage("Only \'CWL\' and \'WDL\' are valid descriptor types", CLIENT_ERROR);
+                }
+            }
+
+            handleTestParameter(entry, version, adds, removes, descriptorType);
+        }
+    }
 
     /**
      * this function will check the content of the entry file if it's a valid cwl/wdl file
@@ -705,7 +814,7 @@ public abstract class AbstractEntryClient {
      * Type.WDL if file content is WDL
      * Type.NONE if file content is neither WDL nor CWL
      */
-    public Type checkFileContent(File content){
+    private Type checkFileContent(File content){
         if(checkCWL(content)){
             return Type.CWL;
         }else if(checkWDL(content)){
@@ -721,7 +830,7 @@ public abstract class AbstractEntryClient {
      * Type.WDL if file extension is WDL
      * Type.NONE if file extension is neither WDL nor CWL, could be no extension or some other random extension(e.g .txt)
      */
-    public Type checkFileExtension(String path){
+    private Type checkFileExtension(String path){
         if(FilenameUtils.getExtension(path).toLowerCase().equals(CWL_STRING)){
             return Type.CWL;
         } else if(FilenameUtils.getExtension(path).toLowerCase().equals(WDL_STRING)){
@@ -856,6 +965,27 @@ public abstract class AbstractEntryClient {
             errorMessage("One of  --json, --yaml, and --tsv is required", CLIENT_ERROR);
         }
 
+        handleCWLLaunch(entry, isLocalEntry, yamlRun, jsonRun, csvRuns, null, null);
+
+    }
+
+    /**
+     *
+     * @param entry either a dockstore.cwl or a local file
+     * @param isLocalEntry is the descriptor a local file
+     * @param yamlRun runtime descriptor, one of these is required
+     * @param jsonRun runtime descriptor, one of these is required
+     * @param csvRuns runtime descriptor, one of these is required
+     * @throws IOException
+     * @throws ApiException
+     */
+    public void handleCWLLaunch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns, OutputStream stdoutStream, OutputStream stderrStream)
+            throws IOException, ApiException {
+
+        if (!SCRIPT.get()) {
+            Client.checkForCWLDependencies();
+        }
+
         final File tempDir = Files.createTempDir();
         File tempCWL;
         if (!isLocalEntry) {
@@ -871,80 +1001,85 @@ public abstract class AbstractEntryClient {
         }
         jsonRun = convertYamlToJson(yamlRun, jsonRun);
 
-        final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
-        if (jsonRun != null) {
-            // if the root document is an array, this indicates multiple runs
-            JsonParser parser = new JsonParser();
-            final JsonElement parsed = parser.parse(new InputStreamReader(new FileInputStream(jsonRun), StandardCharsets.UTF_8));
-            if (parsed.isJsonArray()) {
-                final JsonArray asJsonArray = parsed.getAsJsonArray();
-                for (JsonElement element : asJsonArray) {
-                    final String finalString = gson.toJson(element);
-                    final File tempJson = File.createTempFile("parameter", ".json", Files.createTempDir());
-                    FileUtils.write(tempJson, finalString, StandardCharsets.UTF_8);
-                    final LauncherCWL cwlLauncher = new LauncherCWL(getConfigFile(), tempCWL.getAbsolutePath(), tempJson.getAbsolutePath());
+        try {
+            final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
+            if (jsonRun != null) {
+                // if the root document is an array, this indicates multiple runs
+                JsonParser parser = new JsonParser();
+                final JsonElement parsed = parser.parse(new InputStreamReader(new FileInputStream(jsonRun), StandardCharsets.UTF_8));
+                if (parsed.isJsonArray()) {
+                    final JsonArray asJsonArray = parsed.getAsJsonArray();
+                    for (JsonElement element : asJsonArray) {
+                        final String finalString = gson.toJson(element);
+                        final File tempJson = File.createTempFile("parameter", ".json", Files.createTempDir());
+                        FileUtils.write(tempJson, finalString, StandardCharsets.UTF_8);
+                        final LauncherCWL cwlLauncher = new LauncherCWL(getConfigFile(), tempCWL.getAbsolutePath(), tempJson.getAbsolutePath(), stdoutStream, stderrStream);
+                        if (this instanceof WorkflowClient) {
+                            cwlLauncher.run(Workflow.class);
+                        } else {
+                            cwlLauncher.run(CommandLineTool.class);
+                        }
+                    }
+                } else {
+                    final LauncherCWL cwlLauncher = new LauncherCWL(getConfigFile(), tempCWL.getAbsolutePath(), jsonRun, stdoutStream, stderrStream);
                     if (this instanceof WorkflowClient) {
                         cwlLauncher.run(Workflow.class);
                     } else {
                         cwlLauncher.run(CommandLineTool.class);
+                    }
+                }
+            } else if (csvRuns != null) {
+                final File csvData = new File(csvRuns);
+                try (CSVParser parser = CSVParser.parse(csvData, StandardCharsets.UTF_8,
+                        CSVFormat.DEFAULT.withDelimiter('\t').withEscape('\\').withQuoteMode(QuoteMode.NONE))) {
+                    // grab header
+                    final Iterator<CSVRecord> iterator = parser.iterator();
+                    final CSVRecord headers = iterator.next();
+                    // ignore row with type information
+                    iterator.next();
+                    // process rows
+                    while (iterator.hasNext()) {
+                        final CSVRecord csvRecord = iterator.next();
+                        final File tempJson = File.createTempFile("temp", ".json", Files.createTempDir());
+                        StringBuilder buffer = new StringBuilder();
+                        buffer.append("{");
+                        for (int i = 0; i < csvRecord.size(); i++) {
+                            buffer.append("\"").append(headers.get(i)).append("\"");
+                            buffer.append(":");
+                            // if the type is an array, just pass it through
+                            buffer.append(csvRecord.get(i));
+
+                            if (i < csvRecord.size() - 1) {
+                                buffer.append(",");
+                            }
+                        }
+                        buffer.append("}");
+                        // prettify it
+                        JsonParser prettyParser = new JsonParser();
+                        JsonObject json = prettyParser.parse(buffer.toString()).getAsJsonObject();
+                        final String finalString = gson.toJson(json);
+
+                        // write it out
+                        FileUtils.write(tempJson, finalString, StandardCharsets.UTF_8);
+
+                        // final String stringMapAsString = gson.toJson(stringMap);
+                        // Files.write(stringMapAsString, tempJson, StandardCharsets.UTF_8);
+                        final LauncherCWL cwlLauncher = new LauncherCWL(this.getConfigFile(), tempCWL.getAbsolutePath(), tempJson.getAbsolutePath(), stdoutStream, stderrStream);
+                        if (this instanceof WorkflowClient) {
+                            cwlLauncher.run(Workflow.class);
+                        } else {
+                            cwlLauncher.run(CommandLineTool.class);
+                        }
                     }
                 }
             } else {
-                final LauncherCWL cwlLauncher = new LauncherCWL(getConfigFile(), tempCWL.getAbsolutePath(), jsonRun);
-                if (this instanceof WorkflowClient) {
-                    cwlLauncher.run(Workflow.class);
-                } else {
-                    cwlLauncher.run(CommandLineTool.class);
-                }
+                errorMessage("Missing required parameters, one of  --json or --tsv is required", CLIENT_ERROR);
             }
-        } else if (csvRuns != null) {
-            final File csvData = new File(csvRuns);
-            try (CSVParser parser = CSVParser.parse(csvData, StandardCharsets.UTF_8, CSVFormat.DEFAULT.withDelimiter('\t').withEscape('\\')
-                    .withQuoteMode(QuoteMode.NONE))) {
-                // grab header
-                final Iterator<CSVRecord> iterator = parser.iterator();
-                final CSVRecord headers = iterator.next();
-                // ignore row with type information
-                iterator.next();
-                // process rows
-                while (iterator.hasNext()) {
-                    final CSVRecord csvRecord = iterator.next();
-                    final File tempJson = File.createTempFile("temp", ".json", Files.createTempDir());
-                    StringBuilder buffer = new StringBuilder();
-                    buffer.append("{");
-                    for (int i = 0; i < csvRecord.size(); i++) {
-                        buffer.append("\"").append(headers.get(i)).append("\"");
-                        buffer.append(":");
-                        // if the type is an array, just pass it through
-                        buffer.append(csvRecord.get(i));
-
-                        if (i < csvRecord.size() - 1) {
-                            buffer.append(",");
-                        }
-                    }
-                    buffer.append("}");
-                    // prettify it
-                    JsonParser prettyParser = new JsonParser();
-                    JsonObject json = prettyParser.parse(buffer.toString()).getAsJsonObject();
-                    final String finalString = gson.toJson(json);
-
-                    // write it out
-                    FileUtils.write(tempJson, finalString, StandardCharsets.UTF_8);
-
-                    // final String stringMapAsString = gson.toJson(stringMap);
-                    // Files.write(stringMapAsString, tempJson, StandardCharsets.UTF_8);
-                    final LauncherCWL cwlLauncher = new LauncherCWL(this.getConfigFile(), tempCWL.getAbsolutePath(), tempJson.getAbsolutePath());
-                    if (this instanceof WorkflowClient) {
-                        cwlLauncher.run(Workflow.class);
-                    } else {
-                        cwlLauncher.run(CommandLineTool.class);
-                    }
-                }
-            }
-        } else {
-            errorMessage("Missing required parameters, one of  --json or --tsv is required", CLIENT_ERROR);
+        } catch (CWL.GsonBuildException ex) {
+            exceptionMessage(ex, "There was an error creating the CWL GSON instance.", API_ERROR);
+        } catch (JsonParseException ex) {
+            exceptionMessage(ex, "The JSON file provided is invalid.", API_ERROR);
         }
-
     }
 
     private String convertYamlToJson(String yamlRun, String jsonRun) throws IOException {
@@ -973,9 +1108,42 @@ public abstract class AbstractEntryClient {
             isLocalEntry = true;
         }
         final String json = reqVal(args, "--json");
+        final String wdlOutputTarget = optVal(args, "--wdl-output-target", null);
 
-        Main main = new Main();
+        launchWdlInternal(entry, isLocalEntry, json, wdlOutputTarget);
+    }
+
+    /**
+     *
+     * @param entry file path for tthe wdl file or a dockstore id
+     * @param isLocalEntry
+     * @param json file path for the json parameter file
+     * @param wdlOutputTarget
+     * @return an exit code for the run
+     */
+    public long launchWdlInternal(String entry, boolean isLocalEntry, String json, String wdlOutputTarget) {
+
         File parameterFile = new File(json);
+
+        // grab the cromwell jar
+        String libraryLocation = System.getProperty("user.home") + File.separator + ".dockstore" + File.separator + "libraries" + File.separator;
+        URL cromwellURL;
+        String cromwellFileName;
+        try {
+            cromwellURL = new URL(CROMWELL_LOCATION);
+            cromwellFileName = new File(cromwellURL.toURI().getPath()).getName();
+        } catch (MalformedURLException | URISyntaxException e) {
+            throw new RuntimeException("Could not create cromwell location", e);
+        }
+        String cromwellTarget = libraryLocation + cromwellFileName;
+        File cromwellTargetFile = new File(cromwellTarget);
+        if (!cromwellTargetFile.exists()) {
+            try {
+                FileUtils.copyURLToFile(cromwellURL, cromwellTargetFile);
+            } catch (IOException e) {
+                throw new RuntimeException("Could not download cromwell location", e);
+            }
+        }
 
         final SourceFile wdlFromServer;
         try {
@@ -1013,39 +1181,54 @@ public abstract class AbstractEntryClient {
             String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
 
             final List<String> wdlRun = Lists.newArrayList(tmp.getAbsolutePath(), newJsonPath);
-            final scala.collection.immutable.List<String> wdlRunList = scala.collection.JavaConversions.asScalaBuffer(wdlRun).toList();
-
+            
             // run a workflow
             System.out.println("Calling out to Cromwell to run your workflow");
 
-            // save the output stream
-            PrintStream savedOut = System.out;
-            PrintStream savedErr = System.err;
 
-            // capture system.out and system.err
-            ByteArrayOutputStream stdoutCapture = new ByteArrayOutputStream();
-            System.setOut(new PrintStream(stdoutCapture, true, StandardCharsets.UTF_8.toString()));
-            ByteArrayOutputStream stderrCapture = new ByteArrayOutputStream();
-            System.setErr(new PrintStream(stderrCapture, true, StandardCharsets.UTF_8.toString()));
+            // Currently Cromwell does not support HTTP(S) imports
+            // https://github.com/broadinstitute/cromwell/issues/1528
 
-            final int run = main.run(wdlRunList);
+            final String[] s = { "java", "-jar", cromwellTargetFile.getAbsolutePath(), "run" };
+            List<String> arguments = new ArrayList<>();
+            arguments.addAll(Arrays.asList(s));
+            arguments.addAll(wdlRun);
 
-            System.out.flush();
-            System.err.flush();
-            String stdout = stdoutCapture.toString(StandardCharsets.UTF_8);
-            String stderr = stderrCapture.toString(StandardCharsets.UTF_8);
+            int exitCode = 0;
+            String stdout;
+            String stderr;
+            try {
+                // TODO: probably want to make a new library call so that we can stream output properly and get this exit code
+                final String join = Joiner.on(" ").join(arguments);
+                System.out.println(join);
+                final ImmutablePair<String, String> execute = Utilities.executeCommand(join);
+                stdout = execute.getLeft();
+                stderr = execute.getRight();
+            } catch(RuntimeException e){
+                LOG.error("Problem running cromwell: ", e);
+                if (e.getCause() instanceof ExecuteException) {
+                    return ((ExecuteException)e.getCause()).getExitValue();
+                }
+                throw new RuntimeException("Could not run Cromwell", e);
+            }
 
-            System.setOut(savedOut);
-            System.setErr(savedErr);
-            System.out.println("Cromwell exit code: " + run);
+            System.out.println("Cromwell exit code: " + exitCode);
 
             LauncherCWL.outputIntegrationOutput(workingDir, ImmutablePair.of(stdout, stderr), stdout.replaceAll("\n", "\t"), stderr.replaceAll("\n", "\t"), "Cromwell");
 
             // capture the output and provision it
-            final String wdlOutputTarget = optVal(args, "--wdl-output-target", null);
             if (wdlOutputTarget != null) {
+                // TODO: this is very hacky, look for a runtime option or start cromwell as a server and communicate via REST
+                String outputPrefix = "Final Outputs:";
+                int startIndex = stdout.indexOf("\n{\n", stdout.indexOf(outputPrefix));
+                int endIndex = stdout.indexOf("\n}\n", startIndex)+2;
+                String bracketContents = stdout.substring(startIndex,endIndex).trim();
+                if (bracketContents.isEmpty()){
+                    throw new RuntimeException("No cromwell output");
+                }
+
                 // grab values from output JSON
-                Map<String, String> outputJson = gson.fromJson(stdout, HashMap.class);
+                Map<String, String> outputJson = gson.fromJson(bracketContents, HashMap.class);
                 System.out.println("Provisioning your output files to their final destinations");
                 final List<String> outputFiles = bridge.getOutputFiles(tmp);
                 for (String outFile : outputFiles) {
@@ -1053,7 +1236,7 @@ public abstract class AbstractEntryClient {
                     final File resultFile = new File(outputJson.get(outFile));
                     FileProvisioning.FileInfo new1 = new FileProvisioning.FileInfo();
 
-                    new1.setUrl(wdlOutputTarget + "/" + resultFile.getParentFile().getName() + "/" + resultFile.getName());
+                    new1.setUrl(wdlOutputTarget + "/" + outFile);
                     new1.setLocalPath(resultFile.getAbsolutePath());
                     System.out.println("Uploading: " + outFile + " from " + resultFile + " to : " + new1.getUrl());
                     FileProvisioning fileProvisioning = new FileProvisioning(this.getConfigFile());
@@ -1067,6 +1250,7 @@ public abstract class AbstractEntryClient {
         } catch (IOException ex) {
             exceptionMessage(ex, "", IO_ERROR);
         }
+        return 0;
     }
 
     /**
@@ -1089,16 +1273,20 @@ public abstract class AbstractEntryClient {
             if (!m.find()) {
                 FileUtils.writeStringToFile(tmp, line + "\n", StandardCharsets.UTF_8, true);
             } else {
-                if (!m.group(1).startsWith(File.separator)) {
-                    String newImportLine = "import \"" + tempDir + File.separator + m.group(1) + "\"" + m.group(2) + "\n";
-                    FileUtils.writeStringToFile(tmp, newImportLine, StandardCharsets.UTF_8, true);
+                if (!m.group(1).startsWith("https://") && !m.group(1).startsWith("http://")) { // Don't resolve URLs
+                    if (!m.group(1).startsWith(File.separator)) { // what is the purpose of this line?
+                        String newImportLine = "import \"" + tempDir + File.separator + m.group(1) + "\"" + m.group(2) + "\n";
+                        FileUtils.writeStringToFile(tmp, newImportLine, StandardCharsets.UTF_8, true);
+                    }
+                } else {
+                    FileUtils.writeStringToFile(tmp, line + "\n", StandardCharsets.UTF_8, true);
                 }
             }
         }
         return tmp;
     }
 
-    protected abstract void downloadDescriptors(String entry, String descriptor, File tempDir);
+    public abstract List<SourceFile> downloadDescriptors(String entry, String descriptor, File tempDir);
 
     private String runString(List<String> args, final boolean json) throws
             ApiException, IOException {
@@ -1115,11 +1303,17 @@ public abstract class AbstractEntryClient {
 
         if (descriptor.equals(CWL_STRING)) {
             // need to suppress output
-            final ImmutablePair<String, String> output = cwlUtil.parseCWL(tempDescriptor.getAbsolutePath(), true);
+            final ImmutablePair<String, String> output = cwlUtil.parseCWL(tempDescriptor.getAbsolutePath());
             final Map<String, Object> stringObjectMap = cwlUtil.extractRunJson(output.getLeft());
             if (json) {
-                final Gson gson = CWL.getTypeSafeCWLToolDocument();
-                return gson.toJson(stringObjectMap);
+                try {
+                    final Gson gson = CWL.getTypeSafeCWLToolDocument();
+                    return gson.toJson(stringObjectMap);
+                } catch (CWL.GsonBuildException ex) {
+                    exceptionMessage(ex, "There was an error creating the CWL GSON instance.", API_ERROR);
+                } catch (JsonParseException ex) {
+                    exceptionMessage(ex, "The JSON file provided is invalid.", API_ERROR);
+                }
             } else {
                 // re-arrange as rows and columns
                 final Map<String, String> typeMap = cwlUtil.extractCWLTypes(output.getLeft());
@@ -1211,6 +1405,27 @@ public abstract class AbstractEntryClient {
         printHelpFooter();
     }
 
+    private void testParameterHelp() {
+        printHelpHeader();
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " test_parameter --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " test_parameter [parameters]");
+        out("");
+        out("Description:");
+        out("  Add or remove test parameter files from a given Dockstore " + getEntryType() + " version");
+        out("");
+        out("Required Parameters:");
+        out("  --entry <entry>                                                          Complete " + getEntryType() + " path in the Dockstore");
+        out("  --version <version>                                                      " + getEntryType() + " version name.");
+        if (getEntryType().toLowerCase().equals("tool")) {
+            out("  --descriptor-type <descriptor-type>                                      CWL/WDL");
+        }
+        out("");
+        out("Optional Parameters:");
+        out("  --add <test parameter file> (--add <test parameter file>)               Path in Git repository of test parameter file(s) to add.");
+        out("  --remove <test parameter file> (--remove <test parameter file>)         Path in Git repository of test parameter file(s) to remove.");
+        printHelpFooter();
+    }
+
     private void infoHelp() {
         printHelpHeader();
         out("Usage: dockstore " + getEntryType().toLowerCase() + " info --help");
@@ -1265,6 +1480,19 @@ public abstract class AbstractEntryClient {
         printHelpFooter();
     }
 
+    private void cwl2yamlHelp() {
+        printHelpHeader();
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " " + CONVERT + " --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " " + CONVERT + " cwl2yaml [parameters]");
+        out("");
+        out("Description:");
+        out("  Spit out a yaml run file for a given cwl document.");
+        out("");
+        out("Required parameters:");
+        out("  --cwl <file>                Path to cwl file");
+        printHelpFooter();
+    }
+
     private void cwl2jsonHelp() {
         printHelpHeader();
         out("Usage: dockstore " + getEntryType().toLowerCase() + " " + CONVERT + " --help");
@@ -1295,6 +1523,7 @@ public abstract class AbstractEntryClient {
         printHelpHeader();
         out("Usage: dockstore " + getEntryType().toLowerCase() + " " + CONVERT + " --help");
         out("       dockstore " + getEntryType().toLowerCase() + " " + CONVERT + " cwl2json [parameters]");
+        out("       dockstore " + getEntryType().toLowerCase() + " " + CONVERT + " cwl2yaml [parameters]");
         out("       dockstore " + getEntryType().toLowerCase() + " " + CONVERT + " wdl2json [parameters]");
         out("       dockstore " + getEntryType().toLowerCase() + " " + CONVERT + " entry2json [parameters]");
         out("       dockstore " + getEntryType().toLowerCase() + " " + CONVERT + " entry2tsv [parameters]");
@@ -1353,7 +1582,32 @@ public abstract class AbstractEntryClient {
         printHelpFooter();
     }
 
-    protected static String getCleanedDescription(String description) {
+    private void verifyHelp() {
+        printHelpHeader();
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " verify --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " verify [parameters]");
+        out("       dockstore " + getEntryType().toLowerCase() + " verify --unverify [parameters]");
+        out("");
+        out("Description:");
+        out("  Verify/unverify a version.");
+        out("");
+        out("Required parameters:");
+        out("  --entry <entry>                              Complete entry path in the Dockstore");
+        out("  --version <version>                          Version name");
+        out("");
+        out("Optional Parameters:");
+        out("  --verified-source <verified-source>          Source of verification (Required to verify).");
+        printHelpFooter();
+    }
+
+    private void printAdminHelp() {
+        out("Admin Only Commands:");
+        out("");
+        out("  verify           :  Verify/unverify a version");
+        out("");
+    }
+
+    static String getCleanedDescription(String description) {
         if (description != null) {
             // strip control characters
             description = CharMatcher.JAVA_ISO_CONTROL.removeFrom(description);

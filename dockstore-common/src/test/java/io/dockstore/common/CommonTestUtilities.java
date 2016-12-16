@@ -91,11 +91,11 @@ public class CommonTestUtilities {
             runInsertStatement("insert into user_entry(userid, entryid) VALUES (1, 6);", new KeyedHandler<>("entryid"));
             runInsertStatement("insert into user_entry(userid, entryid) VALUES (2, 6);", new KeyedHandler<>("entryid"));
 
-            runInsertStatement("insert into tag(id, valid, automated, hidden, size, cwlpath, wdlpath, dockerfilepath) VALUES (1, true, true, false, 0,'/Dockstore.cwl', '/Dockstore.wdl', '/Dockerfile');", new KeyedHandler<>(
+            runInsertStatement("insert into tag(id, valid, automated, hidden, size, cwlpath, wdlpath, dockerfilepath, dirtybit, verified, verifiedsource) VALUES (1, true, true, false, 0,'/Dockstore.cwl', '/Dockstore.wdl', '/Dockerfile', false, false, null);", new KeyedHandler<>(
                     "id"));
             runInsertStatement("insert into tool_tag(toolid, tagid) VALUES (6, 1);", new KeyedHandler<>("tagid"));
 
-            runInsertStatement("insert into tag(id, valid, automated, hidden, size, cwlpath, wdlpath, dockerfilepath) VALUES (2, true, true, false, 0,'/Dockstore.cwl', '/Dockstore.wdl', '/Dockerfile');", new KeyedHandler<>(
+            runInsertStatement("insert into tag(id, valid, automated, hidden, size, cwlpath, wdlpath, dockerfilepath, dirtybit, verified, verifiedsource) VALUES (2, true, true, false, 0,'/Dockstore.cwl', '/Dockstore.wdl', '/Dockerfile', false, false, null);", new KeyedHandler<>(
                     "id"));
             runInsertStatement("insert into tool_tag(toolid, tagid) VALUES (5, 2);", new KeyedHandler<>("tagid"));
 
@@ -116,13 +116,13 @@ public class CommonTestUtilities {
             */
             // Add extra user with tool for testing user access
             runInsertStatement("insert into enduser(id, isAdmin, username) VALUES (2,true,'admin@admin.com');", new KeyedHandler<>("id"));
-            runInsertStatement("insert into token(id, content, tokensource, userid, username) VALUES (5, '" + DUMMY_TOKEN_1
+            runInsertStatement("insert into token(id, content, tokensource, userid, username) VALUES (6, '" + DUMMY_TOKEN_1
                     + "', 'dockstore', 2, 'admin@admin.com');", new KeyedHandler<>("id"));
 
             runInsertStatement(
-                    "insert into tool(id, name, namespace, registry, path, ispublished, toolname) VALUES (9, 'test1', 'test_org', 'QUAY_IO', 'quay.io/test_org/test1', false,'');",
+                    "insert into tool(id, name, namespace, registry, path, ispublished, toolname) VALUES (12, 'test1', 'test_org', 'QUAY_IO', 'quay.io/test_org/test1', false,'');",
                     new KeyedHandler<>("id"));
-            runInsertStatement("insert into user_entry(userid, entryid) VALUES (2, 9);", new KeyedHandler<>("entryid"));
+            runInsertStatement("insert into user_entry(userid, entryid) VALUES (2, 12);", new KeyedHandler<>("entryid"));
 
 
             // need to increment past manually entered ids above

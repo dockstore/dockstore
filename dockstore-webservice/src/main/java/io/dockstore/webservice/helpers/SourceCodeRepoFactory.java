@@ -35,7 +35,7 @@ public class SourceCodeRepoFactory {
     private static final Logger LOG = LoggerFactory.getLogger(SourceCodeRepoFactory.class);
 
     public static SourceCodeRepoInterface createSourceCodeRepo(String gitUrl, HttpClient client, String bitbucketTokenContent,
-            String githubTokenContent) {
+            String gitlabTokenContent, String githubTokenContent) {
 
         Map<String, String> repoUrlMap = parseGitUrl(gitUrl);
 
@@ -55,6 +55,13 @@ public class SourceCodeRepoFactory {
                 repo = new BitBucketSourceCodeRepo(gitUsername, client, bitbucketTokenContent, gitRepository);
             } else {
                 LOG.info("WARNING: Source is from Bitbucket, but user does not have Bitbucket token!");
+                return null;
+            }
+        } else if ("gitlab.com".equals(source)) {
+            if (gitlabTokenContent != null) {
+                repo = new GitLabSourceCodeRepo(gitUsername, client, gitlabTokenContent, gitRepository);
+            } else {
+                LOG.info("WARNING: Source is from Gitlab, but user does not have Gitlab token!");
                 return null;
             }
         } else {

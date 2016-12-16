@@ -17,9 +17,11 @@
 package io.dockstore.client.cli;
 
 import com.google.common.collect.Lists;
+import com.google.common.io.Files;
 import com.google.gson.Gson;
-import cromwell.Main;
 import io.dockstore.client.Bridge;
+import io.dockstore.client.cli.nested.AbstractEntryClient;
+import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.WDLFileProvisioning;
 import io.dropwizard.testing.ResourceHelpers;
 import org.apache.commons.io.FileUtils;
@@ -31,9 +33,9 @@ import scala.collection.immutable.List;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-
 
 /**
  * This tests integration with the CromWell engine and what will eventually be wdltool.
@@ -52,42 +54,74 @@ public class CromwellIT {
     }
 
     @Test
-    public void runWDLWorkflow(){
-        Main main = new Main();
+    public void runWDLWorkflow() throws IOException {
+        Client client = new Client();
+        client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
+        AbstractEntryClient main = new ToolClient(client, false);
         File workflowFile = new File(ResourceHelpers.resourceFilePath("wdl.wdl"));
         File parameterFile = new File(ResourceHelpers.resourceFilePath("wdl.json"));
-        final java.util.List<String> wdlRun = Lists.newArrayList(workflowFile.getAbsolutePath(), parameterFile.getAbsolutePath());
-        final List<String> wdlRunList = JavaConversions.asScalaBuffer(wdlRun).toList();
         // run a workflow
-        final int run = main.run(wdlRunList);
+        final long run = main.launchWdlInternal(workflowFile.getAbsolutePath(), true, parameterFile.getAbsolutePath(), null);
         Assert.assertTrue(run == 0);
     }
+
     @Test
-    public void fileProvisioning() {
-        Main main = new Main();
+    public void failRunWDLWorkflow() throws IOException {
+        Client client = new Client();
+        client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
+        AbstractEntryClient main = new ToolClient(client, false);
+        File workflowFile = new File(ResourceHelpers.resourceFilePath("wdl.wdl"));
+        File parameterFile = new File(ResourceHelpers.resourceFilePath("wdl_wrong.json"));
+        // run a workflow
+        final long run = main.launchWdlInternal(workflowFile.getAbsolutePath(), true, parameterFile.getAbsolutePath(), null);
+        Assert.assertTrue(run != 0);
+    }
+
+    @Test
+    public void fileProvisioning() throws IOException {
+        Client client = new Client();
+        client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
+        AbstractEntryClient main = new ToolClient(client, false);
+
         File workflowFile = new File(ResourceHelpers.resourceFilePath("wdlfileprov.wdl"));
         File parameterFile = new File(ResourceHelpers.resourceFilePath("wdlfileprov.json"));
         Bridge bridge = new Bridge();
-        Map<String,String> wdlInputs = bridge.getInputFiles(workflowFile);
+        Map<String, String> wdlInputs = bridge.getInputFiles(workflowFile);
 
         WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning(ResourceHelpers.resourceFilePath("config_file.txt"));
         Gson gson = new Gson();
-        String jsonString = null;
-        try {
-            jsonString = FileUtils.readFileToString(parameterFile, StandardCharsets.UTF_8);
-            Map<String, Object> inputJson = gson.fromJson(jsonString, HashMap.class);
+        String jsonString;
 
-            Map<String,Object> fileMap = wdlFileProvisioning.pullFiles(inputJson, wdlInputs);
+        final File tempDir = Files.createTempDir();
 
-            String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
-            final java.util.List<String> wdlRun = Lists.newArrayList(workflowFile.getAbsolutePath(), newJsonPath);
-            final List<String> wdlRunList = JavaConversions.asScalaBuffer(wdlRun).toList();
-            // run a workflow
-            final int run = main.run(wdlRunList);
-            Assert.assertTrue(run == 0);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        jsonString = FileUtils.readFileToString(parameterFile, StandardCharsets.UTF_8);
+        Map<String, Object> inputJson = gson.fromJson(jsonString, HashMap.class);
+
+        Map<String, Object> fileMap = wdlFileProvisioning.pullFiles(inputJson, wdlInputs);
+
+        String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
+        // run a workflow
+        final long run = main.launchWdlInternal(workflowFile.getAbsolutePath(), true, newJsonPath, tempDir.getAbsolutePath());
+        Assert.assertTrue(run == 0);
+        // let's check that provisioning out occured
+        final Collection<File> files = FileUtils.listFiles(tempDir, null, true);
+        Assert.assertTrue(files.size() == 2);
     }
 
+    @Test
+    public void testWDLResolver() {
+        // If resolver works, this should throw no errors
+        File sourceFile = new File(ResourceHelpers.resourceFilePath("wdl-sanger-workflow.wdl"));
+        Bridge bridge = new Bridge();
+        HashMap<String, String> secondaryFiles = new HashMap<>();
+        secondaryFiles.put("wdl.wdl","task ps {\n" + "  command {\n" + "    ps\n" + "  }\n" + "  output {\n" + "    File procs = stdout()\n"
+                + "  }\n" + "}\n" + "\n" + "task cgrep {\n" + "  String pattern\n" + "  File in_file\n" + "  command {\n"
+                + "    grep '${pattern}' ${in_file} | wc -l\n" + "  }\n" + "  output {\n" + "    Int count = read_int(stdout())\n" + "  }\n"
+                + "}\n" + "\n" + "task wc {\n" + "  File in_file\n" + "  command {\n" + "    cat ${in_file} | wc -l\n" + "  }\n"
+                + "  output {\n" + "    Int count = read_int(stdout())\n" + "  }\n" + "}\n" + "\n" + "workflow three_step {\n"
+                + "  call ps\n" + "  call cgrep {\n" + "    input: in_file=ps.procs\n" + "  }\n" + "  call wc {\n"
+                + "    input: in_file=ps.procs\n" + "  }\n" + "}\n");
+        bridge.setSecondaryFiles(secondaryFiles);
+        bridge.getInputFiles(sourceFile);
+    }
 }

@@ -91,7 +91,6 @@ public class Tool extends Entry<Tool, Tag> {
     @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the WDL document", required = true)
     private String defaultWdlPath = "/Dockstore.wdl";
 
-
     @Column(nullable = false)
     @ApiModelProperty(value = "This is the tool name of the container, when not-present this will function just like 0.1 dockstore"
             + "when present, this can be used to distinguish between two containers based on the same image, but associated with different "
@@ -280,6 +279,7 @@ public class Tool extends Entry<Tool, Tag> {
     public String getToolPath() {
         return getPath() + (toolname == null || toolname.isEmpty() ? "" : '/' + toolname);
     }
+    
 
     /**
      * Updates information from given tool based on the new tool
