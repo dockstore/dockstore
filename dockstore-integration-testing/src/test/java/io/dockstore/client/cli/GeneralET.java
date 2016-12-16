@@ -19,10 +19,10 @@ package io.dockstore.client.cli;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.Constants;
+import io.dockstore.common.Registry;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dockstore.common.Registry;
 import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit.DropwizardAppRule;
 import io.swagger.client.ApiClient;
@@ -33,7 +33,7 @@ import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.commons.io.FileUtils;
 import org.json.JSONException;
@@ -80,7 +80,7 @@ public class GeneralET {
         private static ApiClient getWebClient() throws IOException, TimeoutException {
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
                 File configFile = FileUtils.getFile("src", "test", "resources", "config2");
-                HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+                INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
                 ApiClient client = new ApiClient();
                 client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
                 client.addDefaultHeader(

@@ -27,6 +27,7 @@ import io.cwl.avro.CWL;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.client.cli.nested.WorkflowClient;
+import io.dockstore.common.Utilities;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;
@@ -36,8 +37,8 @@ import io.swagger.client.api.GAGHApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Metadata;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.configuration2.INIConfiguration;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
@@ -366,8 +367,9 @@ public class Client {
         }
     }
 
-    private void clean() throws ConfigurationException, IOException {
-        final String cacheDirectory = getCacheDirectory(new HierarchicalINIConfiguration(getConfigFile()));
+    private void clean() throws IOException, ConfigurationException {
+        final INIConfiguration configuration = Utilities.parseConfig(getConfigFile());
+        final String cacheDirectory = getCacheDirectory(configuration);
         FileUtils.deleteDirectory(new File(cacheDirectory));
     }
 
@@ -763,7 +765,8 @@ public class Client {
     private void setupClientEnvironment(List<String> args) throws ConfigurationException {
         String userHome = System.getProperty("user.home");
         this.setConfigFile(optVal(args, "--config", userHome + File.separator + ".dockstore" + File.separator + "config"));
-        HierarchicalINIConfiguration config = new HierarchicalINIConfiguration(getConfigFile());
+
+        INIConfiguration config = Utilities.parseConfig(configFile);
 
         // pull out the variables from the config
         String token = config.getString("token","");

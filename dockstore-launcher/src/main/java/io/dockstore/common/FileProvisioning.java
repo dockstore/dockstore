@@ -32,8 +32,7 @@ import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.net.io.CopyStreamEvent;
 import org.apache.commons.net.io.CopyStreamListener;
@@ -77,17 +76,13 @@ public class FileProvisioning {
     private static final String S3_ENDPOINT = "s3.endpoint";
     private static final String DCC_CLIENT_KEY = "dcc_storage.client";
 
-    private HierarchicalINIConfiguration config;
+    private INIConfiguration config;
 
     /**
      * Constructor
      */
     public FileProvisioning(String configFile) {
-        try {
-            this.config = new HierarchicalINIConfiguration(configFile);
-        } catch (ConfigurationException e) {
-            e.printStackTrace();
-        }
+        this.config = Utilities.parseConfig(configFile);
     }
 
     // Which functions to move here? DCC and apache commons ones?
@@ -149,7 +144,7 @@ public class FileProvisioning {
         }
     }
 
-    private static AmazonS3 getAmazonS3Client(HierarchicalINIConfiguration config) {
+    private static AmazonS3 getAmazonS3Client(INIConfiguration config) {
         AmazonS3 s3Client = new AmazonS3Client(new ClientConfiguration().withSignerOverride("S3Signer"));
         if (config.containsKey(S3_ENDPOINT)) {
             final String endpoint = config.getString(S3_ENDPOINT);
@@ -283,12 +278,12 @@ public class FileProvisioning {
         }
     }
 
-    public static String getCacheDirectory(HierarchicalINIConfiguration config) {
+    public static String getCacheDirectory(INIConfiguration config) {
         return config
                 .getString("cache-dir", System.getProperty("user.home") + File.separator + ".dockstore" + File.separator + "cache");
     }
 
-    private static boolean isCacheOn(HierarchicalINIConfiguration config){
+    private static boolean isCacheOn(INIConfiguration config){
         final String useCache = config.getString("use-cache", "false");
         return useCache.equalsIgnoreCase("true") || useCache.equalsIgnoreCase("use") || useCache.equalsIgnoreCase("T");
     }

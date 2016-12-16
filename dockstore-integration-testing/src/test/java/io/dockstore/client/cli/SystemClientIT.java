@@ -18,10 +18,10 @@ package io.dockstore.client.cli;
 
 import com.google.common.io.Resources;
 import io.dockstore.common.Constants;
+import io.dockstore.common.Registry;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dockstore.common.Registry;
 import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit.DropwizardAppRule;
 import io.swagger.client.ApiClient;
@@ -43,7 +43,7 @@ import io.swagger.client.model.ToolDockerfile;
 import io.swagger.client.model.ToolVersion;
 import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
 import org.junit.Before;
@@ -94,7 +94,7 @@ public class SystemClientIT {
 
     private static ApiClient getWebClient(boolean correctUser, boolean admin) throws IOException, TimeoutException {
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
-        HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         ApiClient client = new ApiClient();
         client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
         client.addDefaultHeader(

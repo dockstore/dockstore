@@ -16,7 +16,7 @@
 
 package io.dockstore.common;
 
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.dbcp2.ConnectionFactory;
 import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
 import org.apache.commons.dbcp2.PoolableConnection;
@@ -49,7 +49,7 @@ public class BasicPostgreSQL {
     protected static final Logger LOG = LoggerFactory.getLogger(BasicPostgreSQL.class);
     private static DataSource dataSource = null;
 
-    public BasicPostgreSQL(HierarchicalINIConfiguration settings) {
+    public BasicPostgreSQL(INIConfiguration settings) {
         if (dataSource == null) {
             try {
                 String nullConfigs = "";

@@ -130,7 +130,7 @@ public class FileImporter {
                 Files.write(content, tempDesc, StandardCharsets.UTF_8);
 
                 // Use matcher to get imports
-                List<String> lines = FileUtils.readLines(tempDesc);
+                List<String> lines = FileUtils.readLines(tempDesc, StandardCharsets.UTF_8);
                 ArrayList<String> importPaths = new ArrayList<>();
                 Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"");
 

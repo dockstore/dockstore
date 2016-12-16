@@ -37,8 +37,7 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.json.simple.JSONArray;
@@ -87,7 +86,7 @@ public class LauncherCWL {
     private final String runtimeDescriptorPath;
     private final OutputStream stdoutStream;
     private final OutputStream stderrStream;
-    private HierarchicalINIConfiguration config;
+    private INIConfiguration config;
     private String globalWorkingDir;
     private final Yaml yaml = new Yaml(new SafeConstructor());
     private final Gson gson;
@@ -133,11 +132,8 @@ public class LauncherCWL {
 
     public void run(Class cwlClassTarget){
         // now read in the INI file
-        try {
-            config = new HierarchicalINIConfiguration(configFilePath);
-        } catch (ConfigurationException e) {
-            throw new RuntimeException("could not read launcher config ini", e);
-        }
+        config = Utilities.parseConfig(configFilePath);
+
 
         // parse the CWL tool definition without validation
         CWL cwlUtil = new CWL();

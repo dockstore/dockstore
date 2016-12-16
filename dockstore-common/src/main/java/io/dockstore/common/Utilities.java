@@ -18,8 +18,12 @@ package io.dockstore.common;
 
 import com.google.common.base.Optional;
 import com.google.common.io.ByteStreams;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.configuration2.INIConfiguration;
+import org.apache.commons.configuration2.builder.ConfigurationBuilder;
+import org.apache.commons.configuration2.builder.ReloadingFileBasedConfigurationBuilder;
+import org.apache.commons.configuration2.builder.fluent.Parameters;
+import org.apache.commons.configuration2.ex.ConfigurationException;
+import org.apache.commons.configuration2.reloading.PeriodicReloadingTrigger;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecuteResultHandler;
 import org.apache.commons.exec.DefaultExecutor;
@@ -36,19 +40,36 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  *
  * @author xliu
  */
 public class Utilities {
+    private static final Map<String, ConfigurationBuilder<INIConfiguration>> MAP = new HashMap<>();
 
     private static final Logger LOG = LoggerFactory.getLogger(Utilities.class);
 
-
-    public static HierarchicalINIConfiguration parseConfig(String path) {
+    /**
+     * The singleton map os not entirely awesome, but this allows our legacy code to
+     * benefit from live reloads for configuration while the application is running
+     * @param configFile the path to the config file which should be loaded
+     * @return configuration file
+     */
+    public static INIConfiguration parseConfig(String configFile) {
+        if (!MAP.containsKey(configFile)){
+            ReloadingFileBasedConfigurationBuilder<INIConfiguration> builder = new ReloadingFileBasedConfigurationBuilder<>(INIConfiguration.class)
+                    .configure(new Parameters().properties().setFileName(configFile));
+            PeriodicReloadingTrigger trigger = new PeriodicReloadingTrigger(builder.getReloadingController(),
+                    null, 1, TimeUnit.MINUTES);
+            trigger.start();
+            MAP.put(configFile, builder);
+        }
         try {
-            return new HierarchicalINIConfiguration(path);
+            return MAP.get(configFile).getConfiguration();
         } catch (ConfigurationException ex) {
             throw new RuntimeException("Could not read ~/.dockstore/config");
         }

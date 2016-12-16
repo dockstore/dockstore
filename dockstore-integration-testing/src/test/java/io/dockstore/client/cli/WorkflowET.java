@@ -31,7 +31,7 @@ import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
@@ -74,7 +74,7 @@ public class WorkflowET {
     protected static ApiClient getWebClient() throws IOException, TimeoutException {
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         File configFile = FileUtils.getFile("src", "test", "resources", "config2");
-        HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         ApiClient client = new ApiClient();
         client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
         client.addDefaultHeader(

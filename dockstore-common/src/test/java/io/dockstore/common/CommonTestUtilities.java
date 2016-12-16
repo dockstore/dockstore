@@ -17,8 +17,7 @@
 package io.dockstore.common;
 
 import io.dropwizard.testing.ResourceHelpers;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.dbutils.ResultSetHandler;
 import org.apache.commons.dbutils.handlers.KeyedHandler;
 import org.apache.commons.io.FileUtils;
@@ -38,17 +37,10 @@ public class CommonTestUtilities {
      */
     public static final String DUMMY_TOKEN_2 = "3a04647fd0a1bd949637n5fddb164261fc8c80d83f0750fe0e873bc744338fce";
 
-    public static HierarchicalINIConfiguration parseConfig(String path) {
-        try {
-            return new HierarchicalINIConfiguration(path);
-        } catch (ConfigurationException ex) {
-            throw new RuntimeException(ex);
-        }
-    }
 
     public static class TestingPostgres extends BasicPostgreSQL {
 
-        TestingPostgres(HierarchicalINIConfiguration config) {
+        TestingPostgres(INIConfiguration config) {
             super(config);
         }
 
@@ -186,7 +178,7 @@ public class CommonTestUtilities {
 
     public static TestingPostgres getTestingPostgres() {
         final File configFile = FileUtils.getFile("src", "test", "resources", "config");
-        final HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+        final INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         return new TestingPostgres(parseConfig);
     }
 }

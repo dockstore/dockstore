@@ -19,8 +19,8 @@ package io.github.collaboratory;
 import com.amazonaws.AmazonClientException;
 import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.Workflow;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import io.dockstore.common.Utilities;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Rule;
@@ -46,8 +46,7 @@ public class LauncherTest {
     public void cleanCache() throws ConfigurationException, IOException {
         // need to clean cache to make tests predictable
         File iniFile = FileUtils.getFile("src", "test", "resources", "launcher.ini");
-        HierarchicalINIConfiguration config = new HierarchicalINIConfiguration(iniFile);
-        final String cacheDirectory = getCacheDirectory(config);
+        final String cacheDirectory = getCacheDirectory(Utilities.parseConfig(iniFile.getAbsolutePath()));
         FileUtils.deleteDirectory(new File(cacheDirectory));
     }
 
