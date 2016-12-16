@@ -4,7 +4,8 @@
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/ga4gh/dockstore?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Coverity Scan](https://img.shields.io/coverity/scan/9682.svg?maxAge=2592000)](https://scan.coverity.com/projects/ga4gh-dockstore)
 [![Dependency Status](https://dependencyci.com/github/ga4gh/dockstore/badge)](https://dependencyci.com/github/ga4gh/dockstore)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.154185.svg)](https://doi.org/10.5281/zenodo.154185)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.168593.svg)](https://doi.org/10.5281/zenodo.168593)
+
 
 
 
