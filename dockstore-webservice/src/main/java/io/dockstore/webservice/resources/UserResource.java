@@ -37,6 +37,7 @@ import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
@@ -58,6 +59,8 @@ import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Set;
+import java.util.stream.Collectors;
 /**
  * @author xliu
  */
@@ -379,6 +382,9 @@ public class UserResource {
 
         Helper.checkUser(authUser, userId);
 
+        // Update user data
+        Helper.updateUserHelper(authUser, userDAO, tokenDAO);
+
         return dockerRepoResource.refreshToolsForUser(userId);
     }
 
@@ -391,6 +397,9 @@ public class UserResource {
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
 
         Helper.checkUser(authUser, userId);
+
+        // Update user data
+        Helper.updateUserHelper(authUser, userDAO, tokenDAO);
 
         // Refresh all workflows, including full workflows
         workflowResource.refreshStubWorkflowsForUser(authUser);
@@ -424,5 +433,51 @@ public class UserResource {
         // need to avoid lazy initialize error
         final User byId = this.userDAO.findById(userId);
         return FluentIterable.from(byId.getEntries()).filter(Tool.class).toList();
+    }
+
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/starredTools")
+    @ApiOperation(value = "Get the logged-in user's starred tools", response = Entry.class, responseContainer = "List")
+    public Set<Entry> getStarredTools(@ApiParam(hidden = true) @Auth User user) {
+        User u = userDAO.findById(user.getId());
+        return u.getStarredEntries().stream().filter(element -> element instanceof Tool).collect(Collectors.toSet());
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/starredWorkflows")
+    @ApiOperation(value = "Get the logged-in user's starred workflows", response = Entry.class, responseContainer = "List")
+    public Set<Entry> getStarredWorkflows(@ApiParam(hidden = true) @Auth User user) {
+        User u = userDAO.findById(user.getId());
+        return u.getStarredEntries().stream().filter(element -> element instanceof Workflow).collect(Collectors.toSet());
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @RolesAllowed("admin")
+    @Path("/updateUserMetatdata")
+    @ApiOperation(value = "Update metadata of all users", notes = "Update all users metadata. Admin only.", response = User.class, responseContainer = "List")
+    public List<User> updateUserMetadata(@ApiParam(hidden = true) @Auth User user) {
+        List<User> users = userDAO.findAll();
+        for (User u : users) {
+            Helper.updateUserHelper(u, userDAO, tokenDAO);
+        }
+
+        return userDAO.findAll();
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/user/updateUserMetatdata")
+    @ApiOperation(value = "Update metadata for logged in user", notes = "Update metadata for logged in user.", response = User.class)
+    public User updateLoggedInUserMetadata(@ApiParam(hidden = true) @Auth User user) {
+        Helper.updateUserHelper(user, userDAO, tokenDAO);
+        return userDAO.findById(user.getId());
     }
 }

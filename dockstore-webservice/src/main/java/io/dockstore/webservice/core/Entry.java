@@ -22,7 +22,6 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -39,6 +38,8 @@ import javax.persistence.SequenceGenerator;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
 
 /**
@@ -72,10 +73,16 @@ public abstract class Entry<S extends Entry, T extends Version> {
     @OrderBy("id")
     private SortedSet<Label> labels = new TreeSet<>();
 
-    @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty(value = "This indicates the users that have control over this entry, dockstore specific", required = false)
     private Set<User> users;
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "starred", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"))
+    @ApiModelProperty(value = "This indicates the users that have starred this entry, dockstore specific", required = false)
+    @JsonSerialize(using = EntryStarredSerializer.class)
+    private Set<User> starredUsers;
 
     @Column
     @ApiModelProperty("This is the email of the git organization")
@@ -99,11 +106,13 @@ public abstract class Entry<S extends Entry, T extends Version> {
 
     public Entry() {
         users = new HashSet<>(0);
+        starredUsers = new HashSet<>(0);
     }
 
     public Entry(long id) {
         this.id = id;
         users = new HashSet<>(0);
+        starredUsers = new HashSet<>(0);
     }
 
     @JsonProperty
@@ -231,6 +240,17 @@ public abstract class Entry<S extends Entry, T extends Version> {
         this.lastUpdated = lastUpdated;
     }
 
+    public Set<User> getStarredUsers() {
+        return starredUsers;
+    }
+
+    public void addStarredUser(User user) {
+        starredUsers.add(user);
+    }
+
+    public boolean removeStarredUser(User user) {
+        return starredUsers.remove(user);
+    }
     /**
      * Used during refresh to update containers
      *

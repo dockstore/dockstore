@@ -45,6 +45,7 @@ import org.eclipse.egit.github.core.client.RequestException;
 import org.eclipse.egit.github.core.service.ContentsService;
 import org.eclipse.egit.github.core.service.OrganizationService;
 import org.eclipse.egit.github.core.service.RepositoryService;
+import org.eclipse.egit.github.core.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,6 +61,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     private final ContentsService cService;
     private final RepositoryService service;
     private final OrganizationService oService;
+    private final UserService uService;
     private final String gitRepository;
 
     // TODO: should be made protected in favour of factory
@@ -71,6 +73,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         this.service = new RepositoryService(githubClient);
         this.cService = new ContentsService(githubClient);
         this.oService = new OrganizationService(githubClient);
+        this.uService = new UserService(githubClient);
         this.gitUsername = gitUsername;
         this.gitRepository = gitRepository;
     }
@@ -306,4 +309,25 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         return content;
     }
 
+    /**
+     * Updates a user object with metadata from GitHub
+     * @param user
+     * @return Updated user object
+     */
+    public io.dockstore.webservice.core.User getUserMetadata(io.dockstore.webservice.core.User user) {
+        // eGit user object
+        User gitUser;
+        try {
+            gitUser = uService.getUser(user.getUsername());
+            user.setBio(gitUser.getBio());
+            user.setCompany(gitUser.getCompany());
+            user.setEmail(gitUser.getEmail());
+            user.setLocation(gitUser.getLocation());
+            user.setAvatarUrl(gitUser.getAvatarUrl());
+        } catch (IOException ex) {
+            LOG.info("Could not find user information for user " + user.getUsername());
+        }
+
+        return user;
+    }
 }

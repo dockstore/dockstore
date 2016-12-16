@@ -157,8 +157,10 @@ public class DockerRepoResource {
             @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
         Tool c = toolDAO.findById(containerId);
         Helper.checkEntry(c);
-
         Helper.checkUser(user, c);
+
+        // Update user data
+        Helper.updateUserHelper(user, userDAO, tokenDAO);
 
         List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
 
@@ -168,6 +170,7 @@ public class DockerRepoResource {
         }
 
         return Helper.refreshContainer(containerId, user.getId(), client, objectMapper, userDAO, toolDAO, tokenDAO, tagDAO, fileDAO);
+
     }
 
     @GET
@@ -841,6 +844,55 @@ public class DockerRepoResource {
         }
 
         return tag.getSourceFiles();
+    }
+
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}/star")
+    @ApiOperation(value = "Stars a tool.")
+    public void starEntry(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Tool to star.", required = true) @PathParam("containerId") Long containerId) {
+        Tool tool = toolDAO.findById(containerId);
+        Helper.checkEntry(tool);
+
+        Set<User> starredUsers = tool.getStarredUsers();
+        if (!starredUsers.contains(user)) {
+            tool.addStarredUser(user);
+        } else {
+            throw new CustomWebApplicationException("You cannot star the tool " + tool.getToolPath() + " because you have already starred it.", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}/unstar")
+    @ApiOperation(value = "Unstars a tool.")
+    public void unstarEntry(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Tool to unstar.", required = true) @PathParam("containerId") Long containerId) {
+        Tool tool = toolDAO.findById(containerId);
+        Helper.checkEntry(tool);
+
+        Set<User> starredUsers = tool.getStarredUsers();
+        if (starredUsers.contains(user)) {
+            tool.removeStarredUser(user);
+        } else {
+            throw new CustomWebApplicationException("You cannot unstar the tool " + tool.getToolPath() + " because you have not starred it.", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    @GET
+    @Path("/{containerId}/starredUsers")
+    @Timed
+    @UnitOfWork
+    @ApiOperation(value = "Returns list of users who starred the given tool", response = User.class, responseContainer = "List")
+    public Set<User> getStarredUsers(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Tool to grab starred users for.", required = true) @PathParam("containerId") Long containerId) {
+        Tool tool = toolDAO.findById(containerId);
+        Helper.checkEntry(tool);
+
+        return tool.getStarredUsers();
     }
 
 }

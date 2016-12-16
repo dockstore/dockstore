@@ -299,6 +299,9 @@ public class WorkflowResource {
         Helper.checkEntry(workflow);
         Helper.checkUser(user, workflow);
 
+        // Update user data
+        Helper.updateUserHelper(user, userDAO, tokenDAO);
+
         // get a live user for the following
         user = userDAO.findById(user.getId());
         // Set up source code interface and ensure token is set up
@@ -1100,4 +1103,53 @@ public class WorkflowResource {
         return mainDescriptor;
     }
 
+
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/{workflowId}/star")
+    @ApiOperation(value = "Stars a workflow.")
+    public void starEntry(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Tool to star.", required = true) @PathParam("workflowId") Long workflowId) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        Helper.checkEntry(workflow);
+
+        Set<User> starredUsers = workflow.getStarredUsers();
+        if (!starredUsers.contains(user)) {
+            workflow.addStarredUser(user);
+        } else {
+            throw new CustomWebApplicationException("You cannot star the workflow " + workflow.getPath() + " because you have already starred it.", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("/{workflowId}/unstar")
+    @ApiOperation(value = "Unstars a workflow.")
+    public void unstarEntry(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Workflow to unstar.", required = true) @PathParam("workflowId") Long workflowId) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        Helper.checkEntry(workflow);
+
+        Set<User> starredUsers = workflow.getStarredUsers();
+        if (starredUsers.contains(user)) {
+            workflow.removeStarredUser(user);
+        } else {
+            throw new CustomWebApplicationException("You cannot unstar the workflow " + workflow.getPath() + " because you have not starred it.", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    @GET
+    @Path("/{workflowId}/starredUsers")
+    @Timed
+    @UnitOfWork
+    @ApiOperation(value = "Returns list of users who starred the given Workflow", response = User.class, responseContainer = "List")
+    public Set<User> getStarredUsers(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Workflow to grab starred users for.", required = true) @PathParam("workflowId") Long workflowId) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        Helper.checkEntry(workflow);
+
+        return workflow.getStarredUsers();
+    }
 }

@@ -526,6 +526,21 @@ public final class Helper {
         }
     }
 
+    /**
+     * Updates the given user with metadata from Github
+     * @param user
+     * @param userDAO
+     * @param tokenDAO
+     * @return updated user
+     */
+    public static User updateUserHelper(final User user, final UserDAO userDAO, final TokenDAO tokenDAO) {
+        User existingUser = userDAO.findById(user.getId());
+        Token githubToken = tokenDAO.findGithubByUserId(existingUser.getId()).get(0);
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = new GitHubSourceCodeRepo(existingUser.getUsername(), githubToken.getContent(), null);
+        existingUser.update(gitHubSourceCodeRepo.getUserMetadata(existingUser));
+        return existingUser;
+    }
+
     public static class RepoList {
 
         private List<Tool> repositories;
