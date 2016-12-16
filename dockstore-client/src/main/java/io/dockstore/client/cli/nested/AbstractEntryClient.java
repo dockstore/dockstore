@@ -377,7 +377,7 @@ public abstract class AbstractEntryClient {
      *
      * @param args user's command-line arguments
      */
-    protected abstract void manualPublish(final List<String> args);
+    protected abstract void manualPublish(List<String> args);
 
     public abstract SourceFile getDescriptorFromServer(String entry, String descriptorType) throws
             ApiException, IOException;
