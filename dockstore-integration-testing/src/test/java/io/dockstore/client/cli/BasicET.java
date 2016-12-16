@@ -255,7 +255,7 @@ public class BasicET {
         @Test
         public void testQuayGithubAutoRegistration(){
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from tool where path like \'" + Registry.QUAY_IO.name() + "%\' and giturl like 'git@github.com%'", new ScalarHandler<>());
+                final long count = testingPostgres.runSelectStatement("select count(*) from tool where path like \'" + Registry.QUAY_IO.toString() + "%\' and giturl like 'git@github.com%'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 5 registered from Quay and Github, there are " + count, count == 5);
         }
 
@@ -345,7 +345,7 @@ public class BasicET {
         @Test
         public void testQuayBitbucketAutoRegistration(){
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from tool where path like \'" + Registry.QUAY_IO.name() + "%\' and giturl like 'git@bitbucket.org%'", new ScalarHandler<>());
+                final long count = testingPostgres.runSelectStatement("select count(*) from tool where path like \'" + Registry.QUAY_IO.toString() + "%\' and giturl like 'git@bitbucket.org%'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 2 registered from Quay and Bitbucket", count == 2);
         }
 
@@ -424,7 +424,7 @@ public class BasicET {
         public void testQuayGitlabAutoRegistration(){
                 // Need to add these to the db dump (db dump 1)
                 final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-                final long count = testingPostgres.runSelectStatement("select count(*) from tool where path like \'" + Registry.QUAY_IO.name() + "%\' and giturl like 'git@gitlab.com%'", new ScalarHandler<>());
+                final long count = testingPostgres.runSelectStatement("select count(*) from tool where path like \'" + Registry.QUAY_IO.toString() + "%\' and giturl like 'git@gitlab.com%'", new ScalarHandler<>());
                 Assert.assertTrue("there should be 2 registered from Quay and Gitlab", count == 2);
         }
 
