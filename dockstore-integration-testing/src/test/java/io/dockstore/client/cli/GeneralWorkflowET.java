@@ -371,7 +371,7 @@ public class GeneralWorkflowET {
          */
         @Test
         public void testLocalLaunchCWLNoFile() {
-                systemExit.expectSystemExitWithStatus(Client.IO_ERROR);
+                systemExit.expectSystemExitWithStatus(Client.ENTRY_NOT_FOUND);
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--local-entry", "imnotreal.cwl", "--json",
                         "imnotreal-job.json", "--script" });
         }
@@ -381,7 +381,7 @@ public class GeneralWorkflowET {
          */
         @Test
         public void testLocalLaunchWDLNoFile() {
-                systemExit.expectSystemExitWithStatus(Client.IO_ERROR);
+                systemExit.expectSystemExitWithStatus(Client.ENTRY_NOT_FOUND);
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--local-entry", "imnotreal.wdl", "--json",
                         "imnotreal-job.json", "--descriptor", "wdl", "--script" });
         }
@@ -391,7 +391,7 @@ public class GeneralWorkflowET {
          */
         @Test
         public void testRemoteLaunchCWLNoFile() {
-                systemExit.expectSystemExitWithStatus(Client.API_ERROR);
+                systemExit.expectSystemExitWithStatus(Client.ENTRY_NOT_FOUND);
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry", "imnotreal.cwl", "--json",
                         "imnotreal-job.json", "--script" });
         }
@@ -401,7 +401,7 @@ public class GeneralWorkflowET {
          */
         @Test
         public void testRemoteLaunchWDLNoFile() {
-                systemExit.expectSystemExitWithStatus(Client.API_ERROR);
+                systemExit.expectSystemExitWithStatus(Client.ENTRY_NOT_FOUND);
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry", "imnotreal.wdl", "--json",
                         "imnotreal-job.json", "--descriptor", "wdl", "--script" });
         }

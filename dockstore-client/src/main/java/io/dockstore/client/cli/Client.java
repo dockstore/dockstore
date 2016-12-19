@@ -105,6 +105,7 @@ public class Client {
     public static final int API_ERROR = 6; // API throws an exception
     public static final int CLIENT_ERROR = 4; // Client does something wrong (ex. input validation)
     public static final int COMMAND_ERROR = 10; // Command is not successful, but not due to errors
+    public static final int ENTRY_NOT_FOUND = 12; // Entry could not be found locally or remotely
 
     public static final AtomicBoolean DEBUG = new AtomicBoolean(false);
     public static final AtomicBoolean SCRIPT = new AtomicBoolean(false);

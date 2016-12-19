@@ -94,6 +94,7 @@ import static io.dockstore.client.cli.ArgumentUtility.reqVal;
 import static io.dockstore.client.cli.Client.API_ERROR;
 import static io.dockstore.client.cli.Client.CLIENT_ERROR;
 import static io.dockstore.client.cli.Client.IO_ERROR;
+import static io.dockstore.client.cli.Client.ENTRY_NOT_FOUND;
 import static io.dockstore.client.cli.Client.SCRIPT;
 
 /**
@@ -855,9 +856,9 @@ public abstract class AbstractEntryClient {
 
         if (!file.exists() || file.isDirectory()) {
             if (getEntryType().toLowerCase().equals("tool")) {
-                errorMessage("The tool file " + file.getPath() + " does not exist. Did you mean to launch a remote tool or a workflow?", IO_ERROR);
+                errorMessage("The tool file " + file.getPath() + " does not exist. Did you mean to launch a remote tool or a workflow?", ENTRY_NOT_FOUND);
             } else {
-                errorMessage("The workflow file " + file.getPath() + " does not exist. Did you mean to launch a remote workflow or a tool?", IO_ERROR);
+                errorMessage("The workflow file " + file.getPath() + " does not exist. Did you mean to launch a remote workflow or a tool?", ENTRY_NOT_FOUND);
             }
         }
 
@@ -1034,9 +1035,9 @@ public abstract class AbstractEntryClient {
                 downloadDescriptors(entry, "cwl", tempDir);
             } catch (ApiException e) {
                 if (getEntryType().toLowerCase().equals("tool")) {
-                    exceptionMessage(e, "The tool entry does not exist. Did you mean to launch a local tool or a workflow?", API_ERROR);
+                    exceptionMessage(e, "The tool entry does not exist. Did you mean to launch a local tool or a workflow?", ENTRY_NOT_FOUND);
                 } else {
-                    exceptionMessage(e, "The workflow entry does not exist. Did you mean to launch a local workflow or a tool?", API_ERROR);
+                    exceptionMessage(e, "The workflow entry does not exist. Did you mean to launch a local workflow or a tool?", ENTRY_NOT_FOUND);
                 }
             }
         }
@@ -1284,9 +1285,9 @@ public abstract class AbstractEntryClient {
             }
         } catch (ApiException ex) {
             if (getEntryType().toLowerCase().equals("tool")) {
-                exceptionMessage(ex, "The tool entry does not exist. Did you mean to launch a local tool or a workflow?", API_ERROR);
+                exceptionMessage(ex, "The tool entry does not exist. Did you mean to launch a local tool or a workflow?", ENTRY_NOT_FOUND);
             } else {
-                exceptionMessage(ex, "The workflow entry does not exist. Did you mean to launch a local workflow or a tool?", API_ERROR);
+                exceptionMessage(ex, "The workflow entry does not exist. Did you mean to launch a local workflow or a tool?", ENTRY_NOT_FOUND);
             }
         } catch (IOException ex) {
             exceptionMessage(ex, "", IO_ERROR);
