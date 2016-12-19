@@ -831,9 +831,10 @@ public class DockerRepoResource {
             Map<String, String> registry = new HashMap<>();
             registry.put("enum", r.name());
             registry.put("friendlyName", r.getFriendlyName());
-            registry.put("dockerCommand", r.toString());
+            registry.put("dockerPath", r.toString());
             registry.put("url", r.getUrl());
             registry.put("privateOnly", Boolean.toString(r.isPrivateOnly()));
+            registry.put("customDockerPath", Boolean.toString(r.hasCustomDockerPath()));
             registryList.add(registry);
         }
         return registryList;

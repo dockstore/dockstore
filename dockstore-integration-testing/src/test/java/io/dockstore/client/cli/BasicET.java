@@ -1087,7 +1087,7 @@ public class BasicET {
                 // Manual publish
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.AMAZON_ECR.name(),
                         "--namespace", "notarealnamespace", "--name", "notarealname", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
-                        "master", "--toolname", "alternate", "--private", "true", "--tool-maintainer-email", "duncan.andrew.g@gmail.com", "--custom-registry", "amazon.registry", "--script" });
+                        "master", "--toolname", "alternate", "--private", "true", "--tool-maintainer-email", "duncan.andrew.g@gmail.com", "--custom-docker-path", "amazon.registry", "--script" });
 
                 // Check that tool is published and has correct values
                 final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='true' and privateaccess='true' and path='amazon.registry/notarealnamespace/notarealname' and registry='" + Registry.AMAZON_ECR.name() +"'", new ScalarHandler<>());
@@ -1108,7 +1108,20 @@ public class BasicET {
                 systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.AMAZON_ECR.name(),
                         "--namespace", "notarealnamespace", "--name", "notarealname", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
-                        "master", "--toolname", "alternate", "--tool-maintainer-email", "duncan.andrew.g@gmail.com", "--custom-registry", "amazon.registry", "--script" });
+                        "master", "--toolname", "alternate", "--tool-maintainer-email", "duncan.andrew.g@gmail.com", "--custom-docker-path", "amazon.registry", "--script" });
+
+        }
+
+        /**
+         * This tests that you can't manually publish a tool from a registry that requires a custom docker path without specifying the path
+         */
+        @Test
+        public void testManualPublishCustomDockerPathRegistry() {
+                // Manual publish
+                systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.AMAZON_ECR.name(),
+                        "--namespace", "notarealnamespace", "--name", "notarealname", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
+                        "master", "--toolname", "alternate", "--private", "true", "--tool-maintainer-email", "duncan.andrew.g@gmail.com", "--script" });
 
         }
 }

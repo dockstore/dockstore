@@ -310,7 +310,9 @@ public class ToolClient extends AbstractEntryClient {
         }
     }
 
+    // Checkstyle suppressed warnings should by fixed
     @Override
+    @SuppressWarnings("checkstyle:methodlength")
     public void manualPublish(final List<String> args) {
         if (containsHelpRequest(args)) {
             manualPublishHelp();
@@ -329,7 +331,7 @@ public class ToolClient extends AbstractEntryClient {
             final String toolMaintainerEmail = optVal(args, "--tool-maintainer-email", null);
             final String registry = optVal(args, "--registry", DockstoreTool.RegistryEnum.DOCKER_HUB.name());
             final String privateAccess = optVal(args, "--private", "false");
-            final String registryOverride = optVal(args, "--custom-registry", null);
+            final String customDockerPath = optVal(args, "--custom-docker-path", null);
 
             // Check that registry is valid
             boolean validRegistry = Stream.of(Registry.values()).anyMatch(r -> r.name().equals(registry));
@@ -340,13 +342,16 @@ public class ToolClient extends AbstractEntryClient {
                 errorMessage("", Client.CLIENT_ERROR);
             }
 
+            // Determine if chosen registry has special conditions
             boolean isPrivateRegistry = Stream.of(Registry.values()).anyMatch(r -> r.name().equals(registry) && r.isPrivateOnly());
+            boolean hasCustomDockerPath = Stream.of(Registry.values()).anyMatch(r -> r.name().equals(registry) && r.hasCustomDockerPath());
 
-            // Check if registry is private only
-            if (isPrivateRegistry) {
-                // Ensure that registryOverride is not null
-                if (Strings.isNullOrEmpty(registryOverride)) {
-                    errorMessage(registry + " is private only and requires a custom registry to be set.", Client.CLIENT_ERROR);
+            // Check if registry needs to override the docker path
+            if (hasCustomDockerPath) {
+                // Ensure that customDockerPath is not null
+                // TODO: add validity checker for given path
+                if (Strings.isNullOrEmpty(customDockerPath)) {
+                    errorMessage(registry + " requires a custom Docker path to be set.", Client.CLIENT_ERROR);
                 }
             }
 
@@ -355,21 +360,20 @@ public class ToolClient extends AbstractEntryClient {
                 errorMessage("The possible values for --private are 'true' and 'false'.", Client.CLIENT_ERROR);
             }
 
-            // Private access defaults to false
-            boolean setPrivateAccess = false;
+            // Private access
+            boolean setPrivateAccess = privateAccess.equalsIgnoreCase("true");
 
-            // Check that tool maintainer email is given if the tool is private with no email setup
-            if (privateAccess.equalsIgnoreCase("true")) {
-                if (Strings.isNullOrEmpty(toolMaintainerEmail)) {
-                    errorMessage("For a private tool, the tool maintainer email is required.", Client.CLIENT_ERROR);
-                }
-                setPrivateAccess = true;
-            }
-
+            // Ensure that tool is set to private if it is a private only registry
             if (isPrivateRegistry) {
-                // Ensure that tool is set to private if it is a private only registry
                 if (!setPrivateAccess) {
                     errorMessage(registry + " is private only and requires the tool to be private.", Client.CLIENT_ERROR);
+                }
+            }
+
+            // Check that tool maintainer email is given if the tool is private with no email setup
+            if (setPrivateAccess) {
+                if (Strings.isNullOrEmpty(toolMaintainerEmail)) {
+                    errorMessage("For a private tool, the tool maintainer email is required.", Client.CLIENT_ERROR);
                 }
             }
 
@@ -392,9 +396,10 @@ public class ToolClient extends AbstractEntryClient {
 
             // Registry path used (ex. quay.io)
             String registryPath;
-            if (isPrivateRegistry) {
-                // If private only registry we must use the user provided string
-                registryPath = registryOverride;
+
+            // If the registry requires a custom docker path we must use it instead of the default
+            if (hasCustomDockerPath) {
+                registryPath = customDockerPath;
             } else {
                 registryPath = getRegistryPath(registry);
             }
@@ -473,7 +478,7 @@ public class ToolClient extends AbstractEntryClient {
     private String getRegistryPath(String registry) {
         for (Registry r  : Registry.values()) {
             if (registry.equals(r.name())) {
-                if (r.isPrivateOnly()) {
+                if (r.hasCustomDockerPath()) {
                     return null;
                 } else {
                     return r.toString();
@@ -859,6 +864,7 @@ public class ToolClient extends AbstractEntryClient {
 
                     boolean isPrivateRegistry = Stream.of(Registry.values()).anyMatch(r -> r.name().equals(tool.getRegistry().name()) && r.isPrivateOnly());
 
+                    // Cannot set private only registry tools to public
                     if (isPrivateRegistry) {
                         if (!setPrivateAccess) {
                             errorMessage(tool.getRegistry().name() + " is a private only Docker registry, which means that the tool cannot be set to public.",
@@ -1111,7 +1117,7 @@ public class ToolClient extends AbstractEntryClient {
         out("  --version-name <version>                                 Version tag name for Dockerhub containers only, defaults to latest.");
         out("  --private <true/false>                                   Is the tool private or not, defaults to false.");
         out("  --tool-maintainer-email <tool maintainer email>          The contact email for the tool maintainer. Required for private repositories.");
-        out("  --custom-registry <custom registry>                      Custom Docker registry path (ex. registry.hub.docker.com). Required for private Docker registries only.");
+        out("  --custom-docker-path <custom docker path>                Custom Docker registry path (ex. registry.hub.docker.com).");
         printHelpFooter();
     }
 
@@ -1130,10 +1136,10 @@ public class ToolClient extends AbstractEntryClient {
     private static void printRegistriesAvailable() {
         out("The available Docker Registries are:");
         for (Registry r : Registry.values()) {
-            if (!r.isPrivateOnly()) {
+            if (!r.hasCustomDockerPath()) {
                 out(" *" + r.name() + " (" + r.toString() + ")");
             } else {
-                out(" *" + r.name() + " (PRIVATE)");
+                out(" *" + r.name() + " (Custom)");
             }
         }
     }
