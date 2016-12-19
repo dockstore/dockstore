@@ -367,6 +367,46 @@ public class GeneralWorkflowET {
         }
 
         /**
+         * This tests that attempting to launch a workflow locally, where no file exists, an IOError will occur
+         */
+        @Test
+        public void testLocalLaunchCWLNoFile() {
+                systemExit.expectSystemExitWithStatus(Client.IO_ERROR);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--local-entry", "imnotreal.cwl", "--json",
+                        "imnotreal-job.json", "--script" });
+        }
+
+        /**
+         * This tests that attempting to launch a WDL workflow locally, where no file exists, an IOError will occur
+         */
+        @Test
+        public void testLocalLaunchWDLNoFile() {
+                systemExit.expectSystemExitWithStatus(Client.IO_ERROR);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--local-entry", "imnotreal.wdl", "--json",
+                        "imnotreal-job.json", "--descriptor", "wdl", "--script" });
+        }
+
+        /**
+         * This tests that attempting to launch a workflow remotely, where no file exists, an APIError will occur
+         */
+        @Test
+        public void testRemoteLaunchCWLNoFile() {
+                systemExit.expectSystemExitWithStatus(Client.API_ERROR);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry", "imnotreal.cwl", "--json",
+                        "imnotreal-job.json", "--script" });
+        }
+
+        /**
+         * This tests that attempting to launch a WDL workflow remotely, where no file exists, an APIError will occur
+         */
+        @Test
+        public void testRemoteLaunchWDLNoFile() {
+                systemExit.expectSystemExitWithStatus(Client.API_ERROR);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry", "imnotreal.wdl", "--json",
+                        "imnotreal-job.json", "--descriptor", "wdl", "--script" });
+        }
+
+        /**
          * Tests that a developer can launch a WDL workflow locally, instead of getting files from Dockstore
          */
         @Test
