@@ -16,8 +16,7 @@
 
 package io.dockstore.webservice.core;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import java.util.Objects;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -27,11 +26,13 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import java.util.Objects;
+
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 /**
  * This describes a cached copy of a remotely accessible file. Implementation specific.
- * 
+ *
  * @author xliu
  */
 @ApiModel("SourceFile")
@@ -109,7 +110,7 @@ public class SourceFile {
         if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        final SourceFile other = (SourceFile) obj;
+        final SourceFile other = (SourceFile)obj;
         return Objects.equals(this.id, other.id) && Objects.equals(this.type, other.type) && Objects.equals(this.content, other.content);
     }
 }

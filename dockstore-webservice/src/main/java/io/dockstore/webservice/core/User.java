@@ -37,13 +37,12 @@ import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 /**
  * Stores end user information
- * 
+ *
  * @author xliu
  */
 @ApiModel(value = "User", description = "End users for the dockstore")
@@ -148,7 +147,7 @@ public class User implements Principal {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final User other = (User) obj;
+        final User other = (User)obj;
         if (id != other.id) {
             return false;
         }

@@ -27,7 +27,7 @@ import io.swagger.annotations.ApiOperation;
 
 /**
  * This resource is a stop-gap GUI for web service developers to integrate with BitBucket
- * 
+ *
  * @author xliu
  */
 @Path("/integration.bitbucket.org")

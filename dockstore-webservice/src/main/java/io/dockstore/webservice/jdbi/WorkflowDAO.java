@@ -18,19 +18,16 @@ package io.dockstore.webservice.jdbi;
 
 import java.util.List;
 
+import io.dockstore.webservice.core.Workflow;
 import org.hibernate.SessionFactory;
 
-import io.dockstore.webservice.core.Workflow;
-
 /**
- *
  * @author dyuen
  */
 public class WorkflowDAO extends EntryDAO<Workflow> {
     public WorkflowDAO(SessionFactory factory) {
         super(factory);
     }
-
 
     public Workflow findByPath(String path) {
         return uniqueResult(namedQuery("io.dockstore.webservice.core.Workflow.findByPath").setParameter("path", path));

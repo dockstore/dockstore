@@ -34,12 +34,11 @@ import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import io.swagger.annotations.ApiModel;
 
 /**
  * This describes a grouping of end-users for the purposes of managing sharing.
- * 
+ *
  * @author xliu
  */
 @ApiModel(value = "Group", description = "This describes a grouping of end-users for the purposes of managing sharing. Implementation-specific.")

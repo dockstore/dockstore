@@ -16,8 +16,18 @@
 
 package io.dockstore.webservice.helpers;
 
-import com.google.common.base.Optional;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import com.google.common.base.Optional;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -37,17 +47,6 @@ import org.eclipse.egit.github.core.service.OrganizationService;
 import org.eclipse.egit.github.core.service.RepositoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -69,13 +68,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         GitHubClient githubClient = new GitHubClient();
         githubClient.setOAuth2Token(githubTokenContent);
 
-        RepositoryService service = new RepositoryService(githubClient);
-        ContentsService cService = new ContentsService(githubClient);
-        OrganizationService oService = new OrganizationService(githubClient);
-
-        this.service = service;
-        this.cService = cService;
-        this.oService = oService;
+        this.service = new RepositoryService(githubClient);
+        this.cService = new ContentsService(githubClient);
+        this.oService = new OrganizationService(githubClient);
         this.gitUsername = gitUsername;
         this.gitRepository = gitRepository;
     }
@@ -84,7 +79,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public String readFile(String fileName, String reference) {
         checkNotNull(fileName, "The fileName given is null.");
         try {
-            Repository repo = service.getRepository(gitUsername, gitRepository); // may need to pass owner from git url, as this may differ from the git username
+            Repository repo = service.getRepository(gitUsername,
+                    gitRepository); // may need to pass owner from git url, as this may differ from the git username
             List<RepositoryContents> contents;
             try {
                 contents = cService.getContents(repo, fileName, reference);
@@ -98,10 +94,11 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 return null;
             }
 
-        } catch (RequestException e){
-            if (e.getStatus() == HttpStatus.SC_UNAUTHORIZED){
+        } catch (RequestException e) {
+            if (e.getStatus() == HttpStatus.SC_UNAUTHORIZED) {
                 // we have bad credentials which should not be ignored
-                throw new CustomWebApplicationException("Error reading from "+gitRepository+", please re-create your git token", HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException("Error reading from " + gitRepository + ", please re-create your git token",
+                        HttpStatus.SC_BAD_REQUEST);
             }
             return null;
         } catch (IOException e) {
@@ -126,11 +123,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     }
 
-    @Override public Map<String, String> getWorkflowGitUrl2RepositoryId() {
+    @Override
+    public Map<String, String> getWorkflowGitUrl2RepositoryId() {
         Map<String, String> reposByGitURl = new HashMap<>();
         try {
             final List<Repository> repositories = service.getRepositories();
-            for(Repository repo : repositories){
+            for (Repository repo : repositories) {
                 reposByGitURl.put(repo.getSshUrl(), repo.generateId());
             }
             return reposByGitURl;
@@ -170,7 +168,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow, Map<String, WorkflowVersion> existingDefaults) {
+    public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
+            Map<String, WorkflowVersion> existingDefaults) {
         RepositoryId id = RepositoryId.createFromId(repositoryId);
 
         // when getting a full workflow, look for versions and check each version for valid workflows
@@ -205,7 +204,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
                     // TODO: Is this the best way to determine file type? I don't think so
                     // Should be workflow.getDescriptorType().equals("cwl") - though enum is better!
-                    if (calculatedExtension.equalsIgnoreCase("cwl") || calculatedExtension.equalsIgnoreCase("yml") || calculatedExtension.equalsIgnoreCase("yaml")) {
+                    if ("cwl".equalsIgnoreCase(calculatedExtension) || "yml".equalsIgnoreCase(calculatedExtension) || "yaml"
+                            .equalsIgnoreCase(calculatedExtension)) {
                         validWorkflow = checkValidCWLWorkflow(content);
                         testJson.setType(SourceFile.FileType.CWL_TEST_JSON);
                     } else {
@@ -255,7 +255,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     repositoryId = m.group(2);
                 }
             } else {
-                repositoryId = ((Workflow) entry).getRepository();
+                repositoryId = ((Workflow)entry).getRepository();
             }
         } else {
             repositoryId = gitRepository;

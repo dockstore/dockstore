@@ -16,15 +16,14 @@
 
 package io.dockstore.webservice.jdbi;
 
+import java.util.List;
+
 import io.dockstore.webservice.core.User;
 import io.dropwizard.hibernate.AbstractDAO;
 import org.hibernate.Query;
 import org.hibernate.SessionFactory;
 
-import java.util.List;
-
 /**
- *
  * @author xliu
  */
 public class UserDAO extends AbstractDAO<User> {
@@ -51,6 +50,6 @@ public class UserDAO extends AbstractDAO<User> {
 
     public User findByUsername(String username) {
         Query query = namedQuery("io.dockstore.webservice.core.User.findByUsername").setParameter("username", username);
-        return (User) query.uniqueResult();
+        return (User)query.uniqueResult();
     }
 }

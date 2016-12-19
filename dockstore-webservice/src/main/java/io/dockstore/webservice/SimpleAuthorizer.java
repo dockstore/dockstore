@@ -16,18 +16,19 @@
 
 package io.dockstore.webservice;
 
-    import io.dockstore.webservice.core.User;
-    import io.dropwizard.auth.Authorizer;
+import io.dockstore.webservice.core.User;
+import io.dropwizard.auth.Authorizer;
 
 /**
  * @author dyuen
  */
 public class SimpleAuthorizer implements Authorizer<User> {
 
-    @Override public boolean authorize(User principal, String role) {
-        if (role.equalsIgnoreCase("admin")){
+    @Override
+    public boolean authorize(User principal, String role) {
+        if ("admin".equalsIgnoreCase(role)) {
             return principal.getIsAdmin();
-        } else{
+        } else {
             return true;
         }
     }

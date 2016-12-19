@@ -17,7 +17,6 @@
 package io.dockstore.common;
 
 /**
- * 
  * This describes all keys available in Dockstore config files.
  *
  * @author xliu

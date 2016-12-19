@@ -16,6 +16,20 @@
 
 package io.dockstore.common;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.SignerFactory;
 import com.amazonaws.event.ProgressEvent;
@@ -46,20 +60,6 @@ import org.sagebionetworks.client.SynapseClient;
 import org.sagebionetworks.client.SynapseClientImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.math.BigDecimal;
-import java.math.MathContext;
-import java.math.RoundingMode;
-import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.List;
 
 /**
  * The purpose of this class is to provide general functions to deal with workflow file provisioning.
@@ -180,12 +180,12 @@ public class FileProvisioning {
 
     /**
      * This method downloads both local and remote files into the working directory
+     *
      * @param targetPath path for target file
-     * @param localPath the absolute path where we will download files to
-     * @param pathInfo additional information on the type of file
+     * @param localPath  the absolute path where we will download files to
+     * @param pathInfo   additional information on the type of file
      */
-    public void provisionInputFile(String targetPath, Path localPath,
-            PathInfo pathInfo) {
+    public void provisionInputFile(String targetPath, Path localPath, PathInfo pathInfo) {
 
         Path potentialCachedFile = null;
         final boolean useCache = isCacheOn(config);
@@ -224,27 +224,27 @@ public class FileProvisioning {
         if (pathInfo.isObjectIdType()) {
             String objectId = pathInfo.getObjectId();
             this.downloadFromDccStorage(objectId, localPath.getParent().toFile().getAbsolutePath(), localPath.toFile().getAbsolutePath());
-        } else if (targetPath.startsWith("syn")){
+        } else if (targetPath.startsWith("syn")) {
             this.downloadFromSynapse(targetPath, localPath.toFile().getAbsolutePath());
         } else if (targetPath.startsWith("s3://")) {
             this.downloadFromS3(targetPath, localPath.toFile().getAbsolutePath());
         } else if (!pathInfo.isLocalFileType()) {
             this.downloadFromHttp(targetPath, localPath.toFile().getAbsolutePath());
         } else {
-            assert(pathInfo.isLocalFileType());
+            assert (pathInfo.isLocalFileType());
             // hard link into target location
             Path actualTargetPath = null;
             try {
                 String workingDir = System.getProperty("user.dir");
-                if (targetPath.startsWith("/")){
+                if (targetPath.startsWith("/")) {
                     // absolute path
                     actualTargetPath = Paths.get(targetPath);
-                } else{
+                } else {
                     // relative path
-                    actualTargetPath =  Paths.get(workingDir, targetPath);
+                    actualTargetPath = Paths.get(workingDir, targetPath);
                 }
                 // create needed directories
-                if(!localPath.toFile().getParentFile().mkdirs()){
+                if (!localPath.toFile().getParentFile().mkdirs()) {
                     throw new IOException("Could not create " + localPath);
                 }
                 // create link
@@ -279,18 +279,18 @@ public class FileProvisioning {
     }
 
     public static String getCacheDirectory(INIConfiguration config) {
-        return config
-                .getString("cache-dir", System.getProperty("user.home") + File.separator + ".dockstore" + File.separator + "cache");
+        return config.getString("cache-dir", System.getProperty("user.home") + File.separator + ".dockstore" + File.separator + "cache");
     }
 
-    private static boolean isCacheOn(INIConfiguration config){
+    private static boolean isCacheOn(INIConfiguration config) {
         final String useCache = config.getString("use-cache", "false");
-        return useCache.equalsIgnoreCase("true") || useCache.equalsIgnoreCase("use") || useCache.equalsIgnoreCase("T");
+        return "true".equalsIgnoreCase(useCache) || "use".equalsIgnoreCase(useCache) || "T".equalsIgnoreCase(useCache);
     }
 
     /**
      * Copies files from srcPath to destPath
-     * @param srcPath source file
+     *
+     * @param srcPath  source file
      * @param destPath destination file
      */
     public void provisionOutputFile(String srcPath, String destPath) {
@@ -306,8 +306,10 @@ public class FileProvisioning {
             putObjectRequest.setGeneralProgressListener(new ProgressListener() {
                 ProgressPrinter printer = new ProgressPrinter();
                 long runningTotal = 0;
-                @Override public void progressChanged(ProgressEvent progressEvent) {
-                    if (progressEvent.getEventType() == ProgressEventType.REQUEST_BYTE_TRANSFER_EVENT){
+
+                @Override
+                public void progressChanged(ProgressEvent progressEvent) {
+                    if (progressEvent.getEventType() == ProgressEventType.REQUEST_BYTE_TRANSFER_EVENT) {
                         runningTotal += progressEvent.getBytesTransferred();
                     }
                     printer.handleProgress(runningTotal, inputSize);
@@ -315,7 +317,7 @@ public class FileProvisioning {
             });
             try {
                 s3Client.putObject(putObjectRequest);
-            } finally{
+            } finally {
                 System.out.println();
             }
         } else {
@@ -366,7 +368,7 @@ public class FileProvisioning {
             }
 
             builder.append("] ");
-            builder.append(percentage.setScale(0,BigDecimal.ROUND_HALF_EVEN).toPlainString()).append("%");
+            builder.append(percentage.setScale(0, BigDecimal.ROUND_HALF_EVEN).toPlainString()).append("%");
 
             System.out.print(builder);
             // track progress
@@ -381,18 +383,20 @@ public class FileProvisioning {
      * @param inputStream source
      * @param inputSize   total size
      * @param outputSteam destination
-     * @throws IOException  throws an exception if unable to provision input files
+     * @throws IOException throws an exception if unable to provision input files
      */
     private static void copyFromInputStreamToOutputStream(InputStream inputStream, long inputSize, OutputStream outputSteam)
             throws IOException {
         CopyStreamListener listener = new CopyStreamListener() {
             ProgressPrinter printer = new ProgressPrinter();
 
-            @Override public void bytesTransferred(CopyStreamEvent event) {
+            @Override
+            public void bytesTransferred(CopyStreamEvent event) {
                 /* do nothing */
             }
 
-            @Override public void bytesTransferred(long totalBytesTransferred, int bytesTransferred, long streamSize) {
+            @Override
+            public void bytesTransferred(long totalBytesTransferred, int bytesTransferred, long streamSize) {
                 printer.handleProgress(totalBytesTransferred, streamSize);
             }
         };

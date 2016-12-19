@@ -18,13 +18,13 @@ package io.dockstore.common;
 
 /**
  * This enumerates the types of docker registry that we can associate an entry with.
- * 
+ *
  * @author dyuen
  */
 public enum Registry {
     // Add new registries here
-    QUAY_IO("quay.io", "Quay.io", "https://quay.io/repository/"), DOCKER_HUB("registry.hub.docker.com", "Docker Hub", "https://hub.docker.com/"),
-    GITLAB("registry.gitlab.com", "GitLab", "https://gitlab.com/");
+    QUAY_IO("quay.io", "Quay.io", "https://quay.io/repository/"), DOCKER_HUB("registry.hub.docker.com", "Docker Hub",
+            "https://hub.docker.com/"), GITLAB("registry.gitlab.com", "GitLab", "https://gitlab.com/");
 
     /**
      * this name is what is actually used in commands like docker pull

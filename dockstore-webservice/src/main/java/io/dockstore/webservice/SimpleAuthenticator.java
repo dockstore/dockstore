@@ -16,6 +16,8 @@
 
 package io.dockstore.webservice;
 
+import java.util.Optional;
+
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -26,10 +28,7 @@ import io.dropwizard.hibernate.UnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Optional;
-
 /**
- *
  * @author xliu
  */
 public class SimpleAuthenticator implements Authenticator<String, User> {

@@ -16,12 +16,10 @@
 
 package io.dockstore.webservice.jdbi;
 
+import io.dockstore.webservice.core.WorkflowVersion;
 import org.hibernate.SessionFactory;
 
-import io.dockstore.webservice.core.WorkflowVersion;
-
 /**
- *
  * @author dyuen
  */
 public class WorkflowVersionDAO extends VersionDAO<WorkflowVersion> {

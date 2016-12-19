@@ -15,11 +15,6 @@
  */
 package io.swagger.api;
 
-import io.dockstore.webservice.DockstoreWebserviceApplication;
-import io.dropwizard.hibernate.UnitOfWork;
-import io.swagger.api.factories.MetadataApiServiceFactory;
-import io.swagger.model.Metadata;
-
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -27,17 +22,27 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 
+import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dropwizard.hibernate.UnitOfWork;
+import io.swagger.api.factories.MetadataApiServiceFactory;
+import io.swagger.model.Metadata;
+
 @Path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/metadata")
 
-@Produces({ "application/json",
-        "text/plain" }) @io.swagger.annotations.Api(description = "the metadata API") @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z") public class MetadataApi {
+@Produces({ "application/json", "text/plain" })
+@io.swagger.annotations.Api(description = "the metadata API")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
+public class MetadataApi {
     private final MetadataApiService delegate = MetadataApiServiceFactory.getMetadataApi();
 
-    @GET @UnitOfWork @Produces({ "application/json",
-            "text/plain" }) @io.swagger.annotations.ApiOperation(value = "Return some metadata that is useful for describing this registry", notes = "Return some metadata that is useful for describing this registry", response = Metadata.class, tags = {
-            "GA4GH", }) @io.swagger.annotations.ApiResponses(value = {
-            @io.swagger.annotations.ApiResponse(code = 200, message = "A Metadata object describing this service.", response = Metadata.class) }) public Response metadataGet(
-            @Context SecurityContext securityContext) throws NotFoundException {
+    @GET
+    @UnitOfWork
+    @Produces({ "application/json", "text/plain" })
+    @io.swagger.annotations.ApiOperation(value = "Return some metadata that is useful for describing this registry", notes = "Return some metadata that is useful for describing this registry", response = Metadata.class, tags = {
+            "GA4GH", })
+    @io.swagger.annotations.ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "A Metadata object describing this service.", response = Metadata.class) })
+    public Response metadataGet(@Context SecurityContext securityContext) throws NotFoundException {
         return delegate.metadataGet(securityContext);
     }
 }

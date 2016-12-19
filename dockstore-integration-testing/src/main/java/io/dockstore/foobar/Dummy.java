@@ -21,7 +21,7 @@ package io.dockstore.foobar;
  * Created by dyuen on 26/05/16.
  */
 public class Dummy {
-    public static void main(String[] args){
+    public static void main(String[] args) {
         System.out.println();
     }
 }

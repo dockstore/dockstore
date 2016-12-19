@@ -20,7 +20,7 @@ import io.swagger.annotations.ApiModel;
 
 /**
  * Enumerates the sources for access tokens for the dockstore
- * 
+ *
  * @author dyuen
  */
 @ApiModel(description = "Enumerates the sources for access tokens for the dockstore")

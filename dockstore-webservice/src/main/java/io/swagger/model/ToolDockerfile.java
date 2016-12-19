@@ -15,12 +15,12 @@
  */
 package io.swagger.model;
 
+import java.util.Objects;
+
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-
-import java.util.Objects;
 
 /**
  * A tool dockerfile is a document that describes how to build a particular Docker image.
@@ -29,7 +29,8 @@ import java.util.Objects;
 /**
  * A tool dockerfile is a document that describes how to build a particular Docker image.
  */
-@ApiModel(description = "A tool dockerfile is a document that describes how to build a particular Docker image.") @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
+@ApiModel(description = "A tool dockerfile is a document that describes how to build a particular Docker image.")
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
 @JsonNaming(PropertyNamingStrategy.KebabCaseStrategy.class)
 public class ToolDockerfile {
     private String dockerfile = null;
@@ -46,7 +47,8 @@ public class ToolDockerfile {
      *
      * @return dockerfile
      **/
-    @ApiModelProperty(required = true, value = "The dockerfile content for this tool.") public String getDockerfile() {
+    @ApiModelProperty(required = true, value = "The dockerfile content for this tool.")
+    public String getDockerfile() {
         return dockerfile;
     }
 
@@ -64,7 +66,8 @@ public class ToolDockerfile {
      *
      * @return url
      **/
-    @ApiModelProperty(value = "Optional url to the dockerfile used to build this image, should include version information, and can include a git hash  (e.g. https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/c83478829802b4d36374870843821abe1b625a71/delly_docker/Dockerfile )") public String getUrl() {
+    @ApiModelProperty(value = "Optional url to the dockerfile used to build this image, should include version information, and can include a git hash  (e.g. https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/c83478829802b4d36374870843821abe1b625a71/delly_docker/Dockerfile )")
+    public String getUrl() {
         return url;
     }
 
@@ -72,22 +75,25 @@ public class ToolDockerfile {
         this.url = url;
     }
 
-    @Override public boolean equals(java.lang.Object o) {
+    @Override
+    public boolean equals(java.lang.Object o) {
         if (this == o) {
             return true;
         }
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        ToolDockerfile toolDockerfile = (ToolDockerfile) o;
+        ToolDockerfile toolDockerfile = (ToolDockerfile)o;
         return Objects.equals(this.dockerfile, toolDockerfile.dockerfile) && Objects.equals(this.url, toolDockerfile.url);
     }
 
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
         return Objects.hash(dockerfile, url);
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("class ToolDockerfile {\n");
 
@@ -106,6 +112,6 @@ public class ToolDockerfile {
             return "null";
         }
         return o.toString().replace("\n", "\n    ");
-  }
+    }
 }
 
