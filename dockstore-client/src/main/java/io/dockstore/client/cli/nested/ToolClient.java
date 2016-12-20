@@ -386,25 +386,37 @@ public class ToolClient extends AbstractEntryClient {
             }
 
             // Swagger does not fully copy the enum (leaves out properties), so we need to map Registry enum to RegistryEnum in DockstoreTool
-            DockstoreTool.RegistryEnum regEnum = getRegistryEnum(registry);
+            Optional<DockstoreTool.RegistryEnum> regEnum = getRegistryEnum(registry);
+
+            if (!regEnum.isPresent()) {
+                errorMessage("The registry that you entered does not exist. Run \'dockstore tool manual_publish\' to see valid registries.", Client.CLIENT_ERROR);
+            }
 
             DockstoreTool tool = new DockstoreTool();
             tool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
             tool.setName(name);
             tool.setNamespace(namespace);
-            tool.setRegistry(regEnum);
+            tool.setRegistry(regEnum.get());
 
             // Registry path used (ex. quay.io)
-            String registryPath;
+            Optional<String> registryPath;
 
             // If the registry requires a custom docker path we must use it instead of the default
             if (hasCustomDockerPath) {
-                registryPath = customDockerPath;
+                registryPath = Optional.of(customDockerPath);
             } else {
                 registryPath = getRegistryPath(registry);
             }
 
-            tool.setPath(Joiner.on("/").skipNulls().join(registryPath, namespace, name));
+            if (!registryPath.isPresent()) {
+                if (hasCustomDockerPath) {
+                    errorMessage("The registry path is unavailable.", Client.CLIENT_ERROR);
+                } else {
+                    errorMessage("The registry path is unavailable. Did you remember to enter a valid docker registry path and docker registry?", Client.CLIENT_ERROR);
+                }
+            }
+
+            tool.setPath(Joiner.on("/").skipNulls().join(registryPath.get(), namespace, name));
 
             tool.setDefaultDockerfilePath(dockerfilePath);
             tool.setDefaultCwlPath(cwlPath);
@@ -432,7 +444,7 @@ public class ToolClient extends AbstractEntryClient {
             }
 
             // Register new tool
-            final String fullName = Joiner.on("/").skipNulls().join(registryPath, namespace, name, toolname);
+            final String fullName = Joiner.on("/").skipNulls().join(registryPath.get(), namespace, name, toolname);
             try {
                 tool = containersApi.registerManual(tool);
                 if (tool != null) {
@@ -466,27 +478,37 @@ public class ToolClient extends AbstractEntryClient {
         }
     }
 
-    private DockstoreTool.RegistryEnum getRegistryEnum(String registry) {
+    /**
+     * Given a registry ENUM string, returns the matching registry enum
+     * @param registry
+     * @return An optional value of the registry enum
+     */
+    private Optional<DockstoreTool.RegistryEnum> getRegistryEnum(String registry) {
         for (DockstoreTool.RegistryEnum reg : DockstoreTool.RegistryEnum.values()) {
             if (registry.equals(reg.name())) {
-                return reg;
+                return Optional.of(reg);
             }
         }
-        return null;
+        return Optional.empty();
     }
 
-    private String getRegistryPath(String registry) {
+    /**
+     * Given a registry ENUM string, returns the default docker registry path
+     * @param registry
+     * @return An optional docker registry path
+     */
+    private Optional<String> getRegistryPath(String registry) {
         for (Registry r  : Registry.values()) {
             if (registry.equals(r.name())) {
                 if (r.hasCustomDockerPath()) {
-                    return null;
+                    return Optional.of(null);
                 } else {
-                    return r.toString();
+                    return Optional.of(r.toString());
                 }
             }
         }
 
-        return null;
+        return Optional.empty();
     }
 
     protected void refreshAllEntries() {
