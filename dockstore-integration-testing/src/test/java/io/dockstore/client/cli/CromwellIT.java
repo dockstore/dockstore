@@ -27,6 +27,8 @@ import io.dropwizard.testing.ResourceHelpers;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Test;
+
+import io.swagger.client.ApiException;
 import scala.collection.JavaConversions;
 import scala.collection.immutable.List;
 
@@ -54,7 +56,7 @@ public class CromwellIT {
     }
 
     @Test
-    public void runWDLWorkflow() throws IOException {
+    public void runWDLWorkflow() throws IOException, ApiException {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
         AbstractEntryClient main = new ToolClient(client, false);
@@ -66,7 +68,7 @@ public class CromwellIT {
     }
 
     @Test
-    public void failRunWDLWorkflow() throws IOException {
+    public void failRunWDLWorkflow() throws IOException, ApiException {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
         AbstractEntryClient main = new ToolClient(client, false);
@@ -78,7 +80,7 @@ public class CromwellIT {
     }
 
     @Test
-    public void fileProvisioning() throws IOException {
+    public void fileProvisioning() throws IOException, ApiException {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
         AbstractEntryClient main = new ToolClient(client, false);

@@ -87,12 +87,14 @@ import static io.dockstore.client.cli.ArgumentUtility.invalid;
 import static io.dockstore.client.cli.ArgumentUtility.optVal;
 import static io.dockstore.client.cli.ArgumentUtility.optVals;
 import static io.dockstore.client.cli.ArgumentUtility.out;
+import static io.dockstore.client.cli.ArgumentUtility.printLineBreak;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
 import static io.dockstore.client.cli.ArgumentUtility.reqVal;
 import static io.dockstore.client.cli.Client.API_ERROR;
 import static io.dockstore.client.cli.Client.CLIENT_ERROR;
 import static io.dockstore.client.cli.Client.IO_ERROR;
+import static io.dockstore.client.cli.Client.ENTRY_NOT_FOUND;
 import static io.dockstore.client.cli.Client.SCRIPT;
 
 /**
@@ -153,7 +155,7 @@ public abstract class AbstractEntryClient {
         out("  " + CWL_STRING + "              :  returns the Common Workflow Language " + getEntryType() + " definition for this entry");
         out("                      which enables integration with Global Alliance compliant systems");
         out("");
-        out("  " + WDL_STRING + "              :  returns the Workflow Descriptor Language definition for this Docker image.");
+        out("  " + WDL_STRING + "              :  returns the Workflow Descriptor Language definition for this Docker image");
         out("");
         out("  refresh          :  updates your list of " + getEntryType() + "s stored on Dockstore or an individual " + getEntryType());
         out("");
@@ -168,7 +170,7 @@ public abstract class AbstractEntryClient {
         if (isAdmin) {
             printAdminHelp();
         }
-        out("------------------");
+        printLineBreak();
         out("");
         out("Flags:");
         out("  --help               Print help information");
@@ -177,7 +179,7 @@ public abstract class AbstractEntryClient {
         out("                       Default: false");
         out("  --config <file>      Override config file");
         out("                       Default: ~/.dockstore/config");
-        out("  --script             Will not check Github for newer versions of Dockstore");
+        out("  --script             For usage with scripts. Will not check for updates to Dockstore CLI.");
         out("                       Default: false");
         printHelpFooter();
     }
@@ -642,8 +644,10 @@ public abstract class AbstractEntryClient {
                         classWfFound = true;
                     } else if(getEntryType().toLowerCase().equals("tool") && matchTool.find()){
                         classToolFound = true;
-                    } else if((getEntryType().toLowerCase().equals("tool") && matchWf.find()) || (getEntryType().toLowerCase().equals("workflow") && matchTool.find())){
-                        errorMessage("Entry type does not match the class specified in CWL file.",CLIENT_ERROR);
+                    } else if((getEntryType().toLowerCase().equals("tool") && matchWf.find())) {
+                        errorMessage("Expected a tool but the CWL file specified a workflow. Use 'dockstore workflow launch ...' instead.", CLIENT_ERROR);
+                    } else if (getEntryType().toLowerCase().equals("workflow") && matchTool.find()){
+                        errorMessage("Expected a workflow but the CWL file specified a tool. Use 'dockstore tool launch ...' instead.", CLIENT_ERROR);
                     }
                 }
             }
@@ -842,23 +846,32 @@ public abstract class AbstractEntryClient {
     /**
      * this function will check for the content and the extension of entry file
      * for launch simplification, trying to reduce the use '--descriptor' when launching
-     * @param entry relative path to local descriptor for either WDL/CWL tools or workflows
+     * @param localFilePath relative path to local descriptor for either WDL/CWL tools or workflows
      * this will either give back exceptionMessage and exit (if the content/extension/descriptor is invalid)
      * OR proceed with launching the entry file (if it's valid)
      */
-    public void checkEntryFile(String entry,List<String> argsList, String descriptor){
-        File file = new File(entry);
+    public void checkEntryFile(String localFilePath,List<String> argsList, String descriptor){
+        File file = new File(localFilePath);
         Type ext = checkFileExtension(file.getPath());     //file extension could be cwl,wdl or ""
+
+        if (!file.exists() || file.isDirectory()) {
+            if (getEntryType().toLowerCase().equals("tool")) {
+                errorMessage("The tool file " + file.getPath() + " does not exist. Did you mean to launch a remote tool or a workflow?", ENTRY_NOT_FOUND);
+            } else {
+                errorMessage("The workflow file " + file.getPath() + " does not exist. Did you mean to launch a remote workflow or a tool?", ENTRY_NOT_FOUND);
+            }
+        }
+
         Type content = checkFileContent(file);             //check the file content (wdl,cwl or "")
 
         if(ext.equals(Type.CWL)){
             if(content.equals(Type.CWL)) {
                 try {
-                    launchCwl(entry, argsList);
+                    launchCwl(localFilePath, argsList, true);
                 } catch (ApiException e) {
-                    exceptionMessage(e, "api error launching workflow", Client.API_ERROR);
+                    exceptionMessage(e, "API error launching entry", Client.API_ERROR);
                 } catch (IOException e) {
-                    exceptionMessage(e, "io error launching workflow", IO_ERROR);
+                    exceptionMessage(e, "IO error launching entry", IO_ERROR);
                 }
             }else if(!content.equals(Type.CWL) && descriptor==null){
                 //extension is cwl but the content is not cwl
@@ -868,13 +881,25 @@ public abstract class AbstractEntryClient {
             }else if(content.equals(Type.WDL) && descriptor.equals(WDL_STRING)) {
                 out("This is a WDL file.. Please put the correct extension to the entry file name.");
                 out("Launching entry file as a WDL file..");
-                launchWdl(argsList);
+                try {
+                    launchWdl(argsList, true);
+                } catch (ApiException e) {
+                    exceptionMessage(e, "API error launching entry", Client.API_ERROR);
+                } catch (IOException e) {
+                    exceptionMessage(e, "IO error launching entry", IO_ERROR);
+                }
             } else{
                 errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
             }
         }else if(ext.equals(Type.WDL)){
             if(content.equals(Type.WDL)){
-                launchWdl(entry, argsList);
+                try {
+                    launchWdl(localFilePath, argsList, true);
+                } catch (ApiException e) {
+                    exceptionMessage(e, "API error launching entry", Client.API_ERROR);
+                } catch (IOException e) {
+                    exceptionMessage(e, "IO error launching entry", IO_ERROR);
+                }
             }else if(!content.equals(Type.WDL) && descriptor==null){
                 //extension is wdl but the content is not wdl
                 out("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end");
@@ -884,11 +909,11 @@ public abstract class AbstractEntryClient {
                 out("This is a CWL file.. Please put the correct extension to the entry file name.");
                 out("Launching entry file as a CWL file..");
                 try {
-                    launchCwl(entry, argsList);
+                    launchCwl(localFilePath, argsList, true);
                 } catch (ApiException e) {
-                    exceptionMessage(e, "api error launching workflow", Client.API_ERROR);
+                    exceptionMessage(e, "API error launching entry", Client.API_ERROR);
                 } catch (IOException e) {
-                    exceptionMessage(e, "io error launching workflow", IO_ERROR);
+                    exceptionMessage(e, "IO error launching entry", IO_ERROR);
                 }
             } else{
                 errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
@@ -899,16 +924,22 @@ public abstract class AbstractEntryClient {
                 out("This is a CWL file.. Please put an extension to the entry file name.");
                 out("Launching entry file as a CWL file..");
                 try {
-                    launchCwl(entry, argsList);
+                    launchCwl(localFilePath, argsList, true);
                 } catch (ApiException e) {
-                    exceptionMessage(e, "api error launching workflow", Client.API_ERROR);
+                    exceptionMessage(e, "API error launching entry", Client.API_ERROR);
                 } catch (IOException e) {
-                    exceptionMessage(e, "io error launching workflow", IO_ERROR);
+                    exceptionMessage(e, "IO error launching entry", IO_ERROR);
                 }
             }else if(content.equals(Type.WDL)){
                 out("This is a WDL file.. Please put an extension to the entry file name.");
                 out("Launching entry file as a WDL file..");
-                launchWdl(entry, argsList);
+                try {
+                    launchWdl(localFilePath, argsList, true);
+                } catch (ApiException e) {
+                    exceptionMessage(e, "API error launching entry", Client.API_ERROR);
+                } catch (IOException e) {
+                    exceptionMessage(e, "IO error launching entry", IO_ERROR);
+                }
             } else{
                 errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
             }
@@ -924,39 +955,42 @@ public abstract class AbstractEntryClient {
         if (args.isEmpty() || containsHelpRequest(args)) {
             launchHelp();
         } else {
-            if (args.contains("--local-entry")) {
+            if (args.contains("--local-entry") && args.contains("--entry")) {
+                errorMessage("You can only use one of --local-entry and --entry at a time. Please use --help for more information.", CLIENT_ERROR);
+            } else if (args.contains("--local-entry")) {
                 final String descriptor = optVal(args, "--descriptor", null);
-                final String entry = reqVal(args, "--entry");
-                checkEntryFile(entry,args, descriptor);
-            }else{
+                final String localFilePath = reqVal(args, "--local-entry");
+                checkEntryFile(localFilePath, args, descriptor);
+            } else{
                 final String descriptor = optVal(args, "--descriptor", CWL_STRING);
                 if (descriptor.equals(CWL_STRING)) {
                     try {
-                        launchCwl(args);
+                        launchCwl(args, false);
                     } catch (ApiException e) {
-                        exceptionMessage(e, "api error launching workflow", Client.API_ERROR);
+                        exceptionMessage(e, "API error launching workflow. Did you mean to use --local-entry instead of --entry?", Client.API_ERROR);
                     } catch (IOException e) {
-                        exceptionMessage(e, "io error launching workflow", IO_ERROR);
+                        exceptionMessage(e, "IO error launching workflow. Did you mean to use --local-entry instead of --entry?", Client.IO_ERROR);
                     }
                 } else if (descriptor.equals(WDL_STRING)) {
-                    launchWdl(args);
+                    try {
+                        launchWdl(args, false);
+                    } catch (ApiException e) {
+                        exceptionMessage(e, "API error launching workflow. Did you mean to use --local-entry instead of --entry?", Client.API_ERROR);
+                    } catch (IOException e) {
+                        exceptionMessage(e, "IO error launching workflow. Did you mean to use --local-entry instead of --entry?", Client.IO_ERROR);
+                    }
                 }
             }
 
         }
     }
 
-    private void launchCwl(final List<String> args) throws ApiException, IOException {
+    private void launchCwl(final List<String> args, boolean isLocalEntry) throws ApiException, IOException {
         String entry = reqVal(args, "--entry");
-        launchCwl(entry, args);
+        launchCwl(entry, args, isLocalEntry);
     }
 
-    private void launchCwl(String entry, final List<String> args) throws ApiException, IOException {
-        boolean isLocalEntry = false;
-        if (args.contains("--local-entry")) {
-            isLocalEntry = true;
-        }
-
+    private void launchCwl(String entry, final List<String> args, boolean isLocalEntry) throws ApiException, IOException {
         final String yamlRun = optVal(args, "--yaml", null);
         String jsonRun = optVal(args, "--json", null);
         final String csvRuns = optVal(args, "--tsv", null);
@@ -995,9 +1029,17 @@ public abstract class AbstractEntryClient {
         }
 
         if (!isLocalEntry) {
-            final SourceFile cwlFromServer = getDescriptorFromServer(entry, "cwl");
-            Files.write(cwlFromServer.getContent(), tempCWL, StandardCharsets.UTF_8);
-            downloadDescriptors(entry, "cwl", tempDir);
+            try {
+                final SourceFile cwlFromServer = getDescriptorFromServer(entry, "cwl");
+                Files.write(cwlFromServer.getContent(), tempCWL, StandardCharsets.UTF_8);
+                downloadDescriptors(entry, "cwl", tempDir);
+            } catch (ApiException e) {
+                if (getEntryType().toLowerCase().equals("tool")) {
+                    exceptionMessage(e, "The tool entry does not exist. Did you mean to launch a local tool or a workflow?", ENTRY_NOT_FOUND);
+                } else {
+                    exceptionMessage(e, "The workflow entry does not exist. Did you mean to launch a local workflow or a tool?", ENTRY_NOT_FOUND);
+                }
+            }
         }
         jsonRun = convertYamlToJson(yamlRun, jsonRun);
 
@@ -1097,16 +1139,12 @@ public abstract class AbstractEntryClient {
         return jsonRun;
     }
 
-    private void launchWdl(final List<String> args) {
+    private void launchWdl(final List<String> args, boolean isLocalEntry) throws IOException, ApiException {
         final String entry = reqVal(args, "--entry");
-        launchWdl(entry, args);
+        launchWdl(entry, args, isLocalEntry);
     }
 
-    private void launchWdl(String entry, final List<String> args) {
-        boolean isLocalEntry = false;
-        if (args.contains("--local-entry")) {
-            isLocalEntry = true;
-        }
+    private void launchWdl(String entry, final List<String> args, boolean isLocalEntry) throws IOException, ApiException {
         final String json = reqVal(args, "--json");
         final String wdlOutputTarget = optVal(args, "--wdl-output-target", null);
 
@@ -1115,13 +1153,13 @@ public abstract class AbstractEntryClient {
 
     /**
      *
-     * @param entry file path for tthe wdl file or a dockstore id
+     * @param entry file path for the wdl file or a dockstore id
      * @param isLocalEntry
      * @param json file path for the json parameter file
      * @param wdlOutputTarget
      * @return an exit code for the run
      */
-    public long launchWdlInternal(String entry, boolean isLocalEntry, String json, String wdlOutputTarget) {
+    public long launchWdlInternal(String entry, boolean isLocalEntry, String json, String wdlOutputTarget) throws IOException, ApiException {
 
         File parameterFile = new File(json);
 
@@ -1246,7 +1284,11 @@ public abstract class AbstractEntryClient {
                 System.out.println("Output files left in place");
             }
         } catch (ApiException ex) {
-            exceptionMessage(ex, "", API_ERROR);
+            if (getEntryType().toLowerCase().equals("tool")) {
+                exceptionMessage(ex, "The tool entry does not exist. Did you mean to launch a local tool or a workflow?", ENTRY_NOT_FOUND);
+            } else {
+                exceptionMessage(ex, "The workflow entry does not exist. Did you mean to launch a local workflow or a tool?", ENTRY_NOT_FOUND);
+            }
         } catch (IOException ex) {
             exceptionMessage(ex, "", IO_ERROR);
         }
@@ -1373,8 +1415,8 @@ public abstract class AbstractEntryClient {
         out("  Publish/unpublish a registered " + getEntryType() + ".");
         out("  No arguments will list the current and potential " + getEntryType() + "s to share.");
         out("Optional Parameters:");
-        out("  --entry <entry>             Complete " + getEntryType() + " path in the Dockstore");
-        out("  --entryname <" + getEntryType() + "name>       " + getEntryType() + "name of new entry");
+        out("  --entry <entry>             Complete " + getEntryType() + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
+        out("  --entryname <" + getEntryType() + "name>      " + getEntryType() + "name of new entry");
         printHelpFooter();
     }
 
@@ -1384,7 +1426,7 @@ public abstract class AbstractEntryClient {
         out("       dockstore " + getEntryType().toLowerCase() + " list");
         out("");
         out("Description:");
-        out("  lists all the " + getEntryType() + " published by the user");
+        out("  lists all the " + getEntryType() + " published by the user.");
         printHelpFooter();
     }
 
@@ -1414,15 +1456,15 @@ public abstract class AbstractEntryClient {
         out("  Add or remove test parameter files from a given Dockstore " + getEntryType() + " version");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>                                                          Complete " + getEntryType() + " path in the Dockstore");
-        out("  --version <version>                                                      " + getEntryType() + " version name.");
+        out("  --entry <entry>                                                          Complete " + getEntryType() + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
+        out("  --version <version>                                                      " + getEntryType() + " version name");
         if (getEntryType().toLowerCase().equals("tool")) {
             out("  --descriptor-type <descriptor-type>                                      CWL/WDL");
         }
         out("");
         out("Optional Parameters:");
-        out("  --add <test parameter file> (--add <test parameter file>)               Path in Git repository of test parameter file(s) to add.");
-        out("  --remove <test parameter file> (--remove <test parameter file>)         Path in Git repository of test parameter file(s) to remove.");
+        out("  --add <test parameter file> (--add <test parameter file>)               Path in Git repository of test parameter file(s) to add");
+        out("  --remove <test parameter file> (--remove <test parameter file>)         Path in Git repository of test parameter file(s) to remove");
         printHelpFooter();
     }
 
@@ -1432,10 +1474,10 @@ public abstract class AbstractEntryClient {
         out("       dockstore " + getEntryType().toLowerCase() + " info [parameters]");
         out("");
         out("Description:");
-        out("  Get information related to a published " + getEntryType());
+        out("  Get information related to a published " + getEntryType() + ".");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>     The complete " + getEntryType() + " path in the Dockstore.");
+        out("  --entry <entry>     The complete " + getEntryType() + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
         printHelpFooter();
     }
 
@@ -1445,11 +1487,11 @@ public abstract class AbstractEntryClient {
         out("       dockstore " + getEntryType().toLowerCase() + " " + descriptorType + " [parameters]");
         out("");
         out("Description:");
-        out("  Grab a " + descriptorType + " document for a particular entry");
+        out("  Grab a " + descriptorType.toUpperCase() + " document for a particular entry.");
         out("");
         out("Required parameters:");
         out("  --entry <entry>              Complete " + getEntryType()
-                + " path in the Dockstore ex: quay.io/collaboratory/seqware-bwa-workflow:develop ");
+                + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow:develop)");
         printHelpFooter();
     }
 
@@ -1463,7 +1505,7 @@ public abstract class AbstractEntryClient {
         out("  Refresh an individual " + getEntryType() + " or all your " + getEntryType() + ".");
         out("");
         out("Optional Parameters:");
-        out("  --entry <entry>         Complete tool path in the Dockstore");
+        out("  --entry <entry>         Complete tool path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
         printHelpFooter();
     }
 
@@ -1476,7 +1518,7 @@ public abstract class AbstractEntryClient {
         out("  Search for published " + getEntryType() + " on Dockstore.");
         out("");
         out("Required Parameters:");
-        out("  --pattern <pattern>         Pattern to search Dockstore with.");
+        out("  --pattern <pattern>         Pattern to search Dockstore with");
         printHelpFooter();
     }
 
@@ -1542,7 +1584,7 @@ public abstract class AbstractEntryClient {
         out("  Spit out a tsv run file for a given cwl document.");
         out("");
         out("Required parameters:");
-        out("  --entry <entry>                Complete " + getEntryType().toLowerCase() + " path in the Dockstore");
+        out("  --entry <entry>                Complete " + getEntryType().toLowerCase() + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow:develop)");
         printHelpFooter();
     }
 
@@ -1555,7 +1597,7 @@ public abstract class AbstractEntryClient {
         out("  Spit out a json run file for a given cwl document.");
         out("");
         out("Required parameters:");
-        out("  --entry <entry>                Complete " + getEntryType().toLowerCase() + " path in the Dockstore");
+        out("  --entry <entry>                Complete " + getEntryType().toLowerCase() + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow:develop)");
         out("  --descriptor <descriptor>      Type of descriptor language used. Defaults to cwl");
         printHelpFooter();
     }
@@ -1569,7 +1611,9 @@ public abstract class AbstractEntryClient {
         out("  Launch an entry locally.");
         out("");
         out("Required parameters:");
-        out("  --entry <entry>                     Complete entry path in the Dockstore");
+        out("  --entry <entry>                     Complete entry path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow:develop)");
+        out("   OR");
+        out("  --local-entry <local-entry>         Allows you to specify a full path to a local descriptor instead of an entry path");
         out("");
         out("Optional parameters:");
         out("  --json <json file>                  Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs");
@@ -1591,7 +1635,7 @@ public abstract class AbstractEntryClient {
         out("  Verify/unverify a version.");
         out("");
         out("Required parameters:");
-        out("  --entry <entry>                              Complete entry path in the Dockstore");
+        out("  --entry <entry>                              Complete entry path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
         out("  --version <version>                          Version name");
         out("");
         out("Optional Parameters:");

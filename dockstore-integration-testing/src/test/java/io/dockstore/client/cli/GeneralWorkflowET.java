@@ -362,8 +362,48 @@ public class GeneralWorkflowET {
          */
         @Ignore
         public void testLocalLaunchCWL() {
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry", ResourceHelpers.resourceFilePath("filtercount.cwl.yaml") , "--json",
-                        ResourceHelpers.resourceFilePath("filtercount-job.json"), "--script", "--local-entry" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--local-entry", ResourceHelpers.resourceFilePath("filtercount.cwl.yaml") , "--json",
+                        ResourceHelpers.resourceFilePath("filtercount-job.json"), "--script" });
+        }
+
+        /**
+         * This tests that attempting to launch a workflow locally, where no file exists, an IOError will occur
+         */
+        @Test
+        public void testLocalLaunchCWLNoFile() {
+                systemExit.expectSystemExitWithStatus(Client.ENTRY_NOT_FOUND);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--local-entry", "imnotreal.cwl", "--json",
+                        "imnotreal-job.json", "--script" });
+        }
+
+        /**
+         * This tests that attempting to launch a WDL workflow locally, where no file exists, an IOError will occur
+         */
+        @Test
+        public void testLocalLaunchWDLNoFile() {
+                systemExit.expectSystemExitWithStatus(Client.ENTRY_NOT_FOUND);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--local-entry", "imnotreal.wdl", "--json",
+                        "imnotreal-job.json", "--descriptor", "wdl", "--script" });
+        }
+
+        /**
+         * This tests that attempting to launch a workflow remotely, where no file exists, an APIError will occur
+         */
+        @Test
+        public void testRemoteLaunchCWLNoFile() {
+                systemExit.expectSystemExitWithStatus(Client.ENTRY_NOT_FOUND);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry", "imnotreal.cwl", "--json",
+                        "imnotreal-job.json", "--script" });
+        }
+
+        /**
+         * This tests that attempting to launch a WDL workflow remotely, where no file exists, an APIError will occur
+         */
+        @Test
+        public void testRemoteLaunchWDLNoFile() {
+                systemExit.expectSystemExitWithStatus(Client.ENTRY_NOT_FOUND);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry", "imnotreal.wdl", "--json",
+                        "imnotreal-job.json", "--descriptor", "wdl", "--script" });
         }
 
         /**
@@ -371,8 +411,8 @@ public class GeneralWorkflowET {
          */
         @Test
         public void testLocalLaunchWDL() {
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry", ResourceHelpers.resourceFilePath("wdl.wdl") , "--json",
-                        ResourceHelpers.resourceFilePath("wdl.json"), "--descriptor", "wdl", "--script", "--local-entry" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--local-entry", ResourceHelpers.resourceFilePath("wdl.wdl") , "--json",
+                        ResourceHelpers.resourceFilePath("wdl.json"), "--descriptor", "wdl", "--script" });
         }
 
         /**
@@ -380,8 +420,8 @@ public class GeneralWorkflowET {
          */
         @Test
         public void testLocalLaunchWDLWithDir() {
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry", ResourceHelpers.resourceFilePath("directorytest.wdl") , "--json",
-                        ResourceHelpers.resourceFilePath("directorytest.json"), "--descriptor", "wdl", "--script", "--local-entry" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--local-entry", ResourceHelpers.resourceFilePath("directorytest.wdl") , "--json",
+                        ResourceHelpers.resourceFilePath("directorytest.json"), "--descriptor", "wdl", "--script" });
         }
 
         /**
@@ -390,8 +430,8 @@ public class GeneralWorkflowET {
          */
         @Ignore
         public void testLocalLaunchWDLImportHTTP() {
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry", ResourceHelpers.resourceFilePath("wdlhttpimport.wdl") , "--json",
-                        ResourceHelpers.resourceFilePath("wdlhttp.json"), "--descriptor", "wdl", "--script", "--local-entry" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--local-entry", ResourceHelpers.resourceFilePath("wdlhttpimport.wdl") , "--json",
+                        ResourceHelpers.resourceFilePath("wdlhttp.json"), "--descriptor", "wdl", "--script" });
         }
 
         /**
@@ -401,8 +441,8 @@ public class GeneralWorkflowET {
         public void testLocalLaunchWDLImportIncorrectHTTP() {
                 systemExit.expectSystemExitWithStatus(1);
 
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry", ResourceHelpers.resourceFilePath("wdlincorrecthttp.wdl") , "--json",
-                        ResourceHelpers.resourceFilePath("wdl.json"), "--descriptor", "wdl", "--script", "--local-entry" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--local-entry", ResourceHelpers.resourceFilePath("wdlincorrecthttp.wdl") , "--json",
+                        ResourceHelpers.resourceFilePath("wdl.json"), "--descriptor", "wdl", "--script" });
         }
 
         @Test

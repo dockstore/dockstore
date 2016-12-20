@@ -346,6 +346,15 @@
         <dropColumn tableName="workflow" columnName="defaulttestparameterfile"></dropColumn>
     </changeSet>
 
+    <changeSet id="removemailto" author="agduncan" context="removes_mail_to_from_existing_entries">
+        <sql dbms="postgresql">
+            update tool set email = replace(email, 'mailto:', '');
+        </sql>
+        <sql dbms="postgresql">
+            update workflow set email = replace(email, 'mailto:', '');
+        </sql>
+    </changeSet>
+
     <changeSet id="privatetools" author="agduncan" context="adds_private_tools">
         <addColumn tableName="tool">
             <column name="privateaccess" type="boolean"></column>

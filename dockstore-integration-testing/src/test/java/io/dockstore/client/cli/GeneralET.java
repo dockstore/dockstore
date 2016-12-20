@@ -517,8 +517,8 @@ public class GeneralET {
          */
         @Test
         public void testLocalLaunchCWL() {
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "launch", "--entry",
-                        ResourceHelpers.resourceFilePath("arrays.cwl") , "--json", ResourceHelpers.resourceFilePath("testArrayHttpInputLocalOutput.json"), "--script", "--local-entry" });
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "launch", "--local-entry",
+                        ResourceHelpers.resourceFilePath("arrays.cwl") , "--json", ResourceHelpers.resourceFilePath("testArrayHttpInputLocalOutput.json"), "--script" });
         }
 
         /**
@@ -600,4 +600,43 @@ public class GeneralET {
                 assertTrue("the cwl path should be changed to /test1/Dockerfile", path.equals("/test1/Dockerfile"));
         }
 
+    /**
+     * This tests that attempting to launch a CWL tool locally, where no file exists, an IOError will occur
+     */
+    @Test
+    public void testLocalLaunchCWLNoFile() {
+        systemExit.expectSystemExitWithStatus(Client.ENTRY_NOT_FOUND);
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "launch", "--local-entry", "imnotreal.cwl", "--json",
+                "filtercount-job.json", "--script" });
+    }
+
+    /**
+     * This tests that attempting to launch a WDL tool locally, where no file exists, an IOError will occur
+     */
+    @Test
+    public void testLocalLaunchWDLNoFile() {
+        systemExit.expectSystemExitWithStatus(Client.ENTRY_NOT_FOUND);
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "launch", "--local-entry", "imnotreal.wdl", "--json",
+                "imnotreal-job.json", "--descriptor", "wdl", "--script" });
+    }
+
+    /**
+     * This tests that attempting to launch a CWL tool remotely, where no file exists, an APIError will occur
+     */
+    @Test
+    public void testRemoteLaunchCWLNoFile() {
+        systemExit.expectSystemExitWithStatus(Client.ENTRY_NOT_FOUND);
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "launch", "--entry", "imnotreal.cwl", "--json",
+                "imnotreal-job.json", "--script" });
+    }
+
+    /**
+     * This tests that attempting to launch a WDL tool remotely, where no file exists, an APIError will occur
+     */
+    @Test
+    public void testRemoteLaunchWDLNoFile() {
+        systemExit.expectSystemExitWithStatus(Client.ENTRY_NOT_FOUND);
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "launch", "--entry", "imnotreal.wdl", "--json",
+                "imnotreal-job.json", "--descriptor", "wdl", "--script" });
+    }
 }
