@@ -24,6 +24,7 @@ public final class Dummy {
     private Dummy() {
         // hide constructors for utility classes
     }
+
     public static void main(String[] args) {
         System.out.println();
     }

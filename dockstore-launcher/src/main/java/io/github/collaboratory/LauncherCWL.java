@@ -462,8 +462,9 @@ public class LauncherCWL {
 
         final String joined = Joiner.on(" ").join(command);
         System.out.println("Executing: " + joined);
-        final ImmutablePair<String, String> execute = Utilities.executeCommand(joined, MoreObjects.firstNonNull(localStdoutStream, System.out),
-                MoreObjects.firstNonNull(localStderrStream, System.err));
+        final ImmutablePair<String, String> execute = Utilities
+                .executeCommand(joined, MoreObjects.firstNonNull(localStdoutStream, System.out),
+                        MoreObjects.firstNonNull(localStderrStream, System.err));
         // mutate stderr and stdout into format for output
 
         String stdout = execute.getLeft().replaceAll("(?m)^", "\t");

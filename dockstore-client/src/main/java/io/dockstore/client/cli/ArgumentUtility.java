@@ -204,27 +204,24 @@ public final class ArgumentUtility {
         return containsHelp;
     }
 
+    public static void printLineBreak() {
+        out("---------------------------------------------");
+    }
+
     public static void printHelpHeader() {
         out("");
-        out("HELP FOR DOCKSTORE");
-        out("------------------");
+        out(" ____             _        _                 \n" + "|  _ \\  ___   ___| | _____| |_ ___  _ __ ___ \n"
+                + "| | | |/ _ \\ / __| |/ / __| __/ _ \\| '__/ _ \\\n" + "| |_| | (_) | (__|   <\\__ \\ || (_) | | |  __/\n"
+                + "|____/ \\___/ \\___|_|\\_\\___/\\__\\___/|_|  \\___|\n");
+        printLineBreak();
         out("See https://www.dockstore.org for more information");
         out("");
     }
 
     public static void printHelpFooter() {
         out("");
-        out("------------------");
+        printLineBreak();
         out("");
-    }
-
-    static boolean isHelp(List<String> args, boolean valOnEmpty) {
-        if (args.isEmpty()) {
-            return valOnEmpty;
-        }
-
-        String first = args.get(0);
-        return isHelpRequest(first);
     }
 
     public static void invalid(String cmd) {

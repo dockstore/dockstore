@@ -123,7 +123,9 @@ public abstract class SourceCodeRepoInterface {
                     String author = (String)map.get("foaf:name");
                     entry.setAuthor(author);
                     String email = (String)map.get("foaf:mbox");
-                    entry.setEmail(email);
+                    if (!Strings.isNullOrEmpty(email)) {
+                        entry.setEmail(email.replaceFirst("^mailto:", ""));
+                    }
                 } else {
                     LOG.info("Creator not found!");
                 }
@@ -139,7 +141,6 @@ public abstract class SourceCodeRepoInterface {
 
     /**
      * Default implementation that parses WDL content from an entry?
-     * TODO: does this belong here?
      *
      * @param entry   the source for the wdl content
      * @param content the actual wdl content

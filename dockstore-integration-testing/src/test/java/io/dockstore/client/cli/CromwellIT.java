@@ -31,6 +31,7 @@ import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.WDLFileProvisioning;
 import io.dropwizard.testing.ResourceHelpers;
+import io.swagger.client.ApiException;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -55,7 +56,7 @@ public class CromwellIT {
     }
 
     @Test
-    public void runWDLWorkflow() throws IOException {
+    public void runWDLWorkflow() throws IOException, ApiException {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
         AbstractEntryClient main = new ToolClient(client, false);
@@ -67,7 +68,7 @@ public class CromwellIT {
     }
 
     @Test
-    public void failRunWDLWorkflow() throws IOException {
+    public void failRunWDLWorkflow() throws IOException, ApiException {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
         AbstractEntryClient main = new ToolClient(client, false);
@@ -79,7 +80,7 @@ public class CromwellIT {
     }
 
     @Test
-    public void fileProvisioning() throws IOException {
+    public void fileProvisioning() throws IOException, ApiException {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
         AbstractEntryClient main = new ToolClient(client, false);
