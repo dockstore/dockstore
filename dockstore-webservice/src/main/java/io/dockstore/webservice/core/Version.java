@@ -73,10 +73,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @ApiModelProperty("Cached files for each version. Includes Dockerfile and Descriptor files")
     private final Set<SourceFile> sourceFiles;
 
-    public Version() {
-        sourceFiles = new HashSet<>(0);
-    }
-
     @Column
     @ApiModelProperty("Implementation specific, whether this row is visible to other users aside from the owner")
     private boolean hidden;
@@ -99,6 +95,10 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @Column
     @ApiModelProperty("Verified source for the version")
     private String verifiedSource;
+
+    public Version() {
+        sourceFiles = new HashSet<>(0);
+    }
 
     public boolean isVerified() {
         return verified;

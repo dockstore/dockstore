@@ -97,11 +97,6 @@ public abstract class Entry<S extends Entry, T extends Version> {
     @ApiModelProperty(value = "This is a link to the associated repo with a descriptor, required GA4GH", required = true)
     private String gitUrl;
 
-    @JsonProperty
-    public String getAuthor() {
-        return author;
-    }
-
     public Entry() {
         users = new HashSet<>(0);
     }
@@ -109,6 +104,11 @@ public abstract class Entry<S extends Entry, T extends Version> {
     public Entry(long id) {
         this.id = id;
         users = new HashSet<>(0);
+    }
+
+    @JsonProperty
+    public String getAuthor() {
+        return author;
     }
 
     @JsonProperty

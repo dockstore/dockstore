@@ -141,6 +141,7 @@ public class GitHubRepoResource {
      * @param repo
      * @deprecated this looks like it looks at invalid collab.json
      */
+    @Deprecated
     private void checkAndAddRepoToBuilder(StringBuilder builder, ContentsService cService, Repository repo) {
         try {
             List<RepositoryContents> contents = cService.getContents(repo, "collab.json");

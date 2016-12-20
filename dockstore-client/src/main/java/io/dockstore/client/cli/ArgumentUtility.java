@@ -39,6 +39,10 @@ public final class ArgumentUtility {
     public static final String GIT_HEADER = "Git Repo";
     public static final int MAX_DESCRIPTION = 50;
 
+    private ArgumentUtility() {
+        // hide the constructor for utility classes
+    }
+
     public static void out(String format, Object... args) {
         System.out.println(String.format(format, args));
     }
@@ -248,9 +252,6 @@ public final class ArgumentUtility {
         return found;
     }
 
-    static class Kill extends RuntimeException {
-    }
-
     public static String getGitRegistry(String gitUrl) {
         if (gitUrl.contains("bitbucket")) {
             return "bitbucket";
@@ -261,6 +262,9 @@ public final class ArgumentUtility {
         } else {
             return null;
         }
+    }
+
+    static class Kill extends RuntimeException {
     }
 
 }

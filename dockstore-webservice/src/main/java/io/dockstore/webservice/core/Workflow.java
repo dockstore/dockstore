@@ -98,16 +98,16 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         workflowVersions = new TreeSet<>();
     }
 
-    @Override
-    public Set<WorkflowVersion> getVersions() {
-        return workflowVersions;
-    }
-
     public Workflow(long id, String workflowName) {
         super(id);
         // this.userId = userId;
         this.workflowName = workflowName;
         workflowVersions = new TreeSet<>();
+    }
+
+    @Override
+    public Set<WorkflowVersion> getVersions() {
+        return workflowVersions;
     }
 
     /**

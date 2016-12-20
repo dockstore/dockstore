@@ -54,9 +54,8 @@ import org.yaml.snakeyaml.Yaml;
  * Created by aduncan on 14/10/16.
  */
 public class DAGHelper {
-    private final ToolDAO toolDAO;
-
     private static final Logger LOG = LoggerFactory.getLogger(DAGHelper.class);
+    private final ToolDAO toolDAO;
 
     public DAGHelper(final ToolDAO toolDAO) {
         this.toolDAO = toolDAO;

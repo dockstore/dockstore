@@ -30,9 +30,13 @@ import org.slf4j.LoggerFactory;
 /**
  * @author dyuen
  */
-public class SourceCodeRepoFactory {
+public final class SourceCodeRepoFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(SourceCodeRepoFactory.class);
+
+    private SourceCodeRepoFactory() {
+        // hide the constructor for utility classes
+    }
 
     public static SourceCodeRepoInterface createSourceCodeRepo(String gitUrl, HttpClient client, String bitbucketTokenContent,
             String gitlabTokenContent, String githubTokenContent) {

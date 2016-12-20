@@ -336,6 +336,39 @@ public class FileProvisioning {
         }
     }
 
+    /**
+     * Copy from stream to stream while displaying progress
+     *
+     * @param inputStream source
+     * @param inputSize   total size
+     * @param outputSteam destination
+     * @throws IOException throws an exception if unable to provision input files
+     */
+    private static void copyFromInputStreamToOutputStream(InputStream inputStream, long inputSize, OutputStream outputSteam)
+            throws IOException {
+        CopyStreamListener listener = new CopyStreamListener() {
+            ProgressPrinter printer = new ProgressPrinter();
+
+            @Override
+            public void bytesTransferred(CopyStreamEvent event) {
+                /* do nothing */
+            }
+
+            @Override
+            public void bytesTransferred(long totalBytesTransferred, int bytesTransferred, long streamSize) {
+                printer.handleProgress(totalBytesTransferred, streamSize);
+            }
+        };
+        try (OutputStream outputStream = outputSteam) {
+            Util.copyStream(inputStream, outputStream, Util.DEFAULT_COPY_BUFFER_SIZE, inputSize, listener);
+        } catch (IOException e) {
+            throw new RuntimeException("Could not provision input files", e);
+        } finally {
+            IOUtils.closeQuietly(inputStream);
+            System.out.println();
+        }
+    }
+
     private static class ProgressPrinter {
         static final int SIZE_OF_PROGRESS_BAR = 50;
         boolean printedBefore = false;
@@ -377,53 +410,13 @@ public class FileProvisioning {
         }
     }
 
-    /**
-     * Copy from stream to stream while displaying progress
-     *
-     * @param inputStream source
-     * @param inputSize   total size
-     * @param outputSteam destination
-     * @throws IOException throws an exception if unable to provision input files
-     */
-    private static void copyFromInputStreamToOutputStream(InputStream inputStream, long inputSize, OutputStream outputSteam)
-            throws IOException {
-        CopyStreamListener listener = new CopyStreamListener() {
-            ProgressPrinter printer = new ProgressPrinter();
-
-            @Override
-            public void bytesTransferred(CopyStreamEvent event) {
-                /* do nothing */
-            }
-
-            @Override
-            public void bytesTransferred(long totalBytesTransferred, int bytesTransferred, long streamSize) {
-                printer.handleProgress(totalBytesTransferred, streamSize);
-            }
-        };
-        try (OutputStream outputStream = outputSteam) {
-            Util.copyStream(inputStream, outputStream, Util.DEFAULT_COPY_BUFFER_SIZE, inputSize, listener);
-        } catch (IOException e) {
-            throw new RuntimeException("Could not provision input files", e);
-        } finally {
-            IOUtils.closeQuietly(inputStream);
-            System.out.println();
-        }
-    }
-
     public static class PathInfo {
-        private static final Logger LOG = LoggerFactory.getLogger(PathInfo.class);
         static final String DCC_STORAGE_SCHEME = "icgc";
+
+        private static final Logger LOG = LoggerFactory.getLogger(PathInfo.class);
         private boolean objectIdType;
         private String objectId = "";
         private boolean localFileType = false;
-
-        boolean isObjectIdType() {
-            return objectIdType;
-        }
-
-        String getObjectId() {
-            return objectId;
-        }
 
         public PathInfo(String path) {
             try {
@@ -440,6 +433,14 @@ public class FileProvisioning {
                 LOG.info("Invalid or local path specified for CWL pre-processor values: " + path);
                 objectIdType = false;
             }
+        }
+
+        boolean isObjectIdType() {
+            return objectIdType;
+        }
+
+        String getObjectId() {
+            return objectId;
         }
 
         boolean isLocalFileType() {

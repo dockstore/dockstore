@@ -32,8 +32,9 @@ import org.slf4j.LoggerFactory;
  * @author xliu
  */
 public class SimpleAuthenticator implements Authenticator<String, User> {
-    private final TokenDAO dao;
     private static final Logger LOG = LoggerFactory.getLogger(SimpleAuthenticator.class);
+
+    private final TokenDAO dao;
     private final UserDAO userDAO;
 
     public SimpleAuthenticator(TokenDAO dao, UserDAO userDAO) {

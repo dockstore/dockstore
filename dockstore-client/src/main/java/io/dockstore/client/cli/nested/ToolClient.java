@@ -1053,6 +1053,13 @@ public class ToolClient extends AbstractEntryClient {
         printHelpFooter();
     }
 
+    private static void printRegistriesAvailable() {
+        out("The available Docker Registries are:");
+        for (Registry r : Registry.values()) {
+            out(" *" + r.toString());
+        }
+    }
+
     private static class ToolComparator implements Comparator<DockstoreTool> {
         @Override
         public int compare(DockstoreTool c1, DockstoreTool c2) {
@@ -1060,13 +1067,6 @@ public class ToolClient extends AbstractEntryClient {
             String path2 = c2.getPath();
 
             return path1.compareToIgnoreCase(path2);
-        }
-    }
-
-    private static void printRegistriesAvailable() {
-        out("The available Docker Registries are:");
-        for (Registry r : Registry.values()) {
-            out(" *" + r.toString());
         }
     }
 }

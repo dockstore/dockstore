@@ -85,6 +85,9 @@ import org.slf4j.LoggerFactory;
 @Produces(MediaType.APPLICATION_JSON)
 public class DockerRepoResource {
 
+    private static final String TARGET_URL = "https://quay.io/api/v1/";
+    private static final Logger LOG = LoggerFactory.getLogger(DockerRepoResource.class);
+
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
     private final ToolDAO toolDAO;
@@ -92,17 +95,10 @@ public class DockerRepoResource {
     private final LabelDAO labelDAO;
     private final FileDAO fileDAO;
     private final HttpClient client;
-
     private final String bitbucketClientID;
     private final String bitbucketClientSecret;
-
     private final EntryVersionHelper<Tool> entryVersionHelper;
-
-    private static final String TARGET_URL = "https://quay.io/api/v1/";
-
     private final ObjectMapper objectMapper;
-
-    private static final Logger LOG = LoggerFactory.getLogger(DockerRepoResource.class);
 
     @SuppressWarnings("checkstyle:parameternumber")
     public DockerRepoResource(ObjectMapper mapper, HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ToolDAO toolDAO, TagDAO tagDAO,
@@ -734,6 +730,24 @@ public class DockerRepoResource {
         }
     }
 
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/dockerRegistryList")
+    @ApiOperation(value = "Get the list of docker registries supported on Dockstore.", notes = "Does not need authentication", response = Map.class, responseContainer = "List")
+    public List<Map<String, String>> getTestParameterFiles() {
+        ArrayList<Map<String, String>> registryList = new ArrayList<>();
+        for (Registry r : Registry.values()) {
+            Map<String, String> registry = new HashMap<>();
+            registry.put("enum", r.name());
+            registry.put("friendlyName", r.getFriendlyName());
+            registry.put("dockerCommand", r.toString());
+            registry.put("url", r.getUrl());
+            registryList.add(registry);
+        }
+        return registryList;
+    }
+
     @PUT
     @Timed
     @UnitOfWork
@@ -825,23 +839,4 @@ public class DockerRepoResource {
 
         return tag.getSourceFiles();
     }
-
-    @GET
-    @Timed
-    @UnitOfWork
-    @Path("/dockerRegistryList")
-    @ApiOperation(value = "Get the list of docker registries supported on Dockstore.", notes = "Does not need authentication", response = Map.class, responseContainer = "List")
-    public List<Map<String, String>> getTestParameterFiles() {
-        ArrayList<Map<String, String>> registryList = new ArrayList<>();
-        for (Registry r : Registry.values()) {
-            Map<String, String> registry = new HashMap<>();
-            registry.put("enum", r.name());
-            registry.put("friendlyName", r.getFriendlyName());
-            registry.put("dockerCommand", r.toString());
-            registry.put("url", r.getUrl());
-            registryList.add(registry);
-        }
-        return registryList;
-    }
-
 }

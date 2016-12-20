@@ -59,11 +59,10 @@ import org.slf4j.LoggerFactory;
 @Api("containertags")
 @Produces(MediaType.APPLICATION_JSON)
 public class DockerRepoTagResource {
+    private static final Logger LOG = LoggerFactory.getLogger(DockerRepoTagResource.class);
 
     private final ToolDAO toolDAO;
     private final TagDAO tagDAO;
-
-    private static final Logger LOG = LoggerFactory.getLogger(DockerRepoTagResource.class);
 
     public DockerRepoTagResource(ToolDAO toolDAO, TagDAO tagDAO) {
         this.tagDAO = tagDAO;

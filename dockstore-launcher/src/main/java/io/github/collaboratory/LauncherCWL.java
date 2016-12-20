@@ -657,7 +657,7 @@ public class LauncherCWL {
                     return;
                 }
 
-                HashMap param = (HashMap)stringObjectEntry.getValue();
+                Map param = (HashMap)stringObjectEntry.getValue();
                 String path = (String)param.get("path");
                 if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
                     doProcessFile(stringObjectEntry.getKey(), path, cwlInputFileID, fileMap, secondaryFiles);
@@ -745,15 +745,6 @@ public class LauncherCWL {
         } catch (ParseException exp) {
             LOG.error("Unexpected exception:{}", exp.getMessage());
             throw new RuntimeException("Could not parse command-line", exp);
-        }
-    }
-
-    public static void main(String[] args) {
-        try {
-            final LauncherCWL launcherCWL = new LauncherCWL(args);
-            launcherCWL.run(CommandLineTool.class);
-        } catch (CWL.GsonBuildException ex) {
-            LOG.error("There was an error creating the CWL GSON instance.");
         }
     }
 

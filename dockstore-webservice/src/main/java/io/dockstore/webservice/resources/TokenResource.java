@@ -81,9 +81,6 @@ import org.slf4j.LoggerFactory;
 @Api(value = "/auth/tokens", tags = "tokens")
 @Produces(MediaType.APPLICATION_JSON)
 public class TokenResource {
-    private final TokenDAO tokenDAO;
-    private final UserDAO userDAO;
-
     /**
      * Global instance of the HTTP transport.
      */
@@ -97,6 +94,11 @@ public class TokenResource {
     private static final String QUAY_URL = "https://quay.io/api/v1/";
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
     private static final String GITLAB_URL = "https://gitlab.com/";
+    private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
+
+    private final TokenDAO tokenDAO;
+    private final UserDAO userDAO;
+
     private final String githubClientID;
     private final String githubClientSecret;
     private final String bitbucketClientID;
@@ -105,8 +107,6 @@ public class TokenResource {
     private final String gitlabRedirectUri;
     private final String gitlabClientSecret;
     private final HttpClient client;
-
-    private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
     private final CachingAuthenticator<String, User> cachingAuthenticator;
 
     @SuppressWarnings("checkstyle:parameternumber")

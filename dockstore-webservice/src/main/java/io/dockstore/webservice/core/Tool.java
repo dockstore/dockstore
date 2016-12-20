@@ -135,16 +135,16 @@ public class Tool extends Entry<Tool, Tag> {
         tags = new TreeSet<>();
     }
 
-    @Override
-    public Set<Tag> getVersions() {
-        return tags;
-    }
-
     public Tool(long id, String name) {
         super(id);
         // this.userId = userId;
         this.name = name;
         tags = new TreeSet<>();
+    }
+
+    @Override
+    public Set<Tag> getVersions() {
+        return tags;
     }
 
     /**

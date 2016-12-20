@@ -37,8 +37,12 @@ import org.slf4j.LoggerFactory;
 /**
  * @author dyuen
  */
-public class ResourceUtilities {
+public final class ResourceUtilities {
     private static final Logger LOG = LoggerFactory.getLogger(ResourceUtilities.class);
+
+    private ResourceUtilities() {
+        // hide the constructor for utility classes
+    }
 
     // from dropwizard example
     public static Optional<String> asString(String input, String token, HttpClient client) {

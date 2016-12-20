@@ -59,17 +59,8 @@ public final class Helper {
 
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
 
-    public static class RepoList {
-
-        private List<Tool> repositories;
-
-        public void setRepositories(List<Tool> repositories) {
-            this.repositories = repositories;
-        }
-
-        public List<Tool> getRepositories() {
-            return repositories;
-        }
+    private Helper() {
+        // hide the constructor for utility classes
     }
 
     public static void updateFiles(Tool tool, final HttpClient client, final FileDAO fileDAO, final Token githubToken,
@@ -535,6 +526,19 @@ public final class Helper {
         }
         if (quayToken == null) {
             LOG.info("WARNING: QUAY token not found!");
+        }
+    }
+
+    public static class RepoList {
+
+        private List<Tool> repositories;
+
+        public void setRepositories(List<Tool> repositories) {
+            this.repositories = repositories;
+        }
+
+        public List<Tool> getRepositories() {
+            return repositories;
         }
     }
 }

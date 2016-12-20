@@ -92,6 +92,8 @@ import org.slf4j.LoggerFactory;
 @Produces(MediaType.APPLICATION_JSON)
 public class WorkflowResource {
 
+    private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
+
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
     private final WorkflowDAO workflowDAO;
@@ -104,8 +106,6 @@ public class WorkflowResource {
     private final String bitbucketClientID;
     private final String bitbucketClientSecret;
     private final EntryVersionHelper<Workflow> entryVersionHelper;
-
-    private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
 
     public enum Type {
         DAG, TOOLS

@@ -109,11 +109,10 @@ import static io.dockstore.client.cli.Client.SCRIPT;
  * @author dyuen
  */
 public abstract class AbstractEntryClient {
-    private final CWL cwlUtil = new CWL();
-
-    private static final Logger LOG = LoggerFactory.getLogger(AbstractEntryClient.class);
     public static final String CROMWELL_LOCATION = "https://github.com/broadinstitute/cromwell/releases/download/0.21/cromwell-0.21.jar";
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractEntryClient.class);
     public boolean isAdmin = false;
+    private final CWL cwlUtil = new CWL();
 
     public enum Type {
         CWL("cwl"), WDL("wdl"), NONE("none");

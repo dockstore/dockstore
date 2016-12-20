@@ -47,10 +47,15 @@ import org.slf4j.LoggerFactory;
 /**
  * @author xliu
  */
-public class Utilities {
+public final class Utilities {
+
     private static final Map<String, ConfigurationBuilder<INIConfiguration>> MAP = new HashMap<>();
 
     private static final Logger LOG = LoggerFactory.getLogger(Utilities.class);
+
+    private Utilities() {
+        // hide the default constructor for a utility class
+    }
 
     /**
      * The singleton map os not entirely awesome, but this allows our legacy code to

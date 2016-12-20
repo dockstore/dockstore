@@ -63,13 +63,13 @@ public class Tag extends Version<Tag> {
     @ApiModelProperty("Path for the WDL document")
     private String wdlPath = "/Dockstore.wdl";
 
-    public Tag() {
-        super();
-    }
-
     @Column
     @ApiModelProperty("Implementation specific, indicates whether this is an automated build on quay.io")
     private boolean automated;
+
+    public Tag() {
+        super();
+    }
 
     public void updateByUser(final Tag tag) {
         super.updateByUser(tag);

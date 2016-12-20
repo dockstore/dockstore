@@ -88,17 +88,7 @@ import static io.dockstore.common.FileProvisioning.getCacheDirectory;
  */
 public class Client {
 
-    private static final Logger LOG = LoggerFactory.getLogger(Client.class);
-
-    private String configFile = null;
-    private ContainersApi containersApi;
-    private UsersApi usersApi;
-    private GAGHApi ga4ghApi;
-
-    private boolean isAdmin = false;
-
     public static final int PADDING = 3;
-
     public static final int GENERIC_ERROR = 1; // General error, not yet described by an error type
     public static final int CONNECTION_ERROR = 150; // Connection exception
     public static final int IO_ERROR = 3; // IO throws an exception
@@ -108,7 +98,16 @@ public class Client {
 
     public static final AtomicBoolean DEBUG = new AtomicBoolean(false);
     public static final AtomicBoolean SCRIPT = new AtomicBoolean(false);
+
+    private static final Logger LOG = LoggerFactory.getLogger(Client.class);
     private static ObjectMapper objectMapper;
+
+    private String configFile = null;
+    private ContainersApi containersApi;
+    private UsersApi usersApi;
+    private GAGHApi ga4ghApi;
+
+    private boolean isAdmin = false;
     private ToolClient toolClient;
     private WorkflowClient workflowClient;
 
@@ -179,7 +178,7 @@ public class Client {
                 }
             }
         } catch (IOException e) {
-            // e.printStackTrace();
+            LOG.error("Could not reach version from Dockstore script, e");
         }
         if (line == null) {
             errorMessage("Could not read version from Dockstore script", CLIENT_ERROR);
@@ -212,8 +211,10 @@ public class Client {
             return mapCur.get(info).toString();
 
         } catch (IOException e) {
+            // this indicates that we cannot read versions of dockstore from github
+            // and we should ignore rather than crash
+            return "null";
         }
-        return "null";
     }
 
     /**
@@ -233,9 +234,11 @@ public class Client {
                 mapRel = mapper.readValue(url, ct);
                 return mapRel;
             } catch (IOException e) {
+                LOG.debug("Could not read releases of Dockstore", e);
             }
 
         } catch (MalformedURLException e) {
+            LOG.debug("Could not read releases of Dockstore", e);
         }
         return null;
     }
@@ -304,10 +307,10 @@ public class Client {
                 return map.get("name").toString();
 
             } catch (IOException e) {
-                // e.printStackTrace();
+                LOG.debug("Could not read latest release of Dockstore from GitHub", e);
             }
         } catch (MalformedURLException e) {
-            // e.printStackTrace();
+            LOG.debug("Could not read latest release of Dockstore from GitHub", e);
         }
         return null;
     }
@@ -332,9 +335,11 @@ public class Client {
                 }
                 return false;
             } catch (IOException | NullPointerException e) {
+                LOG.debug("Could not read a release of Dockstore from GitHub", e);
             }
 
         } catch (MalformedURLException e) {
+            LOG.debug("Could not read a release of Dockstore from GitHub", e);
         }
         return false;
     }
@@ -520,7 +525,7 @@ public class Client {
                     try {
                         url = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/tags/" + currentVersion);
                     } catch (MalformedURLException e) {
-                        // e.printStackTrace();
+                        LOG.debug("Could not read a release of Dockstore from GitHub", e);
                     }
 
                     ObjectMapper mapper = getObjectMapper();
@@ -555,11 +560,11 @@ public class Client {
                                 }
                             }
                         } catch (ParseException e) {
-                            // e.printStackTrace();
+                            LOG.debug("Could not parse a release number of Dockstore from GitHub", e);
                         }
 
                     } catch (IOException e) {
-                        // e.printStackTrace();
+                        LOG.debug("Could not read a release of Dockstore from GitHub", e);
                     }
                 }
             }
@@ -805,6 +810,11 @@ public class Client {
         defaultApiClient.setDebugging(DEBUG.get());
     }
 
+    /**
+     * Used for integration testing
+     *
+     * @param argv arguments provided match usage in the dockstore script (i.e. tool launch ...)
+     */
     public static void main(String[] argv) {
         Client client = new Client();
         client.run(argv);

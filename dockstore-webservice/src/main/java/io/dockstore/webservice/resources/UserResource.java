@@ -65,12 +65,13 @@ import org.slf4j.LoggerFactory;
 @Api("/users")
 @Produces(MediaType.APPLICATION_JSON)
 public class UserResource {
+    private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
+
     private final HttpClient client;
     private final UserDAO userDAO;
     private final GroupDAO groupDAO;
     private final TokenDAO tokenDAO;
 
-    private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
     private final WorkflowResource workflowResource;
     private final DockerRepoResource dockerRepoResource;
 
@@ -152,6 +153,15 @@ public class UserResource {
             throw new CustomWebApplicationException("User not found.", HttpStatus.SC_BAD_REQUEST);
         }
         return user;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/user")
+    @ApiOperation(value = "Get the logged-in user", response = User.class)
+    public User getUser(@ApiParam(hidden = true) @Auth User user) {
+        return userDAO.findById(user.getId());
     }
 
     @GET
@@ -414,14 +424,5 @@ public class UserResource {
         // need to avoid lazy initialize error
         final User byId = this.userDAO.findById(userId);
         return FluentIterable.from(byId.getEntries()).filter(Tool.class).toList();
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork
-    @Path("/user")
-    @ApiOperation(value = "Get the logged-in user", response = User.class)
-    public User getUser(@ApiParam(hidden = true) @Auth User user) {
-        return userDAO.findById(user.getId());
     }
 }

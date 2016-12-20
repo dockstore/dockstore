@@ -95,17 +95,12 @@ import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_ORIGINS_PARAM
  * @author dyuen
  */
 public class DockstoreWebserviceApplication extends Application<DockstoreWebserviceConfiguration> {
-
-    private static final Logger LOG = LoggerFactory.getLogger(DockstoreWebserviceApplication.class);
     public static final String GA4GH_API_PATH = "/api/ga4gh/v1";
+    private static final Logger LOG = LoggerFactory.getLogger(DockstoreWebserviceApplication.class);
     private static final int BYTES_IN_KILOBYTE = 1024;
     private static final int KILOBYTES_IN_MEGABYTE = 1024;
     private static final int CACHE_IN_MB = 100;
     private static Cache cache = null;
-
-    public static void main(String[] args) throws Exception {
-        new DockstoreWebserviceApplication().run(args);
-    }
 
     private final HibernateBundle<DockstoreWebserviceConfiguration> hibernate = new HibernateBundle<DockstoreWebserviceConfiguration>(
             Token.class, Tool.class, User.class, Group.class, Tag.class, Label.class, SourceFile.class, Workflow.class,
@@ -115,6 +110,10 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             return configuration.getDataSourceFactory();
         }
     };
+
+    public static void main(String[] args) throws Exception {
+        new DockstoreWebserviceApplication().run(args);
+    }
 
     @Override
     public String getName() {
