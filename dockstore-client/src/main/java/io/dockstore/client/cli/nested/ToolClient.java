@@ -1099,7 +1099,7 @@ public class ToolClient extends AbstractEntryClient {
         out("       dockstore tool manual_publish [parameters]");
         out("");
         out("Description:");
-        out("  Manually register an tool in the dockstore. Currently this is used to register entries for images on Docker Hub.");
+        out("  Manually register an tool in the dockstore.");
         out("  No parameters will show the list of available registries.");
         out("");
         out("Required parameters:");
@@ -1117,7 +1117,7 @@ public class ToolClient extends AbstractEntryClient {
         out("  --version-name <version>                                 Version tag name for Dockerhub containers only, defaults to latest.");
         out("  --private <true/false>                                   Is the tool private or not, defaults to false.");
         out("  --tool-maintainer-email <tool maintainer email>          The contact email for the tool maintainer. Required for private repositories.");
-        out("  --custom-docker-path <custom docker path>                Custom Docker registry path (ex. registry.hub.docker.com).");
+        out("  --custom-docker-path <custom docker path>                Custom Docker registry path (ex. registry.hub.docker.com). Only available for certain registries.");
         printHelpFooter();
     }
 
