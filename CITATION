@@ -1,0 +1,18 @@
+To cite Dockstore in a publication please refer to 
+
+https://zenodo.org/record/168593
+
+@misc{denis_yuen_2016_168593,
+  author       = {Denis Yuen and
+                  Andrew Duncan and
+                  Victor Liu and
+                  Brian O'Connor and
+                  Janice Patricia and
+                  Vincent Chung and
+                  Peter Amstutz},
+  title        = {ga4gh/dockstore: 1.1},
+  month        = nov,
+  year         = 2016,
+  doi          = {10.5281/zenodo.168593},
+  url          = {https://doi.org/10.5281/zenodo.168593}
+}

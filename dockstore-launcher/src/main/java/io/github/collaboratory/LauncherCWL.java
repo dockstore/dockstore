@@ -198,8 +198,10 @@ public class LauncherCWL {
         System.out.println();
 
         // push output files
-        System.out.println("Provisioning your output files to their final destinations");
-        pushOutputFiles(outputMap, outputObj);
+        if (outputMap.size() > 0) {
+            System.out.println("Provisioning your output files to their final destinations");
+            pushOutputFiles(outputMap, outputObj);
+        }
     }
 
     /**
@@ -245,11 +247,16 @@ public class LauncherCWL {
         // pull back the name of the input from the CWL
         String cwlID = fileIdString.contains("#") ? fileIdString.split("#")[1] : fileIdString;
         LOG.info("ID: {}", cwlID);
-
         prepUploadsHelper(inputsOutputs, fileMap, cwlID);
     }
 
-    private void prepUploadsHelper(Map<String, Object> inputsOutputs, Map<String, List<FileProvisioning.FileInfo>> fileMap, String cwlID) {
+    /**
+     *
+     * @param inputsOutputs a map of both inputs and outputs to their data in the input json file
+     * @param fileMap stores the results of each file provision event
+     * @param cwlID the cwl id of the file that we are attempting to process
+     */
+    private void prepUploadsHelper(Map<String, Object> inputsOutputs, final Map<String, List<FileProvisioning.FileInfo>> fileMap, String cwlID) {
         // now that I have an input name from the CWL I can find it in the JSON parameterization for this run
         LOG.info("JSON: {}", inputsOutputs);
         for (Entry<String, Object> stringObjectEntry : inputsOutputs.entrySet()) {
@@ -259,12 +266,12 @@ public class LauncherCWL {
                 if (key.equals(cwlID)) {
                     if (value instanceof Map) {
                         Map param = (Map<String, Object>) stringObjectEntry.getValue();
-                        handleOutputFile(fileMap, cwlID, param, key);
+                        handleOutputFile(fileMap, cwlID, param);
                     } else {
                         assert(value instanceof List);
                         for(Object entry: (List)value){
                             if (entry instanceof Map) {
-                                handleOutputFile(fileMap, cwlID, (Map<String, Object>)entry , key);
+                                handleOutputFile(fileMap, cwlID, (Map<String, Object>)entry);
                             }
                         }
                     }
@@ -274,20 +281,19 @@ public class LauncherCWL {
     }
 
     /**
-     * Handles one output for upload
-     * @param fileMap output map
-     * @param cwlID
-     * @param param the paramter from the json input file ()
-     * @param key
+     * Handles one output file for upload
+     * @param fileMap stores the results of each file provision event
+     * @param cwlID the cwl id of the file that we are attempting to process
+     * @param param the parameter from the json input file
      */
-    private void handleOutputFile(Map<String, List<FileProvisioning.FileInfo>> fileMap, final String cwlID, Map<String, Object> param, final String key) {
+    private void handleOutputFile(Map<String, List<FileProvisioning.FileInfo>> fileMap, final String cwlID, Map<String, Object> param) {
         if (param.containsKey("class") && param.get("class").toString().equalsIgnoreCase("Directory")){
             // ignore directory output
             return;
         }
         String path = (String) param.get("path");
         // if it's the current one
-        LOG.info("PATH TO UPLOAD TO: {} FOR {} FOR {}", path, cwlID, key);
+        LOG.info("PATH TO UPLOAD TO: {} FOR {}", path, cwlID);
 
         // output
         // TODO: poor naming here, need to cleanup the variables
@@ -487,6 +493,11 @@ public class LauncherCWL {
         }
     }
 
+    /**
+     *
+     * @param fileMap indicates which output files need to be provisioned where
+     * @param outputObject provides information on the output files from CWL
+     */
     private void pushOutputFiles(Map<String, List<FileProvisioning.FileInfo>> fileMap, Map<String, Object> outputObject) {
 
         LOG.info("UPLOADING FILES...");
@@ -496,19 +507,19 @@ public class LauncherCWL {
             String key = entry.getKey();
 
             if ((outputObject.get(key) instanceof List)){
-                List<Map<String, String>> cwltoolOutput = (List)outputObject.get(key);
+                List<Map<String, Object>> cwltoolOutput = (List)outputObject.get(key);
                 // lengths should be the same
                 assert(cwltoolOutput.size() == files.size());
                 // for through each one and handle it, we have to assume that the order matches?
-                final Iterator<Map<String, String>> iterator = cwltoolOutput.iterator();
+                final Iterator<Map<String, Object>> iterator = cwltoolOutput.iterator();
                 for(FileProvisioning.FileInfo info : files){
-                    final Map<String, String> cwlToolOutputEntry = iterator.next();
+                    final Map<String, Object> cwlToolOutputEntry = iterator.next();
                     provisionOutputFile(key, info, cwlToolOutputEntry);
                 }
             }else {
                 assert(files.size() == 1);
                 FileProvisioning.FileInfo file = files.get(0);
-                final Map<String, String> fileMapDataStructure = (Map) (outputObject).get(key);
+                final Map<String, Object> fileMapDataStructure = (Map) (outputObject).get(key);
                 provisionOutputFile(key, file, fileMapDataStructure);
             }
         }
@@ -520,15 +531,29 @@ public class LauncherCWL {
      * @param file information on the final resting place for the output file
      * @param fileMapDataStructure the CWLtool output which contains the path to the file after cwltool is done with it
      */
-    private void provisionOutputFile(final String key, FileProvisioning.FileInfo file, final Map<String, String> fileMapDataStructure) {
-        String cwlOutputPath = fileMapDataStructure.get("path");
-        if (!fileMapDataStructure.get("class").equalsIgnoreCase("File")){
+    private void provisionOutputFile(final String key, FileProvisioning.FileInfo file, final Map<String, Object> fileMapDataStructure) {
+        String cwlOutputPath = (String)fileMapDataStructure.get("path");
+        if (!((String)fileMapDataStructure.get("class")).equalsIgnoreCase("File")){
             System.err.println(cwlOutputPath + " is not a file, ignoring");
             return;
         }
         LOG.info("NAME: {} URL: {} FILENAME: {} CWL OUTPUT PATH: {}", file.getLocalPath(), file.getUrl(), key, cwlOutputPath);
         System.out.println("Uploading: #" + key + " from " + cwlOutputPath + " to : " + file.getUrl());
-        fileProvisioning.provisionOutputFile(file, cwlOutputPath);
+        fileProvisioning.provisionOutputFile(cwlOutputPath, file.getUrl());
+
+        if (fileMapDataStructure.containsKey("secondaryFiles")){
+            final List<Map<String, Object>> secondaryFiles = (List<Map<String, Object>>) fileMapDataStructure.getOrDefault("secondaryFiles", new ArrayList<Map<String, Object>>());
+            for(Map<String, Object> secondaryFile : secondaryFiles){
+                FileProvisioning.FileInfo fileInfo = new FileProvisioning.FileInfo();
+                fileInfo.setLocalPath(file.getLocalPath());
+                List<String> splitPathList = Lists.newArrayList(file.getUrl().split("/"));
+                splitPathList.remove(splitPathList.size() -1);
+                splitPathList.add((String)secondaryFile.get("basename"));
+                final String join = Joiner.on("/").join(splitPathList);
+                fileInfo.setUrl(join);
+                provisionOutputFile(key, fileInfo, secondaryFile);
+            }
+        }
     }
 
     private Map<String, FileProvisioning.FileInfo> pullFiles(Object cwlObject, Map<String, Object> inputsOutputs) {
@@ -556,15 +581,7 @@ public class LauncherCWL {
                 cwlInputFileID = cwlInputFileID.contains("/") ? cwlInputFileID.split("/")[1] : cwlInputFileID;
                 LOG.info("ID: {}", cwlInputFileID);
 
-                // identify and get secondary files if needed
-                final Method getSecondaryFiles = file.getClass().getDeclaredMethod("getSecondaryFiles");
-                final Object invoke = getSecondaryFiles.invoke(file);
-                List<String> secondaryFiles = null;
-                if (invoke instanceof List){
-                    secondaryFiles = (List<String>) invoke;
-                } else if (invoke instanceof String){
-                    secondaryFiles = Lists.newArrayList((String)invoke);
-                }
+                List<String> secondaryFiles = getSecondaryFileStrings(file);
 
                 pullFilesHelper(inputsOutputs, fileMap, cwlInputFileID, secondaryFiles);
             }
@@ -573,6 +590,29 @@ public class LauncherCWL {
             throw new RuntimeException();
         }
         return fileMap;
+    }
+
+    /**
+     *
+     * @param file either an input or output parameter for both workflows and tools
+     * @return A list of secondary files
+     */
+    private List<String> getSecondaryFileStrings(Object file) {
+        try {
+            // identify and get secondary files if needed
+            final Method getSecondaryFiles = file.getClass().getDeclaredMethod("getSecondaryFiles");
+            final Object invoke = getSecondaryFiles.invoke(file);
+            List<String> secondaryFiles = null;
+            if (invoke instanceof List) {
+                secondaryFiles = (List<String>) invoke;
+            } else if (invoke instanceof String) {
+                secondaryFiles = Lists.newArrayList((String) invoke);
+            }
+            return secondaryFiles;
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+            LOG.error("Reflection issue, this is likely a coding problem.");
+            throw new RuntimeException();
+        }
     }
 
     /**

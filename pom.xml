@@ -19,7 +19,7 @@
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>1.1</version>
+    <version>1.1.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
@@ -45,7 +45,7 @@
         <aws.version>1.10.77</aws.version>
         <powermock.version>1.6.5</powermock.version>
         <mockito.version>1.10.19</mockito.version>
-        <cwlavro.version>1.0.6</cwlavro.version>
+        <cwlavro.version>1.0.7</cwlavro.version>
         <okhttp.version>3.2.0</okhttp.version>
         <slf4j.version>1.7.21</slf4j.version>
         <swagger-ui.version>2.1.4</swagger-ui.version>
@@ -822,6 +822,11 @@
                     <artifactId>swagger-codegen-maven-plugin</artifactId>
                     <version>2.1.4</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>exec-maven-plugin</artifactId>
+                    <version>1.5.0</version>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -981,6 +986,22 @@
             <plugin>
                 <groupId>org.eluder.coveralls</groupId>
                 <artifactId>coveralls-maven-plugin</artifactId>
+            </plugin>
+            <!-- identify and fail if we use problematic Java dependencies for Java 9 -->
+            <plugin>
+                <groupId>org.codefx.mvn</groupId>
+                <artifactId>jdeps-maven-plugin</artifactId>
+                <version>0.2</version>
+                <configuration>
+                    <defaultSeverity>FAIL</defaultSeverity>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>jdkinternals</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

@@ -325,7 +325,7 @@ public class Client {
                     }
                 }
                 return false;
-            } catch (IOException e) {
+            } catch (IOException | NullPointerException e) {
             }
 
         } catch (MalformedURLException e) {
@@ -592,12 +592,12 @@ public class Client {
             errorMessage("Can't find the current version.", CLIENT_ERROR);
         }
 
+        out("Dockstore version " + currentVersion);
         String latestVersion = getLatestVersion();
         if (latestVersion == null) {
             errorMessage("Can't find the latest version. Something might be wrong with the connection to Github.", CLIENT_ERROR);
         }
 
-        out("Dockstore version " + currentVersion);
         // skip upgrade check for development versions
         if (currentVersion.endsWith("SNAPSHOT")){
             return;

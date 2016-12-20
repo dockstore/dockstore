@@ -40,7 +40,9 @@ import org.apache.commons.net.io.CopyStreamListener;
 import org.apache.commons.net.io.Util;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemManager;
+import org.apache.commons.vfs2.FileSystemOptions;
 import org.apache.commons.vfs2.VFS;
+import org.apache.commons.vfs2.provider.ftp.FtpFileSystemConfigBuilder;
 import org.sagebionetworks.client.SynapseClient;
 import org.sagebionetworks.client.SynapseClientImpl;
 import org.slf4j.Logger;
@@ -162,9 +164,13 @@ public class FileProvisioning {
         // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
         // https://commons.apache.org/proper/commons-vfs/filesystems.html
         try {
+            // force passive mode for FTP (see emails from Keiran)
+            FileSystemOptions opts = new FileSystemOptions();
+            FtpFileSystemConfigBuilder.getInstance().setPassiveMode(opts, true);
+
             // trigger a copy from the URL to a local file path that's a UUID to avoid collision
             FileSystemManager fsManager = VFS.getManager();
-            org.apache.commons.vfs2.FileObject src = fsManager.resolveFile(path);
+            org.apache.commons.vfs2.FileObject src = fsManager.resolveFile(path, opts);
             org.apache.commons.vfs2.FileObject dest = fsManager.resolveFile(new File(targetFilePath).getAbsolutePath());
             InputStream inputStream = src.getContent().getInputStream();
             long inputSize = src.getContent().getSize();
@@ -205,10 +211,8 @@ public class FileProvisioning {
             potentialCachedFile = Paths.get(cacheDirectory, sha1Prefix, sha1Suffix);
             if (Files.exists(potentialCachedFile)) {
                 System.out.println("Found file " + targetPath + " in cache, hard-linking");
-                boolean linked = false;
                 try {
                     Files.createLink(localPath, potentialCachedFile);
-                    linked = true;
                 } catch (IOException e) {
                     LOG.error("Cannot create hard link to cached file, you may want to move your cache", e.getMessage());
                     try {
@@ -218,10 +222,6 @@ public class FileProvisioning {
                         throw new RuntimeException("Could not copy " + targetPath + " to " + localPath, e1);
                     }
                     System.out.println("Found file " + targetPath + " in cache, copied");
-                    return;
-                }
-                if (linked) {
-                    return;
                 }
             }
         }
@@ -249,7 +249,9 @@ public class FileProvisioning {
                     actualTargetPath =  Paths.get(workingDir, targetPath);
                 }
                 // create needed directories
-                localPath.toFile().getParentFile().mkdirs();
+                if(!localPath.toFile().getParentFile().mkdirs()){
+                    throw new IOException("Could not create " + localPath);
+                }
                 // create link
                 Files.createLink(localPath, actualTargetPath);
             } catch (IOException e) {
@@ -286,17 +288,22 @@ public class FileProvisioning {
                 .getString("cache-dir", System.getProperty("user.home") + File.separator + ".dockstore" + File.separator + "cache");
     }
 
-    public static boolean isCacheOn(HierarchicalINIConfiguration config){
+    private static boolean isCacheOn(HierarchicalINIConfiguration config){
         final String useCache = config.getString("use-cache", "false");
         return useCache.equalsIgnoreCase("true") || useCache.equalsIgnoreCase("use") || useCache.equalsIgnoreCase("T");
     }
 
-    public void provisionOutputFile(FileInfo file, String cwlOutputPath) {
-        File sourceFile = new File(cwlOutputPath);
+    /**
+     * Copies files from srcPath to destPath
+     * @param srcPath source file
+     * @param destPath destination file
+     */
+    public void provisionOutputFile(String srcPath, String destPath) {
+        File sourceFile = new File(srcPath);
         long inputSize = sourceFile.length();
-        if (file.getUrl().startsWith("s3://")) {
+        if (destPath.startsWith("s3://")) {
             AmazonS3 s3Client = FileProvisioning.getAmazonS3Client(config);
-            String trimmedPath = file.getUrl().replace("s3://", "");
+            String trimmedPath = destPath.replace("s3://", "");
             List<String> splitPathList = Lists.newArrayList(trimmedPath.split("/"));
             String bucketName = splitPathList.remove(0);
 
@@ -323,7 +330,7 @@ public class FileProvisioning {
                 fsManager = VFS.getManager();
                 // check for a local file path
                 Path currentWorkingDir = Paths.get("").toAbsolutePath();
-                FileObject dest = fsManager.resolveFile(currentWorkingDir.toFile(), file.getUrl());
+                FileObject dest = fsManager.resolveFile(currentWorkingDir.toFile(), destPath);
                 FileObject src = fsManager.resolveFile(sourceFile.getAbsolutePath());
                 copyFromInputStreamToOutputStream(src.getContent().getInputStream(), inputSize, dest.getContent().getOutputStream());
             } catch (IOException e) {
@@ -343,7 +350,7 @@ public class FileProvisioning {
             BigDecimal denominator = BigDecimal.valueOf(streamSize);
             BigDecimal fraction = numerator.divide(denominator, new MathContext(2, RoundingMode.HALF_EVEN));
             if (fraction.equals(progress)) {
-                /** don't bother refreshing if no progress made */
+                /* don't bother refreshing if no progress made */
                 return;
             }
 
@@ -379,7 +386,7 @@ public class FileProvisioning {
      * @param inputStream source
      * @param inputSize   total size
      * @param outputSteam destination
-     * @throws IOException
+     * @throws IOException  throws an exception if unable to provision input files
      */
     private static void copyFromInputStreamToOutputStream(InputStream inputStream, long inputSize, OutputStream outputSteam)
             throws IOException {
@@ -387,7 +394,7 @@ public class FileProvisioning {
             ProgressPrinter printer = new ProgressPrinter();
 
             @Override public void bytesTransferred(CopyStreamEvent event) {
-                /** do nothing */
+                /* do nothing */
             }
 
             @Override public void bytesTransferred(long totalBytesTransferred, int bytesTransferred, long streamSize) {
@@ -395,7 +402,7 @@ public class FileProvisioning {
             }
         };
         try (OutputStream outputStream = outputSteam) {
-            final long l = Util.copyStream(inputStream, outputStream, Util.DEFAULT_COPY_BUFFER_SIZE, inputSize, listener);
+            Util.copyStream(inputStream, outputStream, Util.DEFAULT_COPY_BUFFER_SIZE, inputSize, listener);
         } catch (IOException e) {
             throw new RuntimeException("Could not provision input files", e);
         } finally {
@@ -436,7 +443,7 @@ public class FileProvisioning {
             }
         }
 
-        public boolean isLocalFileType() {
+        boolean isLocalFileType() {
             return localFileType;
         }
     }

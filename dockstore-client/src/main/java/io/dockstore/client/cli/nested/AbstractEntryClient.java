@@ -1240,7 +1240,7 @@ public abstract class AbstractEntryClient {
                     new1.setLocalPath(resultFile.getAbsolutePath());
                     System.out.println("Uploading: " + outFile + " from " + resultFile + " to : " + new1.getUrl());
                     FileProvisioning fileProvisioning = new FileProvisioning(this.getConfigFile());
-                    fileProvisioning.provisionOutputFile(new1, resultFile.getAbsolutePath());
+                    fileProvisioning.provisionOutputFile(resultFile.getAbsolutePath(), new1.getUrl());
                 }
             } else{
                 System.out.println("Output files left in place");
@@ -1529,7 +1529,6 @@ public abstract class AbstractEntryClient {
         out("       dockstore " + getEntryType().toLowerCase() + " " + CONVERT + " entry2tsv [parameters]");
         out("");
         out("Description:");
-        out("  These are preview features that will be finalized for the next major release.");
         out("  They allow you to convert between file representations.");
         printHelpFooter();
     }
