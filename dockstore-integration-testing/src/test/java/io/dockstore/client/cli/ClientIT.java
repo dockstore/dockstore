@@ -169,8 +169,9 @@ public class ClientIT {
     public void launchingCWLWorkflow() throws IOException {
         final String firstWorkflowCWL = ResourceHelpers.resourceFilePath("1st-workflow.cwl");
         final String firstWorkflowJSON = ResourceHelpers.resourceFilePath("1st-workflow-job.json");
-        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "workflow", "launch",
-                "--local-entry", firstWorkflowCWL, "--json", firstWorkflowJSON });
+        Client.main(
+                new String[] { "--config", TestUtility.getConfigFileLocation(true), "workflow", "launch", "--local-entry", firstWorkflowCWL,
+                        "--json", firstWorkflowJSON });
     }
 
     @Test
