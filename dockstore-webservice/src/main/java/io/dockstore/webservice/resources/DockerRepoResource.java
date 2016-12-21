@@ -16,16 +16,35 @@
 
 package io.dockstore.webservice.resources;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.repackaged.com.google.common.base.Strings;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
+import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.core.Label;
-import io.dockstore.common.Registry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
 import io.dockstore.webservice.core.Tag;
@@ -51,7 +70,6 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.model.ToolDescriptor;
-
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.json.JSONArray;
@@ -59,32 +77,16 @@ import org.json.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 /**
- *
  * @author dyuen
  */
 @Path("/containers")
 @Api("containers")
 @Produces(MediaType.APPLICATION_JSON)
 public class DockerRepoResource {
+
+    private static final String TARGET_URL = "https://quay.io/api/v1/";
+    private static final Logger LOG = LoggerFactory.getLogger(DockerRepoResource.class);
 
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
@@ -93,22 +95,14 @@ public class DockerRepoResource {
     private final LabelDAO labelDAO;
     private final FileDAO fileDAO;
     private final HttpClient client;
-
     private final String bitbucketClientID;
     private final String bitbucketClientSecret;
-
     private final EntryVersionHelper<Tool> entryVersionHelper;
-
-
-    private static final String TARGET_URL = "https://quay.io/api/v1/";
-
     private final ObjectMapper objectMapper;
 
-    private static final Logger LOG = LoggerFactory.getLogger(DockerRepoResource.class);
-
     @SuppressWarnings("checkstyle:parameternumber")
-    public DockerRepoResource(ObjectMapper mapper, HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ToolDAO toolDAO,
-            TagDAO tagDAO, LabelDAO labelDAO, FileDAO fileDAO, String bitbucketClientID, String bitbucketClientSecret) {
+    public DockerRepoResource(ObjectMapper mapper, HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ToolDAO toolDAO, TagDAO tagDAO,
+            LabelDAO labelDAO, FileDAO fileDAO, String bitbucketClientID, String bitbucketClientSecret) {
         objectMapper = mapper;
         this.userDAO = userDAO;
         this.tokenDAO = tokenDAO;
@@ -173,8 +167,7 @@ public class DockerRepoResource {
             Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
         }
 
-        return Helper.refreshContainer(containerId, user.getId(), client, objectMapper, userDAO, toolDAO,
-                tokenDAO, tagDAO, fileDAO);
+        return Helper.refreshContainer(containerId, user.getId(), client, objectMapper, userDAO, toolDAO, tokenDAO, tagDAO, fileDAO);
     }
 
     @GET
@@ -250,10 +243,10 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/updateTagPaths")
-    @ApiOperation(value = "Change the workflow paths", notes = "Tag correspond to each row of the versions table listing all information for a docker repo tag",  response = Tool.class)
+    @ApiOperation(value = "Change the workflow paths", notes = "Tag correspond to each row of the versions table listing all information for a docker repo tag", response = Tool.class)
     public Tool updateTagContainerPath(@ApiParam(hidden = true) @Auth User user,
-                                               @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
-                                               @ApiParam(value = "Tool with updated information", required = true) Tool tool){
+            @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
+            @ApiParam(value = "Tool with updated information", required = true) Tool tool) {
 
         Tool c = toolDAO.findById(containerId);
 
@@ -263,7 +256,7 @@ public class DockerRepoResource {
 
         //update the workflow path in all workflowVersions
         Set<Tag> tags = c.getTags();
-        for(Tag tag : tags){
+        for (Tag tag : tags) {
             if (!tag.isDirtyBit()) {
                 tag.setCwlPath(tool.getDefaultCwlPath());
                 tag.setWdlPath(tool.getDefaultWdlPath());
@@ -338,15 +331,18 @@ public class DockerRepoResource {
         }
 
         // Check if tool has tags
-        if (tool.getRegistry() == Registry.QUAY_IO && !Helper.checkQuayContainerForTags(tool, client, objectMapper, tokenDAO, user.getId())) {
+        if (tool.getRegistry() == Registry.QUAY_IO && !Helper
+                .checkQuayContainerForTags(tool, client, objectMapper, tokenDAO, user.getId())) {
             LOG.info(user.getUsername() + ": tool has no tags.");
-            throw new CustomWebApplicationException("Tool " + tool.getToolPath() + " has no tags. Quay containers must have at least one tag.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(
+                    "Tool " + tool.getToolPath() + " has no tags. Quay containers must have at least one tag.", HttpStatus.SC_BAD_REQUEST);
         }
 
         // Check if user owns repo, or if user is in the organization which owns the tool
-        if (tool.getRegistry() == Registry.QUAY_IO  && !Helper.checkIfUserOwns(tool, client, objectMapper, tokenDAO, user.getId())) {
+        if (tool.getRegistry() == Registry.QUAY_IO && !Helper.checkIfUserOwns(tool, client, objectMapper, tokenDAO, user.getId())) {
             LOG.info(user.getUsername() + ": User does not own the given Quay Repo.");
-            throw new CustomWebApplicationException("User does not own the tool " + tool.getPath() + ". You can only add Quay repositories that you own or are part of the organization", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("User does not own the tool " + tool.getPath()
+                    + ". You can only add Quay repositories that you own or are part of the organization", HttpStatus.SC_BAD_REQUEST);
         }
 
         long id = toolDAO.create(tool);
@@ -409,7 +405,9 @@ public class DockerRepoResource {
             if (c.isPrivateAccess()) {
                 // Check that either tool maintainer email or author email is not null
                 if (Strings.isNullOrEmpty(c.getToolMaintainerEmail()) && Strings.isNullOrEmpty(c.getEmail())) {
-                    throw new CustomWebApplicationException("Either a tool email or tool maintainer email is required to publish private tools.", HttpStatus.SC_BAD_REQUEST);
+                    throw new CustomWebApplicationException(
+                            "Either a tool email or tool maintainer email is required to publish private tools.",
+                            HttpStatus.SC_BAD_REQUEST);
                 }
             }
 
@@ -432,13 +430,13 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("published")
-    @ApiOperation(value = "List all published containers.", tags = { "containers" }, notes = "NO authentication", response = Tool.class, responseContainer = "List")
+    @ApiOperation(value = "List all published containers.", tags = {
+            "containers" }, notes = "NO authentication", response = Tool.class, responseContainer = "List")
     public List<Tool> allPublishedContainers() {
         List<Tool> tools = toolDAO.findAllPublished();
         entryVersionHelper.filterContainersForHiddenTags(tools);
         return tools;
     }
-
 
     @GET
     @Timed
@@ -497,7 +495,8 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/path/tool/{repository}/published")
-    @ApiOperation(value = "Get a published container by tool path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Tool.class) public Tool getPublishedContainerByToolPath(
+    @ApiOperation(value = "Get a published container by tool path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Tool.class)
+    public Tool getPublishedContainerByToolPath(
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         final String[] split = path.split("/");
         // check that this is a tool path
@@ -556,17 +555,17 @@ public class DockerRepoResource {
 
                     Gson gson = new Gson();
                     Map<String, ArrayList> map = new HashMap<>();
-                    map = (Map<String, ArrayList>) gson.fromJson(json, map.getClass());
+                    map = (Map<String, ArrayList>)gson.fromJson(json, map.getClass());
 
                     Map<String, Map<String, String>> map2;
 
                     if (!map.get("builds").isEmpty()) {
-                        map2 = (Map<String, Map<String, String>>) map.get("builds").get(0);
+                        map2 = (Map<String, Map<String, String>>)map.get("builds").get(0);
 
                         String gitURL = map2.get("trigger_metadata").get("git_url");
                         LOG.info(user.getUsername() + ": " + gitURL);
 
-                        ArrayList<String> tags = (ArrayList<String>) map2.get("tags");
+                        ArrayList<String> tags = (ArrayList<String>)map2.get("tags");
                         for (String tag : tags) {
                             LOG.info(user.getUsername() + ": " + tag);
                         }
@@ -585,8 +584,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/search")
-    @ApiOperation(value = "Search for matching registered containers."
-            , notes = "Search on the name (full path name) and description. NO authentication", response = Tool.class, responseContainer = "List", tags = {
+    @ApiOperation(value = "Search for matching registered containers.", notes = "Search on the name (full path name) and description. NO authentication", response = Tool.class, responseContainer = "List", tags = {
             "containers" })
     public List<Tool> search(@QueryParam("pattern") String word) {
         return toolDAO.searchPattern(word);
@@ -612,7 +610,8 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/dockerfile")
-    @ApiOperation(value = "Get the corresponding Dockerfile on Github.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class)
+    @ApiOperation(value = "Get the corresponding Dockerfile on Github.", tags = {
+            "containers" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile dockerfile(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag) {
 
@@ -623,22 +622,21 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/verifiedSources")
-    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "containers" }, notes = "Does not need authentication", response = String.class)
+    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = {
+            "containers" }, notes = "Does not need authentication", response = String.class)
     public String verifiedSources(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
         Helper.checkEntry(tool);
 
         Set<String> verifiedSourcesArray = new HashSet<>();
-        tool.getTags()
-                .stream()
-                .filter((Tag u) -> u.isVerified())
-                .forEach((Tag v) -> verifiedSourcesArray.add(v.getVerifiedSource()));
+        tool.getTags().stream().filter((Tag u) -> u.isVerified()).forEach((Tag v) -> verifiedSourcesArray.add(v.getVerifiedSource()));
 
         JSONArray jsonArray;
         try {
             jsonArray = new JSONArray(verifiedSourcesArray.toArray());
         } catch (JSONException ex) {
-            throw new CustomWebApplicationException("There was an error converting the array of verified sources to a JSON array.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            throw new CustomWebApplicationException("There was an error converting the array of verified sources to a JSON array.",
+                    HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
 
         return jsonArray.toString();
@@ -649,7 +647,8 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/cwl")
-    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class)
+    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = {
+            "containers" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile cwl(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag) {
 
@@ -660,7 +659,8 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/wdl")
-    @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class)
+    @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = {
+            "containers" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile wdl(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag) {
 
@@ -671,9 +671,10 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/cwl/{relative-path}")
-    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class)
+    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = {
+            "containers" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile secondaryCwlPath(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
-            @QueryParam("tag") String tag, @PathParam("relative-path") String path){
+            @QueryParam("tag") String tag, @PathParam("relative-path") String path) {
 
         return entryVersionHelper.getSourceFileByPath(containerId, tag, FileType.DOCKSTORE_CWL, path);
     }
@@ -682,9 +683,10 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/wdl/{relative-path}")
-    @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class)
+    @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = {
+            "containers" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile secondaryWdlPath(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
-            @QueryParam("tag") String tag, @PathParam("relative-path") String path){
+            @QueryParam("tag") String tag, @PathParam("relative-path") String path) {
 
         return entryVersionHelper.getSourceFileByPath(containerId, tag, FileType.DOCKSTORE_WDL, path);
     }
@@ -693,7 +695,8 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/secondaryCwl")
-    @ApiOperation(value = "Get a list of secondary CWL files from Git.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
+    @ApiOperation(value = "Get a list of secondary CWL files from Git.", tags = {
+            "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
     public List<SourceFile> secondaryCwl(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag) {
 
@@ -704,7 +707,8 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/secondaryWdl")
-    @ApiOperation(value = "Get a list of secondary WDL files from Git.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
+    @ApiOperation(value = "Get a list of secondary WDL files from Git.", tags = {
+            "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
     public List<SourceFile> secondaryWdl(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag) {
 
@@ -715,15 +719,33 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/testParameterFiles")
-    @ApiOperation(value = "Get the corresponding wdl test parameter files.", tags = { "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
+    @ApiOperation(value = "Get the corresponding wdl test parameter files.", tags = {
+            "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
     public List<SourceFile> getTestParameterFiles(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
-            @QueryParam("tag") String tag,
-            @QueryParam("descriptorType") String descriptorType) {
+            @QueryParam("tag") String tag, @QueryParam("descriptorType") String descriptorType) {
         if (descriptorType.toUpperCase().equals(ToolDescriptor.TypeEnum.WDL.toString())) {
             return entryVersionHelper.getAllSourceFiles(containerId, tag, FileType.WDL_TEST_JSON);
         } else {
             return entryVersionHelper.getAllSourceFiles(containerId, tag, FileType.CWL_TEST_JSON);
         }
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/dockerRegistryList")
+    @ApiOperation(value = "Get the list of docker registries supported on Dockstore.", notes = "Does not need authentication", response = Map.class, responseContainer = "List")
+    public List<Map<String, String>> getTestParameterFiles() {
+        ArrayList<Map<String, String>> registryList = new ArrayList<>();
+        for (Registry r : Registry.values()) {
+            Map<String, String> registry = new HashMap<>();
+            registry.put("enum", r.name());
+            registry.put("friendlyName", r.getFriendlyName());
+            registry.put("dockerCommand", r.toString());
+            registry.put("url", r.getUrl());
+            registryList.add(registry);
+        }
+        return registryList;
     }
 
     @PUT
@@ -735,33 +757,32 @@ public class DockerRepoResource {
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
             @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", defaultValue = "") String emptyBody,
-            @QueryParam("tagName") String tagName,
-            @QueryParam("descriptorType") String descriptorType) {
+            @QueryParam("tagName") String tagName, @QueryParam("descriptorType") String descriptorType) {
         Tool tool = toolDAO.findById(containerId);
         Helper.checkEntry(tool);
 
-        Tag tag = tool.getTags()
-                .stream()
-                .filter((Tag v) -> v.getName().equals(tagName))
-                .findFirst()
-                .get();
+        Tag tag = tool.getTags().stream().filter((Tag v) -> v.getName().equals(tagName)).findFirst().get();
 
         if (tag == null) {
             LOG.info("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.");
-            throw new CustomWebApplicationException("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.",
+                    HttpStatus.SC_BAD_REQUEST);
         }
 
         if (!tag.isValid()) {
             LOG.info("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' is invalid.");
-            throw new CustomWebApplicationException("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' is invalid.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' is invalid.",
+                    HttpStatus.SC_BAD_REQUEST);
         }
 
         Set<SourceFile> sourceFiles = tag.getSourceFiles();
 
         // Add new test parameter files
-        FileType fileType = (descriptorType.toUpperCase().equals(ToolDescriptor.TypeEnum.CWL.toString())) ? FileType.CWL_TEST_JSON : FileType.WDL_TEST_JSON;
+        FileType fileType = (descriptorType.toUpperCase().equals(ToolDescriptor.TypeEnum.CWL.toString())) ? FileType.CWL_TEST_JSON
+                : FileType.WDL_TEST_JSON;
         for (String path : testParameterPaths) {
-            long sourcefileDuplicate = sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType).count();
+            long sourcefileDuplicate = sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType)
+                    .count();
             if (sourcefileDuplicate == 0) {
                 // Sourcefile doesn't exist, add a stub which will have it's content filled on refresh
                 SourceFile sourceFile = new SourceFile();
@@ -785,57 +806,37 @@ public class DockerRepoResource {
     public Set<SourceFile> deleteTestParameterFiles(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
-            @QueryParam("tagName") String tagName,
-            @QueryParam("descriptorType") String descriptorType) {
+            @QueryParam("tagName") String tagName, @QueryParam("descriptorType") String descriptorType) {
         Tool tool = toolDAO.findById(containerId);
         Helper.checkEntry(tool);
 
-        Tag tag = tool.getTags()
-                .stream()
-                .filter((Tag v) -> v.getName().equals(tagName))
-                .findFirst()
-                .get();
+        Tag tag = tool.getTags().stream().filter((Tag v) -> v.getName().equals(tagName)).findFirst().get();
 
         if (tag == null) {
             LOG.info("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.");
-            throw new CustomWebApplicationException("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.",
+                    HttpStatus.SC_BAD_REQUEST);
         }
 
         if (!tag.isValid()) {
             LOG.info("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' is invalid.");
-            throw new CustomWebApplicationException("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' is invalid.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' is invalid.",
+                    HttpStatus.SC_BAD_REQUEST);
         }
 
         Set<SourceFile> sourceFiles = tag.getSourceFiles();
 
         // Remove test parameter files
-        FileType fileType = (descriptorType.toUpperCase().equals(ToolDescriptor.TypeEnum.CWL.toString())) ? FileType.CWL_TEST_JSON : FileType.WDL_TEST_JSON;
+        FileType fileType = (descriptorType.toUpperCase().equals(ToolDescriptor.TypeEnum.CWL.toString())) ? FileType.CWL_TEST_JSON
+                : FileType.WDL_TEST_JSON;
         for (String path : testParameterPaths) {
             if (sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType).count() > 0) {
-                SourceFile toRemove = sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType).findFirst().get();
+                SourceFile toRemove = sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType)
+                        .findFirst().get();
                 sourceFiles.remove(toRemove);
             }
         }
 
         return tag.getSourceFiles();
     }
-
-    @GET
-    @Timed
-    @UnitOfWork
-    @Path("/dockerRegistryList")
-    @ApiOperation(value = "Get the list of docker registries supported on Dockstore.", notes = "Does not need authentication", response = Map.class, responseContainer = "List")
-    public List<Map<String, String>> getTestParameterFiles() {
-        ArrayList<Map<String, String>> registryList = new ArrayList<>();
-        for (Registry r : Registry.values()) {
-            Map<String, String> registry = new HashMap<>();
-            registry.put("enum", r.name());
-            registry.put("friendlyName", r.getFriendlyName());
-            registry.put("dockerCommand", r.toString());
-            registry.put("url", r.getUrl());
-            registryList.add(registry);
-        }
-        return registryList;
-    }
-
 }

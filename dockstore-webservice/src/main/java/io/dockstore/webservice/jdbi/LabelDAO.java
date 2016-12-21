@@ -21,7 +21,6 @@ import io.dropwizard.hibernate.AbstractDAO;
 import org.hibernate.SessionFactory;
 
 /**
- *
  * @author oicr-vchung
  */
 public class LabelDAO extends AbstractDAO<Label> {

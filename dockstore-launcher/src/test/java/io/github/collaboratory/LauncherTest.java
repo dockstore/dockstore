@@ -16,20 +16,20 @@
 
 package io.github.collaboratory;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+
 import com.amazonaws.AmazonClientException;
 import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.Workflow;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import io.dockstore.common.Utilities;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
 
 import static io.dockstore.common.FileProvisioning.getCacheDirectory;
 import static org.junit.Assert.assertTrue;
@@ -46,8 +46,7 @@ public class LauncherTest {
     public void cleanCache() throws ConfigurationException, IOException {
         // need to clean cache to make tests predictable
         File iniFile = FileUtils.getFile("src", "test", "resources", "launcher.ini");
-        HierarchicalINIConfiguration config = new HierarchicalINIConfiguration(iniFile);
-        final String cacheDirectory = getCacheDirectory(config);
+        final String cacheDirectory = getCacheDirectory(Utilities.parseConfig(iniFile.getAbsolutePath()));
         FileUtils.deleteDirectory(new File(cacheDirectory));
     }
 
@@ -61,11 +60,12 @@ public class LauncherTest {
             expectedEx.expect(AmazonClientException.class);
             expectedEx.expectMessage("Unable to load AWS credentials from any provider in the chain");
         }
-        final LauncherCWL launcherCWL = new LauncherCWL(new String[] { "--config", iniFile.getAbsolutePath(), "--descriptor",
-                cwlFile.getAbsolutePath(), "--job", jobFile.getAbsolutePath() });
+        final LauncherCWL launcherCWL = new LauncherCWL(
+                new String[] { "--config", iniFile.getAbsolutePath(), "--descriptor", cwlFile.getAbsolutePath(), "--job",
+                        jobFile.getAbsolutePath() });
         launcherCWL.run(CommandLineTool.class);
     }
-        
+
     @Test
     public void testCWLProgrammatic() throws Exception {
         File iniFile = FileUtils.getFile("src", "test", "resources", "launcher.ini");

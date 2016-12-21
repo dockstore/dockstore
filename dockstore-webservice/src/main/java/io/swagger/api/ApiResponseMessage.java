@@ -17,7 +17,9 @@ package io.swagger.api;
 
 import javax.xml.bind.annotation.XmlTransient;
 
-@javax.xml.bind.annotation.XmlRootElement @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z") public class ApiResponseMessage {
+@javax.xml.bind.annotation.XmlRootElement
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
+public class ApiResponseMessage {
     public static final int ERROR = 1;
     public static final int WARNING = 2;
     public static final int INFO = 3;
@@ -56,7 +58,8 @@ import javax.xml.bind.annotation.XmlTransient;
         this.message = message;
     }
 
-    @XmlTransient public int getCode() {
+    @XmlTransient
+    public int getCode() {
         return code;
     }
 

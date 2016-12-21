@@ -20,14 +20,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.dockstore.common.Registry;
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Token;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.common.Registry;
-import io.dockstore.webservice.core.Token;
 
 /**
  * Create image registries

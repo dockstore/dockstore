@@ -18,13 +18,11 @@ package io.dockstore.webservice.jdbi;
 
 import java.util.List;
 
+import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.ToolMode;
 import org.hibernate.SessionFactory;
 
-import io.dockstore.webservice.core.ToolMode;
-import io.dockstore.webservice.core.Tool;
-
 /**
- *
  * @author xliu
  */
 public class ToolDAO extends EntryDAO<Tool> {
@@ -37,8 +35,8 @@ public class ToolDAO extends EntryDAO<Tool> {
     }
 
     public Tool findByToolPath(String path, String tool) {
-        return uniqueResult(namedQuery("io.dockstore.webservice.core.Tool.findByToolPath").setParameter("path", path).setParameter(
-                "toolname", tool));
+        return uniqueResult(
+                namedQuery("io.dockstore.webservice.core.Tool.findByToolPath").setParameter("path", path).setParameter("toolname", tool));
     }
 
     public List<Tool> findByMode(final ToolMode mode) {

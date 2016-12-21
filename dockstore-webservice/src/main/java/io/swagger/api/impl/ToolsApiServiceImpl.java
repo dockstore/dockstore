@@ -16,6 +16,27 @@
 
 package io.swagger.api.impl;
 
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
+
 import avro.shaded.com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.HashBasedTable;
@@ -44,26 +65,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import static io.dockstore.webservice.core.SourceFile.FileType.DOCKERFILE;
 import static io.dockstore.webservice.core.SourceFile.FileType.DOCKSTORE_CWL;
@@ -104,31 +105,30 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         try {
             // construct escaped ID
             if (container instanceof Tool) {
-                newID = ((Tool) container).getToolPath();
+                newID = ((Tool)container).getToolPath();
             } else if (container instanceof Workflow) {
-                newID = "#workflow/" + ((Workflow) container).getPath();
+                newID = "#workflow/" + ((Workflow)container).getPath();
             } else {
                 LOG.error("Could not construct URL for our container with id: " + container.getId());
                 return null;
             }
 
             String escapedID = URLEncoder.encode(newID, StandardCharsets.UTF_8.displayName());
-            URI uri = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()), "/api/ga4gh/v1/tools/", null,
-                    null);
+            URI uri = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()), "/api/ga4gh/v1/tools/",
+                    null, null);
             globalId = uri.toString() + escapedID;
         } catch (URISyntaxException | UnsupportedEncodingException e) {
             LOG.error("Could not construct URL for our container with id: " + container.getId());
             return null;
         }
         // TODO: hook this up to a type field in our DB?
-        ToolClass type = container instanceof Tool ?
-                ToolClassesApiServiceImpl.getCommandLineToolClass() :
-                ToolClassesApiServiceImpl.getWorkflowClass();
+        ToolClass type = container instanceof Tool ? ToolClassesApiServiceImpl.getCommandLineToolClass()
+                : ToolClassesApiServiceImpl.getWorkflowClass();
 
         io.swagger.model.Tool tool = new io.swagger.model.Tool();
-        if (container.getAuthor() == null){
+        if (container.getAuthor() == null) {
             tool.setAuthor("Unknown author");
-        } else{
+        } else {
             tool.setAuthor(container.getAuthor());
         }
         tool.setDescription(container.getDescription());
@@ -138,14 +138,14 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         tool.setUrl(globalId);
         // tool specific
         if (container instanceof Tool) {
-            Tool inputTool = (Tool) container;
+            Tool inputTool = (Tool)container;
             tool.setToolname(inputTool.getToolname());
             tool.setOrganization(inputTool.getNamespace());
             tool.setToolname(inputTool.getName());
         }
         // workflow specific
         if (container instanceof Workflow) {
-            Workflow inputTool = (Workflow) container;
+            Workflow inputTool = (Workflow)container;
             tool.setToolname(inputTool.getPath());
             tool.setOrganization(inputTool.getOrganization());
             tool.setToolname(inputTool.getWorkflowName());
@@ -155,27 +155,26 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         // setup versions as well
         Set inputVersions;
         if (container instanceof Tool) {
-            inputVersions = ((Tool) container).getTags();
+            inputVersions = ((Tool)container).getTags();
         } else {
-            inputVersions = ((Workflow) container).getWorkflowVersions();
+            inputVersions = ((Workflow)container).getWorkflowVersions();
         }
 
         // handle verified information
         tool.setVerified(((Set<Version>)inputVersions).stream().anyMatch(Version::isVerified));
-        final List<String> collect = ((Set<Version>) inputVersions).stream().filter(Version::isVerified).map(Version::getVerifiedSource)
+        final List<String> collect = ((Set<Version>)inputVersions).stream().filter(Version::isVerified).map(Version::getVerifiedSource)
                 .collect(Collectors.toList());
         Gson gson = new Gson();
         tool.setVerifiedSource(gson.toJson(collect));
 
-
-        for (Version inputVersion : (Set<Version>) inputVersions) {
+        for (Version inputVersion : (Set<Version>)inputVersions) {
 
             // tags with no names make no sense here
             // also hide hidden tags
             if (inputVersion.getName() == null || inputVersion.isHidden()) {
                 continue;
             }
-            if (inputVersion instanceof Tag && ((Tag) inputVersion).getImageId() == null) {
+            if (inputVersion instanceof Tag && ((Tag)inputVersion).getImageId() == null) {
                 continue;
             }
 
@@ -218,39 +217,44 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                     case DOCKERFILE:
                         ToolDockerfile dockerfile = new ToolDockerfile();
                         dockerfile.setDockerfile(file.getContent());
-                        dockerfile.setUrl(urlBuilt + ((Tag) inputVersion).getDockerfilePath());
+                        dockerfile.setUrl(urlBuilt + ((Tag)inputVersion).getDockerfilePath());
                         version.setDockerfile(true);
-                        fileTable.put(inputVersion.getName(),DOCKERFILE, dockerfile);
+                        fileTable.put(inputVersion.getName(), DOCKERFILE, dockerfile);
                         break;
                     case DOCKSTORE_CWL:
                         version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);
-                        fileTable.put(inputVersion.getName(), DOCKSTORE_CWL, buildSourceFile(urlBuilt + ((Tag) inputVersion).getCwlPath(), file));
+                        fileTable.put(inputVersion.getName(), DOCKSTORE_CWL,
+                                buildSourceFile(urlBuilt + ((Tag)inputVersion).getCwlPath(), file));
                         break;
                     case DOCKSTORE_WDL:
                         version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);
-                        fileTable.put(inputVersion.getName(), DOCKSTORE_WDL, buildSourceFile(urlBuilt + ((Tag) inputVersion).getWdlPath(), file));
+                        fileTable.put(inputVersion.getName(), DOCKSTORE_WDL,
+                                buildSourceFile(urlBuilt + ((Tag)inputVersion).getWdlPath(), file));
                         break;
                     }
                 } else if (inputVersion instanceof WorkflowVersion) {
                     switch (file.getType()) {
                     case DOCKSTORE_CWL:
                         version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);
-                        fileTable.put(inputVersion.getName(), DOCKSTORE_CWL, buildSourceFile(urlBuilt + ((WorkflowVersion) inputVersion).getWorkflowPath(), file));
+                        fileTable.put(inputVersion.getName(), DOCKSTORE_CWL,
+                                buildSourceFile(urlBuilt + ((WorkflowVersion)inputVersion).getWorkflowPath(), file));
                         break;
                     case DOCKSTORE_WDL:
                         version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);
-                        fileTable.put(inputVersion.getName(), DOCKSTORE_WDL, buildSourceFile(urlBuilt + ((WorkflowVersion) inputVersion).getWorkflowPath(), file));
+                        fileTable.put(inputVersion.getName(), DOCKSTORE_WDL,
+                                buildSourceFile(urlBuilt + ((WorkflowVersion)inputVersion).getWorkflowPath(), file));
                         break;
                     }
                 }
             }
             if (container instanceof Tool) {
-                version.setImage(((Tool) container).getPath() + ":" + inputVersion.getName());
+                version.setImage(((Tool)container).getPath() + ":" + inputVersion.getName());
             }
             // ensure that descriptor is non-null before adding to list
             if (!version.getDescriptorType().isEmpty()) {
                 // do some clean-up
-                version.setMetaVersion(String.valueOf(inputVersion.getLastModified() != null ? inputVersion.getLastModified() : new Date(0)));
+                version.setMetaVersion(
+                        String.valueOf(inputVersion.getLastModified() != null ? inputVersion.getLastModified() : new Date(0)));
                 final List<ToolVersion.DescriptorTypeEnum> descriptorType = version.getDescriptorType();
                 if (!descriptorType.isEmpty()) {
                     EnumSet<ToolVersion.DescriptorTypeEnum> set = EnumSet.copyOf(descriptorType);
@@ -296,13 +300,15 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         return urlBuilder.toString();
     }
 
-    @Override public Response toolsIdGet(String id, SecurityContext securityContext) throws NotFoundException {
+    @Override
+    public Response toolsIdGet(String id, SecurityContext securityContext) throws NotFoundException {
         ParsedRegistryID parsedID = new ParsedRegistryID(id);
         Entry entry = getEntry(parsedID);
         return buildToolResponse(entry, null, false);
     }
 
-    @Override public Response toolsIdVersionsGet(String id, SecurityContext securityContext) throws NotFoundException {
+    @Override
+    public Response toolsIdVersionsGet(String id, SecurityContext securityContext) throws NotFoundException {
         ParsedRegistryID parsedID = new ParsedRegistryID(id);
         Entry entry = getEntry(parsedID);
         return buildToolResponse(entry, null, true);
@@ -337,8 +343,8 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         return response;
     }
 
-    @Override public Response toolsIdVersionsVersionIdGet(String id, String versionId, SecurityContext securityContext)
-            throws NotFoundException {
+    @Override
+    public Response toolsIdVersionsVersionIdGet(String id, String versionId, SecurityContext securityContext) throws NotFoundException {
         ParsedRegistryID parsedID = new ParsedRegistryID(id);
         try {
             versionId = URLDecoder.decode(versionId, StandardCharsets.UTF_8.displayName());
@@ -359,8 +365,9 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         return entry;
     }
 
-    @Override public Response toolsIdVersionsVersionIdTypeDescriptorGet(String type, String id, String versionId,
-            SecurityContext securityContext) throws NotFoundException {
+    @Override
+    public Response toolsIdVersionsVersionIdTypeDescriptorGet(String type, String id, String versionId, SecurityContext securityContext)
+            throws NotFoundException {
         SourceFile.FileType fileType = getFileType(type);
         if (fileType == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
@@ -368,8 +375,9 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         return getFileByToolVersionID(id, versionId, fileType, null, StringUtils.containsIgnoreCase(type, "plain"));
     }
 
-    @Override public Response toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(String type, String id, String versionId,
-            String relativePath, SecurityContext securityContext) throws NotFoundException {
+    @Override
+    public Response toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(String type, String id, String versionId, String relativePath,
+            SecurityContext securityContext) throws NotFoundException {
         if (type == null) {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
@@ -381,8 +389,9 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         return getFileByToolVersionID(id, versionId, fileType, relativePath, StringUtils.containsIgnoreCase(type, "plain"));
     }
 
-    @Override public Response toolsIdVersionsVersionIdTypeTestsGet(String type, String id, String versionId,
-            SecurityContext securityContext) throws NotFoundException {
+    @Override
+    public Response toolsIdVersionsVersionIdTypeTestsGet(String type, String id, String versionId, SecurityContext securityContext)
+            throws NotFoundException {
         /** we do not have test data implemented */
         return Response.status(Response.Status.NOT_FOUND).build();
     }
@@ -403,13 +412,15 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         return type;
     }
 
-    @Override public Response toolsIdVersionsVersionIdDockerfileGet(String id, String versionId, SecurityContext securityContext)
+    @Override
+    public Response toolsIdVersionsVersionIdDockerfileGet(String id, String versionId, SecurityContext securityContext)
             throws NotFoundException {
         return getFileByToolVersionID(id, versionId, DOCKERFILE, null, false);
     }
 
-    @Override public Response toolsGet(String registryId, String registry, String organization, String name, String toolname,
-            String description, String author, String offset, Integer limit, SecurityContext securityContext) throws NotFoundException {
+    @Override
+    public Response toolsGet(String registryId, String registry, String organization, String name, String toolname, String description,
+            String author, String offset, Integer limit, SecurityContext securityContext) throws NotFoundException {
         final List<Entry> all = new ArrayList<>();
         all.addAll(toolDAO.findAllPublished());
         all.addAll(workflowDAO.findAllPublished());
@@ -423,7 +434,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             }
 
             if (c instanceof Tool) {
-                Tool tool = (Tool) c;
+                Tool tool = (Tool)c;
                 // check each criteria. This sucks. Can we do this better with reflection? Or should we pre-convert?
                 if (registryId != null) {
                     if (!registryId.contains(tool.getToolPath())) {
@@ -468,17 +479,17 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             }
         }
 
-        if (limit == null){
+        if (limit == null) {
             limit = DEFAULT_PAGE_SIZE;
         }
         List<List<io.swagger.model.Tool>> pagedResults = Lists.partition(results, limit);
         int offsetInteger = 0;
-        if (offset != null){
+        if (offset != null) {
             offsetInteger = Integer.parseInt(offset);
         }
-        if (offsetInteger >= pagedResults.size()){
+        if (offsetInteger >= pagedResults.size()) {
             results = new ArrayList<>();
-        } else{
+        } else {
             results = pagedResults.get(offsetInteger);
         }
         final Response.ResponseBuilder responseBuilder = Response.ok(results);
@@ -499,13 +510,11 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             if (offsetInteger + 1 < pagedResults.size()) {
                 URI nextPageURI = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()),
                         "/api/ga4gh/v1/tools", Joiner.on('&').join(filters) + "&offset=" + (offsetInteger + 1), null);
-                responseBuilder.header("next-page",nextPageURI.toURL().toString());
+                responseBuilder.header("next-page", nextPageURI.toURL().toString());
             }
-            URI lastPageURI = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()), "/api/ga4gh/v1/tools",
-                    Joiner.on('&').join(filters) + "&offset="+(pagedResults.size()-1),
-                    null);
-            responseBuilder.header("last-page",lastPageURI.toURL().toString());
-
+            URI lastPageURI = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()),
+                    "/api/ga4gh/v1/tools", Joiner.on('&').join(filters) + "&offset=" + (pagedResults.size() - 1), null);
+            responseBuilder.header("last-page", lastPageURI.toURL().toString());
 
         } catch (URISyntaxException | MalformedURLException e) {
             throw new WebApplicationException("Could not construct page links", HttpStatus.SC_BAD_REQUEST);
@@ -513,7 +522,6 @@ public class ToolsApiServiceImpl extends ToolsApiService {
 
         return responseBuilder.build();
     }
-
 
     private void handleParameter(String parameter, String queryName, List<String> filters) {
         if (parameter != null) {
@@ -556,11 +564,11 @@ public class ToolsApiServiceImpl extends ToolsApiService {
 
         Optional<? extends Version> oldFirst;
         if (entry instanceof Tool) {
-            Tool toolEntry = (Tool) entry;
+            Tool toolEntry = (Tool)entry;
             oldFirst = toolEntry.getVersions().stream().filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId))
                     .findFirst();
         } else {
-            Workflow workflowEntry = (Workflow) entry;
+            Workflow workflowEntry = (Workflow)entry;
             oldFirst = workflowEntry.getVersions().stream().filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId))
                     .findFirst();
         }
@@ -570,19 +578,22 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             final ToolVersion toolVersion = first.get();
             final String toolVersionName = toolVersion.getName();
             if (type == DOCKERFILE) {
-                final ToolDockerfile dockerfile = (ToolDockerfile) table.get(toolVersionName, SourceFile.FileType.DOCKERFILE);
-                return Response.status(Response.Status.OK).type(unwrap? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(unwrap ? dockerfile.getDockerfile() : dockerfile).build();
+                final ToolDockerfile dockerfile = (ToolDockerfile)table.get(toolVersionName, SourceFile.FileType.DOCKERFILE);
+                return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
+                        .entity(unwrap ? dockerfile.getDockerfile() : dockerfile).build();
             } else {
                 if (relativePath == null) {
-                    if ((type == DOCKSTORE_WDL) && (((ToolDescriptor)table.get(toolVersionName, SourceFile.FileType.DOCKSTORE_WDL)).getType()
-                            == ToolDescriptor.TypeEnum.WDL)) {
-                        final ToolDescriptor descriptor = (ToolDescriptor) table.get(toolVersionName, SourceFile.FileType.DOCKSTORE_WDL);
+                    if ((type == DOCKSTORE_WDL) && (
+                            ((ToolDescriptor)table.get(toolVersionName, SourceFile.FileType.DOCKSTORE_WDL)).getType()
+                                    == ToolDescriptor.TypeEnum.WDL)) {
+                        final ToolDescriptor descriptor = (ToolDescriptor)table.get(toolVersionName, SourceFile.FileType.DOCKSTORE_WDL);
                         return Response.status(Response.Status.OK).entity(unwrap ? descriptor.getDescriptor() : descriptor).build();
-                    } else if (type == DOCKSTORE_CWL
-                            && (((ToolDescriptor)table.get(toolVersionName, SourceFile.FileType.DOCKSTORE_CWL)).getType()
-                            == ToolDescriptor.TypeEnum.CWL))  {
-                        final ToolDescriptor descriptor = (ToolDescriptor) table.get(toolVersionName, SourceFile.FileType.DOCKSTORE_CWL);
-                        return Response.status(Response.Status.OK).type(unwrap? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(unwrap ? descriptor.getDescriptor() : descriptor).build();
+                    } else if (type == DOCKSTORE_CWL && (
+                            ((ToolDescriptor)table.get(toolVersionName, SourceFile.FileType.DOCKSTORE_CWL)).getType()
+                                    == ToolDescriptor.TypeEnum.CWL)) {
+                        final ToolDescriptor descriptor = (ToolDescriptor)table.get(toolVersionName, SourceFile.FileType.DOCKSTORE_CWL);
+                        return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
+                                .entity(unwrap ? descriptor.getDescriptor() : descriptor).build();
                     }
                     return Response.status(Response.Status.NOT_FOUND).build();
                 } else {
@@ -591,7 +602,8 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                             .findFirst();
                     if (first1.isPresent()) {
                         final SourceFile entity = first1.get();
-                        return Response.status(Response.Status.OK).type(unwrap? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(unwrap ? entity.getContent() : entity).build();
+                        return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
+                                .entity(unwrap ? entity.getContent() : entity).build();
                     }
                 }
             }

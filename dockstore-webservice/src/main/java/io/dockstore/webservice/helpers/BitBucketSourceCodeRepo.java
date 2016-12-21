@@ -16,30 +16,28 @@
 
 package io.dockstore.webservice.helpers;
 
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.resources.ResourceUtilities;
-
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * @author dyuen
@@ -58,11 +56,10 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     // TODO: should be made protected in favour of factory
 
     /**
-     *
-     * @param gitUsername username that owns the bitbucket token
+     * @param gitUsername           username that owns the bitbucket token
      * @param client
      * @param bitbucketTokenContent bitbucket token
-     * @param gitRepository name of the repo
+     * @param gitRepository         name of the repo
      */
     public BitBucketSourceCodeRepo(String gitUsername, HttpClient client, String bitbucketTokenContent, String gitRepository) {
         this.client = client;
@@ -90,7 +87,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
                 Gson gson = new Gson();
                 Map<String, String> map = new HashMap<>();
-                map = (Map<String, String>) gson.fromJson(branchJson, map.getClass());
+                map = (Map<String, String>)gson.fromJson(branchJson, map.getClass());
 
                 branch = map.get("name");
 
@@ -151,7 +148,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 String bitbucketUrl = BITBUCKET_GIT_URL_PREFIX + owner + "/" + name + BITBUCKET_GIT_URL_SUFFIX;
 
                 String id = owner + "/" + name;
-                reposByGitURl.put(bitbucketUrl,id);
+                reposByGitURl.put(bitbucketUrl, id);
             }
 
         }
@@ -160,12 +157,13 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
     /**
      * Uses Bitbucket API to grab a raw source file and return it
+     *
      * @param path
      * @param repositoryId
      * @param branch
-         * @param type
-         * @return source file
-         */
+     * @param type
+     * @return source file
+     */
     private SourceFile getSourceFile(String path, String repositoryId, String branch, SourceFile.FileType type) {
         // TODO: should we even be creating a sourcefile before checking that it is valid?
         // I think it is fine since in the next part we just check that source file has content or not (no content is like null)
@@ -221,7 +219,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow, Map<String, WorkflowVersion> existingDefaults) {
+    public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
+            Map<String, WorkflowVersion> existingDefaults) {
         // Look at each version, check for valid workflows
         String url = BITBUCKET_API_URL + "repositories/" + repositoryId + "/branches-tags";
 
@@ -251,7 +250,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                     // TODO: No exceptions are caught here in the event of a failed call
                     sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, identifiedType);
 
-                    workflow.addWorkflowVersion(combineVersionAndSourcefile(sourceFile, workflow, identifiedType, version, existingDefaults));
+                    workflow.addWorkflowVersion(
+                            combineVersionAndSourcefile(sourceFile, workflow, identifiedType, version, existingDefaults));
                 }
             }
 
@@ -303,7 +303,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 String branchJson = asString.get();
                 Gson gson = new Gson();
                 Map<String, String> map = new HashMap<>();
-                map = (Map<String, String>) gson.fromJson(branchJson, map.getClass());
+                map = (Map<String, String>)gson.fromJson(branchJson, map.getClass());
 
                 // Branch stores the "main branch" on bitbucket
                 branch = map.get("name");

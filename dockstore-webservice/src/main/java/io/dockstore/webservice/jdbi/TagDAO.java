@@ -16,12 +16,10 @@
 
 package io.dockstore.webservice.jdbi;
 
+import io.dockstore.webservice.core.Tag;
 import org.hibernate.SessionFactory;
 
-import io.dockstore.webservice.core.Tag;
-
 /**
- *
  * @author xliu
  */
 public class TagDAO extends VersionDAO<Tag> {

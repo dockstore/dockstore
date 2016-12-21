@@ -19,11 +19,10 @@ package io.dockstore.webservice.helpers;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.http.client.HttpClient;
-
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
+import org.apache.http.client.HttpClient;
 
 /**
  * Created by aduncan on 09/12/16.
@@ -37,19 +36,23 @@ public class ManualRegistry extends AbstractImageRegistry {
         this.registry = registry;
     }
 
-    @Override public List<Tag> getTags(Tool tool) {
+    @Override
+    public List<Tag> getTags(Tool tool) {
         return new ArrayList<>();
     }
 
-    @Override public List<String> getNamespaces() {
+    @Override
+    public List<String> getNamespaces() {
         return new ArrayList<>();
     }
 
-    @Override public List<Tool> getToolsFromNamespace(List<String> namespaces) {
+    @Override
+    public List<Tool> getToolsFromNamespace(List<String> namespaces) {
         return new ArrayList<>();
     }
 
-    @Override public void updateAPIToolsWithBuildInformation(List<Tool> apiTools) {
+    @Override
+    public void updateAPIToolsWithBuildInformation(List<Tool> apiTools) {
         for (Tool tool : apiTools) {
             tool.setRegistry(registry);
         }

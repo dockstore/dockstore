@@ -16,12 +16,19 @@
 
 package io.dockstore.client.cli;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.util.List;
+import java.util.concurrent.TimeoutException;
+
 import com.google.common.io.Resources;
 import io.dockstore.common.Constants;
+import io.dockstore.common.Registry;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dockstore.common.Registry;
 import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit.DropwizardAppRule;
 import io.swagger.client.ApiClient;
@@ -43,7 +50,7 @@ import io.swagger.client.model.ToolDockerfile;
 import io.swagger.client.model.ToolVersion;
 import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
 import org.junit.Before;
@@ -51,19 +58,13 @@ import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.charset.Charset;
-import java.util.List;
-import java.util.concurrent.TimeoutException;
-
 import static io.dockstore.common.CommonTestUtilities.clearState;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
  * Tests the actual ApiClient generated via Swagger
+ *
  * @author xliu
  */
 public class SystemClientIT {
@@ -94,19 +95,16 @@ public class SystemClientIT {
 
     private static ApiClient getWebClient(boolean correctUser, boolean admin) throws IOException, TimeoutException {
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
-        HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         ApiClient client = new ApiClient();
         client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
-        client.addDefaultHeader(
-                "Authorization",
-                "Bearer "
-                        + (correctUser ? parseConfig.getString(admin ? Constants.WEBSERVICE_TOKEN_USER_1
-                                : Constants.WEBSERVICE_TOKEN_USER_2) : "foobar"));
+        client.addDefaultHeader("Authorization", "Bearer " + (correctUser ? parseConfig
+                .getString(admin ? Constants.WEBSERVICE_TOKEN_USER_1 : Constants.WEBSERVICE_TOKEN_USER_2) : "foobar"));
         return client;
     }
 
     @Before
-    public void cleanState(){
+    public void cleanState() {
         clearState();
     }
 
@@ -293,7 +291,7 @@ public class SystemClientIT {
         try {
             final ToolVersion foobar = toolApi.toolsIdVersionsVersionIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, "foobar");
             assertTrue(foobar != null); // this should be unreachable
-        } catch(ApiException e){
+        } catch (ApiException e) {
             assertTrue(e.getCode() == HttpStatus.SC_NOT_FOUND);
         }
     }
@@ -315,14 +313,13 @@ public class SystemClientIT {
         assertTrue(tags.size() == 1);
         Tag tag = tags.get(0);
 
-
         // verify master branch
         assertTrue(!tag.getVerified());
         assertTrue(tag.getVerifiedSource() == null);
         VerifyRequest request = new VerifyRequest();
         request.setVerify(true);
         request.setVerifiedSource("test-source");
-        containertagsApi.verifyToolTag(dockstoreTool.getId(), tag.getId(),request);
+        containertagsApi.verifyToolTag(dockstoreTool.getId(), tag.getId(), request);
 
         // check again
         tags = containertagsApi.getTagsByPath(dockstoreTool.getId());
@@ -340,21 +337,26 @@ public class SystemClientIT {
         DockstoreTool c = getContainer();
         containersApi.registerManual(c);
 
-        final ToolDockerfile toolDockerfile = toolApi.toolsIdVersionsVersionIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5","master");
+        final ToolDockerfile toolDockerfile = toolApi
+                .toolsIdVersionsVersionIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5", "master");
         assertTrue(toolDockerfile.getDockerfile().contains("dockerstuff"));
-        final ToolDescriptor cwl = toolApi.toolsIdVersionsVersionIdTypeDescriptorGet("cwl", "registry.hub.docker.com/seqware/seqware/test5", "master");
+        final ToolDescriptor cwl = toolApi
+                .toolsIdVersionsVersionIdTypeDescriptorGet("cwl", "registry.hub.docker.com/seqware/seqware/test5", "master");
         assertTrue(cwl.getDescriptor().contains("cwlstuff"));
 
         // hit up the plain text versions
         final String basePath = client.getBasePath();
         String encodedID = "registry.hub.docker.com%2Fseqware%2Fseqware%2Ftest5";
-        URL url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/"+encodedID+"/versions/master/cwl-plain/descriptor");
+        URL url = new URL(
+                basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/cwl-plain/descriptor");
         List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
         assertTrue(strings.size() == 1 && strings.get(0).equals("cwlstuff"));
 
         //hit up the relative path version
         String encodedPath = "%2FDockstore.cwl";
-        url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/"+encodedID+"/versions/master/cwl-plain/descriptor/"+encodedPath);
+        url = new URL(
+                basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/cwl-plain/descriptor/"
+                        + encodedPath);
         strings = Resources.readLines(url, Charset.forName("UTF-8"));
         assertTrue(strings.size() == 1 && strings.get(0).equals("cwlstuff"));
     }
@@ -374,23 +376,23 @@ public class SystemClientIT {
         // hit up the plain text versions
         final String basePath = client.getBasePath();
         String encodedID = "registry.hub.docker.com%2Fseqware%2Fseqware%2Ftest5";
-        URL url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/"+encodedID);
+        URL url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID);
         List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
         // test root version
         assertTrue(strings.size() == 1 && strings.get(0).contains("\"verified\":true,\"verified-source\":\"[\\\"funky source\\\"]\""));
 
         // TODO: really, we should be using deserialized versions, but this is not currently working
-//        ObjectMapper mapper = new ObjectMapper();
-//        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-//        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-//        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-//        mapper.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
-//        mapper.enable(DeserializationFeature.READ_ENUMS_USING_TO_STRING);
-//        mapper.registerModule(new JodaModule());
-//        final DockstoreTool dockstoreTool = mapper.readValue(strings.get(0), DockstoreTool.class);
+        //        ObjectMapper mapper = new ObjectMapper();
+        //        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        //        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        //        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        //        mapper.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
+        //        mapper.enable(DeserializationFeature.READ_ENUMS_USING_TO_STRING);
+        //        mapper.registerModule(new JodaModule());
+        //        final DockstoreTool dockstoreTool = mapper.readValue(strings.get(0), DockstoreTool.class);
 
         // hit up a specific version
-        url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/"+encodedID+"/versions/master");
+        url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master");
         strings = Resources.readLines(url, Charset.forName("UTF-8"));
         // test nested version
         assertTrue(strings.size() == 1 && strings.get(0).contains("\"verified\":true,\"verified-source\":\"funky source\""));
@@ -460,7 +462,8 @@ public class SystemClientIT {
         ApiClient muggleClient = getWebClient();
         ContainersApi muggleContainersApi = new ContainersApi(muggleClient);
         final DockstoreTool registeredContainer = muggleContainersApi.getPublishedContainer(c.getId());
-        assertTrue("should see no tags as a regular user, saw " + registeredContainer.getTags().size(), registeredContainer.getTags().size() == 0);
+        assertTrue("should see no tags as a regular user, saw " + registeredContainer.getTags().size(),
+                registeredContainer.getTags().size() == 0);
     }
 
     @Test

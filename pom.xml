@@ -14,7 +14,8 @@
   ~    limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.dockstore</groupId>
@@ -35,11 +36,11 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <github.url>scm:git:git@github.com:ga4gh/dockstore.git</github.url>
-        <dropwizard.version>1.0.0</dropwizard.version>
+        <dropwizard.version>1.0.5</dropwizard.version>
         <swagger-annotations-version>1.5.9</swagger-annotations-version>
         <assertj.version>3.4.1</assertj.version>
-        <jackson.version>2.7.6</jackson.version>
-        <jersey-version>2.23.1</jersey-version>
+        <jackson.version>2.7.8</jackson.version>
+        <jersey-version>2.23.2</jersey-version>
         <junit-version>4.12</junit-version>
         <logback.version>1.1.7</logback.version>
         <aws.version>1.10.77</aws.version>
@@ -54,7 +55,7 @@
 
     <organization>
         <name>Dockstore</name>
-	    <url>https://www.dockstore.org/</url>
+        <url>https://www.dockstore.org/</url>
     </organization>
 
     <scm>
@@ -344,9 +345,9 @@
                 <version>2.5</version>
             </dependency>
             <dependency>
-                <groupId>commons-configuration</groupId>
-                <artifactId>commons-configuration</artifactId>
-                <version>1.10</version>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-configuration2</artifactId>
+                <version>2.1</version>
             </dependency>
 
             <dependency>
@@ -676,6 +677,13 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
                     <version>2.17</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>com.puppycrawl.tools</groupId>
+                            <artifactId>checkstyle</artifactId>
+                            <version>7.3</version>
+                        </dependency>
+                    </dependencies>
                     <configuration>
                         <configLocation>checkstyle.xml</configLocation>
                     </configuration>
@@ -839,7 +847,7 @@
                         <id>enforce</id>
                         <configuration>
                             <rules>
-                                <DependencyConvergence />
+                                <DependencyConvergence/>
                                 <requirePluginVersions>
                                     <message>Best Practice is to always define plugin versions!</message>
                                 </requirePluginVersions>
@@ -850,7 +858,7 @@
                                         <exclude>io.dockstore:*</exclude>
                                     </excludes>
                                 </requireReleaseDeps>
-                                <requireUpperBoundDeps />
+                                <requireUpperBoundDeps/>
                             </rules>
                         </configuration>
                         <goals>
@@ -937,7 +945,7 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>cobertura-maven-plugin</artifactId>
                 <configuration>
-                    <check />
+                    <check/>
                     <formats>
                         <format>xml</format>
                         <format>html</format>
@@ -1012,7 +1020,7 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>cobertura-maven-plugin</artifactId>
                 <configuration>
-                    <check />
+                    <check/>
                     <formats>
                         <format>xml</format>
                         <format>html</format>
@@ -1051,7 +1059,7 @@
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>cobertura-maven-plugin</artifactId>
                         <configuration>
-                            <check />
+                            <check/>
                             <formats>
                                 <format>xml</format>
                             </formats>

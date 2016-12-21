@@ -16,12 +16,12 @@
   -->
 
 <html>
-    <body>
-        <p id="demo"></p>
-        <script>
-            var hash =  window.location.hash.substring(1);
-            document.getElementById("demo").innerHTML = "Hash fragment is: " + hash;
-	    window.location = window.location.origin + "/auth/tokens/quay.io?scope=repo%3Aread&" +  hash; 
-        </script>
-    </body>
+<body>
+<p id="demo"></p>
+<script>
+    var hash = window.location.hash.substring(1);
+    document.getElementById("demo").innerHTML = "Hash fragment is: " + hash;
+    window.location = window.location.origin + "/auth/tokens/quay.io?scope=repo%3Aread&" + hash;
+</script>
+</body>
 </html>

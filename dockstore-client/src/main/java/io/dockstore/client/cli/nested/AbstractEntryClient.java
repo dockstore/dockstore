@@ -16,6 +16,28 @@
 
 package io.dockstore.client.cli.nested;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
@@ -53,28 +75,6 @@ import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import static io.dockstore.client.cli.ArgumentUtility.CONVERT;
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.LAUNCH;
@@ -87,23 +87,23 @@ import static io.dockstore.client.cli.ArgumentUtility.invalid;
 import static io.dockstore.client.cli.ArgumentUtility.optVal;
 import static io.dockstore.client.cli.ArgumentUtility.optVals;
 import static io.dockstore.client.cli.ArgumentUtility.out;
-import static io.dockstore.client.cli.ArgumentUtility.printLineBreak;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
+import static io.dockstore.client.cli.ArgumentUtility.printLineBreak;
 import static io.dockstore.client.cli.ArgumentUtility.reqVal;
 import static io.dockstore.client.cli.Client.API_ERROR;
 import static io.dockstore.client.cli.Client.CLIENT_ERROR;
-import static io.dockstore.client.cli.Client.IO_ERROR;
 import static io.dockstore.client.cli.Client.ENTRY_NOT_FOUND;
+import static io.dockstore.client.cli.Client.IO_ERROR;
 import static io.dockstore.client.cli.Client.SCRIPT;
 
 /**
  * Handles the commands for a particular type of entry. (e.g. Workflows, Tools) Not a great abstraction, but enforces some structure for
  * now.
- *
+ * <p>
  * The goal here should be to gradually work toward an interface that removes those pesky command line arguments (List<String> args) from
  * implementing classes that do not need to reference to the command line arguments directly.
- *
+ * <p>
  * Note that many of these methods depend on a unique identifier for an entry called a path for workflows and tools.
  * For example, a tool path looks like quay.io/collaboratory/bwa-tool:develop wheras a workflow path looks like
  * collaboratory/bwa-workflow:develop
@@ -111,11 +111,10 @@ import static io.dockstore.client.cli.Client.SCRIPT;
  * @author dyuen
  */
 public abstract class AbstractEntryClient {
-    private final CWL cwlUtil = new CWL();
-
-    private static final Logger LOG = LoggerFactory.getLogger(AbstractEntryClient.class);
     public static final String CROMWELL_LOCATION = "https://github.com/broadinstitute/cromwell/releases/download/0.21/cromwell-0.21.jar";
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractEntryClient.class);
     public boolean isAdmin = false;
+    private final CWL cwlUtil = new CWL();
 
     public enum Type {
         CWL("cwl"), WDL("wdl"), NONE("none");
@@ -129,7 +128,6 @@ public abstract class AbstractEntryClient {
         public String toString() {
             return desc;
         }
-
 
     }
 
@@ -200,13 +198,11 @@ public abstract class AbstractEntryClient {
      * A default implementation to process the commands that are common between types of entries. (i.e. both workflows and tools need to be
      * published and labelled)
      *
-     * @param args
-     *            the arguments yet to be processed
-     * @param activeCommand
-     *            the current command that we're interested in
+     * @param args          the arguments yet to be processed
+     * @param activeCommand the current command that we're interested in
      * @return whether this interface handled the active command
      */
-    public final boolean processEntryCommands(List<String> args, String activeCommand) throws IOException, ApiException{
+    public final boolean processEntryCommands(List<String> args, String activeCommand) throws IOException, ApiException {
         if (null != activeCommand) {
             // see if it is a command specific to this kind of Entry
             boolean processed = processEntrySpecificCommands(args, activeCommand);
@@ -265,28 +261,23 @@ public abstract class AbstractEntryClient {
     /**
      * Handle search for an entry
      *
-     * @param pattern
-     *            a pattern, currently a subtring for searching
+     * @param pattern a pattern, currently a subtring for searching
      */
     protected abstract void handleSearch(String pattern);
 
     /**
      * Handle the actual labelling
      *
-     * @param entryPath
-     *            a unique identifier for an entry, called a path for workflows and tools
-     * @param addsSet
-     *            the set of labels that we wish to add
-     * @param removesSet
-     *            the set of labels that we wish to delete
+     * @param entryPath  a unique identifier for an entry, called a path for workflows and tools
+     * @param addsSet    the set of labels that we wish to add
+     * @param removesSet the set of labels that we wish to delete
      */
     protected abstract void handleLabels(String entryPath, Set<String> addsSet, Set<String> removesSet);
 
     /**
      * Handle output for a type of entry
      *
-     * @param entryPath
-     *            a unique identifier for an entry, called a path for workflows and tools
+     * @param entryPath a unique identifier for an entry, called a path for workflows and tools
      */
     protected abstract void handleInfo(String entryPath);
 
@@ -298,8 +289,7 @@ public abstract class AbstractEntryClient {
     /**
      * Refresh a specific entry of this type.
      *
-     * @param toolpath
-     *            a unique identifier for an entry, called a path for workflows and tools
+     * @param toolpath a unique identifier for an entry, called a path for workflows and tools
      */
     protected abstract void refreshTargetEntry(String toolpath);
 
@@ -307,13 +297,11 @@ public abstract class AbstractEntryClient {
      * Grab the descriptor for an entry. TODO: descriptorType should probably be an enum, may need to play with generics to make it
      * dependent on the type of entry
      *
-     * @param descriptorType
-     *            type of descriptor
-     * @param entry
-     *            a unique identifier for an entry, called a path for workflows and tools ex:
-     *            quay.io/collaboratory/seqware-bwa-workflow:develop for a tool
+     * @param descriptorType type of descriptor
+     * @param entry          a unique identifier for an entry, called a path for workflows and tools ex:
+     *                       quay.io/collaboratory/seqware-bwa-workflow:develop for a tool
      */
-    private void handleDescriptor(String descriptorType, String entry){
+    private void handleDescriptor(String descriptorType, String entry) {
         try {
             SourceFile file = getDescriptorFromServer(entry, descriptorType);
 
@@ -328,32 +316,35 @@ public abstract class AbstractEntryClient {
     }
 
     /**
-     *
-     * @param entryPath a unique identifier for an entry, called a path for workflows and tools
-     * @param newName take entryPath and rename its most specific name (ex: toolName for tools) to newName
+     * @param entryPath        a unique identifier for an entry, called a path for workflows and tools
+     * @param newName          take entryPath and rename its most specific name (ex: toolName for tools) to newName
      * @param unpublishRequest true to publish, false to unpublish
      */
     protected abstract void handlePublishUnpublish(String entryPath, String newName, boolean unpublishRequest);
 
     /**
      * Verify/Unverify an entry
-     * @param entry a unique identifier for an entry, called a path for workflows and tools
-     * @param versionName the name of the version
-     * @param verifySource source of entry verification
+     *
+     * @param entry           a unique identifier for an entry, called a path for workflows and tools
+     * @param versionName     the name of the version
+     * @param verifySource    source of entry verification
      * @param unverifyRequest true to unverify, false to verify
-     * @param isScript true if called by script, false otherwise
+     * @param isScript        true if called by script, false otherwise
      */
-    protected abstract void handleVerifyUnverify(String entry, String versionName, String verifySource, boolean unverifyRequest, boolean isScript);
+    protected abstract void handleVerifyUnverify(String entry, String versionName, String verifySource, boolean unverifyRequest,
+            boolean isScript);
 
     /**
      * Adds/removes supplied test parameter paths for a given entry version
-     * @param entry a unique identifier for an entry, called a path for workflows and tools
-     * @param versionName the name of the version
-     * @param adds set of test parameter paths to add (from git)
-     * @param removes set of test parameter paths to remove (from git)
+     *
+     * @param entry          a unique identifier for an entry, called a path for workflows and tools
+     * @param versionName    the name of the version
+     * @param adds           set of test parameter paths to add (from git)
+     * @param removes        set of test parameter paths to remove (from git)
      * @param descriptorType CWL or WDL
      */
-    protected abstract void handleTestParameter(String entry, String versionName, List<String> adds, List<String> removes, String descriptorType);
+    protected abstract void handleTestParameter(String entry, String versionName, List<String> adds, List<String> removes,
+            String descriptorType);
 
     /**
      * List all of the entries published and unpublished for this user
@@ -368,8 +359,7 @@ public abstract class AbstractEntryClient {
     /**
      * Process commands that are specific to this kind of entry (tools, workflows).
      *
-     * @param args
-     *            remaining command segment
+     * @param args remaining command segment
      * @return true iff this handled the command
      */
     protected abstract boolean processEntrySpecificCommands(List<String> args, String activeCommand);
@@ -379,12 +369,13 @@ public abstract class AbstractEntryClient {
      *
      * @param args user's command-line arguments
      */
-    protected abstract void manualPublish(final List<String> args);
+    protected abstract void manualPublish(List<String> args);
 
-    public abstract SourceFile getDescriptorFromServer(String entry, String descriptorType) throws
-            ApiException, IOException;
+    public abstract SourceFile getDescriptorFromServer(String entry, String descriptorType) throws ApiException, IOException;
 
-    /** private helper methods */
+    /**
+     * private helper methods
+     */
 
     public void publish(List<String> args) {
         if (args.isEmpty()) {
@@ -502,9 +493,8 @@ public abstract class AbstractEntryClient {
     }
 
     private void convert(final List<String> args) throws ApiException, IOException {
-        if (args.isEmpty()
-                || (containsHelpRequest(args) && !args.contains("cwl2json") && !args.contains("wdl2json") && !args.contains("entry2json") && !args
-                .contains("entry2tsv"))) {
+        if (args.isEmpty() || (containsHelpRequest(args) && !args.contains("cwl2json") && !args.contains("wdl2json") && !args
+                .contains("entry2json") && !args.contains("entry2tsv"))) {
             convertHelp(); // Display general help
         } else {
             final String cmd = args.remove(0);
@@ -537,7 +527,7 @@ public abstract class AbstractEntryClient {
         if (args.isEmpty() || containsHelpRequest(args)) {
             if (json) {
                 cwl2jsonHelp();
-            } else{
+            } else {
                 cwl2yamlHelp();
             }
         } else {
@@ -549,7 +539,7 @@ public abstract class AbstractEntryClient {
                 if (json) {
                     final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
                     out(gson.toJson(runJson));
-                } else{
+                } else {
                     Yaml yaml = new Yaml();
                     out(yaml.dumpAs(runJson, null, DumperOptions.FlowStyle.BLOCK));
                 }
@@ -599,12 +589,13 @@ public abstract class AbstractEntryClient {
      * it will get the content of the file and try to find/match the required fields
      * Required fields in CWL: 'inputs' 'outputs' 'class' (CommandLineTool: 'baseCommand' , Workflow:'steps'
      * Optional field, but good practice: 'cwlVersion'
+     *
      * @param content : the entry file content, type File
      * @return true if the file is CWL (warning will be added here if cwlVersion is not found but will still return true)
      * false if it's not a CWL file (could be WDL or something else)
      * errormsg & exit if >=1 required field not found in the file
      */
-    public Boolean checkCWL(File content){
+    public Boolean checkCWL(File content) {
         /* CWL: check for 'class:CommandLineTool', 'inputs: ','outputs: ', and 'baseCommand'. Optional: 'cwlVersion'
          CWL: check for 'class:Workflow', 'inputs: ','outputs: ', and 'steps'. Optional: 'cwlVersion'*/
         Pattern inputPattern = Pattern.compile("(.*)(inputs)(.*)(:)(.*)");
@@ -615,13 +606,12 @@ public abstract class AbstractEntryClient {
         Pattern versionPattern = Pattern.compile("(.*)(cwlVersion)(.*)(:)(.*)");
         Pattern stepsPattern = Pattern.compile("(.*)(steps)(.*)(:)(.*)");
         String missing = "Required fields that are missing from CWL file :";
-        boolean inputFound = false, classWfFound = false, classToolFound = false, outputFound = false,
-                commandFound = false, versionFound = false, stepsFound = false;
+        boolean inputFound = false, classWfFound = false, classToolFound = false, outputFound = false, commandFound = false, versionFound = false, stepsFound = false;
         Path p = Paths.get(content.getPath());
         //go through each line of the file content and find the word patterns as described above
-        try{
+        try {
             List<String> fileContent = java.nio.file.Files.readAllLines(p, StandardCharsets.UTF_8);
-            for(String line: fileContent){
+            for (String line : fileContent) {
                 Matcher matchWf = classWfPattern.matcher(line);
                 Matcher matchTool = classToolPattern.matcher(line);
                 Matcher matchInput = inputPattern.matcher(line);
@@ -629,64 +619,67 @@ public abstract class AbstractEntryClient {
                 Matcher matchCommand = commandPattern.matcher(line);
                 Matcher matchVersion = versionPattern.matcher(line);
                 Matcher matchSteps = stepsPattern.matcher(line);
-                if(matchInput.find() && !stepsFound){
+                if (matchInput.find() && !stepsFound) {
                     inputFound = true;
-                } else if(matchOutput.find()){
+                } else if (matchOutput.find()) {
                     outputFound = true;
-                } else if(matchCommand.find()){
+                } else if (matchCommand.find()) {
                     commandFound = true;
-                } else if(matchVersion.find()){
+                } else if (matchVersion.find()) {
                     versionFound = true;
-                } else if(matchSteps.find()){
+                } else if (matchSteps.find()) {
                     stepsFound = true;
-                } else{
-                    if(getEntryType().toLowerCase().equals("workflow") && matchWf.find()){
+                } else {
+                    if (getEntryType().toLowerCase().equals("workflow") && matchWf.find()) {
                         classWfFound = true;
-                    } else if(getEntryType().toLowerCase().equals("tool") && matchTool.find()){
+                    } else if (getEntryType().toLowerCase().equals("tool") && matchTool.find()) {
                         classToolFound = true;
-                    } else if((getEntryType().toLowerCase().equals("tool") && matchWf.find())) {
-                        errorMessage("Expected a tool but the CWL file specified a workflow. Use 'dockstore workflow launch ...' instead.", CLIENT_ERROR);
-                    } else if (getEntryType().toLowerCase().equals("workflow") && matchTool.find()){
-                        errorMessage("Expected a workflow but the CWL file specified a tool. Use 'dockstore tool launch ...' instead.", CLIENT_ERROR);
+                    } else if ((getEntryType().toLowerCase().equals("tool") && matchWf.find())) {
+                        errorMessage("Expected a tool but the CWL file specified a workflow. Use 'dockstore workflow launch ...' instead.",
+                                CLIENT_ERROR);
+                    } else if (getEntryType().toLowerCase().equals("workflow") && matchTool.find()) {
+                        errorMessage("Expected a workflow but the CWL file specified a tool. Use 'dockstore tool launch ...' instead.",
+                                CLIENT_ERROR);
                     }
                 }
             }
             //check if the required fields are found, if not, give warning for the optional ones or error for the required ones
-            if(inputFound && outputFound && classWfFound && stepsFound){
+            if (inputFound && outputFound && classWfFound && stepsFound) {
                 //this is a valid cwl workflow file
-                if(!versionFound) {
+                if (!versionFound) {
                     out("Warning: 'cwlVersion' field is missing in the CWL file.");
                 }
                 return true;
-            } else if(inputFound && outputFound && classToolFound && commandFound){
+            } else if (inputFound && outputFound && classToolFound && commandFound) {
                 //this is a valid cwl tool file
-                if(!versionFound){
+                if (!versionFound) {
                     out("Warning: 'cwlVersion' field is missing in the CWL file.");
                 }
                 return true;
-            } else if((!inputFound && !outputFound && !classToolFound && !commandFound) || (!inputFound && !outputFound && !classWfFound)){
+            } else if ((!inputFound && !outputFound && !classToolFound && !commandFound) || (!inputFound && !outputFound
+                    && !classWfFound)) {
                 //not a CWL file, could be WDL or something else
                 return false;
-            } else{
+            } else {
                 //CWL but some required fields are missing
-                if(!outputFound) {
+                if (!outputFound) {
                     missing += " 'outputs'";
                 }
-                if(!inputFound) {
+                if (!inputFound) {
                     missing += " 'inputs'";
                 }
-                if(classWfFound && !stepsFound) {
+                if (classWfFound && !stepsFound) {
                     missing += " 'steps'";
                 }
-                if(!classToolFound && !classWfFound) {
+                if (!classToolFound && !classWfFound) {
                     missing += " 'class'";
                 }
-                if(classToolFound && !commandFound){
+                if (classToolFound && !commandFound) {
                     missing += " 'baseCommand'";
                 }
                 errorMessage(missing, CLIENT_ERROR);
             }
-        } catch(IOException e){
+        } catch (IOException e) {
             throw new RuntimeException("Failed to get content of entry file.", e);
         }
         return false;
@@ -696,12 +689,13 @@ public abstract class AbstractEntryClient {
      * this function will check if the content of the file is WDL or not
      * it will get the content of the file and try to find/match the required fields
      * Required fields in WDL: 'task' 'workflow 'command' 'call' 'output'
+     *
      * @param content : the entry file content, File Type
      * @return true if it is a valid WDL file
      * false if it's not a WDL file (could be CWL or something else)
      * errormsg and exit if >=1 required field not found in the file
      */
-    public Boolean checkWDL(File content){
+    public Boolean checkWDL(File content) {
         /* WDL: check for 'task' (must be >=1) ,'call', 'command', 'output' and 'workflow' */
         Pattern taskPattern = Pattern.compile("(.*)(task)(\\s)(.*)(\\{)");
         Pattern wfPattern = Pattern.compile("(.*)(workflow)(\\s)(.*)(\\{)");
@@ -713,9 +707,9 @@ public abstract class AbstractEntryClient {
         String missing = "Required fields that are missing from WDL file :";
         Path p = Paths.get(content.getPath());
         //go through each line of the file content and find the word patterns as described above
-        try{
+        try {
             List<String> fileContent = java.nio.file.Files.readAllLines(p, StandardCharsets.UTF_8);
-            for(String line: fileContent){
+            for (String line : fileContent) {
                 Matcher matchTask = taskPattern.matcher(line);
                 Matcher matchWorkflow = wfPattern.matcher(line);
                 Matcher matchCommand = commandPattern.matcher(line);
@@ -723,42 +717,42 @@ public abstract class AbstractEntryClient {
                 Matcher matchOutput = outputPattern.matcher(line);
                 if (matchTask.find()) {
                     counter++;
-                } else if(matchWorkflow.find()){
+                } else if (matchWorkflow.find()) {
                     wfFound = true;
-                } else if(matchCommand.find()){
+                } else if (matchCommand.find()) {
                     commandFound = true;
-                } else if(matchCall.find()){
+                } else if (matchCall.find()) {
                     callFound = true;
-                } else if(matchOutput.find()){
+                } else if (matchOutput.find()) {
                     outputFound = true;
                 }
             }
             //check all the required fields and give error message if it's missing
-            if(counter>0 && wfFound && commandFound && callFound && outputFound){
+            if (counter > 0 && wfFound && commandFound && callFound && outputFound) {
                 return true;    //this is a valid WDL file
-            } else if(counter==0 && !wfFound && !commandFound && !callFound && !outputFound){
+            } else if (counter == 0 && !wfFound && !commandFound && !callFound && !outputFound) {
                 return false;   //not a WDL file, maybe a CWL file or something else
             } else {
                 //WDL file but some required fields are missing
-                if(counter==0){
+                if (counter == 0) {
                     missing += " 'task'";
                 }
-                if(!wfFound){
-                    missing+=" 'workflow'";
+                if (!wfFound) {
+                    missing += " 'workflow'";
                 }
-                if(!commandFound){
-                    missing+=" 'command'";
+                if (!commandFound) {
+                    missing += " 'command'";
                 }
-                if(!callFound){
-                    missing+=" 'call'";
+                if (!callFound) {
+                    missing += " 'call'";
                 }
-                if(!outputFound) {
+                if (!outputFound) {
                     missing += " 'output'";
                 }
                 errorMessage(missing, CLIENT_ERROR);
             }
 
-        } catch (IOException e){
+        } catch (IOException e) {
             throw new RuntimeException("Failed to get content of entry file.", e);
         }
         return false;
@@ -784,7 +778,7 @@ public abstract class AbstractEntryClient {
 
     private void testParameter(List<String> args) {
         if (containsHelpRequest(args) || args.isEmpty()) {
-             testParameterHelp();
+            testParameterHelp();
         } else if (!args.isEmpty()) {
             String entry = reqVal(args, "--entry");
             String version = reqVal(args, "--version");
@@ -797,7 +791,7 @@ public abstract class AbstractEntryClient {
                 descriptorType = descriptorType.toLowerCase();
                 boolean validType = false;
                 for (Type type : Type.values()) {
-                    if (type.toString().equals(descriptorType) && !descriptorType.equals("none")) {
+                    if (type.toString().equals(descriptorType) && !"none".equals(descriptorType)) {
                         validType = true;
                         break;
                     }
@@ -813,15 +807,16 @@ public abstract class AbstractEntryClient {
 
     /**
      * this function will check the content of the entry file if it's a valid cwl/wdl file
+     *
      * @param content: the file content, Type File
      * @return Type -> Type.CWL if file content is CWL
      * Type.WDL if file content is WDL
      * Type.NONE if file content is neither WDL nor CWL
      */
-    private Type checkFileContent(File content){
-        if(checkCWL(content)){
+    private Type checkFileContent(File content) {
+        if (checkCWL(content)) {
             return Type.CWL;
-        }else if(checkWDL(content)){
+        } else if (checkWDL(content)) {
             return Type.WDL;
         }
         return Type.NONE;
@@ -829,15 +824,16 @@ public abstract class AbstractEntryClient {
 
     /**
      * this function will check the extension of the entry file (cwl/wdl)
+     *
      * @param path: the file path, Type String
      * @return Type -> Type.CWL if file extension is CWL
      * Type.WDL if file extension is WDL
      * Type.NONE if file extension is neither WDL nor CWL, could be no extension or some other random extension(e.g .txt)
      */
-    private Type checkFileExtension(String path){
-        if(FilenameUtils.getExtension(path).toLowerCase().equals(CWL_STRING)){
+    private Type checkFileExtension(String path) {
+        if (FilenameUtils.getExtension(path).toLowerCase().equals(CWL_STRING)) {
             return Type.CWL;
-        } else if(FilenameUtils.getExtension(path).toLowerCase().equals(WDL_STRING)){
+        } else if (FilenameUtils.getExtension(path).toLowerCase().equals(WDL_STRING)) {
             return Type.WDL;
         }
         return Type.NONE;
@@ -846,26 +842,29 @@ public abstract class AbstractEntryClient {
     /**
      * this function will check for the content and the extension of entry file
      * for launch simplification, trying to reduce the use '--descriptor' when launching
+     *
      * @param localFilePath relative path to local descriptor for either WDL/CWL tools or workflows
-     * this will either give back exceptionMessage and exit (if the content/extension/descriptor is invalid)
-     * OR proceed with launching the entry file (if it's valid)
+     *                      this will either give back exceptionMessage and exit (if the content/extension/descriptor is invalid)
+     *                      OR proceed with launching the entry file (if it's valid)
      */
-    public void checkEntryFile(String localFilePath,List<String> argsList, String descriptor){
+    public void checkEntryFile(String localFilePath, List<String> argsList, String descriptor) {
         File file = new File(localFilePath);
         Type ext = checkFileExtension(file.getPath());     //file extension could be cwl,wdl or ""
 
         if (!file.exists() || file.isDirectory()) {
             if (getEntryType().toLowerCase().equals("tool")) {
-                errorMessage("The tool file " + file.getPath() + " does not exist. Did you mean to launch a remote tool or a workflow?", ENTRY_NOT_FOUND);
+                errorMessage("The tool file " + file.getPath() + " does not exist. Did you mean to launch a remote tool or a workflow?",
+                        ENTRY_NOT_FOUND);
             } else {
-                errorMessage("The workflow file " + file.getPath() + " does not exist. Did you mean to launch a remote workflow or a tool?", ENTRY_NOT_FOUND);
+                errorMessage("The workflow file " + file.getPath() + " does not exist. Did you mean to launch a remote workflow or a tool?",
+                        ENTRY_NOT_FOUND);
             }
         }
 
         Type content = checkFileContent(file);             //check the file content (wdl,cwl or "")
 
-        if(ext.equals(Type.CWL)){
-            if(content.equals(Type.CWL)) {
+        if (ext.equals(Type.CWL)) {
+            if (content.equals(Type.CWL)) {
                 try {
                     launchCwl(localFilePath, argsList, true);
                 } catch (ApiException e) {
@@ -873,12 +872,12 @@ public abstract class AbstractEntryClient {
                 } catch (IOException e) {
                     exceptionMessage(e, "IO error launching entry", IO_ERROR);
                 }
-            }else if(!content.equals(Type.CWL) && descriptor==null){
+            } else if (!content.equals(Type.CWL) && descriptor == null) {
                 //extension is cwl but the content is not cwl
                 out("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end");
-            }else if(!content.equals(Type.CWL) && descriptor.equals(CWL_STRING)){
+            } else if (!content.equals(Type.CWL) && descriptor.equals(CWL_STRING)) {
                 errorMessage("Entry file is not a valid CWL file.", CLIENT_ERROR);
-            }else if(content.equals(Type.WDL) && descriptor.equals(WDL_STRING)) {
+            } else if (content.equals(Type.WDL) && descriptor.equals(WDL_STRING)) {
                 out("This is a WDL file.. Please put the correct extension to the entry file name.");
                 out("Launching entry file as a WDL file..");
                 try {
@@ -888,11 +887,12 @@ public abstract class AbstractEntryClient {
                 } catch (IOException e) {
                     exceptionMessage(e, "IO error launching entry", IO_ERROR);
                 }
-            } else{
-                errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
+            } else {
+                errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.",
+                        CLIENT_ERROR);
             }
-        }else if(ext.equals(Type.WDL)){
-            if(content.equals(Type.WDL)){
+        } else if (ext.equals(Type.WDL)) {
+            if (content.equals(Type.WDL)) {
                 try {
                     launchWdl(localFilePath, argsList, true);
                 } catch (ApiException e) {
@@ -900,12 +900,12 @@ public abstract class AbstractEntryClient {
                 } catch (IOException e) {
                     exceptionMessage(e, "IO error launching entry", IO_ERROR);
                 }
-            }else if(!content.equals(Type.WDL) && descriptor==null){
+            } else if (!content.equals(Type.WDL) && descriptor == null) {
                 //extension is wdl but the content is not wdl
                 out("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end");
-            }else if(!content.equals(Type.WDL) && descriptor.equals(WDL_STRING)){
+            } else if (!content.equals(Type.WDL) && descriptor.equals(WDL_STRING)) {
                 errorMessage("Entry file is not a valid WDL file.", CLIENT_ERROR);
-            }else if(content.equals(Type.CWL) && descriptor.equals(CWL_STRING)){
+            } else if (content.equals(Type.CWL) && descriptor.equals(CWL_STRING)) {
                 out("This is a CWL file.. Please put the correct extension to the entry file name.");
                 out("Launching entry file as a CWL file..");
                 try {
@@ -915,12 +915,13 @@ public abstract class AbstractEntryClient {
                 } catch (IOException e) {
                     exceptionMessage(e, "IO error launching entry", IO_ERROR);
                 }
-            } else{
-                errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
+            } else {
+                errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.",
+                        CLIENT_ERROR);
             }
-        }else{
+        } else {
             //no extension given
-            if(content.equals(Type.CWL)){
+            if (content.equals(Type.CWL)) {
                 out("This is a CWL file.. Please put an extension to the entry file name.");
                 out("Launching entry file as a CWL file..");
                 try {
@@ -930,7 +931,7 @@ public abstract class AbstractEntryClient {
                 } catch (IOException e) {
                     exceptionMessage(e, "IO error launching entry", IO_ERROR);
                 }
-            }else if(content.equals(Type.WDL)){
+            } else if (content.equals(Type.WDL)) {
                 out("This is a WDL file.. Please put an extension to the entry file name.");
                 out("Launching entry file as a WDL file..");
                 try {
@@ -940,8 +941,9 @@ public abstract class AbstractEntryClient {
                 } catch (IOException e) {
                     exceptionMessage(e, "IO error launching entry", IO_ERROR);
                 }
-            } else{
-                errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.", CLIENT_ERROR);
+            } else {
+                errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.",
+                        CLIENT_ERROR);
             }
         }
     }
@@ -949,6 +951,7 @@ public abstract class AbstractEntryClient {
     /**
      * TODO: this may need to be moved to ToolClient depending on whether we can re-use
      * this for workflows.
+     *
      * @param args
      */
     private void launch(final List<String> args) {
@@ -956,28 +959,33 @@ public abstract class AbstractEntryClient {
             launchHelp();
         } else {
             if (args.contains("--local-entry") && args.contains("--entry")) {
-                errorMessage("You can only use one of --local-entry and --entry at a time. Please use --help for more information.", CLIENT_ERROR);
+                errorMessage("You can only use one of --local-entry and --entry at a time. Please use --help for more information.",
+                        CLIENT_ERROR);
             } else if (args.contains("--local-entry")) {
                 final String descriptor = optVal(args, "--descriptor", null);
                 final String localFilePath = reqVal(args, "--local-entry");
                 checkEntryFile(localFilePath, args, descriptor);
-            } else{
+            } else {
                 final String descriptor = optVal(args, "--descriptor", CWL_STRING);
                 if (descriptor.equals(CWL_STRING)) {
                     try {
                         launchCwl(args, false);
                     } catch (ApiException e) {
-                        exceptionMessage(e, "API error launching workflow. Did you mean to use --local-entry instead of --entry?", Client.API_ERROR);
+                        exceptionMessage(e, "API error launching workflow. Did you mean to use --local-entry instead of --entry?",
+                                Client.API_ERROR);
                     } catch (IOException e) {
-                        exceptionMessage(e, "IO error launching workflow. Did you mean to use --local-entry instead of --entry?", Client.IO_ERROR);
+                        exceptionMessage(e, "IO error launching workflow. Did you mean to use --local-entry instead of --entry?",
+                                Client.IO_ERROR);
                     }
                 } else if (descriptor.equals(WDL_STRING)) {
                     try {
                         launchWdl(args, false);
                     } catch (ApiException e) {
-                        exceptionMessage(e, "API error launching workflow. Did you mean to use --local-entry instead of --entry?", Client.API_ERROR);
+                        exceptionMessage(e, "API error launching workflow. Did you mean to use --local-entry instead of --entry?",
+                                Client.API_ERROR);
                     } catch (IOException e) {
-                        exceptionMessage(e, "IO error launching workflow. Did you mean to use --local-entry instead of --entry?", Client.IO_ERROR);
+                        exceptionMessage(e, "IO error launching workflow. Did you mean to use --local-entry instead of --entry?",
+                                Client.IO_ERROR);
                     }
                 }
             }
@@ -995,7 +1003,7 @@ public abstract class AbstractEntryClient {
         String jsonRun = optVal(args, "--json", null);
         final String csvRuns = optVal(args, "--tsv", null);
 
-        if (!(yamlRun != null ^ jsonRun != null ^ csvRuns != null)){
+        if (!(yamlRun != null ^ jsonRun != null ^ csvRuns != null)) {
             errorMessage("One of  --json, --yaml, and --tsv is required", CLIENT_ERROR);
         }
 
@@ -1004,17 +1012,16 @@ public abstract class AbstractEntryClient {
     }
 
     /**
-     *
-     * @param entry either a dockstore.cwl or a local file
+     * @param entry        either a dockstore.cwl or a local file
      * @param isLocalEntry is the descriptor a local file
-     * @param yamlRun runtime descriptor, one of these is required
-     * @param jsonRun runtime descriptor, one of these is required
-     * @param csvRuns runtime descriptor, one of these is required
+     * @param yamlRun      runtime descriptor, one of these is required
+     * @param jsonRun      runtime descriptor, one of these is required
+     * @param csvRuns      runtime descriptor, one of these is required
      * @throws IOException
      * @throws ApiException
      */
-    public void handleCWLLaunch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns, OutputStream stdoutStream, OutputStream stderrStream)
-            throws IOException, ApiException {
+    public void handleCWLLaunch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns,
+            OutputStream stdoutStream, OutputStream stderrStream) throws IOException, ApiException {
 
         if (!SCRIPT.get()) {
             Client.checkForCWLDependencies();
@@ -1035,9 +1042,11 @@ public abstract class AbstractEntryClient {
                 downloadDescriptors(entry, "cwl", tempDir);
             } catch (ApiException e) {
                 if (getEntryType().toLowerCase().equals("tool")) {
-                    exceptionMessage(e, "The tool entry does not exist. Did you mean to launch a local tool or a workflow?", ENTRY_NOT_FOUND);
+                    exceptionMessage(e, "The tool entry does not exist. Did you mean to launch a local tool or a workflow?",
+                            ENTRY_NOT_FOUND);
                 } else {
-                    exceptionMessage(e, "The workflow entry does not exist. Did you mean to launch a local workflow or a tool?", ENTRY_NOT_FOUND);
+                    exceptionMessage(e, "The workflow entry does not exist. Did you mean to launch a local workflow or a tool?",
+                            ENTRY_NOT_FOUND);
                 }
             }
         }
@@ -1055,7 +1064,8 @@ public abstract class AbstractEntryClient {
                         final String finalString = gson.toJson(element);
                         final File tempJson = File.createTempFile("parameter", ".json", Files.createTempDir());
                         FileUtils.write(tempJson, finalString, StandardCharsets.UTF_8);
-                        final LauncherCWL cwlLauncher = new LauncherCWL(getConfigFile(), tempCWL.getAbsolutePath(), tempJson.getAbsolutePath(), stdoutStream, stderrStream);
+                        final LauncherCWL cwlLauncher = new LauncherCWL(getConfigFile(), tempCWL.getAbsolutePath(),
+                                tempJson.getAbsolutePath(), stdoutStream, stderrStream);
                         if (this instanceof WorkflowClient) {
                             cwlLauncher.run(Workflow.class);
                         } else {
@@ -1063,7 +1073,8 @@ public abstract class AbstractEntryClient {
                         }
                     }
                 } else {
-                    final LauncherCWL cwlLauncher = new LauncherCWL(getConfigFile(), tempCWL.getAbsolutePath(), jsonRun, stdoutStream, stderrStream);
+                    final LauncherCWL cwlLauncher = new LauncherCWL(getConfigFile(), tempCWL.getAbsolutePath(), jsonRun, stdoutStream,
+                            stderrStream);
                     if (this instanceof WorkflowClient) {
                         cwlLauncher.run(Workflow.class);
                     } else {
@@ -1106,7 +1117,8 @@ public abstract class AbstractEntryClient {
 
                         // final String stringMapAsString = gson.toJson(stringMap);
                         // Files.write(stringMapAsString, tempJson, StandardCharsets.UTF_8);
-                        final LauncherCWL cwlLauncher = new LauncherCWL(this.getConfigFile(), tempCWL.getAbsolutePath(), tempJson.getAbsolutePath(), stdoutStream, stderrStream);
+                        final LauncherCWL cwlLauncher = new LauncherCWL(this.getConfigFile(), tempCWL.getAbsolutePath(),
+                                tempJson.getAbsolutePath(), stdoutStream, stderrStream);
                         if (this instanceof WorkflowClient) {
                             cwlLauncher.run(Workflow.class);
                         } else {
@@ -1126,12 +1138,12 @@ public abstract class AbstractEntryClient {
 
     private String convertYamlToJson(String yamlRun, String jsonRun) throws IOException {
         // if we have a yaml parameter file, convert it into a json
-        if (yamlRun != null){
+        if (yamlRun != null) {
             final File tempFile = File.createTempFile("temp", "json");
             Yaml yaml = new Yaml();
             final FileInputStream fileInputStream = FileUtils.openInputStream(new File(yamlRun));
-            Map<String,Object> map= (Map<String, Object>) yaml.load(fileInputStream);
-            JSONObject jsonObject=new JSONObject(map);
+            Map<String, Object> map = (Map<String, Object>)yaml.load(fileInputStream);
+            JSONObject jsonObject = new JSONObject(map);
             final String jsonContent = jsonObject.toString();
             FileUtils.write(tempFile, jsonContent, StandardCharsets.UTF_8);
             jsonRun = tempFile.getAbsolutePath();
@@ -1152,19 +1164,20 @@ public abstract class AbstractEntryClient {
     }
 
     /**
-     *
-     * @param entry file path for the wdl file or a dockstore id
+     * @param entry           file path for the wdl file or a dockstore id
      * @param isLocalEntry
-     * @param json file path for the json parameter file
+     * @param json            file path for the json parameter file
      * @param wdlOutputTarget
      * @return an exit code for the run
      */
-    public long launchWdlInternal(String entry, boolean isLocalEntry, String json, String wdlOutputTarget) throws IOException, ApiException {
+    public long launchWdlInternal(String entry, boolean isLocalEntry, String json, String wdlOutputTarget)
+            throws IOException, ApiException {
 
         File parameterFile = new File(json);
 
         // grab the cromwell jar
-        String libraryLocation = System.getProperty("user.home") + File.separator + ".dockstore" + File.separator + "libraries" + File.separator;
+        String libraryLocation =
+                System.getProperty("user.home") + File.separator + ".dockstore" + File.separator + "libraries" + File.separator;
         URL cromwellURL;
         String cromwellFileName;
         try {
@@ -1219,10 +1232,9 @@ public abstract class AbstractEntryClient {
             String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
 
             final List<String> wdlRun = Lists.newArrayList(tmp.getAbsolutePath(), newJsonPath);
-            
+
             // run a workflow
             System.out.println("Calling out to Cromwell to run your workflow");
-
 
             // Currently Cromwell does not support HTTP(S) imports
             // https://github.com/broadinstitute/cromwell/issues/1528
@@ -1242,7 +1254,7 @@ public abstract class AbstractEntryClient {
                 final ImmutablePair<String, String> execute = Utilities.executeCommand(join);
                 stdout = execute.getLeft();
                 stderr = execute.getRight();
-            } catch(RuntimeException e){
+            } catch (RuntimeException e) {
                 LOG.error("Problem running cromwell: ", e);
                 if (e.getCause() instanceof ExecuteException) {
                     return ((ExecuteException)e.getCause()).getExitValue();
@@ -1252,16 +1264,17 @@ public abstract class AbstractEntryClient {
 
             System.out.println("Cromwell exit code: " + exitCode);
 
-            LauncherCWL.outputIntegrationOutput(workingDir, ImmutablePair.of(stdout, stderr), stdout.replaceAll("\n", "\t"), stderr.replaceAll("\n", "\t"), "Cromwell");
+            LauncherCWL.outputIntegrationOutput(workingDir, ImmutablePair.of(stdout, stderr), stdout.replaceAll("\n", "\t"),
+                    stderr.replaceAll("\n", "\t"), "Cromwell");
 
             // capture the output and provision it
             if (wdlOutputTarget != null) {
                 // TODO: this is very hacky, look for a runtime option or start cromwell as a server and communicate via REST
                 String outputPrefix = "Final Outputs:";
                 int startIndex = stdout.indexOf("\n{\n", stdout.indexOf(outputPrefix));
-                int endIndex = stdout.indexOf("\n}\n", startIndex)+2;
-                String bracketContents = stdout.substring(startIndex,endIndex).trim();
-                if (bracketContents.isEmpty()){
+                int endIndex = stdout.indexOf("\n}\n", startIndex) + 2;
+                String bracketContents = stdout.substring(startIndex, endIndex).trim();
+                if (bracketContents.isEmpty()) {
                     throw new RuntimeException("No cromwell output");
                 }
 
@@ -1280,14 +1293,15 @@ public abstract class AbstractEntryClient {
                     FileProvisioning fileProvisioning = new FileProvisioning(this.getConfigFile());
                     fileProvisioning.provisionOutputFile(resultFile.getAbsolutePath(), new1.getUrl());
                 }
-            } else{
+            } else {
                 System.out.println("Output files left in place");
             }
         } catch (ApiException ex) {
             if (getEntryType().toLowerCase().equals("tool")) {
                 exceptionMessage(ex, "The tool entry does not exist. Did you mean to launch a local tool or a workflow?", ENTRY_NOT_FOUND);
             } else {
-                exceptionMessage(ex, "The workflow entry does not exist. Did you mean to launch a local workflow or a tool?", ENTRY_NOT_FOUND);
+                exceptionMessage(ex, "The workflow entry does not exist. Did you mean to launch a local workflow or a tool?",
+                        ENTRY_NOT_FOUND);
             }
         } catch (IOException ex) {
             exceptionMessage(ex, "", IO_ERROR);
@@ -1296,7 +1310,6 @@ public abstract class AbstractEntryClient {
     }
 
     /**
-     *
      * @param tempDir
      * @param tempDescriptor
      * @return
@@ -1330,8 +1343,7 @@ public abstract class AbstractEntryClient {
 
     public abstract List<SourceFile> downloadDescriptors(String entry, String descriptor, File tempDir);
 
-    private String runString(List<String> args, final boolean json) throws
-            ApiException, IOException {
+    private String runString(List<String> args, final boolean json) throws ApiException, IOException {
         final String entry = reqVal(args, "--entry");
         final String descriptor = optVal(args, "--descriptor", CWL_STRING);
 
@@ -1367,7 +1379,7 @@ public abstract class AbstractEntryClient {
                     types.add(typeMap.get(objectEntry.getKey()));
                     Object value = objectEntry.getValue();
                     if (value instanceof Map) {
-                        Map map = (Map) value;
+                        Map map = (Map)value;
                         if (map.containsKey("class") && "File".equals(map.get("class"))) {
                             value = map.get("path");
                         }
@@ -1401,8 +1413,9 @@ public abstract class AbstractEntryClient {
         return null;
     }
 
-
-    /** help text output */
+    /**
+     * help text output
+     */
 
     private void publishHelp() {
         printHelpHeader();
@@ -1415,7 +1428,8 @@ public abstract class AbstractEntryClient {
         out("  Publish/unpublish a registered " + getEntryType() + ".");
         out("  No arguments will list the current and potential " + getEntryType() + "s to share.");
         out("Optional Parameters:");
-        out("  --entry <entry>             Complete " + getEntryType() + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
+        out("  --entry <entry>             Complete " + getEntryType()
+                + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
         out("  --entryname <" + getEntryType() + "name>      " + getEntryType() + "name of new entry");
         printHelpFooter();
     }
@@ -1456,7 +1470,8 @@ public abstract class AbstractEntryClient {
         out("  Add or remove test parameter files from a given Dockstore " + getEntryType() + " version");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>                                                          Complete " + getEntryType() + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
+        out("  --entry <entry>                                                          Complete " + getEntryType()
+                + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
         out("  --version <version>                                                      " + getEntryType() + " version name");
         if (getEntryType().toLowerCase().equals("tool")) {
             out("  --descriptor-type <descriptor-type>                                      CWL/WDL");
@@ -1477,7 +1492,8 @@ public abstract class AbstractEntryClient {
         out("  Get information related to a published " + getEntryType() + ".");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>     The complete " + getEntryType() + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
+        out("  --entry <entry>     The complete " + getEntryType()
+                + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
         printHelpFooter();
     }
 
@@ -1584,7 +1600,8 @@ public abstract class AbstractEntryClient {
         out("  Spit out a tsv run file for a given cwl document.");
         out("");
         out("Required parameters:");
-        out("  --entry <entry>                Complete " + getEntryType().toLowerCase() + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow:develop)");
+        out("  --entry <entry>                Complete " + getEntryType().toLowerCase()
+                + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow:develop)");
         printHelpFooter();
     }
 
@@ -1597,7 +1614,8 @@ public abstract class AbstractEntryClient {
         out("  Spit out a json run file for a given cwl document.");
         out("");
         out("Required parameters:");
-        out("  --entry <entry>                Complete " + getEntryType().toLowerCase() + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow:develop)");
+        out("  --entry <entry>                Complete " + getEntryType().toLowerCase()
+                + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow:develop)");
         out("  --descriptor <descriptor>      Type of descriptor language used. Defaults to cwl");
         printHelpFooter();
     }

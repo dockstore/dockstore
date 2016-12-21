@@ -16,6 +16,11 @@
 
 package io.dockstore.webservice.helpers;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import com.google.common.collect.Lists;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
@@ -27,11 +32,6 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * This class contains code for interacting with versions for all types of entries.
@@ -64,8 +64,9 @@ public class EntryVersionHelper<T extends Entry> {
 
     /**
      * Return the primary descriptor (i.e. the dockstore.cwl or dockstore.wdl usually, or a single Dockerfile)
-     * @param entryId internal id for an entry
-     * @param tag github reference
+     *
+     * @param entryId  internal id for an entry
+     * @param tag      github reference
      * @param fileType narrow the file to a specific type
      * @return return the primary descriptor or Dockerfile
      */
@@ -76,21 +77,22 @@ public class EntryVersionHelper<T extends Entry> {
     /**
      * If path is null, return the first file with the correct path that matches.
      * If path is not null, return the primary descriptor (i.e. the dockstore.cwl or dockstore.wdl usually, or a single Dockerfile)
-     * @param entryId internal id for an entry
-     * @param tag github reference
+     *
+     * @param entryId  internal id for an entry
+     * @param tag      github reference
      * @param fileType narrow the file to a specific type
-     * @param path a specific path to a file
+     * @param path     a specific path to a file
      * @return a single file depending on parameters
      */
     public SourceFile getSourceFileByPath(long entryId, String tag, SourceFile.FileType fileType, String path) {
         final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(entryId, tag, fileType);
-        for(Map.Entry<String, ImmutablePair<SourceFile, FileDescription>> entry : sourceFiles.entrySet()){
+        for (Map.Entry<String, ImmutablePair<SourceFile, FileDescription>> entry : sourceFiles.entrySet()) {
             if (path != null) {
                 //db stored paths are absolute, convert relative to absolute
                 if (entry.getKey().equals(path)) {
                     return entry.getValue().getLeft();
                 }
-            } else if (entry.getValue().getRight().primaryDescriptor){
+            } else if (entry.getValue().getRight().primaryDescriptor) {
                 return entry.getValue().getLeft();
             }
         }
@@ -100,8 +102,8 @@ public class EntryVersionHelper<T extends Entry> {
     public List<SourceFile> getAllSecondaryFiles(long workflowId, String tag, SourceFile.FileType fileType) {
         final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(workflowId, tag, fileType);
         List<SourceFile> files = Lists.newArrayList();
-        for(Map.Entry<String, ImmutablePair<SourceFile, FileDescription>> entry : sourceFiles.entrySet()){
-            if (entry.getValue().getLeft().getType().equals(fileType) && !entry.getValue().right.primaryDescriptor){
+        for (Map.Entry<String, ImmutablePair<SourceFile, FileDescription>> entry : sourceFiles.entrySet()) {
+            if (entry.getValue().getLeft().getType().equals(fileType) && !entry.getValue().right.primaryDescriptor) {
                 files.add(entry.getValue().getLeft());
             }
         }
@@ -111,18 +113,17 @@ public class EntryVersionHelper<T extends Entry> {
     public List<SourceFile> getAllSourceFiles(long workflowId, String tag, SourceFile.FileType fileType) {
         final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(workflowId, tag, fileType);
         List<SourceFile> files = Lists.newArrayList();
-        for(Map.Entry<String, ImmutablePair<SourceFile, FileDescription>> entry : sourceFiles.entrySet()){
-            if (entry.getValue().getLeft().getType().equals(fileType)){
+        for (Map.Entry<String, ImmutablePair<SourceFile, FileDescription>> entry : sourceFiles.entrySet()) {
+            if (entry.getValue().getLeft().getType().equals(fileType)) {
                 files.add(entry.getValue().getLeft());
             }
         }
         return files;
     }
 
-
     private Map<String, ImmutablePair<SourceFile, FileDescription>> getSourceFiles(long workflowId, String tag,
             SourceFile.FileType fileType) {
-        T entry = (T) dao.findById(workflowId);
+        T entry = (T)dao.findById(workflowId);
         Helper.checkEntry(entry);
         this.filterContainersForHiddenTags(entry);
         Version tagInstance = null;
@@ -137,7 +138,7 @@ public class EntryVersionHelper<T extends Entry> {
 
         // todo: why the cast here?
         for (Object o : entry.getVersions()) {
-            Version t = (Version) o;
+            Version t = (Version)o;
             if (t.getName().equals(tag)) {
                 tagInstance = t;
             }
@@ -147,7 +148,7 @@ public class EntryVersionHelper<T extends Entry> {
             throw new CustomWebApplicationException("Invalid version.", HttpStatus.SC_BAD_REQUEST);
         } else {
             if (tagInstance instanceof WorkflowVersion) {
-                final WorkflowVersion workflowVersion = (WorkflowVersion) tagInstance;
+                final WorkflowVersion workflowVersion = (WorkflowVersion)tagInstance;
                 for (SourceFile file : workflowVersion.getSourceFiles()) {
                     if (fileType == SourceFile.FileType.CWL_TEST_JSON) {
                         if (file.getType() == SourceFile.FileType.CWL_TEST_JSON) {
@@ -167,11 +168,11 @@ public class EntryVersionHelper<T extends Entry> {
                     }
                 }
             } else {
-                final Tool tool = (Tool) entry;
-                final Tag toolTag = (Tag) tagInstance;
+                final Tool tool = (Tool)entry;
+                final Tag toolTag = (Tag)tagInstance;
                 for (SourceFile file : toolTag.getSourceFiles()) {
                     // dockerfile is a special case since there always is only a max of one
-                    if (fileType == SourceFile.FileType.DOCKERFILE){
+                    if (fileType == SourceFile.FileType.DOCKERFILE) {
                         if (file.getType() == SourceFile.FileType.DOCKERFILE) {
                             resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(true)));
                         }
@@ -195,7 +196,7 @@ public class EntryVersionHelper<T extends Entry> {
                         toolPath = tool.getDefaultCwlPath();
                     } else if (fileType == SourceFile.FileType.DOCKSTORE_WDL) {
                         toolPath = tool.getDefaultWdlPath();
-                    } else{
+                    } else {
                         throw new CustomWebApplicationException("Format " + fileType + " not valid", HttpStatus.SC_BAD_REQUEST);
                     }
 
@@ -204,12 +205,11 @@ public class EntryVersionHelper<T extends Entry> {
                         toolVersionPath = toolTag.getCwlPath();
                     } else if (fileType == SourceFile.FileType.DOCKSTORE_WDL) {
                         toolVersionPath = toolTag.getWdlPath();
-                    } else{
+                    } else {
                         throw new CustomWebApplicationException("Format " + fileType + " not valid", HttpStatus.SC_BAD_REQUEST);
                     }
 
-                    final String actualPath =
-                            (toolVersionPath == null || toolVersionPath.isEmpty()) ? toolPath : toolVersionPath;
+                    final String actualPath = (toolVersionPath == null || toolVersionPath.isEmpty()) ? toolPath : toolVersionPath;
                     boolean isPrimary = file.getType() == fileType && actualPath.equalsIgnoreCase(file.getPath());
                     if (fileType == file.getType()) {
                         resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(isPrimary)));
@@ -222,7 +222,8 @@ public class EntryVersionHelper<T extends Entry> {
 
     private class FileDescription {
         boolean primaryDescriptor;
-        FileDescription(boolean isPrimaryDescriptor){
+
+        FileDescription(boolean isPrimaryDescriptor) {
             this.primaryDescriptor = isPrimaryDescriptor;
         }
     }

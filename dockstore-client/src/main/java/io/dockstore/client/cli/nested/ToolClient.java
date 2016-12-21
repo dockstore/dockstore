@@ -16,6 +16,19 @@
 
 package io.dockstore.client.cli.nested;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.Scanner;
+import java.util.Set;
+import java.util.stream.Stream;
+
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.io.Files;
@@ -34,23 +47,9 @@ import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
-
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.validator.routines.EmailValidator;
 import org.apache.http.HttpStatus;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.Scanner;
-import java.util.Set;
-import java.util.stream.Stream;
 
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.DESCRIPTION_HEADER;
@@ -65,13 +64,14 @@ import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.ArgumentUtility.optVal;
 import static io.dockstore.client.cli.ArgumentUtility.out;
-import static io.dockstore.client.cli.ArgumentUtility.printLineBreak;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
+import static io.dockstore.client.cli.ArgumentUtility.printLineBreak;
 import static io.dockstore.client.cli.ArgumentUtility.reqVal;
 
 /**
  * Implement all operations that have to do with tools.
+ *
  * @author dyuen
  */
 public class ToolClient extends AbstractEntryClient {
@@ -81,7 +81,7 @@ public class ToolClient extends AbstractEntryClient {
     private ContainertagsApi containerTagsApi;
     private UsersApi usersApi;
 
-    public ToolClient(Client client, boolean isAdmin){
+    public ToolClient(Client client, boolean isAdmin) {
         /* for testing */
         this.client = client;
         this.isAdmin = isAdmin;
@@ -151,8 +151,7 @@ public class ToolClient extends AbstractEntryClient {
                 }
             }
 
-            out(format, container.getToolPath(), description, gitUrl, boolWord(container.getIsPublished()), descriptor,
-                    automated);
+            out(format, container.getToolPath(), description, gitUrl, boolWord(container.getIsPublished()), descriptor, automated);
         }
     }
 
@@ -247,7 +246,8 @@ public class ToolClient extends AbstractEntryClient {
         }
     }
 
-    @Override protected void handleTestParameter(String entry, String versionName, List<String> adds, List<String> removes, String descriptorType) {
+    @Override
+    protected void handleTestParameter(String entry, String versionName, List<String> adds, List<String> removes, String descriptorType) {
         try {
             DockstoreTool container = containersApi.getContainerByToolPath(entry);
             long containerId = container.getId();
@@ -268,7 +268,8 @@ public class ToolClient extends AbstractEntryClient {
             }
 
         } catch (ApiException ex) {
-            exceptionMessage(ex, "There was an error updating the test parameter files for " + entry + " version " + versionName, Client.API_ERROR);
+            exceptionMessage(ex, "There was an error updating the test parameter files for " + entry + " version " + versionName,
+                    Client.API_ERROR);
         }
     }
 
@@ -341,7 +342,7 @@ public class ToolClient extends AbstractEntryClient {
             }
 
             // Check for correct private access
-            if (!(privateAccess.equalsIgnoreCase("false") || privateAccess.equalsIgnoreCase("true"))) {
+            if (!("false".equalsIgnoreCase(privateAccess) || "true".equalsIgnoreCase(privateAccess))) {
                 errorMessage("The possible values for --private are 'true' and 'false'.", Client.CLIENT_ERROR);
             }
 
@@ -349,7 +350,7 @@ public class ToolClient extends AbstractEntryClient {
             boolean setPrivateAccess = false;
 
             // Check that tool maintainer email is given if the tool is private with no email setup
-            if (privateAccess.equalsIgnoreCase("true")) {
+            if ("true".equalsIgnoreCase(privateAccess)) {
                 if (Strings.isNullOrEmpty(toolMaintainerEmail)) {
                     errorMessage("For a private tool, the tool maintainer email is required.", Client.CLIENT_ERROR);
                 }
@@ -420,11 +421,10 @@ public class ToolClient extends AbstractEntryClient {
                         out("Successfully published " + fullName);
                     } else {
                         out("Successfully registered " + fullName + ", however it is not valid to publish."); // Should this throw an
-                                                                                                                     // error?
+                        // error?
                     }
                 } catch (ApiException ex) {
-                    exceptionMessage(ex, "Successfully registered " + fullName + ", however it is not valid to publish.",
-                            Client.API_ERROR);
+                    exceptionMessage(ex, "Successfully registered " + fullName + ", however it is not valid to publish.", Client.API_ERROR);
                 }
             }
         }
@@ -595,8 +595,8 @@ public class ToolClient extends AbstractEntryClient {
     }
 
     private void versionTag(List<String> args) {
-        if (args.isEmpty()
-                || (containsHelpRequest(args) && !args.contains("add") && !args.contains("update") && !args.contains("remove"))) {
+        if (args.isEmpty() || (containsHelpRequest(args) && !args.contains("add") && !args.contains("update") && !args
+                .contains("remove"))) {
             versionTagHelp();
         } else {
             String subcommand = args.remove(0);
@@ -754,7 +754,8 @@ public class ToolClient extends AbstractEntryClient {
                 final String defaultTag = optVal(args, "--default-version", tool.getDefaultVersion());
 
                 // Check that user did not use manual only attributes for an auto tool
-                if (tool.getMode() != DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH && (args.contains("--private") || args.contains("--tool-maintainer-email"))) {
+                if (tool.getMode() != DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH && (args.contains("--private") || args
+                        .contains("--tool-maintainer-email"))) {
                     out("--private and --tool-maintainer-email are only available for use with manually registered tools.");
                 }
 
@@ -762,12 +763,13 @@ public class ToolClient extends AbstractEntryClient {
                 final String privateAccess = optVal(args, "--private", tool.getPrivateAccess().toString());
 
                 // Check for correct private access
-                if (!(privateAccess.equalsIgnoreCase("false") || privateAccess.equalsIgnoreCase("true"))) {
+                if (!("false".equalsIgnoreCase(privateAccess) || "true".equalsIgnoreCase(privateAccess))) {
                     errorMessage("The possible values for --private are 'true' and 'false'.", Client.CLIENT_ERROR);
                 }
 
                 // Check that the tool maintainer email is valid
-                if (tool.getMode() == DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH && !toolMaintainerEmail.equals(tool.getToolMaintainerEmail()) && !Strings.isNullOrEmpty(toolMaintainerEmail)) {
+                if (tool.getMode() == DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH && !toolMaintainerEmail.equals(tool.getToolMaintainerEmail())
+                        && !Strings.isNullOrEmpty(toolMaintainerEmail)) {
                     EmailValidator emailValidator = EmailValidator.getInstance();
                     if (!emailValidator.isValid(toolMaintainerEmail)) {
                         errorMessage("The email address that you entered is invalid.", Client.CLIENT_ERROR);
@@ -896,7 +898,8 @@ public class ToolClient extends AbstractEntryClient {
                 } else {
                     List<SourceFile> files = containersApi.secondaryWdl(tool.getId(), version);
                     for (SourceFile sourceFile : files) {
-                        File tempDescriptor = File.createTempFile(FilenameUtils.removeExtension(sourceFile.getPath()), FilenameUtils.getExtension(sourceFile.getPath()), tempDir);
+                        File tempDescriptor = File.createTempFile(FilenameUtils.removeExtension(sourceFile.getPath()),
+                                FilenameUtils.getExtension(sourceFile.getPath()), tempDir);
                         Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
                         result.add(sourceFile);
                     }
@@ -1051,7 +1054,12 @@ public class ToolClient extends AbstractEntryClient {
         printHelpFooter();
     }
 
-
+    private static void printRegistriesAvailable() {
+        out("The available Docker Registries are:");
+        for (Registry r : Registry.values()) {
+            out(" *" + r.toString());
+        }
+    }
 
     private static class ToolComparator implements Comparator<DockstoreTool> {
         @Override
@@ -1060,13 +1068,6 @@ public class ToolClient extends AbstractEntryClient {
             String path2 = c2.getPath();
 
             return path1.compareToIgnoreCase(path2);
-        }
-    }
-
-    private static void printRegistriesAvailable() {
-        out("The available Docker Registries are:");
-        for (Registry r : Registry.values()) {
-            out(" *" + r.toString());
         }
     }
 }

@@ -18,14 +18,12 @@ package io.dockstore.webservice.jdbi;
 
 import java.util.List;
 
+import io.dockstore.webservice.core.Token;
+import io.dropwizard.hibernate.AbstractDAO;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 
-import io.dockstore.webservice.core.Token;
-import io.dropwizard.hibernate.AbstractDAO;
-
 /**
- *
  * @author dyuen
  */
 public class TokenDAO extends AbstractDAO<Token> {

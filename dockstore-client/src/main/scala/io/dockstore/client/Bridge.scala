@@ -32,10 +32,10 @@ import scala.util.{Failure, Success, Try}
   * until wdltool is released to artifactory.
   */
 class Bridge {
-  var secondaryWdlFiles = new util.HashMap[String,String]()
+  var secondaryWdlFiles = new util.HashMap[String, String]()
   val bridgeHelper = new BridgeHelper()
 
-  def setSecondaryFiles(secondaryFiles: util.HashMap[String,String]) = {
+  def setSecondaryFiles(secondaryFiles: util.HashMap[String, String]) = {
     secondaryWdlFiles = secondaryFiles
   }
 
@@ -44,12 +44,12 @@ class Bridge {
   }
 
   def inputs(args: Seq[String]): String = {
-      loadWdl(args.head) { namespace =>
-        import wdl4s.types.WdlTypeJsonFormatter._
-        namespace match {
-          case x: NamespaceWithWorkflow => x.workflow.inputs.toJson.prettyPrint
-        }
+    loadWdl(args.head) { namespace =>
+      import wdl4s.types.WdlTypeJsonFormatter._
+      namespace match {
+        case x: NamespaceWithWorkflow => x.workflow.inputs.toJson.prettyPrint
       }
+    }
   }
 
   private[this] def loadWdl(path: String)(f: WdlNamespace => String): String = {
@@ -86,7 +86,7 @@ class Bridge {
 
     val inputList = new util.HashMap[String, String]()
 
-    ns.workflow.inputs foreach {case(key,value) =>
+    ns.workflow.inputs foreach { case (key, value) =>
       if (value.wdlType == WdlFileType || value.wdlType == WdlArrayType(WdlFileType)) {
         inputList.put(value.fqn, value.wdlType.toWdlString)
       }
@@ -107,6 +107,7 @@ class Bridge {
 
     importList
   }
+
   def getImportMap(file: JFile): util.LinkedHashMap[String, String] = {
     val lines = scala.io.Source.fromFile(file).mkString
     val importMap = new util.LinkedHashMap[String, String]()
@@ -130,7 +131,7 @@ class Bridge {
 
     val outputList = new util.ArrayList[String]()
 
-    ns.workflow.outputs.seq foreach{value =>
+    ns.workflow.outputs.seq foreach { value =>
       if (value.wdlType == WdlFileType || value.wdlType == WdlArrayType(WdlFileType)) {
         outputList.add(value.fullyQualifiedName)
       }
@@ -138,8 +139,9 @@ class Bridge {
     outputList
   }
 
-  val passthrough = new PartialFunction[WdlValue,WdlValue] {
+  val passthrough = new PartialFunction[WdlValue, WdlValue] {
     def apply(x: WdlValue) = x
+
     def isDefinedAt(x: WdlValue) = true
   }
 
@@ -156,7 +158,7 @@ class Bridge {
         try {
           // Get the list of docker images
           val dockerAttributes = task.runtimeAttributes.attrs.get("docker")
-          val attributes = if (dockerAttributes.isDefined) dockerAttributes.get.collectAsSeq(passthrough).map(x => x.toWdlString.replaceAll("\"","")) else null
+          val attributes = if (dockerAttributes.isDefined) dockerAttributes.get.collectAsSeq(passthrough).map(x => x.toWdlString.replaceAll("\"", "")) else null
           var name = call.alias.toString
           tasks.put(task.name, attributes)
         } catch {
@@ -174,10 +176,10 @@ class Bridge {
     val tasks = new util.LinkedHashMap[String, String]()
 
 
-    ns.workflow.calls foreach {call =>
+    ns.workflow.calls foreach { call =>
       val task = call.task
       val dockerAttributes = task.runtimeAttributes.attrs.get("docker")
-      tasks.put("dockstore_" + call.unqualifiedName, if (dockerAttributes.isDefined) dockerAttributes.get.collectAsSeq(passthrough).map(x => x.toWdlString.replaceAll("\"","")).mkString("") else null)
+      tasks.put("dockstore_" + call.unqualifiedName, if (dockerAttributes.isDefined) dockerAttributes.get.collectAsSeq(passthrough).map(x => x.toWdlString.replaceAll("\"", "")).mkString("") else null)
     }
     tasks
   }
@@ -186,12 +188,12 @@ class Bridge {
     val lines = scala.io.Source.fromFile(file).mkString
     val ns = NamespaceWithWorkflow.load(lines, dagResolver)
     val dependencyMap = new util.LinkedHashMap[String, util.ArrayList[String]]()
-   ns.workflow.calls foreach {call =>
+    ns.workflow.calls foreach { call =>
       val dependencies = new util.ArrayList[String]()
-      call.inputMappings foreach {case(key, value) =>
-          value.prerequisiteCallNames foreach { inputDependency =>
-            dependencies.add("dockstore_" + inputDependency)
-          }
+      call.inputMappings foreach { case (key, value) =>
+        value.prerequisiteCallNames foreach { inputDependency =>
+          dependencies.add("dockstore_" + inputDependency)
+        }
       }
       dependencyMap.put("dockstore_" + call.unqualifiedName, dependencies)
     }

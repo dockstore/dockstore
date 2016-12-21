@@ -36,22 +36,22 @@ import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import io.dockstore.common.Registry;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 /**
  * This describes one tool in the dockstore, extending entry with fields necessary to describe bioinformatics tools.
- *
+ * <p>
  * Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be
  * associated with CWL and Dockerfile documents.
  *
  * @author xliu
  * @author dyuen
  */
-@ApiModel(value = "DockstoreTool", description = "This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be\n"
-        + " * associated with CWL and Dockerfile documents")
+@ApiModel(value = "DockstoreTool", description =
+        "This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be\n"
+                + " * associated with CWL and Dockerfile documents")
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = { "registry", "namespace", "name", "toolname" }))
 @NamedQueries({
@@ -135,11 +135,6 @@ public class Tool extends Entry<Tool, Tag> {
         tags = new TreeSet<>();
     }
 
-    @Override
-    public Set<Tag> getVersions() {
-        return tags;
-    }
-
     public Tool(long id, String name) {
         super(id);
         // this.userId = userId;
@@ -147,8 +142,14 @@ public class Tool extends Entry<Tool, Tag> {
         tags = new TreeSet<>();
     }
 
+    @Override
+    public Set<Tag> getVersions() {
+        return tags;
+    }
+
     /**
      * Used during refresh to update tools
+     *
      * @param tool
      */
     public void update(Tool tool) {
@@ -158,7 +159,6 @@ public class Tool extends Entry<Tool, Tag> {
         this.toolMaintainerEmail = tool.getToolMaintainerEmail();
         this.privateAccess = tool.isPrivateAccess();
     }
-
 
     @JsonProperty
     public String getName() {
@@ -207,22 +207,18 @@ public class Tool extends Entry<Tool, Tag> {
     }
 
     /**
-     * @param name
-     *            the repo name to set
+     * @param name the repo name to set
      */
     public void setName(String name) {
         this.name = name;
     }
 
     /**
-     * @param namespace
-     *            the repo name to set
+     * @param namespace the repo name to set
      */
     public void setNamespace(String namespace) {
         this.namespace = namespace;
     }
-
-
 
     public void setRegistry(Registry registry) {
         this.registry = registry;
@@ -231,7 +227,6 @@ public class Tool extends Entry<Tool, Tag> {
     public void setPath(String path) {
         this.path = path;
     }
-
 
     public void setLastBuild(Date lastBuild) {
         this.lastBuild = lastBuild;
@@ -274,7 +269,6 @@ public class Tool extends Entry<Tool, Tag> {
         this.defaultWdlPath = defaultWdlPath;
     }
 
-
     @JsonProperty
     public String getToolname() {
         return toolname;
@@ -307,8 +301,9 @@ public class Tool extends Entry<Tool, Tag> {
 
     /**
      * Updates information from given tool based on the new tool
+     *
      * @param tool
-         */
+     */
     public void updateInfo(Tool tool) {
         // Add descriptor type default paths here
         defaultCwlPath = tool.getDefaultCwlPath();

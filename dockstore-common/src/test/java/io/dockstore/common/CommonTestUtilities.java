@@ -16,19 +16,16 @@
 
 package io.dockstore.common;
 
+import java.io.File;
+import java.io.IOException;
+
 import io.dropwizard.testing.ResourceHelpers;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.dbutils.ResultSetHandler;
 import org.apache.commons.dbutils.handlers.KeyedHandler;
 import org.apache.commons.io.FileUtils;
 
-import java.io.File;
-import java.io.IOException;
-
-
 /**
- *
  * @author xliu
  */
 public class CommonTestUtilities {
@@ -38,17 +35,9 @@ public class CommonTestUtilities {
      */
     public static final String DUMMY_TOKEN_2 = "3a04647fd0a1bd949637n5fddb164261fc8c80d83f0750fe0e873bc744338fce";
 
-    public static HierarchicalINIConfiguration parseConfig(String path) {
-        try {
-            return new HierarchicalINIConfiguration(path);
-        } catch (ConfigurationException ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
     public static class TestingPostgres extends BasicPostgreSQL {
 
-        TestingPostgres(HierarchicalINIConfiguration config) {
+        TestingPostgres(INIConfiguration config) {
             super(config);
         }
 
@@ -91,12 +80,14 @@ public class CommonTestUtilities {
             runInsertStatement("insert into user_entry(userid, entryid) VALUES (1, 6);", new KeyedHandler<>("entryid"));
             runInsertStatement("insert into user_entry(userid, entryid) VALUES (2, 6);", new KeyedHandler<>("entryid"));
 
-            runInsertStatement("insert into tag(id, valid, automated, hidden, size, cwlpath, wdlpath, dockerfilepath, dirtybit, verified, verifiedsource) VALUES (1, true, true, false, 0,'/Dockstore.cwl', '/Dockstore.wdl', '/Dockerfile', false, false, null);", new KeyedHandler<>(
-                    "id"));
+            runInsertStatement(
+                    "insert into tag(id, valid, automated, hidden, size, cwlpath, wdlpath, dockerfilepath, dirtybit, verified, verifiedsource) VALUES (1, true, true, false, 0,'/Dockstore.cwl', '/Dockstore.wdl', '/Dockerfile', false, false, null);",
+                    new KeyedHandler<>("id"));
             runInsertStatement("insert into tool_tag(toolid, tagid) VALUES (6, 1);", new KeyedHandler<>("tagid"));
 
-            runInsertStatement("insert into tag(id, valid, automated, hidden, size, cwlpath, wdlpath, dockerfilepath, dirtybit, verified, verifiedsource) VALUES (2, true, true, false, 0,'/Dockstore.cwl', '/Dockstore.wdl', '/Dockerfile', false, false, null);", new KeyedHandler<>(
-                    "id"));
+            runInsertStatement(
+                    "insert into tag(id, valid, automated, hidden, size, cwlpath, wdlpath, dockerfilepath, dirtybit, verified, verifiedsource) VALUES (2, true, true, false, 0,'/Dockstore.cwl', '/Dockstore.wdl', '/Dockerfile', false, false, null);",
+                    new KeyedHandler<>("id"));
             runInsertStatement("insert into tool_tag(toolid, tagid) VALUES (5, 2);", new KeyedHandler<>("tagid"));
 
             // need to increment past manually entered ids above
@@ -124,7 +115,6 @@ public class CommonTestUtilities {
                     new KeyedHandler<>("id"));
             runInsertStatement("insert into user_entry(userid, entryid) VALUES (2, 12);", new KeyedHandler<>("entryid"));
 
-
             // need to increment past manually entered ids above
             runUpdateStatementConfidential("alter sequence container_id_seq restart with 1000;");
             runUpdateStatementConfidential("alter sequence tag_id_seq restart with 1000;");
@@ -151,7 +141,7 @@ public class CommonTestUtilities {
         }
 
         @Override
-        public boolean runUpdateStatement(String query, Object... params){
+        public boolean runUpdateStatement(String query, Object... params) {
             return super.runUpdateStatement(query, params);
         }
     }
@@ -166,8 +156,9 @@ public class CommonTestUtilities {
 
     /**
      * Clears database state and known queues for confidential testing. For DockstoreTestUser
+     *
      * @throws IOException
-         */
+     */
     public static void clearStateMakePrivate() throws IOException {
         final TestingPostgres postgres = getTestingPostgres();
         postgres.clearDatabaseMakePrivate();
@@ -176,6 +167,7 @@ public class CommonTestUtilities {
 
     /**
      * Clears database state and known queues for confidential testing. For DockstoreTestUser2
+     *
      * @throws IOException
      */
     public static void clearStateMakePrivate2() throws IOException {
@@ -186,7 +178,7 @@ public class CommonTestUtilities {
 
     public static TestingPostgres getTestingPostgres() {
         final File configFile = FileUtils.getFile("src", "test", "resources", "config");
-        final HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+        final INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         return new TestingPostgres(parseConfig);
     }
 }

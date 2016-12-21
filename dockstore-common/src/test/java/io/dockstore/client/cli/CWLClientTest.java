@@ -20,22 +20,18 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.junit.Test;
-
 import com.google.common.io.Resources;
 import com.google.gson.Gson;
-
 import io.cwl.avro.CWL;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
 
 /**
- *
  * @author dyuen
  */
 public class CWLClientTest {
-
 
     @Test
     public void serializeToJson() throws Exception {
@@ -51,7 +47,7 @@ public class CWLClientTest {
     }
 
     @Test
-    public void parseCWL() throws Exception{
+    public void parseCWL() throws Exception {
         final URL resource = Resources.getResource("cwl.json");
         final CWL cwl = new CWL();
         final ImmutablePair<String, String> output = cwl.parseCWL(resource.getFile());
@@ -60,7 +56,7 @@ public class CWLClientTest {
     }
 
     @Test
-    public void extractCWLTypes() throws Exception{
+    public void extractCWLTypes() throws Exception {
         final URL resource = Resources.getResource("cwl.json");
         final CWL cwl = new CWL();
         final ImmutablePair<String, String> output = cwl.parseCWL(resource.getFile());
@@ -71,12 +67,11 @@ public class CWLClientTest {
     }
 
     @Test
-    public void testFileConversions() throws Exception{
+    public void testFileConversions() throws Exception {
         final Object file1 = CWL.getStub("File", null);
         assertTrue(file1 instanceof Map && "fill me in".equals(((Map)file1).get("path")));
         final Object file2 = CWL.getStub("File", "foobar");
         assertTrue(file2 instanceof Map && "foobar".equals(((Map)file2).get("path")));
     }
-
 
 }

@@ -15,7 +15,8 @@
  */
 package io.swagger.api;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z") public class StringUtil {
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
+public class StringUtil {
     /**
      * Check if the given array contains the given value (with case-insensitive comparison).
      *
@@ -54,6 +55,6 @@ package io.swagger.api;
         for (int i = 1; i < len; i++) {
             out.append(separator).append(array[i]);
         }
-    return out.toString();
-  }
+        return out.toString();
+    }
 }

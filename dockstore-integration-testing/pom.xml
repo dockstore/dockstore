@@ -15,7 +15,8 @@
   ~    limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.dockstore</groupId>
@@ -25,11 +26,11 @@
     </parent>
     <artifactId>dockstore-integration-testing</artifactId>
     <packaging>jar</packaging>
-    
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
-    
+
     <dependencies>
         <dependency>
             <groupId>io.dockstore</groupId>
@@ -63,10 +64,10 @@
             <artifactId>commons-io</artifactId>
         </dependency>
         <dependency>
-            <groupId>commons-configuration</groupId>
-            <artifactId>commons-configuration</artifactId>
-            <version>1.10</version>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-configuration2</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
@@ -117,9 +118,8 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-    
-    
-    
+
+
     <build>
         <plugins>
             <plugin>
@@ -143,9 +143,9 @@
                             <outputXML>true</outputXML>
                             <ignoreNonCompile>true</ignoreNonCompile>
                             <usedDependencies>
-<!--                                <usedDependency>joda-time:joda-time</usedDependency>-->
+                                <!--                                <usedDependency>joda-time:joda-time</usedDependency>-->
                                 <usedDependency>commons-io:commons-io</usedDependency>
-                                <usedDependency>commons-configuration:commons-configuration</usedDependency>
+                                <usedDependency>org.apache.commons:commons-configuration2</usedDependency>
                             </usedDependencies>
                         </configuration>
                     </execution>
@@ -163,21 +163,21 @@
             <id>confidential-tests</id>
             <build>
                 <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-failsafe-plugin</artifactId>
-                            <version>${maven-fire.version}</version>
-                            <configuration>
-                                <includes>
-                                    <!-- standard inclusions -->
-                                    <include>**/IT*.java</include>
-                                    <include>**/*IT.java</include>
-                                    <include>**/*ITCase.java</include>
-                                    <!-- additional confidential tests-->
-                                    <include>**/*ET.java</include>
-                                </includes>
-                            </configuration>
-                        </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>${maven-fire.version}</version>
+                        <configuration>
+                            <includes>
+                                <!-- standard inclusions -->
+                                <include>**/IT*.java</include>
+                                <include>**/*IT.java</include>
+                                <include>**/*ITCase.java</include>
+                                <!-- additional confidential tests-->
+                                <include>**/*ET.java</include>
+                            </includes>
+                        </configuration>
+                    </plugin>
                 </plugins>
             </build>
 

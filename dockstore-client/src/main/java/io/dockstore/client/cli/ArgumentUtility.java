@@ -26,6 +26,7 @@ import io.swagger.client.model.Workflow;
 /**
  * Organizes all methods that have to do with parsing of input and creation of output.
  * This is a static utility class with no state.
+ *
  * @author dyuen
  */
 public final class ArgumentUtility {
@@ -38,6 +39,9 @@ public final class ArgumentUtility {
     public static final String GIT_HEADER = "Git Repo";
     public static final int MAX_DESCRIPTION = 50;
 
+    private ArgumentUtility() {
+        // hide the constructor for utility classes
+    }
 
     public static void out(String format, Object... args) {
         System.out.println(String.format(format, args));
@@ -57,7 +61,7 @@ public final class ArgumentUtility {
     }
 
     public static void exceptionMessage(Exception exception, String message, int exitCode) {
-        if (!message.equals("")) {
+        if (!"".equals(message)) {
             err(message);
         }
         if (Client.DEBUG.get()) {
@@ -91,7 +95,7 @@ public final class ArgumentUtility {
         List<String> vals = new ArrayList<>();
 
         for (int i = 0; i < args.size(); /** do nothing */
-        i = i) {
+             i = i) {
             String s = args.get(i);
             if (key.equals(s)) {
                 args.remove(i);
@@ -181,7 +185,7 @@ public final class ArgumentUtility {
         maxWidths[1] = (maxWidths[1] > MAX_DESCRIPTION) ? MAX_DESCRIPTION : maxWidths[1];
 
         return maxWidths;
-        }
+    }
 
     static boolean isHelpRequest(String first) {
         return "-h".equals(first) || "--help".equals(first);
@@ -206,10 +210,8 @@ public final class ArgumentUtility {
 
     public static void printHelpHeader() {
         out("");
-        out(" ____             _        _                 \n"
-                + "|  _ \\  ___   ___| | _____| |_ ___  _ __ ___ \n"
-                + "| | | |/ _ \\ / __| |/ / __| __/ _ \\| '__/ _ \\\n"
-                + "| |_| | (_) | (__|   <\\__ \\ || (_) | | |  __/\n"
+        out(" ____             _        _                 \n" + "|  _ \\  ___   ___| | _____| |_ ___  _ __ ___ \n"
+                + "| | | |/ _ \\ / __| |/ / __| __/ _ \\| '__/ _ \\\n" + "| |_| | (_) | (__|   <\\__ \\ || (_) | | |  __/\n"
                 + "|____/ \\___/ \\___|_|\\_\\___/\\__\\___/|_|  \\___|\n");
         printLineBreak();
         out("See https://www.dockstore.org for more information");
@@ -227,7 +229,8 @@ public final class ArgumentUtility {
     }
 
     private static void invalid(String cmd, String sub) {
-        errorMessage("dockstore: " + cmd + " " + sub + " is not a dockstore command. See 'dockstore " + cmd + " --help'.", Client.CLIENT_ERROR);
+        errorMessage("dockstore: " + cmd + " " + sub + " is not a dockstore command. See 'dockstore " + cmd + " --help'.",
+                Client.CLIENT_ERROR);
     }
 
     static boolean flag(List<String> args, String flag) {
@@ -246,8 +249,6 @@ public final class ArgumentUtility {
         return found;
     }
 
-    static class Kill extends RuntimeException {
-    }
     public static String getGitRegistry(String gitUrl) {
         if (gitUrl.contains("bitbucket")) {
             return "bitbucket";
@@ -258,6 +259,9 @@ public final class ArgumentUtility {
         } else {
             return null;
         }
+    }
+
+    static class Kill extends RuntimeException {
     }
 
 }

@@ -106,7 +106,10 @@ Demo the webservice and test communication with GitHub and quay.io
 
 ### Coding Standards
 
-Please refer to SeqWare's [Coding Standards](https://seqware.github.io/docs/100-coding-standards/). 
+[codestyle.xml](codestyle.xml) defines the coding style for Dockstore as an IntelliJ Code Style XML file that should be imported into IntelliJ IDE. 
+We also have a matching [checkstyle.xml](checkstyle.xml) that can be imported into other IDEs and is run during the build.  
+
+For users of Intellij or comparable IDEs, we also suggest loading the checkstyle.xml with a plugin in order to display warnings and errors while coding live rather than encountering them later when running a build. 
 
 ### Dockstore Java Client
 
