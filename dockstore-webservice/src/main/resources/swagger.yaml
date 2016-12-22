@@ -59,7 +59,7 @@ definitions:
       registry:
         description: 'This is a specific docker provider like quay.io or dockerhub
           or n/a?, required: GA4GH'
-        enum: [QUAY_IO, DOCKER_HUB]
+        enum: [QUAY_IO, DOCKER_HUB, GITLAB, AMAZON_ECR]
         type: string
       tags:
         description: Implementation specific tracking of valid build tags for the docker container
@@ -738,7 +738,7 @@ paths:
   /containers/dockerRegistryList:
     get:
       description: Does not need authentication
-      operationId: getTestParameterFiles
+      operationId: getDockerRegistries
       parameters: []
       produces: [application/json]
       responses:

@@ -86,7 +86,7 @@ public class BasicET {
      */
     @Test
     public void testVersionTagDockerhub() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.name(),
                 Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "dockerhubandgithub", "--git-url",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "regular",
                 "--script" });
@@ -125,7 +125,7 @@ public class BasicET {
      */
     @Test
     public void testManualQuaySameAsAutoQuay() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
                 Registry.QUAY_IO.toString(), "--namespace", "dockstoretestuser", "--name", "quayandgithub", "--git-url",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "regular",
                 "--script" });
@@ -142,7 +142,7 @@ public class BasicET {
      */
     @Test
     public void testManualQuayToAutoSamePathDifferentGitRepo() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
                 Registry.QUAY_IO.toString(), "--namespace", "dockstoretestuser", "--name", "quayandgithub", "--git-url",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git", "--git-reference", "master", "--toolname", "alternate",
                 "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
@@ -162,10 +162,9 @@ public class BasicET {
         Client.main(
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry",
                         "quay.io/dockstoretestuser/quayandgithub", "--toolname", "testToolname", "--script" });
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--entry",
-                "quay.io/dockstoretestuser/quayandgithub/testToolname" });
+
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-                Registry.QUAY_IO.toString(), "--namespace", "dockstoretestuser", "--name", "quayandgithub", "--git-url",
+                Registry.QUAY_IO.name(), "--namespace", "dockstoretestuser", "--name", "quayandgithub", "--git-url",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "testtool",
                 "--script" });
 
@@ -183,7 +182,7 @@ public class BasicET {
     @Test
     public void testManualQuayManualBuild() {
         systemExit.expectSystemExitWithStatus(Client.API_ERROR);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
                 Registry.QUAY_IO.toString(), "--namespace", "dockstoretestuser", "--name", "noautobuild", "--git-url",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "alternate",
                 "--script" });
@@ -196,7 +195,7 @@ public class BasicET {
     @Test
     public void testManualQuayNoTags() {
         systemExit.expectSystemExitWithStatus(Client.API_ERROR);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
                 Registry.QUAY_IO.toString(), "--namespace", "dockstoretestuser", "--name", "nobuildsatall", "--git-url",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "alternate",
                 "--script" });
@@ -237,7 +236,7 @@ public class BasicET {
     public void testAddQuayRepoOfNonOwnedOrg() {
         // Repo user isn't part of org
         systemExit.expectSystemExitWithStatus(Client.API_ERROR);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
                 Registry.QUAY_IO.toString(), "--namespace", "dockstore2", "--name", "testrepo2", "--git-url",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "testOrg",
                 "--cwl-path", "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile", "--script" });
@@ -253,7 +252,7 @@ public class BasicET {
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--entry",
                 "quay.io/dockstoretestuser/quayandbitbucket", "--script" });
 
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.name(),
                 Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "dockerhubandbitbucket", "--git-url",
                 "git@bitbucket.org:dockstoretestuser/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "regular",
                 "--script" });
@@ -262,7 +261,7 @@ public class BasicET {
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--entry",
                 "quay.io/dockstoretestuser/quayandgithub", "--script" });
 
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.name(),
                 Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "dockerhubandgithub", "--git-url",
                 "git@github.com:dockstoretestuser/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "regular",
                 "--script" });
@@ -339,7 +338,7 @@ public class BasicET {
     @Test
     public void testQuayGithubManualPublishAndUnpublishAlternateStructure() {
         // Manual publish
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
                 Registry.QUAY_IO.toString(), "--namespace", "dockstoretestuser", "--name", "quayandgithubalternate", "--git-url",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git", "--git-reference", "master", "--toolname", "alternate",
                 "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
@@ -365,7 +364,7 @@ public class BasicET {
     @Test
     public void testQuayGithubManuallyRegisterDuplicate() {
         systemExit.expectSystemExitWithStatus(Client.API_ERROR);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
                 Registry.QUAY_IO.toString(), "--namespace", "dockstoretestuser", "--name", "quayandgithub", "--git-url",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--script" });
     }
@@ -445,7 +444,7 @@ public class BasicET {
     @Test
     public void testQuayBitbucketManualPublishAndUnpublishAlternateStructure() {
         // Manual Publish
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
                 Registry.QUAY_IO.toString(), "--namespace", "dockstoretestuser", "--name", "quayandbitbucketalternate", "--git-url",
                 "git@bitbucket.org:DockstoreTestUser/quayandbitbucketalternate.git", "--git-reference", "master", "--toolname", "alternate",
                 "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
@@ -472,7 +471,7 @@ public class BasicET {
     @Test
     public void testQuayBitbucketManuallyRegisterDuplicate() {
         systemExit.expectSystemExitWithStatus(Client.API_ERROR);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
                 Registry.QUAY_IO.toString(), "--namespace", "dockstoretestuser", "--name", "quayandbitbucket", "--git-url",
                 "git@bitbucket.org:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--script" });
     }
@@ -534,7 +533,7 @@ public class BasicET {
     @Test
     public void testQuayGitlabManualPublishAndUnpublishAlternateStructure() {
         // Manual Publish
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
                 Registry.QUAY_IO.toString(), "--namespace", "dockstoretestuser", "--name", "quayandgitlabalternate", "--git-url",
                 "git@gitlab.com:dockstore.test.user/quayandgitlabalternate.git", "--git-reference", "master", "--toolname", "alternate",
                 "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
@@ -561,7 +560,7 @@ public class BasicET {
     @Test
     public void testQuayGitlabManuallyRegisterDuplicate() {
         systemExit.expectSystemExitWithStatus(Client.API_ERROR);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
                 Registry.QUAY_IO.toString(), "--namespace", "dockstoretestuser", "--name", "quayandgitlab", "--git-url",
                 "git@gitlab.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--script" });
     }
@@ -576,7 +575,7 @@ public class BasicET {
      */
     @Test
     public void testDockerhubGithubManualRegistration() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.name(),
                 Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "dockerhubandgithub", "--git-url",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "regular",
                 "--script" });
@@ -602,7 +601,7 @@ public class BasicET {
      */
     @Test
     public void testDockerhubGithubAlternateStructure() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.name(),
                 Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "dockerhubandgithub", "--git-url",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git", "--git-reference", "master", "--toolname", "alternate",
                 "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
@@ -629,7 +628,7 @@ public class BasicET {
     public void testDockerhubGithubWrongStructure() {
         // Todo : Manual publish entry with wrong cwl and dockerfile locations, should not be able to manual publish
         systemExit.expectSystemExitWithStatus(Client.GENERIC_ERROR);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.name(),
                 Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "dockerhubandgithubalternate", "--git-url",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git", "--git-reference", "master", "--toolname", "regular",
                 "--cwl-path", "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile", "--script" });
@@ -640,7 +639,7 @@ public class BasicET {
      */
     @Test
     public void testDockerhubGithubManualRegistrationDuplicates() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.name(),
                 Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "dockerhubandgithub", "--git-url",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "regular",
                 "--script" });
@@ -652,7 +651,7 @@ public class BasicET {
         Assert.assertTrue("there should be 1 entry", count == 1);
 
         // Add duplicate entry with different toolname
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.name(),
                 Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "dockerhubandgithub", "--git-url",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "regular2",
                 "--script" });
@@ -688,7 +687,7 @@ public class BasicET {
      */
     @Test
     public void testDockerhubBitbucketManualRegistration() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.name(),
                 Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "dockerhubandbitbucket", "--git-url",
                 "git@bitbucket.org:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "regular",
                 "--script" });
@@ -713,7 +712,7 @@ public class BasicET {
      */
     @Test
     public void testDockerhubBitbucketAlternateStructure() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.name(),
                 Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "dockerhubandbitbucket", "--git-url",
                 "git@bitbucket.org:DockstoreTestUser/quayandbitbucketalternate.git", "--git-reference", "master", "--toolname", "alternate",
                 "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
@@ -740,7 +739,7 @@ public class BasicET {
     public void testDockerhubBitbucketWrongStructure() {
         // Todo : Manual publish entry with wrong cwl and dockerfile locations, should not be able to manual publish
         systemExit.expectSystemExitWithStatus(Client.GENERIC_ERROR);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.name(),
                 Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "dockerhubandbitbucketalternate", "--git-url",
                 "git@bitbucket.org:DockstoreTestUser/quayandbitbucketalterante.git", "--git-reference", "master", "--toolname", "alternate",
                 "--cwl-path", "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile", "--script" });
@@ -751,7 +750,7 @@ public class BasicET {
      */
     @Test
     public void testDockerhubBitbucketManualRegistrationDuplicates() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.name(),
                 Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "dockerhubandbitbucket", "--git-url",
                 "git@bitbucket.org:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "regular",
                 "--script" });
@@ -763,7 +762,7 @@ public class BasicET {
         Assert.assertTrue("there should be 1 entry", count == 1);
 
         // Add duplicate entry with different toolname
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.name(),
                 Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "dockerhubandbitbucket", "--git-url",
                 "git@bitbucket.org:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "regular2",
                 "--script" });
@@ -799,7 +798,7 @@ public class BasicET {
      */
     @Test
     public void testDockerhubGitlabManualRegistration() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.name(),
                 Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "dockerhubandgitlab", "--git-url",
                 "git@gitlab.com:dockstore.test.user/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "regular",
                 "--script" });
@@ -824,7 +823,7 @@ public class BasicET {
      */
     @Test
     public void testDockerhubGitlabAlternateStructure() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.name(),
                 Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "dockerhubandgitlab", "--git-url",
                 "git@gitlab.com:dockstore.test.user/quayandgitlabalternate.git", "--git-reference", "master", "--toolname", "alternate",
                 "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
@@ -849,7 +848,7 @@ public class BasicET {
      */
     @Test
     public void testDockerhubGitlabManualRegistrationDuplicates() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.name(),
                 Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "dockerhubandgitlab", "--git-url",
                 "git@gitlab.com:dockstore.test.user/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "regular",
                 "--script" });
@@ -861,7 +860,7 @@ public class BasicET {
         Assert.assertTrue("there should be 1 entry", count == 1);
 
         // Add duplicate entry with different toolname
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.name(),
                 Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "dockerhubandgitlab", "--git-url",
                 "git@gitlab.com:dockstore.test.user/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "regular2",
                 "--script" });
@@ -944,7 +943,7 @@ public class BasicET {
     public void testManualPublishToolNoDescriptorPaths() {
         // Manual publish, should fail
         systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
                 Registry.QUAY_IO.toString(), "--namespace", "dockstoretestuser", "--name", "quayandgithubalternate", "--git-url",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay-alternate.git", "--git-reference", "master", "--toolname", "alternate",
                 "--cwl-path", "", "--wdl-path", "", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
@@ -1102,7 +1101,7 @@ public class BasicET {
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
 
         // Manual publish private repo with tool maintainer email
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.name(),
                 Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "private_test_repo", "--git-url",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "tool1",
                 "--tool-maintainer-email", "testemail@domain.com", "--private", "true", "--script" });
@@ -1114,7 +1113,7 @@ public class BasicET {
         Assert.assertTrue("one tool should be private and published, there are " + count, count == 1);
 
         // Manual publish public repo
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.name(),
                 Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "private_test_repo", "--git-url",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "tool2",
                 "--script" });
@@ -1143,7 +1142,7 @@ public class BasicET {
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
 
         // Manual publish public repo
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.name(),
                 Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "private_test_repo", "--git-url",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "tool1",
                 "--script" });
@@ -1184,7 +1183,7 @@ public class BasicET {
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
 
         // Manual publish public repo
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.name(),
                 Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "private_test_repo", "--git-url",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay-2.git", "--git-reference", "master", "--toolname", "tool1",
                 "--script" });
@@ -1234,19 +1233,22 @@ public class BasicET {
         systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
 
         // Manual publish private repo without tool maintainer email
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.name(),
                 Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "private_test_repo", "--git-url",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--private", "true", "--script" });
 
     }
 
+        /**
+         * This tests that you can manually publish a gitlab registry image
+         */
     @Test
     public void testManualPublishGitlabDocker() {
         // Setup database
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
 
         // Manual publish
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.GITLAB.name(),
                 Registry.GITLAB.toString(), "--namespace", "dockstore.test.user", "--name", "dockstore-whalesay", "--git-url",
                 "git@gitlab.com:dockstore.test.user/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "alternate",
                 "--private", "true", "--tool-maintainer-email", "duncan.andrew.g@gmail.com", "--script" });
@@ -1258,4 +1260,52 @@ public class BasicET {
 
     }
 
+        /**
+         * This tests that you can manually publish a private only registry (Amazon ECR), but you can't change the tool to public
+         */
+        @Test
+        public void testManualPublishPrivateOnlyRegistry() {
+                // Setup database
+                final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+                // Manual publish
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.AMAZON_ECR.name(),
+                        "--namespace", "notarealnamespace", "--name", "notarealname", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
+                        "master", "--toolname", "alternate", "--private", "true", "--tool-maintainer-email", "duncan.andrew.g@gmail.com", "--custom-docker-path", "amazon.registry", "--script" });
+
+                // Check that tool is published and has correct values
+                final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='true' and privateaccess='true' and path='amazon.registry/notarealnamespace/notarealname' and registry='" + Registry.AMAZON_ECR.name() +"'", new ScalarHandler<>());
+                Assert.assertTrue("one tool should be private, published and from amazon, there are " + count, count == 1);
+
+                // Update tool to public (shouldn't work)
+                systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "update_tool", "--entry", "amazon.registry/notarealnamespace/notarealname/alternate",
+                        "--private", "false", "--script" });
+        }
+
+        /**
+         * This tests that you can't manually publish a private only registry as public
+         */
+        @Test
+        public void testManualPublishPrivateOnlyRegistryAsPublic() {
+                // Manual publish
+                systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.AMAZON_ECR.name(),
+                        "--namespace", "notarealnamespace", "--name", "notarealname", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
+                        "master", "--toolname", "alternate", "--tool-maintainer-email", "duncan.andrew.g@gmail.com", "--custom-docker-path", "amazon.registry", "--script" });
+
+        }
+
+        /**
+         * This tests that you can't manually publish a tool from a registry that requires a custom docker path without specifying the path
+         */
+        @Test
+        public void testManualPublishCustomDockerPathRegistry() {
+                // Manual publish
+                systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.AMAZON_ECR.name(),
+                        "--namespace", "notarealnamespace", "--name", "notarealname", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
+                        "master", "--toolname", "alternate", "--private", "true", "--tool-maintainer-email", "duncan.andrew.g@gmail.com", "--script" });
+
+        }
 }

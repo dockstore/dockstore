@@ -77,6 +77,12 @@ public abstract class AbstractImageRegistry {
     public abstract void updateAPIToolsWithBuildInformation(List<Tool> apiTools);
 
     /**
+     * Returns the registry associated with the current class
+     * @return registry associated with class
+     */
+    public abstract Registry getRegistry();
+
+    /**
      * Updates/Adds/Deletes tools and their associated tags
      *
      * @return
@@ -98,13 +104,8 @@ public abstract class AbstractImageRegistry {
         List<Tool> dbTools = new ArrayList<>(getToolsFromUser(userId, userDAO));
 
         // Filter DB tools and API tools to only include relevant tools
-        if (this.getClass().equals(QuayImageRegistry.class)) {
-            manualTools.removeIf(test -> !test.getUsers().contains(user) || !test.getRegistry().equals(Registry.QUAY_IO));
-            dbTools.removeIf(test -> !test.getRegistry().equals(Registry.QUAY_IO));
-        } else { // Deal with manual
-            manualTools.removeIf(test -> !test.getUsers().contains(user) || test.getRegistry().equals(Registry.QUAY_IO));
-            dbTools.removeIf(test -> test.getRegistry().equals(Registry.QUAY_IO));
-        }
+        manualTools.removeIf(test -> !test.getUsers().contains(user) || !test.getRegistry().equals(getRegistry()));
+        dbTools.removeIf(test -> !test.getRegistry().equals(getRegistry()));
         apiTools.addAll(manualTools);
 
         // Remove tools that can't be updated (Manual tools)
@@ -149,8 +150,8 @@ public abstract class AbstractImageRegistry {
         }
 
         // If exists, check conditions to see if it should be changed to auto (in sync with quay tags and git repo)
-        if (tool.getMode() == ToolMode.MANUAL_IMAGE_PATH && duplicatePath != null && tool.getRegistry().toString()
-                .equals(Registry.QUAY_IO.toString()) && duplicatePath.getGitUrl().equals(tool.getGitUrl())) {
+        if (tool.getMode() == ToolMode.MANUAL_IMAGE_PATH && duplicatePath != null  && tool.getRegistry().name().equals(
+                Registry.QUAY_IO.name()) && duplicatePath.getGitUrl().equals(tool.getGitUrl())) {
             tool.setMode(duplicatePath.getMode());
         }
 
@@ -435,5 +436,4 @@ public abstract class AbstractImageRegistry {
 
         return dbToolList;
     }
-
 }

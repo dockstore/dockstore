@@ -290,7 +290,7 @@ public class GeneralET {
      */
     @Test
     public void testAddVersionTagManualContainer() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
                 Registry.QUAY_IO.toString(), "--namespace", "dockstoretestuser2", "--name", "quayandgithub", "--git-url",
                 "git@github.com:dockstoretestuser2/quayandgithubalternate.git", "--git-reference", "master", "--toolname", "alternate",
                 "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
@@ -364,7 +364,7 @@ public class GeneralET {
      */
     @Test
     public void testVersionTagDelete() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
                 Registry.QUAY_IO.toString(), "--namespace", "dockstoretestuser2", "--name", "quayandgithub", "--git-url",
                 "git@github.com:dockstoretestuser2/quayandgithubalternate.git", "--git-reference", "master", "--toolname", "alternate",
                 "--cwl-path", "/testDir/Dockstore.cwl", "--wdl-path", "/testDir/Dockstore.wdl", "--dockerfile-path", "/testDir/Dockerfile",
@@ -481,7 +481,7 @@ public class GeneralET {
      */
     @Test
     public void testChangeToolname() {
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
                 Registry.QUAY_IO.toString(), "--namespace", "dockstoretestuser2", "--name", "quayandgithubalternate", "--git-url",
                 "git@github.com:dockstoretestuser2/quayandgithubalternate.git", "--git-reference", "master", "--toolname", "alternate",
                 "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
@@ -515,7 +515,7 @@ public class GeneralET {
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
 
         // Repo user has access to
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
                 Registry.QUAY_IO.toString(), "--namespace", "dockstoretestuser2", "--name", "quayandgithub", "--git-url",
                 "git@github.com:dockstoretestuser2/quayandgithubalternate.git", "--git-reference", "master", "--toolname", "testTool",
                 "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
@@ -525,7 +525,7 @@ public class GeneralET {
         assertTrue("the container should exist", count == 1);
 
         // Repo user is part of org
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
                 Registry.QUAY_IO.toString(), "--namespace", "dockstore2", "--name", "testrepo2", "--git-url",
                 "git@github.com:dockstoretestuser2/quayandgithub.git", "--git-reference", "master", "--toolname", "testOrg", "--cwl-path",
                 "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile", "--script" });
@@ -536,7 +536,7 @@ public class GeneralET {
 
         // Repo user doesn't own
         systemExit.expectSystemExitWithStatus(Client.API_ERROR);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry",
+                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
                 Registry.QUAY_IO.toString(), "--namespace", "dockstoretestuser", "--name", "testrepo", "--git-url",
                 "git@github.com:dockstoretestuser/quayandgithub.git", "--git-reference", "master", "--toolname", "testTool", "--cwl-path",
                 "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile", "--script" });

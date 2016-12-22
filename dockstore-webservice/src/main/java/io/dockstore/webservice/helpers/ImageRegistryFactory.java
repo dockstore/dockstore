@@ -56,7 +56,8 @@ public class ImageRegistryFactory {
     }
 
     public AbstractImageRegistry createImageRegistry(Registry registry) {
-        boolean validRegistry = Stream.of(Registry.values()).anyMatch(r -> r.toString().equals(registry.toString()));
+        // Private only registries should not have a default docker command value
+        boolean validRegistry = Stream.of(Registry.values()).anyMatch(r -> r.name().equals(registry.name()));
         if (registry == Registry.QUAY_IO) {
             if (quayToken == null) {
                 return null;

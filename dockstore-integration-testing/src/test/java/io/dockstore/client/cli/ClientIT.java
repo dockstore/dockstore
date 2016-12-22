@@ -154,13 +154,13 @@ public class ClientIT {
     @Test
     public void manualRegisterADuplicate() throws IOException {
         systemExit.expectSystemExitWithStatus(Client.API_ERROR);
-        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "manual_publish", "--registry",
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
                 Registry.QUAY_IO.toString(), "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url",
                 "git@github.com:funky-user/test2.git", "--git-reference", "refs/head/master" });
-        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "manual_publish", "--registry",
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
                 Registry.QUAY_IO.toString(), "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url",
                 "git@github.com:funky-user/test2.git", "--git-reference", "refs/head/master", "--toolname", "test1" });
-        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "manual_publish", "--registry",
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
                 Registry.QUAY_IO.toString(), "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url",
                 "git@github.com:funky-user/test2.git", "--git-reference", "refs/head/master", "--toolname", "test1" });
     }

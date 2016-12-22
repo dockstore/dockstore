@@ -266,12 +266,9 @@ public final class Helper {
         // Get a list of all namespaces from all image registries
         List<Tool> updatedTools = new ArrayList<>();
         for (AbstractImageRegistry abstractImageRegistry : allRegistries) {
-            if (abstractImageRegistry.getClass().equals(QuayImageRegistry.class)) {
-                LOG.info("Grabbing QUAY repos");
+            Registry registry = abstractImageRegistry.getRegistry();
+            LOG.info("Grabbing " + registry.getFriendlyName() + " repos");
 
-            } else {
-                LOG.info("Grabbing DockerHub repos");
-            }
             updatedTools.addAll(abstractImageRegistry
                     .refreshTools(userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken, bitbucketToken, gitlabToken));
         }

@@ -23,13 +23,13 @@ package io.dockstore.common;
  */
 public enum Registry {
     // Add new registries here
-    QUAY_IO("quay.io", "Quay.io", "https://quay.io/repository/"), DOCKER_HUB("registry.hub.docker.com", "Docker Hub",
-            "https://hub.docker.com/"), GITLAB("registry.gitlab.com", "GitLab", "https://gitlab.com/");
+    QUAY_IO("quay.io", "Quay.io", "https://quay.io/repository/", false, false), DOCKER_HUB("registry.hub.docker.com", "Docker Hub", "https://hub.docker.com/", false, false),
+    GITLAB("registry.gitlab.com", "GitLab", "https://gitlab.com/", false, false), AMAZON_ECR(null, "Amazon ECR", null, true, true);
 
     /**
      * this name is what is actually used in commands like docker pull
      */
-    private final String dockerCommand;
+    private final String dockerPath;
 
     /**
      * this name is what is displayed to users to name the registry
@@ -42,15 +42,29 @@ public enum Registry {
      */
     private final String url;
 
-    Registry(final String dockerCommand, final String friendlyName, final String url) {
+    /**
+     * if set to true, then the registry has no public facing site and is only available through an authorized docker pull (the docker registry path is not set)
+     * if set to false, then the registry has a public facing site which can be linked to
+     */
+    private final boolean privateOnly;
+
+    /**
+     * if set to true, then the registry has no public facing site and is only available through an authorized docker pull (the docker registry path is not set)
+     * if set to false, then the registry has a public facing site which can be linked to
+     */
+    private final boolean customDockerPath;
+
+    Registry(final String dockerPath, final String friendlyName, final String url, final boolean privateOnly, final boolean customDockerPath) {
         this.friendlyName = friendlyName;
-        this.dockerCommand = dockerCommand;
+        this.dockerPath = dockerPath;
         this.url = url;
+        this.privateOnly = privateOnly;
+        this.customDockerPath = customDockerPath;
     }
 
     @Override
     public String toString() {
-        return dockerCommand;
+        return dockerPath;
     }
 
     public String getFriendlyName() {
@@ -59,5 +73,13 @@ public enum Registry {
 
     public String getUrl() {
         return url;
+    }
+
+    public boolean isPrivateOnly() {
+        return privateOnly;
+    }
+
+    public boolean hasCustomDockerPath() {
+        return customDockerPath;
     }
 }

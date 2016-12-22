@@ -60,4 +60,9 @@ public class DockerHubRegistry extends AbstractImageRegistry {
         }
     }
 
+    @Override
+    public Registry getRegistry() {
+        return Registry.DOCKER_HUB;
+    }
+
 }

@@ -312,7 +312,9 @@ public class ToolClient extends AbstractEntryClient {
         }
     }
 
+    // Checkstyle suppressed warnings should by fixed
     @Override
+    @SuppressWarnings("checkstyle:methodlength")
     public void manualPublish(final List<String> args) {
         if (containsHelpRequest(args)) {
             manualPublishHelp();
@@ -329,16 +331,30 @@ public class ToolClient extends AbstractEntryClient {
             final String gitReference = reqVal(args, "--git-reference");
             final String toolname = optVal(args, "--toolname", null);
             final String toolMaintainerEmail = optVal(args, "--tool-maintainer-email", null);
-            final String registry = optVal(args, "--registry", Registry.DOCKER_HUB.toString());
+            final String registry = optVal(args, "--registry", DockstoreTool.RegistryEnum.DOCKER_HUB.name());
             final String privateAccess = optVal(args, "--private", "false");
+            final String customDockerPath = optVal(args, "--custom-docker-path", null);
 
             // Check that registry is valid
-            boolean validRegistry = Stream.of(Registry.values()).anyMatch(r -> r.toString().equals(registry));
+            boolean validRegistry = Stream.of(Registry.values()).anyMatch(r -> r.name().equals(registry));
 
             if (!validRegistry) {
                 out("The registry \'" + registry + "\' is not available.");
                 printRegistriesAvailable();
-                errorMessage("Invalid Docker registry.", Client.CLIENT_ERROR);
+                errorMessage("", Client.CLIENT_ERROR);
+            }
+
+            // Determine if chosen registry has special conditions
+            boolean isPrivateRegistry = Stream.of(Registry.values()).anyMatch(r -> r.name().equals(registry) && r.isPrivateOnly());
+            boolean hasCustomDockerPath = Stream.of(Registry.values()).anyMatch(r -> r.name().equals(registry) && r.hasCustomDockerPath());
+
+            // Check if registry needs to override the docker path
+            if (hasCustomDockerPath) {
+                // Ensure that customDockerPath is not null
+                // TODO: add validity checker for given path
+                if (Strings.isNullOrEmpty(customDockerPath)) {
+                    errorMessage(registry + " requires a custom Docker path to be set.", Client.CLIENT_ERROR);
+                }
             }
 
             // Check for correct private access
@@ -346,15 +362,21 @@ public class ToolClient extends AbstractEntryClient {
                 errorMessage("The possible values for --private are 'true' and 'false'.", Client.CLIENT_ERROR);
             }
 
-            // Private access defaults to false
-            boolean setPrivateAccess = false;
+            // Private access
+            boolean setPrivateAccess = "true".equalsIgnoreCase(privateAccess);
+
+            // Ensure that tool is set to private if it is a private only registry
+            if (isPrivateRegistry) {
+                if (!setPrivateAccess) {
+                    errorMessage(registry + " is private only and requires the tool to be private.", Client.CLIENT_ERROR);
+                }
+            }
 
             // Check that tool maintainer email is given if the tool is private with no email setup
-            if ("true".equalsIgnoreCase(privateAccess)) {
+            if (setPrivateAccess) {
                 if (Strings.isNullOrEmpty(toolMaintainerEmail)) {
                     errorMessage("For a private tool, the tool maintainer email is required.", Client.CLIENT_ERROR);
                 }
-                setPrivateAccess = true;
             }
 
             // Check validity of email
@@ -365,18 +387,45 @@ public class ToolClient extends AbstractEntryClient {
                 }
             }
 
+            // Swagger does not fully copy the enum (leaves out properties), so we need to map Registry enum to RegistryEnum in DockstoreTool
+            Optional<DockstoreTool.RegistryEnum> regEnum = getRegistryEnum(registry);
+
+            if (!regEnum.isPresent()) {
+                errorMessage("The registry that you entered does not exist. Run \'dockstore tool manual_publish\' to see valid registries.", Client.CLIENT_ERROR);
+            }
+
             DockstoreTool tool = new DockstoreTool();
             tool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
             tool.setName(name);
             tool.setNamespace(namespace);
-            tool.setRegistry("quay.io".equals(registry) ? DockstoreTool.RegistryEnum.QUAY_IO : DockstoreTool.RegistryEnum.DOCKER_HUB);
+            tool.setRegistry(regEnum.get());
+
+            // Registry path used (ex. quay.io)
+            Optional<String> registryPath;
+
+            // If the registry requires a custom docker path we must use it instead of the default
+            if (hasCustomDockerPath) {
+                registryPath = Optional.of(customDockerPath);
+            } else {
+                registryPath = getRegistryPath(registry);
+            }
+
+            if (!registryPath.isPresent()) {
+                if (hasCustomDockerPath) {
+                    errorMessage("The registry path is unavailable.", Client.CLIENT_ERROR);
+                } else {
+                    errorMessage("The registry path is unavailable. Did you remember to enter a valid docker registry path and docker registry?", Client.CLIENT_ERROR);
+                }
+            }
+
+            tool.setPath(Joiner.on("/").skipNulls().join(registryPath.get(), namespace, name));
+
             tool.setDefaultDockerfilePath(dockerfilePath);
             tool.setDefaultCwlPath(cwlPath);
             tool.setDefaultWdlPath(wdlPath);
             tool.setIsPublished(false);
             tool.setGitUrl(gitURL);
             tool.setToolname(toolname);
-            tool.setPath(Joiner.on("/").skipNulls().join(registry, namespace, name));
             tool.setPrivateAccess(setPrivateAccess);
             tool.setToolMaintainerEmail(toolMaintainerEmail);
 
@@ -385,7 +434,7 @@ public class ToolClient extends AbstractEntryClient {
                 errorMessage("A tool must have at least one descriptor default path.", Client.CLIENT_ERROR);
             }
 
-            if (!Registry.QUAY_IO.toString().equals(registry)) {
+            if (!Registry.QUAY_IO.name().equals(registry)) {
                 final String versionName = optVal(args, "--version-name", "latest");
                 final Tag tag = new Tag();
                 tag.setReference(gitReference);
@@ -397,7 +446,7 @@ public class ToolClient extends AbstractEntryClient {
             }
 
             // Register new tool
-            final String fullName = Joiner.on("/").skipNulls().join(registry, namespace, name, toolname);
+            final String fullName = Joiner.on("/").skipNulls().join(registryPath.get(), namespace, name, toolname);
             try {
                 tool = containersApi.registerManual(tool);
                 if (tool != null) {
@@ -428,6 +477,39 @@ public class ToolClient extends AbstractEntryClient {
                 }
             }
         }
+    }
+
+    /**
+     * Given a registry ENUM string, returns the matching registry enum
+     * @param registry
+     * @return An optional value of the registry enum
+     */
+    private Optional<DockstoreTool.RegistryEnum> getRegistryEnum(String registry) {
+        for (DockstoreTool.RegistryEnum reg : DockstoreTool.RegistryEnum.values()) {
+            if (registry.equals(reg.name())) {
+                return Optional.of(reg);
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Given a registry ENUM string, returns the default docker registry path
+     * @param registry
+     * @return An optional docker registry path
+     */
+    private Optional<String> getRegistryPath(String registry) {
+        for (Registry r  : Registry.values()) {
+            if (registry.equals(r.name())) {
+                if (r.hasCustomDockerPath()) {
+                    return Optional.of(null);
+                } else {
+                    return Optional.of(r.toString());
+                }
+            }
+        }
+
+        return Optional.empty();
     }
 
     protected void refreshAllEntries() {
@@ -805,6 +887,16 @@ public class ToolClient extends AbstractEntryClient {
                         }
                     }
 
+                    boolean isPrivateRegistry = Stream.of(Registry.values()).anyMatch(r -> r.name().equals(tool.getRegistry().name()) && r.isPrivateOnly());
+
+                    // Cannot set private only registry tools to public
+                    if (isPrivateRegistry) {
+                        if (!setPrivateAccess) {
+                            errorMessage(tool.getRegistry().name() + " is a private only Docker registry, which means that the tool cannot be set to public.",
+                                    Client.CLIENT_ERROR);
+                        }
+                    }
+
                     tool.setPrivateAccess(setPrivateAccess);
                 }
 
@@ -1033,7 +1125,7 @@ public class ToolClient extends AbstractEntryClient {
         out("       dockstore tool manual_publish [parameters]");
         out("");
         out("Description:");
-        out("  Manually register an tool in the dockstore. Currently this is used to register entries for images on Docker Hub.");
+        out("  Manually register an tool in the dockstore.");
         out("  No parameters will show the list of available registries.");
         out("");
         out("Required parameters:");
@@ -1047,17 +1139,22 @@ public class ToolClient extends AbstractEntryClient {
         out("  --cwl-path <file>                                        Path for the CWL document, defaults to /Dockstore.cwl");
         out("  --wdl-path <file>                                        Path for the WDL document, defaults to /Dockstore.wdl");
         out("  --toolname <toolname>                                    Name of the tool, can be omitted, defaults to null");
-        out("  --registry <registry>                                    Docker registry, can be omitted, defaults to registry.hub.docker.com");
-        out("  --version-name <version>                                 Version tag name for Dockerhub containers only, defaults to latest");
-        out("  --private <true/false>                                   Is the tool private or not, defaults to false");
+        out("  --registry <registry>                                    Docker registry, can be omitted, defaults to DOCKER_HUB. Run command with no parameters to see available registries.");
+        out("  --version-name <version>                                 Version tag name for Dockerhub containers only, defaults to latest.");
+        out("  --private <true/false>                                   Is the tool private or not, defaults to false.");
         out("  --tool-maintainer-email <tool maintainer email>          The contact email for the tool maintainer. Required for private repositories.");
+        out("  --custom-docker-path <custom docker path>                Custom Docker registry path (ex. registry.hub.docker.com). Only available for certain registries.");
         printHelpFooter();
     }
 
     private static void printRegistriesAvailable() {
         out("The available Docker Registries are:");
         for (Registry r : Registry.values()) {
-            out(" *" + r.toString());
+            if (!r.hasCustomDockerPath()) {
+                out(" *" + r.name() + " (" + r.toString() + ")");
+            } else {
+                out(" *" + r.name() + " (Custom)");
+            }
         }
     }
 
@@ -1071,3 +1168,5 @@ public class ToolClient extends AbstractEntryClient {
         }
     }
 }
+ 
+
