@@ -1145,8 +1145,7 @@ public class WorkflowResource {
     @Timed
     @UnitOfWork
     @ApiOperation(value = "Returns list of users who starred the given Workflow", response = User.class, responseContainer = "List")
-    public Set<User> getStarredUsers(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "Workflow to grab starred users for.", required = true) @PathParam("workflowId") Long workflowId) {
+    public Set<User> getStarredUsers(@ApiParam(value = "Workflow to grab starred users for.", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         Helper.checkEntry(workflow);
 

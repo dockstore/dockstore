@@ -887,8 +887,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @ApiOperation(value = "Returns list of users who starred the given tool", response = User.class, responseContainer = "List")
-    public Set<User> getStarredUsers(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "Tool to grab starred users for.", required = true) @PathParam("containerId") Long containerId) {
+    public Set<User> getStarredUsers(@ApiParam(value = "Tool to grab starred users for.", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
         Helper.checkEntry(tool);
 
