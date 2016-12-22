@@ -162,10 +162,9 @@ public class BasicET {
         Client.main(
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry",
                         "quay.io/dockstoretestuser/quayandgithub", "--toolname", "testToolname", "--script" });
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
-                "quay.io/dockstoretestuser/quayandgithub/testToolname" });
+
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
-                Registry.QUAY_IO.toString(), "--namespace", "dockstoretestuser", "--name", "quayandgithub", "--git-url",
+                Registry.QUAY_IO.name(), "--namespace", "dockstoretestuser", "--name", "quayandgithub", "--git-url",
                 "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "testtool",
                 "--script" });
 
