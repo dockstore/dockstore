@@ -20,8 +20,12 @@ package io.dockstore.foobar;
  * Dummy class to satisfy coveralls-maven-plugin (does not like empty modules)
  * Created by dyuen on 26/05/16.
  */
-public class Dummy {
-    public static void main(String[] args){
+public final class Dummy {
+    private Dummy() {
+        // hide constructors for utility classes
+    }
+
+    public static void main(String[] args) {
         System.out.println();
     }
 }

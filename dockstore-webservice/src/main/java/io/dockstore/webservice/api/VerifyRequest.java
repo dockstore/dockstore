@@ -17,7 +17,6 @@
 package io.dockstore.webservice.api;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import io.swagger.annotations.ApiModel;
 
 /**

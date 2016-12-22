@@ -18,7 +18,7 @@ package io.dockstore.common;
 
 /**
  * This enumerates the types of docker registry that we can associate an entry with.
- * 
+ *
  * @author dyuen
  */
 public enum Registry {

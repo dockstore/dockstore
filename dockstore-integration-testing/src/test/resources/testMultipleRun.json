@@ -1,53 +1,53 @@
 [
-   {
-      "input":[
-         {
-            "path":"src/test/resources/example.bedGraph",
-            "class":"File"
-         }
-      ],
-      "allocatedResources":{
-         "cpu":1,
-         "mem":1000
-      },
-      "key":[
-         "1,1",
-         "2,2n"
-      ],
-      "output":"example.bedGraph.sorted1"
-   },
-   {
-      "input":[
-         {
-            "path":"src/test/resources/example.bedGraph",
-            "class":"File"
-         }
-      ],
-      "allocatedResources":{
-         "cpu":1,
-         "mem":1000
-      },
-      "key":[
-         "1,1",
-         "2,2n"
-      ],
-      "output":"example.bedGraph.sorted2"
-   },
-   {
-      "input":[
-         {
-            "path":"src/test/resources/example.bedGraph",
-            "class":"File"
-         }
-      ],
-      "allocatedResources":{
-         "cpu":1,
-         "mem":1000
-      },
-      "key":[
-         "1,1",
-         "2,2n"
-      ],
-      "output":"example.bedGraph.sorted3"
-   }
+  {
+    "input": [
+      {
+        "path": "src/test/resources/example.bedGraph",
+        "class": "File"
+      }
+    ],
+    "allocatedResources": {
+      "cpu": 1,
+      "mem": 1000
+    },
+    "key": [
+      "1,1",
+      "2,2n"
+    ],
+    "output": "example.bedGraph.sorted1"
+  },
+  {
+    "input": [
+      {
+        "path": "src/test/resources/example.bedGraph",
+        "class": "File"
+      }
+    ],
+    "allocatedResources": {
+      "cpu": 1,
+      "mem": 1000
+    },
+    "key": [
+      "1,1",
+      "2,2n"
+    ],
+    "output": "example.bedGraph.sorted2"
+  },
+  {
+    "input": [
+      {
+        "path": "src/test/resources/example.bedGraph",
+        "class": "File"
+      }
+    ],
+    "allocatedResources": {
+      "cpu": 1,
+      "mem": 1000
+    },
+    "key": [
+      "1,1",
+      "2,2n"
+    ],
+    "output": "example.bedGraph.sorted3"
+  }
 ]

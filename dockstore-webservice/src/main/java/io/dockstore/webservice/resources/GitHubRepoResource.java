@@ -16,6 +16,18 @@
 
 package io.dockstore.webservice.resources;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.List;
+
+import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
@@ -36,19 +48,7 @@ import org.eclipse.egit.github.core.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.GET;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.List;
-
 /**
- *
  * @author dyuen
  */
 @Path("/github.repo")
@@ -135,11 +135,13 @@ public class GitHubRepoResource {
 
     /**
      * Check whether the repo has valid contents, if so, list it.
-     * @deprecated this looks like it looks at invalid collab.json
+     *
      * @param builder
      * @param cService
      * @param repo
-    */
+     * @deprecated this looks like it looks at invalid collab.json
+     */
+    @Deprecated
     private void checkAndAddRepoToBuilder(StringBuilder builder, ContentsService cService, Repository repo) {
         try {
             List<RepositoryContents> contents = cService.getContents(repo, "collab.json");

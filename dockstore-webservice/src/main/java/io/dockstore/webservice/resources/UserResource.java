@@ -16,6 +16,22 @@
 
 package io.dockstore.webservice.resources;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
+import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
@@ -42,41 +58,25 @@ import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
 /**
- *
  * @author xliu
  */
 @Path("/users")
 @Api("/users")
 @Produces(MediaType.APPLICATION_JSON)
 public class UserResource {
+    private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
+
     private final HttpClient client;
     private final UserDAO userDAO;
     private final GroupDAO groupDAO;
     private final TokenDAO tokenDAO;
 
-
-    private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
     private final WorkflowResource workflowResource;
     private final DockerRepoResource dockerRepoResource;
 
-    public UserResource(HttpClient client, TokenDAO tokenDAO, UserDAO userDAO, GroupDAO groupDAO,
-            WorkflowResource workflowResource, DockerRepoResource dockerRepoResource) {
+    public UserResource(HttpClient client, TokenDAO tokenDAO, UserDAO userDAO, GroupDAO groupDAO, WorkflowResource workflowResource,
+            DockerRepoResource dockerRepoResource) {
         this.client = client;
         this.userDAO = userDAO;
         this.groupDAO = groupDAO;
@@ -153,6 +153,15 @@ public class UserResource {
             throw new CustomWebApplicationException("User not found.", HttpStatus.SC_BAD_REQUEST);
         }
         return user;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/user")
+    @ApiOperation(value = "Get the logged-in user", response = User.class)
+    public User getUser(@ApiParam(hidden = true) @Auth User user) {
+        return userDAO.findById(user.getId());
     }
 
     @GET
@@ -236,8 +245,7 @@ public class UserResource {
     @UnitOfWork
     @Path("/groups/{groupId}/users")
     @ApiOperation(value = "Get users that belongs to a group", response = User.class, responseContainer = "List")
-    public List<User> getUsersFromGroup(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam("Group") @PathParam("groupId") long groupId) {
+    public List<User> getUsersFromGroup(@ApiParam(hidden = true) @Auth User user, @ApiParam("Group") @PathParam("groupId") long groupId) {
         Group group = groupDAO.findById(groupId);
         if (group == null) {
             throw new CustomWebApplicationException("Group not found.", HttpStatus.SC_BAD_REQUEST);
@@ -269,8 +277,7 @@ public class UserResource {
     @UnitOfWork
     @Path("/{userId}/groups")
     @ApiOperation(value = "Add a group to a user", response = User.class)
-    public User addGroupToUser(@ApiParam(hidden = true) @Auth User authUser,
-            @ApiParam("User ID of user") @PathParam("userId") long userId,
+    public User addGroupToUser(@ApiParam(hidden = true) @Auth User authUser, @ApiParam("User ID of user") @PathParam("userId") long userId,
             @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) Group groupParam) {
         Helper.checkUser(authUser, userId);
 
@@ -296,7 +303,8 @@ public class UserResource {
     @ApiOperation(value = "Remove a user from a group", response = User.class)
     @ApiResponses(@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid user or group value"))
     public User removeUserFromGroup(@ApiParam(hidden = true) @Auth User authUser,
-            @ApiParam("User ID of user") @PathParam("userId") long userId, @ApiParam("Group ID of group") @PathParam("groupId") long groupId) {
+            @ApiParam("User ID of user") @PathParam("userId") long userId,
+            @ApiParam("Group ID of group") @PathParam("groupId") long groupId) {
         Helper.checkUser(authUser, userId);
 
         User user = userDAO.findById(userId);
@@ -325,7 +333,7 @@ public class UserResource {
         final ImmutableList<Tool> immutableList = FluentIterable.from(byId.getEntries()).filter(Tool.class).toList();
         final List<Tool> repositories = Lists.newArrayList(immutableList);
 
-        for (Iterator<Tool> iterator = repositories.iterator(); iterator.hasNext();) {
+        for (Iterator<Tool> iterator = repositories.iterator(); iterator.hasNext(); ) {
             Tool c = iterator.next();
 
             if (!c.getIsPublished()) {
@@ -350,7 +358,7 @@ public class UserResource {
         final ImmutableList<Workflow> immutableList = FluentIterable.from(byId.getEntries()).filter(Workflow.class).toList();
         final List<Workflow> repositories = Lists.newArrayList(immutableList);
 
-        for (Iterator<Workflow> iterator = repositories.iterator(); iterator.hasNext();) {
+        for (Iterator<Workflow> iterator = repositories.iterator(); iterator.hasNext(); ) {
             Workflow workflow = iterator.next();
 
             if (!workflow.getIsPublished()) {
@@ -380,7 +388,7 @@ public class UserResource {
     @Path("/{userId}/workflows/refresh")
     @ApiOperation(value = "Refresh workflows owned by the logged-in user", notes = "Updates some metadata", response = Workflow.class, responseContainer = "List")
     public List<Workflow> refreshWorkflows(@ApiParam(hidden = true) @Auth User authUser,
-                                 @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
+            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
 
         Helper.checkUser(authUser, userId);
 
@@ -398,13 +406,12 @@ public class UserResource {
     @UnitOfWork
     @ApiOperation(value = "List workflows owned by the logged-in user", notes = "Lists all registered and unregistered workflows owned by the user", response = Workflow.class, responseContainer = "List")
     public List<Workflow> userWorkflows(@ApiParam(hidden = true) @Auth User user,
-                                        @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
+            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         Helper.checkUser(user, userId);
         // need to avoid lazy initialize error
         final User byId = this.userDAO.findById(userId);
         return FluentIterable.from(byId.getEntries()).filter(Workflow.class).toList();
     }
-
 
     @GET
     @Path("/{userId}/containers")
@@ -417,14 +424,5 @@ public class UserResource {
         // need to avoid lazy initialize error
         final User byId = this.userDAO.findById(userId);
         return FluentIterable.from(byId.getEntries()).filter(Tool.class).toList();
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork
-    @Path("/user")
-    @ApiOperation(value = "Get the logged-in user", response = User.class)
-    public User getUser(@ApiParam(hidden = true) @Auth User user) {
-        return userDAO.findById(user.getId());
     }
 }

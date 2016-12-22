@@ -738,7 +738,7 @@ paths:
   /containers/dockerRegistryList:
     get:
       description: Does not need authentication
-      operationId: getTestParameterFiles
+      operationId: getDockerRegistries
       parameters: []
       produces: [application/json]
       responses:

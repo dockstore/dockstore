@@ -21,7 +21,6 @@ import io.dropwizard.hibernate.AbstractDAO;
 import org.hibernate.SessionFactory;
 
 /**
- *
  * @author xliu
  */
 public class FileDAO extends AbstractDAO<SourceFile> {

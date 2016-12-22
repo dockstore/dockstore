@@ -4,7 +4,8 @@
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/ga4gh/dockstore?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Coverity Scan](https://img.shields.io/coverity/scan/9682.svg?maxAge=2592000)](https://scan.coverity.com/projects/ga4gh-dockstore)
 [![Dependency Status](https://dependencyci.com/github/ga4gh/dockstore/badge)](https://dependencyci.com/github/ga4gh/dockstore)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.154185.svg)](https://doi.org/10.5281/zenodo.154185)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.168593.svg)](https://doi.org/10.5281/zenodo.168593)
+
 
 
 
@@ -105,7 +106,10 @@ Demo the webservice and test communication with GitHub and quay.io
 
 ### Coding Standards
 
-Please refer to SeqWare's [Coding Standards](https://seqware.github.io/docs/100-coding-standards/). 
+[codestyle.xml](codestyle.xml) defines the coding style for Dockstore as an IntelliJ Code Style XML file that should be imported into IntelliJ IDE. 
+We also have a matching [checkstyle.xml](checkstyle.xml) that can be imported into other IDEs and is run during the build.  
+
+For users of Intellij or comparable IDEs, we also suggest loading the checkstyle.xml with a plugin in order to display warnings and errors while coding live rather than encountering them later when running a build. 
 
 ### Dockstore Java Client
 

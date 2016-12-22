@@ -17,12 +17,12 @@
 package io.dockstore.common;
 
 /**
- * 
  * This describes all keys available in Dockstore config files.
  *
  * @author xliu
  */
-public class Constants {
+public final class Constants {
+
     public static final String WEBSERVICE_BASE_PATH = "webservice.base_path";
     public static final String WEBSERVICE_TOKEN_USER_1 = "webservice.tokenUser1"; // Dummy dockstore token for user 1
     public static final String WEBSERVICE_TOKEN_USER_2 = "webservice.tokenUser2"; // Dummy dockstore token for user 2
@@ -32,4 +32,8 @@ public class Constants {
     public static final String POSTGRES_PASSWORD = "database.postgresPass";
     public static final String POSTGRES_DBNAME = "database.postgresDBName";
     public static final String POSTGRES_MAX_CONNECTIONS = "database.maxConnections";
+
+    private Constants() {
+        // hide the default constructor for a constant class
+    }
 }

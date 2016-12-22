@@ -16,16 +16,14 @@
 
 package io.dockstore.webservice.jdbi;
 
-import org.hibernate.SessionFactory;
-
 import io.dockstore.webservice.core.Version;
 import io.dropwizard.hibernate.AbstractDAO;
+import org.hibernate.SessionFactory;
 
 /**
- *
  * @author xliu
  */
-public class VersionDAO <T extends Version> extends AbstractDAO<T> {
+public class VersionDAO<T extends Version> extends AbstractDAO<T> {
 
     public VersionDAO(SessionFactory sessionFactory) {
         super(sessionFactory);

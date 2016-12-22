@@ -17,6 +17,7 @@
 /**
  * Implements CLI operations for specific types of entries
  * (ex: workflows and tools).
+ *
  * @author dyuen
  */
 package io.dockstore.client.cli.nested;

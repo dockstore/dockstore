@@ -25,12 +25,11 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
 
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Charsets;
-import com.google.common.io.Files;
 
 /**
  * Created by aduncan on 19/10/16.
@@ -40,6 +39,7 @@ public class BridgeHelper {
 
     /**
      * This resolves a URL into file content
+     *
      * @param importUrl
      * @return content of file
      */
@@ -50,8 +50,8 @@ public class BridgeHelper {
         UrlValidator urlValidator = new UrlValidator();
         if (urlValidator.isValid(importUrl)) {
             // Check that url is from GitHub, Bitbucket, or GitLab
-            if (importUrl.startsWith("https://raw.githubusercontent.com/") || importUrl.startsWith("https://bitbucket.org")
-                    || importUrl.startsWith("https://gitlab.com")) {
+            if (importUrl.startsWith("https://raw.githubusercontent.com/") || importUrl.startsWith("https://bitbucket.org") || importUrl
+                    .startsWith("https://gitlab.com")) {
                 // Grab file located at URL
                 try {
                     InputStream inputStream = new URL(importUrl).openStream();
@@ -81,6 +81,7 @@ public class BridgeHelper {
 
     /**
      * Resolves local imports
+     *
      * @param importPath
      * @param secondaryFileDesc
      * @return content of local import
@@ -100,6 +101,7 @@ public class BridgeHelper {
 
     /**
      * Resolves local imports (when files exist locally)
+     *
      * @param importPath
      * @return content of local import
      */

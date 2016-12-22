@@ -16,19 +16,20 @@
 
 package io.dockstore.webservice.core;
 
+import java.util.Objects;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import java.util.Objects;
-
 /**
  * This implements version for a Workflow.
- * 
+ *
  * @author dyuen
  */
 @ApiModel(value = "WorkflowVersion", description = "This describes one workflow version associated with a workflow.")
@@ -60,7 +61,6 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
         super.setReference(tag.getReference());
     }
 
-
     @JsonProperty
     public String getWorkflowPath() {
         return workflowPath;
@@ -70,7 +70,8 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
         this.workflowPath = workflowPath;
     }
 
-    @Override public int hashCode() {
+    @Override
+    public int hashCode() {
         return 31 * super.hashCode() + Objects.hash(workflowPath);
     }
 
@@ -85,19 +86,18 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
         if (!super.equals(obj)) {
             return false;
         }
-        final WorkflowVersion other = (WorkflowVersion) obj;
+        final WorkflowVersion other = (WorkflowVersion)obj;
         return Objects.equals(this.workflowPath, other.workflowPath);
     }
 
-    @Override public int compareTo(WorkflowVersion that) {
+    @Override
+    public int compareTo(WorkflowVersion that) {
         if (super.compareTo(that) < 0) {
             return -1;
         } else if (super.compareTo(that) > 0) {
             return 1;
         }
 
-        return ComparisonChain.start()
-            .compare(this.workflowPath, that.workflowPath, Ordering.natural().nullsLast())
-            .result();
+        return ComparisonChain.start().compare(this.workflowPath, that.workflowPath, Ordering.natural().nullsLast()).result();
     }
 }

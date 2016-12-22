@@ -16,6 +16,24 @@
 
 package io.dockstore.webservice.resources;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+
+import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
 import com.codahale.metrics.annotation.Timed;
 import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
 import com.google.api.client.auth.oauth2.BearerToken;
@@ -53,23 +71,6 @@ import org.eclipse.egit.github.core.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-
 /**
  * The githubToken resource handles operations with tokens. Tokens are needed to talk with the quay.io and github APIs. In addition, they
  * will be needed to pull down docker containers that are requested by users.
@@ -80,18 +81,24 @@ import java.util.Random;
 @Api(value = "/auth/tokens", tags = "tokens")
 @Produces(MediaType.APPLICATION_JSON)
 public class TokenResource {
-    private final TokenDAO tokenDAO;
-    private final UserDAO userDAO;
-
-    /** Global instance of the HTTP transport. */
+    /**
+     * Global instance of the HTTP transport.
+     */
     private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
 
-    /** Global instance of the JSON factory. */
+    /**
+     * Global instance of the JSON factory.
+     */
     private static final JsonFactory JSON_FACTORY = new JacksonFactory();
 
     private static final String QUAY_URL = "https://quay.io/api/v1/";
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
     private static final String GITLAB_URL = "https://gitlab.com/";
+    private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
+
+    private final TokenDAO tokenDAO;
+    private final UserDAO userDAO;
+
     private final String githubClientID;
     private final String githubClientSecret;
     private final String bitbucketClientID;
@@ -100,13 +107,12 @@ public class TokenResource {
     private final String gitlabRedirectUri;
     private final String gitlabClientSecret;
     private final HttpClient client;
-
-    private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
     private final CachingAuthenticator<String, User> cachingAuthenticator;
 
     @SuppressWarnings("checkstyle:parameternumber")
     public TokenResource(TokenDAO tokenDAO, UserDAO enduserDAO, String githubClientID, String githubClientSecret, String bitbucketClientID,
-            String bitbucketClientSecret, String gitlabClientID, String gitlabClientSecret, String gitlabRedirectUri, HttpClient client, CachingAuthenticator<String, User> cachingAuthenticator) {
+            String bitbucketClientSecret, String gitlabClientID, String gitlabClientSecret, String gitlabRedirectUri, HttpClient client,
+            CachingAuthenticator<String, User> cachingAuthenticator) {
         this.tokenDAO = tokenDAO;
         userDAO = enduserDAO;
         this.githubClientID = githubClientID;
@@ -220,13 +226,15 @@ public class TokenResource {
     public Token addGitlabToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("code") String code) {
         final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
                 JSON_FACTORY, new GenericUrl(GITLAB_URL + "oauth/token"),
-                new ClientParametersAuthentication(gitlabClientID, gitlabClientSecret), gitlabClientID,
-                GITLAB_URL + "oauth/authorize").build();
+                new ClientParametersAuthentication(gitlabClientID, gitlabClientSecret), gitlabClientID, GITLAB_URL + "oauth/authorize")
+                .build();
 
         LOG.info("About to try and grab access token");
         String accessToken;
         try {
-            TokenResponse tokenResponse = flow.newTokenRequest(code).setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).setGrantType("authorization_code").setRedirectUri(gitlabRedirectUri).execute();
+            TokenResponse tokenResponse = flow.newTokenRequest(code)
+                    .setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).setGrantType("authorization_code")
+                    .setRedirectUri(gitlabRedirectUri).execute();
             accessToken = tokenResponse.getAccessToken();
         } catch (IOException e) {
             LOG.error("Retrieving accessToken was unsuccessful");
@@ -263,7 +271,6 @@ public class TokenResource {
             LOG.info("Could not find user");
             throw new CustomWebApplicationException("User not found", HttpStatus.SC_CONFLICT);
         }
-
 
     }
 
@@ -370,9 +377,9 @@ public class TokenResource {
     @Timed
     @UnitOfWork
     @Path("/bitbucket.org")
-    @ApiOperation(value = "Add a new bitbucket.org token, used by quay.io redirect", notes = "This is used as part of the OAuth 2 web flow. "
-            + "Once a user has approved permissions for Collaboratory"
-            + "Their browser will load the redirect URI which should resolve here", response = Token.class)
+    @ApiOperation(value = "Add a new bitbucket.org token, used by quay.io redirect", notes =
+            "This is used as part of the OAuth 2 web flow. " + "Once a user has approved permissions for Collaboratory"
+                    + "Their browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addBitbucketToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("code") String code)
             throws UnsupportedEncodingException {
         if (code.isEmpty()) {
@@ -436,7 +443,7 @@ public class TokenResource {
             String response = asString2.get();
             Gson gson = new Gson();
             Map<String, String> map = new HashMap<>();
-            map = (Map<String, String>) gson.fromJson(response, map.getClass());
+            map = (Map<String, String>)gson.fromJson(response, map.getClass());
 
             username = map.get("username");
             LOG.info("Username: {}", username);
