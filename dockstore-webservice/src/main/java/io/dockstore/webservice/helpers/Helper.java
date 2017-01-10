@@ -526,6 +526,14 @@ public final class Helper {
         }
     }
 
+    /**
+     * Stars the entry
+     *
+     * @param entry     the entry to star
+     * @param user      the user to star the entry with
+     * @param entryType the entry type which is either "workflow" or "tool"
+     * @param entryPath the path of the entry
+     */
     public static void starEntryHelper(Entry entry, User user, String entryType, String entryPath) {
         Helper.checkEntry(entry);
         Set<User> starredUsers = entry.getStarredUsers();
@@ -536,6 +544,14 @@ public final class Helper {
         }
     }
 
+    /**
+     * Unstars the entry
+     *
+     * @param entry     the entry to unstar
+     * @param user      the user to unstar the entry with
+     * @param entryType the entry type which is either "workflow" or "tool"
+     * @param entryPath the path of the entry
+     */
     public static void unstarEntryHelper(Entry entry, User user, String entryType, String entryPath) {
         Helper.checkEntry(entry);
 
