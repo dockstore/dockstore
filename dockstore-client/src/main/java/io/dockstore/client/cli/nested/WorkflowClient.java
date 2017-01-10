@@ -267,6 +267,54 @@ public class WorkflowClient extends AbstractEntryClient {
     }
 
     @Override
+    protected void handleStarUnstar(String entryPath, String newName, boolean unpublishRequest) {
+        Workflow existingWorkflow;
+        boolean isPublished = false;
+        try {
+            existingWorkflow = workflowsApi.getWorkflowByPath(entryPath);
+            isPublished = existingWorkflow.getIsPublished();
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "Unable to publish/unpublish " + newName, Client.API_ERROR);
+        }
+        if (unpublishRequest) {
+            if (isPublished) {
+                publish(false, entryPath);
+            } else {
+                out("This workflow is already unpublished.");
+            }
+        } else {
+            if (newName == null) {
+                if (isPublished) {
+                    out("This workflow is already published.");
+                } else {
+                    publish(true, entryPath);
+                }
+            } else {
+                try {
+                    Workflow workflow = workflowsApi.getWorkflowByPath(entryPath);
+
+                    Workflow newWorkflow = new Workflow();
+                    String registry = getGitRegistry(workflow.getGitUrl());
+
+                    newWorkflow = workflowsApi
+                            .manualRegister(registry, workflow.getPath(), workflow.getWorkflowPath(), newWorkflow.getWorkflowName(),
+                                    workflow.getDescriptorType());
+
+                    if (newWorkflow != null) {
+                        out("Successfully registered " + entryPath + "/" + newName);
+                        workflowsApi.refresh(newWorkflow.getId());
+                        publish(true, newWorkflow.getPath());
+                    } else {
+                        errorMessage("Unable to publish " + newName, Client.COMMAND_ERROR);
+                    }
+                } catch (ApiException ex) {
+                    exceptionMessage(ex, "Unable to publish " + newName, Client.API_ERROR);
+                }
+            }
+        }
+    }
+
+    @Override
     protected void handleVerifyUnverify(String entry, String versionName, String verifySource, boolean unverifyRequest, boolean isScript) {
         boolean toOverwrite = true;
 
@@ -338,6 +386,24 @@ public class WorkflowClient extends AbstractEntryClient {
         }
     }
 
+    @Override
+    protected void handleListUnstarredEntries() {
+        try {
+            // check user info after usage so that users can get usage without live webservice
+            User user = usersApi.getUser();
+            if (user == null) {
+                errorMessage("User not found", Client.CLIENT_ERROR);
+            }
+            List<Workflow> workflows = usersApi.userWorkflows(user.getId());
+
+            out("YOUR AVAILABLE WORKFLOWS");
+            printLineBreak();
+            printWorkflowList(workflows);
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "", Client.API_ERROR);
+        }
+    }
+
     public void publish(boolean publish, String entry) {
         String action = "publish";
         if (!publish) {
@@ -354,6 +420,30 @@ public class WorkflowClient extends AbstractEntryClient {
                 out("Successfully " + action + "ed  " + entry);
             } else {
                 errorMessage("Unable to " + action + " workflow " + entry, Client.COMMAND_ERROR);
+            }
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "Unable to " + action + " workflow " + entry, Client.API_ERROR);
+        }
+    }
+
+    /**
+     * Interacts with API to star/unstar a workflow
+     *
+     * @param star  true to star, false to unstar
+     * @param entry the workflow or tool
+     */
+    private void star(boolean star, String entry) {
+        String action = "star";
+        if (!star) {
+            action = "unstar";
+        }
+        try {
+            Workflow workflow = workflowsApi.getWorkflowByPath(entry);
+            if (star) {
+                workflowsApi.starEntry(workflow.getId());
+            }
+            else {
+                workflowsApi.unstarEntry(workflow.getId());
             }
         } catch (ApiException ex) {
             exceptionMessage(ex, "Unable to " + action + " workflow " + entry, Client.API_ERROR);

@@ -206,6 +206,18 @@ public class ToolClient extends AbstractEntryClient {
         }
     }
 
+    protected void handleStarUnstar(String pattern) {
+        try {
+            List<DockstoreTool> containers = containersApi.search(pattern);
+
+            out("MATCHING TOOLS");
+            printLineBreak();
+            printToolList(containers);
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "", Client.API_ERROR);
+        }
+    }
+
     protected void handlePublishUnpublish(String entryPath, String newName, boolean unpublishRequest) {
         if (unpublishRequest) {
             publish(false, entryPath);
@@ -236,6 +248,35 @@ public class ToolClient extends AbstractEntryClient {
                         out("Successfully registered " + entryPath + "/" + newName);
                         containersApi.refresh(newContainer.getId());
                         publish(true, newContainer.getToolPath());
+                    } else {
+                        errorMessage("Unable to publish " + newName, Client.COMMAND_ERROR);
+                    }
+                } catch (ApiException ex) {
+                    exceptionMessage(ex, "Unable to publish " + newName, Client.API_ERROR);
+                }
+            }
+        }
+    }
+
+    /**
+     *
+     * @param entryPath         a unique identifier for an entry, called a path for workflows and tools
+     * @param newName           take entryPath and rename its most specific name (ex: toolName for tools) to newName
+     * @param unstarRequest     true to unstar, false to star
+     */
+    protected void handleStarUnstar(String entryPath, String newName, boolean unstarRequest) {
+        if (unstarRequest) {
+            star(false, entryPath);
+        } else {
+            if (newName == null) {
+                star(true, entryPath);
+            } else {
+                try {
+                    DockstoreTool container = containersApi.getContainerByToolPath(entryPath);
+                    containersApi.starEntry(container.getId(), container);
+                    if (container != null) {
+                        out("Successfully starred " + entryPath + "/" + newName);
+
                     } else {
                         errorMessage("Unable to publish " + newName, Client.COMMAND_ERROR);
                     }
@@ -290,6 +331,24 @@ public class ToolClient extends AbstractEntryClient {
         }
     }
 
+    @Override
+    protected void handleListUnstarredEntries() {
+        try {
+            // check user info after usage so that users can get usage without live webservice
+            User user = usersApi.getUser();
+            if (user == null) {
+                errorMessage("User not found", Client.CLIENT_ERROR);
+            }
+            List<DockstoreTool> containers = usersApi.userContainers(user.getId());
+
+            out("YOUR AVAILABLE CONTAINERS");
+            printLineBreak();
+            printToolList(containers);
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "", Client.API_ERROR);
+        }
+    }
+
     private void publish(boolean publish, String entry) {
         String action = "publish";
         if (!publish) {
@@ -307,6 +366,31 @@ public class ToolClient extends AbstractEntryClient {
             } else {
                 errorMessage("Unable to " + action + " container " + entry, Client.COMMAND_ERROR);
             }
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "Unable to " + action + " container " + entry, Client.API_ERROR);
+        }
+    }
+
+    /**
+     * Interacts with API to star/unstar a workflow
+     *
+     * @param star  true to star, false to unstar
+     * @param entry the workflow or tool
+     */
+    private void star(boolean star, String entry) {
+        String action = "star";
+        if (!star) {
+            action = "unstar";
+        }
+        try {
+            DockstoreTool container = containersApi.getContainerByToolPath(entry);
+            if (star) {
+                containersApi.starEntry(container.getId(), container);
+            }
+            else {
+                containersApi.unstarEntry(container.getId(), container);
+            }
+            out("Successfully " + action + "ed  " + entry);
         } catch (ApiException ex) {
             exceptionMessage(ex, "Unable to " + action + " container " + entry, Client.API_ERROR);
         }

@@ -159,6 +159,8 @@ public abstract class AbstractEntryClient {
         out("");
         out("  label            :  updates labels for an individual " + getEntryType() + "");
         out("");
+        out("  star             :  star/unstar a " + getEntryType() + " in the dockstore");
+        out("");
         out("  test_parameter   :  updates test parameter files for a version of a " + getEntryType() + "");
         out("");
         out("  " + CONVERT + "          :  utilities that allow you to convert file types");
@@ -222,6 +224,9 @@ public abstract class AbstractEntryClient {
                 break;
             case "publish":
                 publish(args);
+                break;
+            case "star":
+                star(args);
                 break;
             case WDL_STRING:
                 descriptor(args, WDL_STRING);
@@ -323,6 +328,13 @@ public abstract class AbstractEntryClient {
     protected abstract void handlePublishUnpublish(String entryPath, String newName, boolean unpublishRequest);
 
     /**
+     * @param entryPath         a unique identifier for an entry, called a path for workflows and tools
+     * @param newName           take entryPath and rename its most specific name (ex: toolName for tools) to newName
+     * @param unstarRequest     true to star, false to unstar
+     */
+    protected abstract void handleStarUnstar(String entryPath, String newName, boolean unstarRequest);
+
+    /**
      * Verify/Unverify an entry
      *
      * @param entry           a unique identifier for an entry, called a path for workflows and tools
@@ -350,6 +362,11 @@ public abstract class AbstractEntryClient {
      * List all of the entries published and unpublished for this user
      */
     protected abstract void handleListNonpublishedEntries();
+
+    /**
+     * List all of the entries starred and unstarred for this user
+     */
+    protected abstract void handleListUnstarredEntries();
 
     /**
      * List all of the published entries of this type for this user
@@ -387,6 +404,19 @@ public abstract class AbstractEntryClient {
             String entryname = optVal(args, "--entryname", null);
             final boolean unpublishRequest = args.contains("--unpub");
             handlePublishUnpublish(first, entryname, unpublishRequest);
+        }
+    }
+
+    public void star(List<String> args) {
+        if (args.isEmpty()) {
+            handleListUnstarredEntries();
+        } else if (containsHelpRequest(args)) {
+            starHelp();
+        } else {
+            String first = reqVal(args, "--entry");
+            String entryname = optVal(args, "--entryname", null);
+            final boolean unstarRequest = args.contains("--unstar");
+            handleStarUnstar(first, entryname, unstarRequest);
         }
     }
 
@@ -1426,6 +1456,23 @@ public abstract class AbstractEntryClient {
         out("");
         out("Description:");
         out("  Publish/unpublish a registered " + getEntryType() + ".");
+        out("  No arguments will list the current and potential " + getEntryType() + "s to share.");
+        out("Optional Parameters:");
+        out("  --entry <entry>             Complete " + getEntryType()
+                + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
+        out("  --entryname <" + getEntryType() + "name>      " + getEntryType() + "name of new entry");
+        printHelpFooter();
+    }
+
+    private void starHelp() {
+        printHelpHeader();
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " star --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " star");
+        out("       dockstore " + getEntryType().toLowerCase() + " star [parameters]");
+        out("       dockstore " + getEntryType().toLowerCase() + " star --unstar [parameters]");
+        out("");
+        out("Description:");
+        out("  Star/unstar a registered " + getEntryType() + ".");
         out("  No arguments will list the current and potential " + getEntryType() + "s to share.");
         out("Optional Parameters:");
         out("  --entry <entry>             Complete " + getEntryType()
