@@ -854,14 +854,7 @@ public class DockerRepoResource {
     public void starEntry(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to star.", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
-        Helper.checkEntry(tool);
-
-        Set<User> starredUsers = tool.getStarredUsers();
-        if (!starredUsers.contains(user)) {
-            tool.addStarredUser(user);
-        } else {
-            throw new CustomWebApplicationException("You cannot star the tool " + tool.getToolPath() + " because you have already starred it.", HttpStatus.SC_BAD_REQUEST);
-        }
+        Helper.starEntryHelper(tool, user, "tool", tool.getPath());
     }
 
     @DELETE
@@ -872,14 +865,7 @@ public class DockerRepoResource {
     public void unstarEntry(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to unstar.", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
-        Helper.checkEntry(tool);
-
-        Set<User> starredUsers = tool.getStarredUsers();
-        if (starredUsers.contains(user)) {
-            tool.removeStarredUser(user);
-        } else {
-            throw new CustomWebApplicationException("You cannot unstar the tool " + tool.getToolPath() + " because you have not starred it.", HttpStatus.SC_BAD_REQUEST);
-        }
+        Helper.unstarEntryHelper(tool, user, "tool", tool.getPath());
     }
 
     @GET
@@ -890,7 +876,6 @@ public class DockerRepoResource {
     public Set<User> getStarredUsers(@ApiParam(value = "Tool to grab starred users for.", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
         Helper.checkEntry(tool);
-
         return tool.getStarredUsers();
     }
 

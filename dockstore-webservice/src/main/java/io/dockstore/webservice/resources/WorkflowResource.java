@@ -1112,14 +1112,7 @@ public class WorkflowResource {
     public void starEntry(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to star.", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
-        Helper.checkEntry(workflow);
-
-        Set<User> starredUsers = workflow.getStarredUsers();
-        if (!starredUsers.contains(user)) {
-            workflow.addStarredUser(user);
-        } else {
-            throw new CustomWebApplicationException("You cannot star the workflow " + workflow.getPath() + " because you have already starred it.", HttpStatus.SC_BAD_REQUEST);
-        }
+        Helper.starEntryHelper(workflow, user, "workflow", workflow.getPath());
     }
 
     @DELETE
@@ -1130,14 +1123,7 @@ public class WorkflowResource {
     public void unstarEntry(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Workflow to unstar.", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
-        Helper.checkEntry(workflow);
-
-        Set<User> starredUsers = workflow.getStarredUsers();
-        if (starredUsers.contains(user)) {
-            workflow.removeStarredUser(user);
-        } else {
-            throw new CustomWebApplicationException("You cannot unstar the workflow " + workflow.getPath() + " because you have not starred it.", HttpStatus.SC_BAD_REQUEST);
-        }
+        Helper.unstarEntryHelper(workflow, user, "workflow", workflow.getPath());
     }
 
     @GET

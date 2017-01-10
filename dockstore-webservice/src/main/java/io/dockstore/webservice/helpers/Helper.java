@@ -526,6 +526,27 @@ public final class Helper {
         }
     }
 
+    public static void starEntryHelper(Entry entry, User user, String entryType, String entryPath) {
+        Helper.checkEntry(entry);
+        Set<User> starredUsers = entry.getStarredUsers();
+        if (!starredUsers.contains(user)) {
+            entry.addStarredUser(user);
+        } else {
+            throw new CustomWebApplicationException("You cannot star the " + entryType + " " + entryPath + " because you have already starred it.", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    public static void unstarEntryHelper(Entry entry, User user, String entryType, String entryPath) {
+        Helper.checkEntry(entry);
+
+        Set<User> starredUsers = entry.getStarredUsers();
+        if (starredUsers.contains(user)) {
+            entry.removeStarredUser(user);
+        } else {
+            throw new CustomWebApplicationException("You cannot unstar the " + entryType + " " + entryPath + " because you have not starred it.", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
     /**
      * Updates the given user with metadata from Github
      * @param user
