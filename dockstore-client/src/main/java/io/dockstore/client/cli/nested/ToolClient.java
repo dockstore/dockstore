@@ -218,6 +218,19 @@ public class ToolClient extends AbstractEntryClient {
         }
     }
 
+    /**
+     * @param entryPath     a unique identifier for an entry, called a path for workflows and tools
+     * @param newName       take entryPath and rename its most specific name (ex: toolName for tools) to newName
+     * @param unstarRequest true to unstar, false to star
+     */
+    protected void handleStarUnstar(String entryPath, String newName, boolean unstarRequest) {
+        if (unstarRequest) {
+            star(false, entryPath);
+        } else {
+            star(true, entryPath);
+        }
+    }
+
     protected void handlePublishUnpublish(String entryPath, String newName, boolean unpublishRequest) {
         if (unpublishRequest) {
             publish(false, entryPath);
@@ -248,35 +261,6 @@ public class ToolClient extends AbstractEntryClient {
                         out("Successfully registered " + entryPath + "/" + newName);
                         containersApi.refresh(newContainer.getId());
                         publish(true, newContainer.getToolPath());
-                    } else {
-                        errorMessage("Unable to publish " + newName, Client.COMMAND_ERROR);
-                    }
-                } catch (ApiException ex) {
-                    exceptionMessage(ex, "Unable to publish " + newName, Client.API_ERROR);
-                }
-            }
-        }
-    }
-
-    /**
-     *
-     * @param entryPath         a unique identifier for an entry, called a path for workflows and tools
-     * @param newName           take entryPath and rename its most specific name (ex: toolName for tools) to newName
-     * @param unstarRequest     true to unstar, false to star
-     */
-    protected void handleStarUnstar(String entryPath, String newName, boolean unstarRequest) {
-        if (unstarRequest) {
-            star(false, entryPath);
-        } else {
-            if (newName == null) {
-                star(true, entryPath);
-            } else {
-                try {
-                    DockstoreTool container = containersApi.getContainerByToolPath(entryPath);
-                    containersApi.starEntry(container.getId(), container);
-                    if (container != null) {
-                        out("Successfully starred " + entryPath + "/" + newName);
-
                     } else {
                         errorMessage("Unable to publish " + newName, Client.COMMAND_ERROR);
                     }
@@ -385,10 +369,9 @@ public class ToolClient extends AbstractEntryClient {
         try {
             DockstoreTool container = containersApi.getContainerByToolPath(entry);
             if (star) {
-                containersApi.starEntry(container.getId(), container);
-            }
-            else {
-                containersApi.unstarEntry(container.getId(), container);
+                containersApi.starEntry(container.getId());
+            } else {
+                containersApi.unstarEntry(container.getId());
             }
             out("Successfully " + action + "ed  " + entry);
         } catch (ApiException ex) {
@@ -475,7 +458,8 @@ public class ToolClient extends AbstractEntryClient {
             Optional<DockstoreTool.RegistryEnum> regEnum = getRegistryEnum(registry);
 
             if (!regEnum.isPresent()) {
-                errorMessage("The registry that you entered does not exist. Run \'dockstore tool manual_publish\' to see valid registries.", Client.CLIENT_ERROR);
+                errorMessage("The registry that you entered does not exist. Run \'dockstore tool manual_publish\' to see valid registries.",
+                        Client.CLIENT_ERROR);
             }
 
             DockstoreTool tool = new DockstoreTool();
@@ -498,7 +482,9 @@ public class ToolClient extends AbstractEntryClient {
                 if (hasCustomDockerPath) {
                     errorMessage("The registry path is unavailable.", Client.CLIENT_ERROR);
                 } else {
-                    errorMessage("The registry path is unavailable. Did you remember to enter a valid docker registry path and docker registry?", Client.CLIENT_ERROR);
+                    errorMessage(
+                            "The registry path is unavailable. Did you remember to enter a valid docker registry path and docker registry?",
+                            Client.CLIENT_ERROR);
                 }
             }
 
@@ -565,6 +551,7 @@ public class ToolClient extends AbstractEntryClient {
 
     /**
      * Given a registry ENUM string, returns the matching registry enum
+     *
      * @param registry
      * @return An optional value of the registry enum
      */
@@ -579,11 +566,12 @@ public class ToolClient extends AbstractEntryClient {
 
     /**
      * Given a registry ENUM string, returns the default docker registry path
+     *
      * @param registry
      * @return An optional docker registry path
      */
     private Optional<String> getRegistryPath(String registry) {
-        for (Registry r  : Registry.values()) {
+        for (Registry r : Registry.values()) {
             if (registry.equals(r.name())) {
                 if (r.hasCustomDockerPath()) {
                     return Optional.of(null);
@@ -971,12 +959,14 @@ public class ToolClient extends AbstractEntryClient {
                         }
                     }
 
-                    boolean isPrivateRegistry = Stream.of(Registry.values()).anyMatch(r -> r.name().equals(tool.getRegistry().name()) && r.isPrivateOnly());
+                    boolean isPrivateRegistry = Stream.of(Registry.values())
+                            .anyMatch(r -> r.name().equals(tool.getRegistry().name()) && r.isPrivateOnly());
 
                     // Cannot set private only registry tools to public
                     if (isPrivateRegistry) {
                         if (!setPrivateAccess) {
-                            errorMessage(tool.getRegistry().name() + " is a private only Docker registry, which means that the tool cannot be set to public.",
+                            errorMessage(tool.getRegistry().name()
+                                            + " is a private only Docker registry, which means that the tool cannot be set to public.",
                                     Client.CLIENT_ERROR);
                         }
                     }

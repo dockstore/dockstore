@@ -441,8 +441,7 @@ public class WorkflowClient extends AbstractEntryClient {
             Workflow workflow = workflowsApi.getWorkflowByPath(entry);
             if (star) {
                 workflowsApi.starEntry(workflow.getId());
-            }
-            else {
+            } else {
                 workflowsApi.unstarEntry(workflow.getId());
             }
         } catch (ApiException ex) {
