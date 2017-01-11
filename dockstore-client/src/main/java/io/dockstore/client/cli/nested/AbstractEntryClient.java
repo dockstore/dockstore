@@ -329,10 +329,9 @@ public abstract class AbstractEntryClient {
 
     /**
      * @param entryPath         a unique identifier for an entry, called a path for workflows and tools
-     * @param newName           take entryPath and rename its most specific name (ex: toolName for tools) to newName
      * @param unstarRequest     true to star, false to unstar
      */
-    protected abstract void handleStarUnstar(String entryPath, String newName, boolean unstarRequest);
+    protected abstract void handleStarUnstar(String entryPath, boolean unstarRequest);
 
     /**
      * Verify/Unverify an entry
@@ -414,9 +413,8 @@ public abstract class AbstractEntryClient {
             starHelp();
         } else {
             String first = reqVal(args, "--entry");
-            String entryname = optVal(args, "--entryname", null);
             final boolean unstarRequest = args.contains("--unstar");
-            handleStarUnstar(first, entryname, unstarRequest);
+            handleStarUnstar(first, unstarRequest);
         }
     }
 
@@ -1475,9 +1473,8 @@ public abstract class AbstractEntryClient {
         out("  Star/unstar a registered " + getEntryType() + ".");
         out("  No arguments will list the current and potential " + getEntryType() + "s to share.");
         out("Optional Parameters:");
-        out("  --entry <entry>             Complete " + getEntryType()
+        out("  --entry <" + getEntryType() + ">             Complete " + getEntryType()
                 + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
-        out("  --entryname <" + getEntryType() + "name>      " + getEntryType() + "name of new entry");
         printHelpFooter();
     }
 

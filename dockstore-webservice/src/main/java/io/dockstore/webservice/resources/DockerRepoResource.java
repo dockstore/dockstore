@@ -44,6 +44,7 @@ import com.google.gson.Gson;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
+import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
@@ -852,7 +853,8 @@ public class DockerRepoResource {
     @Path("/{containerId}/star")
     @ApiOperation(value = "Stars a tool.")
     public void starEntry(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "Tool to star.", required = true) @PathParam("containerId") Long containerId) {
+            @ApiParam(value = "Tool to star.", required = true) @PathParam("containerId") Long containerId,
+            @ApiParam(value = "StarRequest to star a repo for a user", required = true) StarRequest request) {
         Tool tool = toolDAO.findById(containerId);
         Helper.starEntryHelper(tool, user, "tool", tool.getPath());
     }

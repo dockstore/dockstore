@@ -44,6 +44,7 @@ import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
+import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
@@ -206,24 +207,11 @@ public class ToolClient extends AbstractEntryClient {
         }
     }
 
-    protected void handleStarUnstar(String pattern) {
-        try {
-            List<DockstoreTool> containers = containersApi.search(pattern);
-
-            out("MATCHING TOOLS");
-            printLineBreak();
-            printToolList(containers);
-        } catch (ApiException ex) {
-            exceptionMessage(ex, "", Client.API_ERROR);
-        }
-    }
-
     /**
      * @param entryPath     a unique identifier for an entry, called a path for workflows and tools
-     * @param newName       take entryPath and rename its most specific name (ex: toolName for tools) to newName
      * @param unstarRequest true to unstar, false to star
      */
-    protected void handleStarUnstar(String entryPath, String newName, boolean unstarRequest) {
+    protected void handleStarUnstar(String entryPath, boolean unstarRequest) {
         if (unstarRequest) {
             star(false, entryPath);
         } else {
@@ -323,9 +311,9 @@ public class ToolClient extends AbstractEntryClient {
             if (user == null) {
                 errorMessage("User not found", Client.CLIENT_ERROR);
             }
-            List<DockstoreTool> containers = usersApi.userContainers(user.getId());
+            List<DockstoreTool> containers = containersApi.allPublishedContainers();
 
-            out("YOUR AVAILABLE CONTAINERS");
+            out("ALL PUBLISHED TOOLS");
             printLineBreak();
             printToolList(containers);
         } catch (ApiException ex) {
@@ -367,13 +355,15 @@ public class ToolClient extends AbstractEntryClient {
             action = "unstar";
         }
         try {
-            DockstoreTool container = containersApi.getContainerByToolPath(entry);
+            DockstoreTool container = containersApi.getPublishedContainerByToolPath(entry);
             if (star) {
-                containersApi.starEntry(container.getId());
+                StarRequest request = new StarRequest();
+                request.setStar(true);
+                containersApi.starEntry(container.getId(), request);
             } else {
                 containersApi.unstarEntry(container.getId());
             }
-            out("Successfully " + action + "ed  " + entry);
+            out("Successfully " + action + "red  " + entry);
         } catch (ApiException ex) {
             exceptionMessage(ex, "Unable to " + action + " container " + entry, Client.API_ERROR);
         }

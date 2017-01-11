@@ -37,6 +37,7 @@ import io.swagger.client.model.Body3;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
+import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
 import io.swagger.client.model.Workflow;
@@ -267,50 +268,11 @@ public class WorkflowClient extends AbstractEntryClient {
     }
 
     @Override
-    protected void handleStarUnstar(String entryPath, String newName, boolean unpublishRequest) {
-        Workflow existingWorkflow;
-        boolean isPublished = false;
-        try {
-            existingWorkflow = workflowsApi.getWorkflowByPath(entryPath);
-            isPublished = existingWorkflow.getIsPublished();
-        } catch (ApiException ex) {
-            exceptionMessage(ex, "Unable to publish/unpublish " + newName, Client.API_ERROR);
-        }
-        if (unpublishRequest) {
-            if (isPublished) {
-                publish(false, entryPath);
-            } else {
-                out("This workflow is already unpublished.");
-            }
+    protected void handleStarUnstar(String entryPath, boolean unstarRequest) {
+        if (unstarRequest) {
+            star(false, entryPath);
         } else {
-            if (newName == null) {
-                if (isPublished) {
-                    out("This workflow is already published.");
-                } else {
-                    publish(true, entryPath);
-                }
-            } else {
-                try {
-                    Workflow workflow = workflowsApi.getWorkflowByPath(entryPath);
-
-                    Workflow newWorkflow = new Workflow();
-                    String registry = getGitRegistry(workflow.getGitUrl());
-
-                    newWorkflow = workflowsApi
-                            .manualRegister(registry, workflow.getPath(), workflow.getWorkflowPath(), newWorkflow.getWorkflowName(),
-                                    workflow.getDescriptorType());
-
-                    if (newWorkflow != null) {
-                        out("Successfully registered " + entryPath + "/" + newName);
-                        workflowsApi.refresh(newWorkflow.getId());
-                        publish(true, newWorkflow.getPath());
-                    } else {
-                        errorMessage("Unable to publish " + newName, Client.COMMAND_ERROR);
-                    }
-                } catch (ApiException ex) {
-                    exceptionMessage(ex, "Unable to publish " + newName, Client.API_ERROR);
-                }
-            }
+            star(true, entryPath);
         }
     }
 
@@ -394,9 +356,9 @@ public class WorkflowClient extends AbstractEntryClient {
             if (user == null) {
                 errorMessage("User not found", Client.CLIENT_ERROR);
             }
-            List<Workflow> workflows = usersApi.userWorkflows(user.getId());
+            List<Workflow> workflows = workflowsApi.allPublishedWorkflows();
 
-            out("YOUR AVAILABLE WORKFLOWS");
+            out("ALL PUBLISHED WORKFLOWS");
             printLineBreak();
             printWorkflowList(workflows);
         } catch (ApiException ex) {
@@ -438,12 +400,15 @@ public class WorkflowClient extends AbstractEntryClient {
             action = "unstar";
         }
         try {
-            Workflow workflow = workflowsApi.getWorkflowByPath(entry);
+            Workflow workflow = workflowsApi.getPublishedWorkflowByPath(entry);
             if (star) {
-                workflowsApi.starEntry(workflow.getId());
+                StarRequest request = new StarRequest();
+                request.setStar(star);
+                workflowsApi.starEntry(workflow.getId(), request);
             } else {
                 workflowsApi.unstarEntry(workflow.getId());
             }
+            out("Successfully " + action + "red  " + entry);
         } catch (ApiException ex) {
             exceptionMessage(ex, "Unable to " + action + " workflow " + entry, Client.API_ERROR);
         }

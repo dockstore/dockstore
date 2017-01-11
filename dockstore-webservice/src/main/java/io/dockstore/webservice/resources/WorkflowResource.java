@@ -46,6 +46,7 @@ import com.google.common.io.Files;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.VerifyRequest;
+import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
@@ -1110,9 +1111,12 @@ public class WorkflowResource {
     @Path("/{workflowId}/star")
     @ApiOperation(value = "Stars a workflow.")
     public void starEntry(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "Tool to star.", required = true) @PathParam("workflowId") Long workflowId) {
+            @ApiParam(value = "Tool to star.", required = true) @PathParam("workflowId") Long workflowId,
+            @ApiParam(value = "StarRequest to star a repo for a user", required = true) StarRequest request) {
         Workflow workflow = workflowDAO.findById(workflowId);
+
         Helper.starEntryHelper(workflow, user, "workflow", workflow.getPath());
+
     }
 
     @DELETE
