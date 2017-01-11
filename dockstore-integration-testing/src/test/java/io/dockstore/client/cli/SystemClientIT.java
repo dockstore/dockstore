@@ -37,11 +37,13 @@ import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.GAGHApi;
 import io.swagger.client.api.UsersApi;
+import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Group;
 import io.swagger.client.model.Metadata;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
+import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Token;
 import io.swagger.client.model.Tool;
@@ -50,6 +52,7 @@ import io.swagger.client.model.ToolDockerfile;
 import io.swagger.client.model.ToolVersion;
 import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
+import io.swagger.client.model.Workflow;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
@@ -512,4 +515,47 @@ public class SystemClientIT {
         assertTrue(!tokens.isEmpty());
     }
 
+    @Test (expected = ApiException.class)
+    public void testStarStarredTool() throws ApiException, IOException, TimeoutException {
+        ApiClient client = getWebClient();
+        ContainersApi containersApi = new ContainersApi(client);
+        DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
+        long containerId = container.getId();
+        StarRequest request = new StarRequest();
+        request.setStar(true);
+        containersApi.starEntry(container.getId(), request);
+        containersApi.starEntry(container.getId(), request);
+        }
+
+
+    @Test (expected = ApiException.class)
+    public void testUnstarUnstarredTool() throws ApiException, IOException, TimeoutException {
+        ApiClient client = getWebClient();
+        ContainersApi containersApi = new ContainersApi(client);
+        DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
+        long containerId = container.getId();
+        containersApi.unstarEntry(container.getId());
+    }
+
+    @Test (expected = ApiException.class)
+    public void testStarStarredWorkflow() throws ApiException, IOException, TimeoutException {
+        ApiClient client = getWebClient();
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+        Workflow workflow = workflowsApi.getPublishedWorkflowByPath("A/l");
+        long workflowId = workflow.getId();
+        StarRequest request = new StarRequest();
+        request.setStar(true);
+        workflowsApi.starEntry(workflowId, request);
+        workflowsApi.starEntry(workflowId, request);
+    }
+
+
+    @Test (expected = ApiException.class)
+    public void testUnstarUnstarredWorkflow() throws ApiException, IOException, TimeoutException {
+        ApiClient client = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(client);
+        Workflow workflow = workflowApi.getPublishedWorkflowByPath("A/l");
+        long workflowId = workflow.getId();
+        workflowApi.unstarEntry(workflowId);
+    }
 }

@@ -201,6 +201,10 @@ definitions:
         type: string
     required: [path, type]
     type: object
+  StarRequest:
+    properties:
+      star: {default: false, readOnly: true, type: boolean}
+    type: object
   Tag:
     description: This describes one tag associated with a container.
     properties:
@@ -1141,6 +1145,11 @@ paths:
       parameters:
       - {description: Tool to star., format: int64, in: path, name: containerId, required: true,
         type: integer}
+      - description: StarRequest to star a repo for a user
+        in: body
+        name: body
+        required: true
+        schema: {$ref: '#/definitions/StarRequest'}
       produces: [application/json]
       responses:
         default: {description: successful operation}
@@ -2203,6 +2212,11 @@ paths:
       parameters:
       - {description: Tool to star., format: int64, in: path, name: workflowId, required: true,
         type: integer}
+      - description: StarRequest to star a repo for a user
+        in: body
+        name: body
+        required: true
+        schema: {$ref: '#/definitions/StarRequest'}
       produces: [application/json]
       responses:
         default: {description: successful operation}
