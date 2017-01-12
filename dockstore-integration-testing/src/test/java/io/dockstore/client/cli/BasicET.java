@@ -1309,11 +1309,12 @@ public class BasicET {
 
         }
 
-        /**
-        * This tests that you can refresh user data by refreshing a tool
-         * ONLY WORKS if the current user in the database dump has no metadata, and on Github there is metadata (bio, location)
-        */
-        @Test
+    /**
+     * This tests that you can refresh user data by refreshing a tool
+     * ONLY WORKS if the current user in the database dump has no metadata, and on Github there is metadata (bio, location)
+     * If the user has metadata, test will pass as long as the user's metadata isn't the same as Github already
+     */
+    @Test
         public void testRefreshingUserMetadata() {
             // Setup database
             final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();

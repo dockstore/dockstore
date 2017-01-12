@@ -262,7 +262,7 @@ public class SystemClientIT {
         containersApi.registerManual(c);
 
         List<Tool> tools = toolApi.toolsGet(null, null, null, null, null, null, null, null, null);
-        assertTrue(tools.size() == 2);
+        assertTrue(tools.size() == 3);
 
         // test a few constraints
         tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, null, null, null, null, null, null, null, null);
@@ -515,6 +515,13 @@ public class SystemClientIT {
         assertTrue(!tokens.isEmpty());
     }
 
+    /**
+     * This tests if a tool can be starred twice.
+     * This test will pass if this action cannot be performed.
+     * @throws ApiException
+     * @throws IOException
+     * @throws TimeoutException
+     */
     @Test (expected = ApiException.class)
     public void testStarStarredTool() throws ApiException, IOException, TimeoutException {
         ApiClient client = getWebClient();
@@ -527,7 +534,13 @@ public class SystemClientIT {
         containersApi.starEntry(container.getId(), request);
         }
 
-
+    /**
+     * This tests if an already unstarred tool can be unstarred again.
+     * This test will pass if this action cannot be performed.
+     * @throws ApiException
+     * @throws IOException
+     * @throws TimeoutException
+     */
     @Test (expected = ApiException.class)
     public void testUnstarUnstarredTool() throws ApiException, IOException, TimeoutException {
         ApiClient client = getWebClient();
@@ -537,6 +550,13 @@ public class SystemClientIT {
         containersApi.unstarEntry(container.getId());
     }
 
+    /**
+     * This tests if a workflow can be starred twice.
+     * This test will pass if this action cannot be performed.
+     * @throws ApiException
+     * @throws IOException
+     * @throws TimeoutException
+     */
     @Test (expected = ApiException.class)
     public void testStarStarredWorkflow() throws ApiException, IOException, TimeoutException {
         ApiClient client = getWebClient();
@@ -549,7 +569,13 @@ public class SystemClientIT {
         workflowsApi.starEntry(workflowId, request);
     }
 
-
+    /**
+     * This tests if an already unstarred workflow can be unstarred again.
+     * This test will pass if this action cannot be performed.
+     * @throws ApiException
+     * @throws IOException
+     * @throws TimeoutException
+     */
     @Test (expected = ApiException.class)
     public void testUnstarUnstarredWorkflow() throws ApiException, IOException, TimeoutException {
         ApiClient client = getWebClient();
