@@ -207,18 +207,6 @@ public class ToolClient extends AbstractEntryClient {
         }
     }
 
-    /**
-     * @param entryPath     a unique identifier for an entry, called a path for workflows and tools
-     * @param unstarRequest true to unstar, false to star
-     */
-    protected void handleStarUnstar(String entryPath, boolean unstarRequest) {
-        if (unstarRequest) {
-            star(false, entryPath);
-        } else {
-            star(true, entryPath);
-        }
-    }
-
     protected void handlePublishUnpublish(String entryPath, String newName, boolean unpublishRequest) {
         if (unpublishRequest) {
             publish(false, entryPath);
@@ -306,16 +294,10 @@ public class ToolClient extends AbstractEntryClient {
     @Override
     protected void handleListUnstarredEntries() {
         try {
-            // check user info after usage so that users can get usage without live webservice
-            User user = usersApi.getUser();
-            if (user == null) {
-                errorMessage("User not found", Client.CLIENT_ERROR);
-            }
             List<DockstoreTool> containers = containersApi.allPublishedContainers();
-
             out("ALL PUBLISHED TOOLS");
             printLineBreak();
-            printToolList(containers);
+            printPublishedList(containers);
         } catch (ApiException ex) {
             exceptionMessage(ex, "", Client.API_ERROR);
         }
@@ -345,11 +327,11 @@ public class ToolClient extends AbstractEntryClient {
 
     /**
      * Interacts with API to star/unstar a workflow
-     *
-     * @param star  true to star, false to unstar
      * @param entry the workflow or tool
+     * @param star  true to star, false to unstar
      */
-    private void star(boolean star, String entry) {
+    @Override
+    protected void handleStarUnstar(String entry, boolean star) {
         String action = "star";
         if (!star) {
             action = "unstar";

@@ -268,15 +268,6 @@ public class WorkflowClient extends AbstractEntryClient {
     }
 
     @Override
-    protected void handleStarUnstar(String entryPath, boolean unstarRequest) {
-        if (unstarRequest) {
-            star(false, entryPath);
-        } else {
-            star(true, entryPath);
-        }
-    }
-
-    @Override
     protected void handleVerifyUnverify(String entry, String versionName, String verifySource, boolean unverifyRequest, boolean isScript) {
         boolean toOverwrite = true;
 
@@ -351,13 +342,7 @@ public class WorkflowClient extends AbstractEntryClient {
     @Override
     protected void handleListUnstarredEntries() {
         try {
-            // check user info after usage so that users can get usage without live webservice
-            User user = usersApi.getUser();
-            if (user == null) {
-                errorMessage("User not found", Client.CLIENT_ERROR);
-            }
             List<Workflow> workflows = workflowsApi.allPublishedWorkflows();
-
             out("ALL PUBLISHED WORKFLOWS");
             printLineBreak();
             printWorkflowList(workflows);
@@ -390,11 +375,11 @@ public class WorkflowClient extends AbstractEntryClient {
 
     /**
      * Interacts with API to star/unstar a workflow
-     *
-     * @param star  true to star, false to unstar
      * @param entry the workflow or tool
+     * @param star  true to star, false to unstar
      */
-    private void star(boolean star, String entry) {
+    @Override
+    protected void handleStarUnstar(String entry, boolean star) {
         String action = "star";
         if (!star) {
             action = "unstar";

@@ -528,10 +528,11 @@ public class SystemClientIT {
         ContainersApi containersApi = new ContainersApi(client);
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
         long containerId = container.getId();
+        assertTrue(containerId == 2);
         StarRequest request = new StarRequest();
         request.setStar(true);
-        containersApi.starEntry(container.getId(), request);
-        containersApi.starEntry(container.getId(), request);
+        containersApi.starEntry(containerId, request);
+        containersApi.starEntry(containerId, request);
         }
 
     /**
@@ -547,7 +548,8 @@ public class SystemClientIT {
         ContainersApi containersApi = new ContainersApi(client);
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
         long containerId = container.getId();
-        containersApi.unstarEntry(container.getId());
+        assertTrue(containerId == 2);
+        containersApi.unstarEntry(containerId);
     }
 
     /**
@@ -563,6 +565,7 @@ public class SystemClientIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
         Workflow workflow = workflowsApi.getPublishedWorkflowByPath("A/l");
         long workflowId = workflow.getId();
+        assertTrue(workflowId == 11);
         StarRequest request = new StarRequest();
         request.setStar(true);
         workflowsApi.starEntry(workflowId, request);
@@ -582,6 +585,7 @@ public class SystemClientIT {
         WorkflowsApi workflowApi = new WorkflowsApi(client);
         Workflow workflow = workflowApi.getPublishedWorkflowByPath("A/l");
         long workflowId = workflow.getId();
+        assertTrue(workflowId == 11);
         workflowApi.unstarEntry(workflowId);
     }
 }
