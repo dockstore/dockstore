@@ -194,6 +194,7 @@ public class FileProvisioning {
 
         Path potentialCachedFile = null;
         final boolean useCache = isCacheOn(config);
+        // check if a file exists in the cache and if it does, link/copy it into place
         if (useCache) {
             // check cache for cached files
             final String cacheDirectory = getCacheDirectory(config);
@@ -212,6 +213,10 @@ public class FileProvisioning {
             if (Files.exists(potentialCachedFile)) {
                 System.out.println("Found file " + targetPath + " in cache, hard-linking");
                 try {
+                    final Path parentPath = localPath.getParent();
+                    if (Files.notExists(parentPath)) {
+                        Files.createDirectory(parentPath);
+                    }
                     Files.createLink(localPath, potentialCachedFile);
                 } catch (IOException e) {
                     LOG.error("Cannot create hard link to cached file, you may want to move your cache", e.getMessage());
@@ -226,45 +231,51 @@ public class FileProvisioning {
             }
         }
 
-        if (pathInfo.isObjectIdType()) {
-            String objectId = pathInfo.getObjectId();
-            this.downloadFromDccStorage(objectId, localPath.getParent().toFile().getAbsolutePath(), localPath.toFile().getAbsolutePath());
-        } else if (targetPath.startsWith("syn")){
-            this.downloadFromSynapse(targetPath, localPath.toFile().getAbsolutePath());
-        } else if (targetPath.startsWith("s3://")) {
-            this.downloadFromS3(targetPath, localPath.toFile().getAbsolutePath());
-        } else if (!pathInfo.isLocalFileType()) {
-            this.downloadFromHttp(targetPath, localPath.toFile().getAbsolutePath());
-        } else {
-            assert(pathInfo.isLocalFileType());
-            // hard link into target location
-            Path actualTargetPath = null;
-            try {
-                String workingDir = System.getProperty("user.dir");
-                if (targetPath.startsWith("/")){
-                    // absolute path
-                    actualTargetPath = Paths.get(targetPath);
-                } else{
-                    // relative path
-                    actualTargetPath =  Paths.get(workingDir, targetPath);
-                }
-                // create needed directories
-                if(!localPath.toFile().getParentFile().mkdirs()){
-                    throw new IOException("Could not create " + localPath);
-                }
-                // create link
-                Files.createLink(localPath, actualTargetPath);
-            } catch (IOException e) {
-                LOG.info("Could not link " + targetPath + " to " + localPath + " , copying instead", e);
+        // if a file does not exist yet, get it
+        if (!Files.exists(localPath)) {
+            if (pathInfo.isObjectIdType()) {
+                String objectId = pathInfo.getObjectId();
+                this.downloadFromDccStorage(objectId, localPath.getParent().toFile().getAbsolutePath(), localPath.toFile().getAbsolutePath());
+            } else if (targetPath.startsWith("syn")) {
+                this.downloadFromSynapse(targetPath, localPath.toFile().getAbsolutePath());
+            } else if (targetPath.startsWith("s3://")) {
+                this.downloadFromS3(targetPath, localPath.toFile().getAbsolutePath());
+            } else if (!pathInfo.isLocalFileType()) {
+                this.downloadFromHttp(targetPath, localPath.toFile().getAbsolutePath());
+            } else {
+                assert (pathInfo.isLocalFileType());
+                // hard link into target location
+                Path actualTargetPath = null;
                 try {
-                    Files.copy(actualTargetPath, localPath);
-                } catch (IOException e1) {
-                    LOG.error("Could not copy " + targetPath + " to " + localPath, e);
-                    throw new RuntimeException("Could not copy " + targetPath + " to " + localPath, e1);
+                    String workingDir = System.getProperty("user.dir");
+                    if (targetPath.startsWith("/")) {
+                        // absolute path
+                        actualTargetPath = Paths.get(targetPath);
+                    } else {
+                        // relative path
+                        actualTargetPath = Paths.get(workingDir, targetPath);
+                    }
+                    // create needed directories
+                    File parentFile = localPath.toFile().getParentFile();
+                    if (!parentFile.exists() && !parentFile.mkdirs()) {
+                        throw new IOException("Could not create " + localPath);
+                    }
+
+                    // create link
+                    Files.createLink(localPath, actualTargetPath);
+                } catch (IOException e) {
+                    LOG.info("Could not link " + targetPath + " to " + localPath + " , copying instead", e);
+                    try {
+                        Files.copy(actualTargetPath, localPath);
+                    } catch (IOException e1) {
+                        LOG.error("Could not copy " + targetPath + " to " + localPath, e);
+                        throw new RuntimeException("Could not copy " + targetPath + " to " + localPath, e1);
+                    }
                 }
             }
         }
 
+        // cache the file if we got it successfully
         if (useCache) {
             // populate cache
             if (Files.notExists(potentialCachedFile)) {
