@@ -26,18 +26,26 @@ import org.apache.commons.io.FileUtils;
 import static io.dockstore.common.CommonTestUtilities.DUMMY_TOKEN_1;
 
 /**
- * Created by jpatricia on 12/05/16.
+ * @author jpatricia
  */
-public class TestUtility {
-    public static String getConfigFileLocation(boolean correctUser) throws IOException {
-        return getConfigFileLocation(correctUser, true);
+public final class TestUtility {
+
+    private TestUtility(){
+        // utility class
     }
 
-    public static String getConfigFileLocation(boolean correctUser, boolean validPort) throws IOException {
+    public static String getConfigFileLocation(boolean correctUser) throws IOException {
+        return getConfigFileLocation(correctUser, true, false);
+    }
+
+    public static String getConfigFileLocation(boolean correctUser, boolean validPort, boolean useCache) throws IOException {
         File tempDir = Files.createTempDir();
         final File tempFile = File.createTempFile("config", "config", tempDir);
         FileUtils.write(tempFile, "token: " + (correctUser ? DUMMY_TOKEN_1 : "foobar") + "\n", StandardCharsets.UTF_8);
         FileUtils.write(tempFile, "server-url: http://localhost:" + (validPort ? "8000" : "9001") + "\n", StandardCharsets.UTF_8, true);
+        if (useCache){
+            FileUtils.write(tempFile, "use-cache: true\n", StandardCharsets.UTF_8, true);
+        }
 
         return tempFile.getAbsolutePath();
     }

@@ -81,7 +81,7 @@ public class ClientIT {
     @Test
     public void testListEntriesOnWrongPort() throws IOException, TimeoutException, ApiException {
         systemExit.expectSystemExitWithStatus(Client.CONNECTION_ERROR);
-        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true, false), "tool", "list" });
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true, false, false), "tool", "list" });
     }
 
     // Won't work as entry must be valid
