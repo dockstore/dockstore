@@ -208,6 +208,10 @@ public class FileProvisioning {
             if (Files.exists(potentialCachedFile)) {
                 System.out.println("Found file " + targetPath + " in cache, hard-linking");
                 try {
+                    final Path parentPath = localPath.getParent();
+                    if (Files.notExists(parentPath)) {
+                        Files.createDirectory(parentPath);
+                    }
                     Files.createLink(localPath, potentialCachedFile);
                 } catch (IOException e) {
                     LOG.error("Cannot create hard link to cached file, you may want to move your cache", e.getMessage());
