@@ -37,6 +37,7 @@ import io.swagger.client.model.Body3;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
+import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
 import io.swagger.client.model.Workflow;
@@ -338,6 +339,18 @@ public class WorkflowClient extends AbstractEntryClient {
         }
     }
 
+    @Override
+    protected void handleListUnstarredEntries() {
+        try {
+            List<Workflow> workflows = workflowsApi.allPublishedWorkflows();
+            out("ALL PUBLISHED WORKFLOWS");
+            printLineBreak();
+            printWorkflowList(workflows);
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "", Client.API_ERROR);
+        }
+    }
+
     public void publish(boolean publish, String entry) {
         String action = "publish";
         if (!publish) {
@@ -355,6 +368,32 @@ public class WorkflowClient extends AbstractEntryClient {
             } else {
                 errorMessage("Unable to " + action + " workflow " + entry, Client.COMMAND_ERROR);
             }
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "Unable to " + action + " workflow " + entry, Client.API_ERROR);
+        }
+    }
+
+    /**
+     * Interacts with API to star/unstar a workflow
+     * @param entry the workflow or tool
+     * @param star  true to star, false to unstar
+     */
+    @Override
+    protected void handleStarUnstar(String entry, boolean star) {
+        String action = "star";
+        if (!star) {
+            action = "unstar";
+        }
+        try {
+            Workflow workflow = workflowsApi.getPublishedWorkflowByPath(entry);
+            if (star) {
+                StarRequest request = new StarRequest();
+                request.setStar(star);
+                workflowsApi.starEntry(workflow.getId(), request);
+            } else {
+                workflowsApi.unstarEntry(workflow.getId());
+            }
+            out("Successfully " + action + "red  " + entry);
         } catch (ApiException ex) {
             exceptionMessage(ex, "Unable to " + action + " workflow " + entry, Client.API_ERROR);
         }

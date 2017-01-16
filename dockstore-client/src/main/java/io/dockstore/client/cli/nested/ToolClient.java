@@ -44,6 +44,7 @@ import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
+import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
@@ -290,6 +291,18 @@ public class ToolClient extends AbstractEntryClient {
         }
     }
 
+    @Override
+    protected void handleListUnstarredEntries() {
+        try {
+            List<DockstoreTool> containers = containersApi.allPublishedContainers();
+            out("ALL PUBLISHED TOOLS");
+            printLineBreak();
+            printPublishedList(containers);
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "", Client.API_ERROR);
+        }
+    }
+
     private void publish(boolean publish, String entry) {
         String action = "publish";
         if (!publish) {
@@ -307,6 +320,32 @@ public class ToolClient extends AbstractEntryClient {
             } else {
                 errorMessage("Unable to " + action + " container " + entry, Client.COMMAND_ERROR);
             }
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "Unable to " + action + " container " + entry, Client.API_ERROR);
+        }
+    }
+
+    /**
+     * Interacts with API to star/unstar a workflow
+     * @param entry the workflow or tool
+     * @param star  true to star, false to unstar
+     */
+    @Override
+    protected void handleStarUnstar(String entry, boolean star) {
+        String action = "star";
+        if (!star) {
+            action = "unstar";
+        }
+        try {
+            DockstoreTool container = containersApi.getPublishedContainerByToolPath(entry);
+            if (star) {
+                StarRequest request = new StarRequest();
+                request.setStar(true);
+                containersApi.starEntry(container.getId(), request);
+            } else {
+                containersApi.unstarEntry(container.getId());
+            }
+            out("Successfully " + action + "red  " + entry);
         } catch (ApiException ex) {
             exceptionMessage(ex, "Unable to " + action + " container " + entry, Client.API_ERROR);
         }
@@ -391,7 +430,8 @@ public class ToolClient extends AbstractEntryClient {
             Optional<DockstoreTool.RegistryEnum> regEnum = getRegistryEnum(registry);
 
             if (!regEnum.isPresent()) {
-                errorMessage("The registry that you entered does not exist. Run \'dockstore tool manual_publish\' to see valid registries.", Client.CLIENT_ERROR);
+                errorMessage("The registry that you entered does not exist. Run \'dockstore tool manual_publish\' to see valid registries.",
+                        Client.CLIENT_ERROR);
             }
 
             DockstoreTool tool = new DockstoreTool();
@@ -414,7 +454,9 @@ public class ToolClient extends AbstractEntryClient {
                 if (hasCustomDockerPath) {
                     errorMessage("The registry path is unavailable.", Client.CLIENT_ERROR);
                 } else {
-                    errorMessage("The registry path is unavailable. Did you remember to enter a valid docker registry path and docker registry?", Client.CLIENT_ERROR);
+                    errorMessage(
+                            "The registry path is unavailable. Did you remember to enter a valid docker registry path and docker registry?",
+                            Client.CLIENT_ERROR);
                 }
             }
 
@@ -481,6 +523,7 @@ public class ToolClient extends AbstractEntryClient {
 
     /**
      * Given a registry ENUM string, returns the matching registry enum
+     *
      * @param registry
      * @return An optional value of the registry enum
      */
@@ -495,11 +538,12 @@ public class ToolClient extends AbstractEntryClient {
 
     /**
      * Given a registry ENUM string, returns the default docker registry path
+     *
      * @param registry
      * @return An optional docker registry path
      */
     private Optional<String> getRegistryPath(String registry) {
-        for (Registry r  : Registry.values()) {
+        for (Registry r : Registry.values()) {
             if (registry.equals(r.name())) {
                 if (r.hasCustomDockerPath()) {
                     return Optional.of(null);
@@ -887,12 +931,14 @@ public class ToolClient extends AbstractEntryClient {
                         }
                     }
 
-                    boolean isPrivateRegistry = Stream.of(Registry.values()).anyMatch(r -> r.name().equals(tool.getRegistry().name()) && r.isPrivateOnly());
+                    boolean isPrivateRegistry = Stream.of(Registry.values())
+                            .anyMatch(r -> r.name().equals(tool.getRegistry().name()) && r.isPrivateOnly());
 
                     // Cannot set private only registry tools to public
                     if (isPrivateRegistry) {
                         if (!setPrivateAccess) {
-                            errorMessage(tool.getRegistry().name() + " is a private only Docker registry, which means that the tool cannot be set to public.",
+                            errorMessage(tool.getRegistry().name()
+                                            + " is a private only Docker registry, which means that the tool cannot be set to public.",
                                     Client.CLIENT_ERROR);
                         }
                     }

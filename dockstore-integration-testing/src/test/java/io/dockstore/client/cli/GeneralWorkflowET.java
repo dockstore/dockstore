@@ -1022,4 +1022,22 @@ public class GeneralWorkflowET {
                 .runSelectStatement("select count(*) from workflowversion where verified='true'", new ScalarHandler<>());
         Assert.assertTrue("there should be one verified workflowversion, there are " + count5, count5 == 1);
     }
+
+    /**
+     * This tests that you can refresh user data by refreshing a workflow
+     * ONLY WORKS if the current user in the database dump has no metadata, and on Github there is metadata (bio, location)
+     * If the user has metadata, test will pass as long as the user's metadata isn't the same as Github already
+     */
+    @Test
+    public void testRefreshingUserMetadata() {
+        // Setup database
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+        // Refresh all workflows
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh",  "--script" });
+
+        // Check that user has been updated
+        final long count = testingPostgres.runSelectStatement("select count(*) from enduser where location='Toronto' and bio='I am a test user'", new ScalarHandler<>());
+        Assert.assertTrue("One user should have this info now, there are  " + count, count == 1);
+    }
 }

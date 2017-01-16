@@ -37,11 +37,13 @@ import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.GAGHApi;
 import io.swagger.client.api.UsersApi;
+import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Group;
 import io.swagger.client.model.Metadata;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
+import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Token;
 import io.swagger.client.model.Tool;
@@ -50,6 +52,7 @@ import io.swagger.client.model.ToolDockerfile;
 import io.swagger.client.model.ToolVersion;
 import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
+import io.swagger.client.model.Workflow;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
@@ -259,7 +262,7 @@ public class SystemClientIT {
         containersApi.registerManual(c);
 
         List<Tool> tools = toolApi.toolsGet(null, null, null, null, null, null, null, null, null);
-        assertTrue(tools.size() == 2);
+        assertTrue(tools.size() == 3);
 
         // test a few constraints
         tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, null, null, null, null, null, null, null, null);
@@ -512,4 +515,77 @@ public class SystemClientIT {
         assertTrue(!tokens.isEmpty());
     }
 
+    /**
+     * This tests if a tool can be starred twice.
+     * This test will pass if this action cannot be performed.
+     * @throws ApiException
+     * @throws IOException
+     * @throws TimeoutException
+     */
+    @Test (expected = ApiException.class)
+    public void testStarStarredTool() throws ApiException, IOException, TimeoutException {
+        ApiClient client = getWebClient();
+        ContainersApi containersApi = new ContainersApi(client);
+        DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
+        long containerId = container.getId();
+        assertTrue(containerId == 2);
+        StarRequest request = new StarRequest();
+        request.setStar(true);
+        containersApi.starEntry(containerId, request);
+        containersApi.starEntry(containerId, request);
+        }
+
+    /**
+     * This tests if an already unstarred tool can be unstarred again.
+     * This test will pass if this action cannot be performed.
+     * @throws ApiException
+     * @throws IOException
+     * @throws TimeoutException
+     */
+    @Test (expected = ApiException.class)
+    public void testUnstarUnstarredTool() throws ApiException, IOException, TimeoutException {
+        ApiClient client = getWebClient();
+        ContainersApi containersApi = new ContainersApi(client);
+        DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
+        long containerId = container.getId();
+        assertTrue(containerId == 2);
+        containersApi.unstarEntry(containerId);
+    }
+
+    /**
+     * This tests if a workflow can be starred twice.
+     * This test will pass if this action cannot be performed.
+     * @throws ApiException
+     * @throws IOException
+     * @throws TimeoutException
+     */
+    @Test (expected = ApiException.class)
+    public void testStarStarredWorkflow() throws ApiException, IOException, TimeoutException {
+        ApiClient client = getWebClient();
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+        Workflow workflow = workflowsApi.getPublishedWorkflowByPath("A/l");
+        long workflowId = workflow.getId();
+        assertTrue(workflowId == 11);
+        StarRequest request = new StarRequest();
+        request.setStar(true);
+        workflowsApi.starEntry(workflowId, request);
+        workflowsApi.starEntry(workflowId, request);
+    }
+
+    /**
+     * This tests if an already unstarred workflow can be unstarred again.
+     * This test will pass if this action cannot be performed.
+     * @throws ApiException
+     * @throws IOException
+     * @throws TimeoutException
+     */
+    @Test (expected = ApiException.class)
+    public void testUnstarUnstarredWorkflow() throws ApiException, IOException, TimeoutException {
+        ApiClient client = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(client);
+        Workflow workflow = workflowApi.getPublishedWorkflowByPath("A/l");
+        long workflowId = workflow.getId();
+        assertTrue(workflowId == 11);
+        workflowApi.unstarEntry(workflowId);
+    }
 }

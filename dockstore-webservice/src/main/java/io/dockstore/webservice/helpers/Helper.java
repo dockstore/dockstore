@@ -526,6 +526,58 @@ public final class Helper {
         }
     }
 
+    /**
+     * Stars the entry
+     *
+     * @param entry     the entry to star
+     * @param user      the user to star the entry with
+     * @param entryType the entry type which is either "workflow" or "tool"
+     * @param entryPath the path of the entry
+     */
+    public static void starEntryHelper(Entry entry, User user, String entryType, String entryPath) {
+        Helper.checkEntry(entry);
+        Set<User> starredUsers = entry.getStarredUsers();
+        if (!starredUsers.contains(user)) {
+            entry.addStarredUser(user);
+        } else {
+            throw new CustomWebApplicationException("You cannot star the " + entryType + " " + entryPath + " because you have already starred it.", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Unstars the entry
+     *
+     * @param entry     the entry to unstar
+     * @param user      the user to unstar the entry with
+     * @param entryType the entry type which is either "workflow" or "tool"
+     * @param entryPath the path of the entry
+     */
+    public static void unstarEntryHelper(Entry entry, User user, String entryType, String entryPath) {
+        Helper.checkEntry(entry);
+
+        Set<User> starredUsers = entry.getStarredUsers();
+        if (starredUsers.contains(user)) {
+            entry.removeStarredUser(user);
+        } else {
+            throw new CustomWebApplicationException("You cannot unstar the " + entryType + " " + entryPath + " because you have not starred it.", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Updates the given user with metadata from Github
+     * @param user
+     * @param userDAO
+     * @param tokenDAO
+     * @return updated user
+     */
+    public static User updateUserHelper(final User user, final UserDAO userDAO, final TokenDAO tokenDAO) {
+        User existingUser = userDAO.findById(user.getId());
+        Token githubToken = tokenDAO.findGithubByUserId(existingUser.getId()).get(0);
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = new GitHubSourceCodeRepo(existingUser.getUsername(), githubToken.getContent(), null);
+        existingUser.update(gitHubSourceCodeRepo.getUserMetadata(existingUser));
+        return existingUser;
+    }
+
     public static class RepoList {
 
         private List<Tool> repositories;

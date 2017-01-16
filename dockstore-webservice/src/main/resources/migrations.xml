@@ -371,4 +371,40 @@
         </addColumn>
     </changeSet>
 
+    <changeSet id="starredentries" author="agduncan" context="adds_starred_entries">
+        <addColumn tableName="enduser">
+            <column name="company" type="varchar(255)"></column>
+        </addColumn>
+        <addColumn tableName="enduser">
+            <column name="bio" type="varchar(255)"></column>
+        </addColumn>
+        <addColumn tableName="enduser">
+            <column name="location" type="varchar(255)"></column>
+        </addColumn>
+        <addColumn tableName="enduser">
+            <column name="email" type="varchar(255)"></column>
+        </addColumn>
+        <addColumn tableName="enduser">
+            <column name="avatarUrl" type="varchar(255)"></column>
+        </addColumn>
+        
+        <createTable tableName="starred">
+            <column name="userid" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="entryid" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addPrimaryKey
+                columnNames="entryid, userid"
+                constraintName="starred_pkey"
+                tableName="starred"/>
+        <addForeignKeyConstraint baseColumnNames="userid"
+                                 baseTableName="starred"
+                                 constraintName="fk_userid"
+                                 referencedColumnNames="id"
+                                 referencedTableName="enduser"/>
+    </changeSet>
+
 </databaseChangeLog>

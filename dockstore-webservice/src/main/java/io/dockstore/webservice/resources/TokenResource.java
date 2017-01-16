@@ -53,6 +53,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.Helper;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -316,6 +317,10 @@ public class TokenResource {
         if (user == null) {
             user = new User();
             user.setUsername(githubLogin);
+
+            // Pull user information from Github
+            GitHubSourceCodeRepo gitHubSourceCodeRepo = new GitHubSourceCodeRepo(githubLogin, accessToken, null);
+            user = gitHubSourceCodeRepo.getUserMetadata(user);
             userID = userDAO.create(user);
 
             // CREATE DOCKSTORE TOKEN

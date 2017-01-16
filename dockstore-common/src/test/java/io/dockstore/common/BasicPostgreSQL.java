@@ -109,7 +109,7 @@ public class BasicPostgreSQL {
     public void clearDatabase() {
         runUpdateStatement("delete from user_entry;");
         runUpdateStatement("delete from endusergroup;");
-
+        runUpdateStatement("delete from starred;");
         runUpdateStatement("delete from enduser;");
         runUpdateStatement("delete from token;");
         runUpdateStatement("delete from version_sourcefile;");

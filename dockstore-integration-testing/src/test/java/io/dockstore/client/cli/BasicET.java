@@ -1308,4 +1308,23 @@ public class BasicET {
                         "master", "--toolname", "alternate", "--private", "true", "--tool-maintainer-email", "duncan.andrew.g@gmail.com", "--script" });
 
         }
+
+    /**
+     * This tests that you can refresh user data by refreshing a tool
+     * ONLY WORKS if the current user in the database dump has no metadata, and on Github there is metadata (bio, location)
+     * If the user has metadata, test will pass as long as the user's metadata isn't the same as Github already
+     */
+    @Test
+        public void testRefreshingUserMetadata() {
+            // Setup database
+            final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+            // Refresh a tool
+            Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--entry",
+                    "quay.io/dockstoretestuser/quayandbitbucket", "--script" });
+
+            // Check that user has been updated
+            final long count = testingPostgres.runSelectStatement("select count(*) from enduser where location='Toronto' and bio='I am a test user'", new ScalarHandler<>());
+            Assert.assertTrue("One user should have this info now, there are " + count, count == 1);
+        }
 }
