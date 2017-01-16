@@ -189,6 +189,7 @@ public class FileProvisioning {
 
         Path potentialCachedFile = null;
         final boolean useCache = isCacheOn(config);
+        // check if a file exists in the cache and if it does, link/copy it into place
         if (useCache) {
             // check cache for cached files
             final String cacheDirectory = getCacheDirectory(config);
@@ -219,7 +220,10 @@ public class FileProvisioning {
                     System.out.println("Found file " + targetPath + " in cache, copied");
                 }
             }
-        } else {
+        }
+
+        // if a file does not exist yet, get it
+        if (!Files.exists(localPath)) {
             if (pathInfo.isObjectIdType()) {
                 String objectId = pathInfo.getObjectId();
                 this.downloadFromDccStorage(objectId, localPath.getParent().toFile().getAbsolutePath(), localPath.toFile().getAbsolutePath());
@@ -262,6 +266,7 @@ public class FileProvisioning {
             }
         }
 
+        // cache the file if we got it successfully
         if (useCache) {
             // populate cache
             if (Files.notExists(potentialCachedFile)) {
