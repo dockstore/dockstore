@@ -23,7 +23,6 @@ import java.nio.charset.StandardCharsets;
 import avro.shaded.com.google.common.collect.Lists;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.TestUtility;
-import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.ResourceHelpers;
@@ -33,7 +32,6 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.User;
 import io.swagger.quay.client.api.UserApi;
-import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
@@ -45,7 +43,6 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -158,34 +155,6 @@ public class MockedIT {
 
         Assert.assertTrue(new File("/tmp/example.bedGraph").exists());
         Assert.assertTrue("output should contain cwltool command", systemOutRule.getLog().contains("Executing: cwltool"));
-    }
-
-    /**
-     * Tests local file input in arrays or as single files, output to local file
-     *
-     * @throws IOException
-     * @throws ApiException
-     */
-    @Test
-    public void runLaunchOneLocalArrayedJsonWithCache() throws IOException, ApiException {
-        String configFileLocation = TestUtility.getConfigFileLocation(true, true, true);
-        when(client.getConfigFile()).thenReturn(configFileLocation);
-
-        Client.main(new String[] {"--clean-cache", "--config", configFileLocation});
-        // this is kind of redundant, it looks like we take the mocked config file no matter what
-        Client.main(new String[] {"--config", configFileLocation, "tool", "launch", "--entry",
-                "quay.io/collaboratory/arrays", "--json", ResourceHelpers.resourceFilePath("testArrayLocalInputLocalOutput.json") });
-
-        Assert.assertTrue(new File("/tmp/example.bedGraph").exists());
-        Assert.assertTrue("output should contain cwltool command", systemOutRule.getLog().contains("Executing: cwltool"));
-        systemOutRule.clearLog();
-
-        // try again, things should be cached now
-        Client.main(new String[] {"--config", configFileLocation, "tool", "launch", "--entry",
-                "quay.io/collaboratory/arrays", "--json", ResourceHelpers.resourceFilePath("testArrayLocalInputLocalOutput.json") });
-        Assert.assertTrue("output should contain only hard linking",
-                StringUtils.countMatches(systemOutRule.getLog(), "hard-linking") == 6);
-        Assert.assertTrue("output should not contain warnings about skipping files", !systemOutRule.getLog().contains("skipping"));
     }
 
     /**
