@@ -189,6 +189,34 @@ public class MockedIT {
     }
 
     /**
+     * Tests local file input in arrays or as single files, output to local file
+     *
+     * @throws IOException
+     * @throws ApiException
+     */
+    @Test
+    public void runLaunchOneLocalArrayedJsonWithCache() throws IOException, ApiException {
+        String configFileLocation = TestUtility.getConfigFileLocation(true, true, true);
+        when(client.getConfigFile()).thenReturn(configFileLocation);
+
+        Client.main(new String[] {"--clean-cache", "--config", configFileLocation});
+        // this is kind of redundant, it looks like we take the mocked config file no matter what
+        Client.main(new String[] {"--config", configFileLocation, "tool", "launch", "--entry",
+                "quay.io/collaboratory/arrays", "--json", ResourceHelpers.resourceFilePath("testArrayLocalInputLocalOutput.json") });
+
+        Assert.assertTrue(new File("/tmp/example.bedGraph").exists());
+        Assert.assertTrue("output should contain cwltool command", systemOutRule.getLog().contains("Executing: cwltool"));
+        systemOutRule.clearLog();
+
+        // try again, things should be cached now
+        Client.main(new String[] {"--config", configFileLocation, "tool", "launch", "--entry",
+                "quay.io/collaboratory/arrays", "--json", ResourceHelpers.resourceFilePath("testArrayLocalInputLocalOutput.json") });
+        Assert.assertTrue("output should contain only hard linking",
+                StringUtils.countMatches(systemOutRule.getLog(), "hard-linking") == 6);
+        Assert.assertTrue("output should not contain warnings about skipping files", !systemOutRule.getLog().contains("skipping"));
+    }
+
+    /**
      * Tests http file input in arrays or as single files, output to local file and local array
      *
      * @throws IOException
