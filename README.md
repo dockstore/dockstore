@@ -224,6 +224,11 @@ After the release to Artifactory, document the release on GitHub via the Release
 
 This is for release versions that have been released to production. 
 
+1. Create a hotfix branch  `mvn hf hotfix start <version>`
+2. Iterate pom file versions to a SNAPSHOT if needed `mvn versions:set -DnewVersion=<version>-SNAPSHOT` 
+3. Prepare the release and the perform it (you may need permissions) `mvn release:prepare` and `mvn release:perform`
+3. Merge to master and develop `mvn hf hotfix finish`
+
 
 ### Encrypted Documents for Travis-CI
 
