@@ -385,7 +385,7 @@
             <column name="email" type="varchar(255)"></column>
         </addColumn>
         <addColumn tableName="enduser">
-            <column name="avatarUrl" type="varchar(255)"></column>
+            <column name="avatarurl" type="varchar(255)"></column>
         </addColumn>
         
         <createTable tableName="starred">
