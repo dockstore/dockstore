@@ -51,6 +51,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.swagger.api.NotFoundException;
@@ -58,6 +59,7 @@ import io.swagger.api.ToolsApiService;
 import io.swagger.model.ToolClass;
 import io.swagger.model.ToolDescriptor;
 import io.swagger.model.ToolDockerfile;
+import io.swagger.model.ToolTests;
 import io.swagger.model.ToolVersion;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -66,9 +68,11 @@ import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.dockstore.webservice.core.SourceFile.FileType.CWL_TEST_JSON;
 import static io.dockstore.webservice.core.SourceFile.FileType.DOCKERFILE;
 import static io.dockstore.webservice.core.SourceFile.FileType.DOCKSTORE_CWL;
 import static io.dockstore.webservice.core.SourceFile.FileType.DOCKSTORE_WDL;
+import static io.dockstore.webservice.core.SourceFile.FileType.WDL_TEST_JSON;
 
 public class ToolsApiServiceImpl extends ToolsApiService {
 
@@ -131,11 +135,13 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         } else {
             tool.setAuthor(container.getAuthor());
         }
+
         tool.setDescription(container.getDescription());
         tool.setMetaVersion(container.getLastUpdated() != null ? container.getLastUpdated().toString() : new Date(0).toString());
         tool.setToolclass(type);
         tool.setId(newID);
         tool.setUrl(globalId);
+
         // tool specific
         if (container instanceof Tool) {
             Tool inputTool = (Tool)container;
@@ -393,7 +399,27 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     public Response toolsIdVersionsVersionIdTypeTestsGet(String type, String id, String versionId, SecurityContext securityContext)
             throws NotFoundException {
         /** we do not have test data implemented */
-        return Response.status(Response.Status.NOT_FOUND).build();
+        if (type == null) {
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
+        SourceFile.FileType fileType = getFileType(type);
+        if (fileType == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        switch (fileType) {
+            case DOCKSTORE_CWL:
+                return getFileByToolVersionID(id, versionId, CWL_TEST_JSON, null, false);
+            case DOCKSTORE_WDL:
+                return Response.status(Response.Status.BAD_REQUEST).build();
+            case DOCKERFILE:
+                return Response.status(Response.Status.BAD_REQUEST).build();
+            case CWL_TEST_JSON:
+                return getFileByToolVersionID(id, versionId, CWL_TEST_JSON, null, false);
+            case WDL_TEST_JSON:
+                return getFileByToolVersionID(id, versionId, WDL_TEST_JSON, null, false);
+        default:
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
     }
 
     private SourceFile.FileType getFileType(String format) {
@@ -548,12 +574,14 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         }
         Entry entry = getEntry(parsedID);
 
+
         // check whether this is registered
         if (!entry.getIsPublished()) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
 
         final Pair<io.swagger.model.Tool, Table<String, SourceFile.FileType, Object>> toolTablePair = convertContainer2Tool(entry);
+
         String finalVersionId = versionId;
         if (toolTablePair == null || toolTablePair.getKey().getVersions() == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
@@ -577,11 +605,22 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         if (first.isPresent() && oldFirst.isPresent()) {
             final ToolVersion toolVersion = first.get();
             final String toolVersionName = toolVersion.getName();
-            if (type == DOCKERFILE) {
+            switch (type) {
+            case CWL_TEST_JSON:
+                final EntryVersionHelper<Tool> entryVersionHelper = new EntryVersionHelper<>(toolDAO);
+                SourceFile sourceFile = entryVersionHelper.getSourceFile(entry.getId(), versionId, CWL_TEST_JSON);
+                // The file is not in the table so it cannot be retrieved this way
+                //final ToolTests toolTests = (ToolTests)table.get(toolVersionName, SourceFile.FileType.CWL_TEST_JSON);
+
+                //                return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
+                //                        .entity(unwrap ? toolTests.getTest() : dockerfile).build();
+                // TODO: Return proper entities depending on requirements
+                return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(unwrap ? sourceFile: sourceFile).build();
+            case DOCKERFILE:
                 final ToolDockerfile dockerfile = (ToolDockerfile)table.get(toolVersionName, SourceFile.FileType.DOCKERFILE);
                 return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
                         .entity(unwrap ? dockerfile.getDockerfile() : dockerfile).build();
-            } else {
+            default:
                 if (relativePath == null) {
                     if ((type == DOCKSTORE_WDL) && (
                             ((ToolDescriptor)table.get(toolVersionName, SourceFile.FileType.DOCKSTORE_WDL)).getType()
@@ -608,7 +647,6 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                 }
             }
         }
-
         return Response.status(Response.Status.NOT_FOUND).build();
     }
 
