@@ -606,9 +606,10 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             final ToolVersion toolVersion = first.get();
             final String toolVersionName = toolVersion.getName();
             switch (type) {
+            case WDL_TEST_JSON:
             case CWL_TEST_JSON:
                 final EntryVersionHelper<Tool> entryVersionHelper = new EntryVersionHelper<>(toolDAO);
-                SourceFile sourceFile = entryVersionHelper.getSourceFile(entry.getId(), versionId, CWL_TEST_JSON);
+                SourceFile sourceFile = entryVersionHelper.getSourceFile(entry.getId(), versionId, type);
                 // The file is not in the table so it cannot be retrieved this way
                 //final ToolTests toolTests = (ToolTests)table.get(toolVersionName, SourceFile.FileType.CWL_TEST_JSON);
 
