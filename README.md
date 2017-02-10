@@ -11,7 +11,7 @@
 
 # Dockstore
 
-The Dockstore concept is simple, provide a place where users can share tools encapsulated in Docker and described with the Common Workflow Language (CWL) which is being recommended by the GA4GH Containers and Workflow group. This enables scientists, for example, to share analytical tools in a way that makes them machine readable and runnable in a variety of environments (SevenBridges, Toil, etc). While the Dockstore is focused on serving researchers in the biosciences the combination of Docker + CWL can be used by anyone to describe the tools and services in their Docker images in a standardized, machine-readable way.  We hope to use this project as motivation to create a GA4GH API standard for container registries and intend on making Dockstore fully compliant.
+Dockstore provides a place for users to share tools encapsulated in Docker and described with the Common Workflow Language (CWL).  This enables scientists to share analytical workflows so that they are machine readable as well as runnable in a variety of environments. While the Dockstore is focused on serving researchers in the biosciences, the combination of Docker + CWL can be used by anyone to describe the tools and services in their Docker images in a standardized, machine-readable way.  We hope to use this project as motivation to create a GA4GH API standard for container registries.
 
 For the live site see https://dockstore.org
 
