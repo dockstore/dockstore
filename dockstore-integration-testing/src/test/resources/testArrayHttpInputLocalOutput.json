@@ -1,20 +1,20 @@
 {
   "arrayed_input": [
     {
-      "path": "http://s3.amazonaws.com/pan-cancer-data/pan-cancer-reference/genome.fa.gz.fai",
+      "path": "https://raw.githubusercontent.com/ga4gh/dockstore/1.0/README.md",
       "class": "File"
     },
     {
-      "path": "http://s3.amazonaws.com/pan-cancer-data/pan-cancer-reference/genome.fa.gz.fai",
+      "path": "https://raw.githubusercontent.com/ga4gh/dockstore/1.0/README.md",
       "class": "File"
     },
     {
-      "path": "http://s3.amazonaws.com/pan-cancer-data/pan-cancer-reference/genome.fa.gz.fai",
+      "path": "https://raw.githubusercontent.com/ga4gh/dockstore/1.0/README.md",
       "class": "File"
     }
   ],
   "hello_input": {
-    "path": "http://s3.amazonaws.com/pan-cancer-data/pan-cancer-reference/genome.fa.gz.fai",
+    "path": "https://raw.githubusercontent.com/ga4gh/dockstore/1.0/README.md",
     "class": "File"
   },
   "hello_output": {
@@ -32,11 +32,11 @@
     }
   ],
   "ref_file_1": {
-    "path": "http://s3.amazonaws.com/pan-cancer-data/pan-cancer-reference/genome.fa.gz.fai",
+    "path": "https://raw.githubusercontent.com/ga4gh/dockstore/1.0/README.md",
     "class": "File"
   },
   "ref_file_2": {
-    "path": "http://s3.amazonaws.com/pan-cancer-data/pan-cancer-reference/genome.fa.gz.fai",
+    "path": "https://raw.githubusercontent.com/ga4gh/dockstore/1.0/README.md",
     "class": "File"
   }
 }
