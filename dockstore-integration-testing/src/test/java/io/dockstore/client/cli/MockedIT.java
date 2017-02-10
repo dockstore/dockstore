@@ -61,7 +61,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
  * 
  * @author dyuen
  */
-@PowerMockIgnore("javax.management.*")
+@PowerMockIgnore({"org.apache.http.conn.ssl.*", "javax.net.ssl.*", "javax.crypto.*", "javax.management.*", "javax.net.*"})
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({Client.class, ToolClient.class, UserApi.class})
 public class MockedIT {
