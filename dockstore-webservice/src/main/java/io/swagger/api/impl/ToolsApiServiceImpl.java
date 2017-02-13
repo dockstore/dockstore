@@ -59,7 +59,6 @@ import io.swagger.api.ToolsApiService;
 import io.swagger.model.ToolClass;
 import io.swagger.model.ToolDescriptor;
 import io.swagger.model.ToolDockerfile;
-import io.swagger.model.ToolTests;
 import io.swagger.model.ToolVersion;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -76,9 +75,8 @@ import static io.dockstore.webservice.core.SourceFile.FileType.WDL_TEST_JSON;
 
 public class ToolsApiServiceImpl extends ToolsApiService {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ToolsApiServiceImpl.class);
     public static final int DEFAULT_PAGE_SIZE = 1000;
-
+    private static final Logger LOG = LoggerFactory.getLogger(ToolsApiServiceImpl.class);
     private static ToolDAO toolDAO = null;
     private static WorkflowDAO workflowDAO = null;
     private static DockstoreWebserviceConfiguration config = null;
@@ -406,17 +404,18 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         if (fileType == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
+
+        // The getFileType version never returns *TEST_JSON filetypes.  Linking CWL_TEST_JSON with DOCKSTORE_CWL and etc until solved.
         switch (fileType) {
-            case DOCKSTORE_CWL:
-                return getFileByToolVersionID(id, versionId, CWL_TEST_JSON, null, false);
-            case DOCKSTORE_WDL:
-                return Response.status(Response.Status.BAD_REQUEST).build();
-            case DOCKERFILE:
-                return Response.status(Response.Status.BAD_REQUEST).build();
-            case CWL_TEST_JSON:
-                return getFileByToolVersionID(id, versionId, CWL_TEST_JSON, null, false);
-            case WDL_TEST_JSON:
-                return getFileByToolVersionID(id, versionId, WDL_TEST_JSON, null, false);
+        case CWL_TEST_JSON:
+        case DOCKSTORE_CWL:
+            return getFileByToolVersionID(id, versionId, CWL_TEST_JSON, null, false);
+        case WDL_TEST_JSON:
+        case DOCKSTORE_WDL:
+            return getFileByToolVersionID(id, versionId, WDL_TEST_JSON, null, false);
+        case DOCKERFILE:
+            return Response.status(Response.Status.BAD_REQUEST).build();
+
         default:
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
@@ -574,7 +573,6 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         }
         Entry entry = getEntry(parsedID);
 
-
         // check whether this is registered
         if (!entry.getIsPublished()) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
@@ -609,14 +607,10 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             case WDL_TEST_JSON:
             case CWL_TEST_JSON:
                 final EntryVersionHelper<Tool> entryVersionHelper = new EntryVersionHelper<>(toolDAO);
-                SourceFile sourceFile = entryVersionHelper.getSourceFile(entry.getId(), versionId, type);
-                // The file is not in the table so it cannot be retrieved this way
-                //final ToolTests toolTests = (ToolTests)table.get(toolVersionName, SourceFile.FileType.CWL_TEST_JSON);
-
-                //                return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                //                        .entity(unwrap ? toolTests.getTest() : dockerfile).build();
+                List<SourceFile> sourceFile = entryVersionHelper.getAllSourceFiles(entry.getId(), versionId, type);
                 // TODO: Return proper entities depending on requirements
-                return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(unwrap ? sourceFile: sourceFile).build();
+                return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
+                        .entity(unwrap ? sourceFile : sourceFile).build();
             case DOCKERFILE:
                 final ToolDockerfile dockerfile = (ToolDockerfile)table.get(toolVersionName, SourceFile.FileType.DOCKERFILE);
                 return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
