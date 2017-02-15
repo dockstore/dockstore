@@ -48,6 +48,7 @@ import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
 import com.amazonaws.services.s3.transfer.Upload;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
+import io.dockstore.provision.ProvisionInterface;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.IOUtils;
@@ -63,6 +64,8 @@ import org.sagebionetworks.client.SynapseClient;
 import org.sagebionetworks.client.SynapseClientImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ro.fortsoft.pf4j.DefaultPluginManager;
+import ro.fortsoft.pf4j.PluginManager;
 
 /**
  * The purpose of this class is to provide general functions to deal with workflow file provisioning.
@@ -407,13 +410,22 @@ public class FileProvisioning {
     }
 
     public static void main(String[] args) {
-        String userHome = System.getProperty("user.home");
-        FileProvisioning provisioning = new FileProvisioning(userHome + File.separator + ".dockstore" + File.separator + "config");
-        long firstTime = System.currentTimeMillis();
-        // used /home/dyuen/Downloads/pcawg_broad_public_refs_full.tar.gz for testing
-        provisioning.provisionOutputFile(args[0], args[0]);
-        final long millisecondsInSecond = 1000L;
-        System.out.println((System.currentTimeMillis() - firstTime) / millisecondsInSecond);
+        PluginManager pluginManager = new DefaultPluginManager(new File("dockstore-file-plugins/built"));
+        pluginManager.loadPlugins();
+        pluginManager.startPlugins();
+
+        List<ProvisionInterface> greetings = pluginManager.getExtensions(ProvisionInterface.class);
+        for (ProvisionInterface provision : greetings) {
+            System.out.println(">>> " + provision.prefixHandled("test"));
+        }
+
+//        String userHome = System.getProperty("user.home");
+//        FileProvisioning provisioning = new FileProvisioning(userHome + File.separator + ".dockstore" + File.separator + "config");
+//        long firstTime = System.currentTimeMillis();
+//        // used /home/dyuen/Downloads/pcawg_broad_public_refs_full.tar.gz for testing
+//        provisioning.provisionOutputFile(args[0], args[0]);
+//        final long millisecondsInSecond = 1000L;
+//        System.out.println((System.currentTimeMillis() - firstTime) / millisecondsInSecond);
     }
 
     private static class ProgressPrinter {
