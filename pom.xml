@@ -42,7 +42,7 @@
         <jersey-version>2.23.1</jersey-version>
         <junit-version>4.12</junit-version>
         <logback.version>1.1.7</logback.version>
-        <aws.version>1.10.77</aws.version>
+        <aws.version>1.11.86</aws.version>
         <powermock.version>1.6.5</powermock.version>
         <mockito.version>1.10.19</mockito.version>
         <cwlavro.version>1.0.7</cwlavro.version>
