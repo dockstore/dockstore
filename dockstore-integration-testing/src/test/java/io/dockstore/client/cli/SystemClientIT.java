@@ -18,12 +18,15 @@ package io.dockstore.client.cli;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
 import com.google.common.io.Resources;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import io.dockstore.common.Constants;
 import io.dockstore.common.Registry;
 import io.dockstore.common.Utilities;
@@ -214,7 +217,18 @@ public class SystemClientIT {
         fileDockerFile.setType(SourceFile.TypeEnum.DOCKERFILE);
         fileDockerFile.setPath("/Dockerfile");
         tag.getSourceFiles().add(fileDockerFile);
+        SourceFile testParameterFile = new SourceFile();
+        testParameterFile.setContent("testparameterstuff");
+        testParameterFile.setType(SourceFile.TypeEnum.CWL_TEST_JSON);
+        testParameterFile.setPath("/test1.json");
+        tag.getSourceFiles().add(testParameterFile);
+        SourceFile testParameterFile2 = new SourceFile();
+        testParameterFile2.setContent("moretestparameterstuff");
+        testParameterFile2.setType(SourceFile.TypeEnum.CWL_TEST_JSON);
+        testParameterFile2.setPath("/test2.json");
+        tag.getSourceFiles().add(testParameterFile2);
         c.getTags().add(tag);
+
         return c;
     }
 
@@ -362,6 +376,16 @@ public class SystemClientIT {
                         + encodedPath);
         strings = Resources.readLines(url, Charset.forName("UTF-8"));
         assertTrue(strings.size() == 1 && strings.get(0).equals("cwlstuff"));
+
+        // Get test files
+        url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/cwl-plain/tests/");
+        strings = Resources.readLines(url, Charset.forName("UTF-8"));
+        Gson gson = new Gson();
+        List<SourceFile> files = gson.fromJson(strings.get(0), new TypeToken<List<SourceFile>>(){}.getType());
+        assertTrue(files.size() == 2);
+        assertTrue(files.get(0).getContent().equals("testparameterstuff"));
+        assertTrue(files.get(1).getContent().equals("moretestparameterstuff"));
+
     }
 
     @Test
