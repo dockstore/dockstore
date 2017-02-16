@@ -14,7 +14,7 @@
 
     <properties>
         <plugin.id>s3-plugin</plugin.id>
-        <plugin.class>io.dockstore.provision.SynapsePlugin</plugin.class>
+        <plugin.class>io.dockstore.provision.S3Plugin</plugin.class>
         <plugin.version>0.0.1</plugin.version>
         <plugin.provider>Denis Yuen</plugin.provider>
         <plugin.dependencies />

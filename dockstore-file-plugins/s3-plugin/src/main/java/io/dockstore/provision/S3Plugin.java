@@ -95,6 +95,10 @@ public class S3Plugin extends Plugin {
 
         private static final String S3_ENDPOINT = "endpoint";
         private Map<String, String> config;
+        public void setConfiguration(Map<String, String> map) {
+            this.config = map;
+        }
+
 
         private AmazonS3 getAmazonS3Client() {
             AmazonS3 s3Client = new AmazonS3Client(new ClientConfiguration().withSignerOverride("S3Signer"));
@@ -105,10 +109,6 @@ public class S3Plugin extends Plugin {
                 s3Client.setS3ClientOptions(S3ClientOptions.builder().setPathStyleAccess(true).build());
             }
             return s3Client;
-        }
-
-        public void setConfiguration(Map<String, String> map) {
-            this.config = map;
         }
 
         public boolean prefixHandled(String path) {

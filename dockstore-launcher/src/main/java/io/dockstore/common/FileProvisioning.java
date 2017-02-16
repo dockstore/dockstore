@@ -49,6 +49,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ro.fortsoft.pf4j.DefaultPluginManager;
 import ro.fortsoft.pf4j.PluginManager;
+import ro.fortsoft.pf4j.PluginWrapper;
 
 /**
  * The purpose of this class is to provide general functions to deal with workflow file provisioning.
@@ -332,6 +333,7 @@ public class FileProvisioning {
         pluginManager.startPlugins();
 
         List<ProvisionInterface> greetings = pluginManager.getExtensions(ProvisionInterface.class);
+        List<PluginWrapper> plugins = pluginManager.getPlugins();
         for (ProvisionInterface provision : greetings) {
             System.out.println(">>> " + provision.prefixHandled("test"));
         }
