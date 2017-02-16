@@ -13,15 +13,12 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-
 package io.github.collaboratory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
 import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.Workflow;
 import io.dockstore.common.Utilities;
@@ -58,7 +55,6 @@ public class LauncherTest {
         File jobFile = FileUtils.getFile("src", "test", "resources", "collab-cwl-job-pre.json");
 
         if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
-            expectedEx.expect(AmazonS3Exception.class);
             expectedEx.expectMessage("Access Denied");
         }
         final LauncherCWL launcherCWL = new LauncherCWL(
@@ -76,7 +72,6 @@ public class LauncherTest {
         ByteArrayOutputStream stderr = new ByteArrayOutputStream();
 
         if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
-            expectedEx.expect(AmazonS3Exception.class);
             expectedEx.expectMessage("Access Denied");
         }
         final LauncherCWL launcherCWL = new LauncherCWL(iniFile.getAbsolutePath(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath(),
@@ -95,7 +90,6 @@ public class LauncherTest {
         ByteArrayOutputStream stderr = new ByteArrayOutputStream();
 
         if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
-            expectedEx.expect(AmazonS3Exception.class);
             expectedEx.expectMessage("Access Denied");
         }
         final LauncherCWL launcherCWL = new LauncherCWL(iniFile.getAbsolutePath(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath(),

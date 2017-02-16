@@ -81,6 +81,7 @@
 
     <modules>
         <module>s3-plugin</module>
+        <module>synapse-plugin</module>
     </modules>
 
     <dependencies>

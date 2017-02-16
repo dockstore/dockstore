@@ -27,30 +27,15 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.SdkBaseException;
-import com.amazonaws.auth.SignerFactory;
-import com.amazonaws.event.ProgressEvent;
-import com.amazonaws.event.ProgressEventType;
-import com.amazonaws.event.ProgressListener;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.S3ClientOptions;
-import com.amazonaws.services.s3.internal.S3Signer;
-import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.transfer.Download;
-import com.amazonaws.services.s3.transfer.TransferManager;
-import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
-import com.amazonaws.services.s3.transfer.Upload;
-import com.google.common.base.Joiner;
-import com.google.common.collect.Lists;
 import io.dockstore.provision.ProvisionInterface;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.configuration2.INIConfiguration;
+import org.apache.commons.configuration2.SubnodeConfiguration;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.net.io.CopyStreamEvent;
 import org.apache.commons.net.io.CopyStreamListener;
@@ -60,8 +45,6 @@ import org.apache.commons.vfs2.FileSystemManager;
 import org.apache.commons.vfs2.FileSystemOptions;
 import org.apache.commons.vfs2.VFS;
 import org.apache.commons.vfs2.provider.ftp.FtpFileSystemConfigBuilder;
-import org.sagebionetworks.client.SynapseClient;
-import org.sagebionetworks.client.SynapseClientImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ro.fortsoft.pf4j.DefaultPluginManager;
@@ -73,14 +56,10 @@ import ro.fortsoft.pf4j.PluginManager;
  */
 public class FileProvisioning {
 
-    static {
-        SignerFactory.registerSigner("S3Signer", S3Signer.class);
-    }
-
     private static final Logger LOG = LoggerFactory.getLogger(FileProvisioning.class);
 
-    private static final String S3_ENDPOINT = "s3.endpoint";
     private static final String DCC_CLIENT_KEY = "dcc_storage.client";
+    private final List<ProvisionInterface> plugins;
 
     private INIConfiguration config;
 
@@ -89,6 +68,20 @@ public class FileProvisioning {
      */
     public FileProvisioning(String configFile) {
         this.config = Utilities.parseConfig(configFile);
+        String filePluginLocation = this.config.getString("file-plugins-location", "/home/dyuen/.dockstore/plugins");
+        PluginManager pluginManager = new DefaultPluginManager(new File(filePluginLocation));
+        pluginManager.loadPlugins();
+        pluginManager.startPlugins();
+
+        this.plugins = pluginManager.getExtensions(ProvisionInterface.class);
+        // set configuration
+        for (ProvisionInterface provision : plugins) {
+            SubnodeConfiguration section = config.getSection("file-" + provision.getClass().getName());
+            Map<String, String> sectionConfig = new HashMap<>();
+            Iterator<String> keys = section.getKeys();
+            keys.forEachRemaining(key -> sectionConfig.put(key, section.getString(key)));
+            provision.setConfiguration(sectionConfig);
+        }
     }
 
     // Which functions to move here? DCC and apache commons ones?
@@ -115,55 +108,6 @@ public class FileProvisioning {
             LOG.error(ioe.getMessage());
             throw new RuntimeException("Could not move input file: ", ioe);
         }
-    }
-
-    private void downloadFromS3(String path, String targetFilePath) {
-        AmazonS3 s3Client = getAmazonS3Client(config);
-        TransferManager tx = TransferManagerBuilder.standard().withS3Client(s3Client).build();
-        String trimmedPath = path.replace("s3://", "");
-        List<String> splitPathList = Lists.newArrayList(trimmedPath.split("/"));
-        String bucketName = splitPathList.remove(0);
-
-        S3Object object = s3Client.getObject(new GetObjectRequest(bucketName, Joiner.on("/").join(splitPathList)));
-        try {
-            GetObjectRequest request = new GetObjectRequest(bucketName, Joiner.on("/").join(splitPathList));
-            request.setGeneralProgressListener(getProgressListener(object.getObjectMetadata().getContentLength()));
-            Download download = tx.download(request, new File(targetFilePath));
-            download.waitForCompletion();
-        } catch (SdkBaseException e) {
-            LOG.error(e.getMessage());
-            throw new RuntimeException("Could not provision input files from S3", e);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } finally {
-            tx.shutdownNow(true);
-        }
-    }
-
-    private void downloadFromSynapse(String path, String targetFilePath) {
-        SynapseClient synapseClient = new SynapseClientImpl();
-
-        try {
-            String synapseKey = config.getString("synapse-api-key");
-            String synapseUserName = config.getString("synapse-user-name");
-            synapseClient.setApiKey(synapseKey);
-            synapseClient.setUserName(synapseUserName);
-            synapseClient.downloadFromFileEntityCurrentVersion(path, new File(targetFilePath));
-        } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new RuntimeException("Could not provision input files from Synapse", e);
-        }
-    }
-
-    private static AmazonS3 getAmazonS3Client(INIConfiguration config) {
-        AmazonS3 s3Client = new AmazonS3Client(new ClientConfiguration().withSignerOverride("S3Signer"));
-        if (config.containsKey(S3_ENDPOINT)) {
-            final String endpoint = config.getString(S3_ENDPOINT);
-            LOG.info("found custom S3 endpoint, setting to {}", endpoint);
-            s3Client.setEndpoint(endpoint);
-            s3Client.setS3ClientOptions(S3ClientOptions.builder().setPathStyleAccess(true).build());
-        }
-        return s3Client;
     }
 
     private void downloadFromHttp(String path, String targetFilePath) {
@@ -239,13 +183,21 @@ public class FileProvisioning {
 
         // if a file does not exist yet, get it
         if (!Files.exists(localPath)) {
-            if (pathInfo.isObjectIdType()) {
+            // check if we can use a plugin
+            boolean handledViaPlugin = false;
+            for (ProvisionInterface provision : plugins) {
+                if (provision.prefixHandled(targetPath)) {
+                    provision.downloadFrom(targetPath, localPath);
+                    handledViaPlugin = true;
+                }
+            }
+
+            if (handledViaPlugin) {
+                // do nothing
+                LOG.info("Transfer already done via plugin");
+            } else if (pathInfo.isObjectIdType()) {
                 String objectId = pathInfo.getObjectId();
                 this.downloadFromDccStorage(objectId, localPath.getParent().toFile().getAbsolutePath(), localPath.toFile().getAbsolutePath());
-            } else if (targetPath.startsWith("syn")) {
-                this.downloadFromSynapse(targetPath, localPath.toFile().getAbsolutePath());
-            } else if (targetPath.startsWith("s3://")) {
-                this.downloadFromS3(targetPath, localPath.toFile().getAbsolutePath());
             } else if (!pathInfo.isLocalFileType()) {
                 this.downloadFromHttp(targetPath, localPath.toFile().getAbsolutePath());
             } else {
@@ -317,22 +269,24 @@ public class FileProvisioning {
      */
     public void provisionOutputFile(String srcPath, String destPath) {
         File sourceFile = new File(srcPath);
-        if (destPath.startsWith("s3://")) {
-            uploadToS3(destPath, sourceFile);
-        } else {
-            try {
-                long inputSize = sourceFile.length();
-                FileSystemManager fsManager;
-                // trigger a copy from the URL to a local file path that's a UUID to avoid collision
-                fsManager = VFS.getManager();
-                // check for a local file path
-                Path currentWorkingDir = Paths.get("").toAbsolutePath();
-                FileObject dest = fsManager.resolveFile(currentWorkingDir.toFile(), destPath);
-                FileObject src = fsManager.resolveFile(sourceFile.getAbsolutePath());
-                copyFromInputStreamToOutputStream(src.getContent().getInputStream(), inputSize, dest.getContent().getOutputStream());
-            } catch (IOException e) {
-                throw new RuntimeException("Could not provision output files", e);
+        for (ProvisionInterface provision : plugins) {
+            if (provision.prefixHandled(destPath)) {
+                provision.uploadTo(destPath, Paths.get(srcPath), null);
+                return;
             }
+        }
+        try {
+            long inputSize = sourceFile.length();
+            FileSystemManager fsManager;
+            // trigger a copy from the URL to a local file path that's a UUID to avoid collision
+            fsManager = VFS.getManager();
+            // check for a local file path
+            Path currentWorkingDir = Paths.get("").toAbsolutePath();
+            FileObject dest = fsManager.resolveFile(currentWorkingDir.toFile(), destPath);
+            FileObject src = fsManager.resolveFile(sourceFile.getAbsolutePath());
+            copyFromInputStreamToOutputStream(src.getContent().getInputStream(), inputSize, dest.getContent().getOutputStream());
+        } catch (IOException e) {
+            throw new RuntimeException("Could not provision output files", e);
         }
     }
 
@@ -370,43 +324,6 @@ public class FileProvisioning {
             IOUtils.closeQuietly(inputStream);
             System.out.println();
         }
-    }
-
-
-    private void uploadToS3(String destPath, File sourceFile) {
-        long inputSize = sourceFile.length();
-        AmazonS3 s3Client = FileProvisioning.getAmazonS3Client(config);
-        TransferManager tx = TransferManagerBuilder.standard().withS3Client(s3Client).build();
-
-        String trimmedPath = destPath.replace("s3://", "");
-        List<String> splitPathList = Lists.newArrayList(trimmedPath.split("/"));
-        String bucketName = splitPathList.remove(0);
-
-        PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, Joiner.on("/").join(splitPathList), sourceFile);
-        putObjectRequest.setGeneralProgressListener(getProgressListener(inputSize));
-        try {
-            Upload upload = tx.upload(putObjectRequest);
-            upload.waitForUploadResult();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } finally {
-            tx.shutdownNow(true);
-            System.out.println();
-        }
-    }
-
-    private ProgressListener getProgressListener(final long inputSize) {
-        return new ProgressListener() {
-            ProgressPrinter printer = new ProgressPrinter();
-            long runningTotal = 0;
-            @Override
-            public void progressChanged(ProgressEvent progressEvent) {
-                if (progressEvent.getEventType() == ProgressEventType.REQUEST_BYTE_TRANSFER_EVENT) {
-                    runningTotal += progressEvent.getBytesTransferred();
-                }
-                printer.handleProgress(runningTotal, inputSize);
-            }
-        };
     }
 
     public static void main(String[] args) {

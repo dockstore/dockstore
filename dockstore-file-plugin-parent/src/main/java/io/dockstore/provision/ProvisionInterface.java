@@ -15,7 +15,11 @@
  */
 package io.dockstore.provision;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.nio.file.Path;
+import java.util.Map;
 
 import ro.fortsoft.pf4j.ExtensionPoint;
 
@@ -50,4 +54,46 @@ public interface ProvisionInterface extends ExtensionPoint {
      */
     boolean uploadTo(String destPath, Path sourceFile, String metadata);
 
+    void setConfiguration(Map<String, String> config);
+
+    class ProgressPrinter {
+        static final int SIZE_OF_PROGRESS_BAR = 50;
+        boolean printedBefore = false;
+        BigDecimal progress = new BigDecimal(0);
+
+        void handleProgress(long totalBytesTransferred, long streamSize) {
+
+            BigDecimal numerator = BigDecimal.valueOf(totalBytesTransferred);
+            BigDecimal denominator = BigDecimal.valueOf(streamSize);
+            BigDecimal fraction = numerator.divide(denominator, new MathContext(2, RoundingMode.HALF_EVEN));
+            if (fraction.equals(progress)) {
+                /* don't bother refreshing if no progress made */
+                return;
+            }
+
+            BigDecimal outOfTwenty = fraction.multiply(new BigDecimal(SIZE_OF_PROGRESS_BAR));
+            BigDecimal percentage = fraction.movePointRight(2);
+            StringBuilder builder = new StringBuilder();
+            if (printedBefore) {
+                builder.append('\r');
+            }
+
+            builder.append("[");
+            for (int i = 0; i < SIZE_OF_PROGRESS_BAR; i++) {
+                if (i < outOfTwenty.intValue()) {
+                    builder.append("#");
+                } else {
+                    builder.append(" ");
+                }
+            }
+
+            builder.append("] ");
+            builder.append(percentage.setScale(0, BigDecimal.ROUND_HALF_EVEN).toPlainString()).append("%");
+
+            System.out.print(builder);
+            // track progress
+            printedBefore = true;
+            progress = fraction;
+        }
+    }
 }

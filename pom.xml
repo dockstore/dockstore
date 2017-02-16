@@ -136,14 +136,14 @@
 
     <modules>
         <module>dockstore-common</module>
+        <module>dockstore-file-plugin-parent</module>
+        <module>dockstore-file-plugins</module>
         <module>dockstore-launcher</module>
         <module>dockstore-webservice</module>
         <module>swagger-java-client</module>
         <module>swagger-java-quay-client</module>
         <module>dockstore-client</module>
         <module>dockstore-integration-testing</module>
-        <module>dockstore-file-plugin-parent</module>
-        <module>dockstore-file-plugins</module>
     </modules>
 
 
@@ -572,12 +572,6 @@
                 <artifactId>okhttp-urlconnection</artifactId>
                 <version>${okhttp.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.sagebionetworks</groupId>
-                <artifactId>synapseJavaClient</artifactId>
-                <version>137.0</version>
-            </dependency>
-
             <dependency>
                 <groupId>commons-dbutils</groupId>
                 <artifactId>commons-dbutils</artifactId>

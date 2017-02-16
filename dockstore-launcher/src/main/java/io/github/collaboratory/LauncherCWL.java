@@ -36,8 +36,6 @@ import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import com.amazonaws.auth.SignerFactory;
-import com.amazonaws.services.s3.internal.S3Signer;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects;
@@ -73,10 +71,6 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
  * @author tetron
  */
 public class LauncherCWL {
-
-    static {
-        SignerFactory.registerSigner("S3Signer", S3Signer.class);
-    }
 
     private static final Logger LOG = LoggerFactory.getLogger(LauncherCWL.class);
 

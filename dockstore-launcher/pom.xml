@@ -53,10 +53,12 @@
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-core</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-s3</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>commons-httpclient</groupId>
@@ -121,11 +123,6 @@
             <artifactId>commons-vfs2</artifactId>
             <version>2.1</version>
         </dependency>
-        <dependency>
-            <groupId>org.sagebionetworks</groupId>
-            <artifactId>synapseJavaClient</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>commons-net</groupId>
             <artifactId>commons-net</artifactId>
