@@ -27,11 +27,13 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.github.zafarkhaja.semver.UnexpectedCharacterException;
 import io.dockstore.provision.ProvisionInterface;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.configuration2.INIConfiguration;
@@ -60,7 +62,7 @@ public class FileProvisioning {
     private static final Logger LOG = LoggerFactory.getLogger(FileProvisioning.class);
 
     private static final String DCC_CLIENT_KEY = "dcc_storage.client";
-    private final List<ProvisionInterface> plugins;
+    private List<ProvisionInterface> plugins = new ArrayList<>();
 
     private INIConfiguration config;
 
@@ -69,12 +71,19 @@ public class FileProvisioning {
      */
     public FileProvisioning(String configFile) {
         this.config = Utilities.parseConfig(configFile);
-        String filePluginLocation = this.config.getString("file-plugins-location", "/home/dyuen/.dockstore/plugins");
-        PluginManager pluginManager = new DefaultPluginManager(new File(filePluginLocation));
-        pluginManager.loadPlugins();
-        pluginManager.startPlugins();
+        try {
+            String userHome = System.getProperty("user.home");
+            String pluginPath = userHome + File.separator + ".dockstore" + File.separator + "plugins";
 
-        this.plugins = pluginManager.getExtensions(ProvisionInterface.class);
+            String filePluginLocation = this.config.getString("file-plugins-location", pluginPath);
+            PluginManager pluginManager = new DefaultPluginManager(new File(filePluginLocation));
+            pluginManager.loadPlugins();
+            pluginManager.startPlugins();
+
+            this.plugins = pluginManager.getExtensions(ProvisionInterface.class);
+        } catch (UnexpectedCharacterException e) {
+            LOG.error("Could not load plugins: " + e.toString(), e);
+        }
         // set configuration
         for (ProvisionInterface provision : plugins) {
             SubnodeConfiguration section = config.getSection("file-" + provision.getClass().getName());
