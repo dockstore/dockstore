@@ -141,6 +141,11 @@
             <groupId>ro.fortsoft.pf4j</groupId>
             <artifactId>pf4j</artifactId>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/commons-beanutils/commons-beanutils -->
+        <dependency>
+            <groupId>commons-beanutils</groupId>
+            <artifactId>commons-beanutils</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -209,6 +214,7 @@
                                 <usedDependency>commons-httpclient:commons-httpclient</usedDependency>
                                 <usedDependency>ch.qos.logback:logback-core</usedDependency>
                                 <usedDependency>ch.qos.logback:logback-classic</usedDependency>
+                                <usedDependency>commons-beanutils:commons-beanutils</usedDependency>
                             </usedDependencies>
                         </configuration>
                     </execution>
