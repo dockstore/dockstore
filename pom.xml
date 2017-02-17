@@ -137,7 +137,6 @@
     <modules>
         <module>dockstore-common</module>
         <module>dockstore-file-plugin-parent</module>
-        <module>dockstore-file-plugins</module>
         <module>dockstore-launcher</module>
         <module>dockstore-webservice</module>
         <module>swagger-java-client</module>

@@ -20,9 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.math.BigDecimal;
-import java.math.MathContext;
-import java.math.RoundingMode;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -34,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.github.zafarkhaja.semver.UnexpectedCharacterException;
+import io.dockstore.provision.ProgressPrinter;
 import io.dockstore.provision.ProvisionInterface;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.configuration2.INIConfiguration;
@@ -61,7 +59,6 @@ public class FileProvisioning {
 
     private static final Logger LOG = LoggerFactory.getLogger(FileProvisioning.class);
 
-    private static final String DCC_CLIENT_KEY = "dcc_storage.client";
     private List<ProvisionInterface> plugins = new ArrayList<>();
 
     private INIConfiguration config;
@@ -83,6 +80,7 @@ public class FileProvisioning {
             this.plugins = pluginManager.getExtensions(ProvisionInterface.class);
         } catch (UnexpectedCharacterException e) {
             LOG.error("Could not load plugins: " + e.toString(), e);
+            throw new RuntimeException(e);
         }
         // set configuration
         for (ProvisionInterface provision : plugins) {
@@ -94,33 +92,7 @@ public class FileProvisioning {
         }
     }
 
-    // Which functions to move here? DCC and apache commons ones?
-    private String getStorageClient() {
-        return config.getString(DCC_CLIENT_KEY, "/icgc/dcc-storage/bin/dcc-storage-client");
-    }
-
-    private void downloadFromDccStorage(String objectId, String downloadDir, String targetFilePath) {
-        // default layout saves to original_file_name/object_id
-        // file name is the directory and object id is actual file name
-        String client = getStorageClient();
-        String bob =
-                client + " --quiet" + " download" + " --object-id " + objectId + " --output-dir " + downloadDir + " --output-layout id";
-        Utilities.executeCommand(bob);
-
-        // downloaded file
-        String downloadPath = new File(downloadDir).getAbsolutePath() + "/" + objectId;
-        System.out.println("download path: " + downloadPath);
-        Path downloadedFileFileObj = Paths.get(downloadPath);
-        Path targetPathFileObj = Paths.get(targetFilePath);
-        try {
-            Files.move(downloadedFileFileObj, targetPathFileObj);
-        } catch (IOException ioe) {
-            LOG.error(ioe.getMessage());
-            throw new RuntimeException("Could not move input file: ", ioe);
-        }
-    }
-
-    private void downloadFromHttp(String path, String targetFilePath) {
+    private void downloadFromVFS2(String path, String targetFilePath) {
         // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
         // https://commons.apache.org/proper/commons-vfs/filesystems.html
         try {
@@ -148,9 +120,8 @@ public class FileProvisioning {
      *
      * @param targetPath path for target file
      * @param localPath  the absolute path where we will download files to
-     * @param pathInfo   additional information on the type of file
      */
-    public void provisionInputFile(String targetPath, Path localPath, PathInfo pathInfo) {
+    public void provisionInputFile(String targetPath, Path localPath) {
 
         Path potentialCachedFile = null;
         final boolean useCache = isCacheOn(config);
@@ -191,27 +162,26 @@ public class FileProvisioning {
             }
         }
 
+        URI objectIdentifier = URI.create(targetPath);    // throws IllegalArgumentException if it isn't a valid URI
+        if (objectIdentifier.getScheme() != null) {
+            String scheme = objectIdentifier.getScheme().toLowerCase();
+            for (ProvisionInterface provision : plugins) {
+                if (provision.schemesHandled().contains(scheme.toUpperCase()) || provision.schemesHandled().contains(scheme.toLowerCase())) {
+                    boolean downloaded = provision.downloadFrom(targetPath, localPath);
+                    if (!downloaded) {
+                        throw new RuntimeException("Could not provision: " + targetPath + " to " + localPath);
+                    }
+                }
+            }
+        }
         // if a file does not exist yet, get it
         if (!Files.exists(localPath)) {
             // check if we can use a plugin
-            boolean handledViaPlugin = false;
-            for (ProvisionInterface provision : plugins) {
-                if (provision.prefixHandled(targetPath)) {
-                    provision.downloadFrom(targetPath, localPath);
-                    handledViaPlugin = true;
-                }
-            }
+            boolean localFileType = objectIdentifier.getScheme() == null;
 
-            if (handledViaPlugin) {
-                // do nothing
-                LOG.info("Transfer already done via plugin");
-            } else if (pathInfo.isObjectIdType()) {
-                String objectId = pathInfo.getObjectId();
-                this.downloadFromDccStorage(objectId, localPath.getParent().toFile().getAbsolutePath(), localPath.toFile().getAbsolutePath());
-            } else if (!pathInfo.isLocalFileType()) {
-                this.downloadFromHttp(targetPath, localPath.toFile().getAbsolutePath());
+            if (!localFileType) {
+                this.downloadFromVFS2(targetPath, localPath.toFile().getAbsolutePath());
             } else {
-                assert (pathInfo.isLocalFileType());
                 // hard link into target location
                 Path actualTargetPath = null;
                 try {
@@ -278,11 +248,19 @@ public class FileProvisioning {
      * @param destPath destination file
      */
     public void provisionOutputFile(String srcPath, String destPath) {
+        URI objectIdentifier = URI.create(destPath);    // throws IllegalArgumentException if it isn't a valid URI
         File sourceFile = new File(srcPath);
-        for (ProvisionInterface provision : plugins) {
-            if (provision.prefixHandled(destPath)) {
-                provision.uploadTo(destPath, Paths.get(srcPath), null);
-                return;
+
+        if (objectIdentifier.getScheme() != null) {
+            String scheme = objectIdentifier.getScheme();
+            for (ProvisionInterface provision : plugins) {
+                if (provision.schemesHandled().contains(scheme.toUpperCase()) || provision.schemesHandled().contains(scheme.toLowerCase())) {
+                    boolean uploaded = provision.uploadTo(destPath, Paths.get(srcPath), null);
+                    if (!uploaded) {
+                        throw new RuntimeException("Could not provision: " + srcPath + " to " + destPath);
+                    }
+                    return;
+                }
             }
         }
         try {
@@ -337,101 +315,21 @@ public class FileProvisioning {
     }
 
     public static void main(String[] args) {
-        PluginManager pluginManager = new DefaultPluginManager(new File("dockstore-file-plugins/built"));
+        String userHome = System.getProperty("user.home");
+        String pluginPath = userHome + File.separator + ".dockstore" + File.separator + "plugins";
+
+        PluginManager pluginManager = new DefaultPluginManager(new File(pluginPath));
         pluginManager.loadPlugins();
         pluginManager.startPlugins();
 
-        List<ProvisionInterface> greetings = pluginManager.getExtensions(ProvisionInterface.class);
         List<PluginWrapper> plugins = pluginManager.getPlugins();
+        List<ProvisionInterface> greetings = pluginManager.getExtensions(ProvisionInterface.class);
         for (ProvisionInterface provision : greetings) {
-            System.out.println(">>> " + provision.prefixHandled("test"));
-        }
-
-//        String userHome = System.getProperty("user.home");
-//        FileProvisioning provisioning = new FileProvisioning(userHome + File.separator + ".dockstore" + File.separator + "config");
-//        long firstTime = System.currentTimeMillis();
-//        // used /home/dyuen/Downloads/pcawg_broad_public_refs_full.tar.gz for testing
-//        provisioning.provisionOutputFile(args[0], args[0]);
-//        final long millisecondsInSecond = 1000L;
-//        System.out.println((System.currentTimeMillis() - firstTime) / millisecondsInSecond);
-    }
-
-    private static class ProgressPrinter {
-        static final int SIZE_OF_PROGRESS_BAR = 50;
-        boolean printedBefore = false;
-        BigDecimal progress = new BigDecimal(0);
-
-        void handleProgress(long totalBytesTransferred, long streamSize) {
-
-            BigDecimal numerator = BigDecimal.valueOf(totalBytesTransferred);
-            BigDecimal denominator = BigDecimal.valueOf(streamSize);
-            BigDecimal fraction = numerator.divide(denominator, new MathContext(2, RoundingMode.HALF_EVEN));
-            if (fraction.equals(progress)) {
-                /* don't bother refreshing if no progress made */
-                return;
+            System.out.println("Plugin: " + provision.getClass().getName());
+            System.out.println("\tSchemes handled: " + provision.getClass().getName());
+            for (String prefix: provision.schemesHandled()) {
+                System.out.println("\t\t " + prefix);
             }
-
-            BigDecimal outOfTwenty = fraction.multiply(new BigDecimal(SIZE_OF_PROGRESS_BAR));
-            BigDecimal percentage = fraction.movePointRight(2);
-            StringBuilder builder = new StringBuilder();
-            if (printedBefore) {
-                builder.append('\r');
-            }
-
-            builder.append("[");
-            for (int i = 0; i < SIZE_OF_PROGRESS_BAR; i++) {
-                if (i < outOfTwenty.intValue()) {
-                    builder.append("#");
-                } else {
-                    builder.append(" ");
-                }
-            }
-
-            builder.append("] ");
-            builder.append(percentage.setScale(0, BigDecimal.ROUND_HALF_EVEN).toPlainString()).append("%");
-
-            System.out.print(builder);
-            // track progress
-            printedBefore = true;
-            progress = fraction;
-        }
-    }
-
-    public static class PathInfo {
-        static final String DCC_STORAGE_SCHEME = "icgc";
-
-        private static final Logger LOG = LoggerFactory.getLogger(PathInfo.class);
-        private boolean objectIdType;
-        private String objectId = "";
-        private boolean localFileType = false;
-
-        public PathInfo(String path) {
-            try {
-                URI objectIdentifier = URI.create(path);    // throws IllegalArgumentException if it isn't a valid URI
-                if (objectIdentifier.getScheme() == null) {
-                    localFileType = true;
-                }
-                if (objectIdentifier.getScheme().equalsIgnoreCase(DCC_STORAGE_SCHEME)) {
-                    objectIdType = true;
-                    objectId = objectIdentifier.getSchemeSpecificPart().toLowerCase();
-                }
-            } catch (IllegalArgumentException | NullPointerException iae) {
-                // if there is no scheme, then it must be a local file
-                LOG.info("Invalid or local path specified for CWL pre-processor values: " + path);
-                objectIdType = false;
-            }
-        }
-
-        boolean isObjectIdType() {
-            return objectIdType;
-        }
-
-        String getObjectId() {
-            return objectId;
-        }
-
-        boolean isLocalFileType() {
-            return localFileType;
         }
     }
 
