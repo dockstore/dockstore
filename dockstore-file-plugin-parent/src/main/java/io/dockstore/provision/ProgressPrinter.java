@@ -62,7 +62,7 @@ public class ProgressPrinter {
         builder.append("] ");
         builder.append(percentage.setScale(0, BigDecimal.ROUND_HALF_EVEN).toPlainString()).append("%");
 
-        System.out.println(builder);
+        System.out.print(builder);
         // track progress
         printedBefore = true;
         progress = fraction;
