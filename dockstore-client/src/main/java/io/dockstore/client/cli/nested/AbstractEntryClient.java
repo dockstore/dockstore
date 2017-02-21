@@ -16,28 +16,6 @@
 
 package io.dockstore.client.cli.nested;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
@@ -74,6 +52,28 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static io.dockstore.client.cli.ArgumentUtility.CONVERT;
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
@@ -343,7 +343,7 @@ public abstract class AbstractEntryClient {
      * @param isScript        true if called by script, false otherwise
      */
     protected abstract void handleVerifyUnverify(String entry, String versionName, String verifySource, boolean unverifyRequest,
-            boolean isScript);
+                                                 boolean isScript);
 
     /**
      * Adds/removes supplied test parameter paths for a given entry version
@@ -355,7 +355,7 @@ public abstract class AbstractEntryClient {
      * @param descriptorType CWL or WDL
      */
     protected abstract void handleTestParameter(String entry, String versionName, List<String> adds, List<String> removes,
-            String descriptorType);
+                                                String descriptorType);
 
     /**
      * List all of the entries published and unpublished for this user
@@ -627,7 +627,10 @@ public abstract class AbstractEntryClient {
         /* CWL: check for 'class:CommandLineTool', 'inputs: ','outputs: ', and 'baseCommand'. Optional: 'cwlVersion'
          CWL: check for 'class:Workflow', 'inputs: ','outputs: ', and 'steps'. Optional: 'cwlVersion'*/
         Pattern inputPattern = Pattern.compile("(.*)(inputs)(.*)(:)(.*)");
-        Pattern outputPattern = Pattern.compile("(.*)(outputs)(.*)(:)(.*)");
+
+        Pattern outputPatternEmpty = Pattern.compile("(.*)(outputs:)(.*)(\\[\\])");
+        Pattern outputPatternParas = Pattern.compile("(.*)(outputs:)(.*)");
+
         Pattern classWfPattern = Pattern.compile("(.*)(class)(.*)(:)(\\sWorkflow)");
         Pattern classToolPattern = Pattern.compile("(.*)(class)(.*)(:)(\\sCommandLineTool)");
         Pattern commandPattern = Pattern.compile("(.*)(baseCommand)(.*)(:)(.*)");
@@ -639,18 +642,54 @@ public abstract class AbstractEntryClient {
         //go through each line of the file content and find the word patterns as described above
         try {
             List<String> fileContent = java.nio.file.Files.readAllLines(p, StandardCharsets.UTF_8);
-            for (String line : fileContent) {
+            for (int i = 0; i < fileContent.size(); i++) {
+                String line = fileContent.get(i);
+
                 Matcher matchWf = classWfPattern.matcher(line);
                 Matcher matchTool = classToolPattern.matcher(line);
                 Matcher matchInput = inputPattern.matcher(line);
-                Matcher matchOutput = outputPattern.matcher(line);
+
+                Matcher matchOutputEmpty = outputPatternEmpty.matcher(line);
+                Matcher matchOutputParas = outputPatternParas.matcher(line);
+
                 Matcher matchCommand = commandPattern.matcher(line);
                 Matcher matchVersion = versionPattern.matcher(line);
                 Matcher matchSteps = stepsPattern.matcher(line);
+
                 if (matchInput.find() && !stepsFound) {
                     inputFound = true;
-                } else if (matchOutput.find()) {
+                } else if (matchOutputEmpty.find()) {
                     outputFound = true;
+                } else if (matchOutputParas.find()) {
+                    outputFound = true;
+
+                    i++;
+
+                    try {
+                        line = fileContent.get(i);
+                    } catch (IndexOutOfBoundsException e) {
+                        missing += " valid list for 'outputs' at line " + --i;
+                        errorMessage(missing, CLIENT_ERROR);
+                        return false;
+                    }
+
+                    Pattern idPattern = Pattern.compile("^\\s*(- id:)[\\w\\W]*\\s*$");
+                    Matcher matchId = idPattern.matcher(line);
+
+                    Pattern namePattern = Pattern.compile("^\\s*[\\w\\W]*\\s*:$");
+                    Matcher matchName = namePattern.matcher(line);
+
+                    // check if it matches id pattern first
+                    // then check if it matches name pattern
+
+                    if (!matchId.find()) {
+                        if (!matchName.find()) {
+                            missing += " 'id' field under 'outputs' at line " + i;
+                            errorMessage(missing, CLIENT_ERROR);
+                            return false;
+                        }
+                    }
+
                 } else if (matchCommand.find()) {
                     commandFound = true;
                 } else if (matchVersion.find()) {
@@ -1049,7 +1088,7 @@ public abstract class AbstractEntryClient {
      * @throws ApiException
      */
     public void handleCWLLaunch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns,
-            OutputStream stdoutStream, OutputStream stderrStream) throws IOException, ApiException {
+                                OutputStream stdoutStream, OutputStream stderrStream) throws IOException, ApiException {
 
         if (!SCRIPT.get()) {
             Client.checkForCWLDependencies();
