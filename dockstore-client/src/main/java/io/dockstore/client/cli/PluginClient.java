@@ -15,7 +15,6 @@
  */
 package io.dockstore.client.cli;
 
-import java.io.File;
 import java.util.List;
 
 import io.dockstore.common.FileProvisionUtil;
