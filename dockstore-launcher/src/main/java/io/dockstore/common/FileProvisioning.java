@@ -18,8 +18,6 @@ package io.dockstore.common;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,20 +29,13 @@ import java.util.List;
 import java.util.Map;
 
 import com.github.zafarkhaja.semver.UnexpectedCharacterException;
-import io.dockstore.provision.ProgressPrinter;
 import io.dockstore.provision.ProvisionInterface;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.configuration2.SubnodeConfiguration;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.net.io.CopyStreamEvent;
-import org.apache.commons.net.io.CopyStreamListener;
-import org.apache.commons.net.io.Util;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemManager;
-import org.apache.commons.vfs2.FileSystemOptions;
 import org.apache.commons.vfs2.VFS;
-import org.apache.commons.vfs2.provider.ftp.FtpFileSystemConfigBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ro.fortsoft.pf4j.DefaultPluginManager;
@@ -69,13 +60,7 @@ public class FileProvisioning {
     public FileProvisioning(String configFile) {
         this.config = Utilities.parseConfig(configFile);
         try {
-            String userHome = System.getProperty("user.home");
-            String pluginPath = userHome + File.separator + ".dockstore" + File.separator + "plugins";
-
-            String filePluginLocation = this.config.getString("file-plugins-location", pluginPath);
-            PluginManager pluginManager = new DefaultPluginManager(new File(filePluginLocation));
-            pluginManager.loadPlugins();
-            pluginManager.startPlugins();
+            PluginManager pluginManager = FileProvisionUtil.getPluginManager(config);
 
             this.plugins = pluginManager.getExtensions(ProvisionInterface.class);
         } catch (UnexpectedCharacterException e) {
@@ -92,28 +77,9 @@ public class FileProvisioning {
         }
     }
 
-    private void downloadFromVFS2(String path, String targetFilePath) {
-        // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
-        // https://commons.apache.org/proper/commons-vfs/filesystems.html
-        try {
-            // force passive mode for FTP (see emails from Keiran)
-            FileSystemOptions opts = new FileSystemOptions();
-            FtpFileSystemConfigBuilder.getInstance().setPassiveMode(opts, true);
 
-            // trigger a copy from the URL to a local file path that's a UUID to avoid collision
-            FileSystemManager fsManager = VFS.getManager();
-            org.apache.commons.vfs2.FileObject src = fsManager.resolveFile(path, opts);
-            org.apache.commons.vfs2.FileObject dest = fsManager.resolveFile(new File(targetFilePath).getAbsolutePath());
-            InputStream inputStream = src.getContent().getInputStream();
-            long inputSize = src.getContent().getSize();
-            OutputStream outputSteam = dest.getContent().getOutputStream();
-            copyFromInputStreamToOutputStream(inputStream, inputSize, outputSteam);
-            // dest.copyFrom(src, Selectors.SELECT_SELF);
-        } catch (IOException e) {
-            LOG.error(e.getMessage());
-            throw new RuntimeException("Could not provision input files", e);
-        }
-    }
+
+
 
     /**
      * This method downloads both local and remote files into the working directory
@@ -180,7 +146,7 @@ public class FileProvisioning {
             boolean localFileType = objectIdentifier.getScheme() == null;
 
             if (!localFileType) {
-                this.downloadFromVFS2(targetPath, localPath.toFile().getAbsolutePath());
+                FileProvisionUtil.downloadFromVFS2(targetPath, localPath.toFile().getAbsolutePath());
             } else {
                 // hard link into target location
                 Path actualTargetPath = null;
@@ -272,45 +238,9 @@ public class FileProvisioning {
             Path currentWorkingDir = Paths.get("").toAbsolutePath();
             FileObject dest = fsManager.resolveFile(currentWorkingDir.toFile(), destPath);
             FileObject src = fsManager.resolveFile(sourceFile.getAbsolutePath());
-            copyFromInputStreamToOutputStream(src.getContent().getInputStream(), inputSize, dest.getContent().getOutputStream());
+            FileProvisionUtil.copyFromInputStreamToOutputStream(src.getContent().getInputStream(), inputSize, dest.getContent().getOutputStream());
         } catch (IOException e) {
             throw new RuntimeException("Could not provision output files", e);
-        }
-    }
-
-    /**
-     * Copy from stream to stream while displaying progress
-     *
-     * @param inputStream source
-     * @param inputSize   total size
-     * @param outputSteam destination
-     * @throws IOException  throws an exception if unable to provision input files
-     */
-    private static void copyFromInputStreamToOutputStream(InputStream inputStream, long inputSize, OutputStream outputSteam)
-            throws IOException {
-        CopyStreamListener listener = new CopyStreamListener() {
-            ProgressPrinter printer = new ProgressPrinter();
-
-            @Override
-            public void bytesTransferred(CopyStreamEvent event) {
-                /* do nothing */
-            }
-
-            @Override
-            public void bytesTransferred(long totalBytesTransferred, int bytesTransferred, long streamSize) {
-                printer.handleProgress(totalBytesTransferred, streamSize);
-            }
-        };
-        try (OutputStream outputStream = outputSteam) {
-            // a larger buffer improves copy performance
-            // we can also split this (local file copy) out into a plugin later
-            final int largeBuffer = 100;
-            Util.copyStream(inputStream, outputStream, Util.DEFAULT_COPY_BUFFER_SIZE * largeBuffer, inputSize, listener);
-        } catch (IOException e) {
-            throw new RuntimeException("Could not provision input files", e);
-        } finally {
-            IOUtils.closeQuietly(inputStream);
-            System.out.println();
         }
     }
 

@@ -21,7 +21,9 @@ import java.io.IOException;
 
 import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.Workflow;
+import io.dockstore.common.FileProvisionUtil;
 import io.dockstore.common.Utilities;
+import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
@@ -44,8 +46,12 @@ public class LauncherTest {
     public void cleanCache() throws ConfigurationException, IOException {
         // need to clean cache to make tests predictable
         File iniFile = FileUtils.getFile("src", "test", "resources", "launcher.ini");
-        final String cacheDirectory = getCacheDirectory(Utilities.parseConfig(iniFile.getAbsolutePath()));
+        INIConfiguration config = Utilities.parseConfig(iniFile.getAbsolutePath());
+        final String cacheDirectory = getCacheDirectory(config);
         FileUtils.deleteDirectory(new File(cacheDirectory));
+
+        // download plugins
+        FileProvisionUtil.downloadPlugins(config);
     }
 
     @Test
