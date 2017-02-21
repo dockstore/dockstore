@@ -63,23 +63,29 @@ public class FileProvisioning {
             PluginManager pluginManager = FileProvisionUtil.getPluginManager(config);
 
             this.plugins = pluginManager.getExtensions(ProvisionInterface.class);
+
+            List<PluginWrapper> pluginWrappers = pluginManager.getPlugins();
+            for (PluginWrapper pluginWrapper : pluginWrappers) {
+                SubnodeConfiguration section = config.getSection(pluginWrapper.getPluginId());
+                Map<String, String> sectionConfig = new HashMap<>();
+                Iterator<String> keys = section.getKeys();
+                keys.forEachRemaining(key -> sectionConfig.put(key, section.getString(key)));
+                // this is ugly, but we need to pass configuration into the plugins
+                // TODO: speed this up using a map of plugins
+                for (ProvisionInterface extension : plugins) {
+                    String extensionName = extension.getClass().getName();
+                    String pluginClass = pluginWrapper.getDescriptor().getPluginClass();
+                    if (extensionName.startsWith(pluginClass)) {
+                        extension.setConfiguration(sectionConfig);
+                    }
+                }
+            }
+        System.out.println();
         } catch (UnexpectedCharacterException e) {
             LOG.error("Could not load plugins: " + e.toString(), e);
             throw new RuntimeException(e);
         }
-        // set configuration
-        for (ProvisionInterface provision : plugins) {
-            SubnodeConfiguration section = config.getSection("file-" + provision.getClass().getName());
-            Map<String, String> sectionConfig = new HashMap<>();
-            Iterator<String> keys = section.getKeys();
-            keys.forEachRemaining(key -> sectionConfig.put(key, section.getString(key)));
-            provision.setConfiguration(sectionConfig);
-        }
     }
-
-
-
-
 
     /**
      * This method downloads both local and remote files into the working directory

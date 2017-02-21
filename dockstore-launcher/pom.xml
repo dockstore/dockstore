@@ -107,6 +107,11 @@
             <groupId>io.cwl</groupId>
             <artifactId>cwlavro-generated</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro</artifactId>
+            <version>1.8.1</version>
+        </dependency>
 
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -210,6 +215,7 @@
                                 <usedDependency>ch.qos.logback:logback-core</usedDependency>
                                 <usedDependency>ch.qos.logback:logback-classic</usedDependency>
                                 <usedDependency>commons-beanutils:commons-beanutils</usedDependency>
+                                <usedDependency>org.apache.avro:avro</usedDependency>
                             </usedDependencies>
                         </configuration>
                     </execution>

@@ -145,6 +145,20 @@
                             <outputDirectory>${project.build.directory}/lib</outputDirectory>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>analyze</id>
+                        <goals>
+                            <goal>analyze-only</goal>
+                        </goals>
+                        <configuration>
+                            <failOnWarning>true</failOnWarning>
+                            <outputXML>true</outputXML>
+                            <ignoreNonCompile>true</ignoreNonCompile>
+                            <usedDependencies>
+                                <usedDependency>com.fasterxml.jackson.core:jackson-core</usedDependency>
+                            </usedDependencies>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
 
@@ -282,6 +296,11 @@
             <artifactId>junit</artifactId>
             <version>${junit-version}</version>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
         </dependency>
     </dependencies>
 </project>
