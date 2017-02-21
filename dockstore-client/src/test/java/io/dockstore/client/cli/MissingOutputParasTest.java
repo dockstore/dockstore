@@ -7,17 +7,21 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
+import org.junit.runner.RunWith;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
+import java.util.List;
 
 import static org.junit.Assert.assertTrue;
 
 /**
  * Created by kcao on 17/02/17.
  */
-public class InvalidOutputsTest {
+
+public class MissingOutputParasTest {
     @Rule
     public final ExpectedSystemExit exit = ExpectedSystemExit.none();
 
@@ -27,7 +31,7 @@ public class InvalidOutputsTest {
 
     @BeforeClass
     public static void baseCWL() {
-        cwlTestFile = new File(System.getProperty("user.home") + File.separator + "invalidCWLOutputs.cwl");
+        cwlTestFile = new File(System.getProperty("user.home") + File.separator + "missingOutputParas.cwl");
         stringBuilder.append("class: CommandLineTool\n");
         stringBuilder.append("baseCommand: echo\n");
         stringBuilder.append("inputs:\n");

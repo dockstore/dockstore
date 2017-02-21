@@ -563,6 +563,17 @@ public abstract class AbstractEntryClient {
             final ImmutablePair<String, String> output = cwlUtil.parseCWL(cwlPath);
 
             try {
+                JsonObject jsonObject = new JsonParser().parse(output.getLeft()).getAsJsonObject();
+                boolean outputsFound = false;
+                for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
+                    if (entry.getKey().equals("outputs")) {
+                        outputsFound = true;
+                    }
+                }
+                if (!outputsFound) {
+                    errorMessage("Missing 'outputs' feature in cwl file", API_ERROR);
+                }
+
                 final Map<String, Object> runJson = cwlUtil.extractRunJson(output.getLeft());
                 if (json) {
                     final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
