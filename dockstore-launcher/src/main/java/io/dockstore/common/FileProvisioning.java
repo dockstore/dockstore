@@ -236,7 +236,6 @@ public class FileProvisioning {
             }
         }
         try {
-            long inputSize = sourceFile.length();
             FileSystemManager fsManager;
             // trigger a copy from the URL to a local file path that's a UUID to avoid collision
             fsManager = VFS.getManager();
@@ -258,7 +257,6 @@ public class FileProvisioning {
         pluginManager.loadPlugins();
         pluginManager.startPlugins();
 
-        List<PluginWrapper> plugins = pluginManager.getPlugins();
         List<ProvisionInterface> greetings = pluginManager.getExtensions(ProvisionInterface.class);
         for (ProvisionInterface provision : greetings) {
             System.out.println("Plugin: " + provision.getClass().getName());
