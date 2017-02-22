@@ -17,6 +17,7 @@
 package io.dockstore.common;
 
 import com.amazonaws.ClientConfiguration;
+import com.amazonaws.SdkBaseException;
 import com.amazonaws.auth.SignerFactory;
 import com.amazonaws.event.ProgressEvent;
 import com.amazonaws.event.ProgressEventType;
@@ -28,7 +29,10 @@ import com.amazonaws.services.s3.internal.S3Signer;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectInputStream;
+import com.amazonaws.services.s3.transfer.Download;
+import com.amazonaws.services.s3.transfer.TransferManager;
+import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
+import com.amazonaws.services.s3.transfer.Upload;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -49,7 +53,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -118,19 +121,24 @@ public class FileProvisioning {
 
     private void downloadFromS3(String path, String targetFilePath) {
         AmazonS3 s3Client = getAmazonS3Client(config);
+        TransferManager tx = TransferManagerBuilder.standard().withS3Client(s3Client).build();
         String trimmedPath = path.replace("s3://", "");
         List<String> splitPathList = Lists.newArrayList(trimmedPath.split("/"));
         String bucketName = splitPathList.remove(0);
 
         S3Object object = s3Client.getObject(new GetObjectRequest(bucketName, Joiner.on("/").join(splitPathList)));
         try {
-            FileOutputStream outputStream = new FileOutputStream(new File(targetFilePath));
-            S3ObjectInputStream inputStream = object.getObjectContent();
-            long inputSize = object.getObjectMetadata().getContentLength();
-            copyFromInputStreamToOutputStream(inputStream, inputSize, outputStream);
-        } catch (IOException e) {
+            GetObjectRequest request = new GetObjectRequest(bucketName, Joiner.on("/").join(splitPathList));
+            request.setGeneralProgressListener(getProgressListener(object.getObjectMetadata().getContentLength()));
+            Download download = tx.download(request, new File(targetFilePath));
+            download.waitForCompletion();
+        } catch (SdkBaseException e) {
             LOG.error(e.getMessage());
             throw new RuntimeException("Could not provision input files from S3", e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } finally{
+            tx.shutdownNow(true);
         }
     }
 
@@ -311,31 +319,11 @@ public class FileProvisioning {
      */
     public void provisionOutputFile(String srcPath, String destPath) {
         File sourceFile = new File(srcPath);
-        long inputSize = sourceFile.length();
         if (destPath.startsWith("s3://")) {
-            AmazonS3 s3Client = FileProvisioning.getAmazonS3Client(config);
-            String trimmedPath = destPath.replace("s3://", "");
-            List<String> splitPathList = Lists.newArrayList(trimmedPath.split("/"));
-            String bucketName = splitPathList.remove(0);
-
-            PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, Joiner.on("/").join(splitPathList), sourceFile);
-            putObjectRequest.setGeneralProgressListener(new ProgressListener() {
-                ProgressPrinter printer = new ProgressPrinter();
-                long runningTotal = 0;
-                @Override public void progressChanged(ProgressEvent progressEvent) {
-                    if (progressEvent.getEventType() == ProgressEventType.REQUEST_BYTE_TRANSFER_EVENT){
-                        runningTotal += progressEvent.getBytesTransferred();
-                    }
-                    printer.handleProgress(runningTotal, inputSize);
-                }
-            });
-            try {
-                s3Client.putObject(putObjectRequest);
-            } finally{
-                System.out.println();
-            }
+            uploadToS3(destPath, sourceFile);
         } else {
             try {
+                long inputSize = sourceFile.length();
                 FileSystemManager fsManager;
                 // trigger a copy from the URL to a local file path that's a UUID to avoid collision
                 fsManager = VFS.getManager();
@@ -348,6 +336,41 @@ public class FileProvisioning {
                 throw new RuntimeException("Could not provision output files", e);
             }
         }
+    }
+
+    private void uploadToS3(String destPath, File sourceFile) {
+        long inputSize = sourceFile.length();
+        AmazonS3 s3Client = FileProvisioning.getAmazonS3Client(config);
+        TransferManager tx = TransferManagerBuilder.standard().withS3Client(s3Client).build();
+
+        String trimmedPath = destPath.replace("s3://", "");
+        List<String> splitPathList = Lists.newArrayList(trimmedPath.split("/"));
+        String bucketName = splitPathList.remove(0);
+
+        PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, Joiner.on("/").join(splitPathList), sourceFile);
+        putObjectRequest.setGeneralProgressListener(getProgressListener(inputSize));
+        try {
+            Upload upload = tx.upload(putObjectRequest);
+            upload.waitForUploadResult();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } finally{
+            tx.shutdownNow(true);
+            System.out.println();
+        }
+    }
+
+    private ProgressListener getProgressListener(final long inputSize) {
+        return new ProgressListener() {
+            ProgressPrinter printer = new ProgressPrinter();
+            long runningTotal = 0;
+            @Override public void progressChanged(ProgressEvent progressEvent) {
+                if (progressEvent.getEventType() == ProgressEventType.REQUEST_BYTE_TRANSFER_EVENT){
+                    runningTotal += progressEvent.getBytesTransferred();
+                }
+                printer.handleProgress(runningTotal, inputSize);
+            }
+        };
     }
 
     private static class ProgressPrinter {
@@ -413,7 +436,10 @@ public class FileProvisioning {
             }
         };
         try (OutputStream outputStream = outputSteam) {
-            Util.copyStream(inputStream, outputStream, Util.DEFAULT_COPY_BUFFER_SIZE, inputSize, listener);
+            // a larger buffer improves copy performance
+            // we can also split this (local file copy) out into a plugin later
+            final int largeBuffer = 100;
+            Util.copyStream(inputStream, outputStream, Util.DEFAULT_COPY_BUFFER_SIZE*largeBuffer, inputSize, listener);
         } catch (IOException e) {
             throw new RuntimeException("Could not provision input files", e);
         } finally {
@@ -481,6 +507,16 @@ public class FileProvisioning {
         public void setUrl(String url) {
             this.url = url;
         }
+    }
+
+    public static void main(String[] args){
+        String userHome = System.getProperty("user.home");
+        FileProvisioning provisioning = new FileProvisioning(userHome + File.separator + ".dockstore" + File.separator + "config");
+        long firstTime = System.currentTimeMillis();
+        // used /home/dyuen/Downloads/pcawg_broad_public_refs_full.tar.gz for testing
+        provisioning.provisionOutputFile(args[0],args[0]);
+        final long millisecondsInSecond = 1000L;
+        System.out.println((System.currentTimeMillis() - firstTime)/millisecondsInSecond);
     }
 }
 

@@ -19,7 +19,7 @@
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>1.1.2</version>
+    <version>1.1.6-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
@@ -42,7 +42,7 @@
         <jersey-version>2.23.1</jersey-version>
         <junit-version>4.12</junit-version>
         <logback.version>1.1.7</logback.version>
-        <aws.version>1.10.77</aws.version>
+        <aws.version>1.11.86</aws.version>
         <powermock.version>1.6.5</powermock.version>
         <mockito.version>1.10.19</mockito.version>
         <cwlavro.version>1.0.7</cwlavro.version>
@@ -65,6 +65,11 @@
     </scm>
 
     <repositories>
+        <repository>
+            <id>artifacts.oicr.on.ca</id>
+            <name>artifacts.oicr.on.ca</name>
+            <url>https://artifacts.oicr.on.ca/artifactory/collab-release</url>
+        </repository>
         <repository>
             <id>seqware.sourceforge.net</id>
             <name>SeqWare Maven Repository</name>
@@ -127,10 +132,9 @@
 
     <distributionManagement>
         <repository>
-            <id>seqwaremaven.oicr.on.ca</id>
-            <name>seqwaremaven.oicr.on.ca-releases</name>
-            <url>https://seqwaremaven.oicr.on.ca/artifactory/collab-release</url>
-            <uniqueVersion>false</uniqueVersion>
+            <id>central</id>
+            <name>artifacts.oicr.on.ca-releases</name>
+            <url>https://artifacts.oicr.on.ca/artifactory/collab-release</url>
         </repository>
     </distributionManagement>
 

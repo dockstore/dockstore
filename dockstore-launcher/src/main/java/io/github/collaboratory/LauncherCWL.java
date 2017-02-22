@@ -715,6 +715,10 @@ public class LauncherCWL {
     private void copyIndividualFile(String key, String path, Map<String, FileProvisioning.FileInfo> fileMap,
             File downloadDirFileObj, boolean record) {
         String shortfileName = Paths.get(path).getFileName().toString();
+        // will need to be handled by plug-ins, mutate long name to short name
+        if (shortfileName.startsWith("icgc:")){
+            shortfileName = shortfileName.substring("icgc:".length());
+        }
         final Path targetFilePath = Paths.get(downloadDirFileObj.getAbsolutePath(), shortfileName);
 
         // expects URI in "path": "icgc:eef47481-670d-4139-ab5b-1dad808a92d9"
