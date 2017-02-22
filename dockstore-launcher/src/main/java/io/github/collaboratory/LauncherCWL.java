@@ -720,7 +720,7 @@ public class LauncherCWL {
             boolean record) {
         String shortfileName = Paths.get(path).getFileName().toString();
         // will need to be handled by plug-ins, mutate long name to short name
-        if (shortfileName.startsWith("icgc:")){
+        if (shortfileName.startsWith("icgc:")) {
             shortfileName = shortfileName.substring("icgc:".length());
         }
         final Path targetFilePath = Paths.get(downloadDirFileObj.getAbsolutePath(), shortfileName);

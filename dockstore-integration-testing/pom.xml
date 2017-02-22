@@ -165,32 +165,7 @@
                             <goal>clean</goal>
                         </goals>
                         <configuration>
-                            <filesets>
-                                <fileset>
-                                    <directory>cromwell-workflow-logs</directory>
-                                </fileset>
-                                <fileset>
-                                    <includes>
-                                        <include>Cromwell.stderr.txt</include>
-                                        <include>Cromwell.stdout.txt</include>
-                                    </includes>
-                                </fileset>
-                            </filesets>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-clean-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>clean-test-download</id>
-                        <phase>install</phase>
-                        <goals>
-                            <goal>clean</goal>
-                        </goals>
-                        <configuration>
+                            <excludeDefaultDirectories>true</excludeDefaultDirectories>
                             <filesets>
                                 <fileset>
                                     <directory>cromwell-workflow-logs</directory>

@@ -31,7 +31,6 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import com.amazonaws.ClientConfiguration;
-import com.amazonaws.SdkBaseException;
 import com.amazonaws.auth.SignerFactory;
 import com.amazonaws.event.ProgressEvent;
 import com.amazonaws.event.ProgressEventType;
@@ -43,10 +42,7 @@ import com.amazonaws.services.s3.internal.S3Signer;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.transfer.Download;
-import com.amazonaws.services.s3.transfer.TransferManager;
-import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
-import com.amazonaws.services.s3.transfer.Upload;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -117,24 +113,19 @@ public class FileProvisioning {
 
     private void downloadFromS3(String path, String targetFilePath) {
         AmazonS3 s3Client = getAmazonS3Client(config);
-        TransferManager tx = TransferManagerBuilder.standard().withS3Client(s3Client).build();
         String trimmedPath = path.replace("s3://", "");
         List<String> splitPathList = Lists.newArrayList(trimmedPath.split("/"));
         String bucketName = splitPathList.remove(0);
 
         S3Object object = s3Client.getObject(new GetObjectRequest(bucketName, Joiner.on("/").join(splitPathList)));
         try {
-            GetObjectRequest request = new GetObjectRequest(bucketName, Joiner.on("/").join(splitPathList));
-            request.setGeneralProgressListener(getProgressListener(object.getObjectMetadata().getContentLength()));
-            Download download = tx.download(request, new File(targetFilePath));
-            download.waitForCompletion();
-        } catch (SdkBaseException e) {
+            FileOutputStream outputStream = new FileOutputStream(new File(targetFilePath));
+            S3ObjectInputStream inputStream = object.getObjectContent();
+            long inputSize = object.getObjectMetadata().getContentLength();
+            copyFromInputStreamToOutputStream(inputStream, inputSize, outputStream);
+        } catch (IOException e) {
             LOG.error(e.getMessage());
             throw new RuntimeException("Could not provision input files from S3", e);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } finally{
-            tx.shutdownNow(true);
         }
     }
 
@@ -490,16 +481,6 @@ public class FileProvisioning {
         public void setUrl(String url) {
             this.url = url;
         }
-    }
-
-    public static void main(String[] args){
-        String userHome = System.getProperty("user.home");
-        FileProvisioning provisioning = new FileProvisioning(userHome + File.separator + ".dockstore" + File.separator + "config");
-        long firstTime = System.currentTimeMillis();
-        // used /home/dyuen/Downloads/pcawg_broad_public_refs_full.tar.gz for testing
-        provisioning.provisionOutputFile(args[0],args[0]);
-        final long millisecondsInSecond = 1000L;
-        System.out.println((System.currentTimeMillis() - firstTime)/millisecondsInSecond);
     }
 }
 
