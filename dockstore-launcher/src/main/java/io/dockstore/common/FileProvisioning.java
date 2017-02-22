@@ -80,7 +80,6 @@ public class FileProvisioning {
                     }
                 }
             }
-        System.out.println();
         } catch (UnexpectedCharacterException e) {
             LOG.error("Could not load plugins: " + e.toString(), e);
             throw new RuntimeException(e);
