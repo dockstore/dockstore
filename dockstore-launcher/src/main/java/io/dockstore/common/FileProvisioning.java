@@ -221,6 +221,7 @@ public class FileProvisioning {
     public void provisionOutputFile(String srcPath, String destPath) {
         URI objectIdentifier = URI.create(destPath);    // throws IllegalArgumentException if it isn't a valid URI
         File sourceFile = new File(srcPath);
+        long inputSize = sourceFile.length();
 
         if (objectIdentifier.getScheme() != null) {
             String scheme = objectIdentifier.getScheme();
