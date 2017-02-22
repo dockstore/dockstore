@@ -649,6 +649,7 @@
                             <goal>clean</goal>
                         </goals>
                         <configuration>
+			    <excludeDefaultDirectories>true</excludeDefaultDirectories>
                             <filesets>
                                 <fileset>
                                     <directory>tool-registry-validator</directory>
