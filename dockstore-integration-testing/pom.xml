@@ -166,6 +166,7 @@
                             <goal>clean</goal>
                         </goals>
                         <configuration>
+			    <excludeDefaultDirectories>true</excludeDefaultDirectories>
                             <filesets>
                                 <fileset>
                                     <directory>cromwell-workflow-logs</directory>
