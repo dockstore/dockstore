@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 
 import com.amazonaws.AmazonClientException;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.Workflow;
 import io.dockstore.common.Utilities;
@@ -57,8 +58,8 @@ public class LauncherTest {
         File jobFile = FileUtils.getFile("src", "test", "resources", "collab-cwl-job-pre.json");
 
         if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
-            expectedEx.expect(AmazonClientException.class);
-            expectedEx.expectMessage("Unable to load AWS credentials from any provider in the chain");
+            expectedEx.expect(AmazonS3Exception.class);
+            expectedEx.expectMessage("Access Denied");
         }
         final LauncherCWL launcherCWL = new LauncherCWL(
                 new String[] { "--config", iniFile.getAbsolutePath(), "--descriptor", cwlFile.getAbsolutePath(), "--job",
@@ -75,8 +76,8 @@ public class LauncherTest {
         ByteArrayOutputStream stderr = new ByteArrayOutputStream();
 
         if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
-            expectedEx.expect(AmazonClientException.class);
-            expectedEx.expectMessage("Unable to load AWS credentials from any provider in the chain");
+            expectedEx.expect(AmazonS3Exception.class);
+            expectedEx.expectMessage("Access Denied");
         }
         final LauncherCWL launcherCWL = new LauncherCWL(iniFile.getAbsolutePath(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath(),
                 stdout, stderr);
@@ -94,8 +95,8 @@ public class LauncherTest {
         ByteArrayOutputStream stderr = new ByteArrayOutputStream();
 
         if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
-            expectedEx.expect(AmazonClientException.class);
-            expectedEx.expectMessage("Unable to load AWS credentials from any provider in the chain");
+            expectedEx.expect(AmazonS3Exception.class);
+            expectedEx.expectMessage("Access Denied");
         }
         final LauncherCWL launcherCWL = new LauncherCWL(iniFile.getAbsolutePath(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath(),
                 stdout, stderr);
