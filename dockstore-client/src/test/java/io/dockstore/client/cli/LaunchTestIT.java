@@ -716,4 +716,40 @@ public class LaunchTestIT {
 
     }
 
+    @Test
+    public void toolAsWorkflow() {
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("dir6.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("dir6.cwl.json"));
+
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("workflow");
+            add("launch");
+            add("--local-entry");
+            add(cwlFile.getAbsolutePath());
+            add("--json");
+            add(cwlJSON.getAbsolutePath());
+        }};
+        exit.expectSystemExit();
+        runClientCommand(args, false);
+        assertTrue("Out should suggest to run as tool instead", systemOutRule.getLog().contains("Expected a workflow but the"));
+    }
+
+    @Test
+    public void workflowAsTool(){
+        File file = new File(ResourceHelpers.resourceFilePath("noInput.cwl"));
+        File json = new File(ResourceHelpers.resourceFilePath("1st-workflow-job.json"));
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("tool");
+            add("launch");
+            add("--local-entry");
+            add(file.getAbsolutePath());
+            add("--json");
+            add(json.getAbsolutePath());
+        }};
+        exit.expectSystemExit();
+        runClientCommand(args, false);
+        assertTrue("Out should suggest to run as workflow instead", systemOutRule.getLog().contains("Expected a tool but the"));
+
+    }
+
 }
