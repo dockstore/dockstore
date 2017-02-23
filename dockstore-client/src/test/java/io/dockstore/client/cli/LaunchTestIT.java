@@ -32,7 +32,9 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.Assertion;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
+import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
@@ -47,6 +49,8 @@ public class LaunchTestIT {
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
     @Rule
     public final ExpectedSystemExit exit = ExpectedSystemExit.none();
+    @Rule
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog();
 
     @Test
     public void wdlCorrect() throws IOException {
@@ -730,8 +734,9 @@ public class LaunchTestIT {
             add(cwlJSON.getAbsolutePath());
         }};
         exit.expectSystemExit();
+        exit.checkAssertionAfterwards(
+                () -> assertTrue("Out should suggest to run as workflow instead", systemErrRule.getLog().contains("Expected a workflow but the")));
         runClientCommand(args, false);
-        assertTrue("Out should suggest to run as tool instead", systemOutRule.getLog().contains("Expected a workflow but the"));
     }
 
     @Test
@@ -747,9 +752,8 @@ public class LaunchTestIT {
             add(json.getAbsolutePath());
         }};
         exit.expectSystemExit();
+        exit.checkAssertionAfterwards(
+                () -> assertTrue("Out should suggest to run as workflow instead", systemErrRule.getLog().contains("Expected a tool but the")));
         runClientCommand(args, false);
-        assertTrue("Out should suggest to run as workflow instead", systemOutRule.getLog().contains("Expected a tool but the"));
-
     }
-
 }
