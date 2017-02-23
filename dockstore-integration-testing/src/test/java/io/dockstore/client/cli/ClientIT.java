@@ -215,8 +215,11 @@ public class ClientIT {
         checkCommandForHelp(new String[] { "tool", "version_tag", "add", "--help" });
         checkCommandForHelp(new String[] { "tool", "update_tool", "--help" });
         checkCommandForHelp(new String[] { "tool", "manual_publish", "--help" });
+        checkCommandForHelp(new String[] { "tool", "star", "--help" });
+        checkCommandForHelp(new String[] { "tool", "test_parameter", "--help" });
+        checkCommandForHelp(new String[] { "tool", "verify", "--help" });
+        checkCommandForHelp(new String[] { "tool" });
 
-        checkCommandForHelp(new String[] { "workflow" });
         checkCommandForHelp(new String[] { "workflow", "list", "--help" });
         checkCommandForHelp(new String[] { "workflow", "search", "--help" });
         checkCommandForHelp(new String[] { "workflow", "publish", "--help" });
@@ -227,6 +230,7 @@ public class ClientIT {
         checkCommandForHelp(new String[] { "workflow", "label", "--help" });
         checkCommandForHelp(new String[] { "workflow", "convert", "--help" });
         checkCommandForHelp(new String[] { "workflow", "convert", "cwl2json", "--help" });
+        checkCommandForHelp(new String[] { "workflow", "convert", "cwl2yaml", "--help" });
         checkCommandForHelp(new String[] { "workflow", "convert", "wd2json", "--help" });
         checkCommandForHelp(new String[] { "workflow", "convert", "entry2json", "--help" });
         checkCommandForHelp(new String[] { "workflow", "convert", "entry2tsv", "--help" });
@@ -235,8 +239,14 @@ public class ClientIT {
         checkCommandForHelp(new String[] { "workflow", "update_workflow", "--help" });
         checkCommandForHelp(new String[] { "workflow", "manual_publish", "--help" });
         checkCommandForHelp(new String[] { "workflow", "restub", "--help" });
-
+        checkCommandForHelp(new String[] { "workflow", "star", "--help" });
+        checkCommandForHelp(new String[] { "workflow", "test_parameter", "--help" });
+        checkCommandForHelp(new String[] { "workflow", "verify", "--help" });
         checkCommandForHelp(new String[] { "workflow" });
+
+        checkCommandForHelp(new String[] { "plugin", "list", "--help" });
+        checkCommandForHelp(new String[] { "plugin", "download", "--help" });
+        checkCommandForHelp(new String[] { "plugin" });
     }
 
     private void checkCommandForHelp(String[] argv) throws IOException {

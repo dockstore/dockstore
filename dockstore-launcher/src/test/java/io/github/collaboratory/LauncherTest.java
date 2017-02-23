@@ -104,4 +104,6 @@ public class LauncherTest {
 
         assertTrue(!stdout.toString().isEmpty());
     }
+
+
 }
