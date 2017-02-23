@@ -33,6 +33,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
+import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
@@ -45,6 +46,8 @@ public class LaunchTestIT {
 
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
+    @Rule
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog();
     @Rule
     public final ExpectedSystemExit exit = ExpectedSystemExit.none();
 
@@ -557,13 +560,10 @@ public class LaunchTestIT {
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
 
         exit.expectSystemExit();
-
+        exit.checkAssertionAfterwards(
+                () -> assertTrue("output should include an error message of invalid file", systemErrRule.getLog().contains("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.")));
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
-
-        assertTrue("output should include an error message of invalid file", systemOutRule.getLog()
-                .contains("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name."));
-
     }
 
     @Test
@@ -587,13 +587,10 @@ public class LaunchTestIT {
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
 
         exit.expectSystemExit();
-
+        exit.checkAssertionAfterwards(
+                () -> assertTrue("output should include an error message of invalid file", systemErrRule.getLog().contains("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.")));
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
-
-        assertTrue("output should include an error message of invalid file", systemOutRule.getLog()
-                .contains("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name."));
-
     }
 
     @Test
@@ -617,13 +614,10 @@ public class LaunchTestIT {
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
 
         exit.expectSystemExit();
-
+        exit.checkAssertionAfterwards(
+                () -> assertTrue("output should include an error message and exit", systemErrRule.getLog().contains("Required fields that are missing from WDL file : 'task'")));
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
-
-        assertTrue("output should include an error message and exit",
-                systemOutRule.getLog().contains("Required fields that are missing from WDL file : 'task'"));
-
     }
 
     @Test
@@ -647,13 +641,10 @@ public class LaunchTestIT {
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
 
         exit.expectSystemExit();
-
+        exit.checkAssertionAfterwards(
+                () -> assertTrue("output should include an error message and exit", systemErrRule.getLog().contains("Required fields that are missing from WDL file : 'command'")));
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
-
-        assertTrue("output should include an error message and exit",
-                systemOutRule.getLog().contains("Required fields that are missing from WDL file : 'command'"));
-
     }
 
     @Test
@@ -677,13 +668,10 @@ public class LaunchTestIT {
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
 
         exit.expectSystemExit();
-
+        exit.checkAssertionAfterwards(
+                () -> assertTrue("output should include an error message and exit", systemErrRule.getLog().contains("Required fields that are missing from WDL file : 'workflow' 'call'")));
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
-
-        assertTrue("output should include an error message and exit",
-                systemOutRule.getLog().contains("Required fields that are missing from WDL file : 'workflow' 'call'"));
-
     }
 
     @Test
@@ -707,13 +695,10 @@ public class LaunchTestIT {
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
 
         exit.expectSystemExit();
-
+        exit.checkAssertionAfterwards(
+                () -> assertTrue("output should include an error message and exit", systemErrRule.getLog().contains("Required fields that are missing from CWL file : 'inputs'")));
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
-
-        assertTrue("output should include an error message and exit",
-                systemOutRule.getLog().contains("Required fields that are missing from CWL file : 'inputs'"));
-
     }
 
 }
