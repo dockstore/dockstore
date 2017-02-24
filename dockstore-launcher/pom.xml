@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
-        <version>1.2-alpha.3-SNAPSHOT</version>
+        <version>1.2.0-alpha.3-SNAPSHOT</version>
     </parent>
 
     <artifactId>dockstore-launcher</artifactId>
@@ -33,7 +33,12 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.2-alpha.3-SNAPSHOT</version>
+            <version>1.2.0-alpha.3-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>io.dockstore</groupId>
+            <artifactId>dockstore-file-plugin-parent</artifactId>
+            <version>1.2.0-alpha.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>commons-cli</groupId>
@@ -44,14 +49,6 @@
             <groupId>com.googlecode.json-simple</groupId>
             <artifactId>json-simple</artifactId>
             <version>1.1.1</version>
-        </dependency>
-        <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-s3</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-httpclient</groupId>
@@ -110,17 +107,17 @@
             <groupId>io.cwl</groupId>
             <artifactId>cwlavro-generated</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro</artifactId>
+            <version>1.8.1</version>
+        </dependency>
 
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-vfs2</artifactId>
             <version>2.1</version>
         </dependency>
-        <dependency>
-            <groupId>org.sagebionetworks</groupId>
-            <artifactId>synapseJavaClient</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>commons-net</groupId>
             <artifactId>commons-net</artifactId>
@@ -134,6 +131,25 @@
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
             <version>20090211</version>
+        </dependency>
+        <dependency>
+            <groupId>ro.fortsoft.pf4j</groupId>
+            <artifactId>pf4j</artifactId>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/commons-beanutils/commons-beanutils -->
+        <dependency>
+            <groupId>commons-beanutils</groupId>
+            <artifactId>commons-beanutils</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.zafarkhaja</groupId>
+            <artifactId>java-semver</artifactId>
+            <version>0.9.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.stefanbirkner</groupId>
+            <artifactId>system-rules</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -203,6 +219,8 @@
                                 <usedDependency>commons-httpclient:commons-httpclient</usedDependency>
                                 <usedDependency>ch.qos.logback:logback-core</usedDependency>
                                 <usedDependency>ch.qos.logback:logback-classic</usedDependency>
+                                <usedDependency>commons-beanutils:commons-beanutils</usedDependency>
+                                <usedDependency>org.apache.avro:avro</usedDependency>
                             </usedDependencies>
                         </configuration>
                     </execution>

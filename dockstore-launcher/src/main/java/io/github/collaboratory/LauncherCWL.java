@@ -36,8 +36,6 @@ import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import com.amazonaws.auth.SignerFactory;
-import com.amazonaws.services.s3.internal.S3Signer;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects;
@@ -50,7 +48,6 @@ import io.cwl.avro.CommandOutputParameter;
 import io.cwl.avro.Workflow;
 import io.cwl.avro.WorkflowOutputParameter;
 import io.dockstore.common.FileProvisioning;
-import io.dockstore.common.FileProvisioning.PathInfo;
 import io.dockstore.common.Utilities;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -73,10 +70,6 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
  * @author tetron
  */
 public class LauncherCWL {
-
-    static {
-        SignerFactory.registerSigner("S3Signer", S3Signer.class);
-    }
 
     private static final Logger LOG = LoggerFactory.getLogger(LauncherCWL.class);
 
@@ -726,8 +719,7 @@ public class LauncherCWL {
         final Path targetFilePath = Paths.get(downloadDirFileObj.getAbsolutePath(), shortfileName);
 
         // expects URI in "path": "icgc:eef47481-670d-4139-ab5b-1dad808a92d9"
-        PathInfo pathInfo = new PathInfo(path);
-        fileProvisioning.provisionInputFile(path, targetFilePath, pathInfo);
+        fileProvisioning.provisionInputFile(path, targetFilePath);
         // now add this info to a hash so I can later reconstruct a docker -v command
         FileProvisioning.FileInfo info = new FileProvisioning.FileInfo();
         info.setLocalPath(targetFilePath.toFile().getAbsolutePath());

@@ -17,6 +17,7 @@
 package io.dockstore.client.cli;
 
 import java.io.IOException;
+import java.util.Objects;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Before;
@@ -48,10 +49,10 @@ public class UpgradeTestIT {
                 return "upgrade-unstable";
             }
         } else {    //current is not the latest stable version
-            if (upCommand.equals("stable")) {
+            if ("stable".equals(upCommand)) {
                 //upgrade to latest stable
                 return latestStable;
-            } else if (upCommand.equals("none")) {
+            } else if ("none".equals(upCommand)) {
                 if (current.equals(latestUnstable)) {
                     //current version is latest unstable version
                     return "upgrade-stable";
@@ -60,7 +61,7 @@ public class UpgradeTestIT {
                     // upgrade to latest stable version
                     return latestStable;
                 }
-            } else if (upCommand.equals("unstable")) {
+            } else if ("unstable".equals(upCommand)) {
                 if (current.equals(latestUnstable)) {
                     // current version is the latest unstable version
                     return "upgrade-stable";
@@ -80,7 +81,6 @@ public class UpgradeTestIT {
         this.objectMapper = mock(ObjectMapper.class);
         Client.setObjectMapper(objectMapper);
 
-        ObjectMapper localObjectMapper = new ObjectMapper();
 
         /**
          URL latest = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/latest");
@@ -108,7 +108,7 @@ public class UpgradeTestIT {
         String unstable = "0.4-beta.0";
         // assert that the value matches the mocking
         String desiredVersion = decideOutput("none", currentVersion, detectedVersion, unstable);
-        assert (desiredVersion.equals("0.4-beta.1"));
+        assert (Objects.equals(desiredVersion, "0.4-beta.1"));
     }
 
     @Test
@@ -119,7 +119,7 @@ public class UpgradeTestIT {
         String unstable = "0.4-beta.0";
         // assert that the value matches the mocking
         String optCommand = decideOutput("none", currentVersion, detectedVersion, unstable);
-        assert (optCommand.equals("upgrade-stable"));
+        assert (Objects.equals(optCommand, "upgrade-stable"));
     }
 
     @Test
@@ -131,7 +131,7 @@ public class UpgradeTestIT {
         String unstable = "0.4-beta.0";
         // assert that the value matches the mocking
         String optCommand = decideOutput("none", currentVersion, detectedVersion, unstable);
-        assert (optCommand.equals("upgrade-unstable"));
+        assert (Objects.equals(optCommand, "upgrade-unstable"));
     }
 
     @Test
@@ -142,7 +142,7 @@ public class UpgradeTestIT {
         String unstable = "0.4-beta.0";
         // assert that the value matches the mocking
         String desiredVersion = decideOutput("stable", currentVersion, detectedVersion, unstable);
-        assert (desiredVersion.equals("0.4-beta.1"));
+        assert (Objects.equals(desiredVersion, "0.4-beta.1"));
     }
 
     @Test
@@ -153,7 +153,7 @@ public class UpgradeTestIT {
         String unstable = "0.4-beta.0";
         // assert that the value matches the mocking
         String optCommand = decideOutput("stable", currentVersion, detectedVersion, unstable);
-        assert (optCommand.equals("upgrade-unstable"));
+        assert (Objects.equals(optCommand, "upgrade-unstable"));
     }
 
     @Test
@@ -164,7 +164,7 @@ public class UpgradeTestIT {
         String unstable = "0.4-beta.0";
         // assert that the value matches the mocking
         String desiredVersion = decideOutput("unstable", currentVersion, detectedVersion, unstable);
-        assert (desiredVersion.equals("0.4-beta.0"));
+        assert (Objects.equals(desiredVersion, "0.4-beta.0"));
     }
 
     @Test
@@ -175,7 +175,7 @@ public class UpgradeTestIT {
         String unstable = "0.4-beta.0";
         // assert that the value matches the mocking
         String optCommand = decideOutput("unstable", currentVersion, detectedVersion, unstable);
-        assert (optCommand.equals("upgrade-stable"));
+        assert (Objects.equals(optCommand, "upgrade-stable"));
     }
 }
 
