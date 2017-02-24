@@ -40,7 +40,7 @@ import ro.fortsoft.pf4j.util.NotFileFilter;
  */
 public class VersionAwarePluginManager extends DefaultPluginManager {
 
-    private static final Logger LOG = LoggerFactory.getLogger(DefaultPluginManager.class);
+    private static final Logger LOG = LoggerFactory.getLogger(VersionAwarePluginManager.class);
     // maps plugin id -> version, directory path
     private Map<String, Pair<Version, File>> pluginVersionMap = new HashMap<>();
 
@@ -54,6 +54,7 @@ public class VersionAwarePluginManager extends DefaultPluginManager {
     }
 
     void cleanupOldVersions() {
+        this.loadPlugins();
         // check for no plugins
         AndFileFilter pluginsFilter = new AndFileFilter(new DirectoryFileFilter());
         pluginsFilter.addFileFilter(new NotFileFilter(createHiddenPluginFilter()));
