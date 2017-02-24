@@ -562,6 +562,7 @@ public abstract class AbstractEntryClient {
         } else {
             final String cwlPath = reqVal(args, "--cwl");
             final ImmutablePair<String, String> output = cwlUtil.parseCWL(cwlPath);
+            validateCWL(cwlPath);
 
             try {
                 final Map<String, Object> runJson = cwlUtil.extractRunJson(output.getLeft());
