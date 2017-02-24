@@ -39,7 +39,7 @@ The CLI has the following dependencies
 
 To install CWL tool:
 
-    pip install --user cwl-runner cwltool==1.0.20161114152756 schema-salad==1.18.20161005190847 avro==1.8.1
+    pip install --user cwl-runner cwltool==1.0.20170217172322 schema-salad==2.2.20170222151604 avro==1.8.1
 
 You may need other pip installable tools like `typing` or `setuptools`.  This depends on your python environment.
 

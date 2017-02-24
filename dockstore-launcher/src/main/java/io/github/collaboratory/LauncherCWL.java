@@ -183,7 +183,7 @@ public class LauncherCWL {
         // run command
         System.out.println("Calling out to cwltool to run your " + (cwlObject instanceof Workflow ? "workflow" : "tool"));
         Map<String, Object> outputObj = runCWLCommand(imageDescriptorPath, newJsonPath, globalWorkingDir + "/outputs/",
-                globalWorkingDir + "/working/", stdoutStream, stderrStream);
+                globalWorkingDir + "/working/", globalWorkingDir + "/tmp/", stdoutStream, stderrStream);
         System.out.println();
 
         // push output files
@@ -425,16 +425,15 @@ public class LauncherCWL {
         globalWorkingDir = workingDir + "/launcher-" + uuid;
         System.out.println("Creating directories for run of Dockstore launcher at: " + globalWorkingDir);
         Utilities.executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid);
-        Utilities.executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid + "/configs");
         Utilities.executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid + "/working");
         Utilities.executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid + "/inputs");
-        Utilities.executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid + "/logs");
         Utilities.executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid + "/outputs");
+        Utilities.executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid + "/tmp");
 
         return new File(workingDir + "/launcher-" + uuid).getAbsolutePath();
     }
 
-    private Map<String, Object> runCWLCommand(String cwlFile, String jsonSettings, String outputDir, String workingDir,
+    private Map<String, Object> runCWLCommand(String cwlFile, String jsonSettings, String outputDir, String workingDir, String tmpDir,
             OutputStream localStdoutStream, OutputStream localStderrStream) {
         // Get extras from config file
         List<String> extraFlags = (List)config.getList("cwltool-extra-parameters");
@@ -449,7 +448,7 @@ public class LauncherCWL {
 
         // Create cwltool command
         List<String> command = new ArrayList<>(
-                Arrays.asList("cwltool", "--enable-dev", "--non-strict", "--outdir", outputDir, "--tmpdir-prefix", workingDir, cwlFile,
+                Arrays.asList("cwltool", "--enable-dev", "--non-strict", "--outdir", outputDir, "--tmpdir-prefix", tmpDir, "--tmp-outdir-prefix", workingDir, cwlFile,
                         jsonSettings));
         command.addAll(1, extraFlags);
 

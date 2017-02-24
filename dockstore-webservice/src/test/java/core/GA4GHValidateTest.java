@@ -25,10 +25,11 @@ import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit.DropwizardAppRule;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
- * Not really a test, this is used to generate a yaml representation of our webservice for future reference.
+ * This is used to run the Python GA4GH tool registry validator to ensure that our implementation is compliant.
  *
  * @author dyuen
  */
