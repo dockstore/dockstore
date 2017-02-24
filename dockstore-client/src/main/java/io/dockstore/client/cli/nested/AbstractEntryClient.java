@@ -16,30 +16,9 @@
 
 package io.dockstore.client.cli.nested;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
@@ -74,6 +53,28 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static io.dockstore.client.cli.ArgumentUtility.CONVERT;
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
@@ -613,6 +614,16 @@ public abstract class AbstractEntryClient {
     }
 
     /**
+     * this function will validate CWL file
+     * using this command: cwltool --non-strict --validate <file_path>
+     * @param cwlFilePath
+     */
+    private void validateCWL(String cwlFilePath) {
+        final String[] s = { "cwltool", "--non-strict", "--validate", cwlFilePath };
+        io.cwl.avro.Utilities.executeCommand(Joiner.on(" ").join(Arrays.asList(s)), false,  Optional.absent(), Optional.absent());
+    }
+
+    /**
      * this function will check if the content of the file is CWL or not
      * it will get the content of the file and try to find/match the required fields
      * Required fields in CWL: 'inputs' 'outputs' 'class' (CommandLineTool: 'baseCommand' , Workflow:'steps'
@@ -724,6 +735,9 @@ public abstract class AbstractEntryClient {
      * errormsg and exit if >=1 required field not found in the file
      */
     public Boolean checkWDL(File content) {
+
+
+
         /* WDL: check for 'task' (must be >=1) ,'call', 'command', 'output' and 'workflow' */
         Pattern taskPattern = Pattern.compile("(.*)(task)(\\s)(.*)(\\{)");
         Pattern wfPattern = Pattern.compile("(.*)(workflow)(\\s)(.*)(\\{)");
@@ -893,6 +907,8 @@ public abstract class AbstractEntryClient {
 
         if (ext.equals(Type.CWL)) {
             if (content.equals(Type.CWL)) {
+                validateCWL(localFilePath);
+
                 try {
                     launchCwl(localFilePath, argsList, true);
                 } catch (ApiException e) {
