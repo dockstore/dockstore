@@ -48,8 +48,6 @@ public class LaunchTestIT {
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
     @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog();
-    @Rule
     public final ExpectedSystemExit exit = ExpectedSystemExit.none();
     @Rule
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog();
