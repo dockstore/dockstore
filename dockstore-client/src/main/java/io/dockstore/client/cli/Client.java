@@ -501,12 +501,12 @@ public class Client {
                         com.google.common.base.Optional.absent());
         final String schemaSaladVersion = pair2.getKey().split(" ")[1].trim();
 
-        final String expectedCwltoolVersion = "1.0.20161114152756";
+        final String expectedCwltoolVersion = "1.0.20170217172322";
         if (!cwlToolVersion.equals(expectedCwltoolVersion)) {
             errorMessage("cwltool version is " + cwlToolVersion + " , Dockstore is tested with " + expectedCwltoolVersion
                     + "\nOverride and run with `--script`", COMMAND_ERROR);
         }
-        final String expectedSchemaSaladVersion = "1.18.20161005190847";
+        final String expectedSchemaSaladVersion = "2.2.20170222151604";
         if (!schemaSaladVersion.equals(expectedSchemaSaladVersion)) {
             errorMessage("schema-salad version is " + cwlToolVersion + " , Dockstore is tested with " + expectedSchemaSaladVersion
                     + "\nOverride and run with `--script`", COMMAND_ERROR);
@@ -646,6 +646,7 @@ public class Client {
         out("Modes:");
         out("   tool                Puts dockstore into tool mode.");
         out("   workflow            Puts dockstore into workflow mode.");
+        out("   plugin              Configure and debug plugins.");
         out("");
         printLineBreak();
         out("");
@@ -714,6 +715,8 @@ public class Client {
                         targetClient = getToolClient();
                     } else if ("workflow".equals(mode)) {
                         targetClient = getWorkflowClient();
+                    } else if ("plugin".equals(mode)) {
+                        handled = PluginClient.handleCommand(args, Utilities.parseConfig(configFile));
                     }
 
                     if (targetClient != null) {
@@ -724,7 +727,6 @@ public class Client {
                             handled = targetClient.processEntryCommands(args, cmd);
                         } else {
                             targetClient.printGeneralHelp();
-                            return;
                         }
                     } else {
                         // mode is cmd if it is not workflow or tool
@@ -781,10 +783,7 @@ public class Client {
     }
 
     private void setupClientEnvironment(List<String> args) throws ConfigurationException {
-        String userHome = System.getProperty("user.home");
-        this.setConfigFile(optVal(args, "--config", userHome + File.separator + ".dockstore" + File.separator + "config"));
-
-        INIConfiguration config = Utilities.parseConfig(configFile);
+        INIConfiguration config = getIniConfiguration(args);
 
         // pull out the variables from the config
         String token = config.getString("token", "");
@@ -810,6 +809,13 @@ public class Client {
         this.workflowClient = new WorkflowClient(new WorkflowsApi(defaultApiClient), usersApi, this, isAdmin);
 
         defaultApiClient.setDebugging(DEBUG.get());
+    }
+
+    private INIConfiguration getIniConfiguration(List<String> args) {
+        String userHome = System.getProperty("user.home");
+        this.setConfigFile(optVal(args, "--config", userHome + File.separator + ".dockstore" + File.separator + "config"));
+
+        return Utilities.parseConfig(configFile);
     }
 
     /**

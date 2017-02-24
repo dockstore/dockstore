@@ -104,7 +104,6 @@ public class WDLFileProvisioning {
      * @return Mapping of fully qualified name to new input file string or list of new input file strings
      */
     private Map<String, Object> doProcessFile(String key, String path, String uniqueHash) {
-        FileProvisioning.PathInfo pathInfo = new FileProvisioning.PathInfo(path);
         Map<String, Object> jsonEntry = new HashMap<>();
 
         LOG.info("PATH TO DOWNLOAD FROM: {} FOR {}", path, key);
@@ -126,7 +125,7 @@ public class WDLFileProvisioning {
             // If directory we will create a copy of it, but not of the content
             Utilities.executeCommand("mkdir -p " + targetFilePath.toString());
         } else {
-            fileProvisioning.provisionInputFile(path, targetFilePath, pathInfo);
+            fileProvisioning.provisionInputFile(path, targetFilePath);
         }
 
         jsonEntry.put(key, targetFilePath);
