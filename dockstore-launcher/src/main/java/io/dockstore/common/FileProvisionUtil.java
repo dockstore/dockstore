@@ -39,7 +39,6 @@ import org.apache.commons.vfs2.VFS;
 import org.apache.commons.vfs2.provider.ftp.FtpFileSystemConfigBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ro.fortsoft.pf4j.DefaultPluginManager;
 import ro.fortsoft.pf4j.PluginManager;
 
 /**
@@ -114,6 +113,10 @@ public final class FileProvisionUtil {
 
     public static PluginManager getPluginManager(INIConfiguration config) {
         String filePluginLocation = getFilePluginLocation(config);
+        // need to systematically clean up old versions of plugins
+        VersionAwarePluginManager versionCleaner = new VersionAwarePluginManager(new File(filePluginLocation));
+        versionCleaner.cleanupOldVersions();
+        // start a regular plugin manager to interact with plugins
         PluginManager pluginManager = new VersionAwarePluginManager(new File(filePluginLocation));
         pluginManager.loadPlugins();
         pluginManager.startPlugins();

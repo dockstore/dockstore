@@ -38,7 +38,6 @@ import org.apache.commons.vfs2.FileSystemManager;
 import org.apache.commons.vfs2.VFS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ro.fortsoft.pf4j.DefaultPluginManager;
 import ro.fortsoft.pf4j.PluginManager;
 import ro.fortsoft.pf4j.PluginWrapper;
 
@@ -251,16 +250,10 @@ public class FileProvisioning {
 
     public static void main(String[] args) {
         String userHome = System.getProperty("user.home");
-        String pluginPath = userHome + File.separator + ".dockstore" + File.separator + "plugins";
+        PluginManager manager = FileProvisionUtil
+                .getPluginManager(Utilities.parseConfig(userHome + File.separator + ".dockstore" + File.separator + "config"));
 
-        VersionAwarePluginManager versionCleaner = new VersionAwarePluginManager(new File(pluginPath));
-        versionCleaner.cleanupOldVersions();
-
-        PluginManager pluginManager = new DefaultPluginManager(new File(pluginPath));
-        pluginManager.loadPlugins();
-        pluginManager.startPlugins();
-
-        List<ProvisionInterface> greetings = pluginManager.getExtensions(ProvisionInterface.class);
+        List<ProvisionInterface> greetings = manager.getExtensions(ProvisionInterface.class);
         for (ProvisionInterface provision : greetings) {
             System.out.println("Plugin: " + provision.getClass().getName());
             System.out.println("\tSchemes handled: " + provision.getClass().getName());
