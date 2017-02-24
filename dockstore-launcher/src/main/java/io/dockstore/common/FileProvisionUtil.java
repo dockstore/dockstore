@@ -114,7 +114,7 @@ public final class FileProvisionUtil {
 
     public static PluginManager getPluginManager(INIConfiguration config) {
         String filePluginLocation = getFilePluginLocation(config);
-        PluginManager pluginManager = new DefaultPluginManager(new File(filePluginLocation));
+        PluginManager pluginManager = new VersionAwarePluginManager(new File(filePluginLocation));
         pluginManager.loadPlugins();
         pluginManager.startPlugins();
         return pluginManager;

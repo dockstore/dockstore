@@ -253,6 +253,9 @@ public class FileProvisioning {
         String userHome = System.getProperty("user.home");
         String pluginPath = userHome + File.separator + ".dockstore" + File.separator + "plugins";
 
+        VersionAwarePluginManager versionCleaner = new VersionAwarePluginManager(new File(pluginPath));
+        versionCleaner.cleanupOldVersions();
+
         PluginManager pluginManager = new DefaultPluginManager(new File(pluginPath));
         pluginManager.loadPlugins();
         pluginManager.startPlugins();
