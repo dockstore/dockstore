@@ -1310,6 +1310,7 @@ public abstract class AbstractEntryClient {
                 Map<String, String> outputJson = gson.fromJson(bracketContents, HashMap.class);
                 System.out.println("Provisioning your output files to their final destinations");
                 final List<String> outputFiles = bridge.getOutputFiles(tmp);
+                FileProvisioning fileProvisioning = new FileProvisioning(this.getConfigFile());
                 for (String outFile : outputFiles) {
                     // find file path from output
                     final File resultFile = new File(outputJson.get(outFile));
@@ -1318,9 +1319,9 @@ public abstract class AbstractEntryClient {
                     new1.setUrl(wdlOutputTarget + "/" + outFile);
                     new1.setLocalPath(resultFile.getAbsolutePath());
                     System.out.println("Uploading: " + outFile + " from " + resultFile + " to : " + new1.getUrl());
-                    FileProvisioning fileProvisioning = new FileProvisioning(this.getConfigFile());
-                    fileProvisioning.provisionOutputFile(resultFile.getAbsolutePath(), new1.getUrl());
+                    fileProvisioning.registerOutputFile(resultFile.getAbsolutePath(), new1);
                 }
+                fileProvisioning.uploadFiles();
             } else {
                 System.out.println("Output files left in place");
             }
