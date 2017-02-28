@@ -138,9 +138,9 @@ public final class FileProvisionUtil {
         // download versions info filePluginLocation
         String template = "https://artifacts.oicr.on.ca/artifactory/collab-release/io/dockstore/%2$s/%1$s/%2$s-%1$s.zip";
         try {
-            downloadPlugin(filePluginLocation, template, "0.0.2", "dockstore-file-icgc-storage-client-plugin");
+            downloadPlugin(filePluginLocation, template, "0.0.3", "dockstore-file-icgc-storage-client-plugin");
             downloadPlugin(filePluginLocation, template, "0.0.3", "dockstore-file-s3-plugin");
-            downloadPlugin(filePluginLocation, template, "0.0.2", "dockstore-file-synapse-plugin");
+            downloadPlugin(filePluginLocation, template, "0.0.4", "dockstore-file-synapse-plugin");
         } catch (URISyntaxException | IOException e) {
             throw new RuntimeException(e);
         }
