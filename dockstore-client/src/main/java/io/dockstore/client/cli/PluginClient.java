@@ -67,7 +67,7 @@ public final class PluginClient {
                             .append(plugin.getPlugin().getWrapper().getPluginPath()).append("(.zip)");
                     builder.append("\t");
                     List<ProvisionInterface> extensions = pluginManager.getExtensions(ProvisionInterface.class, plugin.getPluginId());
-                    extensions.forEach(extension -> builder.append(Joiner.on(',').appendTo(builder, extension.schemesHandled())));
+                    extensions.forEach(extension -> Joiner.on(',').appendTo(builder, extension.schemesHandled()));
                     builder.append("\n");
                 }
                 out(TabExpansionUtil.aligned(builder.toString()));
