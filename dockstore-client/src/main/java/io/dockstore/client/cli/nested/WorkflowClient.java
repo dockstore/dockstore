@@ -22,12 +22,21 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
 
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
+import com.beust.jcommander.Parameters;
 import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
 import com.google.common.io.Files;
+import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
+import io.cwl.avro.CWL;
+import io.dockstore.client.Bridge;
 import io.dockstore.client.cli.Client;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
@@ -42,6 +51,9 @@ import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
@@ -61,6 +73,8 @@ import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
 import static io.dockstore.client.cli.ArgumentUtility.printLineBreak;
 import static io.dockstore.client.cli.ArgumentUtility.reqVal;
+import static io.dockstore.client.cli.Client.API_ERROR;
+import static io.dockstore.client.cli.Client.COMMAND_ERROR;
 
 /**
  * This stub will eventually implement all operations on the CLI that are
@@ -132,11 +146,136 @@ public class WorkflowClient extends AbstractEntryClient {
     }
 
     @Override
+    public void handleEntry2json(List<String> args) throws ApiException, IOException {
+        String [] argv = args.toArray(new String[args.size()]);
+        CommandEntry2json commandEntry2json = new CommandEntry2json();
+        JCommander jc = new JCommander(commandEntry2json);
+        jc.setProgramName("dockstore workflow convert entry2json");
+        try {
+            jc.parse(argv);
+            if (commandEntry2json.help) {
+                printHelpHeader();
+                out("Description:");
+                out("  Spit out a json run file for a given cwl document.");
+                out("");
+                jc.usage();
+                printHelpFooter();
+            } else {
+                final String runString = runString(commandEntry2json.entry, true);
+                out(runString);
+            }
+        } catch (Exception e) {
+            exceptionMessage(e, e.getMessage(), COMMAND_ERROR);
+            printHelpHeader();
+            out("Description:");
+            out("  Spit out a json run file for a given cwl document.");
+            jc.usage();
+            printHelpFooter();
+        }
+    }
+
+    @Override
+    public void handleEntry2tsv(List<String> args) throws ApiException, IOException {
+        String [] argv = args.toArray(new String[args.size()]);
+        CommandEntry2tsv commandEntry2tsv = new CommandEntry2tsv();
+        JCommander jc = new JCommander(commandEntry2tsv);
+        jc.setProgramName("dockstore workflow convert entry2tsv");
+        try {
+            jc.parse(argv);
+            if (commandEntry2tsv.help) {
+                printHelpHeader();
+                out("Description:");
+                out("  Spit out a tsv run file for a given cwl document.");
+                out("");
+                jc.usage();
+                printHelpFooter();
+            } else {
+                final String runString = runString(commandEntry2tsv.entry, false);
+                out(runString);
+            }
+        } catch (Exception e) {
+            exceptionMessage(e, e.getMessage(), COMMAND_ERROR);
+            printHelpHeader();
+            out("Description:");
+            out("  Spit out a tsv run file for a given cwl document.");
+            jc.usage();
+            printHelpFooter();
+        }
+    }
+
+    public String runString(String entry, final boolean json) throws ApiException, IOException {
+        final File tempDir = Files.createTempDir();
+        Workflow workflow = workflowsApi.getPublishedWorkflowByPath(entry);
+        String descriptor = workflow.getDescriptorType();
+        final SourceFile descriptorFromServer = getDescriptorFromServer(entry, descriptor);
+        final File tempDescriptor = File.createTempFile("temp", "." + descriptor, tempDir);
+        Files.write(descriptorFromServer.getContent(), tempDescriptor, StandardCharsets.UTF_8);
+        // Download imported descriptors (secondary descriptors)
+        downloadDescriptors(entry, descriptor, tempDir);
+        if (descriptor.equals(CWL_STRING)) {
+            // need to suppress output
+            final ImmutablePair<String, String> output = cwlUtil.parseCWL(tempDescriptor.getAbsolutePath());
+            final Map<String, Object> stringObjectMap = cwlUtil.extractRunJson(output.getLeft());
+            if (json) {
+                try {
+                    final Gson gson = CWL.getTypeSafeCWLToolDocument();
+                    return gson.toJson(stringObjectMap);
+                } catch (CWL.GsonBuildException ex) {
+                    exceptionMessage(ex, "There was an error creating the CWL GSON instance.", API_ERROR);
+                } catch (JsonParseException ex) {
+                    exceptionMessage(ex, "The JSON file provided is invalid.", API_ERROR);
+                }
+            } else {
+                // re-arrange as rows and columns
+                final Map<String, String> typeMap = cwlUtil.extractCWLTypes(output.getLeft());
+                final List<String> headers = new ArrayList<>();
+                final List<String> types = new ArrayList<>();
+                final List<String> entries = new ArrayList<>();
+                for (final Map.Entry<String, Object> objectEntry : stringObjectMap.entrySet()) {
+                    headers.add(objectEntry.getKey());
+                    types.add(typeMap.get(objectEntry.getKey()));
+                    Object value = objectEntry.getValue();
+                    if (value instanceof Map) {
+                        Map map = (Map)value;
+                        if (map.containsKey("class") && "File".equals(map.get("class"))) {
+                            value = map.get("path");
+                        }
+
+                    }
+                    entries.add(value.toString());
+                }
+                final StringBuffer buffer = new StringBuffer();
+                try (CSVPrinter printer = new CSVPrinter(buffer, CSVFormat.DEFAULT)) {
+                    printer.printRecord(headers);
+                    printer.printComment("do not edit the following row, describes CWL types");
+                    printer.printRecord(types);
+                    printer.printComment("duplicate the following row and fill in the values for each run you wish to set parameters for");
+                    printer.printRecord(entries);
+                }
+                return buffer.toString();
+            }
+        } else if (descriptor.equals(WDL_STRING)) {
+            File tmp;
+            if (json) {
+
+                tmp = resolveImportsForDescriptor(tempDir, tempDescriptor);
+
+                final List<String> wdlDocuments = Lists.newArrayList(tmp.getAbsolutePath());
+                final scala.collection.immutable.List<String> wdlList = scala.collection.JavaConversions.asScalaBuffer(wdlDocuments)
+                        .toList();
+                Bridge bridge = new Bridge();
+                return bridge.inputs(wdlList);
+            }
+        }
+        return null;
+    }
+
+    @Override
     public void handleInfo(String entryPath) {
         try {
             Workflow workflow = workflowsApi.getPublishedWorkflowByPath(entryPath);
             if (workflow == null || !workflow.getIsPublished()) {
-                errorMessage("This workflow is not published.", Client.COMMAND_ERROR);
+                errorMessage("This workflow is not published.", COMMAND_ERROR);
             } else {
                 Date dateUploaded = workflow.getLastUpdated();
 
@@ -258,7 +397,7 @@ public class WorkflowClient extends AbstractEntryClient {
                         workflowsApi.refresh(newWorkflow.getId());
                         publish(true, newWorkflow.getPath());
                     } else {
-                        errorMessage("Unable to publish " + newName, Client.COMMAND_ERROR);
+                        errorMessage("Unable to publish " + newName, COMMAND_ERROR);
                     }
                 } catch (ApiException ex) {
                     exceptionMessage(ex, "Unable to publish " + newName, Client.API_ERROR);
@@ -366,7 +505,7 @@ public class WorkflowClient extends AbstractEntryClient {
             if (workflow != null) {
                 out("Successfully " + action + "ed  " + entry);
             } else {
-                errorMessage("Unable to " + action + " workflow " + entry, Client.COMMAND_ERROR);
+                errorMessage("Unable to " + action + " workflow " + entry, COMMAND_ERROR);
             }
         } catch (ApiException ex) {
             exceptionMessage(ex, "Unable to " + action + " workflow " + entry, Client.API_ERROR);
@@ -488,7 +627,7 @@ public class WorkflowClient extends AbstractEntryClient {
                 if (workflow != null) {
                     workflow = workflowsApi.refresh(workflow.getId());
                 } else {
-                    errorMessage("Unable to register " + path, Client.COMMAND_ERROR);
+                    errorMessage("Unable to register " + path, COMMAND_ERROR);
                 }
             } catch (ApiException ex) {
                 exceptionMessage(ex, "Error when trying to register " + path, Client.API_ERROR);
@@ -854,6 +993,23 @@ public class WorkflowClient extends AbstractEntryClient {
             }
         }
         return result;
+    }
+
+    @Parameters(separators = "=", commandDescription = "Spit out a json run file for a given entry")
+    private static class CommandEntry2json {
+        @Parameter(names = "--entry", description = "Complete workflow path in the Dockstore (ex. NCI-GDC/gdc-dnaseq-cwl/GDC_DNASeq:master)", required = true)
+        private String entry;
+        @Parameter(names = "--help", description = "Prints help for entry2json command", help = true)
+        private boolean help = false;
+    }
+
+
+    @Parameters(separators = "=", commandDescription = "Spit out a tsv run file for a given entry")
+    private static class CommandEntry2tsv {
+        @Parameter(names = "--entry", description = "Complete workflow path in the Dockstore (ex. NCI-GDC/gdc-dnaseq-cwl/GDC_DNASeq:master)", required = true)
+        private String entry;
+        @Parameter(names = "--help", description = "Prints help for entry2json command", help = true)
+        private boolean help = false;
     }
 
 }

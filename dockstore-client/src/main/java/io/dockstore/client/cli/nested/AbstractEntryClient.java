@@ -114,7 +114,7 @@ public abstract class AbstractEntryClient {
     public static final String CROMWELL_LOCATION = "https://github.com/broadinstitute/cromwell/releases/download/0.21/cromwell-0.21.jar";
     private static final Logger LOG = LoggerFactory.getLogger(AbstractEntryClient.class);
     public boolean isAdmin = false;
-    private final CWL cwlUtil = new CWL();
+    final CWL cwlUtil = new CWL();
 
     public enum Type {
         CWL("cwl"), WDL("wdl"), NONE("none");
@@ -594,7 +594,7 @@ public abstract class AbstractEntryClient {
         }
     }
 
-    private void handleEntry2json(List<String> args) throws ApiException, IOException {
+    public void handleEntry2json(List<String> args) throws ApiException, IOException {
         if (args.isEmpty() || containsHelpRequest(args)) {
             entry2jsonHelp();
         } else {
@@ -603,7 +603,7 @@ public abstract class AbstractEntryClient {
         }
     }
 
-    private void handleEntry2tsv(List<String> args) throws ApiException, IOException {
+    public void handleEntry2tsv(List<String> args) throws ApiException, IOException {
         if (args.isEmpty() || containsHelpRequest(args)) {
             entry2tsvHelp();
         } else {
@@ -1343,7 +1343,7 @@ public abstract class AbstractEntryClient {
      * @return
      * @throws IOException
      */
-    private File resolveImportsForDescriptor(File tempDir, File tempDescriptor) throws IOException {
+    File resolveImportsForDescriptor(File tempDir, File tempDescriptor) throws IOException {
         File tmp;
         Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"(.*)");
         File file = new File(tempDescriptor.getAbsolutePath());
