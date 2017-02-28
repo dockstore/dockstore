@@ -377,12 +377,7 @@ public class GeneralWorkflowET {
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry",
                 "DockstoreTestUser2/hello-dockstore-workflow", "--script" });
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "convert", "entry2json",
-                "--entry", "DockstoreTestUser2/hello-dockstore-workflow:testBoth", "--descriptor", "cwl", "--script" });
-
-        systemExit.expectSystemExitWithStatus(Client.API_ERROR);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "convert", "entry2json",
-                "--entry", "DockstoreTestUser2/hello-dockstore-workflow:testCwl", "--descriptor", "cwl", "--script" });
-
+                "--entry", "DockstoreTestUser2/hello-dockstore-workflow:testBoth", "--script" });
     }
 
     /**
@@ -402,7 +397,7 @@ public class GeneralWorkflowET {
                 "dockstore_testuser2/dockstore-workflow", "--script" });
 
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "convert", "entry2json",
-                "--entry", "dockstore_testuser2/dockstore-workflow:wdl_import", "--descriptor", "wdl", "--script" });
+                "--entry", "dockstore_testuser2/dockstore-workflow:wdl_import", "--script" });
 
     }
 
