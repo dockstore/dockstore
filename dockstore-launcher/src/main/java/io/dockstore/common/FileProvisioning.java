@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -244,7 +245,7 @@ public class FileProvisioning {
         long inputSize = sourceFile.length();
 
         if (provisionInterface != null) {
-            provisionInterface.uploadTo(destPath, Paths.get(srcPath), metadata);
+            provisionInterface.uploadTo(destPath, Paths.get(srcPath), Optional.ofNullable(metadata));
         } else {
             try {
                 FileSystemManager fsManager;
@@ -282,7 +283,7 @@ public class FileProvisioning {
         for (Map.Entry<ProvisionInterface, Collection<Pair<String, FileInfo>>> entry : provisionInterfaceCollectionMap.entrySet()) {
             ProvisionInterface pInterface = entry.getKey();
             Pair<String, FileInfo>[] pairs = entry.getValue().toArray(new Pair[entry.getValue().size()]);
-            List<String> metadataList = Stream.of(pairs).map(pair -> pair.getValue().getMetadata()).collect(Collectors.toList());
+            List<Optional<String>> metadataList = Stream.of(pairs).map(pair -> Optional.ofNullable(pair.getValue().getMetadata())).collect(Collectors.toList());
             List<Path> srcList = Stream.of(pairs).map(pair -> Paths.get(pair.getKey())).collect(Collectors.toList());
             List<String> destList = Stream.of(pairs).map(pair -> pair.getValue().getUrl()).collect(Collectors.toList());
 

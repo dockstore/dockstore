@@ -18,6 +18,7 @@ package io.dockstore.provision;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import ro.fortsoft.pf4j.ExtensionPoint;
@@ -50,7 +51,7 @@ public interface ProvisionInterface extends ExtensionPoint {
      * @param metadata optional metadata describing the uploaded file that can be understood by the provisioning plugin
      * @return true on success
      */
-    boolean uploadTo(String destPath, Path sourceFile, String metadata);
+    boolean uploadTo(String destPath, Path sourceFile, Optional<String> metadata);
 
     /**
      * Optional method that can be overridden.
@@ -60,7 +61,7 @@ public interface ProvisionInterface extends ExtensionPoint {
      * @param metadata an array of associated metadata
      * @return
      */
-    default boolean prepareFileSet(List<String> destPath, List<Path> sourceFile, List<String> metadata) {
+    default boolean prepareFileSet(List<String> destPath, List<Path> sourceFile, List<Optional<String>> metadata) {
         return true;
     }
 
@@ -72,7 +73,7 @@ public interface ProvisionInterface extends ExtensionPoint {
      * @param metadata an array of associated metadata
      * @return
      */
-    default boolean finalizeFileSet(List<String> destPath, List<Path> sourceFile, List<String> metadata) {
+    default boolean finalizeFileSet(List<String> destPath, List<Path> sourceFile, List<Optional<String>> metadata) {
         return true;
     }
 

@@ -49,6 +49,17 @@
             <artifactId>dockstore-launcher</artifactId>
             <version>1.2.0-alpha.3-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>io.dockstore</groupId>
+            <artifactId>dockstore-file-plugin-parent</artifactId>
+            <version>1.2.0-alpha.3-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro</artifactId>
+            <version>1.8.1</version>
+        </dependency>
+
 
         <dependency>
             <groupId>io.dropwizard</groupId>

@@ -302,8 +302,10 @@ public class LauncherCWL {
         FileProvisioning.FileInfo new1 = new FileProvisioning.FileInfo();
         new1.setUrl(path);
         new1.setLocalPath(uuidPath);
-        byte[] metadatas = Base64.getDecoder().decode((String)param.get("metadata"));
-        new1.setMetadata(new String(metadatas));
+        if (param.containsKey("metadata")) {
+            byte[] metadatas = Base64.getDecoder().decode((String)param.get("metadata"));
+            new1.setMetadata(new String(metadatas, StandardCharsets.UTF_8));
+        }
         fileMap.putIfAbsent(cwlID, new ArrayList<>());
         fileMap.get(cwlID).add(new1);
 
