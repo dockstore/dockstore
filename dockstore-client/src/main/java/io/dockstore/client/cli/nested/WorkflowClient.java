@@ -53,6 +53,7 @@ import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 
@@ -75,6 +76,7 @@ import static io.dockstore.client.cli.ArgumentUtility.printLineBreak;
 import static io.dockstore.client.cli.ArgumentUtility.reqVal;
 import static io.dockstore.client.cli.Client.API_ERROR;
 import static io.dockstore.client.cli.Client.COMMAND_ERROR;
+import static io.dockstore.client.cli.JCommanderUtility.printJCommanderHelp;
 
 /**
  * This stub will eventually implement all operations on the CLI that are
@@ -94,6 +96,86 @@ public class WorkflowClient extends AbstractEntryClient {
         this.usersApi = usersApi;
         this.client = client;
         this.isAdmin = isAdmin;
+    }
+
+    private static void printWorkflowList(List<Workflow> workflows) {
+        int[] maxWidths = columnWidthsWorkflow(workflows);
+
+        int nameWidth = maxWidths[0] + Client.PADDING;
+        int descWidth = maxWidths[1] + Client.PADDING;
+        int gitWidth = maxWidths[2] + Client.PADDING;
+        String format = "%-" + nameWidth + "s%-" + descWidth + "s%-" + gitWidth + "s%-16s";
+        out(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "On Dockstore?");
+
+        for (Workflow workflow : workflows) {
+            String gitUrl = "";
+
+            if (workflow.getGitUrl() != null && !workflow.getGitUrl().isEmpty()) {
+                gitUrl = workflow.getGitUrl();
+            }
+
+            String description = getCleanedDescription(workflow.getDescription());
+
+            out(format, workflow.getPath(), description, gitUrl, boolWord(workflow.getIsPublished()));
+        }
+    }
+
+    private static void manualPublishHelp() {
+        printHelpHeader();
+        out("Usage: dockstore workflow manual_publish --help");
+        out("       dockstore workflow manual_publish [parameters]");
+        out("");
+        out("Description:");
+        out("  Manually register an workflow in the dockstore. If this is successful and the workflow is valid, then publish.");
+        out("");
+        out("Required parameters:");
+        out("  --repository <repository>                            Name for the git repository");
+        out("  --organization <organization>                        Organization for the git repo");
+        out("  --git-version-control <git version control>          Either github, gitlab, or bitbucket");
+        out("");
+        out("Optional parameters:");
+        out("  --workflow-path <workflow-path>                      Path for the descriptor file, defaults to /Dockstore.cwl");
+        out("  --workflow-name <workflow-name>                      Workflow name, defaults to null");
+        out("  --descriptor-type <workflow-name>                    Descriptor type, defaults to cwl");
+
+        printHelpFooter();
+    }
+
+    private static void updateWorkflowHelp() {
+        printHelpHeader();
+        out("Usage: dockstore workflow " + UPDATE_WORKFLOW + " --help");
+        out("       dockstore workflow " + UPDATE_WORKFLOW + " [parameters]");
+        out("");
+        out("Description:");
+        out("  Update certain fields for a given workflow.");
+        out("");
+        out("Required Parameters:");
+        out("  --entry <entry>                                          Complete workflow path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
+        out("");
+        out("Optional Parameters");
+        out("  --workflow-name <workflow-name>                          Name for the given workflow");
+        out("  --descriptor-type <descriptor-type>                      Descriptor type of the given workflow.  Can only be altered if workflow is a STUB.");
+        out("  --workflow-path <workflow-path>                          Path to default workflow descriptor location");
+        out("  --default-version <default-version>                      Default branch name");
+        printHelpFooter();
+    }
+
+    private static void versionTagHelp() {
+        printHelpHeader();
+        out("Usage: dockstore workflow version_tag --help");
+        out("       dockstore workflow version_tag [parameters]");
+        out("");
+        out("Description:");
+        out("  Update certain fields for a given workflow version.");
+        out("");
+        out("Required Parameters:");
+        out("  --entry <entry>                                      Complete workflow path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
+        out("  --name <name>                                        Name of the workflow version.");
+        out("");
+        out("Optional Parameters");
+        out("  --workflow-path <workflow-path>                      Path to workflow descriptor");
+        out("  --hidden <true/false>                                Hide the tag from public viewing, default false");
+        printHelpFooter();
     }
 
     @Override
@@ -147,59 +229,49 @@ public class WorkflowClient extends AbstractEntryClient {
 
     @Override
     public void handleEntry2json(List<String> args) throws ApiException, IOException {
-        String [] argv = args.toArray(new String[args.size()]);
+        String commandName = "entry2json";
+        String[] argv = args.toArray(new String[args.size()]);
+        String[] argv1 = { commandName };
+        String[] both = ArrayUtils.addAll(argv1, argv);
         CommandEntry2json commandEntry2json = new CommandEntry2json();
-        JCommander jc = new JCommander(commandEntry2json);
-        jc.setProgramName("dockstore workflow convert entry2json");
+        JCommander jc = new JCommander();
+        jc.addCommand(commandName, commandEntry2json);
+        jc.setProgramName("dockstore workflow convert");
         try {
-            jc.parse(argv);
+            jc.parse(both);
             if (commandEntry2json.help) {
-                printHelpHeader();
-                out("Description:");
-                out("  Spit out a json run file for a given cwl document.");
-                out("");
-                jc.usage();
-                printHelpFooter();
+                printJCommanderHelp(jc, "dockstore workflow convert", commandName);
             } else {
                 final String runString = runString(commandEntry2json.entry, true);
                 out(runString);
             }
         } catch (Exception e) {
             exceptionMessage(e, e.getMessage(), COMMAND_ERROR);
-            printHelpHeader();
-            out("Description:");
-            out("  Spit out a json run file for a given cwl document.");
-            jc.usage();
-            printHelpFooter();
+            printJCommanderHelp(jc, "dockstore workflow convert", commandName);
         }
     }
 
     @Override
     public void handleEntry2tsv(List<String> args) throws ApiException, IOException {
-        String [] argv = args.toArray(new String[args.size()]);
+        String commandName = "entry2tsv";
+        String[] argv = args.toArray(new String[args.size()]);
+        String[] argv1 = { commandName };
+        String[] both = ArrayUtils.addAll(argv1, argv);
         CommandEntry2tsv commandEntry2tsv = new CommandEntry2tsv();
-        JCommander jc = new JCommander(commandEntry2tsv);
-        jc.setProgramName("dockstore workflow convert entry2tsv");
+        JCommander jc = new JCommander();
+        jc.addCommand(commandName, commandEntry2tsv);
+        jc.setProgramName("dockstore workflow convert");
         try {
-            jc.parse(argv);
+            jc.parse(both);
             if (commandEntry2tsv.help) {
-                printHelpHeader();
-                out("Description:");
-                out("  Spit out a tsv run file for a given cwl document.");
-                out("");
-                jc.usage();
-                printHelpFooter();
+                printJCommanderHelp(jc, "dockstore workflow convert", commandName);
             } else {
                 final String runString = runString(commandEntry2tsv.entry, false);
                 out(runString);
             }
         } catch (Exception e) {
             exceptionMessage(e, e.getMessage(), COMMAND_ERROR);
-            printHelpHeader();
-            out("Description:");
-            out("  Spit out a tsv run file for a given cwl document.");
-            jc.usage();
-            printHelpFooter();
+            printJCommanderHelp(jc, "dockstore workflow convert", commandName);
         }
     }
 
@@ -514,6 +586,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
     /**
      * Interacts with API to star/unstar a workflow
+     *
      * @param entry the workflow or tool
      * @param star  true to star, false to unstar
      */
@@ -663,49 +736,6 @@ public class WorkflowClient extends AbstractEntryClient {
         }
     }
 
-    private static void printWorkflowList(List<Workflow> workflows) {
-        int[] maxWidths = columnWidthsWorkflow(workflows);
-
-        int nameWidth = maxWidths[0] + Client.PADDING;
-        int descWidth = maxWidths[1] + Client.PADDING;
-        int gitWidth = maxWidths[2] + Client.PADDING;
-        String format = "%-" + nameWidth + "s%-" + descWidth + "s%-" + gitWidth + "s%-16s";
-        out(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "On Dockstore?");
-
-        for (Workflow workflow : workflows) {
-            String gitUrl = "";
-
-            if (workflow.getGitUrl() != null && !workflow.getGitUrl().isEmpty()) {
-                gitUrl = workflow.getGitUrl();
-            }
-
-            String description = getCleanedDescription(workflow.getDescription());
-
-            out(format, workflow.getPath(), description, gitUrl, boolWord(workflow.getIsPublished()));
-        }
-    }
-
-    private static void manualPublishHelp() {
-        printHelpHeader();
-        out("Usage: dockstore workflow manual_publish --help");
-        out("       dockstore workflow manual_publish [parameters]");
-        out("");
-        out("Description:");
-        out("  Manually register an workflow in the dockstore. If this is successful and the workflow is valid, then publish.");
-        out("");
-        out("Required parameters:");
-        out("  --repository <repository>                            Name for the git repository");
-        out("  --organization <organization>                        Organization for the git repo");
-        out("  --git-version-control <git version control>          Either github, gitlab, or bitbucket");
-        out("");
-        out("Optional parameters:");
-        out("  --workflow-path <workflow-path>                      Path for the descriptor file, defaults to /Dockstore.cwl");
-        out("  --workflow-name <workflow-name>                      Workflow name, defaults to null");
-        out("  --descriptor-type <workflow-name>                    Descriptor type, defaults to cwl");
-
-        printHelpFooter();
-    }
-
     private void updateWorkflow(List<String> args) {
         if (args.isEmpty() || containsHelpRequest(args)) {
             updateWorkflowHelp();
@@ -771,25 +801,6 @@ public class WorkflowClient extends AbstractEntryClient {
                 exceptionMessage(ex, "", Client.API_ERROR);
             }
         }
-    }
-
-    private static void updateWorkflowHelp() {
-        printHelpHeader();
-        out("Usage: dockstore workflow " + UPDATE_WORKFLOW + " --help");
-        out("       dockstore workflow " + UPDATE_WORKFLOW + " [parameters]");
-        out("");
-        out("Description:");
-        out("  Update certain fields for a given workflow.");
-        out("");
-        out("Required Parameters:");
-        out("  --entry <entry>                                          Complete workflow path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
-        out("");
-        out("Optional Parameters");
-        out("  --workflow-name <workflow-name>                          Name for the given workflow");
-        out("  --descriptor-type <descriptor-type>                      Descriptor type of the given workflow.  Can only be altered if workflow is a STUB.");
-        out("  --workflow-path <workflow-path>                          Path to default workflow descriptor location");
-        out("  --default-version <default-version>                      Default branch name");
-        printHelpFooter();
     }
 
     @Override
@@ -858,24 +869,6 @@ public class WorkflowClient extends AbstractEntryClient {
                 exceptionMessage(ex, "Could not find workflow", Client.API_ERROR);
             }
         }
-    }
-
-    private static void versionTagHelp() {
-        printHelpHeader();
-        out("Usage: dockstore workflow version_tag --help");
-        out("       dockstore workflow version_tag [parameters]");
-        out("");
-        out("Description:");
-        out("  Update certain fields for a given workflow version.");
-        out("");
-        out("Required Parameters:");
-        out("  --entry <entry>                                      Complete workflow path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
-        out("  --name <name>                                        Name of the workflow version.");
-        out("");
-        out("Optional Parameters");
-        out("  --workflow-path <workflow-path>                      Path to workflow descriptor");
-        out("  --hidden <true/false>                                Hide the tag from public viewing, default false");
-        printHelpFooter();
     }
 
     private void restub(List<String> args) {
@@ -995,7 +988,7 @@ public class WorkflowClient extends AbstractEntryClient {
         return result;
     }
 
-    @Parameters(separators = "=", commandDescription = "Spit out a json run file for a given entry")
+    @Parameters(separators = "=", commandDescription = "Spit out a json run file for a given entry.")
     private static class CommandEntry2json {
         @Parameter(names = "--entry", description = "Complete workflow path in the Dockstore (ex. NCI-GDC/gdc-dnaseq-cwl/GDC_DNASeq:master)", required = true)
         private String entry;
@@ -1003,8 +996,7 @@ public class WorkflowClient extends AbstractEntryClient {
         private boolean help = false;
     }
 
-
-    @Parameters(separators = "=", commandDescription = "Spit out a tsv run file for a given entry")
+    @Parameters(separators = "=", commandDescription = "Spit out a tsv run file for a given entry.")
     private static class CommandEntry2tsv {
         @Parameter(names = "--entry", description = "Complete workflow path in the Dockstore (ex. NCI-GDC/gdc-dnaseq-cwl/GDC_DNASeq:master)", required = true)
         private String entry;

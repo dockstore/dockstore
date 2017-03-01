@@ -113,22 +113,18 @@ import static io.dockstore.client.cli.Client.SCRIPT;
 public abstract class AbstractEntryClient {
     public static final String CROMWELL_LOCATION = "https://github.com/broadinstitute/cromwell/releases/download/0.21/cromwell-0.21.jar";
     private static final Logger LOG = LoggerFactory.getLogger(AbstractEntryClient.class);
+    public final CWL cwlUtil = new CWL();
     public boolean isAdmin = false;
-    final CWL cwlUtil = new CWL();
 
-    public enum Type {
-        CWL("cwl"), WDL("wdl"), NONE("none");
-        private final String desc;
-
-        Type(String name) {
-            desc = name;
+    static String getCleanedDescription(String description) {
+        if (description != null) {
+            // strip control characters
+            description = CharMatcher.JAVA_ISO_CONTROL.removeFrom(description);
+            if (description.length() > MAX_DESCRIPTION) {
+                description = description.substring(0, MAX_DESCRIPTION - Client.PADDING) + "...";
+            }
         }
-
-        @Override
-        public String toString() {
-            return desc;
-        }
-
+        return description;
     }
 
     public abstract String getConfigFile();
@@ -328,8 +324,8 @@ public abstract class AbstractEntryClient {
     protected abstract void handlePublishUnpublish(String entryPath, String newName, boolean unpublishRequest);
 
     /**
-     * @param entryPath         a unique identifier for an entry, called a path for workflows and tools
-     * @param unstarRequest     true to star, false to unstar
+     * @param entryPath     a unique identifier for an entry, called a path for workflows and tools
+     * @param unstarRequest true to star, false to unstar
      */
     protected abstract void handleStarUnstar(String entryPath, boolean unstarRequest);
 
@@ -1712,14 +1708,18 @@ public abstract class AbstractEntryClient {
         out("");
     }
 
-    static String getCleanedDescription(String description) {
-        if (description != null) {
-            // strip control characters
-            description = CharMatcher.JAVA_ISO_CONTROL.removeFrom(description);
-            if (description.length() > MAX_DESCRIPTION) {
-                description = description.substring(0, MAX_DESCRIPTION - Client.PADDING) + "...";
-            }
+    public enum Type {
+        CWL("cwl"), WDL("wdl"), NONE("none");
+        private final String desc;
+
+        Type(String name) {
+            desc = name;
         }
-        return description;
+
+        @Override
+        public String toString() {
+            return desc;
+        }
+
     }
 }
