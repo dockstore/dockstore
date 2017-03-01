@@ -111,10 +111,10 @@ import static io.dockstore.client.cli.Client.SCRIPT;
  * @author dyuen
  */
 public abstract class AbstractEntryClient {
-    public static final String CROMWELL_LOCATION = "https://github.com/broadinstitute/cromwell/releases/download/0.21/cromwell-0.21.jar";
+    private static final String CROMWELL_LOCATION = "https://github.com/broadinstitute/cromwell/releases/download/0.21/cromwell-0.21.jar";
     private static final Logger LOG = LoggerFactory.getLogger(AbstractEntryClient.class);
-    public final CWL cwlUtil = new CWL();
-    public boolean isAdmin = false;
+    boolean isAdmin = false;
+    private final CWL cwlUtil = new CWL();
 
     static String getCleanedDescription(String description) {
         if (description != null) {
@@ -402,7 +402,7 @@ public abstract class AbstractEntryClient {
         }
     }
 
-    public void star(List<String> args) {
+    private void star(List<String> args) {
         if (args.isEmpty()) {
             handleListUnstarredEntries();
         } else if (containsHelpRequest(args)) {
@@ -619,7 +619,7 @@ public abstract class AbstractEntryClient {
      * false if it's not a CWL file (could be WDL or something else)
      * errormsg & exit if >=1 required field not found in the file
      */
-    public Boolean checkCWL(File content) {
+    private Boolean checkCWL(File content) {
         /* CWL: check for 'class:CommandLineTool', 'inputs: ','outputs: ', and 'baseCommand'. Optional: 'cwlVersion'
          CWL: check for 'class:Workflow', 'inputs: ','outputs: ', and 'steps'. Optional: 'cwlVersion'*/
         Pattern inputPattern = Pattern.compile("(.*)(inputs)(.*)(:)(.*)");
@@ -719,7 +719,7 @@ public abstract class AbstractEntryClient {
      * false if it's not a WDL file (could be CWL or something else)
      * errormsg and exit if >=1 required field not found in the file
      */
-    public Boolean checkWDL(File content) {
+    private Boolean checkWDL(File content) {
         /* WDL: check for 'task' (must be >=1) ,'call', 'command', 'output' and 'workflow' */
         Pattern taskPattern = Pattern.compile("(.*)(task)(\\s)(.*)(\\{)");
         Pattern wfPattern = Pattern.compile("(.*)(workflow)(\\s)(.*)(\\{)");
@@ -976,7 +976,7 @@ public abstract class AbstractEntryClient {
      * TODO: this may need to be moved to ToolClient depending on whether we can re-use
      * this for workflows.
      *
-     * @param args
+     * @param args  Arguments entered into the CLI
      */
     private void launch(final List<String> args) {
         if (args.isEmpty() || containsHelpRequest(args)) {
@@ -1044,7 +1044,7 @@ public abstract class AbstractEntryClient {
      * @throws IOException
      * @throws ApiException
      */
-    public void handleCWLLaunch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns,
+    private void handleCWLLaunch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns,
             OutputStream stdoutStream, OutputStream stderrStream) throws IOException, ApiException {
 
         if (!SCRIPT.get()) {
@@ -1365,9 +1365,16 @@ public abstract class AbstractEntryClient {
         return tmp;
     }
 
-    public String runString2(String entry, String descriptor, final boolean json)  throws ApiException, IOException  {
-
-
+    /**
+     *
+     * @param entry         Full path of the tool/workflow
+     * @param descriptor    Descriptor type
+     * @param json          Whether to return json or not
+     * @return              The json or tsv output
+     * @throws ApiException
+     * @throws IOException
+     */
+    String runString2(String entry, String descriptor, final boolean json)  throws ApiException, IOException  {
         final File tempDir = Files.createTempDir();
         final SourceFile descriptorFromServer = getDescriptorFromServer(entry, descriptor);
         final File tempDescriptor = File.createTempFile("temp", "." + descriptor, tempDir);
