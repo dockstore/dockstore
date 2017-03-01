@@ -1365,17 +1365,13 @@ public abstract class AbstractEntryClient {
         return tmp;
     }
 
-    public abstract List<SourceFile> downloadDescriptors(String entry, String descriptor, File tempDir);
+    public String runString2(String entry, String descriptor, final boolean json)  throws ApiException, IOException  {
 
-    private String runString(List<String> args, final boolean json) throws ApiException, IOException {
-        final String entry = reqVal(args, "--entry");
-        final String descriptor = optVal(args, "--descriptor", CWL_STRING);
 
         final File tempDir = Files.createTempDir();
         final SourceFile descriptorFromServer = getDescriptorFromServer(entry, descriptor);
         final File tempDescriptor = File.createTempFile("temp", "." + descriptor, tempDir);
         Files.write(descriptorFromServer.getContent(), tempDescriptor, StandardCharsets.UTF_8);
-
         // Download imported descriptors (secondary descriptors)
         downloadDescriptors(entry, descriptor, tempDir);
 
@@ -1436,6 +1432,16 @@ public abstract class AbstractEntryClient {
         }
         return null;
     }
+
+    public abstract List<SourceFile> downloadDescriptors(String entry, String descriptor, File tempDir);
+
+    private String runString(List<String> args, final boolean json) throws ApiException, IOException {
+        final String entry = reqVal(args, "--entry");
+        final String descriptor = optVal(args, "--descriptor", CWL_STRING);
+        return runString2(entry, descriptor, json);
+    }
+
+
 
     /**
      * help text output

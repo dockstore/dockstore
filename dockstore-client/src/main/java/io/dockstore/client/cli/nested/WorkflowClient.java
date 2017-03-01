@@ -276,70 +276,9 @@ public class WorkflowClient extends AbstractEntryClient {
     }
 
     public String runString(String entry, final boolean json) throws ApiException, IOException {
-        final File tempDir = Files.createTempDir();
         Workflow workflow = workflowsApi.getPublishedWorkflowByPath(entry);
         String descriptor = workflow.getDescriptorType();
-        final SourceFile descriptorFromServer = getDescriptorFromServer(entry, descriptor);
-        final File tempDescriptor = File.createTempFile("temp", "." + descriptor, tempDir);
-        Files.write(descriptorFromServer.getContent(), tempDescriptor, StandardCharsets.UTF_8);
-        // Download imported descriptors (secondary descriptors)
-        downloadDescriptors(entry, descriptor, tempDir);
-        if (descriptor.equals(CWL_STRING)) {
-            // need to suppress output
-            final ImmutablePair<String, String> output = cwlUtil.parseCWL(tempDescriptor.getAbsolutePath());
-            final Map<String, Object> stringObjectMap = cwlUtil.extractRunJson(output.getLeft());
-            if (json) {
-                try {
-                    final Gson gson = CWL.getTypeSafeCWLToolDocument();
-                    return gson.toJson(stringObjectMap);
-                } catch (CWL.GsonBuildException ex) {
-                    exceptionMessage(ex, "There was an error creating the CWL GSON instance.", API_ERROR);
-                } catch (JsonParseException ex) {
-                    exceptionMessage(ex, "The JSON file provided is invalid.", API_ERROR);
-                }
-            } else {
-                // re-arrange as rows and columns
-                final Map<String, String> typeMap = cwlUtil.extractCWLTypes(output.getLeft());
-                final List<String> headers = new ArrayList<>();
-                final List<String> types = new ArrayList<>();
-                final List<String> entries = new ArrayList<>();
-                for (final Map.Entry<String, Object> objectEntry : stringObjectMap.entrySet()) {
-                    headers.add(objectEntry.getKey());
-                    types.add(typeMap.get(objectEntry.getKey()));
-                    Object value = objectEntry.getValue();
-                    if (value instanceof Map) {
-                        Map map = (Map)value;
-                        if (map.containsKey("class") && "File".equals(map.get("class"))) {
-                            value = map.get("path");
-                        }
-
-                    }
-                    entries.add(value.toString());
-                }
-                final StringBuffer buffer = new StringBuffer();
-                try (CSVPrinter printer = new CSVPrinter(buffer, CSVFormat.DEFAULT)) {
-                    printer.printRecord(headers);
-                    printer.printComment("do not edit the following row, describes CWL types");
-                    printer.printRecord(types);
-                    printer.printComment("duplicate the following row and fill in the values for each run you wish to set parameters for");
-                    printer.printRecord(entries);
-                }
-                return buffer.toString();
-            }
-        } else if (descriptor.equals(WDL_STRING)) {
-            File tmp;
-            if (json) {
-
-                tmp = resolveImportsForDescriptor(tempDir, tempDescriptor);
-
-                final List<String> wdlDocuments = Lists.newArrayList(tmp.getAbsolutePath());
-                final scala.collection.immutable.List<String> wdlList = scala.collection.JavaConversions.asScalaBuffer(wdlDocuments)
-                        .toList();
-                Bridge bridge = new Bridge();
-                return bridge.inputs(wdlList);
-            }
-        }
-        return null;
+        return runString2(entry, descriptor, json);
     }
 
     @Override
