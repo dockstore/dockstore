@@ -113,8 +113,8 @@ import static io.dockstore.client.cli.Client.SCRIPT;
 public abstract class AbstractEntryClient {
     private static final String CROMWELL_LOCATION = "https://github.com/broadinstitute/cromwell/releases/download/0.21/cromwell-0.21.jar";
     private static final Logger LOG = LoggerFactory.getLogger(AbstractEntryClient.class);
+    private static final CWL CWL_UTIL = new CWL();
     boolean isAdmin = false;
-    private final CWL cwlUtil = new CWL();
 
     static String getCleanedDescription(String description) {
         if (description != null) {
@@ -556,10 +556,10 @@ public abstract class AbstractEntryClient {
             }
         } else {
             final String cwlPath = reqVal(args, "--cwl");
-            final ImmutablePair<String, String> output = cwlUtil.parseCWL(cwlPath);
+            final ImmutablePair<String, String> output = CWL_UTIL.parseCWL(cwlPath);
 
             try {
-                final Map<String, Object> runJson = cwlUtil.extractRunJson(output.getLeft());
+                final Map<String, Object> runJson = CWL_UTIL.extractRunJson(output.getLeft());
                 if (json) {
                     final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
                     out(gson.toJson(runJson));
@@ -837,7 +837,7 @@ public abstract class AbstractEntryClient {
      * Type.WDL if file content is WDL
      * Type.NONE if file content is neither WDL nor CWL
      */
-    private Type checkFileContent(File content) {
+    Type checkFileContent(File content) {
         if (checkCWL(content)) {
             return Type.CWL;
         } else if (checkWDL(content)) {
@@ -854,7 +854,7 @@ public abstract class AbstractEntryClient {
      * Type.WDL if file extension is WDL
      * Type.NONE if file extension is neither WDL nor CWL, could be no extension or some other random extension(e.g .txt)
      */
-    private Type checkFileExtension(String path) {
+    Type checkFileExtension(String path) {
         if (FilenameUtils.getExtension(path).toLowerCase().equals(CWL_STRING)) {
             return Type.CWL;
         } else if (FilenameUtils.getExtension(path).toLowerCase().equals(WDL_STRING)) {
@@ -976,9 +976,9 @@ public abstract class AbstractEntryClient {
      * TODO: this may need to be moved to ToolClient depending on whether we can re-use
      * this for workflows.
      *
-     * @param args  Arguments entered into the CLI
+     * @param args Arguments entered into the CLI
      */
-    private void launch(final List<String> args) {
+    public void launch(final List<String> args) {
         if (args.isEmpty() || containsHelpRequest(args)) {
             launchHelp();
         } else {
@@ -1044,8 +1044,8 @@ public abstract class AbstractEntryClient {
      * @throws IOException
      * @throws ApiException
      */
-    private void handleCWLLaunch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns,
-            OutputStream stdoutStream, OutputStream stderrStream) throws IOException, ApiException {
+    void handleCWLLaunch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns, OutputStream stdoutStream,
+            OutputStream stderrStream) throws IOException, ApiException {
 
         if (!SCRIPT.get()) {
             Client.checkForCWLDependencies();
@@ -1366,15 +1366,14 @@ public abstract class AbstractEntryClient {
     }
 
     /**
-     *
-     * @param entry         Full path of the tool/workflow
-     * @param descriptor    Descriptor type
-     * @param json          Whether to return json or not
-     * @return              The json or tsv output
+     * @param entry      Full path of the tool/workflow
+     * @param descriptor Descriptor type
+     * @param json       Whether to return json or not
+     * @return The json or tsv output
      * @throws ApiException
      * @throws IOException
      */
-    String runString2(String entry, String descriptor, final boolean json)  throws ApiException, IOException  {
+    String runString2(String entry, String descriptor, final boolean json) throws ApiException, IOException {
         final File tempDir = Files.createTempDir();
         final SourceFile descriptorFromServer = getDescriptorFromServer(entry, descriptor);
         final File tempDescriptor = File.createTempFile("temp", "." + descriptor, tempDir);
@@ -1384,8 +1383,8 @@ public abstract class AbstractEntryClient {
 
         if (descriptor.equals(CWL_STRING)) {
             // need to suppress output
-            final ImmutablePair<String, String> output = cwlUtil.parseCWL(tempDescriptor.getAbsolutePath());
-            final Map<String, Object> stringObjectMap = cwlUtil.extractRunJson(output.getLeft());
+            final ImmutablePair<String, String> output = CWL_UTIL.parseCWL(tempDescriptor.getAbsolutePath());
+            final Map<String, Object> stringObjectMap = CWL_UTIL.extractRunJson(output.getLeft());
             if (json) {
                 try {
                     final Gson gson = CWL.getTypeSafeCWLToolDocument();
@@ -1397,7 +1396,7 @@ public abstract class AbstractEntryClient {
                 }
             } else {
                 // re-arrange as rows and columns
-                final Map<String, String> typeMap = cwlUtil.extractCWLTypes(output.getLeft());
+                final Map<String, String> typeMap = CWL_UTIL.extractCWLTypes(output.getLeft());
                 final List<String> headers = new ArrayList<>();
                 final List<String> types = new ArrayList<>();
                 final List<String> entries = new ArrayList<>();
@@ -1447,8 +1446,6 @@ public abstract class AbstractEntryClient {
         final String descriptor = optVal(args, "--descriptor", CWL_STRING);
         return runString2(entry, descriptor, json);
     }
-
-
 
     /**
      * help text output

@@ -32,6 +32,7 @@ import com.beust.jcommander.Parameters;
 import com.google.common.base.Joiner;
 import com.google.common.io.Files;
 import io.dockstore.client.cli.Client;
+import io.dockstore.client.cli.JCommanderUtility;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
@@ -65,8 +66,12 @@ import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
 import static io.dockstore.client.cli.ArgumentUtility.printLineBreak;
 import static io.dockstore.client.cli.ArgumentUtility.reqVal;
+import static io.dockstore.client.cli.Client.CLIENT_ERROR;
 import static io.dockstore.client.cli.Client.COMMAND_ERROR;
+import static io.dockstore.client.cli.Client.ENTRY_NOT_FOUND;
+import static io.dockstore.client.cli.Client.IO_ERROR;
 import static io.dockstore.client.cli.JCommanderUtility.printJCommanderHelp;
+import static io.dockstore.client.cli.JCommanderUtility.printJCommanderHelpLaunch;
 
 /**
  * This stub will eventually implement all operations on the CLI that are
@@ -80,12 +85,17 @@ public class WorkflowClient extends AbstractEntryClient {
     private final WorkflowsApi workflowsApi;
     private final UsersApi usersApi;
     private final Client client;
+    private JCommander jCommander;
+    private CommandLaunch commandLaunch;
 
     public WorkflowClient(WorkflowsApi workflowApi, UsersApi usersApi, Client client, boolean isAdmin) {
         this.workflowsApi = workflowApi;
         this.usersApi = usersApi;
         this.client = client;
         this.isAdmin = isAdmin;
+        this.jCommander = new JCommander();
+        this.commandLaunch = new CommandLaunch();
+        this.jCommander.addCommand("launch", commandLaunch);
     }
 
     private static void printWorkflowList(List<Workflow> workflows) {
@@ -265,10 +275,138 @@ public class WorkflowClient extends AbstractEntryClient {
         }
     }
 
-    public String runString(String entry, final boolean json) throws ApiException, IOException {
+    private String runString(String entry, final boolean json) throws ApiException, IOException {
         Workflow workflow = workflowsApi.getPublishedWorkflowByPath(entry);
         String descriptor = workflow.getDescriptorType();
         return runString2(entry, descriptor, json);
+    }
+
+    /**
+     * @param args Arguments entered into the CLI
+     */
+    @Override
+    public void launch(final List<String> args) {
+        String commandName = "launch";
+        String[] argv = args.toArray(new String[args.size()]);
+        String[] argv1 = { commandName };
+        String[] both = ArrayUtils.addAll(argv1, argv);
+        try {
+            this.jCommander.parse(both);
+            String entry = commandLaunch.entry;
+            String localEntry = commandLaunch.localEntry;
+            String jsonRun = commandLaunch.json;
+            String yamlRun = commandLaunch.yaml;
+            String tsvRun = commandLaunch.tsv;
+            String wdlOutputTarget = commandLaunch.wdlOutputTarget;
+
+            if (this.commandLaunch.help) {
+                JCommanderUtility.printJCommanderHelpLaunch(jCommander, "dockstore workflow", commandName);
+            } else {
+                if ((entry == null) != (localEntry == null)) {
+                    if (entry != null) {
+                        Workflow workflow = workflowsApi.getPublishedWorkflowByPath(entry);
+                        String descriptor = workflow.getDescriptorType();
+
+                        if (descriptor.equals(CWL_STRING)) {
+                            if (!(yamlRun != null ^ jsonRun != null ^ tsvRun != null)) {
+                                errorMessage("One of  --json, --yaml, and --tsv is required", CLIENT_ERROR);
+                            } else {
+                                handleCWLLaunch(entry, false, yamlRun, jsonRun, tsvRun, null, null);
+                            }
+                        } else {
+                            if (jsonRun == null) {
+                                errorMessage("dockstore: missing required flag " + "--json", Client.CLIENT_ERROR);
+                            } else {
+                                launchWdlInternal(entry, false, jsonRun, wdlOutputTarget);
+                            }
+                        }
+                    } else {
+                        checkEntryFile(localEntry, jsonRun, yamlRun, tsvRun, wdlOutputTarget);
+                    }
+                } else {
+                    errorMessage("You can only use one of --local-entry and --entry at a time. Please use --help for more information.",
+                            CLIENT_ERROR);
+                }
+
+            }
+        } catch (Exception e) {
+            exceptionMessage(e, e.getMessage(), COMMAND_ERROR);
+            printJCommanderHelpLaunch(jCommander, "dockstore workflow", commandName);
+        }
+    }
+
+    /**
+     * this function will check for the content and the extension of entry file
+     * for launch simplification, trying to reduce the use '--descriptor' when launching
+     *
+     * @param entry relative path to local descriptor for either WDL/CWL tools or workflows
+     *              this will either give back exceptionMessage and exit (if the content/extension/descriptor is invalid)
+     *              OR proceed with launching the entry file (if it's valid)
+     */
+    private void checkEntryFile(String entry, String jsonRun, String yamlRun, String tsvRuns, String wdlOutputTarget) {
+        File file = new File(entry);
+        Type ext = checkFileExtension(file.getPath());     //file extension could be cwl,wdl or ""
+
+        if (!file.exists() || file.isDirectory()) {
+            errorMessage("The workflow file " + file.getPath() + " does not exist. Did you mean to launch a remote workflow?",
+                    ENTRY_NOT_FOUND);
+        }
+
+        Type content = checkFileContent(file);             //check the file content (wdl,cwl or "")
+
+        try {
+            switch (ext) {
+            case CWL:
+                switch (content) {
+                case CWL:
+                    handleCWLLaunch(entry, true, yamlRun, jsonRun, tsvRuns, null, null);
+                    break;
+                case WDL:
+                    out("This is a WDL file.. Please put an extension to the entry file name.");
+                    out("Launching entry file as a WDL file..");
+                    launchWdlInternal(entry, true, jsonRun, wdlOutputTarget);
+                    break;
+                default:
+                    errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.",
+                            CLIENT_ERROR);
+                    break;
+                }
+            case WDL:
+                switch (content) {
+                case WDL:
+                    launchWdlInternal(entry, true, jsonRun, wdlOutputTarget);
+                    break;
+                case CWL:
+                    out("This is a WDL file.. Please put an extension to the entry file name.");
+                    out("Launching entry file as a WDL file..");
+                    handleCWLLaunch(entry, true, yamlRun, jsonRun, tsvRuns, null, null);
+                    break;
+                default:
+                    errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.",
+                            CLIENT_ERROR);
+                    break;
+                }
+            default:
+                if (content.equals(Type.CWL)) {
+                    out("This is a CWL file.. Please put an extension to the entry file name.");
+                    out("Launching entry file as a CWL file..");
+                    handleCWLLaunch(entry, true, yamlRun, jsonRun, tsvRuns, null, null);
+
+                } else if (content.equals(Type.WDL)) {
+                    out("This is a WDL file.. Please put an extension to the entry file name.");
+                    out("Launching entry file as a WDL file..");
+                    launchWdlInternal(entry, true, jsonRun, wdlOutputTarget);
+
+                } else {
+                    errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.",
+                            CLIENT_ERROR);
+                }
+            }
+        } catch (ApiException e) {
+            exceptionMessage(e, "API error launching entry", Client.API_ERROR);
+        } catch (IOException e) {
+            exceptionMessage(e, "IO error launching entry", IO_ERROR);
+        }
     }
 
     @Override
@@ -930,6 +1068,24 @@ public class WorkflowClient extends AbstractEntryClient {
         @Parameter(names = "--entry", description = "Complete workflow path in the Dockstore (ex. NCI-GDC/gdc-dnaseq-cwl/GDC_DNASeq:master)", required = true)
         private String entry;
         @Parameter(names = "--help", description = "Prints help for entry2json command", help = true)
+        private boolean help = false;
+    }
+
+    @Parameters(separators = "=", commandDescription = "Launch an entry locally or remotely.")
+    private static class CommandLaunch {
+        @Parameter(names = "--local-entry", description = "Allows you to specify a full path to a lcoal descriptor instead of an entry path")
+        private String localEntry;
+        @Parameter(names = "--entry", description = "Complete workflow path in the Dockstore (ex. NCI-GDC/gdc-dnaseq-cwl/GDC_DNASeq:master)")
+        private String entry;
+        @Parameter(names = "--json", description = "Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs")
+        private String json;
+        @Parameter(names = "--yaml", description = "Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs")
+        private String yaml;
+        @Parameter(names = "--tsv", description = "One row corresponds to parameters for one run in the dockstore (Only for CWL)")
+        private String tsv;
+        @Parameter(names = "--wdl-output-target", description = "Allows you to specify a remote path to provision outputs files to (ex: s3://oicr.temp/testing-launcher/")
+        private String wdlOutputTarget;
+        @Parameter(names = "--help", description = "Prints help for launch command", help = true)
         private boolean help = false;
     }
 
