@@ -47,12 +47,12 @@ plugins where a Java library is not available and the plugin needs to call out t
 This was developed in an environment with Java 8 and Maven 3.3.9. 
 
 The steps for implementing a new plugin are as follows:
-1. Copy the one of the above repos. 
-2. Rename the project in the [pom.xml](https://github.com/dockstore/s3-plugin/blob/master/pom.xml#L6) by changing the artifactId, the name, and the plugin class in properties. 
- [ProvisionInterface](https://github.com/ga4gh/dockstore/blob/develop/dockstore-file-plugin-parent/src/main/java/io/dockstore/provision/ProvisionInterface.java) 
+
+1. Fork the one of the above repos. 
+2. Rename the project in the [pom.xml](https://github.com/dockstore/s3-plugin/blob/master/pom.xml#L6) by changing the artifactId, the name, and the plugin class in properties. If you wish to share your project, you may also wish to modify the repository locations. 
 3. Remove the dependency on the AWS S3 library and add a library for your file transfer system [here](https://github.com/dockstore/s3-plugin/blob/master/pom.xml#L200). 
 4. Rename the Java class to match the plugin class entered earlier in the pom.xml. 
-5. Implement the downloadFrom and uploadTo methods. 
+5. Implement the downloadFrom and uploadTo methods from  [ProvisionInterface](https://github.com/ga4gh/dockstore/blob/develop/dockstore-file-plugin-parent/src/main/java/io/dockstore/provision/ProvisionInterface.java) 
 6. If applicable, for file transfer systems that include metadata or require preparation or finalize steps, you can override the default methods listed in the ProvisionInterface. Note that the Base64 encoded metadata will be decoded by the time it reaches your plugin. It is up to you what kind of format the metadata should be in (for example, the s3 plugin uses a JSON map). 
 7. Build the plugin with `mvn clean install` and copy the result zip file to the plugin directory. 
 8. Test with a simple tool such as [md5sum](https://github.com/briandoconnor/dockstore-tool-md5sum). 
