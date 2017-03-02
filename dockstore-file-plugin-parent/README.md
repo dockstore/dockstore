@@ -18,7 +18,7 @@ Use the following command to list currently installed plugins
 dockstore plugin list
 ```
 
-This will list the plugins along with their versions, their install locations, and the schemes that they handle (ex: s3:\\test.txt , icgc:\\123-456 , syn:\\syn12345 ). 
+This will list the plugins along with their versions, their install locations, and the schemes that they handle (ex: `s3:\\test.txt` , `icgc:\\123-456` , `syn:\\syn12345` ). 
 
 Note that dockstore will automatically delete old versions of plugins when you install new plugins. 
 
