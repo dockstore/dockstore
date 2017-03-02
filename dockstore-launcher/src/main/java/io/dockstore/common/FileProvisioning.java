@@ -149,6 +149,7 @@ public class FileProvisioning {
             String scheme = objectIdentifier.getScheme().toLowerCase();
             for (ProvisionInterface provision : plugins) {
                 if (provision.schemesHandled().contains(scheme.toUpperCase()) || provision.schemesHandled().contains(scheme.toLowerCase())) {
+                    System.out.println("Calling on plugin " + provision.getClass().getName() + " to provision " + targetPath);
                     boolean downloaded = provision.downloadFrom(targetPath, localPath);
                     if (!downloaded) {
                         throw new RuntimeException("Could not provision: " + targetPath + " to " + localPath);
@@ -245,6 +246,7 @@ public class FileProvisioning {
         long inputSize = sourceFile.length();
 
         if (provisionInterface != null) {
+            System.out.println("Calling on plugin " + provisionInterface.getClass().getName() + " to provision to " + destPath);
             provisionInterface.uploadTo(destPath, Paths.get(srcPath), Optional.ofNullable(metadata));
         } else {
             try {
@@ -298,7 +300,8 @@ public class FileProvisioning {
                     pInterface.finalizeFileSet(destList, srcList, metadataList);
                 }
             } catch (Exception e) {
-                LOG.error("plugin " + pInterface.getClass().toString() + " threw an exception", e);
+                LOG.error("plugin threw an exception", e);
+                throw new RuntimeException("plugin threw an exception", e);
             }
         }
 

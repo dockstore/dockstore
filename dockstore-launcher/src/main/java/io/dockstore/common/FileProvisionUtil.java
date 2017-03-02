@@ -113,6 +113,15 @@ public final class FileProvisionUtil {
 
     public static PluginManager getPluginManager(INIConfiguration config) {
         String filePluginLocation = getFilePluginLocation(config);
+        // create plugin directory if it does not exist
+        Path path = Paths.get(filePluginLocation);
+        if (!Files.exists(path)) {
+            try {
+                Files.createDirectory(path);
+            } catch (IOException e) {
+                throw new RuntimeException("Could not create plugin directory", e);
+            }
+        }
         // need to systematically clean up old versions of plugins
         VersionAwarePluginManager versionCleaner = new VersionAwarePluginManager(new File(filePluginLocation));
         versionCleaner.cleanupOldVersions();
@@ -140,7 +149,7 @@ public final class FileProvisionUtil {
         try {
             downloadPlugin(filePluginLocation, template, "0.0.3", "dockstore-file-icgc-storage-client-plugin");
             downloadPlugin(filePluginLocation, template, "0.0.3", "dockstore-file-s3-plugin");
-            downloadPlugin(filePluginLocation, template, "0.0.4", "dockstore-file-synapse-plugin");
+            downloadPlugin(filePluginLocation, template, "0.0.5", "dockstore-file-synapse-plugin");
         } catch (URISyntaxException | IOException e) {
             throw new RuntimeException(e);
         }

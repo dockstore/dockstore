@@ -328,8 +328,8 @@ public abstract class AbstractEntryClient {
     protected abstract void handlePublishUnpublish(String entryPath, String newName, boolean unpublishRequest);
 
     /**
-     * @param entryPath         a unique identifier for an entry, called a path for workflows and tools
-     * @param unstarRequest     true to star, false to unstar
+     * @param entryPath     a unique identifier for an entry, called a path for workflows and tools
+     * @param unstarRequest true to star, false to unstar
      */
     protected abstract void handleStarUnstar(String entryPath, boolean unstarRequest);
 
