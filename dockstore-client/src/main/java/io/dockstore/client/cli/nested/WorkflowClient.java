@@ -276,7 +276,10 @@ public class WorkflowClient extends AbstractEntryClient {
     }
 
     private String runString(String entry, final boolean json) throws ApiException, IOException {
-        Workflow workflow = workflowsApi.getPublishedWorkflowByPath(entry);
+        // User may enter the version, so we have to extract the path
+        String[] parts = entry.split(":");
+        String path = parts[0];
+        Workflow workflow = workflowsApi.getPublishedWorkflowByPath(path);
         String descriptor = workflow.getDescriptorType();
         return runString2(entry, descriptor, json);
     }
@@ -304,7 +307,9 @@ public class WorkflowClient extends AbstractEntryClient {
             } else {
                 if ((entry == null) != (localEntry == null)) {
                     if (entry != null) {
-                        Workflow workflow = workflowsApi.getPublishedWorkflowByPath(entry);
+                        String[] parts = entry.split(":");
+                        String path = parts[0];
+                        Workflow workflow = workflowsApi.getPublishedWorkflowByPath(path);
                         String descriptor = workflow.getDescriptorType();
 
                         if (descriptor.equals(CWL_STRING)) {
@@ -337,7 +342,6 @@ public class WorkflowClient extends AbstractEntryClient {
 
     /**
      * this function will check for the content and the extension of entry file
-     * for launch simplification, trying to reduce the use '--descriptor' when launching
      *
      * @param entry relative path to local descriptor for either WDL/CWL tools or workflows
      *              this will either give back exceptionMessage and exit (if the content/extension/descriptor is invalid)
