@@ -173,6 +173,8 @@ if [ "$1" = "self-install" ]; then
         download_failed_message "$DOCKSTORE_URL"
         exit 1
     fi
+    echo "Downloading default file-provisioning plugins"
+    $JAVA_CMD $DOCKSTORE_JVM_OPTS io.dockstore.client.cli.Client plugin download 
 elif [ "$1" = "init" ]; then
     if [ -r "$DOCKSTORE_SETTINGS" ]; then
         echo "The Dockstore settings file already exists at $DOCKSTORE_SETTINGS."
