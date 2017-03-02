@@ -53,9 +53,10 @@ The steps for implementing a new plugin are as follows:
 3. Remove the dependency on the AWS S3 library and add a library for your file transfer system [here](https://github.com/dockstore/s3-plugin/blob/master/pom.xml#L200). 
 4. Rename the Java class to match the plugin class entered earlier in the pom.xml. 
 5. Implement the downloadFrom and uploadTo methods from  [ProvisionInterface](https://github.com/ga4gh/dockstore/blob/develop/dockstore-file-plugin-parent/src/main/java/io/dockstore/provision/ProvisionInterface.java) 
-6. If applicable, for file transfer systems that include metadata or require preparation or finalize steps, you can override the default methods listed in the ProvisionInterface. Note that the Base64 encoded metadata will be decoded by the time it reaches your plugin. It is up to you what kind of format the metadata should be in (for example, the s3 plugin uses a JSON map). 
-7. Build the plugin with `mvn clean install` and copy the result zip file to the plugin directory. 
-8. Test with a simple tool such as [md5sum](https://github.com/briandoconnor/dockstore-tool-md5sum). 
+6. We recommend using [ProgressPrinter](https://github.com/ga4gh/dockstore/blob/develop/dockstore-file-plugin-parent/src/main/java/io/dockstore/provision/ProgressPrinter.java) to give your users an indication of file upload/download progress. 
+7. If applicable, for file transfer systems that include metadata or require preparation or finalize steps, you can override the default methods listed in the ProvisionInterface. Note that the Base64 encoded metadata will be decoded by the time it reaches your plugin. It is up to you what kind of format the metadata should be in (for example, the s3 plugin uses a JSON map). 
+8. Build the plugin with `mvn clean install` and copy the result zip file to the plugin directory. 
+9. Test with a simple tool such as [md5sum](https://github.com/briandoconnor/dockstore-tool-md5sum). 
 
 You should see something similar to the following 
 
