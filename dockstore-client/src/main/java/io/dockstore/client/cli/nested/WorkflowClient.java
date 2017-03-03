@@ -334,7 +334,7 @@ public class WorkflowClient extends AbstractEntryClient {
                             }
                         }
                     } catch (ApiException e) {
-                        errorMessage("Could not use workflow api", API_ERROR);
+                        errorMessage("Could not get workflow: " + path, ENTRY_NOT_FOUND);
                     }
                 } else {
                     checkEntryFile(localEntry, jsonRun, yamlRun, tsvRun, wdlOutputTarget);
