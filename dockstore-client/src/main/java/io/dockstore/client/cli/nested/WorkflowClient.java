@@ -66,12 +66,12 @@ import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
 import static io.dockstore.client.cli.ArgumentUtility.printLineBreak;
 import static io.dockstore.client.cli.ArgumentUtility.reqVal;
+import static io.dockstore.client.cli.Client.API_ERROR;
 import static io.dockstore.client.cli.Client.CLIENT_ERROR;
 import static io.dockstore.client.cli.Client.COMMAND_ERROR;
 import static io.dockstore.client.cli.Client.ENTRY_NOT_FOUND;
 import static io.dockstore.client.cli.Client.IO_ERROR;
 import static io.dockstore.client.cli.JCommanderUtility.printJCommanderHelp;
-import static io.dockstore.client.cli.JCommanderUtility.printJCommanderHelpLaunch;
 
 /**
  * This stub will eventually implement all operations on the CLI that are
@@ -293,22 +293,22 @@ public class WorkflowClient extends AbstractEntryClient {
         String[] argv = args.toArray(new String[args.size()]);
         String[] argv1 = { commandName };
         String[] both = ArrayUtils.addAll(argv1, argv);
-        try {
-            this.jCommander.parse(both);
-            String entry = commandLaunch.entry;
-            String localEntry = commandLaunch.localEntry;
-            String jsonRun = commandLaunch.json;
-            String yamlRun = commandLaunch.yaml;
-            String tsvRun = commandLaunch.tsv;
-            String wdlOutputTarget = commandLaunch.wdlOutputTarget;
+        this.jCommander.parse(both);
+        String entry = commandLaunch.entry;
+        String localEntry = commandLaunch.localEntry;
+        String jsonRun = commandLaunch.json;
+        String yamlRun = commandLaunch.yaml;
+        String tsvRun = commandLaunch.tsv;
+        String wdlOutputTarget = commandLaunch.wdlOutputTarget;
 
-            if (this.commandLaunch.help) {
-                JCommanderUtility.printJCommanderHelpLaunch(jCommander, "dockstore workflow", commandName);
-            } else {
-                if ((entry == null) != (localEntry == null)) {
-                    if (entry != null) {
-                        String[] parts = entry.split(":");
-                        String path = parts[0];
+        if (this.commandLaunch.help) {
+            JCommanderUtility.printJCommanderHelpLaunch(jCommander, "dockstore workflow", commandName);
+        } else {
+            if ((entry == null) != (localEntry == null)) {
+                if (entry != null) {
+                    String[] parts = entry.split(":");
+                    String path = parts[0];
+                    try {
                         Workflow workflow = workflowsApi.getPublishedWorkflowByPath(path);
                         String descriptor = workflow.getDescriptorType();
 
@@ -316,27 +316,33 @@ public class WorkflowClient extends AbstractEntryClient {
                             if (!(yamlRun != null ^ jsonRun != null ^ tsvRun != null)) {
                                 errorMessage("One of  --json, --yaml, and --tsv is required", CLIENT_ERROR);
                             } else {
-                                handleCWLLaunch(entry, false, yamlRun, jsonRun, tsvRun, null, null);
+                                try {
+                                    handleCWLLaunch(entry, false, yamlRun, jsonRun, tsvRun, null, null);
+                                } catch (IOException e) {
+                                    errorMessage("Could not launch entry", IO_ERROR);
+                                }
                             }
                         } else {
                             if (jsonRun == null) {
                                 errorMessage("dockstore: missing required flag " + "--json", Client.CLIENT_ERROR);
                             } else {
-                                launchWdlInternal(entry, false, jsonRun, wdlOutputTarget);
+                                try {
+                                    launchWdlInternal(entry, false, jsonRun, wdlOutputTarget);
+                                } catch (IOException e) {
+                                    errorMessage("Could not launch entry", IO_ERROR);
+                                }
                             }
                         }
-                    } else {
-                        checkEntryFile(localEntry, jsonRun, yamlRun, tsvRun, wdlOutputTarget);
+                    } catch (ApiException e) {
+                        errorMessage("Could not use workflow api", API_ERROR);
                     }
                 } else {
-                    errorMessage("You can only use one of --local-entry and --entry at a time. Please use --help for more information.",
-                            CLIENT_ERROR);
+                    checkEntryFile(localEntry, jsonRun, yamlRun, tsvRun, wdlOutputTarget);
                 }
-
+            } else {
+                errorMessage("You can only use one of --local-entry and --entry at a time. Please use --help for more information.",
+                        CLIENT_ERROR);
             }
-        } catch (Exception e) {
-            exceptionMessage(e, e.getMessage(), COMMAND_ERROR);
-            printJCommanderHelpLaunch(jCommander, "dockstore workflow", commandName);
         }
     }
 
