@@ -26,13 +26,12 @@ import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Objects;
-
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 /**
  * This describes a descriptive label that can be placed on an entry in the dockstore, implementation specific.
- * 
+ *
  * @author oicr-vchung
  */
 @ApiModel(value = "Label", description = "This describes a descriptive label that can be placed on an entry in the dockstore")
@@ -77,7 +76,7 @@ public class Label implements Comparable<Label> {
         if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        final Label other = (Label) obj;
+        final Label other = (Label)obj;
         return Objects.equal(id, other.id) && Objects.equal(value, other.value);
     }
 

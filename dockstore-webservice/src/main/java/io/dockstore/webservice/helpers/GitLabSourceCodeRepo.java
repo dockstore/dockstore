@@ -22,23 +22,21 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.common.base.Optional;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.resources.ResourceUtilities;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by aduncan on 05/10/16.
@@ -61,7 +59,8 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         this.gitRepository = gitRepository;
     }
 
-    @Override public String readFile(String fileName, String reference) {
+    @Override
+    public String readFile(String fileName, String reference) {
         if (fileName.startsWith("/")) {
             fileName = fileName.substring(1);
         }
@@ -104,11 +103,13 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         return content;
     }
 
-    @Override public String getOrganizationEmail() {
+    @Override
+    public String getOrganizationEmail() {
         return null;
     }
 
-    @Override public Map<String, String> getWorkflowGitUrl2RepositoryId() {
+    @Override
+    public Map<String, String> getWorkflowGitUrl2RepositoryId() {
         Map<String, String> reposByGitUrl = new HashMap<>();
         String projectsUrl = GITLAB_API_URL + "projects";
 
@@ -132,7 +133,8 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         return reposByGitUrl;
     }
 
-    @Override public Workflow initializeWorkflow(String repositoryId) {
+    @Override
+    public Workflow initializeWorkflow(String repositoryId) {
         Workflow workflow = new Workflow();
 
         // Does this split not work if name has a slash?
@@ -152,7 +154,8 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         return workflow;
     }
 
-    @Override public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
+    @Override
+    public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
             Map<String, WorkflowVersion> existingDefaults) {
         // Get Gitlab id
         String id = getProjectId(repositoryId);
@@ -187,7 +190,8 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
                     // TODO: No exceptions are caught here in the event of a failed call
                     sourceFile = getSourceFile(calculatedPath, id, branchName, identifiedType);
 
-                    workflow.addWorkflowVersion(combineVersionAndSourcefile(sourceFile, workflow, identifiedType, version, existingDefaults));
+                    workflow.addWorkflowVersion(
+                            combineVersionAndSourcefile(sourceFile, workflow, identifiedType, version, existingDefaults));
                 }
             }
         }
@@ -195,7 +199,8 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         return workflow;
     }
 
-    @Override public String getRepositoryId(Entry entry) {
+    @Override
+    public String getRepositoryId(Entry entry) {
         String repositoryId;
         String giturl = entry.getGitUrl();
 
@@ -213,7 +218,8 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         return repositoryId;
     }
 
-    @Override public String getMainBranch(Entry entry, String repositoryId) {
+    @Override
+    public String getMainBranch(Entry entry, String repositoryId) {
         if (entry.getDefaultVersion() != null) {
             return entry.getDefaultVersion();
         } else {
@@ -241,12 +247,14 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         return null;
     }
 
-    @Override public String getFileContents(String filePath, String branch, String repositoryId) {
+    @Override
+    public String getFileContents(String filePath, String branch, String repositoryId) {
         return getFileContentsFromId(getProjectId(repositoryId), branch, filePath);
     }
 
     /**
      * Given a repository ID (namespace/reponame), returns the Gitlab ID
+     *
      * @param repositoryId
      * @return
      */
@@ -274,6 +282,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
 
     /**
      * Uses Gitlab API to grab a raw source file and return it
+     *
      * @param path
      * @param id
      * @param branch
@@ -292,7 +301,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
 
             if (type == SourceFile.FileType.DOCKSTORE_CWL) {
                 validWorkflow = checkValidCWLWorkflow(content);
-            } else if (type == SourceFile.FileType.DOCKSTORE_WDL)  {
+            } else if (type == SourceFile.FileType.DOCKSTORE_WDL) {
                 validWorkflow = checkValidWDLWorkflow(content);
             } else {
                 // Must be a testjson file
@@ -310,6 +319,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
 
     /**
      * Given a gitlab project id, branch name and filepath, find the contents of a file
+     *
      * @param id
      * @param branch
      * @param filepath

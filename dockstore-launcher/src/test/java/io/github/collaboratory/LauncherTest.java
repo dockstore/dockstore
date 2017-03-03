@@ -13,24 +13,23 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-
 package io.github.collaboratory;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+
 import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.Workflow;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import io.dockstore.common.FileProvisionUtil;
+import io.dockstore.common.Utilities;
+import org.apache.commons.configuration2.INIConfiguration;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
 
 import static io.dockstore.common.FileProvisioning.getCacheDirectory;
 import static org.junit.Assert.assertTrue;
@@ -47,9 +46,12 @@ public class LauncherTest {
     public void cleanCache() throws ConfigurationException, IOException {
         // need to clean cache to make tests predictable
         File iniFile = FileUtils.getFile("src", "test", "resources", "launcher.ini");
-        HierarchicalINIConfiguration config = new HierarchicalINIConfiguration(iniFile);
+        INIConfiguration config = Utilities.parseConfig(iniFile.getAbsolutePath());
         final String cacheDirectory = getCacheDirectory(config);
         FileUtils.deleteDirectory(new File(cacheDirectory));
+
+        // download plugins
+        FileProvisionUtil.downloadPlugins(config);
     }
 
     @Test
@@ -59,14 +61,14 @@ public class LauncherTest {
         File jobFile = FileUtils.getFile("src", "test", "resources", "collab-cwl-job-pre.json");
 
         if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
-            expectedEx.expect(AmazonS3Exception.class);
-            expectedEx.expectMessage("Access Denied");
+            expectedEx.expectMessage("plugin threw an exception");
         }
-        final LauncherCWL launcherCWL = new LauncherCWL(new String[] { "--config", iniFile.getAbsolutePath(), "--descriptor",
-                cwlFile.getAbsolutePath(), "--job", jobFile.getAbsolutePath() });
+        final LauncherCWL launcherCWL = new LauncherCWL(
+                new String[] { "--config", iniFile.getAbsolutePath(), "--descriptor", cwlFile.getAbsolutePath(), "--job",
+                        jobFile.getAbsolutePath() });
         launcherCWL.run(CommandLineTool.class);
     }
-        
+
     @Test
     public void testCWLProgrammatic() throws Exception {
         File iniFile = FileUtils.getFile("src", "test", "resources", "launcher.ini");
@@ -76,8 +78,7 @@ public class LauncherTest {
         ByteArrayOutputStream stderr = new ByteArrayOutputStream();
 
         if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
-            expectedEx.expect(AmazonS3Exception.class);
-            expectedEx.expectMessage("Access Denied");
+            expectedEx.expectMessage("plugin threw an exception");
         }
         final LauncherCWL launcherCWL = new LauncherCWL(iniFile.getAbsolutePath(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath(),
                 stdout, stderr);
@@ -95,8 +96,7 @@ public class LauncherTest {
         ByteArrayOutputStream stderr = new ByteArrayOutputStream();
 
         if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
-            expectedEx.expect(AmazonS3Exception.class);
-            expectedEx.expectMessage("Access Denied");
+            expectedEx.expectMessage("plugin threw an exception");
         }
         final LauncherCWL launcherCWL = new LauncherCWL(iniFile.getAbsolutePath(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath(),
                 stdout, stderr);
@@ -104,4 +104,6 @@ public class LauncherTest {
 
         assertTrue(!stdout.toString().isEmpty());
     }
+
+
 }

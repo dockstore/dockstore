@@ -16,11 +16,12 @@
 
 package io.dockstore.webservice.core;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.annotations.ApiModelProperty;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -34,24 +35,28 @@ import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.SequenceGenerator;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import io.dockstore.webservice.helpers.EntryStarredSerializer;
+import io.swagger.annotations.ApiModelProperty;
 
 /**
  * Base class for all entries in the dockstore
+ *
  * @author dyuen
  */
 @Entity
-@Inheritance(strategy= InheritanceType.TABLE_PER_CLASS)
+@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 public abstract class Entry<S extends Entry, T extends Version> {
 
-    /** re-use existing generator for backwards compatibility */
+    /**
+     * re-use existing generator for backwards compatibility
+     */
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator="container_id_seq")
-    @SequenceGenerator(name="container_id_seq", sequenceName="container_id_seq")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "container_id_seq")
+    @SequenceGenerator(name = "container_id_seq", sequenceName = "container_id_seq")
     @ApiModelProperty("Implementation specific ID for the container in this web service")
     private long id;
 
@@ -68,10 +73,16 @@ public abstract class Entry<S extends Entry, T extends Version> {
     @OrderBy("id")
     private SortedSet<Label> labels = new TreeSet<>();
 
-    @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty(value = "This indicates the users that have control over this entry, dockstore specific", required = false)
     private Set<User> users;
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "starred", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"))
+    @ApiModelProperty(value = "This indicates the users that have starred this entry, dockstore specific", required = false)
+    @JsonSerialize(using = EntryStarredSerializer.class)
+    private Set<User> starredUsers;
 
     @Column
     @ApiModelProperty("This is the email of the git organization")
@@ -93,18 +104,20 @@ public abstract class Entry<S extends Entry, T extends Version> {
     @ApiModelProperty(value = "This is a link to the associated repo with a descriptor, required GA4GH", required = true)
     private String gitUrl;
 
+    public Entry() {
+        users = new HashSet<>(0);
+        starredUsers = new HashSet<>(0);
+    }
+
+    public Entry(long id) {
+        this.id = id;
+        users = new HashSet<>(0);
+        starredUsers = new HashSet<>(0);
+    }
+
     @JsonProperty
     public String getAuthor() {
         return author;
-    }
-
-    public Entry(){
-        users = new HashSet<>(0);
-    }
-
-    public Entry(long id){
-        this.id = id;
-        users = new HashSet<>(0);
     }
 
     @JsonProperty
@@ -116,15 +129,13 @@ public abstract class Entry<S extends Entry, T extends Version> {
         this.id = id;
     }
 
-
     @JsonProperty
     public String getDescription() {
         return description;
     }
 
     /**
-     * @param description
-     *            the repo description to set
+     * @param description the repo description to set
      */
     public void setDescription(String description) {
         this.description = description;
@@ -176,16 +187,14 @@ public abstract class Entry<S extends Entry, T extends Version> {
     }
 
     /**
-     * @param isPublished
-     *            will the repo be published
+     * @param isPublished will the repo be published
      */
     public void setIsPublished(boolean isPublished) {
         this.isPublished = isPublished;
     }
 
     /**
-     * @param lastModified
-     *            the lastModified to set
+     * @param lastModified the lastModified to set
      */
     public void setLastModified(Integer lastModified) {
         this.lastModified = lastModified;
@@ -212,7 +221,6 @@ public abstract class Entry<S extends Entry, T extends Version> {
     }
 
     /**
-     *
      * @return will return the git url or empty string if not present
      */
     @JsonProperty
@@ -232,9 +240,20 @@ public abstract class Entry<S extends Entry, T extends Version> {
         this.lastUpdated = lastUpdated;
     }
 
+    public Set<User> getStarredUsers() {
+        return starredUsers;
+    }
 
+    public void addStarredUser(User user) {
+        starredUsers.add(user);
+    }
+
+    public boolean removeStarredUser(User user) {
+        return starredUsers.remove(user);
+    }
     /**
      * Used during refresh to update containers
+     *
      * @param entry
      */
     public void update(S entry) {
@@ -255,6 +274,7 @@ public abstract class Entry<S extends Entry, T extends Version> {
 
     /**
      * Convenience method to access versions in a generic manner
+     *
      * @return versions
      */
     @JsonIgnore

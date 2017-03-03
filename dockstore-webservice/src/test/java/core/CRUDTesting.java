@@ -20,15 +20,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
-import org.hibernate.Session;
-import org.hibernate.context.internal.ManagedSessionContext;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-
 import io.dockstore.common.CommonTestUtilities.TestingPostgres;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -38,11 +29,18 @@ import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit.DropwizardAppRule;
+import org.hibernate.Session;
+import org.hibernate.context.internal.ManagedSessionContext;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 
 /**
- *
  * @author dyuen
  */
 public class CRUDTesting {
@@ -82,7 +80,7 @@ public class CRUDTesting {
     }
 
     @Test
-    public void testWorkflowCreateAndPersist(){
+    public void testWorkflowCreateAndPersist() {
         final WorkflowDAO workflowDAO = new WorkflowDAO(application.getHibernate().getSessionFactory());
         final Workflow workflow = new Workflow();
         workflow.setWorkflowName("foobar");

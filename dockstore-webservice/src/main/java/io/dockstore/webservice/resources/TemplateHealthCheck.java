@@ -19,7 +19,6 @@ package io.dockstore.webservice.resources;
 import com.codahale.metrics.health.HealthCheck;
 
 /**
- *
  * @author dyuen
  */
 public class TemplateHealthCheck extends HealthCheck {

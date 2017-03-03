@@ -16,6 +16,16 @@
 
 package core;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
 import com.google.common.collect.Ordering;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -29,18 +39,9 @@ import org.yaml.snakeyaml.nodes.Node;
 import org.yaml.snakeyaml.representer.Represent;
 import org.yaml.snakeyaml.representer.Representer;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-
 /**
  * Not really a test, this is used to generate a yaml representation of our webservice for future reference.
+ *
  * @author dyuen
  */
 public class GenerateYamlTest {
@@ -49,16 +50,14 @@ public class GenerateYamlTest {
     public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
             DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstore.yml"));
 
-
     @Test
     public void generateYAML() throws IOException {
         final int localPort = RULE.getLocalPort();
         final String swagger_filename = "/swagger.yaml";
-        File destination = new File(System.getProperty("baseDir")+"/src/main/resources/", "swagger.yaml");
+        File destination = new File(System.getProperty("baseDir") + "/src/main/resources/", "swagger.yaml");
         final URL url = new URL("http", "localhost", localPort, swagger_filename);
         System.out.println(url.toString());
-        FileUtils.copyURLToFile(url,destination);
-
+        FileUtils.copyURLToFile(url, destination);
 
         // try sorting it
         Yaml yaml = new Yaml(new SorterRepresenter());
@@ -68,14 +67,14 @@ public class GenerateYamlTest {
         FileUtils.write(destination, strDump, StandardCharsets.UTF_8);
     }
 
-    private class SorterRepresenter extends Representer{
+    private class SorterRepresenter extends Representer {
         SorterRepresenter() {
             this.representers.put(LinkedHashMap.class, new MapSorter());
         }
 
         private class MapSorter implements Represent {
             public Node representData(Object data) {
-                Map map = (Map) data;
+                Map map = (Map)data;
                 Object sortedMap = sortMapByKey(map);
                 return SorterRepresenter.this.representData(sortedMap);
             }
@@ -85,13 +84,13 @@ public class GenerateYamlTest {
                     TreeMap sortedMap = new TreeMap(Ordering.natural());
                     // not sure if we actually need to go recursive, it seems to mess up parameter order
                     //                    Set<Map.Entry> entrySet = ((Map)object).entrySet();
-//                    for (Map.Entry entry : entrySet) {
-//                        entry.setValue(sortMapByKey(entry.getValue()));
-//                    }
+                    //                    for (Map.Entry entry : entrySet) {
+                    //                        entry.setValue(sortMapByKey(entry.getValue()));
+                    //                    }
                     sortedMap.putAll((Map)object);
                     return sortedMap;
-                } else if (object instanceof List){
-                    Collections.sort((List) object, (o1, o2) -> o1.toString().compareTo(o2.toString()));
+                } else if (object instanceof List) {
+                    Collections.sort((List)object, (o1, o2) -> o1.toString().compareTo(o2.toString()));
                     return object;
                 } else {
                     return object;

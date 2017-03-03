@@ -25,7 +25,8 @@
     <changeSet id="1" author="agduncan" context="descriptor-paths-not-null">
         <addNotNullConstraint tableName="container" columnName="defaultwdlpath" defaultNullValue="/Dockstore.wdl"></addNotNullConstraint>
         <addNotNullConstraint tableName="container" columnName="defaultcwlpath" defaultNullValue="/Dockstore.cwl"></addNotNullConstraint>
-        <addNotNullConstraint tableName="container" columnName="defaultdockerfilepath" defaultNullValue="/Dockerfile"></addNotNullConstraint>
+        <addNotNullConstraint tableName="container" columnName="defaultdockerfilepath"
+                              defaultNullValue="/Dockerfile"></addNotNullConstraint>
         <addNotNullConstraint tableName="tag" columnName="wdlpath" defaultNullValue="/Dockstore.wdl"></addNotNullConstraint>
         <addNotNullConstraint tableName="tag" columnName="cwlpath" defaultNullValue="/Dockstore.cwl"></addNotNullConstraint>
         <addNotNullConstraint tableName="tag" columnName="dockerfilepath" defaultNullValue="/Dockerfile"></addNotNullConstraint>
@@ -136,7 +137,7 @@
                                  constraintName="fk_encl8hnebnkcaxj9tlugr9cxh" deferrable="false" initiallyDeferred="false"
                                  onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id"
                                  referencedTableName="workflowversion"
-                                 />
+        />
     </changeSet>
 
     <changeSet author="dyuen (generated)" id="1456852285299-37">
@@ -145,7 +146,7 @@
                                  constraintName="fk_esgelvnqxrv53m71tdvwkxut3" deferrable="false" initiallyDeferred="false"
                                  onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id"
                                  referencedTableName="workflow"
-                                 />
+        />
     </changeSet>
 
     <changeSet id="75426534536" author="agduncan" context="sourcefile-add-path-column">
@@ -173,7 +174,9 @@
         <dropColumn tableName="tool" columnName="hascollab"></dropColumn>
         <dropColumn tableName="tool" columnName="isstarred"></dropColumn>
         <dropColumn tableName="workflow" columnName="name"></dropColumn>
-        <addColumn tableName="tool"><column name="ispublished" type="boolean"/></addColumn>
+        <addColumn tableName="tool">
+            <column name="ispublished" type="boolean"/>
+        </addColumn>
         <sql dbms="postgresql">
             update tool set ispublished=isregistered;
         </sql>
@@ -259,13 +262,13 @@
     </changeSet>
 
     <changeSet id="default_branch" author="agduncan" context="removes_validtrigger_adds_default_branch">
-       <dropColumn tableName="tool" columnName="validtrigger"></dropColumn>
-       <addColumn tableName="tool">
-           <column name="defaultversion" type="varchar(255)"></column>
-       </addColumn>        
-       <addColumn tableName="workflow">
-           <column name="defaultversion" type="varchar(255)"></column>
-       </addColumn>
+        <dropColumn tableName="tool" columnName="validtrigger"></dropColumn>
+        <addColumn tableName="tool">
+            <column name="defaultversion" type="varchar(255)"></column>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column name="defaultversion" type="varchar(255)"></column>
+        </addColumn>
     </changeSet>
 
     <changeSet id="dirtybit" author="agduncan" context="adds_dirtybit_to_track_version_mods">
@@ -345,4 +348,63 @@
         <dropColumn tableName="workflowversion" columnName="testparameterfile"></dropColumn>
         <dropColumn tableName="workflow" columnName="defaulttestparameterfile"></dropColumn>
     </changeSet>
+
+    <changeSet id="removemailto" author="agduncan" context="removes_mail_to_from_existing_entries">
+        <sql dbms="postgresql">
+            update tool set email = replace(email, 'mailto:', '');
+        </sql>
+        <sql dbms="postgresql">
+            update workflow set email = replace(email, 'mailto:', '');
+        </sql>
+    </changeSet>
+
+    <changeSet id="privatetools" author="agduncan" context="adds_private_tools">
+        <addColumn tableName="tool">
+            <column name="privateaccess" type="boolean"></column>
+        </addColumn>
+        <addDefaultValue tableName="tool" columnName="privateaccess" defaultValueBoolean="false"/>
+        <sql dbms="postgresql">
+            update tool set privateaccess=false;
+        </sql>
+        <addColumn tableName="tool">
+            <column name="toolmaintaineremail" type="varchar(255)"></column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="starredentries" author="agduncan" context="adds_starred_entries">
+        <addColumn tableName="enduser">
+            <column name="company" type="varchar(255)"></column>
+        </addColumn>
+        <addColumn tableName="enduser">
+            <column name="bio" type="varchar(255)"></column>
+        </addColumn>
+        <addColumn tableName="enduser">
+            <column name="location" type="varchar(255)"></column>
+        </addColumn>
+        <addColumn tableName="enduser">
+            <column name="email" type="varchar(255)"></column>
+        </addColumn>
+        <addColumn tableName="enduser">
+            <column name="avatarurl" type="varchar(255)"></column>
+        </addColumn>
+        
+        <createTable tableName="starred">
+            <column name="userid" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="entryid" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addPrimaryKey
+                columnNames="entryid, userid"
+                constraintName="starred_pkey"
+                tableName="starred"/>
+        <addForeignKeyConstraint baseColumnNames="userid"
+                                 baseTableName="starred"
+                                 constraintName="fk_userid"
+                                 referencedColumnNames="id"
+                                 referencedTableName="enduser"/>
+    </changeSet>
+
 </databaseChangeLog>

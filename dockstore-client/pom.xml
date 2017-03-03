@@ -20,13 +20,13 @@
     <parent>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
-        <version>1.1.6-SNAPSHOT</version>
+        <version>1.2.0-alpha.5-SNAPSHOT</version>
     </parent>
     <artifactId>dockstore-client</artifactId>
     <packaging>jar</packaging>
-    
+
     <name>dockstore-client</name>
-    
+
     <dependencies>
         <dependency>
             <groupId>org.postgresql</groupId>
@@ -37,19 +37,30 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.1.6-SNAPSHOT</version>
+            <version>1.2.0-alpha.5-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-client</artifactId>
-            <version>1.1.6-SNAPSHOT</version>
+            <version>1.2.0-alpha.5-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-launcher</artifactId>
-            <version>1.1.6-SNAPSHOT</version>
+            <version>1.2.0-alpha.5-SNAPSHOT</version>
         </dependency>
-        
+        <dependency>
+            <groupId>io.dockstore</groupId>
+            <artifactId>dockstore-file-plugin-parent</artifactId>
+            <version>1.2.0-alpha.5-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro</artifactId>
+            <version>1.8.1</version>
+        </dependency>
+
+
         <dependency>
             <groupId>io.dropwizard</groupId>
             <artifactId>dropwizard-testing</artifactId>
@@ -101,10 +112,10 @@
             <artifactId>commons-io</artifactId>
         </dependency>
         <dependency>
-            <groupId>commons-configuration</groupId>
-            <artifactId>commons-configuration</artifactId>
-            <version>1.10</version>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-configuration2</artifactId>
         </dependency>
+
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
@@ -176,8 +187,11 @@
             <groupId>javax.annotation</groupId>
             <artifactId>javax.annotation-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>ro.fortsoft.pf4j</groupId>
+            <artifactId>pf4j</artifactId>
+        </dependency>
     </dependencies>
-
 
 
     <build>
@@ -186,6 +200,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
                 <configuration>
+                    <shadedArtifactAttached>true</shadedArtifactAttached>
+                    <shadedClassifierName>shaded</shadedClassifierName>
                     <createDependencyReducedPom>false</createDependencyReducedPom>
                     <filters>
                         <filter>
@@ -322,7 +338,7 @@
                 </executions>
             </plugin>
         </plugins>
-        
+
         <resources>
             <resource>
                 <targetPath>${basedir}/target</targetPath>

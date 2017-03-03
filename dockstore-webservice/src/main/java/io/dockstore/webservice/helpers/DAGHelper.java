@@ -16,6 +16,17 @@
 
 package io.dockstore.webservice.helpers;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
@@ -38,25 +49,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 /**
  * A helper class for DAG and tool table creation
  * Created by aduncan on 14/10/16.
  */
 public class DAGHelper {
-    private final ToolDAO toolDAO;
-
     private static final Logger LOG = LoggerFactory.getLogger(DAGHelper.class);
+    private final ToolDAO toolDAO;
 
     public DAGHelper(final ToolDAO toolDAO) {
         this.toolDAO = toolDAO;
@@ -65,14 +64,16 @@ public class DAGHelper {
     /**
      * This method will get the content for tool tab with descriptor type = WDL
      * It will then call another method to transform the content into JSON string and return
+     *
      * @param tempMainDescriptor
-     * @param type either dag or tools
+     * @param type               either dag or tools
      * @return String
-     * */
-    public String getContentWDL(String mainDescName, File tempMainDescriptor,  Map<String, String> secondaryDescContent, WorkflowResource.Type type) {
+     */
+    public String getContentWDL(String mainDescName, File tempMainDescriptor, Map<String, String> secondaryDescContent,
+            WorkflowResource.Type type) {
         // Initialize general variables
         Bridge bridge = new Bridge();
-        bridge.setSecondaryFiles((HashMap<String, String>) secondaryDescContent);
+        bridge.setSecondaryFiles((HashMap<String, String>)secondaryDescContent);
         String callType = "call"; // This may change later (ex. tool, workflow)
         String toolType = "tool";
 
@@ -165,11 +166,12 @@ public class DAGHelper {
      * This method will get the content for tool tab or DAG tab with descriptor type = CWL
      * It will then call another method to transform the content into JSON string and return
      * TODO: Currently only works for CWL 1.0
-     * @param content has the content of main descriptor file
+     *
+     * @param content              has the content of main descriptor file
      * @param secondaryDescContent has the secondary files and the content
-     * @param type either dag or tools
+     * @param type                 either dag or tools
      * @return String
-     * */
+     */
     @SuppressWarnings("checkstyle:methodlength")
     public String getContentCWL(String mainDescName, String content, Map<String, String> secondaryDescContent, WorkflowResource.Type type) {
         Yaml yaml = new Yaml();
@@ -184,7 +186,7 @@ public class DAGHelper {
             Map<String, Triple<String, String, String>> nodeDockerInfo = new HashMap<>(); // map of stepId -> (run path, docker image, docker url)
 
             // Convert YAML to JSON
-            Map<String, Object> mapping = (Map<String, Object>) yaml.load(content);
+            Map<String, Object> mapping = (Map<String, Object>)yaml.load(content);
             JSONObject cwlJson = new JSONObject(mapping);
 
             // Other useful variables
@@ -238,13 +240,13 @@ public class DAGHelper {
 
                             if (sources != null) {
                                 if (sources instanceof String) {
-                                    String[] sourceSplit = ((String) sources).split("/");
+                                    String[] sourceSplit = ((String)sources).split("/");
                                     // Only add if of the form dependentStep/inputName
                                     if (sourceSplit.length > 1) {
                                         stepDependencies.add(nodePrefix + sourceSplit[0].replaceFirst("#", ""));
                                     }
                                 } else {
-                                    ArrayList<String> filteredDependencies = filterDependent((ArrayList<String>) sources, nodePrefix);
+                                    ArrayList<String> filteredDependencies = filterDependent((ArrayList<String>)sources, nodePrefix);
                                     stepDependencies.addAll(filteredDependencies);
                                 }
                             }
@@ -265,7 +267,7 @@ public class DAGHelper {
                     String runAsJson = gson.toJson(gson.toJsonTree(run));
 
                     if (run instanceof String) {
-                        secondaryFile = (String) run;
+                        secondaryFile = (String)run;
                     } else if (isTool(runAsJson, yaml)) {
                         CommandLineTool clTool = gson.fromJson(runAsJson, CommandLineTool.class);
                         stepDockerRequirement = getRequirementOrHint(clTool.getRequirements(), clTool.getHints(), gson,
@@ -283,12 +285,12 @@ public class DAGHelper {
                         stepToType.put(workflowStepId, expressionToolType);
                     } else if (run instanceof Map) {
                         // must be import or include
-                        Object importVal = ((Map) run).get("import");
+                        Object importVal = ((Map)run).get("import");
                         if (importVal != null) {
                             secondaryFile = importVal.toString();
                         }
 
-                        Object includeVal = ((Map) run).get("include");
+                        Object includeVal = ((Map)run).get("include");
                         if (includeVal != null) {
                             secondaryFile = includeVal.toString();
                         }
@@ -339,12 +341,12 @@ public class DAGHelper {
                         Object sources = workflowOutputParameter.getOutputSource();
                         if (sources != null) {
                             if (sources instanceof String) {
-                                String[] sourceSplit = ((String) sources).split("/");
+                                String[] sourceSplit = ((String)sources).split("/");
                                 if (sourceSplit.length > 1) {
                                     endDependencies.add(nodePrefix + sourceSplit[0].replaceFirst("#", ""));
                                 }
                             } else {
-                                ArrayList<String> filteredDependencies = filterDependent((ArrayList<String>) sources, nodePrefix);
+                                ArrayList<String> filteredDependencies = filterDependent((ArrayList<String>)sources, nodePrefix);
                                 endDependencies.addAll(filteredDependencies);
                             }
                         }
@@ -378,6 +380,7 @@ public class DAGHelper {
 
     /**
      * Will determine dockerPull from requirements or hints (requirements takes precedence)
+     *
      * @param requirements
      * @param hints
      * @return
@@ -390,6 +393,7 @@ public class DAGHelper {
 
     /**
      * Checks secondary file for docker pull information
+     *
      * @param stepDockerRequirement
      * @param secondaryFileContents
      * @param gson
@@ -398,7 +402,7 @@ public class DAGHelper {
      */
     private String parseSecondaryFile(String stepDockerRequirement, String secondaryFileContents, Gson gson, Yaml yaml) {
         if (secondaryFileContents != null) {
-            Map<String, Object> entryMapping = (Map<String, Object>) yaml.load(secondaryFileContents);
+            Map<String, Object> entryMapping = (Map<String, Object>)yaml.load(secondaryFileContents);
             JSONObject entryJson = new JSONObject(entryMapping);
 
             List<Object> cltRequirements = null;
@@ -426,6 +430,7 @@ public class DAGHelper {
     /**
      * Given a list of CWL requirements, will return the DockerPull information if present.
      * If not will return the current docker path (currentDefault)
+     *
      * @param requirements
      * @param currentDefault
      * @return
@@ -441,8 +446,8 @@ public class DAGHelper {
                 //                    break;
                 //                }
                 //            }
-                if (((Map) requirement).get("class").equals("DockerRequirement") && ((Map) requirement).get("dockerPull") != null) {
-                    return ((Map) requirement).get("dockerPull").toString();
+                if (((Map)requirement).get("class").equals("DockerRequirement") && ((Map)requirement).get("dockerPull") != null) {
+                    return ((Map)requirement).get("dockerPull").toString();
                 }
             }
         }
@@ -453,6 +458,7 @@ public class DAGHelper {
     /**
      * Given a list of CWL hints, will return the DockerPull information if present.
      * If not will return the current docker path (currentDefault)
+     *
      * @param hints
      * @param gsonWorkflow
      * @param currentDefault
@@ -461,12 +467,13 @@ public class DAGHelper {
     private String getDockerHint(List<Object> hints, Gson gsonWorkflow, String currentDefault) {
         if (hints != null) {
             String hintsJson = gsonWorkflow.toJson(hints);
-            List<Object> hintsList = gsonWorkflow.fromJson(hintsJson, new TypeToken<List<Object>>() {}.getType());
+            List<Object> hintsList = gsonWorkflow.fromJson(hintsJson, new TypeToken<List<Object>>() {
+            }.getType());
 
             for (Object requirement : hintsList) {
-                Object dockerRequirement = ((Map) requirement).get("DockerRequirement");
+                Object dockerRequirement = ((Map)requirement).get("DockerRequirement");
                 if (dockerRequirement != null) {
-                    return ((Map) dockerRequirement).get("dockerPull").toString();
+                    return ((Map)dockerRequirement).get("dockerPull").toString();
                 }
             }
         }
@@ -476,15 +483,16 @@ public class DAGHelper {
 
     /**
      * Checks if a file is a workflow (CWL)
+     *
      * @param content
      * @return true if workflow, false otherwise
      */
     private boolean isWorkflow(String content, Yaml yaml) {
         if (!Strings.isNullOrEmpty(content)) {
-            Map<String, Object> mapping = (Map<String, Object>) yaml.load(content);
+            Map<String, Object> mapping = (Map<String, Object>)yaml.load(content);
             if (mapping.get("class") != null) {
                 String cwlClass = mapping.get("class").toString();
-                return cwlClass.equals("Workflow");
+                return "Workflow".equals(cwlClass);
             }
         }
         return false;
@@ -492,15 +500,16 @@ public class DAGHelper {
 
     /**
      * Checks if a file is an expression tool (CWL)
+     *
      * @param content
      * @return true if expression tool, false otherwise
      */
     private boolean isExpressionTool(String content, Yaml yaml) {
         if (!Strings.isNullOrEmpty(content)) {
-            Map<String, Object> mapping = (Map<String, Object>) yaml.load(content);
+            Map<String, Object> mapping = (Map<String, Object>)yaml.load(content);
             if (mapping.get("class") != null) {
                 String cwlClass = mapping.get("class").toString();
-                return cwlClass.equals("ExpressionTool");
+                return "ExpressionTool".equals(cwlClass);
             }
         }
         return false;
@@ -508,32 +517,34 @@ public class DAGHelper {
 
     /**
      * Checks if a file is a tool (CWL)
+     *
      * @param content
      * @return true if tool, false otherwise
      */
     private boolean isTool(String content, Yaml yaml) {
         if (!Strings.isNullOrEmpty(content)) {
-            Map<String, Object> mapping = (Map<String, Object>) yaml.load(content);
+            Map<String, Object> mapping = (Map<String, Object>)yaml.load(content);
             if (mapping.get("class") != null) {
                 String cwlClass = mapping.get("class").toString();
-                return cwlClass.equals("CommandLineTool");
+                return "CommandLineTool".equals(cwlClass);
             }
         }
         return false;
     }
 
     private boolean isValidCwl(String content, Yaml yaml) {
-        Map<String, Object> mapping = (Map<String, Object>) yaml.load(content);
+        Map<String, Object> mapping = (Map<String, Object>)yaml.load(content);
         String cwlVersion = mapping.get("cwlVersion").toString();
 
         if (cwlVersion != null) {
-            return cwlVersion.equals("v1.0");
+            return "v1.0".equals(cwlVersion);
         }
         return false;
     }
 
     /**
      * Given an array of sources, will look for dependencies in the source name
+     *
      * @param sources
      * @return filtered list of dependent sources
      */
@@ -543,7 +554,7 @@ public class DAGHelper {
         for (String s : sources) {
             String[] split = s.split("/");
             if (split.length > 1) {
-                filteredArray.add(nodePrefix + split[0].replaceFirst("#",""));
+                filteredArray.add(nodePrefix + split[0].replaceFirst("#", ""));
             }
         }
 
@@ -552,6 +563,7 @@ public class DAGHelper {
 
     /**
      * Given a docker entry (quay or dockerhub), return a URL to the given entry
+     *
      * @param dockerEntry has the docker name
      * @return URL
      */
@@ -575,10 +587,10 @@ public class DAGHelper {
         // TODO: How do we check that the URL is valid? If not then the entry is likely a local docker build
         if (dockerEntry.startsWith("quay.io/")) {
             List<Tool> byPath = toolDAO.findPublishedByPath(dockerEntry);
-            if (byPath == null || byPath.isEmpty()){
+            if (byPath == null || byPath.isEmpty()) {
                 // when we cannot find a published tool on Dockstore, link to quay.io
                 url = dockerEntry.replaceFirst("quay\\.io/", quayIOPath);
-            } else{
+            } else {
                 // when we found a published tool, link to the tool on Dockstore
                 url = dockstorePath + dockerEntry;
             }
@@ -610,14 +622,15 @@ public class DAGHelper {
 
     /**
      * This method will setup the nodes (nodePairs) and edges (stepToDependencies) into Cytoscape compatible JSON
+     *
      * @param nodePairs
      * @param stepToDependencies
      * @param stepToType
      * @param nodeDockerInfo
      * @return Cytoscape compatible JSON with nodes and edges
      */
-    private String setupJSONDAG(ArrayList<Pair<String, String>> nodePairs, Map<String, ArrayList<String>> stepToDependencies, Map<String, String> stepToType,
-            Map<String, Triple<String, String, String>> nodeDockerInfo) {
+    private String setupJSONDAG(ArrayList<Pair<String, String>> nodePairs, Map<String, ArrayList<String>> stepToDependencies,
+            Map<String, String> stepToType, Map<String, Triple<String, String, String>> nodeDockerInfo) {
         ArrayList<Object> nodes = new ArrayList<>();
         ArrayList<Object> edges = new ArrayList<>();
         Map<String, ArrayList<Object>> dagJson = new LinkedHashMap<>();
@@ -673,6 +686,7 @@ public class DAGHelper {
     /**
      * This method will setup the tools of CWL workflow
      * It will then call another method to transform it through Gson to a Json string
+     *
      * @param nodeDockerInfo map of stepId -> (run path, docker pull, docker url)
      * @return
      */
@@ -681,7 +695,7 @@ public class DAGHelper {
         ArrayList<Object> tools = new ArrayList<>();
 
         //iterate through each step within workflow file
-        for(Map.Entry<String, Triple<String, String, String>> entry : nodeDockerInfo.entrySet()){
+        for (Map.Entry<String, Triple<String, String, String>> entry : nodeDockerInfo.entrySet()) {
             String key = entry.getKey();
             Triple<String, String, String> value = entry.getValue();
             //get the idName and fileName
@@ -697,7 +711,7 @@ public class DAGHelper {
             dataToolEntry.put("id", toolName.replaceFirst("^dockstore\\_", ""));
             dataToolEntry.put("file", fileName);
             dataToolEntry.put("docker", dockerPullName);
-            dataToolEntry.put("link",dockerLink);
+            dataToolEntry.put("link", dockerLink);
 
             // Only add if docker and link are present
             if (dockerLink != null && dockerPullName != null) {
@@ -711,10 +725,11 @@ public class DAGHelper {
 
     /**
      * This method will transform object containing the tools/dag of a workflow to Json string
+     *
      * @param content has the final content of task/tool/node
      * @return String
-     * */
-    private String convertToJSONString(Object content){
+     */
+    private String convertToJSONString(Object content) {
         //create json string and return
         Gson gson = new Gson();
         String json = gson.toJson(content);

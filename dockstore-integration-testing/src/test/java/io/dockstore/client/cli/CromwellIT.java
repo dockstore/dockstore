@@ -16,6 +16,13 @@
 
 package io.dockstore.client.cli;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
@@ -24,21 +31,16 @@ import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.WDLFileProvisioning;
 import io.dropwizard.testing.ResourceHelpers;
+import io.swagger.client.ApiException;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import scala.collection.JavaConversions;
 import scala.collection.immutable.List;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * This tests integration with the CromWell engine and what will eventually be wdltool.
+ *
  * @author dyuen
  */
 public class CromwellIT {
@@ -54,7 +56,7 @@ public class CromwellIT {
     }
 
     @Test
-    public void runWDLWorkflow() throws IOException {
+    public void runWDLWorkflow() throws IOException, ApiException {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
         AbstractEntryClient main = new ToolClient(client, false);
@@ -66,7 +68,7 @@ public class CromwellIT {
     }
 
     @Test
-    public void failRunWDLWorkflow() throws IOException {
+    public void failRunWDLWorkflow() throws IOException, ApiException {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
         AbstractEntryClient main = new ToolClient(client, false);
@@ -78,7 +80,7 @@ public class CromwellIT {
     }
 
     @Test
-    public void fileProvisioning() throws IOException {
+    public void fileProvisioning() throws IOException, ApiException {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
         AbstractEntryClient main = new ToolClient(client, false);
@@ -114,13 +116,14 @@ public class CromwellIT {
         File sourceFile = new File(ResourceHelpers.resourceFilePath("wdl-sanger-workflow.wdl"));
         Bridge bridge = new Bridge();
         HashMap<String, String> secondaryFiles = new HashMap<>();
-        secondaryFiles.put("wdl.wdl","task ps {\n" + "  command {\n" + "    ps\n" + "  }\n" + "  output {\n" + "    File procs = stdout()\n"
-                + "  }\n" + "}\n" + "\n" + "task cgrep {\n" + "  String pattern\n" + "  File in_file\n" + "  command {\n"
-                + "    grep '${pattern}' ${in_file} | wc -l\n" + "  }\n" + "  output {\n" + "    Int count = read_int(stdout())\n" + "  }\n"
-                + "}\n" + "\n" + "task wc {\n" + "  File in_file\n" + "  command {\n" + "    cat ${in_file} | wc -l\n" + "  }\n"
-                + "  output {\n" + "    Int count = read_int(stdout())\n" + "  }\n" + "}\n" + "\n" + "workflow three_step {\n"
-                + "  call ps\n" + "  call cgrep {\n" + "    input: in_file=ps.procs\n" + "  }\n" + "  call wc {\n"
-                + "    input: in_file=ps.procs\n" + "  }\n" + "}\n");
+        secondaryFiles.put("wdl.wdl",
+                "task ps {\n" + "  command {\n" + "    ps\n" + "  }\n" + "  output {\n" + "    File procs = stdout()\n" + "  }\n" + "}\n"
+                        + "\n" + "task cgrep {\n" + "  String pattern\n" + "  File in_file\n" + "  command {\n"
+                        + "    grep '${pattern}' ${in_file} | wc -l\n" + "  }\n" + "  output {\n" + "    Int count = read_int(stdout())\n"
+                        + "  }\n" + "}\n" + "\n" + "task wc {\n" + "  File in_file\n" + "  command {\n" + "    cat ${in_file} | wc -l\n"
+                        + "  }\n" + "  output {\n" + "    Int count = read_int(stdout())\n" + "  }\n" + "}\n" + "\n"
+                        + "workflow three_step {\n" + "  call ps\n" + "  call cgrep {\n" + "    input: in_file=ps.procs\n" + "  }\n"
+                        + "  call wc {\n" + "    input: in_file=ps.procs\n" + "  }\n" + "}\n");
         bridge.setSecondaryFiles(secondaryFiles);
         bridge.getInputFiles(sourceFile);
     }

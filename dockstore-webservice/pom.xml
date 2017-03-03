@@ -25,9 +25,9 @@
     <properties>
         <jetty-servlet.version>9.3.9.v20160517</jetty-servlet.version>
     </properties>
-    
+
     <parent>
-        <version>1.1.6-SNAPSHOT</version>
+        <version>1.2.0-alpha.5-SNAPSHOT</version>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
         <relativePath>../pom.xml</relativePath>
@@ -37,7 +37,12 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-quay-client</artifactId>
-            <version>1.1.6-SNAPSHOT</version>
+            <version>1.2.0-alpha.5-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>io.dockstore</groupId>
+            <artifactId>dockstore-common</artifactId>
+            <version>1.2.0-alpha.5-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.swagger</groupId>
@@ -338,7 +343,7 @@
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-servlet</artifactId>
             <version>${jetty-servlet.version}</version>
-          </dependency>
+        </dependency>
 
         <dependency>
             <groupId>javax.servlet</groupId>
@@ -359,7 +364,7 @@
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
         </dependency>
-        
+
         <dependency>
             <groupId>com.esotericsoftware.yamlbeans</groupId>
             <artifactId>yamlbeans</artifactId>
@@ -369,7 +374,7 @@
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore</artifactId>
         </dependency>
-        
+
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
@@ -397,6 +402,10 @@
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
         <dependency>
@@ -421,7 +430,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-client</artifactId>
-            <version>1.1.6-SNAPSHOT</version>
+            <version>1.2.0-alpha.5-SNAPSHOT</version>
             <exclusions>
                 <exclusion>
                     <groupId>ch.qos.logback</groupId>
@@ -442,7 +451,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.1.6-SNAPSHOT</version>
+            <version>1.2.0-alpha.5-SNAPSHOT</version>
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
@@ -487,8 +496,31 @@
             <groupId>com.google.http-client</groupId>
             <artifactId>google-http-client</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.cwl</groupId>
+            <artifactId>cwlavro-tools</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.cwl</groupId>
+            <artifactId>cwlavro-generated</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.broadinstitute</groupId>
+            <artifactId>wdl4s_2.11</artifactId>
+        </dependency>
     </dependencies>
-
 
 
     <build>
@@ -605,7 +637,6 @@
                                 <usedDependency>javax.ws.rs:jsr311-api</usedDependency>
                                 <usedDependency>io.swagger:swagger-jersey2-jaxrs</usedDependency>
                                 <usedDependency>io.dropwizard:dropwizard-views-freemarker</usedDependency>
-                                <usedDependency>org.apache.commons:commons-lang3</usedDependency>
                             </usedDependencies>
                         </configuration>
                     </execution>
@@ -649,7 +680,7 @@
                             <goal>clean</goal>
                         </goals>
                         <configuration>
-			    <excludeDefaultDirectories>true</excludeDefaultDirectories>
+                            <excludeDefaultDirectories>true</excludeDefaultDirectories>
                             <filesets>
                                 <fileset>
                                     <directory>tool-registry-validator</directory>

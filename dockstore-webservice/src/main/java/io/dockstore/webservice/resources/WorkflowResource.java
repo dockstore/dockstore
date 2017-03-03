@@ -16,14 +16,37 @@
 
 package io.dockstore.webservice.resources;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+
+import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
+
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Optional;
 import com.google.common.base.Strings;
 import com.google.common.io.Files;
-
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.VerifyRequest;
+import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
@@ -55,7 +78,6 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.model.ToolDescriptor;
-
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.json.JSONArray;
@@ -63,37 +85,15 @@ import org.json.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
-
-
 /**
- *
  * @author dyuen
  */
 @Path("/workflows")
 @Api("workflows")
 @Produces(MediaType.APPLICATION_JSON)
 public class WorkflowResource {
+
+    private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
 
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
@@ -108,16 +108,14 @@ public class WorkflowResource {
     private final String bitbucketClientSecret;
     private final EntryVersionHelper<Workflow> entryVersionHelper;
 
-
-    private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
-
     public enum Type {
         DAG, TOOLS
     }
 
     @SuppressWarnings("checkstyle:parameternumber")
-    public WorkflowResource(HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ToolDAO toolDAO, WorkflowDAO workflowDAO, WorkflowVersionDAO workflowVersionDAO,
-            LabelDAO labelDAO, FileDAO fileDAO, String bitbucketClientID, String bitbucketClientSecret) {
+    public WorkflowResource(HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ToolDAO toolDAO, WorkflowDAO workflowDAO,
+            WorkflowVersionDAO workflowVersionDAO, LabelDAO labelDAO, FileDAO fileDAO, String bitbucketClientID,
+            String bitbucketClientSecret) {
         this.userDAO = userDAO;
         this.tokenDAO = tokenDAO;
         this.workflowVersionDAO = workflowVersionDAO;
@@ -175,7 +173,7 @@ public class WorkflowResource {
         newWorkflow.setDescriptorType(workflow.getDescriptorType());
 
         // Copy Labels
-        SortedSet<Label> labels = (SortedSet) workflow.getLabels();
+        SortedSet<Label> labels = (SortedSet)workflow.getLabels();
         newWorkflow.setLabels(labels);
 
         // copy to new object
@@ -191,6 +189,7 @@ public class WorkflowResource {
 
     /**
      * For each valid token for a git hosting service, refresh all workflows
+     *
      * @param user a user to refresh workflows for
      */
     public void refreshStubWorkflowsForUser(User user) {
@@ -205,8 +204,7 @@ public class WorkflowResource {
             // Update bitbucket workflows if token exists
             if (bitbucketToken != null && bitbucketToken.getContent() != null) {
                 // get workflows from bitbucket for a user and updates db
-                refreshHelper(new BitBucketSourceCodeRepo(bitbucketToken.getUsername(), client,
-                        bitbucketToken.getContent(), null), user);
+                refreshHelper(new BitBucketSourceCodeRepo(bitbucketToken.getUsername(), client, bitbucketToken.getContent(), null), user);
             }
 
             // Refresh Github
@@ -227,7 +225,6 @@ public class WorkflowResource {
                 refreshHelper(new GitLabSourceCodeRepo(user.getUsername(), client, gitlabToken.getContent(), null), user);
             }
 
-
             // when 3) no data is found for a workflow in the db, we may want to create a warning, note, or label
         } catch (WebApplicationException ex) {
             LOG.info(user.getUsername() + ": " + "Failed to refresh user {}", user.getId());
@@ -236,15 +233,16 @@ public class WorkflowResource {
 
     /**
      * Gets a mapping of all workflows from git host, and updates/adds as appropriate
+     *
      * @param sourceCodeRepoInterface
      * @param user
-         */
+     */
     private void refreshHelper(final SourceCodeRepoInterface sourceCodeRepoInterface, User user) {
         // Mapping of git url to repository name (owner/repo)
         final Map<String, String> workflowGitUrl2Name = sourceCodeRepoInterface.getWorkflowGitUrl2RepositoryId();
 
         // For each entry found of the associated git hosting service
-        for(Map.Entry<String, String> entry : workflowGitUrl2Name.entrySet()) {
+        for (Map.Entry<String, String> entry : workflowGitUrl2Name.entrySet()) {
             // Get all workflows with the same giturl
             final List<Workflow> byGitUrl = workflowDAO.findByGitUrl(entry.getKey());
 
@@ -302,6 +300,9 @@ public class WorkflowResource {
         Helper.checkEntry(workflow);
         Helper.checkUser(user, workflow);
 
+        // Update user data
+        Helper.updateUserHelper(user, userDAO, tokenDAO);
+
         // get a live user for the following
         user = userDAO.findById(user.getId());
         // Set up source code interface and ensure token is set up
@@ -309,7 +310,8 @@ public class WorkflowResource {
 
         // do a full refresh when targeted like this
         workflow.setMode(WorkflowMode.FULL);
-        final Workflow newWorkflow = sourceCodeRepo.getWorkflow(workflow.getOrganization() + '/' + workflow.getRepository(), Optional.of(workflow));
+        final Workflow newWorkflow = sourceCodeRepo
+                .getWorkflow(workflow.getOrganization() + '/' + workflow.getRepository(), Optional.of(workflow));
         workflow.getUsers().add(user);
         updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow);
 
@@ -317,8 +319,7 @@ public class WorkflowResource {
     }
 
     /**
-     *
-     * @param workflow workflow to be updated
+     * @param workflow    workflow to be updated
      * @param newWorkflow workflow to grab new content from
      */
     private void updateDBWorkflowWithSourceControlWorkflow(Workflow workflow, Workflow newWorkflow) {
@@ -327,11 +328,11 @@ public class WorkflowResource {
         // update workflow versions
         Map<String, WorkflowVersion> existingVersionMap = new HashMap<>();
         workflow.getWorkflowVersions().forEach(version -> existingVersionMap.put(version.getName(), version));
-        for(WorkflowVersion version:  newWorkflow.getVersions()){
+        for (WorkflowVersion version : newWorkflow.getVersions()) {
             WorkflowVersion workflowVersionFromDB = existingVersionMap.get(version.getName());
-            if (existingVersionMap.containsKey(version.getName())){
+            if (existingVersionMap.containsKey(version.getName())) {
                 workflowVersionFromDB.update(version);
-            } else{
+            } else {
                 // create a new one and replace the old one
                 final long workflowVersionId = workflowVersionDAO.create(version);
                 workflowVersionFromDB = workflowVersionDAO.findById(workflowVersionId);
@@ -341,10 +342,10 @@ public class WorkflowResource {
             // update source files for each version
             Map<String, SourceFile> existingFileMap = new HashMap<>();
             workflowVersionFromDB.getSourceFiles().forEach(file -> existingFileMap.put(file.getType().toString() + file.getPath(), file));
-            for(SourceFile file : version.getSourceFiles()){
-                if (existingFileMap.containsKey(file.getType().toString() + file.getPath())){
+            for (SourceFile file : version.getSourceFiles()) {
+                if (existingFileMap.containsKey(file.getType().toString() + file.getPath())) {
                     existingFileMap.get(file.getType().toString() + file.getPath()).setContent(file.getContent());
-                } else{
+                } else {
                     final long fileID = fileDAO.create(file);
                     final SourceFile fileFromDB = fileDAO.findById(fileID);
                     workflowVersionFromDB.getSourceFiles().add(fileFromDB);
@@ -479,8 +480,8 @@ public class WorkflowResource {
     @Path("/{workflowId}/resetVersionPaths")
     @ApiOperation(value = "Change the workflow paths", notes = "Workflow version correspond to each row of the versions table listing all information for a workflow", response = Workflow.class)
     public Workflow updateWorkflowPath(@ApiParam(hidden = true) @Auth User user,
-                                   @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
-                                   @ApiParam(value = "Workflow with updated information", required = true) Workflow workflow){
+            @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
+            @ApiParam(value = "Workflow with updated information", required = true) Workflow workflow) {
 
         Workflow c = workflowDAO.findById(workflowId);
 
@@ -490,7 +491,7 @@ public class WorkflowResource {
 
         //update the workflow path in all workflowVersions
         Set<WorkflowVersion> versions = c.getVersions();
-        for(WorkflowVersion version : versions){
+        for (WorkflowVersion version : versions) {
             if (!version.isDirtyBit()) {
                 version.setWorkflowPath(workflow.getDefaultWorkflowPath());
             }
@@ -566,7 +567,8 @@ public class WorkflowResource {
     @Timed
     @UnitOfWork
     @Path("published")
-    @ApiOperation(value = "List all published workflows.", tags = { "workflows" }, notes = "NO authentication", response = Workflow.class, responseContainer = "List")
+    @ApiOperation(value = "List all published workflows.", tags = {
+            "workflows" }, notes = "NO authentication", response = Workflow.class, responseContainer = "List")
     public List<Workflow> allPublishedWorkflows() {
         List<Workflow> tools = workflowDAO.findAllPublished();
         entryVersionHelper.filterContainersForHiddenTags(tools);
@@ -592,21 +594,17 @@ public class WorkflowResource {
     @UnitOfWork
     @Path("/path/workflow/{repository}/published")
     @ApiOperation(value = "Get a workflow by path", notes = "Lists info of workflow. Enter full path.", response = Workflow.class)
-    public Workflow getPublishedWorkflowByPath(
-            @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
+    public Workflow getPublishedWorkflowByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         Workflow workflow = workflowDAO.findPublishedByPath(path);
         Helper.checkEntry(workflow);
         return workflow;
     }
 
-
-
     @GET
     @Timed
     @UnitOfWork
     @Path("/search")
-    @ApiOperation(value = "Search for matching published workflows."
-            , notes = "Search on the name (full path name) and description. NO authentication", response = Workflow.class, responseContainer = "List", tags = {
+    @ApiOperation(value = "Search for matching published workflows.", notes = "Search on the name (full path name) and description. NO authentication", response = Workflow.class, responseContainer = "List", tags = {
             "workflows" })
     public List<Workflow> search(@QueryParam("pattern") String word) {
         return workflowDAO.searchPattern(word);
@@ -632,22 +630,22 @@ public class WorkflowResource {
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/verifiedSources")
-    @ApiOperation(value = "Get a semicolon delimited list of verified sources", tags = { "workflows" }, notes = "Does not need authentication", response = String.class)
-    public String verifiedSources(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId)  {
+    @ApiOperation(value = "Get a semicolon delimited list of verified sources", tags = {
+            "workflows" }, notes = "Does not need authentication", response = String.class)
+    public String verifiedSources(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         Helper.checkEntry(workflow);
 
         Set<String> verifiedSourcesArray = new HashSet<>();
-        workflow.getWorkflowVersions()
-                .stream()
-                .filter((WorkflowVersion u) -> u.isVerified())
+        workflow.getWorkflowVersions().stream().filter((WorkflowVersion u) -> u.isVerified())
                 .forEach((WorkflowVersion v) -> verifiedSourcesArray.add(v.getVerifiedSource()));
 
         JSONArray jsonArray;
         try {
             jsonArray = new JSONArray(verifiedSourcesArray.toArray());
         } catch (JSONException ex) {
-            throw new CustomWebApplicationException("There was an error converting the array of verified sources to a JSON array.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            throw new CustomWebApplicationException("There was an error converting the array of verified sources to a JSON array.",
+                    HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
 
         return jsonArray.toString();
@@ -657,9 +655,10 @@ public class WorkflowResource {
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/cwl")
-    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
+    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = {
+            "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile cwl(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
-            @QueryParam("tag") String tag)  {
+            @QueryParam("tag") String tag) {
         return entryVersionHelper.getSourceFile(workflowId, tag, FileType.DOCKSTORE_CWL);
     }
 
@@ -667,7 +666,8 @@ public class WorkflowResource {
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/wdl")
-    @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
+    @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = {
+            "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile wdl(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag) {
         return entryVersionHelper.getSourceFile(workflowId, tag, FileType.DOCKSTORE_WDL);
@@ -677,9 +677,10 @@ public class WorkflowResource {
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/cwl/{relative-path}")
-    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
+    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = {
+            "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile secondaryCwlPath(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
-            @QueryParam("tag") String tag, @PathParam("relative-path") String path){
+            @QueryParam("tag") String tag, @PathParam("relative-path") String path) {
 
         return entryVersionHelper.getSourceFileByPath(workflowId, tag, FileType.DOCKSTORE_CWL, path);
     }
@@ -688,21 +689,22 @@ public class WorkflowResource {
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/wdl/{relative-path}")
-    @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
+    @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = {
+            "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile secondaryWdlPath(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
-            @QueryParam("tag") String tag, @PathParam("relative-path") String path){
+            @QueryParam("tag") String tag, @PathParam("relative-path") String path) {
 
         return entryVersionHelper.getSourceFileByPath(workflowId, tag, FileType.DOCKSTORE_WDL, path);
     }
-
 
     @GET
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/secondaryCwl")
-    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
+    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = {
+            "workflows" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
     public List<SourceFile> secondaryCwl(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
-            @QueryParam("tag") String tag)  {
+            @QueryParam("tag") String tag) {
         return entryVersionHelper.getAllSecondaryFiles(workflowId, tag, FileType.DOCKSTORE_CWL);
     }
 
@@ -710,7 +712,8 @@ public class WorkflowResource {
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/secondaryWdl")
-    @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
+    @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = {
+            "workflows" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
     public List<SourceFile> secondaryWdl(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag) {
         return entryVersionHelper.getAllSecondaryFiles(workflowId, tag, FileType.DOCKSTORE_WDL);
@@ -720,8 +723,10 @@ public class WorkflowResource {
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/testParameterFiles")
-    @ApiOperation(value = "Get the corresponding test parameter files.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
-    public List<SourceFile> getTestParameterFiles(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
+    @ApiOperation(value = "Get the corresponding test parameter files.", tags = {
+            "workflows" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
+    public List<SourceFile> getTestParameterFiles(
+            @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("version") String version) {
 
         Workflow workflow = workflowDAO.findById(workflowId);
@@ -749,31 +754,36 @@ public class WorkflowResource {
 
         if (workflow.getMode() == WorkflowMode.STUB) {
             LOG.info("The workflow \'" + workflow.getPath() + "\' is a STUB. Refresh the workflow if you want to add test parameter files");
-            throw new CustomWebApplicationException("The workflow \'" + workflow.getPath() + "\' is a STUB. Refresh the workflow if you want to add test parameter files", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(
+                    "The workflow \'" + workflow.getPath() + "\' is a STUB. Refresh the workflow if you want to add test parameter files",
+                    HttpStatus.SC_BAD_REQUEST);
         }
 
-        WorkflowVersion workflowVersion = workflow.getWorkflowVersions()
-                .stream()
-                .filter((WorkflowVersion v) -> v.getName().equals(version))
-                .findFirst()
-                .get();
+        WorkflowVersion workflowVersion = workflow.getWorkflowVersions().stream().filter((WorkflowVersion v) -> v.getName().equals(version))
+                .findFirst().get();
 
         if (workflowVersion == null) {
             LOG.info("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' does not exist.");
-            throw new CustomWebApplicationException("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' does not exist.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(
+                    "The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' does not exist.",
+                    HttpStatus.SC_BAD_REQUEST);
         }
 
         if (!workflowVersion.isValid()) {
             LOG.info("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' is invalid.");
-            throw new CustomWebApplicationException("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' is invalid.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(
+                    "The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' is invalid.", HttpStatus.SC_BAD_REQUEST);
         }
 
         Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
 
         // Add new test parameter files
-        FileType fileType = (workflow.getDescriptorType().toUpperCase().equals(ToolDescriptor.TypeEnum.CWL.toString())) ? FileType.CWL_TEST_JSON : FileType.WDL_TEST_JSON;
+        FileType fileType =
+                (workflow.getDescriptorType().toUpperCase().equals(ToolDescriptor.TypeEnum.CWL.toString())) ? FileType.CWL_TEST_JSON
+                        : FileType.WDL_TEST_JSON;
         for (String path : testParameterPaths) {
-            long sourcefileDuplicate = sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType).count();
+            long sourcefileDuplicate = sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType)
+                    .count();
             if (sourcefileDuplicate == 0) {
                 // Sourcefile doesn't exist, add a stub which will have it's content filled on refresh
                 SourceFile sourceFile = new SourceFile();
@@ -801,29 +811,32 @@ public class WorkflowResource {
         Workflow workflow = workflowDAO.findById(workflowId);
         Helper.checkEntry(workflow);
 
-        WorkflowVersion workflowVersion = workflow.getWorkflowVersions()
-                .stream()
-                .filter((WorkflowVersion v) -> v.getName().equals(version))
-                .findFirst()
-                .get();
+        WorkflowVersion workflowVersion = workflow.getWorkflowVersions().stream().filter((WorkflowVersion v) -> v.getName().equals(version))
+                .findFirst().get();
 
         if (workflowVersion == null) {
             LOG.info("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' does not exist.");
-            throw new CustomWebApplicationException("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' does not exist.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(
+                    "The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' does not exist.",
+                    HttpStatus.SC_BAD_REQUEST);
         }
 
         if (!workflowVersion.isValid()) {
             LOG.info("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' is invalid.");
-            throw new CustomWebApplicationException("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' is invalid.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(
+                    "The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' is invalid.", HttpStatus.SC_BAD_REQUEST);
         }
 
         Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
 
         // Remove test parameter files
-        FileType fileType = (workflow.getDescriptorType().toUpperCase().equals(ToolDescriptor.TypeEnum.CWL.toString())) ? FileType.CWL_TEST_JSON : FileType.WDL_TEST_JSON;
+        FileType fileType =
+                (workflow.getDescriptorType().toUpperCase().equals(ToolDescriptor.TypeEnum.CWL.toString())) ? FileType.CWL_TEST_JSON
+                        : FileType.WDL_TEST_JSON;
         for (String path : testParameterPaths) {
             if (sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType).count() > 0) {
-                SourceFile toRemove = sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType).findFirst().get();
+                SourceFile toRemove = sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType)
+                        .findFirst().get();
                 sourceFiles.remove(toRemove);
             }
         }
@@ -845,12 +858,14 @@ public class WorkflowResource {
 
         String completeWorkflowPath = workflowPath;
         // Check that no duplicate workflow (same WorkflowPath) exists
-        if (!workflowName.equals("")) {
+        if (!"".equals(workflowName)) {
             completeWorkflowPath += "/" + workflowName;
         }
 
         if (!defaultWorkflowPath.endsWith(descriptorType)) {
-            throw new CustomWebApplicationException("Please ensure that the given workflow path '" + defaultWorkflowPath + "' is of type " + descriptorType + " and has the file extension " + descriptorType, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(
+                    "Please ensure that the given workflow path '" + defaultWorkflowPath + "' is of type " + descriptorType
+                            + " and has the file extension " + descriptorType, HttpStatus.SC_BAD_REQUEST);
         }
 
         Workflow duplicate = workflowDAO.findByPath(completeWorkflowPath);
@@ -903,8 +918,8 @@ public class WorkflowResource {
         final String gitHubTokenContent = githubToken == null ? null : githubToken.getContent();
         final String gitlabTokenContent = gitlabToken == null ? null : gitlabToken.getContent();
 
-        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(gitUrl, client,
-                bitbucketTokenContent, gitlabTokenContent, gitHubTokenContent);
+        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
+                .createSourceCodeRepo(gitUrl, client, bitbucketTokenContent, gitlabTokenContent, gitHubTokenContent);
         if (sourceCodeRepo == null) {
             throw new CustomWebApplicationException("Git tokens invalid, please re-link your git accounts.", HttpStatus.SC_BAD_REQUEST);
         }
@@ -955,13 +970,13 @@ public class WorkflowResource {
     @Path("/{workflowId}/dag/{workflowVersionId}")
     @ApiOperation(value = "Get the DAG for a given workflow version", notes = "", response = String.class)
     public String getWorkflowDag(@ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId,
-            @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId)  {
+            @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
         String result = null;
 
-        if(mainDescriptor != null) {
+        if (mainDescriptor != null) {
             String descFileContent = mainDescriptor.getContent();
             Map<String, String> secondaryDescContent = new HashMap<>();
             File tmpDir = Files.createTempDir();
@@ -976,7 +991,7 @@ public class WorkflowResource {
                 // get secondary files
                 for (SourceFile secondaryFile : workflowVersion.getSourceFiles()) {
                     if (!secondaryFile.getPath().equals(workflowVersion.getWorkflowPath())) {
-                        secondaryDescContent.put(secondaryFile.getPath(),secondaryFile.getContent());
+                        secondaryDescContent.put(secondaryFile.getPath(), secondaryFile.getContent());
                     }
                 }
             } catch (IOException e) {
@@ -995,21 +1010,23 @@ public class WorkflowResource {
 
     /**
      * This method will create a json data consisting tool and its data required in a workflow for 'Tool' tab
+     *
      * @param workflowId
      * @param workflowVersionId
-     * @return String*/
+     * @return String
+     */
     @GET
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/tools/{workflowVersionId}")
     @ApiOperation(value = "Get the Tools for a given workflow version", notes = "", response = String.class)
     public String getTableToolContent(@ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId,
-                                      @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId)  {
+            @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
 
         Workflow workflow = workflowDAO.findById(workflowId);
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
-        if(mainDescriptor != null) {
+        if (mainDescriptor != null) {
             String descFileContent = mainDescriptor.getContent();
             Map<String, String> secondaryDescContent = new HashMap<>();
 
@@ -1025,7 +1042,7 @@ public class WorkflowResource {
                 // get secondary files
                 for (SourceFile secondaryFile : workflowVersion.getSourceFiles()) {
                     if (!secondaryFile.getPath().equals(workflowVersion.getWorkflowPath())) {
-                        secondaryDescContent.put(secondaryFile.getPath(),secondaryFile.getContent());
+                        secondaryDescContent.put(secondaryFile.getPath(), secondaryFile.getContent());
                     }
                 }
             } catch (IOException e) {
@@ -1034,10 +1051,10 @@ public class WorkflowResource {
 
             String result; // will have the JSON string after done calling the method
             DAGHelper dagHelper = new DAGHelper(toolDAO);
-            if(workflow.getDescriptorType().equals("wdl")) {
+            if (workflow.getDescriptorType().equals("wdl")) {
                 //WDL workflow
                 result = dagHelper.getContentWDL(workflowVersion.getWorkflowPath(), tempMainDescriptor, secondaryDescContent, Type.TOOLS);
-            } else{
+            } else {
                 //CWL workflow
                 result = dagHelper.getContentCWL(workflowVersion.getWorkflowPath(), descFileContent, secondaryDescContent, Type.TOOLS);
             }
@@ -1049,16 +1066,17 @@ public class WorkflowResource {
 
     /**
      * This method will find the workflowVersion based on the workflowVersionId passed in the parameter and return it
+     *
      * @param workflow
      * @param workflowVersionId
      * @return WorkflowVersion
-     * */
-    private WorkflowVersion getWorkflowVersion(Workflow workflow, Long workflowVersionId){
+     */
+    private WorkflowVersion getWorkflowVersion(Workflow workflow, Long workflowVersionId) {
         Set<WorkflowVersion> workflowVersions = workflow.getVersions();
         WorkflowVersion workflowVersion = null;
 
-        for(WorkflowVersion wv : workflowVersions) {
-            if(wv.getId() == workflowVersionId) {
+        for (WorkflowVersion wv : workflowVersions) {
+            if (wv.getId() == workflowVersionId) {
                 workflowVersion = wv;
                 break;
             }
@@ -1069,10 +1087,11 @@ public class WorkflowResource {
 
     /**
      * This method will find the main descriptor file based on the workflow version passed in the parameter
+     *
      * @param workflowVersion
      * @return mainDescriptor
-     * */
-    private SourceFile getMainDescriptorFile(WorkflowVersion workflowVersion){
+     */
+    private SourceFile getMainDescriptorFile(WorkflowVersion workflowVersion) {
 
         SourceFile mainDescriptor = null;
         for (SourceFile sourceFile : workflowVersion.getSourceFiles()) {
@@ -1085,4 +1104,41 @@ public class WorkflowResource {
         return mainDescriptor;
     }
 
+
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/{workflowId}/star")
+    @ApiOperation(value = "Stars a workflow.")
+    public void starEntry(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Tool to star.", required = true) @PathParam("workflowId") Long workflowId,
+            @ApiParam(value = "StarRequest to star a repo for a user", required = true) StarRequest request) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+
+        Helper.starEntryHelper(workflow, user, "workflow", workflow.getPath());
+
+    }
+
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("/{workflowId}/unstar")
+    @ApiOperation(value = "Unstars a workflow.")
+    public void unstarEntry(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Workflow to unstar.", required = true) @PathParam("workflowId") Long workflowId) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        Helper.unstarEntryHelper(workflow, user, "workflow", workflow.getPath());
+    }
+
+    @GET
+    @Path("/{workflowId}/starredUsers")
+    @Timed
+    @UnitOfWork
+    @ApiOperation(value = "Returns list of users who starred the given Workflow", response = User.class, responseContainer = "List")
+    public Set<User> getStarredUsers(@ApiParam(value = "Workflow to grab starred users for.", required = true) @PathParam("workflowId") Long workflowId) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        Helper.checkEntry(workflow);
+
+        return workflow.getStarredUsers();
+    }
 }

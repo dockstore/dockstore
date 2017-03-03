@@ -16,6 +16,11 @@
 
 package io.dockstore.client.cli;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Map;
+
 import com.google.gson.Gson;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.client.cli.nested.WorkflowClient;
@@ -27,13 +32,10 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.Assertion;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
+import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Map;
 
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
@@ -47,6 +49,8 @@ public class LaunchTestIT {
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
     @Rule
     public final ExpectedSystemExit exit = ExpectedSystemExit.none();
+    @Rule
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog();
 
     @Test
     public void wdlCorrect() throws IOException {
@@ -68,11 +72,11 @@ public class LaunchTestIT {
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(helloWDL.getAbsolutePath(), args, null);
 
-        assertTrue("output should include a successful cromwell run",systemOutRule.getLog().contains("Cromwell exit code: 0") );
+        assertTrue("output should include a successful cromwell run", systemOutRule.getLog().contains("Cromwell exit code: 0"));
     }
 
     @Test
-    public void cwlCorrect() throws IOException{
+    public void cwlCorrect() throws IOException {
         //Test when content and extension are cwl  --> no need descriptor
 
         File cwlFile = new File(ResourceHelpers.resourceFilePath("1st-workflow.cwl"));
@@ -92,7 +96,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void yamlToolCorrect() throws IOException{
+    public void yamlToolCorrect() throws IOException {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("1st-tool.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("echo-job.yml"));
 
@@ -110,7 +114,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void runToolWithDirectories() throws IOException{
+    public void runToolWithDirectories() throws IOException {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("dir6.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("dir6.cwl.json"));
 
@@ -130,7 +134,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void runToolWithSecondaryFilesOnOutput() throws IOException{
+    public void runToolWithSecondaryFilesOnOutput() throws IOException {
 
         FileUtils.deleteDirectory(new File("/tmp/provision_out_with_files"));
 
@@ -153,13 +157,14 @@ public class LaunchTestIT {
 
         final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Uploading");
         assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
-        for(char y = 'a'; y <= 'f'; y++){
-            assertTrue("output should provision out to correct locations", systemOutRule.getLog().contains("/tmp/provision_out_with_files/test.a" + y));
+        for (char y = 'a'; y <= 'f'; y++) {
+            assertTrue("output should provision out to correct locations",
+                    systemOutRule.getLog().contains("/tmp/provision_out_with_files/test.a" + y));
         }
     }
 
     @Test
-    public void runToolWithoutProvisionOnOutput() throws IOException{
+    public void runToolWithoutProvisionOnOutput() throws IOException {
 
         FileUtils.deleteDirectory(new File("/tmp/provision_out_with_files"));
 
@@ -185,7 +190,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void runToolWithDirectoriesConversion() throws IOException{
+    public void runToolWithDirectoriesConversion() throws IOException {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("dir6.cwl"));
 
         ArrayList<String> args = new ArrayList<String>() {{
@@ -223,9 +228,8 @@ public class LaunchTestIT {
                 .containsKey("OUTPUT"));
     }
 
-
     @Test
-    public void cwlCorrectWithCache() throws IOException{
+    public void cwlCorrectWithCache() throws IOException {
         //Test when content and extension are cwl  --> no need descriptor
 
         File cwlFile = new File(ResourceHelpers.resourceFilePath("1st-workflow.cwl"));
@@ -247,10 +251,9 @@ public class LaunchTestIT {
     private void runClientCommand(ArrayList<String> args, boolean useCache) {
 
         args.add(0, ResourceHelpers.resourceFilePath(useCache ? "config.withCache" : "config"));
-        args.add(0,"--config");
+        args.add(0, "--config");
         Client.main(args.toArray(new String[args.size()]));
     }
-
 
     private void runTool(File cwlFile, ArrayList<String> args, ContainersApi api, UsersApi usersApi, Client client, boolean useCache) {
         client.setConfigFile(ResourceHelpers.resourceFilePath(useCache ? "config.withCache" : "config"));
@@ -258,7 +261,7 @@ public class LaunchTestIT {
         ToolClient toolClient = new ToolClient(api, null, usersApi, client, false);
         toolClient.checkEntryFile(cwlFile.getAbsolutePath(), args, null);
 
-        assertTrue("output should include a successful cwltool run",systemOutRule.getLog().contains("Final process status is success") );
+        assertTrue("output should include a successful cwltool run", systemOutRule.getLog().contains("Final process status is success"));
     }
 
     private void runWorkflow(File cwlFile, ArrayList<String> args, WorkflowsApi api, UsersApi usersApi, Client client, boolean useCache) {
@@ -267,11 +270,11 @@ public class LaunchTestIT {
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(cwlFile.getAbsolutePath(), args, null);
 
-        assertTrue("output should include a successful cwltool run",systemOutRule.getLog().contains("Final process status is success") );
+        assertTrue("output should include a successful cwltool run", systemOutRule.getLog().contains("Final process status is success"));
     }
 
     @Test
-    public void cwlWrongExt() throws IOException{
+    public void cwlWrongExt() throws IOException {
         //Test when content = cwl but ext = wdl, ask for descriptor
 
         File file = new File(ResourceHelpers.resourceFilePath("wrongExtcwl.wdl"));
@@ -291,11 +294,12 @@ public class LaunchTestIT {
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
-        assertTrue("output should include a successful cromwell run",systemOutRule.getLog().contains("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end") );
+        assertTrue("output should include a successful cromwell run", systemOutRule.getLog()
+                .contains("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end"));
     }
 
     @Test
-    public void cwlWrongExtForce() throws IOException{
+    public void cwlWrongExtForce() throws IOException {
         //Test when content = cwl but ext = wdl, descriptor provided --> CWL
 
         File file = new File(ResourceHelpers.resourceFilePath("wrongExtcwl.wdl"));
@@ -319,11 +323,12 @@ public class LaunchTestIT {
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, CWL_STRING);
 
-        assertTrue("output should include a successful cromwell run",systemOutRule.getLog().contains("This is a CWL file.. Please put the correct extension to the entry file name.") );
+        assertTrue("output should include a successful cromwell run",
+                systemOutRule.getLog().contains("This is a CWL file.. Please put the correct extension to the entry file name."));
     }
 
     @Test
-    public void wdlWrongExt() throws IOException{
+    public void wdlWrongExt() throws IOException {
         //Test when content = wdl but ext = cwl, ask for descriptor
 
         File file = new File(ResourceHelpers.resourceFilePath("wrongExtwdl.cwl"));
@@ -343,11 +348,12 @@ public class LaunchTestIT {
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
-        assertTrue("output should include a successful cromwell run",systemOutRule.getLog().contains("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end") );
+        assertTrue("output should include a successful cromwell run", systemOutRule.getLog()
+                .contains("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end"));
     }
 
     @Test
-    public void randomExtCwl() throws IOException{
+    public void randomExtCwl() throws IOException {
         //Test when content is random, but ext = cwl
         File file = new File(ResourceHelpers.resourceFilePath("random.cwl"));
         File json = new File(ResourceHelpers.resourceFilePath("hello.json"));
@@ -366,11 +372,12 @@ public class LaunchTestIT {
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
-        assertTrue("output should include a successful cromwell run",systemOutRule.getLog().contains("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end") );
+        assertTrue("output should include a successful cromwell run", systemOutRule.getLog()
+                .contains("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end"));
     }
 
     @Test
-    public void randomExtWdl() throws IOException{
+    public void randomExtWdl() throws IOException {
         //Test when content is random, but ext = wdl
         File file = new File(ResourceHelpers.resourceFilePath("random.wdl"));
         File json = new File(ResourceHelpers.resourceFilePath("hello.json"));
@@ -389,11 +396,12 @@ public class LaunchTestIT {
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
-        assertTrue("output should include a successful cromwell run",systemOutRule.getLog().contains("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end") );
+        assertTrue("output should include a successful cromwell run", systemOutRule.getLog()
+                .contains("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end"));
     }
 
     @Test
-    public void wdlWrongExtForce() throws IOException{
+    public void wdlWrongExtForce() throws IOException {
         //Test when content = wdl but ext = cwl, descriptor provided --> WDL
 
         File file = new File(ResourceHelpers.resourceFilePath("wrongExtwdl.cwl"));
@@ -417,11 +425,12 @@ public class LaunchTestIT {
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, WDL_STRING);
 
-        assertTrue("output should include a successful cromwell run",systemOutRule.getLog().contains("This is a WDL file.. Please put the correct extension to the entry file name.") );
+        assertTrue("output should include a successful cromwell run",
+                systemOutRule.getLog().contains("This is a WDL file.. Please put the correct extension to the entry file name."));
     }
 
     @Test
-    public void cwlWrongExtForce1() throws IOException{
+    public void cwlWrongExtForce1() throws IOException {
         //Test when content = cwl but ext = wdl, descriptor provided --> !CWL
 
         File file = new File(ResourceHelpers.resourceFilePath("wrongExtcwl.wdl"));
@@ -449,7 +458,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void wdlWrongExtForce1() throws IOException{
+    public void wdlWrongExtForce1() throws IOException {
         //Test when content = wdl but ext = cwl, descriptor provided --> !WDL
 
         File file = new File(ResourceHelpers.resourceFilePath("wrongExtwdl.cwl"));
@@ -477,8 +486,8 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void cwlNoExt() throws IOException{
-    //Test when content = cwl but no ext
+    public void cwlNoExt() throws IOException {
+        //Test when content = cwl but no ext
 
         File file = new File(ResourceHelpers.resourceFilePath("cwlNoExt"));
         File json = new File(ResourceHelpers.resourceFilePath("1st-workflow-job.json"));
@@ -499,11 +508,12 @@ public class LaunchTestIT {
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
-        assertTrue("output should contain a validation issue",systemOutRule.getLog().contains("This is a CWL file.. Please put an extension to the entry file name.") );
+        assertTrue("output should contain a validation issue",
+                systemOutRule.getLog().contains("This is a CWL file.. Please put an extension to the entry file name."));
     }
 
     @Test
-    public void wdlNoExt() throws IOException{
+    public void wdlNoExt() throws IOException {
         //Test when content = wdl but no ext
 
         File file = new File(ResourceHelpers.resourceFilePath("wdlNoExt"));
@@ -525,12 +535,13 @@ public class LaunchTestIT {
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
-        assertTrue("output should include a successful cromwell run",systemOutRule.getLog().contains("This is a WDL file.. Please put an extension to the entry file name.") );
+        assertTrue("output should include a successful cromwell run",
+                systemOutRule.getLog().contains("This is a WDL file.. Please put an extension to the entry file name."));
 
     }
 
     @Test
-    public void randomNoExt() throws IOException{
+    public void randomNoExt() throws IOException {
         //Test when content is neither CWL nor WDL, and there is no extension
 
         File file = new File(ResourceHelpers.resourceFilePath("random"));
@@ -550,16 +561,14 @@ public class LaunchTestIT {
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
 
         exit.expectSystemExit();
-
+        exit.checkAssertionAfterwards(
+                () -> assertTrue("output should include an error message of invalid file", systemErrRule.getLog().contains("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.")));
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
-
-        assertTrue("output should include an error message of invalid file",systemOutRule.getLog().contains("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name."));
-
     }
 
     @Test
-    public void randomWithExt() throws IOException{
+    public void randomWithExt() throws IOException {
         //Test when content is neither CWL nor WDL, and there is no extension
 
         File file = new File(ResourceHelpers.resourceFilePath("hello.txt"));
@@ -579,16 +588,14 @@ public class LaunchTestIT {
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
 
         exit.expectSystemExit();
-
+        exit.checkAssertionAfterwards(
+                () -> assertTrue("output should include an error message of invalid file", systemErrRule.getLog().contains("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.")));
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
-
-        assertTrue("output should include an error message of invalid file",systemOutRule.getLog().contains("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name."));
-
     }
 
     @Test
-    public void wdlNoTask() throws IOException{
+    public void wdlNoTask() throws IOException {
         //Test when content is missing 'task'
 
         File file = new File(ResourceHelpers.resourceFilePath("noTask.wdl"));
@@ -608,16 +615,14 @@ public class LaunchTestIT {
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
 
         exit.expectSystemExit();
-
+        exit.checkAssertionAfterwards(
+                () -> assertTrue("output should include an error message and exit", systemErrRule.getLog().contains("Required fields that are missing from WDL file : 'task'")));
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
-
-        assertTrue("output should include an error message and exit",systemOutRule.getLog().contains("Required fields that are missing from WDL file : 'task'"));
-
     }
 
     @Test
-    public void wdlNoCommand() throws IOException{
+    public void wdlNoCommand() throws IOException {
         //Test when content is missing 'command'
 
         File file = new File(ResourceHelpers.resourceFilePath("noCommand.wdl"));
@@ -637,16 +642,14 @@ public class LaunchTestIT {
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
 
         exit.expectSystemExit();
-
+        exit.checkAssertionAfterwards(
+                () -> assertTrue("output should include an error message and exit", systemErrRule.getLog().contains("Required fields that are missing from WDL file : 'command'")));
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
-
-        assertTrue("output should include an error message and exit",systemOutRule.getLog().contains("Required fields that are missing from WDL file : 'command'"));
-
     }
 
     @Test
-    public void wdlNoWfCall() throws IOException{
+    public void wdlNoWfCall() throws IOException {
         //Test when content is missing 'workflow' and 'call'
 
         File file = new File(ResourceHelpers.resourceFilePath("noWfCall.wdl"));
@@ -666,16 +669,14 @@ public class LaunchTestIT {
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
 
         exit.expectSystemExit();
-
+        exit.checkAssertionAfterwards(
+                () -> assertTrue("output should include an error message and exit", systemErrRule.getLog().contains("Required fields that are missing from WDL file : 'workflow' 'call'")));
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
-
-        assertTrue("output should include an error message and exit",systemOutRule.getLog().contains("Required fields that are missing from WDL file : 'workflow' 'call'"));
-
     }
 
     @Test
-    public void cwlNoInput() throws IOException{
+    public void cwlNoInput() throws IOException {
         //Test when content is missing 'input'
 
         File file = new File(ResourceHelpers.resourceFilePath("noInput.cwl"));
@@ -695,12 +696,46 @@ public class LaunchTestIT {
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
 
         exit.expectSystemExit();
-
+        exit.checkAssertionAfterwards(
+                () -> assertTrue("output should include an error message and exit", systemErrRule.getLog().contains("Required fields that are missing from CWL file : 'inputs'")));
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
-
-        assertTrue("output should include an error message and exit",systemOutRule.getLog().contains("Required fields that are missing from CWL file : 'inputs'"));
-
     }
 
+    @Test
+    public void toolAsWorkflow() {
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("dir6.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("dir6.cwl.json"));
+
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("workflow");
+            add("launch");
+            add("--local-entry");
+            add(cwlFile.getAbsolutePath());
+            add("--json");
+            add(cwlJSON.getAbsolutePath());
+        }};
+        exit.expectSystemExit();
+        exit.checkAssertionAfterwards(
+                () -> assertTrue("Out should suggest to run as workflow instead", systemErrRule.getLog().contains("Expected a workflow but the")));
+        runClientCommand(args, false);
+    }
+
+    @Test
+    public void workflowAsTool(){
+        File file = new File(ResourceHelpers.resourceFilePath("noInput.cwl"));
+        File json = new File(ResourceHelpers.resourceFilePath("1st-workflow-job.json"));
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("tool");
+            add("launch");
+            add("--local-entry");
+            add(file.getAbsolutePath());
+            add("--json");
+            add(json.getAbsolutePath());
+        }};
+        exit.expectSystemExit();
+        exit.checkAssertionAfterwards(
+                () -> assertTrue("Out should suggest to run as workflow instead", systemErrRule.getLog().contains("Expected a tool but the")));
+        runClientCommand(args, false);
+    }
 }

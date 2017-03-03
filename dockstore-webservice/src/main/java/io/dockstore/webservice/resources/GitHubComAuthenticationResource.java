@@ -26,7 +26,6 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
 /**
- *
  * @author dyuen
  */
 @Path("/integration.github.com")

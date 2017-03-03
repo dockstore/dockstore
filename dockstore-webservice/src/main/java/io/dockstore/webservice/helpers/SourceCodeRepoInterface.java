@@ -16,6 +16,14 @@
 
 package io.dockstore.webservice.helpers;
 
+import java.io.File;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import com.esotericsoftware.yamlbeans.YamlException;
 import com.esotericsoftware.yamlbeans.YamlReader;
 import com.google.common.base.Optional;
@@ -36,17 +44,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import wdl4s.parser.WdlParser;
 
-import java.io.File;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 /**
  * This defines the set of operations that is needed to interact with a particular
  * source code repository.
+ *
  * @author dyuen
  */
 public abstract class SourceCodeRepoInterface {
@@ -56,7 +57,8 @@ public abstract class SourceCodeRepoInterface {
     /**
      * If this interface is pointed at a specific repository, grab a
      * file from a specific branch/tag
-     * @param fileName the name of the file (full path) to retrieve
+     *
+     * @param fileName  the name of the file (full path) to retrieve
      * @param reference the tag/branch to get the file from
      * @return content of the file
      */
@@ -64,15 +66,17 @@ public abstract class SourceCodeRepoInterface {
 
     /**
      * Get the email for the current user
+     *
      * @return email for the logged in user
      */
     public abstract String getOrganizationEmail();
 
     /**
      * Copies some of the attributes of the source workflow to the target workflow
+     *
      * @param sourceWorkflow
      * @param targetWorkflow
-         */
+     */
     protected void copyWorkflow(Workflow sourceWorkflow, Workflow targetWorkflow) {
         targetWorkflow.setPath(sourceWorkflow.getPath());
         targetWorkflow.setIsPublished(sourceWorkflow.getIsPublished());
@@ -91,7 +95,7 @@ public abstract class SourceCodeRepoInterface {
     /**
      * Parses the cwl content to get the author, email, and description, then updates entry.
      *
-     * @param entry an entry to be updated
+     * @param entry   an entry to be updated
      * @param content a cwl document
      * @return the updated entry
      */
@@ -101,11 +105,11 @@ public abstract class SourceCodeRepoInterface {
             try {
                 YamlReader reader = new YamlReader(content);
                 Object object = reader.read();
-                Map map = (Map) object;
+                Map map = (Map)object;
 
-                String description = (String) map.get("description");
+                String description = (String)map.get("description");
                 // changed for CWL 1.0
-                if (map.containsKey("doc")){
+                if (map.containsKey("doc")) {
                     description = (String)map.get("doc");
                 }
                 if (description != null) {
@@ -114,18 +118,20 @@ public abstract class SourceCodeRepoInterface {
                     LOG.info("Description not found!");
                 }
 
-                map = (Map) map.get("dct:creator");
+                map = (Map)map.get("dct:creator");
                 if (map != null) {
-                    String author = (String) map.get("foaf:name");
+                    String author = (String)map.get("foaf:name");
                     entry.setAuthor(author);
-                    String email = (String) map.get("foaf:mbox");
-                    entry.setEmail(email);
+                    String email = (String)map.get("foaf:mbox");
+                    if (!Strings.isNullOrEmpty(email)) {
+                        entry.setEmail(email.replaceFirst("^mailto:", ""));
+                    }
                 } else {
                     LOG.info("Creator not found!");
                 }
 
                 LOG.info("Repository has Dockstore.cwl");
-            } catch (YamlException ex){
+            } catch (YamlException ex) {
                 LOG.info("CWL file is malformed " + ex.getCause().toString());
                 throw new CustomWebApplicationException("Could not parse yaml: " + ex.getCause().toString(), HttpStatus.SC_BAD_REQUEST);
             }
@@ -135,8 +141,8 @@ public abstract class SourceCodeRepoInterface {
 
     /**
      * Default implementation that parses WDL content from an entry?
-     * TODO: does this belong here?
-     * @param entry the source for the wdl content
+     *
+     * @param entry   the source for the wdl content
      * @param content the actual wdl content
      * @return the tool that was given
      */
@@ -151,7 +157,7 @@ public abstract class SourceCodeRepoInterface {
             } else {
                 tokens = new WdlParser.TokenStream(parser.lex(content, FilenameUtils.getName(((Workflow)entry).getDefaultWorkflowPath())));
             }
-            WdlParser.Ast ast = (WdlParser.Ast) parser.parse(tokens).toAst();
+            WdlParser.Ast ast = (WdlParser.Ast)parser.parse(tokens).toAst();
 
             if (ast == null) {
                 LOG.info("Error with WDL file.");
@@ -167,36 +173,39 @@ public abstract class SourceCodeRepoInterface {
 
     /**
      * Get a map of git url to an id that can uniquely identify a repository
+     *
      * @return giturl -> repositoryid
      */
     public abstract Map<String, String> getWorkflowGitUrl2RepositoryId();
 
-    List<String> getWdlImports(File workflowFile){
+    List<String> getWdlImports(File workflowFile) {
         Bridge bridge = new Bridge();
         return bridge.getImportFiles(workflowFile);
     }
 
     /**
      * Given the content of a file, determines if it is a valid WDL workflow
+     *
      * @param content
      * @return true if valid WDL workflow, false otherwise
-         */
+     */
     public Boolean checkValidWDLWorkflow(String content) {
-//        final NamespaceWithWorkflow nameSpaceWithWorkflow = NamespaceWithWorkflow.load(content);
-//        if (nameSpaceWithWorkflow != null) {
-//            return true;
-//        }
-//
-//        return false;
+        //        final NamespaceWithWorkflow nameSpaceWithWorkflow = NamespaceWithWorkflow.load(content);
+        //        if (nameSpaceWithWorkflow != null) {
+        //            return true;
+        //        }
+        //
+        //        return false;
         // For now as long as a file exists, it is a valid WDL
         return true;
     }
 
     /**
      * Given the content of a file, determines if it is a valid CWL workflow
+     *
      * @param content
      * @return true if valid CWL workflow, false otherwise
-         */
+     */
     public boolean checkValidCWLWorkflow(String content) {
         if (content.contains("class: Workflow")) {
             return true;
@@ -207,38 +216,42 @@ public abstract class SourceCodeRepoInterface {
 
     /**
      * Set up workflow with basic attributes from git repository
+     *
      * @param repositoryId
      * @return workflow with some attributes set
-         */
+     */
     public abstract Workflow initializeWorkflow(String repositoryId);
 
     /**
      * Finds all of the workflow versions for a given workflow and store them and their corresponding source files
+     *
      * @param repositoryId
      * @param workflow
      * @param existingWorkflow
      * @param existingDefaults
-         * @return workflow with associated workflow versions
-         */
-    public abstract Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow, Map<String, WorkflowVersion> existingDefaults);
+     * @return workflow with associated workflow versions
+     */
+    public abstract Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
+            Map<String, WorkflowVersion> existingDefaults);
 
     /**
      * Creates or updates a workflow based on the situation. Will grab workflow versions and more metadata if workflow is FULL
+     *
      * @param repositoryId
      * @param existingWorkflow
-         * @return workflow
-         */
+     * @return workflow
+     */
     public Workflow getWorkflow(String repositoryId, Optional<Workflow> existingWorkflow) {
         // Initialize workflow
         Workflow workflow = initializeWorkflow(repositoryId);
 
         // Determine if workflow should be returned as a STUB or FULL
-        if (!existingWorkflow.isPresent()){
+        if (!existingWorkflow.isPresent()) {
             // when there is no existing workflow at all, just return a stub workflow. Also set descriptor type to default cwl.
             workflow.setDescriptorType(AbstractEntryClient.Type.CWL.toString());
             return workflow;
         }
-        if (existingWorkflow.get().getMode() == WorkflowMode.STUB){
+        if (existingWorkflow.get().getMode() == WorkflowMode.STUB) {
             // when there is an existing stub workflow, just return the new stub as well
             return workflow;
         }
@@ -248,9 +261,10 @@ public abstract class SourceCodeRepoInterface {
 
         // if it exists, extract paths from the previous workflow entry
         Map<String, WorkflowVersion> existingDefaults = new HashMap<>();
-        if (existingWorkflow.isPresent()){
+        if (existingWorkflow.isPresent()) {
             // Copy over existing workflow versions
-            existingWorkflow.get().getWorkflowVersions().forEach(existingVersion -> existingDefaults.put(existingVersion.getReference(), existingVersion));
+            existingWorkflow.get().getWorkflowVersions()
+                    .forEach(existingVersion -> existingDefaults.put(existingVersion.getReference(), existingVersion));
 
             // Copy workflow information from source (existingWorkflow) to target (workflow)
             copyWorkflow(existingWorkflow.get(), workflow);
@@ -271,10 +285,11 @@ public abstract class SourceCodeRepoInterface {
 
     /**
      * Update an entry with the contents of the descriptor file from a source code repo
+     *
      * @param entry@Override
      * @param type
-         * @return
-         */
+     * @return
+     */
     public Entry updateEntryMetadata(Entry entry, AbstractEntryClient.Type type) {
         // Determine which branch to use
         String repositoryId = getRepositoryId(entry);
@@ -316,7 +331,7 @@ public abstract class SourceCodeRepoInterface {
         // If entry is a workflow
         if (entry.getClass().equals(Workflow.class)) {
             // Find filepath to parse
-            for (WorkflowVersion workflowVersion : ((Workflow) entry).getVersions()) {
+            for (WorkflowVersion workflowVersion : ((Workflow)entry).getVersions()) {
                 if (workflowVersion.getReference().equals(branch)) {
                     filePath = workflowVersion.getWorkflowPath();
                 }
@@ -355,36 +370,41 @@ public abstract class SourceCodeRepoInterface {
 
     /**
      * Get the repository Id of an entry to be used for API calls
+     *
      * @param entry
      * @return repository id of an entry
-         */
+     */
     public abstract String getRepositoryId(Entry entry);
 
     /**
      * Returns the branch of interest used to determine tool and workflow metadata
+     *
      * @param entry
      * @param repositoryId
-         * @return Branch of interest
-         */
+     * @return Branch of interest
+     */
     public abstract String getMainBranch(Entry entry, String repositoryId);
 
     /**
      * Returns the content of a given file from a specific git repository and branch
+     *
      * @param filePath
      * @param branch
      * @param repositoryId
-         * @return content of a file from git host
-         */
+     * @return content of a file from git host
+     */
     public abstract String getFileContents(String filePath, String branch, String repositoryId);
 
     /**
      * Initializes workflow version for given branch
+     *
      * @param branch
      * @param existingWorkflow
      * @param existingDefaults
      * @return workflow version
      */
-    public WorkflowVersion initializeWorkflowVersion(String branch, Optional<Workflow> existingWorkflow, Map<String, WorkflowVersion> existingDefaults) {
+    public WorkflowVersion initializeWorkflowVersion(String branch, Optional<Workflow> existingWorkflow,
+            Map<String, WorkflowVersion> existingDefaults) {
         WorkflowVersion version = new WorkflowVersion();
         version.setName(branch);
         version.setReference(branch);
@@ -416,29 +436,33 @@ public abstract class SourceCodeRepoInterface {
 
     /**
      * Determine descriptor type from file path
+     *
      * @param path
      * @return descriptor file type
      */
     public SourceFile.FileType getFileType(String path) {
         String calculatedExtension = FilenameUtils.getExtension(path);
-        if (calculatedExtension.equalsIgnoreCase("cwl") || calculatedExtension.equalsIgnoreCase("yml") || calculatedExtension.equalsIgnoreCase("yaml")) {
+        if ("cwl".equalsIgnoreCase(calculatedExtension) || "yml".equalsIgnoreCase(calculatedExtension) || "yaml"
+                .equalsIgnoreCase(calculatedExtension)) {
             return SourceFile.FileType.DOCKSTORE_CWL;
-        } else if(calculatedExtension.equalsIgnoreCase("wdl")) {
+        } else if ("wdl".equalsIgnoreCase(calculatedExtension)) {
             return SourceFile.FileType.DOCKSTORE_WDL;
-        } else{
+        } else {
             throw new CustomWebApplicationException("Invalid file type for import", HttpStatus.SC_BAD_REQUEST);
         }
     }
 
     /**
      * Resolves imports for a sourcefile, associates with version
+     *
      * @param sourceFile
      * @param workflow
      * @param identifiedType
      * @param version
      * @return workflow version
      */
-    public WorkflowVersion combineVersionAndSourcefile(SourceFile sourceFile, Workflow workflow, SourceFile.FileType identifiedType, WorkflowVersion version, Map<String, WorkflowVersion> existingDefaults) {
+    public WorkflowVersion combineVersionAndSourcefile(SourceFile sourceFile, Workflow workflow, SourceFile.FileType identifiedType,
+            WorkflowVersion version, Map<String, WorkflowVersion> existingDefaults) {
         Set<SourceFile> sourceFileSet = new HashSet<>();
 
         // try to use the FileImporter to re-use code for handling imports
@@ -452,10 +476,12 @@ public abstract class SourceCodeRepoInterface {
         // Look for test parameter files if existing workflow
         if (existingDefaults.get(version.getName()) != null) {
             WorkflowVersion existingVersion = existingDefaults.get(version.getName());
-            SourceFile.FileType workflowDescriptorType = (workflow.getDescriptorType().toLowerCase().equals("cwl")) ? SourceFile.FileType.CWL_TEST_JSON : SourceFile.FileType.WDL_TEST_JSON;
+            SourceFile.FileType workflowDescriptorType =
+                    (workflow.getDescriptorType().toLowerCase().equals("cwl")) ? SourceFile.FileType.CWL_TEST_JSON
+                            : SourceFile.FileType.WDL_TEST_JSON;
 
-            List<SourceFile> testParameterFiles = existingVersion.getSourceFiles().stream().filter((SourceFile u) -> u.getType() == workflowDescriptorType).collect(
-                    Collectors.toList());
+            List<SourceFile> testParameterFiles = existingVersion.getSourceFiles().stream()
+                    .filter((SourceFile u) -> u.getType() == workflowDescriptorType).collect(Collectors.toList());
 
             FileImporter importer = new FileImporter(this);
             for (SourceFile testJson : testParameterFiles) {

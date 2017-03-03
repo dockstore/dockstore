@@ -16,27 +16,6 @@
 
 package io.dockstore.client.cli.nested;
 
-import com.google.common.base.Joiner;
-import com.google.common.base.Strings;
-import com.google.common.io.Files;
-import io.dockstore.client.cli.Client;
-import io.swagger.client.ApiException;
-import io.swagger.client.api.ContainersApi;
-import io.swagger.client.api.ContainertagsApi;
-import io.swagger.client.api.UsersApi;
-import io.swagger.client.model.Body;
-import io.swagger.client.model.Body1;
-import io.swagger.client.model.DockstoreTool;
-import io.swagger.client.model.Label;
-import io.swagger.client.model.PublishRequest;
-import io.swagger.client.model.SourceFile;
-import io.swagger.client.model.Tag;
-import io.swagger.client.model.User;
-import io.swagger.client.model.VerifyRequest;
-
-import org.apache.commons.io.FilenameUtils;
-import org.apache.http.HttpStatus;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -48,6 +27,30 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.stream.Stream;
+
+import com.google.common.base.Joiner;
+import com.google.common.base.Strings;
+import com.google.common.io.Files;
+import io.dockstore.client.cli.Client;
+import io.dockstore.common.Registry;
+import io.swagger.client.ApiException;
+import io.swagger.client.api.ContainersApi;
+import io.swagger.client.api.ContainertagsApi;
+import io.swagger.client.api.UsersApi;
+import io.swagger.client.model.Body;
+import io.swagger.client.model.Body1;
+import io.swagger.client.model.DockstoreTool;
+import io.swagger.client.model.Label;
+import io.swagger.client.model.PublishRequest;
+import io.swagger.client.model.SourceFile;
+import io.swagger.client.model.StarRequest;
+import io.swagger.client.model.Tag;
+import io.swagger.client.model.User;
+import io.swagger.client.model.VerifyRequest;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.validator.routines.EmailValidator;
+import org.apache.http.HttpStatus;
 
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.DESCRIPTION_HEADER;
@@ -64,10 +67,12 @@ import static io.dockstore.client.cli.ArgumentUtility.optVal;
 import static io.dockstore.client.cli.ArgumentUtility.out;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
+import static io.dockstore.client.cli.ArgumentUtility.printLineBreak;
 import static io.dockstore.client.cli.ArgumentUtility.reqVal;
 
 /**
  * Implement all operations that have to do with tools.
+ *
  * @author dyuen
  */
 public class ToolClient extends AbstractEntryClient {
@@ -77,7 +82,7 @@ public class ToolClient extends AbstractEntryClient {
     private ContainertagsApi containerTagsApi;
     private UsersApi usersApi;
 
-    public ToolClient(Client client, boolean isAdmin){
+    public ToolClient(Client client, boolean isAdmin) {
         /* for testing */
         this.client = client;
         this.isAdmin = isAdmin;
@@ -147,8 +152,7 @@ public class ToolClient extends AbstractEntryClient {
                 }
             }
 
-            out(format, container.getToolPath(), description, gitUrl, boolWord(container.getIsPublished()), descriptor,
-                    automated);
+            out(format, container.getToolPath(), description, gitUrl, boolWord(container.getIsPublished()), descriptor, automated);
         }
     }
 
@@ -196,7 +200,7 @@ public class ToolClient extends AbstractEntryClient {
             List<DockstoreTool> containers = containersApi.search(pattern);
 
             out("MATCHING TOOLS");
-            out("-------------------");
+            printLineBreak();
             printToolList(containers);
         } catch (ApiException ex) {
             exceptionMessage(ex, "", Client.API_ERROR);
@@ -243,7 +247,8 @@ public class ToolClient extends AbstractEntryClient {
         }
     }
 
-    @Override protected void handleTestParameter(String entry, String versionName, List<String> adds, List<String> removes, String descriptorType) {
+    @Override
+    protected void handleTestParameter(String entry, String versionName, List<String> adds, List<String> removes, String descriptorType) {
         try {
             DockstoreTool container = containersApi.getContainerByToolPath(entry);
             long containerId = container.getId();
@@ -264,7 +269,8 @@ public class ToolClient extends AbstractEntryClient {
             }
 
         } catch (ApiException ex) {
-            exceptionMessage(ex, "There was an error updating the test parameter files for " + entry + " version " + versionName, Client.API_ERROR);
+            exceptionMessage(ex, "There was an error updating the test parameter files for " + entry + " version " + versionName,
+                    Client.API_ERROR);
         }
     }
 
@@ -278,8 +284,20 @@ public class ToolClient extends AbstractEntryClient {
             List<DockstoreTool> containers = usersApi.userContainers(user.getId());
 
             out("YOUR AVAILABLE CONTAINERS");
-            out("-------------------");
+            printLineBreak();
             printToolList(containers);
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "", Client.API_ERROR);
+        }
+    }
+
+    @Override
+    protected void handleListUnstarredEntries() {
+        try {
+            List<DockstoreTool> containers = containersApi.allPublishedContainers();
+            out("ALL PUBLISHED TOOLS");
+            printLineBreak();
+            printPublishedList(containers);
         } catch (ApiException ex) {
             exceptionMessage(ex, "", Client.API_ERROR);
         }
@@ -307,10 +325,40 @@ public class ToolClient extends AbstractEntryClient {
         }
     }
 
+    /**
+     * Interacts with API to star/unstar a workflow
+     * @param entry the workflow or tool
+     * @param star  true to star, false to unstar
+     */
     @Override
+    protected void handleStarUnstar(String entry, boolean star) {
+        String action = "star";
+        if (!star) {
+            action = "unstar";
+        }
+        try {
+            DockstoreTool container = containersApi.getPublishedContainerByToolPath(entry);
+            if (star) {
+                StarRequest request = new StarRequest();
+                request.setStar(true);
+                containersApi.starEntry(container.getId(), request);
+            } else {
+                containersApi.unstarEntry(container.getId());
+            }
+            out("Successfully " + action + "red  " + entry);
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "Unable to " + action + " container " + entry, Client.API_ERROR);
+        }
+    }
+
+    // Checkstyle suppressed warnings should by fixed
+    @Override
+    @SuppressWarnings("checkstyle:methodlength")
     public void manualPublish(final List<String> args) {
-        if (args.isEmpty() || containsHelpRequest(args)) {
+        if (containsHelpRequest(args)) {
             manualPublishHelp();
+        } else if (args.isEmpty()) {
+            printRegistriesAvailable();
         } else {
             final String name = reqVal(args, "--name");
             final String namespace = reqVal(args, "--namespace");
@@ -321,27 +369,114 @@ public class ToolClient extends AbstractEntryClient {
             final String wdlPath = optVal(args, "--wdl-path", "/Dockstore.wdl");
             final String gitReference = reqVal(args, "--git-reference");
             final String toolname = optVal(args, "--toolname", null);
-            final String registry = optVal(args, "--registry", Registry.DOCKER_HUB.toString());
+            final String toolMaintainerEmail = optVal(args, "--tool-maintainer-email", null);
+            final String registry = optVal(args, "--registry", DockstoreTool.RegistryEnum.DOCKER_HUB.name());
+            final String privateAccess = optVal(args, "--private", "false");
+            final String customDockerPath = optVal(args, "--custom-docker-path", null);
+
+            // Check that registry is valid
+            boolean validRegistry = Stream.of(Registry.values()).anyMatch(r -> r.name().equals(registry));
+
+            if (!validRegistry) {
+                out("The registry \'" + registry + "\' is not available.");
+                printRegistriesAvailable();
+                errorMessage("", Client.CLIENT_ERROR);
+            }
+
+            // Determine if chosen registry has special conditions
+            boolean isPrivateRegistry = Stream.of(Registry.values()).anyMatch(r -> r.name().equals(registry) && r.isPrivateOnly());
+            boolean hasCustomDockerPath = Stream.of(Registry.values()).anyMatch(r -> r.name().equals(registry) && r.hasCustomDockerPath());
+
+            // Check if registry needs to override the docker path
+            if (hasCustomDockerPath) {
+                // Ensure that customDockerPath is not null
+                // TODO: add validity checker for given path
+                if (Strings.isNullOrEmpty(customDockerPath)) {
+                    errorMessage(registry + " requires a custom Docker path to be set.", Client.CLIENT_ERROR);
+                }
+            }
+
+            // Check for correct private access
+            if (!("false".equalsIgnoreCase(privateAccess) || "true".equalsIgnoreCase(privateAccess))) {
+                errorMessage("The possible values for --private are 'true' and 'false'.", Client.CLIENT_ERROR);
+            }
+
+            // Private access
+            boolean setPrivateAccess = "true".equalsIgnoreCase(privateAccess);
+
+            // Ensure that tool is set to private if it is a private only registry
+            if (isPrivateRegistry) {
+                if (!setPrivateAccess) {
+                    errorMessage(registry + " is private only and requires the tool to be private.", Client.CLIENT_ERROR);
+                }
+            }
+
+            // Check that tool maintainer email is given if the tool is private with no email setup
+            if (setPrivateAccess) {
+                if (Strings.isNullOrEmpty(toolMaintainerEmail)) {
+                    errorMessage("For a private tool, the tool maintainer email is required.", Client.CLIENT_ERROR);
+                }
+            }
+
+            // Check validity of email
+            if (!Strings.isNullOrEmpty(toolMaintainerEmail)) {
+                EmailValidator emailValidator = EmailValidator.getInstance();
+                if (!emailValidator.isValid(toolMaintainerEmail)) {
+                    errorMessage("The email address that you entered is invalid.", Client.CLIENT_ERROR);
+                }
+            }
+
+            // Swagger does not fully copy the enum (leaves out properties), so we need to map Registry enum to RegistryEnum in DockstoreTool
+            Optional<DockstoreTool.RegistryEnum> regEnum = getRegistryEnum(registry);
+
+            if (!regEnum.isPresent()) {
+                errorMessage("The registry that you entered does not exist. Run \'dockstore tool manual_publish\' to see valid registries.",
+                        Client.CLIENT_ERROR);
+            }
 
             DockstoreTool tool = new DockstoreTool();
             tool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
             tool.setName(name);
             tool.setNamespace(namespace);
-            tool.setRegistry("quay.io".equals(registry) ? DockstoreTool.RegistryEnum.QUAY_IO : DockstoreTool.RegistryEnum.DOCKER_HUB);
+            tool.setRegistry(regEnum.get());
+
+            // Registry path used (ex. quay.io)
+            Optional<String> registryPath;
+
+            // If the registry requires a custom docker path we must use it instead of the default
+            if (hasCustomDockerPath) {
+                registryPath = Optional.of(customDockerPath);
+            } else {
+                registryPath = getRegistryPath(registry);
+            }
+
+            if (!registryPath.isPresent()) {
+                if (hasCustomDockerPath) {
+                    errorMessage("The registry path is unavailable.", Client.CLIENT_ERROR);
+                } else {
+                    errorMessage(
+                            "The registry path is unavailable. Did you remember to enter a valid docker registry path and docker registry?",
+                            Client.CLIENT_ERROR);
+                }
+            }
+
+            tool.setPath(Joiner.on("/").skipNulls().join(registryPath.get(), namespace, name));
+
             tool.setDefaultDockerfilePath(dockerfilePath);
             tool.setDefaultCwlPath(cwlPath);
             tool.setDefaultWdlPath(wdlPath);
             tool.setIsPublished(false);
             tool.setGitUrl(gitURL);
             tool.setToolname(toolname);
-            tool.setPath(Joiner.on("/").skipNulls().join(registry, namespace, name));
+            tool.setPrivateAccess(setPrivateAccess);
+            tool.setToolMaintainerEmail(toolMaintainerEmail);
 
             // Check that tool has at least one default path
             if (Strings.isNullOrEmpty(cwlPath) && Strings.isNullOrEmpty(wdlPath)) {
                 errorMessage("A tool must have at least one descriptor default path.", Client.CLIENT_ERROR);
             }
 
-            if (!Registry.QUAY_IO.toString().equals(registry)) {
+            if (!Registry.QUAY_IO.name().equals(registry)) {
                 final String versionName = optVal(args, "--version-name", "latest");
                 final Tag tag = new Tag();
                 tag.setReference(gitReference);
@@ -353,7 +488,7 @@ public class ToolClient extends AbstractEntryClient {
             }
 
             // Register new tool
-            final String fullName = Joiner.on("/").skipNulls().join(registry, namespace, name, toolname);
+            final String fullName = Joiner.on("/").skipNulls().join(registryPath.get(), namespace, name, toolname);
             try {
                 tool = containersApi.registerManual(tool);
                 if (tool != null) {
@@ -377,14 +512,48 @@ public class ToolClient extends AbstractEntryClient {
                         out("Successfully published " + fullName);
                     } else {
                         out("Successfully registered " + fullName + ", however it is not valid to publish."); // Should this throw an
-                                                                                                                     // error?
+                        // error?
                     }
                 } catch (ApiException ex) {
-                    exceptionMessage(ex, "Successfully registered " + fullName + ", however it is not valid to publish.",
-                            Client.API_ERROR);
+                    exceptionMessage(ex, "Successfully registered " + fullName + ", however it is not valid to publish.", Client.API_ERROR);
                 }
             }
         }
+    }
+
+    /**
+     * Given a registry ENUM string, returns the matching registry enum
+     *
+     * @param registry
+     * @return An optional value of the registry enum
+     */
+    private Optional<DockstoreTool.RegistryEnum> getRegistryEnum(String registry) {
+        for (DockstoreTool.RegistryEnum reg : DockstoreTool.RegistryEnum.values()) {
+            if (registry.equals(reg.name())) {
+                return Optional.of(reg);
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Given a registry ENUM string, returns the default docker registry path
+     *
+     * @param registry
+     * @return An optional docker registry path
+     */
+    private Optional<String> getRegistryPath(String registry) {
+        for (Registry r : Registry.values()) {
+            if (registry.equals(r.name())) {
+                if (r.hasCustomDockerPath()) {
+                    return Optional.of(null);
+                } else {
+                    return Optional.of(r.toString());
+                }
+            }
+        }
+
+        return Optional.empty();
     }
 
     protected void refreshAllEntries() {
@@ -396,7 +565,7 @@ public class ToolClient extends AbstractEntryClient {
             List<DockstoreTool> containers = usersApi.refresh(user.getId());
 
             out("YOUR UPDATED TOOLS");
-            out("-------------------");
+            printLineBreak();
             printToolList(containers);
         } catch (ApiException ex) {
             exceptionMessage(ex, "", Client.API_ERROR);
@@ -411,7 +580,7 @@ public class ToolClient extends AbstractEntryClient {
             List<DockstoreTool> containerList = new ArrayList<>();
             containerList.add(updatedContainer);
             out("YOUR UPDATED TOOLS");
-            out("-------------------");
+            printLineBreak();
             printToolList(containerList);
         } catch (ApiException ex) {
             exceptionMessage(ex, "", Client.API_ERROR);
@@ -552,8 +721,8 @@ public class ToolClient extends AbstractEntryClient {
     }
 
     private void versionTag(List<String> args) {
-        if (args.isEmpty()
-                || (containsHelpRequest(args) && !args.contains("add") && !args.contains("update") && !args.contains("remove"))) {
+        if (args.isEmpty() || (containsHelpRequest(args) && !args.contains("add") && !args.contains("update") && !args
+                .contains("remove"))) {
             versionTagHelp();
         } else {
             String subcommand = args.remove(0);
@@ -710,11 +879,72 @@ public class ToolClient extends AbstractEntryClient {
                 final String gitUrl = optVal(args, "--git-url", tool.getGitUrl());
                 final String defaultTag = optVal(args, "--default-version", tool.getDefaultVersion());
 
+                // Check that user did not use manual only attributes for an auto tool
+                if (tool.getMode() != DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH && (args.contains("--private") || args
+                        .contains("--tool-maintainer-email"))) {
+                    out("--private and --tool-maintainer-email are only available for use with manually registered tools.");
+                }
+
+                final String toolMaintainerEmail = optVal(args, "--tool-maintainer-email", tool.getToolMaintainerEmail());
+                final String privateAccess = optVal(args, "--private", tool.getPrivateAccess().toString());
+
+                // Check for correct private access
+                if (!("false".equalsIgnoreCase(privateAccess) || "true".equalsIgnoreCase(privateAccess))) {
+                    errorMessage("The possible values for --private are 'true' and 'false'.", Client.CLIENT_ERROR);
+                }
+
+                // Check that the tool maintainer email is valid
+                if (tool.getMode() == DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH && !toolMaintainerEmail.equals(tool.getToolMaintainerEmail())
+                        && !Strings.isNullOrEmpty(toolMaintainerEmail)) {
+                    EmailValidator emailValidator = EmailValidator.getInstance();
+                    if (!emailValidator.isValid(toolMaintainerEmail)) {
+                        errorMessage("The email address that you entered is invalid.", Client.CLIENT_ERROR);
+                    }
+                }
+
                 tool.setDefaultCwlPath(cwlPath);
                 tool.setDefaultWdlPath(wdlPath);
                 tool.setDefaultDockerfilePath(dockerfilePath);
                 tool.setToolname(toolname);
                 tool.setGitUrl(gitUrl);
+
+                // The following is only for manual tools as only they can be private tools
+                if (tool.getMode() == DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH) {
+                    // Can't set tool maintainer null for private, published repos unless tool author email exists
+                    if (tool.getIsPublished() && tool.getPrivateAccess()) {
+                        if (Strings.isNullOrEmpty(toolMaintainerEmail) && Strings.isNullOrEmpty(tool.getEmail())) {
+                            errorMessage("A published, private tool must have either an tool author email or tool maintainer email set up.",
+                                    Client.CLIENT_ERROR);
+                        }
+                    }
+
+                    tool.setToolMaintainerEmail(toolMaintainerEmail);
+
+                    // privateAccess should be either 'true' or 'false'
+                    boolean setPrivateAccess = Boolean.parseBoolean(privateAccess);
+
+                    // When changing public tool to private and the tool is published, either tool author email or tool maintainer email must be set up
+                    if (setPrivateAccess && !tool.getPrivateAccess() && tool.getIsPublished()) {
+                        if (Strings.isNullOrEmpty(toolMaintainerEmail) && Strings.isNullOrEmpty(tool.getEmail())) {
+                            errorMessage("A published, private tool must have either an tool author email or tool maintainer email set up.",
+                                    Client.CLIENT_ERROR);
+                        }
+                    }
+
+                    boolean isPrivateRegistry = Stream.of(Registry.values())
+                            .anyMatch(r -> r.name().equals(tool.getRegistry().name()) && r.isPrivateOnly());
+
+                    // Cannot set private only registry tools to public
+                    if (isPrivateRegistry) {
+                        if (!setPrivateAccess) {
+                            errorMessage(tool.getRegistry().name()
+                                            + " is a private only Docker registry, which means that the tool cannot be set to public.",
+                                    Client.CLIENT_ERROR);
+                        }
+                    }
+
+                    tool.setPrivateAccess(setPrivateAccess);
+                }
 
                 // Check that tool has at least one default path
                 if (Strings.isNullOrEmpty(cwlPath) && Strings.isNullOrEmpty(wdlPath)) {
@@ -775,7 +1005,7 @@ public class ToolClient extends AbstractEntryClient {
                 }
             }
         } else {
-            errorMessage("No " + descriptorType + " file found.", Client.COMMAND_ERROR);
+            errorMessage("No tool found with path " + entry, Client.API_ERROR);
         }
         return file;
     }
@@ -806,7 +1036,8 @@ public class ToolClient extends AbstractEntryClient {
                 } else {
                     List<SourceFile> files = containersApi.secondaryWdl(tool.getId(), version);
                     for (SourceFile sourceFile : files) {
-                        File tempDescriptor = File.createTempFile(FilenameUtils.removeExtension(sourceFile.getPath()), FilenameUtils.getExtension(sourceFile.getPath()), tempDir);
+                        File tempDescriptor = File.createTempFile(FilenameUtils.removeExtension(sourceFile.getPath()),
+                                FilenameUtils.getExtension(sourceFile.getPath()), tempDir);
                         Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
                         result.add(sourceFile);
                     }
@@ -827,11 +1058,12 @@ public class ToolClient extends AbstractEntryClient {
 
     // Help Commands
     protected void printClientSpecificHelp() {
+        out("");
         out("  version_tag      :  updates version tags for an individual tool");
         out("");
         out("  " + ToolClient.UPDATE_TOOL + "      :  updates certain fields of a tool");
         out("");
-        out("  manual_publish   :  registers a Docker Hub (or manual Quay) tool in the dockstore and then attempt to publish");
+        out("  manual_publish   :  registers a manual tool in the dockstore and then attempt to publish");
         out("");
     }
 
@@ -844,7 +1076,7 @@ public class ToolClient extends AbstractEntryClient {
         out("  Update certain fields for a given tool.");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>                                              Complete tool path in the Dockstore");
+        out("  --entry <entry>                                              Complete tool path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
         out("");
         out("Optional Parameters");
         out("  --cwl-path <cwl-path>                                        Path to default cwl location");
@@ -853,6 +1085,8 @@ public class ToolClient extends AbstractEntryClient {
         out("  --toolname <toolname>                                        Toolname for the given tool");
         out("  --git-url <git-url>                                          Git url");
         out("  --default-version <default-version>                          Default branch name");
+        out("  --tool-maintainer-email <tool-maintainer-email>              Email of tool maintainer (Used for private tools). Manual tools only.");
+        out("  --private <true/false>                                       Private tools have private docker images, public tools do not. Manual tools only.");
         printHelpFooter();
     }
 
@@ -883,7 +1117,7 @@ public class ToolClient extends AbstractEntryClient {
         out("  Remove an existing version tag of a tool.");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>         Complete tool path in the Dockstore");
+        out("  --entry <entry>         Complete tool path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
         out("  --name <name>           Name of the version tag to remove");
         printHelpFooter();
     }
@@ -897,7 +1131,7 @@ public class ToolClient extends AbstractEntryClient {
         out("  Update an existing version tag of a tool.");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>                                              Complete tool path in the Dockstore");
+        out("  --entry <entry>                                              Complete tool path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
         out("  --name <name>                                                Name of the version tag to update");
         out("");
         out("Optional Parameters:");
@@ -918,7 +1152,7 @@ public class ToolClient extends AbstractEntryClient {
         out("  Add a new version tag to a manually added tool.");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>                                          Complete tool path in the Dockstore");
+        out("  --entry <entry>                                          Complete tool path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
         out("  --name <name>                                            Name of the version tag to add");
         out("");
         out("Optional Parameters:");
@@ -937,7 +1171,8 @@ public class ToolClient extends AbstractEntryClient {
         out("       dockstore tool manual_publish [parameters]");
         out("");
         out("Description:");
-        out("  Manually register an tool in the dockstore. Currently this is used to register entries for images on Docker Hub.");
+        out("  Manually register an tool in the dockstore.");
+        out("  No parameters will show the list of available registries.");
         out("");
         out("Required parameters:");
         out("  --name <name>                                            Name for the docker container");
@@ -950,24 +1185,22 @@ public class ToolClient extends AbstractEntryClient {
         out("  --cwl-path <file>                                        Path for the CWL document, defaults to /Dockstore.cwl");
         out("  --wdl-path <file>                                        Path for the WDL document, defaults to /Dockstore.wdl");
         out("  --toolname <toolname>                                    Name of the tool, can be omitted, defaults to null");
-        out("  --registry <registry>                                    Docker registry, can be omitted, defaults to registry.hub.docker.com");
-        out("  --version-name <version>                                 Version tag name for Dockerhub containers only, defaults to latest");
+        out("  --registry <registry>                                    Docker registry, can be omitted, defaults to DOCKER_HUB. Run command with no parameters to see available registries.");
+        out("  --version-name <version>                                 Version tag name for Dockerhub containers only, defaults to latest.");
+        out("  --private <true/false>                                   Is the tool private or not, defaults to false.");
+        out("  --tool-maintainer-email <tool maintainer email>          The contact email for the tool maintainer. Required for private repositories.");
+        out("  --custom-docker-path <custom docker path>                Custom Docker registry path (ex. registry.hub.docker.com). Only available for certain registries.");
         printHelpFooter();
     }
 
-
-    // This should be linked to common, but we won't do this now because we don't want dependencies changing during testing
-    public enum Registry {
-        QUAY_IO("quay.io"), DOCKER_HUB("registry.hub.docker.com");
-        private String value;
-
-        Registry(String value) {
-            this.value = value;
-        }
-
-        @Override
-        public String toString() {
-            return value;
+    private static void printRegistriesAvailable() {
+        out("The available Docker Registries are:");
+        for (Registry r : Registry.values()) {
+            if (!r.hasCustomDockerPath()) {
+                out(" *" + r.name() + " (" + r.toString() + ")");
+            } else {
+                out(" *" + r.name() + " (Custom)");
+            }
         }
     }
 
@@ -981,3 +1214,5 @@ public class ToolClient extends AbstractEntryClient {
         }
     }
 }
+ 
+

@@ -16,54 +16,38 @@
 
 package io.dockstore.common;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.SdkBaseException;
-import com.amazonaws.auth.SignerFactory;
-import com.amazonaws.event.ProgressEvent;
-import com.amazonaws.event.ProgressEventType;
-import com.amazonaws.event.ProgressListener;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.S3ClientOptions;
-import com.amazonaws.services.s3.internal.S3Signer;
-import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.transfer.Download;
-import com.amazonaws.services.s3.transfer.TransferManager;
-import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
-import com.amazonaws.services.s3.transfer.Upload;
-import com.google.common.base.Joiner;
-import com.google.common.collect.Lists;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.net.io.CopyStreamEvent;
-import org.apache.commons.net.io.CopyStreamListener;
-import org.apache.commons.net.io.Util;
-import org.apache.commons.vfs2.FileObject;
-import org.apache.commons.vfs2.FileSystemManager;
-import org.apache.commons.vfs2.FileSystemOptions;
-import org.apache.commons.vfs2.VFS;
-import org.apache.commons.vfs2.provider.ftp.FtpFileSystemConfigBuilder;
-import org.sagebionetworks.client.SynapseClient;
-import org.sagebionetworks.client.SynapseClientImpl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.math.BigDecimal;
-import java.math.MathContext;
-import java.math.RoundingMode;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import com.github.zafarkhaja.semver.UnexpectedCharacterException;
+import com.google.common.collect.ArrayListMultimap;
+import io.dockstore.provision.ProvisionInterface;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.configuration2.INIConfiguration;
+import org.apache.commons.configuration2.SubnodeConfiguration;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.vfs2.FileObject;
+import org.apache.commons.vfs2.FileSystemManager;
+import org.apache.commons.vfs2.VFS;
+import com.google.common.collect.Multimap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import ro.fortsoft.pf4j.PluginManager;
+import ro.fortsoft.pf4j.PluginWrapper;
 
 /**
  * The purpose of this class is to provide general functions to deal with workflow file provisioning.
@@ -71,134 +55,55 @@ import java.util.List;
  */
 public class FileProvisioning {
 
-    static {
-        SignerFactory.registerSigner("S3Signer", S3Signer.class);
-    }
-
     private static final Logger LOG = LoggerFactory.getLogger(FileProvisioning.class);
 
-    private static final String S3_ENDPOINT = "s3.endpoint";
-    private static final String DCC_CLIENT_KEY = "dcc_storage.client";
+    private List<ProvisionInterface> plugins = new ArrayList<>();
 
-    private HierarchicalINIConfiguration config;
+    private INIConfiguration config;
+
+    // map from cwl emitted local file path to info object containing
+    private List<ImmutablePair<String, FileInfo>> registeredFiles = new ArrayList<>();
+
 
     /**
      * Constructor
      */
     public FileProvisioning(String configFile) {
+        this.config = Utilities.parseConfig(configFile);
         try {
-            this.config = new HierarchicalINIConfiguration(configFile);
-        } catch (ConfigurationException e) {
-            e.printStackTrace();
-        }
-    }
+            PluginManager pluginManager = FileProvisionUtil.getPluginManager(config);
 
-    // Which functions to move here? DCC and apache commons ones?
-    private String getStorageClient() {
-        return config.getString(DCC_CLIENT_KEY, "/icgc/dcc-storage/bin/dcc-storage-client");
-    }
+            this.plugins = pluginManager.getExtensions(ProvisionInterface.class);
 
-    private void downloadFromDccStorage(String objectId, String downloadDir, String targetFilePath) {
-        // default layout saves to original_file_name/object_id
-        // file name is the directory and object id is actual file name
-        String client = getStorageClient();
-        String bob =
-                client + " --quiet" + " download" + " --object-id " + objectId + " --output-dir " + downloadDir + " --output-layout id";
-        Utilities.executeCommand(bob);
-
-        // downloaded file
-        String downloadPath = new File(downloadDir).getAbsolutePath() + "/" + objectId;
-        System.out.println("download path: " + downloadPath);
-        Path downloadedFileFileObj = Paths.get(downloadPath);
-        Path targetPathFileObj = Paths.get(targetFilePath);
-        try {
-            Files.move(downloadedFileFileObj, targetPathFileObj);
-        } catch (IOException ioe) {
-            LOG.error(ioe.getMessage());
-            throw new RuntimeException("Could not move input file: ", ioe);
-        }
-    }
-
-    private void downloadFromS3(String path, String targetFilePath) {
-        AmazonS3 s3Client = getAmazonS3Client(config);
-        TransferManager tx = TransferManagerBuilder.standard().withS3Client(s3Client).build();
-        String trimmedPath = path.replace("s3://", "");
-        List<String> splitPathList = Lists.newArrayList(trimmedPath.split("/"));
-        String bucketName = splitPathList.remove(0);
-
-        S3Object object = s3Client.getObject(new GetObjectRequest(bucketName, Joiner.on("/").join(splitPathList)));
-        try {
-            GetObjectRequest request = new GetObjectRequest(bucketName, Joiner.on("/").join(splitPathList));
-            request.setGeneralProgressListener(getProgressListener(object.getObjectMetadata().getContentLength()));
-            Download download = tx.download(request, new File(targetFilePath));
-            download.waitForCompletion();
-        } catch (SdkBaseException e) {
-            LOG.error(e.getMessage());
-            throw new RuntimeException("Could not provision input files from S3", e);
-        } catch (InterruptedException e) {
+            List<PluginWrapper> pluginWrappers = pluginManager.getPlugins();
+            for (PluginWrapper pluginWrapper : pluginWrappers) {
+                SubnodeConfiguration section = config.getSection(pluginWrapper.getPluginId());
+                Map<String, String> sectionConfig = new HashMap<>();
+                Iterator<String> keys = section.getKeys();
+                keys.forEachRemaining(key -> sectionConfig.put(key, section.getString(key)));
+                // this is ugly, but we need to pass configuration into the plugins
+                // TODO: speed this up using a map of plugins
+                for (ProvisionInterface extension : plugins) {
+                    String extensionName = extension.getClass().getName();
+                    String pluginClass = pluginWrapper.getDescriptor().getPluginClass();
+                    if (extensionName.startsWith(pluginClass)) {
+                        extension.setConfiguration(sectionConfig);
+                    }
+                }
+            }
+        } catch (UnexpectedCharacterException e) {
+            LOG.error("Could not load plugins: " + e.toString(), e);
             throw new RuntimeException(e);
-        } finally{
-            tx.shutdownNow(true);
-        }
-    }
-
-    private void downloadFromSynapse(String path, String targetFilePath) {
-        SynapseClient synapseClient = new SynapseClientImpl();
-
-        try {
-            String synapseKey = config.getString("synapse-api-key");
-            String synapseUserName = config.getString("synapse-user-name");
-            synapseClient.setApiKey(synapseKey);
-            synapseClient.setUserName(synapseUserName);
-            synapseClient.downloadFromFileEntityCurrentVersion(path, new File(targetFilePath));
-        } catch (Exception e) {
-            LOG.error(e.getMessage());
-            throw new RuntimeException("Could not provision input files from Synapse", e);
-        }
-    }
-
-    private static AmazonS3 getAmazonS3Client(HierarchicalINIConfiguration config) {
-        AmazonS3 s3Client = new AmazonS3Client(new ClientConfiguration().withSignerOverride("S3Signer"));
-        if (config.containsKey(S3_ENDPOINT)) {
-            final String endpoint = config.getString(S3_ENDPOINT);
-            LOG.info("found custom S3 endpoint, setting to {}", endpoint);
-            s3Client.setEndpoint(endpoint);
-            s3Client.setS3ClientOptions(S3ClientOptions.builder().setPathStyleAccess(true).build());
-        }
-        return s3Client;
-    }
-
-    private void downloadFromHttp(String path, String targetFilePath) {
-        // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
-        // https://commons.apache.org/proper/commons-vfs/filesystems.html
-        try {
-            // force passive mode for FTP (see emails from Keiran)
-            FileSystemOptions opts = new FileSystemOptions();
-            FtpFileSystemConfigBuilder.getInstance().setPassiveMode(opts, true);
-
-            // trigger a copy from the URL to a local file path that's a UUID to avoid collision
-            FileSystemManager fsManager = VFS.getManager();
-            org.apache.commons.vfs2.FileObject src = fsManager.resolveFile(path, opts);
-            org.apache.commons.vfs2.FileObject dest = fsManager.resolveFile(new File(targetFilePath).getAbsolutePath());
-            InputStream inputStream = src.getContent().getInputStream();
-            long inputSize = src.getContent().getSize();
-            OutputStream outputSteam = dest.getContent().getOutputStream();
-            copyFromInputStreamToOutputStream(inputStream, inputSize, outputSteam);
-            // dest.copyFrom(src, Selectors.SELECT_SELF);
-        } catch (IOException e) {
-            LOG.error(e.getMessage());
-            throw new RuntimeException("Could not provision input files", e);
         }
     }
 
     /**
      * This method downloads both local and remote files into the working directory
+     *
      * @param targetPath path for target file
-     * @param localPath the absolute path where we will download files to
-     * @param pathInfo additional information on the type of file
+     * @param localPath  the absolute path where we will download files to
      */
-    public void provisionInputFile(String targetPath, Path localPath,
-            PathInfo pathInfo) {
+    public void provisionInputFile(String targetPath, Path localPath) {
 
         Path potentialCachedFile = null;
         final boolean useCache = isCacheOn(config);
@@ -239,19 +144,27 @@ public class FileProvisioning {
             }
         }
 
+        URI objectIdentifier = URI.create(targetPath);    // throws IllegalArgumentException if it isn't a valid URI
+        if (objectIdentifier.getScheme() != null) {
+            String scheme = objectIdentifier.getScheme().toLowerCase();
+            for (ProvisionInterface provision : plugins) {
+                if (provision.schemesHandled().contains(scheme.toUpperCase()) || provision.schemesHandled().contains(scheme.toLowerCase())) {
+                    System.out.println("Calling on plugin " + provision.getClass().getName() + " to provision " + targetPath);
+                    boolean downloaded = provision.downloadFrom(targetPath, localPath);
+                    if (!downloaded) {
+                        throw new RuntimeException("Could not provision: " + targetPath + " to " + localPath);
+                    }
+                }
+            }
+        }
         // if a file does not exist yet, get it
         if (!Files.exists(localPath)) {
-            if (pathInfo.isObjectIdType()) {
-                String objectId = pathInfo.getObjectId();
-                this.downloadFromDccStorage(objectId, localPath.getParent().toFile().getAbsolutePath(), localPath.toFile().getAbsolutePath());
-            } else if (targetPath.startsWith("syn")) {
-                this.downloadFromSynapse(targetPath, localPath.toFile().getAbsolutePath());
-            } else if (targetPath.startsWith("s3://")) {
-                this.downloadFromS3(targetPath, localPath.toFile().getAbsolutePath());
-            } else if (!pathInfo.isLocalFileType()) {
-                this.downloadFromHttp(targetPath, localPath.toFile().getAbsolutePath());
+            // check if we can use a plugin
+            boolean localFileType = objectIdentifier.getScheme() == null;
+
+            if (!localFileType) {
+                FileProvisionUtil.downloadFromVFS2(targetPath, localPath.toFile().getAbsolutePath());
             } else {
-                assert (pathInfo.isLocalFileType());
                 // hard link into target location
                 Path actualTargetPath = null;
                 try {
@@ -302,28 +215,41 @@ public class FileProvisioning {
         }
     }
 
-    public static String getCacheDirectory(HierarchicalINIConfiguration config) {
-        return config
-                .getString("cache-dir", System.getProperty("user.home") + File.separator + ".dockstore" + File.separator + "cache");
+    public static String getCacheDirectory(INIConfiguration config) {
+        return config.getString("cache-dir", System.getProperty("user.home") + File.separator + ".dockstore" + File.separator + "cache");
     }
 
-    private static boolean isCacheOn(HierarchicalINIConfiguration config){
+    private static boolean isCacheOn(INIConfiguration config) {
         final String useCache = config.getString("use-cache", "false");
-        return useCache.equalsIgnoreCase("true") || useCache.equalsIgnoreCase("use") || useCache.equalsIgnoreCase("T");
+        return "true".equalsIgnoreCase(useCache) || "use".equalsIgnoreCase(useCache) || "T".equalsIgnoreCase(useCache);
     }
 
     /**
      * Copies files from srcPath to destPath
      * @param srcPath source file
-     * @param destPath destination file
+     * @param info destination and metddata associated with one file
      */
-    public void provisionOutputFile(String srcPath, String destPath) {
+    public void registerOutputFile(String srcPath, FileInfo info) {
+        this.registeredFiles.add(ImmutablePair.of(srcPath, info));
+    }
+
+    /**
+     * Copies files from srcPath to destPath
+     *
+     * @param srcPath  source file
+     * @param destPath destination file
+     * @param metadata metddata associated with one file
+     * @param provisionInterface plugin used for this file
+     */
+    private void provisionOutputFile(String srcPath, String destPath, String metadata, ProvisionInterface provisionInterface) {
         File sourceFile = new File(srcPath);
-        if (destPath.startsWith("s3://")) {
-            uploadToS3(destPath, sourceFile);
+        long inputSize = sourceFile.length();
+
+        if (provisionInterface != null) {
+            System.out.println("Calling on plugin " + provisionInterface.getClass().getName() + " to provision to " + destPath);
+            provisionInterface.uploadTo(destPath, Paths.get(srcPath), Optional.ofNullable(metadata));
         } else {
             try {
-                long inputSize = sourceFile.length();
                 FileSystemManager fsManager;
                 // trigger a copy from the URL to a local file path that's a UUID to avoid collision
                 fsManager = VFS.getManager();
@@ -331,158 +257,77 @@ public class FileProvisioning {
                 Path currentWorkingDir = Paths.get("").toAbsolutePath();
                 FileObject dest = fsManager.resolveFile(currentWorkingDir.toFile(), destPath);
                 FileObject src = fsManager.resolveFile(sourceFile.getAbsolutePath());
-                copyFromInputStreamToOutputStream(src.getContent().getInputStream(), inputSize, dest.getContent().getOutputStream());
+                FileProvisionUtil.copyFromInputStreamToOutputStream(src.getContent().getInputStream(), inputSize, dest.getContent().getOutputStream());
             } catch (IOException e) {
                 throw new RuntimeException("Could not provision output files", e);
             }
         }
     }
 
-    private void uploadToS3(String destPath, File sourceFile) {
-        long inputSize = sourceFile.length();
-        AmazonS3 s3Client = FileProvisioning.getAmazonS3Client(config);
-        TransferManager tx = TransferManagerBuilder.standard().withS3Client(s3Client).build();
+    public static void main(String[] args) {
+        String userHome = System.getProperty("user.home");
+        PluginManager manager = FileProvisionUtil
+                .getPluginManager(Utilities.parseConfig(userHome + File.separator + ".dockstore" + File.separator + "config"));
 
-        String trimmedPath = destPath.replace("s3://", "");
-        List<String> splitPathList = Lists.newArrayList(trimmedPath.split("/"));
-        String bucketName = splitPathList.remove(0);
-
-        PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, Joiner.on("/").join(splitPathList), sourceFile);
-        putObjectRequest.setGeneralProgressListener(getProgressListener(inputSize));
-        try {
-            Upload upload = tx.upload(putObjectRequest);
-            upload.waitForUploadResult();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } finally{
-            tx.shutdownNow(true);
-            System.out.println();
+        List<ProvisionInterface> greetings = manager.getExtensions(ProvisionInterface.class);
+        for (ProvisionInterface provision : greetings) {
+            System.out.println("Plugin: " + provision.getClass().getName());
+            System.out.println("\tSchemes handled: " + provision.getClass().getName());
+            for (String prefix: provision.schemesHandled()) {
+                System.out.println("\t\t " + prefix);
+            }
         }
     }
 
-    private ProgressListener getProgressListener(final long inputSize) {
-        return new ProgressListener() {
-            ProgressPrinter printer = new ProgressPrinter();
-            long runningTotal = 0;
-            @Override public void progressChanged(ProgressEvent progressEvent) {
-                if (progressEvent.getEventType() == ProgressEventType.REQUEST_BYTE_TRANSFER_EVENT){
-                    runningTotal += progressEvent.getBytesTransferred();
-                }
-                printer.handleProgress(runningTotal, inputSize);
-            }
-        };
-    }
+    public void uploadFiles() {
+        Multimap<ProvisionInterface, Pair<String, FileInfo>> map = identifyPlugins();
+        Map<ProvisionInterface, Collection<Pair<String, FileInfo>>> provisionInterfaceCollectionMap = map.asMap();
+        for (Map.Entry<ProvisionInterface, Collection<Pair<String, FileInfo>>> entry : provisionInterfaceCollectionMap.entrySet()) {
+            ProvisionInterface pInterface = entry.getKey();
+            Pair<String, FileInfo>[] pairs = entry.getValue().toArray(new Pair[entry.getValue().size()]);
+            List<Optional<String>> metadataList = Stream.of(pairs).map(pair -> Optional.ofNullable(pair.getValue().getMetadata())).collect(Collectors.toList());
+            List<Path> srcList = Stream.of(pairs).map(pair -> Paths.get(pair.getKey())).collect(Collectors.toList());
+            List<String> destList = Stream.of(pairs).map(pair -> pair.getValue().getUrl()).collect(Collectors.toList());
 
-    private static class ProgressPrinter {
-        static final int SIZE_OF_PROGRESS_BAR = 50;
-        boolean printedBefore = false;
-        BigDecimal progress = new BigDecimal(0);
-
-        void handleProgress(long totalBytesTransferred, long streamSize) {
-
-            BigDecimal numerator = BigDecimal.valueOf(totalBytesTransferred);
-            BigDecimal denominator = BigDecimal.valueOf(streamSize);
-            BigDecimal fraction = numerator.divide(denominator, new MathContext(2, RoundingMode.HALF_EVEN));
-            if (fraction.equals(progress)) {
-                /* don't bother refreshing if no progress made */
-                return;
-            }
-
-            BigDecimal outOfTwenty = fraction.multiply(new BigDecimal(SIZE_OF_PROGRESS_BAR));
-            BigDecimal percentage = fraction.movePointRight(2);
-            StringBuilder builder = new StringBuilder();
-            if (printedBefore) {
-                builder.append('\r');
-            }
-
-            builder.append("[");
-            for (int i = 0; i < SIZE_OF_PROGRESS_BAR; i++) {
-                if (i < outOfTwenty.intValue()) {
-                    builder.append("#");
-                } else {
-                    builder.append(" ");
-                }
-            }
-
-            builder.append("] ");
-            builder.append(percentage.setScale(0,BigDecimal.ROUND_HALF_EVEN).toPlainString()).append("%");
-
-            System.out.print(builder);
-            // track progress
-            printedBefore = true;
-            progress = fraction;
-        }
-    }
-
-    /**
-     * Copy from stream to stream while displaying progress
-     *
-     * @param inputStream source
-     * @param inputSize   total size
-     * @param outputSteam destination
-     * @throws IOException  throws an exception if unable to provision input files
-     */
-    private static void copyFromInputStreamToOutputStream(InputStream inputStream, long inputSize, OutputStream outputSteam)
-            throws IOException {
-        CopyStreamListener listener = new CopyStreamListener() {
-            ProgressPrinter printer = new ProgressPrinter();
-
-            @Override public void bytesTransferred(CopyStreamEvent event) {
-                /* do nothing */
-            }
-
-            @Override public void bytesTransferred(long totalBytesTransferred, int bytesTransferred, long streamSize) {
-                printer.handleProgress(totalBytesTransferred, streamSize);
-            }
-        };
-        try (OutputStream outputStream = outputSteam) {
-            // a larger buffer improves copy performance
-            // we can also split this (local file copy) out into a plugin later
-            final int largeBuffer = 100;
-            Util.copyStream(inputStream, outputStream, Util.DEFAULT_COPY_BUFFER_SIZE*largeBuffer, inputSize, listener);
-        } catch (IOException e) {
-            throw new RuntimeException("Could not provision input files", e);
-        } finally {
-            IOUtils.closeQuietly(inputStream);
-            System.out.println();
-        }
-    }
-
-    public static class PathInfo {
-        private static final Logger LOG = LoggerFactory.getLogger(PathInfo.class);
-        static final String DCC_STORAGE_SCHEME = "icgc";
-        private boolean objectIdType;
-        private String objectId = "";
-        private boolean localFileType = false;
-
-        boolean isObjectIdType() {
-            return objectIdType;
-        }
-
-        String getObjectId() {
-            return objectId;
-        }
-
-        public PathInfo(String path) {
             try {
-                URI objectIdentifier = URI.create(path);    // throws IllegalArgumentException if it isn't a valid URI
-                if (objectIdentifier.getScheme() == null) {
-                    localFileType = true;
+                if (pInterface != null) {
+                    pInterface.prepareFileSet(destList, srcList, metadataList);
                 }
-                if (objectIdentifier.getScheme().equalsIgnoreCase(DCC_STORAGE_SCHEME)) {
-                    objectIdType = true;
-                    objectId = objectIdentifier.getSchemeSpecificPart().toLowerCase();
+                for (Pair<String, FileInfo> pair : pairs) {
+                    this.provisionOutputFile(pair.getLeft(), pair.getRight().getUrl(), pair.getRight().getMetadata(), pInterface);
                 }
-            } catch (IllegalArgumentException | NullPointerException iae) {
-                // if there is no scheme, then it must be a local file
-                LOG.info("Invalid or local path specified for CWL pre-processor values: " + path);
-                objectIdType = false;
+                if (pInterface != null) {
+                    pInterface.finalizeFileSet(destList, srcList, metadataList);
+                }
+            } catch (Exception e) {
+                LOG.error("plugin threw an exception", e);
+                throw new RuntimeException("plugin threw an exception", e);
             }
         }
 
-        boolean isLocalFileType() {
-            return localFileType;
+    }
+
+    private Multimap<ProvisionInterface, Pair<String, FileInfo>> identifyPlugins() {
+        Multimap<ProvisionInterface, Pair<String, FileInfo>> map = ArrayListMultimap.create();
+
+        for (ImmutablePair<String, FileInfo> pair : this.registeredFiles) {
+            String destPath = pair.getRight().getUrl();
+            URI objectIdentifier = URI.create(destPath);    // throws IllegalArgumentException if it isn't a valid URI
+            boolean handled = false;
+            if (objectIdentifier.getScheme() != null) {
+                String scheme = objectIdentifier.getScheme();
+                for (ProvisionInterface provision : plugins) {
+                    if (provision.schemesHandled().contains(scheme.toUpperCase()) || provision.schemesHandled().contains(scheme.toLowerCase())) {
+                        map.put(provision, pair);
+                        handled = true;
+                    }
+                }
+            }
+            if (!handled) {
+                map.put(null, pair);
+            }
         }
+        return map;
     }
 
     /**
@@ -491,6 +336,7 @@ public class FileProvisioning {
     public static class FileInfo {
         private String localPath;
         private String url;
+        private String metadata;
 
         public String getLocalPath() {
             return localPath;
@@ -507,16 +353,14 @@ public class FileProvisioning {
         public void setUrl(String url) {
             this.url = url;
         }
-    }
 
-    public static void main(String[] args){
-        String userHome = System.getProperty("user.home");
-        FileProvisioning provisioning = new FileProvisioning(userHome + File.separator + ".dockstore" + File.separator + "config");
-        long firstTime = System.currentTimeMillis();
-        // used /home/dyuen/Downloads/pcawg_broad_public_refs_full.tar.gz for testing
-        provisioning.provisionOutputFile(args[0],args[0]);
-        final long millisecondsInSecond = 1000L;
-        System.out.println((System.currentTimeMillis() - firstTime)/millisecondsInSecond);
+        public String getMetadata() {
+            return metadata;
+        }
+
+        public void setMetadata(String metadata) {
+            this.metadata = metadata;
+        }
     }
 }
 

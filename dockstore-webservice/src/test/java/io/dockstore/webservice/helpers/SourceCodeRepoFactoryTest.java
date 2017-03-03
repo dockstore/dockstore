@@ -16,10 +16,10 @@
 
 package io.dockstore.webservice.helpers;
 
+import java.util.Map;
+
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.Map;
 
 /**
  * @author dyuen
@@ -30,10 +30,15 @@ public class SourceCodeRepoFactoryTest {
     public void parseGitUrl() throws Exception {
         // test format 1
         final Map<String, String> stringStringMap1 = SourceCodeRepoFactory.parseGitUrl("git@github.com:ga4gh/dockstore-ui.git");
-        Assert.assertTrue("values not found", stringStringMap1.containsKey("Source") && stringStringMap1.containsKey("Username") && stringStringMap1.containsKey("Repository"));
+        Assert.assertTrue("values not found",
+                stringStringMap1.containsKey("Source") && stringStringMap1.containsKey("Username") && stringStringMap1
+                        .containsKey("Repository"));
         // test format 2
-        final Map<String, String> stringStringMap2 = SourceCodeRepoFactory.parseGitUrl("git://github.com/denis-yuen/dockstore-whalesay.git");
-        Assert.assertTrue("values not found", stringStringMap2.containsKey("Source") && stringStringMap2.containsKey("Username") && stringStringMap2.containsKey("Repository"));
+        final Map<String, String> stringStringMap2 = SourceCodeRepoFactory
+                .parseGitUrl("git://github.com/denis-yuen/dockstore-whalesay.git");
+        Assert.assertTrue("values not found",
+                stringStringMap2.containsKey("Source") && stringStringMap2.containsKey("Username") && stringStringMap2
+                        .containsKey("Repository"));
         // test garbage
         final Map<String, String> stringStringMap3 = SourceCodeRepoFactory.parseGitUrl("mostly harmless");
         Assert.assertTrue("should be null", stringStringMap3 == null);
