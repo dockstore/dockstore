@@ -17,8 +17,10 @@ package io.dockstore.client.cli;
 
 import java.util.List;
 
+import avro.shaded.com.google.common.base.Joiner;
 import io.dockstore.common.FileProvisionUtil;
 import io.dockstore.common.TabExpansionUtil;
+import io.dockstore.provision.ProvisionInterface;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,13 +57,17 @@ public final class PluginClient {
                 PluginManager pluginManager = FileProvisionUtil.getPluginManager(configFile);
                 List<PluginWrapper> plugins = pluginManager.getStartedPlugins();
                 StringBuilder builder = new StringBuilder();
-                builder.append("PluginId\tPlugin Version\tPlugin Path\n");
+                builder.append("PluginId\tPlugin Version\tPlugin Path\tSchemes handled\n");
                 for (PluginWrapper plugin : plugins) {
                     builder.append(plugin.getPluginId());
                     builder.append("\t");
                     builder.append(plugin.getPlugin().getWrapper().getDescriptor().getVersion());
                     builder.append("\t");
-                    builder.append(FileProvisionUtil.getFilePluginLocation(configFile) + plugin.getPlugin().getWrapper().getPluginPath() + "(.zip)");
+                    builder.append(FileProvisionUtil.getFilePluginLocation(configFile))
+                            .append(plugin.getPlugin().getWrapper().getPluginPath()).append("(.zip)");
+                    builder.append("\t");
+                    List<ProvisionInterface> extensions = pluginManager.getExtensions(ProvisionInterface.class, plugin.getPluginId());
+                    extensions.forEach(extension -> Joiner.on(',').appendTo(builder, extension.schemesHandled()));
                     builder.append("\n");
                 }
                 out(TabExpansionUtil.aligned(builder.toString()));

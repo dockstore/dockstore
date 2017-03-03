@@ -39,7 +39,6 @@ import org.apache.commons.vfs2.VFS;
 import org.apache.commons.vfs2.provider.ftp.FtpFileSystemConfigBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ro.fortsoft.pf4j.DefaultPluginManager;
 import ro.fortsoft.pf4j.PluginManager;
 
 /**
@@ -114,7 +113,20 @@ public final class FileProvisionUtil {
 
     public static PluginManager getPluginManager(INIConfiguration config) {
         String filePluginLocation = getFilePluginLocation(config);
-        PluginManager pluginManager = new DefaultPluginManager(new File(filePluginLocation));
+        // create plugin directory if it does not exist
+        Path path = Paths.get(filePluginLocation);
+        if (!Files.exists(path)) {
+            try {
+                Files.createDirectory(path);
+            } catch (IOException e) {
+                throw new RuntimeException("Could not create plugin directory", e);
+            }
+        }
+        // need to systematically clean up old versions of plugins
+        VersionAwarePluginManager versionCleaner = new VersionAwarePluginManager(new File(filePluginLocation));
+        versionCleaner.cleanupOldVersions();
+        // start a regular plugin manager to interact with plugins
+        PluginManager pluginManager = new VersionAwarePluginManager(new File(filePluginLocation));
         pluginManager.loadPlugins();
         pluginManager.startPlugins();
         return pluginManager;
@@ -135,9 +147,9 @@ public final class FileProvisionUtil {
         // download versions info filePluginLocation
         String template = "https://artifacts.oicr.on.ca/artifactory/collab-release/io/dockstore/%2$s/%1$s/%2$s-%1$s.zip";
         try {
-            downloadPlugin(filePluginLocation, template, "0.0.1", "dockstore-file-icgc-storage-client-plugin");
-            downloadPlugin(filePluginLocation, template, "0.0.1", "dockstore-file-s3-plugin");
-            downloadPlugin(filePluginLocation, template, "0.0.1", "dockstore-file-synapse-plugin");
+            downloadPlugin(filePluginLocation, template, "0.0.5", "dockstore-file-icgc-storage-client-plugin");
+            downloadPlugin(filePluginLocation, template, "0.0.3", "dockstore-file-s3-plugin");
+            downloadPlugin(filePluginLocation, template, "0.0.5", "dockstore-file-synapse-plugin");
         } catch (URISyntaxException | IOException e) {
             throw new RuntimeException(e);
         }

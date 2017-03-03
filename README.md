@@ -87,8 +87,7 @@ client = /media/large_volume/icgc-storage-client-1.0.23/bin/icgc-storage-client
 ```
 
 Additional plugins can be created by taking one of the repos in [plugins](https://github.com/dockstore) as a model and 
-using [pf4j](https://github.com/decebals/pf4j) as a reference. An additional tutorial will be provided for more in-depth
-help on [dockstore.org](https://dockstore.org).
+using [pf4j](https://github.com/decebals/pf4j) as a reference. See [additional documentation](dockstore-file-plugin-parent) for more details. 
 
 ## For Dockstore Developers
 

@@ -28,6 +28,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -189,7 +190,8 @@ public class LauncherCWL {
         // push output files
         if (outputMap.size() > 0) {
             System.out.println("Provisioning your output files to their final destinations");
-            pushOutputFiles(outputMap, outputObj);
+            registerOutputFiles(outputMap, outputObj);
+            this.fileProvisioning.uploadFiles();
         }
     }
 
@@ -291,19 +293,19 @@ public class LauncherCWL {
         // just file name
         // the file URL
         File filePathObj = new File(cwlID);
-        //String newDirectory = globalWorkingDir + "/outputs/" + UUID.randomUUID().toString();
         String newDirectory = globalWorkingDir + "/outputs";
         Utilities.executeCommand("mkdir -p " + newDirectory);
         File newDirectoryFile = new File(newDirectory);
         String uuidPath = newDirectoryFile.getAbsolutePath() + "/" + filePathObj.getName();
 
-        // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
-        // https://commons.apache.org/proper/commons-vfs/filesystems.html
-
         // now add this info to a hash so I can later reconstruct a docker -v command
         FileProvisioning.FileInfo new1 = new FileProvisioning.FileInfo();
         new1.setUrl(path);
         new1.setLocalPath(uuidPath);
+        if (param.containsKey("metadata")) {
+            byte[] metadatas = Base64.getDecoder().decode((String)param.get("metadata"));
+            new1.setMetadata(new String(metadatas, StandardCharsets.UTF_8));
+        }
         fileMap.putIfAbsent(cwlID, new ArrayList<>());
         fileMap.get(cwlID).add(new1);
 
@@ -344,11 +346,8 @@ public class LauncherCWL {
                 }
                 // now add to the new JSON structure
                 JSONObject newRecord = new JSONObject();
-                newRecord.put("class", param.get("class"));
-                newRecord.put("path", param.get("path"));
-                if (param.containsKey("format")) {
-                    newRecord.put("format", param.get("format"));
-                }
+
+                param.entrySet().forEach(paramEntry -> newRecord.put(paramEntry.getKey(), paramEntry.getValue()));
                 newJSON.put(paramName, newRecord);
 
                 // TODO: fill in for all possible types
@@ -376,8 +375,7 @@ public class LauncherCWL {
                             exitingArray = new JSONArray();
                         }
                         JSONObject newRecord = new JSONObject();
-                        newRecord.put("class", param.get("class"));
-                        newRecord.put("path", param.get("path"));
+                        param.entrySet().forEach(paramEntry -> newRecord.put(paramEntry.getKey(), paramEntry.getValue()));
                         exitingArray.add(newRecord);
                         newJSON.put(paramName, exitingArray);
                     } else {
@@ -493,9 +491,9 @@ public class LauncherCWL {
 
     /**
      * @param fileMap      indicates which output files need to be provisioned where
-     * @param outputObject provides information on the output files from CWL
+     * @param outputObject provides information on the output files from cwltool
      */
-    private void pushOutputFiles(Map<String, List<FileProvisioning.FileInfo>> fileMap, Map<String, Object> outputObject) {
+    private void registerOutputFiles(Map<String, List<FileProvisioning.FileInfo>> fileMap, Map<String, Object> outputObject) {
 
         LOG.info("UPLOADING FILES...");
 
@@ -537,7 +535,7 @@ public class LauncherCWL {
         }
         LOG.info("NAME: {} URL: {} FILENAME: {} CWL OUTPUT PATH: {}", file.getLocalPath(), file.getUrl(), key, cwlOutputPath);
         System.out.println("Uploading: #" + key + " from " + cwlOutputPath + " to : " + file.getUrl());
-        fileProvisioning.provisionOutputFile(cwlOutputPath, file.getUrl());
+        fileProvisioning.registerOutputFile(cwlOutputPath, file);
 
         if (fileMapDataStructure.containsKey("secondaryFiles")) {
             final List<Map<String, Object>> secondaryFiles = (List<Map<String, Object>>)fileMapDataStructure
@@ -702,6 +700,7 @@ public class LauncherCWL {
     }
 
     /**
+     * This methods seems to handle the copying of individual files
      * @param key
      * @param path
      * @param fileMap
@@ -711,13 +710,16 @@ public class LauncherCWL {
     private void copyIndividualFile(String key, String path, Map<String, FileProvisioning.FileInfo> fileMap, File downloadDirFileObj,
             boolean record) {
         String shortfileName = Paths.get(path).getFileName().toString();
-        // will need to be handled by plug-ins, mutate long name to short name
-        if (shortfileName.startsWith("icgc:")) {
-            shortfileName = shortfileName.substring("icgc:".length());
+        // will need to be handled by plug-ins, sanitize file names
+        StringBuilder cleanShortFileName = new StringBuilder();
+        for (char c : shortfileName.toCharArray()) {
+            if (c == '.' || Character.isJavaIdentifierPart(c)) {
+                cleanShortFileName.append(c);
+            }
         }
-        final Path targetFilePath = Paths.get(downloadDirFileObj.getAbsolutePath(), shortfileName);
+        shortfileName = cleanShortFileName.toString();
 
-        // expects URI in "path": "icgc:eef47481-670d-4139-ab5b-1dad808a92d9"
+        final Path targetFilePath = Paths.get(downloadDirFileObj.getAbsolutePath(), shortfileName);
         fileProvisioning.provisionInputFile(path, targetFilePath);
         // now add this info to a hash so I can later reconstruct a docker -v command
         FileProvisioning.FileInfo info = new FileProvisioning.FileInfo();
