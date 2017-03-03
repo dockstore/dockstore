@@ -562,7 +562,10 @@ public abstract class AbstractEntryClient {
         } else {
             final String cwlPath = reqVal(args, "--cwl");
             final ImmutablePair<String, String> output = cwlUtil.parseCWL(cwlPath);
-            validateCWL(cwlPath);
+            // do not continue to convert to json if cwl is invalid
+            if (!validateCWL(cwlPath)) {
+                return;
+            }
 
             try {
                 final Map<String, Object> runJson = cwlUtil.extractRunJson(output.getLeft());
@@ -619,9 +622,17 @@ public abstract class AbstractEntryClient {
      * using this command: cwltool --non-strict --validate <file_path>
      * @param cwlFilePath
      */
-    private void validateCWL(String cwlFilePath) {
+    private boolean validateCWL(String cwlFilePath) {
         final String[] s = { "cwltool", "--non-strict", "--validate", cwlFilePath };
-        io.cwl.avro.Utilities.executeCommand(Joiner.on(" ").join(Arrays.asList(s)), false,  Optional.absent(), Optional.absent());
+        try {
+            io.cwl.avro.Utilities.executeCommand(Joiner.on(" ").join(Arrays.asList(s)), false,  Optional.absent(), Optional.absent());
+            return true;
+        } catch (RuntimeException e) {
+            // when invalid, executeCommand will throw a RuntimeException
+            return false;
+        } catch (Exception e) {
+            throw new RuntimeException("An unexpected exception unrelated to validation has occurred");
+        }
     }
 
     /**
@@ -908,8 +919,10 @@ public abstract class AbstractEntryClient {
 
         if (ext.equals(Type.CWL)) {
             if (content.equals(Type.CWL)) {
-                validateCWL(localFilePath);
-
+                // do not continue to check file if the cwl is invalid
+                if (!validateCWL(localFilePath)) {
+                    return;
+                }
                 try {
                     launchCwl(localFilePath, argsList, true);
                 } catch (ApiException e) {

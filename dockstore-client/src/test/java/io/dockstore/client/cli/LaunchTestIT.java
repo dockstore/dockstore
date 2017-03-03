@@ -790,11 +790,10 @@ public class LaunchTestIT {
             add("--json");
             add(json.getAbsolutePath());
         }};
-        exit.expectSystemExit();
-        exit.checkAssertionAfterwards(
-                () -> assertTrue("output should include an error message and exit",
-                        systemErrRule.getLog().contains("")));
+
         runClientCommand(args, false);
+
+        assertTrue("output should include an error message", systemErrRule.getLog().contains("The error was: 'NoneType' object is not iterable"));
     }
 
     @Test
@@ -828,11 +827,10 @@ public class LaunchTestIT {
             add("--json");
             add(json.getAbsolutePath());
         }};
-        exit.expectSystemExit();
-        exit.checkAssertionAfterwards(
-                () -> assertTrue("output should include an error message and exit",
-                        systemErrRule.getLog().contains("Syntax error while parsing a block collection")));
+
         runClientCommand(args, false);
+
+        assertTrue("output should include an error message", systemErrRule.getLog().contains("Syntax error while parsing a block collection"));
     }
 
     @Test
@@ -845,10 +843,9 @@ public class LaunchTestIT {
             add("--cwl");
             add(file.getAbsolutePath());
         }};
-        exit.expectSystemExit();
-        exit.checkAssertionAfterwards(
-                () -> assertTrue("output should include an error message and exit",
-                        systemErrRule.getLog().contains("missing required field `outputs`")));
+
         runClientCommand(args, false);
+
+        assertTrue("output should include an error message", systemErrRule.getLog().contains("missing required field `outputs`"));
     }
 }
