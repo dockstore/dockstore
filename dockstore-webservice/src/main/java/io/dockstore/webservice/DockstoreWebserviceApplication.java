@@ -16,13 +16,6 @@
 
 package io.dockstore.webservice;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.util.EnumSet;
-import java.util.concurrent.TimeUnit;
-
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.webservice.core.Group;
@@ -54,6 +47,8 @@ import io.dockstore.webservice.resources.TemplateHealthCheck;
 import io.dockstore.webservice.resources.TokenResource;
 import io.dockstore.webservice.resources.UserResource;
 import io.dockstore.webservice.resources.WorkflowResource;
+import io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl;
+import io.dockstore.webservice.resources.proposedGA4GH.ToolsExtendedApi;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.auth.AuthDynamicFeature;
@@ -84,6 +79,13 @@ import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.util.EnumSet;
+import java.util.concurrent.TimeUnit;
 
 import static javax.servlet.DispatcherType.REQUEST;
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ACCESS_CONTROL_ALLOW_METHODS_HEADER;
@@ -242,7 +244,13 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         ToolsApiServiceImpl.setToolDAO(toolDAO);
         ToolsApiServiceImpl.setWorkflowDAO(workflowDAO);
         ToolsApiServiceImpl.setConfig(configuration);
+
+        ToolsApiExtendedServiceImpl.setToolDAO(toolDAO);
+        ToolsApiExtendedServiceImpl.setWorkflowDAO(workflowDAO);
+        ToolsApiExtendedServiceImpl.setConfig(configuration);
+
         environment.jersey().register(new ToolsApi());
+        environment.jersey().register(new ToolsExtendedApi());
         environment.jersey().register(new MetadataApi());
         environment.jersey().register(new ToolClassesApi());
 
