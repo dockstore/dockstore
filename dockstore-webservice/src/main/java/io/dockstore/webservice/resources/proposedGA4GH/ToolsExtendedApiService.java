@@ -12,4 +12,5 @@ public abstract class ToolsExtendedApiService {
     public abstract Response toolsOrgGet(String organization, SecurityContext securityContext) throws NotFoundException;
     public abstract Response workflowsOrgGet(String organization, SecurityContext securityContext) throws NotFoundException;
     public abstract Response entriesOrgGet(String organization, SecurityContext securityContext) throws NotFoundException;
+    public abstract Response organizationsGet(SecurityContext securityContext);
 }

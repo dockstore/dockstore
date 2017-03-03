@@ -7,7 +7,6 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.swagger.api.NotFoundException;
-import io.swagger.api.impl.ToolsApiServiceImpl;
 import io.swagger.api.impl.ToolsImplCommon;
 
 import javax.ws.rs.core.Response;
@@ -24,6 +23,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     private static WorkflowDAO workflowDAO = null;
     private static DockstoreWebserviceConfiguration config = null;
 
+
     public static void setToolDAO(ToolDAO toolDAO) {
         ToolsApiExtendedServiceImpl.toolDAO = toolDAO;
     }
@@ -35,22 +35,25 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         ToolsApiExtendedServiceImpl.config = config;
     }
 
-    @Override
-    public Response toolsOrgGet(String organization, SecurityContext securityContext) throws NotFoundException {
-        ToolsApiServiceImpl toolsApiService = new ToolsApiServiceImpl();
-        return toolsApiService.toolsGet(null, null, organization, null, null, null,
-                null, null, null, securityContext);
+    private List<Entry> getPublished() {
+        final List<Entry> published = new ArrayList<>();
+        published.addAll(toolDAO.findAllPublished());
+        published.addAll(workflowDAO.findAllPublished());
+        published.sort((o1, o2) -> o1.getGitUrl().compareTo(o2.getGitUrl()));
+        return published;
     }
 
     @Override
-    public Response workflowsOrgGet(String organization, SecurityContext securityContext) throws NotFoundException {
-        final List<Entry> all = new ArrayList<>();
-        all.addAll(toolDAO.findAllPublished());
-        all.addAll(workflowDAO.findAllPublished());
-        all.sort((o1, o2) -> o1.getGitUrl().compareTo(o2.getGitUrl()));
+    public Response toolsOrgGet(String organization, SecurityContext securityContext) throws NotFoundException {
+        List<io.swagger.model.Tool> responseList = new ArrayList<>();
+        responseList.addAll(workflowOrgGetList(organization));
+        responseList.addAll(entriesOrgGetList(organization));
+        return Response.ok().entity(responseList).build();
+    }
 
+    private List<io.swagger.model.Tool> workflowOrgGetList(String organization) {
         List<io.swagger.model.Tool> results = new ArrayList<>();
-        for (Entry c : all) {
+        for (Entry c : getPublished()) {
             if (c instanceof Workflow) {
                 if (((Workflow) c).getOrganization().equals(organization)) {
                     io.swagger.model.Tool tool = ToolsImplCommon.convertContainer2Tool(c, config).getLeft();
@@ -60,20 +63,14 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 }
             }
         }
-        return Response.ok(results).build();
+        return results;
     }
 
-    @Override
-    public Response entriesOrgGet(String organization, SecurityContext securityContext) throws NotFoundException {
-        final List<Entry> all = new ArrayList<>();
-        all.addAll(toolDAO.findAllPublished());
-        all.addAll(workflowDAO.findAllPublished());
-        all.sort((o1, o2) -> o1.getGitUrl().compareTo(o2.getGitUrl()));
-
+    private List<io.swagger.model.Tool> entriesOrgGetList(String organization) {
         List<io.swagger.model.Tool> results = new ArrayList<>();
-        for (Entry c : all) {
+        for (Entry c : getPublished()) {
             if (c instanceof Tool) {
-                if (((Tool) c).getNamespace().equals(organization)){
+                if (((Tool) c).getNamespace().equals(organization)) {
                     io.swagger.model.Tool tool = ToolsImplCommon.convertContainer2Tool(c, config).getLeft();
                     if (tool != null) {
                         results.add(tool);
@@ -81,6 +78,33 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 }
             }
         }
-        return Response.ok(results).build();
+        return results;
+    }
+
+    @Override
+    public Response workflowsOrgGet(String organization, SecurityContext securityContext) throws NotFoundException {
+        return Response.ok(workflowOrgGetList(organization)).build();
+    }
+
+    @Override
+    public Response entriesOrgGet(String organization, SecurityContext securityContext) throws NotFoundException {
+        return Response.ok(entriesOrgGetList(organization)).build();
+    }
+
+    @Override
+    public Response organizationsGet(SecurityContext securityContext) {
+        List<String> organizations = new ArrayList<>();
+        for (Entry c : getPublished()) {
+            String org;
+            if (c instanceof Workflow) {
+                org = ((Workflow) c).getOrganization();
+            } else {
+                org = ((Tool) c).getNamespace();
+            }
+            if(!organizations.contains(org)) {
+                organizations.add(org);
+            }
+        }
+        return Response.ok(organizations).build();
     }
 }

@@ -29,7 +29,7 @@ public class ToolsExtendedApi {
     @io.swagger.annotations.ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "An array of Tools of the input organization.", response = Tool.class, responseContainer = "List") })
     public Response toolsOrgGet(
-            @ApiParam(value = "An organization, for example `collaboratory`", required = true) @PathParam("organization") String organization,
+            @ApiParam(value = "An organization, for example `cancercollaboratory`", required = true) @PathParam("organization") String organization,
             @Context SecurityContext securityContext) throws NotFoundException {
         return delegate.toolsOrgGet(organization, securityContext);
     }
@@ -43,7 +43,7 @@ public class ToolsExtendedApi {
     @io.swagger.annotations.ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "An array of Tools of the input organization.", response = Tool.class, responseContainer = "List") })
     public Response workflowsOrgGet(
-            @ApiParam(value = "An organization, for example `collaboratory`", required = true) @PathParam("organization") String organization,
+            @ApiParam(value = "An organization, for example `cancercollaboratory`", required = true) @PathParam("organization") String organization,
             @Context SecurityContext securityContext) throws NotFoundException {
         return delegate.workflowsOrgGet(organization, securityContext);
     }
@@ -57,8 +57,21 @@ public class ToolsExtendedApi {
     @io.swagger.annotations.ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "An array of Tools of the input organization.", response = Tool.class, responseContainer = "List") })
     public Response entriesOrgGet(
-            @ApiParam(value = "An organization, for example `collaboratory`", required = true) @PathParam("organization") String organization,
+            @ApiParam(value = "An organization, for example `cancercollaboratory`", required = true) @PathParam("organization") String organization,
             @Context SecurityContext securityContext) throws NotFoundException {
         return delegate.entriesOrgGet(organization, securityContext);
+    }
+
+    @GET
+    @Path("/organizations")
+    @UnitOfWork
+    @Produces({ "application/json", "text/plain" })
+    @io.swagger.annotations.ApiOperation(value = "List all organizations", notes = "This endpoint returns list of all organizations. ", response = String.class, responseContainer = "List", tags = {
+            "extendedGA4GH", })
+    @io.swagger.annotations.ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "An array of organizations' names.", response = String.class, responseContainer = "List") })
+    public Response entriesOrgGet(
+            @Context SecurityContext securityContext) {
+        return delegate.organizationsGet(securityContext);
     }
 }

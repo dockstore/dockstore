@@ -2443,54 +2443,6 @@ paths:
             type: array
       summary: Update the workflow versions linked to a workflow
       tags: [workflows]
-  /extendedGA4GH/{organization}:
-     get:
-        description: 'List tools of an organization. '
-        operationId: toolsOrgGet
-        parameters:
-        - {description: The organization in the registry that published the image.,
-          in: query, name: organization, required: false, type: string}
-        produces: [application/json, text/plain]
-        responses:
-          200:
-            description: An array of Tools that match the filter.
-            schema:
-              items: {$ref: '#/definitions/Tool'}
-              type: array
-        summary: List tools of an organization
-        tags: [GA4GH]
-  /extendedGA4GH/workflows/{organization}:
-     get:
-        description: 'List workflows of an organization. '
-        operationId: toolsOrgGet
-        parameters:
-        - {description: The organization in the registry that published the image.,
-          in: query, name: organization, required: false, type: string}
-        produces: [application/json, text/plain]
-        responses:
-          200:
-            description: An array of Tools that match the filter.
-            schema:
-              items: {$ref: '#/definitions/Tool'}
-              type: array
-        summary: List tools of an organization
-        tags: [GA4GH]
-  /extendedGA4GH/entries/{organization}:
-       get:
-          description: 'List entries(CommandLineTool) of an organization. '
-          operationId: toolsOrgGet
-          parameters:
-          - {description: The organization in the registry that published the image.,
-            in: query, name: organization, required: false, type: string}
-          produces: [application/json, text/plain]
-          responses:
-            200:
-              description: An array of Tools that match the filter.
-              schema:
-                items: {$ref: '#/definitions/Tool'}
-                type: array
-          summary: List tools of an organization
-          tags: [GA4GH]
 produces: [application/json]
 schemes: [http]
 swagger: '2.0'
@@ -2498,9 +2450,10 @@ tags:
 - {description: List and register entries in the dockstore (pairs of images + metadata (CWL and Dockerfile)),
   name: containers}
 - {description: List and modify tags for containers, name: containertags}
-- {description: A curated subset of resources proposed as a common standard for tool repositories, name: GA4GH}
-- {description: An extension of GA4GH, name: extendedGA4GH}
-- {description: List source code repositories (should be generalized from github), name: github.repo}
+- {description: A curated subset of resources proposed as a common standard for tool repositories,
+  name: GA4GH}
+- {description: List source code repositories (should be generalized from github),
+  name: github.repo}
 - {description: stop-gap allowing developers to associate with bitbucket, name: integration.bitbucket.org}
 - {description: stop-gap allowing developers to associate with github, name: integration.github.com}
 - {description: stop-gap allowing developers to associate with gitlab, name: integration.gitlab.com}
