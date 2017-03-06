@@ -396,17 +396,18 @@ public class WorkflowClient extends AbstractEntryClient {
                     break;
                 }
             default:
-                if (content.equals(Type.CWL)) {
+                switch (content) {
+                case CWL:
                     out("This is a CWL file.. Please put an extension to the entry file name.");
                     out("Launching entry file as a CWL file..");
                     handleCWLLaunch(entry, true, yamlRun, jsonRun, tsvRuns, null, null);
-
-                } else if (content.equals(Type.WDL)) {
+                    break;
+                case WDL:
                     out("This is a WDL file.. Please put an extension to the entry file name.");
                     out("Launching entry file as a WDL file..");
                     launchWdlInternal(entry, true, jsonRun, wdlOutputTarget);
-
-                } else {
+                    break;
+                default:
                     errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.",
                             CLIENT_ERROR);
                 }
