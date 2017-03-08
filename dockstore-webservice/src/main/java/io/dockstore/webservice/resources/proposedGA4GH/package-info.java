@@ -14,17 +14,14 @@
  *    limitations under the License.
  */
 
+/**
+ * Web resources centered around searching by organization
+ * Current GET methods can retrieve
+ *  - list of organizations which have published tools/workflows
+ *  - list of tools/workflows published by an organization
+ *  - list of tools published by an organization
+ *  - list of workflows published by an organization
+ * @since 1.2
+ */
 package io.dockstore.webservice.resources.proposedGA4GH;
 
-/**
- * Created by kcao on 01/03/17.
- */
-public final class ToolsApiExtendedServiceFactory {
-    private static final ToolsExtendedApiService SERVICE = new ToolsApiExtendedServiceImpl();
-
-    private ToolsApiExtendedServiceFactory() { }
-
-    public static ToolsExtendedApiService getToolsExtendedApi() {
-        return SERVICE;
-    }
-}
