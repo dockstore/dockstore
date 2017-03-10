@@ -444,9 +444,7 @@ public final class Helper {
         String gitUsername = m.group(usernameIndex);
         String gitRepository = m.group(reponameIndex);
 
-        String ssh = "git@" + source + ":" + gitUsername + "/" + gitRepository + ".git";
-
-        return ssh;
+        return "git@" + source + ":" + gitUsername + "/" + gitRepository + ".git";
     }
 
     /**

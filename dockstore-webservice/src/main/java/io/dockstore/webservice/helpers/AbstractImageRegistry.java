@@ -132,7 +132,7 @@ public abstract class AbstractImageRegistry {
      * @return
      */
     @SuppressWarnings("checkstyle:parameternumber")
-    public Tool refreshTool(final long toolId, final Long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
+    Tool refreshTool(final long toolId, final Long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
             final FileDAO fileDAO, final HttpClient client, final Token githubToken, final Token bitbucketToken, final Token gitlabToken) {
 
         // Find tool of interest and store in a List (Allows for reuse of code)
