@@ -191,8 +191,8 @@ public class ClientIT {
     }
 
     @Test
-    public void pluginDownload(){
-        Client.main(new String[] {"plugin", "download"});
+    public void pluginDownload() throws IOException {
+        Client.main(new String[] {"--config", TestUtility.getConfigFileLocation(true), "plugin", "download"});
     }
 
     @Test
