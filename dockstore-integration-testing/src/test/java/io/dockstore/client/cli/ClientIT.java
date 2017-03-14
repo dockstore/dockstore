@@ -191,6 +191,11 @@ public class ClientIT {
     }
 
     @Test
+    public void pluginDownload(){
+        Client.main(new String[] {"plugin", "download"});
+    }
+
+    @Test
     public void touchOnAllHelpMessages() throws IOException {
         checkCommandForHelp(new String[] {});
         checkCommandForHelp(new String[] { "tool" });
