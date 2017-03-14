@@ -782,9 +782,14 @@ public class Client {
         }
     }
 
-    private void setupClientEnvironment(List<String> args) throws ConfigurationException {
+    /**
+     * Setup method called by Consonance
+     * @param args
+     * @throws ConfigurationException
+     */
+    @SuppressWarnings("WeakerAccess")
+    public void setupClientEnvironment(List<String> args) throws ConfigurationException {
         INIConfiguration config = getIniConfiguration(args);
-
         // pull out the variables from the config
         String token = config.getString("token", "");
         String serverUrl = config.getString("server-url", "https://www.dockstore.org:8443");
@@ -836,11 +841,21 @@ public class Client {
         this.configFile = configFile;
     }
 
-    private ToolClient getToolClient() {
+    /**
+     * Setup method called by Consonance
+     * @return
+     */
+    @SuppressWarnings("WeakerAccess")
+    public ToolClient getToolClient() {
         return toolClient;
     }
 
-    private WorkflowClient getWorkflowClient() {
+    /**
+     * Setup method called by Consonance
+     * @return
+     */
+    @SuppressWarnings("WeakerAccess")
+    public WorkflowClient getWorkflowClient() {
         return workflowClient;
     }
 }

@@ -19,7 +19,7 @@
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>1.2.0-alpha.5-SNAPSHOT</version>
+    <version>1.2.0-alpha.6-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
@@ -684,6 +684,10 @@
                                 <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
                             </manifest>
                         </archive>
+                        <!-- exclude logback.xml -->
+                        <excludes>
+                            <exclude>**/logback.xml</exclude>
+                        </excludes>
                     </configuration>
                 </plugin>
                 <plugin>
