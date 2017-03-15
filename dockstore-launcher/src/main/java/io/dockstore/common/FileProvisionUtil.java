@@ -247,6 +247,7 @@ public final class FileProvisionUtil {
         try {
             Path source = Paths.get(u.toURI());
             Path target = Paths.get(location);
+            Files.createDirectories(target.getParent());
             Files.copy(source, target);
             LOG.info("Created " + PLUGINS_JSON_FILENAME + " file");
             return true;
