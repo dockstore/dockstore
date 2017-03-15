@@ -30,12 +30,14 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
 
-import com.google.common.io.Resources;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import io.dockstore.provision.ProgressPrinter;
 import org.apache.commons.configuration2.INIConfiguration;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.net.io.CopyStreamEvent;
 import org.apache.commons.net.io.CopyStreamListener;
@@ -178,8 +180,9 @@ public final class FileProvisionUtil {
         Gson gson = new Gson();
         try {
             JsonReader reader = new JsonReader(new InputStreamReader(new FileInputStream(pluginJSONPath), Charset.forName("UTF-8")));
-            PluginsJSON pluginsJSON = gson.fromJson(reader, PluginsJSON.class);
-            pluginsJSON.getPlugins().forEach(t -> downloadPlugin(filePluginLocation, t));
+            PluginJSON[] arrayJSON = gson.fromJson(reader, PluginJSON[].class);
+            List<PluginJSON> listJSON = Arrays.asList(arrayJSON);
+            listJSON.forEach(t -> downloadPlugin(filePluginLocation, t));
         } catch (FileNotFoundException e) {
             LOG.error(PLUGINS_JSON_FILENAME + " not found");
         }
@@ -218,6 +221,7 @@ public final class FileProvisionUtil {
      */
     private static boolean downloadPlugin(String filePluginLocation, PluginJSON json) {
         try {
+            LOG.info("Downloading Plugins");
             String version = json.getVersion();
             String name = json.getName();
             String sourceLocation;
@@ -243,23 +247,15 @@ public final class FileProvisionUtil {
      * @param location Location of where to create the file
      */
     static boolean createPluginJSONFile(String location) {
-        URL u = Resources.getResource(FileProvisionUtil.class, "/" + PLUGINS_JSON_FILENAME);
+        InputStream in = FileProvisionUtil.class.getResourceAsStream("/" + PLUGINS_JSON_FILENAME);
+        File targetFile = new File(location);
         try {
-            Path source = Paths.get(u.toURI());
-            Path target = Paths.get(location);
-            Files.createDirectories(target.getParent());
-            Files.copy(source, target);
-            LOG.info("Created " + PLUGINS_JSON_FILENAME + " file");
+            FileUtils.copyInputStreamToFile(in, targetFile);
             return true;
-        } catch (URISyntaxException e) {
-            LOG.error("Error converting URL to URI");
-            return false;
         } catch (IOException e) {
-            LOG.error("Could not create " + PLUGINS_JSON_FILENAME + " file");
-            return false;
-        } catch (NullPointerException e) {
-            LOG.error("Could not get default " + PLUGINS_JSON_FILENAME);
-            return false;
+            LOG.error("Could not create " + PLUGINS_JSON_FILENAME);
+            e.printStackTrace();
         }
+        return false;
     }
 }
