@@ -46,7 +46,9 @@ export DOCKSTORE_SETTINGS="${DOCKSTORE_SETTINGS:-"$DOCKSTORE_HOME/config"}"
 
 # normalize $0 on certain BSDs
 if [ "$(dirname "$0")" = "." ]; then
-    SCRIPT="$(which $(basename "$0"))"
+    if ! SCRIPT="$(which $(basename "$0"))"; then
+        echo "dockstore should be on PATH"
+    fi
 else
     SCRIPT="$0"
 fi
@@ -241,5 +243,5 @@ else
         stty icanon echo > /dev/null 2>&1
     fi
     
-    exit ${EXIT_CODE}
+    exit $EXIT_CODE
 fi
