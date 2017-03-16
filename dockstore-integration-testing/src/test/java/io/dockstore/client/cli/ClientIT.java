@@ -95,6 +95,27 @@ public class ClientIT {
         Assert.assertTrue("should see three entries", count == 1);
     }
 
+
+    @Test
+    public void testPluginEnable() {
+        Client.main(new String[] {"--config", ResourceHelpers.resourceFilePath("pluginsTest1/configWithPlugins"), "plugin", "download"});
+        systemOutRule.clearLog();
+        Client.main(new String[] {"--config", ResourceHelpers.resourceFilePath("pluginsTest1/configWithPlugins"), "plugin", "list"});
+        Assert.assertTrue(systemOutRule.getLog().contains("dockstore-file-synapse-plugin"));
+        Assert.assertTrue(systemOutRule.getLog().contains("dockstore-file-s3-plugin"));
+        Assert.assertFalse(systemOutRule.getLog().contains("dockstore-icgc-storage-client-plugin"));
+    }
+
+    @Test
+    public void testPluginDisable() {
+        Client.main(new String[] {"--config", ResourceHelpers.resourceFilePath("pluginsTest2/configWithPlugins"), "plugin", "download"});
+        systemOutRule.clearLog();
+        Client.main(new String[] {"--config", ResourceHelpers.resourceFilePath("pluginsTest2/configWithPlugins"), "plugin", "list"});
+        Assert.assertFalse(systemOutRule.getLog().contains("dockstore-file-synapse-plugin"));
+        Assert.assertFalse(systemOutRule.getLog().contains("dockstore-file-s3-plugin"));
+        Assert.assertTrue(systemOutRule.getLog().contains("dockstore-file-icgc-storage-client-plugin"));
+    }
+
     @Ignore
     public void quickRegisterDuplicateEntry() throws IOException {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "publish", "quay.io/test_org/test6" });
