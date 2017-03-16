@@ -41,7 +41,6 @@ if ${cygwin}; then
 fi
 
 export DOCKSTORE_JAR="$DOCKSTORE_HOME/self-installs/dockstore-client-$DOCKSTORE_VERSION.jar"
-#export DOCKSTORE_JAR="$DOCKSTORE_HOME/dockstore-client/target/dockstore-client-$DOCKSTORE_VERSION.jar"
 export DOCKSTORE_SETTINGS="${DOCKSTORE_SETTINGS:-"$DOCKSTORE_HOME/config"}"
 
 # normalize $0 on certain BSDs
