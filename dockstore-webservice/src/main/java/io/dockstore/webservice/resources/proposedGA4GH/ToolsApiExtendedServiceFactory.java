@@ -18,6 +18,8 @@ package io.dockstore.webservice.resources.proposedGA4GH;
 
 /**
  * Created by kcao on 01/03/17.
+ *
+ * Consumers of this factory need not know any details about extended api implementation but may use it
  */
 public final class ToolsApiExtendedServiceFactory {
     private static final ToolsExtendedApiService SERVICE = new ToolsApiExtendedServiceImpl();

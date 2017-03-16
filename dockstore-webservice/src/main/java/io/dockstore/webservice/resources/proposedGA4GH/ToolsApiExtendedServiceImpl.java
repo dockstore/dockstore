@@ -32,6 +32,8 @@ import java.util.List;
 
 /**
  * Created by kcao on 01/03/17.
+ *
+ * Implementations of methods to return responses containing organization related information
  */
 public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 

@@ -16,6 +16,25 @@
 
 package io.dockstore.webservice.resources;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.repackaged.com.google.common.base.Strings;
@@ -59,24 +78,6 @@ import org.json.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 /**
  * @author dyuen
  */
@@ -102,7 +103,7 @@ public class DockerRepoResource {
 
     @SuppressWarnings("checkstyle:parameternumber")
     public DockerRepoResource(ObjectMapper mapper, HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ToolDAO toolDAO, TagDAO tagDAO,
-                              LabelDAO labelDAO, FileDAO fileDAO, String bitbucketClientID, String bitbucketClientSecret) {
+            LabelDAO labelDAO, FileDAO fileDAO, String bitbucketClientID, String bitbucketClientSecret) {
         objectMapper = mapper;
         this.userDAO = userDAO;
         this.tokenDAO = tokenDAO;
@@ -154,7 +155,7 @@ public class DockerRepoResource {
     @UnitOfWork
     @ApiOperation(value = "Refresh one particular repo", response = Tool.class)
     public Tool refresh(@ApiParam(hidden = true) @Auth User user,
-                        @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
+            @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
         Tool c = toolDAO.findById(containerId);
         Helper.checkEntry(c);
         Helper.checkUser(user, c);
@@ -188,7 +189,7 @@ public class DockerRepoResource {
     @Path("/{containerId}")
     @ApiOperation(value = "Get a registered repo", response = Tool.class)
     public Tool getContainer(@ApiParam(hidden = true) @Auth User user,
-                             @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
+            @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
         Tool c = toolDAO.findById(containerId);
         Helper.checkEntry(c);
 
@@ -203,9 +204,9 @@ public class DockerRepoResource {
     @Path("/{containerId}/labels")
     @ApiOperation(value = "Update the labels linked to a container.", notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Tool.class)
     public Tool updateLabels(@ApiParam(hidden = true) @Auth User user,
-                             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
-                             @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings,
-                             @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", defaultValue = "") String emptyBody) {
+            @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
+            @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings,
+            @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", defaultValue = "") String emptyBody) {
         Tool c = toolDAO.findById(containerId);
         Helper.checkEntry(c);
 
@@ -219,8 +220,8 @@ public class DockerRepoResource {
     @Path("/{containerId}")
     @ApiOperation(value = "Update the tool with the given tool.", response = Tool.class)
     public Tool updateContainer(@ApiParam(hidden = true) @Auth User user,
-                                @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
-                                @ApiParam(value = "Tool with updated information", required = true) Tool tool) {
+            @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
+            @ApiParam(value = "Tool with updated information", required = true) Tool tool) {
         Tool c = toolDAO.findById(containerId);
         Helper.checkEntry(c);
 
@@ -248,8 +249,8 @@ public class DockerRepoResource {
     @Path("/{containerId}/updateTagPaths")
     @ApiOperation(value = "Change the workflow paths", notes = "Tag correspond to each row of the versions table listing all information for a docker repo tag", response = Tool.class)
     public Tool updateTagContainerPath(@ApiParam(hidden = true) @Auth User user,
-                                       @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
-                                       @ApiParam(value = "Tool with updated information", required = true) Tool tool) {
+            @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
+            @ApiParam(value = "Tool with updated information", required = true) Tool tool) {
 
         Tool c = toolDAO.findById(containerId);
 
@@ -276,7 +277,7 @@ public class DockerRepoResource {
     @Path("/{containerId}/users")
     @ApiOperation(value = "Get users of a container", response = User.class, responseContainer = "List")
     public List<User> getUsers(@ApiParam(hidden = true) @Auth User user,
-                               @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
+            @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
         Tool c = toolDAO.findById(containerId);
         Helper.checkEntry(c);
 
@@ -302,7 +303,7 @@ public class DockerRepoResource {
     @Path("/registerManual")
     @ApiOperation(value = "Register an image manually, along with tags", notes = "Register an image manually.", response = Tool.class)
     public Tool registerManual(@ApiParam(hidden = true) @Auth User user,
-                               @ApiParam(value = "Tool to be registered", required = true) Tool tool) {
+            @ApiParam(value = "Tool to be registered", required = true) Tool tool) {
         // populate user in tool
         tool.addUser(user);
         // create dependent Tags before creating tool
@@ -361,7 +362,7 @@ public class DockerRepoResource {
     @ApiOperation(value = "Delete manually registered image")
     @ApiResponses(@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid "))
     public Response deleteContainer(@ApiParam(hidden = true) @Auth User user,
-                                    @ApiParam(value = "Tool id to delete", required = true) @PathParam("containerId") Long containerId) {
+            @ApiParam(value = "Tool id to delete", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
         Helper.checkUser(user, tool);
 
@@ -387,8 +388,8 @@ public class DockerRepoResource {
     @Path("/{containerId}/publish")
     @ApiOperation(value = "Publish or unpublish a container", notes = "publish a container (public or private). Assumes that user is using quay.io and github.", response = Tool.class)
     public Tool publish(@ApiParam(hidden = true) @Auth User user,
-                        @ApiParam(value = "Tool id to publish", required = true) @PathParam("containerId") Long containerId,
-                        @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) PublishRequest request) {
+            @ApiParam(value = "Tool id to publish", required = true) @PathParam("containerId") Long containerId,
+            @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) PublishRequest request) {
         Tool c = toolDAO.findById(containerId);
         Helper.checkEntry(c);
 
@@ -460,7 +461,7 @@ public class DockerRepoResource {
     @Path("/path/{repository}")
     @ApiOperation(value = "Get a list of containers by path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Tool.class, responseContainer = "List")
     public List<Tool> getContainerByPath(@ApiParam(hidden = true) @Auth User user,
-                                         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
+            @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         List<Tool> tool = toolDAO.findByPath(path);
 
         Helper.checkEntry(tool);
@@ -476,7 +477,7 @@ public class DockerRepoResource {
     @Path("/path/tool/{repository}")
     @ApiOperation(value = "Get a container by tool path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Tool.class)
     public Tool getContainerByToolPath(@ApiParam(hidden = true) @Auth User user,
-                                       @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
+            @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         final String[] split = path.split("/");
         // check that this is a tool path
         final int toolPathLength = 4;
@@ -542,7 +543,7 @@ public class DockerRepoResource {
     @Path("/builds")
     @ApiOperation(value = "Get the list of repository builds.", notes = "For TESTING purposes. Also useful for getting more information about the repository.\n Enter full path without quay.io", response = String.class, hidden = true)
     public String builds(@ApiParam(hidden = true) @Auth User user, @QueryParam("repository") String repo,
-                         @QueryParam("userId") long userId) {
+            @QueryParam("userId") long userId) {
         Helper.checkUser(user, userId);
 
         List<Token> tokens = tokenDAO.findByUserId(userId);
@@ -616,7 +617,7 @@ public class DockerRepoResource {
     @ApiOperation(value = "Get the corresponding Dockerfile on Github.", tags = {
             "containers" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile dockerfile(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
-                                 @QueryParam("tag") String tag) {
+            @QueryParam("tag") String tag) {
 
         return entryVersionHelper.getSourceFile(containerId, tag, FileType.DOCKERFILE);
     }
@@ -653,7 +654,7 @@ public class DockerRepoResource {
     @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = {
             "containers" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile cwl(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
-                          @QueryParam("tag") String tag) {
+            @QueryParam("tag") String tag) {
 
         return entryVersionHelper.getSourceFile(containerId, tag, FileType.DOCKSTORE_CWL);
     }
@@ -665,7 +666,7 @@ public class DockerRepoResource {
     @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = {
             "containers" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile wdl(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
-                          @QueryParam("tag") String tag) {
+            @QueryParam("tag") String tag) {
 
         return entryVersionHelper.getSourceFile(containerId, tag, FileType.DOCKSTORE_WDL);
     }
@@ -677,7 +678,7 @@ public class DockerRepoResource {
     @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = {
             "containers" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile secondaryCwlPath(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
-                                       @QueryParam("tag") String tag, @PathParam("relative-path") String path) {
+            @QueryParam("tag") String tag, @PathParam("relative-path") String path) {
 
         return entryVersionHelper.getSourceFileByPath(containerId, tag, FileType.DOCKSTORE_CWL, path);
     }
@@ -689,7 +690,7 @@ public class DockerRepoResource {
     @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = {
             "containers" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile secondaryWdlPath(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
-                                       @QueryParam("tag") String tag, @PathParam("relative-path") String path) {
+            @QueryParam("tag") String tag, @PathParam("relative-path") String path) {
 
         return entryVersionHelper.getSourceFileByPath(containerId, tag, FileType.DOCKSTORE_WDL, path);
     }
@@ -701,7 +702,7 @@ public class DockerRepoResource {
     @ApiOperation(value = "Get a list of secondary CWL files from Git.", tags = {
             "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
     public List<SourceFile> secondaryCwl(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
-                                         @QueryParam("tag") String tag) {
+            @QueryParam("tag") String tag) {
 
         return entryVersionHelper.getAllSecondaryFiles(containerId, tag, FileType.DOCKSTORE_CWL);
     }
@@ -713,7 +714,7 @@ public class DockerRepoResource {
     @ApiOperation(value = "Get a list of secondary WDL files from Git.", tags = {
             "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
     public List<SourceFile> secondaryWdl(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
-                                         @QueryParam("tag") String tag) {
+            @QueryParam("tag") String tag) {
 
         return entryVersionHelper.getAllSecondaryFiles(containerId, tag, FileType.DOCKSTORE_WDL);
     }
@@ -725,7 +726,7 @@ public class DockerRepoResource {
     @ApiOperation(value = "Get the corresponding wdl test parameter files.", tags = {
             "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
     public List<SourceFile> getTestParameterFiles(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
-                                                  @QueryParam("tag") String tag, @QueryParam("descriptorType") String descriptorType) {
+            @QueryParam("tag") String tag, @QueryParam("descriptorType") String descriptorType) {
         if (descriptorType.toUpperCase().equals(ToolDescriptor.TypeEnum.WDL.toString())) {
             return entryVersionHelper.getAllSourceFiles(containerId, tag, FileType.WDL_TEST_JSON);
         } else {
@@ -760,10 +761,10 @@ public class DockerRepoResource {
     @Path("/{containerId}/testParameterFiles")
     @ApiOperation(value = "Add test parameter files for a given tag.", response = SourceFile.class, responseContainer = "Set")
     public Set<SourceFile> addTestParameterFiles(@ApiParam(hidden = true) @Auth User user,
-                                                 @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
-                                                 @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
-                                                 @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", defaultValue = "") String emptyBody,
-                                                 @QueryParam("tagName") String tagName, @QueryParam("descriptorType") String descriptorType) {
+            @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
+            @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
+            @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", defaultValue = "") String emptyBody,
+            @QueryParam("tagName") String tagName, @QueryParam("descriptorType") String descriptorType) {
         Tool tool = toolDAO.findById(containerId);
         Helper.checkEntry(tool);
 
@@ -810,9 +811,9 @@ public class DockerRepoResource {
     @Path("/{containerId}/testParameterFiles")
     @ApiOperation(value = "Delete test parameter files for a given tag.", response = SourceFile.class, responseContainer = "Set")
     public Set<SourceFile> deleteTestParameterFiles(@ApiParam(hidden = true) @Auth User user,
-                                                    @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
-                                                    @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
-                                                    @QueryParam("tagName") String tagName, @QueryParam("descriptorType") String descriptorType) {
+            @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
+            @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
+            @QueryParam("tagName") String tagName, @QueryParam("descriptorType") String descriptorType) {
         Tool tool = toolDAO.findById(containerId);
         Helper.checkEntry(tool);
 
@@ -852,8 +853,8 @@ public class DockerRepoResource {
     @Path("/{containerId}/star")
     @ApiOperation(value = "Stars a tool.")
     public void starEntry(@ApiParam(hidden = true) @Auth User user,
-                          @ApiParam(value = "Tool to star.", required = true) @PathParam("containerId") Long containerId,
-                          @ApiParam(value = "StarRequest to star a repo for a user", required = true) StarRequest request) {
+            @ApiParam(value = "Tool to star.", required = true) @PathParam("containerId") Long containerId,
+            @ApiParam(value = "StarRequest to star a repo for a user", required = true) StarRequest request) {
         Tool tool = toolDAO.findById(containerId);
         Helper.starEntryHelper(tool, user, "tool", tool.getPath());
     }
@@ -864,7 +865,7 @@ public class DockerRepoResource {
     @Path("/{containerId}/unstar")
     @ApiOperation(value = "Unstars a tool.")
     public void unstarEntry(@ApiParam(hidden = true) @Auth User user,
-                            @ApiParam(value = "Tool to unstar.", required = true) @PathParam("containerId") Long containerId) {
+            @ApiParam(value = "Tool to unstar.", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
         Helper.unstarEntryHelper(tool, user, "tool", tool.getPath());
     }

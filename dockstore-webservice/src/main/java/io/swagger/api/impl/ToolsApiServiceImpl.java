@@ -37,6 +37,8 @@ import io.swagger.model.ToolVersion;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
@@ -63,6 +65,7 @@ import static io.dockstore.webservice.core.SourceFile.FileType.WDL_TEST_JSON;
 public class ToolsApiServiceImpl extends ToolsApiService {
 
     public static final int DEFAULT_PAGE_SIZE = 1000;
+    private static final Logger LOG = LoggerFactory.getLogger(ToolsApiServiceImpl.class);
 
     private static ToolDAO toolDAO = null;
     private static WorkflowDAO workflowDAO = null;
