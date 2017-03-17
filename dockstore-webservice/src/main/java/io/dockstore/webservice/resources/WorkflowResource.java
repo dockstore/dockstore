@@ -16,37 +16,14 @@
 
 package io.dockstore.webservice.resources;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
-
-import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
-
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Optional;
 import com.google.common.base.Strings;
 import com.google.common.io.Files;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
-import io.dockstore.webservice.api.VerifyRequest;
 import io.dockstore.webservice.api.StarRequest;
+import io.dockstore.webservice.api.VerifyRequest;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
@@ -84,6 +61,28 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
 
 /**
  * @author dyuen
@@ -524,6 +523,17 @@ public class WorkflowResource {
         Workflow workflow = workflowDAO.findPublishedById(workflowId);
         Helper.checkEntry(workflow);
         return entryVersionHelper.filterContainersForHiddenTags(workflow);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/organization/{organization}/published")
+    @ApiOperation(value = "List all published workflows belonging to the specified namespace", notes = "NO authentication", response = Workflow.class, responseContainer = "List")
+    public List<Workflow> getPublishedWorkflowsByOrganization(@ApiParam(value = "organization", required = true) @PathParam("organization") String organization) {
+        List<Workflow> workflows = workflowDAO.findPublishedByOrganization(organization);
+        entryVersionHelper.filterContainersForHiddenTags(workflows);
+        return workflows;
     }
 
     @POST

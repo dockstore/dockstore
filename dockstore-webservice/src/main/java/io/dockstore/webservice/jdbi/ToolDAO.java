@@ -16,11 +16,11 @@
 
 package io.dockstore.webservice.jdbi;
 
-import java.util.List;
-
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
 import org.hibernate.SessionFactory;
+
+import java.util.List;
 
 /**
  * @author xliu
@@ -50,5 +50,9 @@ public class ToolDAO extends EntryDAO<Tool> {
     public Tool findPublishedByToolPath(String path, String tool) {
         return uniqueResult(namedQuery("io.dockstore.webservice.core.Tool.findPublishedByToolPath").setParameter("path", path)
                 .setParameter("toolname", tool));
+    }
+
+    public List<Tool> findPublishedByNamespace(String namespace) {
+        return list(namedQuery("io.dockstore.webservice.core.Tool.findPublishedByNamespace").setParameter("namespace", namespace));
     }
 }
