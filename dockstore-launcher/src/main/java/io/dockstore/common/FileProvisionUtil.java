@@ -253,8 +253,7 @@ public final class FileProvisionUtil {
             FileUtils.copyInputStreamToFile(in, targetFile);
             return true;
         } catch (IOException e) {
-            LOG.error("Could not create " + PLUGINS_JSON_FILENAME);
-            e.printStackTrace();
+            LOG.error(e.getMessage() + ". Could not create " + PLUGINS_JSON_FILENAME);
         }
         return false;
     }

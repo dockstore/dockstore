@@ -8,7 +8,7 @@ any installed plugins can handle them, and then finally it will use [commons-vfs
 ## Usage
 
 The Dockstore CLI downloads a default set of file provisioning plugins when it first installs.
-By default, the default plugins will be specified in ~/.dockstore/plugins.json file which is first created 'dockstore plugins download'.
+By default, the default plugins will be specified in ~/.dockstore/plugins.json file which is created the first time you run the command 'dockstore plugins download'.
 This location can be overridden by using the key 'plugins-json-location' in your Dockstore config.
 
 
