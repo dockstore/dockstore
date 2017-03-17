@@ -73,7 +73,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         List<io.swagger.model.Tool> results = new ArrayList<>();
         for (Entry c : getPublished()) {
             if (c instanceof Workflow) {
-                if (((Workflow) c).getOrganization().equals(organization)) {
+                if (((Workflow) c).getOrganization().equalsIgnoreCase(organization)) {
                     io.swagger.model.Tool tool = ToolsImplCommon.convertContainer2Tool(c, config).getLeft();
                     if (tool != null) {
                         results.add(tool);
@@ -88,7 +88,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         List<io.swagger.model.Tool> results = new ArrayList<>();
         for (Entry c : getPublished()) {
             if (c instanceof Tool) {
-                if (((Tool) c).getNamespace().equals(organization)) {
+                if (((Tool) c).getNamespace().toLowerCase().equalsIgnoreCase(organization)) {
                     io.swagger.model.Tool tool = ToolsImplCommon.convertContainer2Tool(c, config).getLeft();
                     if (tool != null) {
                         results.add(tool);
@@ -115,9 +115,9 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         for (Entry c : getPublished()) {
             String org;
             if (c instanceof Workflow) {
-                org = ((Workflow) c).getOrganization();
+                org = ((Workflow) c).getOrganization().toLowerCase();
             } else {
-                org = ((Tool) c).getNamespace();
+                org = ((Tool) c).getNamespace().toLowerCase();
             }
             if (!organizations.contains(org)) {
                 organizations.add(org);
