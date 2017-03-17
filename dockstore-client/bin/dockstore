@@ -5,6 +5,9 @@ set -o errexit
 # somewhere on your $PATH, like ~/bin. The rest of SeqWare will be
 # installed upon first run into the ~/.dockstore directory.
 
+# Encase variables inside brackets to prevent issues.
+# $DOCKSTORE_VERSION would cause problems if $DOCKSTORE exists.  ${DOCKSTORE_VERSION} would be better.
+
 DEFAULT_DOCKSTORE_VERSION="${project.version}"
 
 export DOCKSTORE_VERSION="${DOCKSTORE_VERSION:-"$DEFAULT_DOCKSTORE_VERSION"}"
