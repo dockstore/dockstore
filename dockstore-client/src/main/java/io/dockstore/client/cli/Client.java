@@ -16,11 +16,8 @@
 
 package io.dockstore.client.cli;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.attribute.PosixFilePermission;
@@ -34,10 +31,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.ws.rs.ProcessingException;
 
@@ -120,23 +116,6 @@ public class Client {
      */
 
     /**
-     * Display metadata describing the server including server version information
-     */
-    private void serverMetadata() {
-        try {
-            final Metadata metadata = ga4ghApi.metadataGet();
-            final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
-            out(gson.toJson(metadata));
-        } catch (ApiException ex) {
-            exceptionMessage(ex, "", API_ERROR);
-        } catch (CWL.GsonBuildException ex) {
-            exceptionMessage(ex, "There was an error creating the CWL GSON instance.", API_ERROR);
-        } catch (JsonParseException ex) {
-            exceptionMessage(ex, "The JSON file provided is invalid.", API_ERROR);
-        }
-    }
-
-    /**
      * Finds the install location of the dockstore CLI
      *
      * @return path for the dockstore
@@ -161,40 +140,15 @@ public class Client {
         return installLocation;
     }
 
-    /**
-     * Finds the version of the dockstore CLI for the given install location NOTE: Do not try and get the version information from the JAR
-     * (implementationVersion) as it cannot be tested. When running the tests the JAR file cannot be found, so no information about it can
-     * be retrieved
-     *
-     * @param installLocation path for the dockstore CLI script
-     * @return the current version of the dockstore CLI script
-     */
-    static String getCurrentVersion(String installLocation) {
-        String currentVersion = null;
-        File file = new File(installLocation);
-        String line = null;
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file.toString()), "utf-8"))) {
-            while ((line = br.readLine()) != null) {
-                if (line.startsWith("DEFAULT_DOCKSTORE_VERSION")) {
-                    break;
-                }
-            }
+    static String getCurrentVersion() {
+        final Properties properties = new Properties();
+        ClassLoader classLoader = ClassLoader.getSystemClassLoader();
+        try {
+            properties.load(classLoader.getResourceAsStream("project.properties"));
         } catch (IOException e) {
-            LOG.error("Could not reach version from Dockstore script, e");
+            LOG.error("Could not get project.properties file");
         }
-        if (line == null) {
-            errorMessage("Could not read version from Dockstore script", CLIENT_ERROR);
-        }
-
-        // Pull Dockstore version from matched line
-        Pattern p = Pattern.compile("\"([^\"]*)\"");
-        Matcher m = p.matcher(line);
-
-        if (m.find()) {
-            currentVersion = m.group(1);
-        }
-
-        return currentVersion;
+        return properties.getProperty("version");
     }
 
     /**
@@ -380,12 +334,6 @@ public class Client {
         }
     }
 
-    private void clean() throws IOException, ConfigurationException {
-        final INIConfiguration configuration = Utilities.parseConfig(getConfigFile());
-        final String cacheDirectory = getCacheDirectory(configuration);
-        FileUtils.deleteDirectory(new File(cacheDirectory));
-    }
-
     /**
      * Checks for upgrade for Dockstore and install
      */
@@ -397,7 +345,7 @@ public class Client {
             errorMessage("Can't find location of Dockstore executable.  Is it on the PATH?", CLIENT_ERROR);
         }
 
-        String currentVersion = getCurrentVersion(installLocation);
+        String currentVersion = getCurrentVersion();
         if (currentVersion == null) {
             errorMessage("Can't find the current version.", CLIENT_ERROR);
         }
@@ -518,56 +466,53 @@ public class Client {
      */
     private static void checkForUpdates() {
         final int monthsBeforeCheck = 3;
-        String installLocation = getInstallLocation();
-        if (installLocation != null) {
-            String currentVersion = getCurrentVersion(installLocation);
-            if (currentVersion != null) {
-                if (checkIfTagExists(currentVersion)) {
-                    URL url = null;
+        String currentVersion = getCurrentVersion();
+        if (currentVersion != null) {
+            if (checkIfTagExists(currentVersion)) {
+                URL url = null;
+                try {
+                    url = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/tags/" + currentVersion);
+                } catch (MalformedURLException e) {
+                    LOG.debug("Could not read a release of Dockstore from GitHub", e);
+                }
+
+                ObjectMapper mapper = getObjectMapper();
+                try {
+                    // Determine when current version was published
+                    Map<String, Object> map = mapper.readValue(url, Map.class);
+                    String publishedAt = map.get("published_at").toString();
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
                     try {
-                        url = new URL("https://api.github.com/repos/ga4gh/dockstore/releases/tags/" + currentVersion);
-                    } catch (MalformedURLException e) {
-                        LOG.debug("Could not read a release of Dockstore from GitHub", e);
-                    }
+                        // Find out when you should check for updates again (publish date + 3 months)
+                        Date date = sdf.parse(publishedAt);
+                        Calendar cal = Calendar.getInstance();
+                        cal.setTime(date);
 
-                    ObjectMapper mapper = getObjectMapper();
-                    try {
-                        // Determine when current version was published
-                        Map<String, Object> map = mapper.readValue(url, Map.class);
-                        String publishedAt = map.get("published_at").toString();
-                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-                        try {
-                            // Find out when you should check for updates again (publish date + 3 months)
-                            Date date = sdf.parse(publishedAt);
-                            Calendar cal = Calendar.getInstance();
-                            cal.setTime(date);
+                        cal.set(Calendar.MONTH, (cal.get(Calendar.MONTH) + monthsBeforeCheck));
+                        Date minUpdateCheck = cal.getTime();
 
-                            cal.set(Calendar.MONTH, (cal.get(Calendar.MONTH) + monthsBeforeCheck));
-                            Date minUpdateCheck = cal.getTime();
+                        // Check for update if it has been at least 3 months since last update
+                        if (minUpdateCheck.before(new Date())) {
+                            String latestVersion = getLatestVersion();
+                            out("Current version : " + currentVersion);
 
-                            // Check for update if it has been at least 3 months since last update
-                            if (minUpdateCheck.before(new Date())) {
-                                String latestVersion = getLatestVersion();
-                                out("Current version : " + currentVersion);
-
-                                if (currentVersion.equals(latestVersion)) {
-                                    out("You have the most recent stable release.");
-                                    out("If you wish to upgrade to the latest unstable version, please use the following command:");
-                                    out("   dockstore --upgrade-unstable"); // takes you to the newest unstable version
-                                } else {
-                                    //not the latest stable version, could be on the newest unstable or older unstable/stable version
-                                    out("Latest version : " + latestVersion);
-                                    out("You do not have the most recent stable release of Dockstore.");
-                                    displayUpgradeMessage(currentVersion);
-                                }
+                            if (currentVersion.equals(latestVersion)) {
+                                out("You have the most recent stable release.");
+                                out("If you wish to upgrade to the latest unstable version, please use the following command:");
+                                out("   dockstore --upgrade-unstable"); // takes you to the newest unstable version
+                            } else {
+                                //not the latest stable version, could be on the newest unstable or older unstable/stable version
+                                out("Latest version : " + latestVersion);
+                                out("You do not have the most recent stable release of Dockstore.");
+                                displayUpgradeMessage(currentVersion);
                             }
-                        } catch (ParseException e) {
-                            LOG.debug("Could not parse a release number of Dockstore from GitHub", e);
                         }
-
-                    } catch (IOException e) {
-                        LOG.debug("Could not read a release of Dockstore from GitHub", e);
+                    } catch (ParseException e) {
+                        LOG.debug("Could not parse a release number of Dockstore from GitHub", e);
                     }
+
+                } catch (IOException e) {
+                    LOG.debug("Could not read a release of Dockstore from GitHub", e);
                 }
             }
         }
@@ -585,10 +530,6 @@ public class Client {
         }
     }
 
-    static void setObjectMapper(ObjectMapper objectMapper) {
-        Client.objectMapper = objectMapper;
-    }
-
     private static ObjectMapper getObjectMapper() {
         if (objectMapper == null) {
             return new ObjectMapper();
@@ -597,16 +538,15 @@ public class Client {
         }
     }
 
+    static void setObjectMapper(ObjectMapper objectMapper) {
+        Client.objectMapper = objectMapper;
+    }
+
     /**
      * Prints out version information for the Dockstore CLI
      */
     private static void version() {
-        String installLocation = getInstallLocation();
-        if (installLocation == null) {
-            errorMessage("Can't find location of Dockstore executable. Is it on the PATH?", CLIENT_ERROR);
-        }
-
-        String currentVersion = getCurrentVersion(installLocation);
+        String currentVersion = getCurrentVersion();
         if (currentVersion == null) {
             errorMessage("Can't find the current version.", CLIENT_ERROR);
         }
@@ -632,12 +572,6 @@ public class Client {
             displayUpgradeMessage(currentVersion);
         }
     }
-
-    /*
-     * Dockstore CLI help functions
-     * ----------------------------------------------------------------------------------------------------------
-     * ------------------------------
-     */
 
     private static void printGeneralHelp() {
         printHelpHeader();
@@ -673,11 +607,50 @@ public class Client {
         printHelpFooter();
     }
 
+    /**
+     * Used for integration testing
+     *
+     * @param argv arguments provided match usage in the dockstore script (i.e. tool launch ...)
+     */
+    public static void main(String[] argv) {
+        Client client = new Client();
+        client.run(argv);
+    }
+
+    /*
+     * Dockstore CLI help functions
+     * ----------------------------------------------------------------------------------------------------------
+     * ------------------------------
+     */
+
+    /**
+     * Display metadata describing the server including server version information
+     */
+    private void serverMetadata() {
+        try {
+            final Metadata metadata = ga4ghApi.metadataGet();
+            final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
+            out(gson.toJson(metadata));
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "", API_ERROR);
+        } catch (CWL.GsonBuildException ex) {
+            exceptionMessage(ex, "There was an error creating the CWL GSON instance.", API_ERROR);
+        } catch (JsonParseException ex) {
+            exceptionMessage(ex, "The JSON file provided is invalid.", API_ERROR);
+        }
+    }
+
     /*
      * Main Method
      * --------------------------------------------------------------------------------------------------------------------------
      * --------------
      */
+
+    private void clean() throws IOException, ConfigurationException {
+        final INIConfiguration configuration = Utilities.parseConfig(getConfigFile());
+        final String cacheDirectory = getCacheDirectory(configuration);
+        FileUtils.deleteDirectory(new File(cacheDirectory));
+    }
 
     private void run(String[] argv) {
         List<String> args = new ArrayList<>(Arrays.asList(argv));
@@ -784,6 +757,7 @@ public class Client {
 
     /**
      * Setup method called by Consonance
+     *
      * @param args
      * @throws ConfigurationException
      */
@@ -823,16 +797,6 @@ public class Client {
         return Utilities.parseConfig(configFile);
     }
 
-    /**
-     * Used for integration testing
-     *
-     * @param argv arguments provided match usage in the dockstore script (i.e. tool launch ...)
-     */
-    public static void main(String[] argv) {
-        Client client = new Client();
-        client.run(argv);
-    }
-
     public String getConfigFile() {
         return configFile;
     }
@@ -843,6 +807,7 @@ public class Client {
 
     /**
      * Setup method called by Consonance
+     *
      * @return
      */
     @SuppressWarnings("WeakerAccess")
@@ -852,6 +817,7 @@ public class Client {
 
     /**
      * Setup method called by Consonance
+     *
      * @return
      */
     @SuppressWarnings("WeakerAccess")

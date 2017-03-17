@@ -552,7 +552,7 @@ public class GeneralET {
         String latestVersion = Client.getLatestVersion();
 
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "--upgrade", "--script" });
-        String currentVersion = Client.getCurrentVersion(installLocation);
+        String currentVersion = Client.getCurrentVersion();
 
         if (installLocation != null && latestVersion != null && currentVersion != null) {
             Assert.assertEquals("Dockstore CLI should now be up to date with the latest stable tag.", currentVersion, latestVersion);
