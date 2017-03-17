@@ -46,13 +46,13 @@ public final class PluginClient {
 
     /**
      * This function is used when nesting commands within commands (ex. list and download within plugin)
-     * @param parentCommand     The parent command (ex. plugin)
-     * @param commandName       The nested command name (ex. "list")
-     * @param commandObject     The nested command (ex. list)
+     *
+     * @param parentCommand The parent command (ex. plugin)
+     * @param commandName   The nested command name (ex. "list")
+     * @param commandObject The nested command (ex. list)
      * @return
      */
-    private static JCommander addCommand(JCommander parentCommand,
-            String commandName, Object commandObject) {
+    private static JCommander addCommand(JCommander parentCommand, String commandName, Object commandObject) {
         parentCommand.addCommand(commandName, commandObject);
         return parentCommand.getCommands().get(commandName);
     }

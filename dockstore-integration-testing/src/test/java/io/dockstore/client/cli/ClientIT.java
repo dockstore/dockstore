@@ -260,7 +260,7 @@ public class ClientIT {
         strings.add(TestUtility.getConfigFileLocation(true));
 
         Client.main(strings.toArray(new String[strings.size()]));
-        //        Assert.assertTrue(systemOutRule.getLog().contains("HELP FOR DOCKSTORE"));
+        Assert.assertTrue(systemOutRule.getLog().contains("Usage"));
         systemOutRule.clearLog();
     }
 
