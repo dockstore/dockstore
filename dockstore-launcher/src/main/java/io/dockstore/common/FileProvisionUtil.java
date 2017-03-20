@@ -16,19 +16,28 @@
 package io.dockstore.common;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
 
+import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
 import io.dockstore.provision.ProgressPrinter;
 import org.apache.commons.configuration2.INIConfiguration;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.net.io.CopyStreamEvent;
 import org.apache.commons.net.io.CopyStreamListener;
@@ -42,10 +51,12 @@ import org.slf4j.LoggerFactory;
 import ro.fortsoft.pf4j.PluginManager;
 
 /**
- * Created by dyuen on 2/21/17.
+ * @author dyuen
+ * @since 2/21/17
  */
 public final class FileProvisionUtil {
 
+    static final String PLUGINS_JSON_FILENAME = "plugins.json";
     private static final Logger LOG = LoggerFactory.getLogger(FileProvisionUtil.class);
 
     private FileProvisionUtil() {
@@ -81,10 +92,9 @@ public final class FileProvisionUtil {
      * @param inputStream source
      * @param inputSize   total size
      * @param outputSteam destination
-     * @throws IOException  throws an exception if unable to provision input files
+     * @throws IOException throws an exception if unable to provision input files
      */
-    static void copyFromInputStreamToOutputStream(InputStream inputStream, long inputSize, OutputStream outputSteam)
-            throws IOException {
+    static void copyFromInputStreamToOutputStream(InputStream inputStream, long inputSize, OutputStream outputSteam) throws IOException {
         CopyStreamListener listener = new CopyStreamListener() {
             ProgressPrinter printer = new ProgressPrinter();
 
@@ -138,35 +148,113 @@ public final class FileProvisionUtil {
         return config.getString("file-plugins-location", pluginPath);
     }
 
+    /**
+     * Gets the plugins json file path from the config file, otherwise defaults.
+     *
+     * @param config The parsed config file
+     * @return The plugins json file path
+     */
+    private static String getPluginJSONLocation(INIConfiguration config) {
+        String userHome = System.getProperty("user.home");
+        String pluginJSONPath = userHome + File.separator + ".dockstore" + File.separator + PLUGINS_JSON_FILENAME;
+        return config.getString("plugins-json-location", pluginJSONPath);
+    }
+
+    /**
+     * Downloads all plugins
+     *
+     * @param configFile The parsed config file
+     */
     public static void downloadPlugins(INIConfiguration configFile) {
         String filePluginLocation = FileProvisionUtil.getFilePluginLocation(configFile);
-        // get sections with versions
-
-        // get plugin versions and default versions if not available
-
-        // download versions info filePluginLocation
-        String template = "https://artifacts.oicr.on.ca/artifactory/collab-release/io/dockstore/%2$s/%1$s/%2$s-%1$s.zip";
+        String pluginJSONPath = FileProvisionUtil.getPluginJSONLocation(configFile);
+        File f = new File(pluginJSONPath);
+        if (!f.exists()) {
+            if (f.isDirectory()) {
+                LOG.error(PLUGINS_JSON_FILENAME + " is actually a directory.");
+                System.exit(1);
+            } else {
+                createPluginJSONFile(pluginJSONPath);
+            }
+        }
+        Gson gson = new Gson();
         try {
-            downloadPlugin(filePluginLocation, template, "0.0.6", "dockstore-file-icgc-storage-client-plugin");
-            downloadPlugin(filePluginLocation, template, "0.0.3", "dockstore-file-s3-plugin");
-            downloadPlugin(filePluginLocation, template, "0.0.5", "dockstore-file-synapse-plugin");
-        } catch (URISyntaxException | IOException e) {
-            throw new RuntimeException(e);
+            JsonReader reader = new JsonReader(new InputStreamReader(new FileInputStream(pluginJSONPath), Charset.forName("UTF-8")));
+            PluginJSON[] arrayJSON = gson.fromJson(reader, PluginJSON[].class);
+            List<PluginJSON> listJSON = Arrays.asList(arrayJSON);
+            listJSON.forEach(t -> downloadPlugin(filePluginLocation, t));
+        } catch (FileNotFoundException e) {
+            LOG.error(PLUGINS_JSON_FILENAME + " not found");
         }
     }
 
-    private static void downloadPlugin(String filePluginLocation, String template, String version, String pluginName)
+    /**
+     * Downloads a plugin
+     *
+     * @param filePluginLocation The path of the plugins folder
+     * @param version            The version of the plugin
+     * @param pluginName         The name of the plugin
+     * @param sourceLocation     The place to download the plugin from
+     * @throws MalformedURLException Exception if URL is invalid like "htp://..."
+     * @throws URISyntaxException    Exception if invalid query like "http:// ..."
+     */
+    private static boolean downloadPlugin(String filePluginLocation, String version, String pluginName, String sourceLocation)
             throws MalformedURLException, URISyntaxException {
-        URL icgcUrl = new URI(String.format(template, version, pluginName)).toURL();
-        Path pluginPath = Paths.get(filePluginLocation, String.format("%2$s-%1$s.zip", version,
-                pluginName));
-        String icgcLocation = icgcUrl.toString();
-        String pluginLocation = pluginPath.toString();
+        String pluginZip = String.format("%2$s-%1$s.zip", version, pluginName);
+        Path pluginPath = Paths.get(filePluginLocation, pluginZip);
+        String destinationLocation = pluginPath.toString();
         if (Files.exists(pluginPath)) {
-            System.out.println("Skipping " + pluginLocation + ", already exists");
+            System.out.println("Skipping " + destinationLocation + ", already exists");
+            return false;
         } else {
-            System.out.println("Downloading " + icgcLocation + " to " + pluginLocation);
-            FileProvisionUtil.downloadFromVFS2(icgcLocation, pluginLocation);
+            System.out.println("Downloading " + sourceLocation + " to " + destinationLocation);
+            FileProvisionUtil.downloadFromVFS2(sourceLocation, destinationLocation);
+            return true;
         }
+    }
+
+    /**
+     * Extracts plugin information from json and then downloads the plugin
+     *
+     * @param filePluginLocation The location of the plugins folder
+     * @param json               The PluginJSON object
+     */
+    private static boolean downloadPlugin(String filePluginLocation, PluginJSON json) {
+        try {
+            LOG.info("Downloading Plugins");
+            String version = json.getVersion();
+            String name = json.getName();
+            String sourceLocation;
+            // A location parameter in the json object indicates it's not on oicr artifactory
+            if (json.getLocation() == null) {
+                String template = "https://artifacts.oicr.on.ca/artifactory/collab-release/io/dockstore/%2$s/%1$s/%2$s-%1$s.zip";
+                URL sourceURL = new URI(String.format(template, version, name)).toURL();
+                sourceLocation = sourceURL.toString();
+            } else {
+                sourceLocation = json.getLocation();
+            }
+            downloadPlugin(filePluginLocation, version, name, sourceLocation);
+            return true;
+        } catch (MalformedURLException | URISyntaxException e) {
+            LOG.error("Could not download plugin: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Creates the plugins json file
+     *
+     * @param location Location of where to create the file
+     */
+    static boolean createPluginJSONFile(String location) {
+        InputStream in = FileProvisionUtil.class.getResourceAsStream("/" + PLUGINS_JSON_FILENAME);
+        File targetFile = new File(location);
+        try {
+            FileUtils.copyInputStreamToFile(in, targetFile);
+            return true;
+        } catch (IOException e) {
+            LOG.error(e.getMessage() + ". Could not create " + PLUGINS_JSON_FILENAME);
+        }
+        return false;
     }
 }
