@@ -29,6 +29,7 @@ import org.hibernate.SessionFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -65,6 +66,96 @@ public class ToolDAO extends EntryDAO<Tool> {
     }
 
     /**
+     * Return map containing schema.org info retrieved from the specified tool's descriptor cwl
+     * @param id of specified tool
+     * @return map containing schema.org info to be used as json-ld data
+     */
+    public List findPublishedSchemaById(long id) {
+        Tool tool = findPublishedById(id);
+        List schemaObjects = new ArrayList();
+
+        if (tool != null) {
+            String defaultVersion = tool.getDefaultVersion();
+
+            String descriptorJson = getDescriptorJson(tool, defaultVersion);
+
+            String schemaVariable = getSchemaVariable(descriptorJson);
+
+            if (!schemaVariable.isEmpty()) {
+                Map<String, Object> map = new HashMap();
+                map = cwlJson2Map(descriptorJson, schemaVariable);
+
+                // must be done after json has been converted to json-ld
+                map = addContext(map, schemaVariable);
+                map = stripNamespace(map, schemaVariable);
+
+                schemaObjects = getSchemaObjectsList(map);
+            }
+        }
+
+        return schemaObjects;
+    }
+
+    /**
+     * Strip out properties to only get schema objects
+     * @param schemaMap properly annotated json-ld map with properties still attached
+     * @return list of schema objects without properties
+     */
+    private static List getSchemaObjectsList(final Map<String, Object> schemaMap) {
+        List schemaObjects = new ArrayList();
+        for (Map.Entry<String, Object> entry : schemaMap.entrySet()) {
+            Object value = entry.getValue();
+
+            if (value instanceof Map) {
+                schemaObjects.add(value);
+            } else if (value instanceof List) {
+                schemaObjects.addAll((List) value);
+            }
+        }
+        return schemaObjects;
+    }
+
+    /**
+     * Add @context to json-ld map and leaves out any schema properties which do not have a class
+     * @param schemaMap json-ld map
+     * @param schemaVariable string which refers to http://schema.org/
+     * @return a map that has been properly annotated with @context
+     */
+    private static Map<String, Object> addContext(final Map<String, Object> schemaMap, final String schemaVariable) {
+        Map<String, Object> merged = new HashMap<>(schemaMap);
+
+        for (Map.Entry<String, Object> entry : schemaMap.entrySet()) {
+            String key = entry.getKey();
+            Object copyValue = merged.get(key);
+
+            if (key.startsWith(schemaVariable)) {
+
+                if (copyValue instanceof List) {
+                    for (Iterator<Object> iterator = ((ArrayList) copyValue).iterator(); iterator.hasNext();) {
+                        Object node = iterator.next();
+
+                        if (node instanceof Map) {
+                            if (((Map) node).get("@type") == null) {
+                                iterator.remove();
+                            } else {
+                                ((Map) node).put("@context", SCHEMA);
+                            }
+                        }
+                    }
+                } else if (copyValue instanceof Map) {
+                    if (((Map) copyValue).get("@type") == null) {
+                        merged.remove(key);
+                    } else {
+                        ((Map) copyValue).put("@context", SCHEMA);
+                    }
+                }
+            }
+        }
+
+        return merged;
+    }
+
+    /**
      * Return a map with correct types for json-ld parsing
      * @param schemaMap map of json data
      * @param schemaVariable string which refers to http://schema.org/
@@ -75,27 +166,26 @@ public class ToolDAO extends EntryDAO<Tool> {
 
         for (Map.Entry<String, Object> entry : schemaMap.entrySet()) {
             String key = entry.getKey();
-            Object value = entry.getValue();
+            //Object value = entry.getValue();
             Object copyValue = merged.get(key);
 
-            if (value instanceof List) {
-                for (int i = 0; i < ((ArrayList) value).size(); i++) {
-                    Object node = ((ArrayList) value).get(i);
+            if (copyValue instanceof List) {
+                for (int i = 0; i < ((ArrayList) copyValue).size(); i++) {
+                    Object node = ((ArrayList) copyValue).get(i);
 
                     if (node instanceof Map) {
                         ((ArrayList) copyValue).set(i, addType((Map<String, Object>) node, schemaVariable));
                     }
                 }
-            } else if (value instanceof Map) {
-                merged.replace(key, value, addType((Map) value, schemaVariable));
-            } else if (value instanceof String) {
-                String type = ((String) value).replace(schemaVariable + ":", "");
+            } else if (copyValue instanceof Map) {
+                merged.replace(key, copyValue, addType((Map) copyValue, schemaVariable));
+            } else if (copyValue instanceof String) {
+                String type = ((String) copyValue).replace(schemaVariable + ":", "");
 
-                if ("class".equals(key)) {
+                if ("class".equals(key) && ((String) copyValue).startsWith(schemaVariable)) {
                     merged.put("@type", type);
                     merged.remove(key);
                 }
-
             }
         }
 
@@ -164,31 +254,6 @@ public class ToolDAO extends EntryDAO<Tool> {
     }
 
     /**
-     * Return map containing schema.org info retrieved from the specified tool's descriptor cwl
-     * @param id of specified tool
-     * @return map containing schema.org info to be used as json-ld data
-     */
-    public Map findPublishedSchemaById(long id) {
-        Tool tool = findPublishedById(id);
-        Map<String, Object> map = new HashMap();
-
-        if (tool != null) {
-            String defaultVersion = tool.getDefaultVersion();
-
-            String descriptorJson = getDescriptorJson(tool, defaultVersion);
-
-            String schemaVariable = getSchemaVariable(descriptorJson);
-
-            map = cwlJson2Map(descriptorJson, schemaVariable);
-
-            // must be done after json has been converted to json-ld
-            map = stripNamespace(map, schemaVariable);
-        }
-
-        return map;
-    }
-
-    /**
      * Return the tool's default version's descriptor json
      * @param tool specified by container ID
      * @param defaultVersion of tool
@@ -227,9 +292,11 @@ public class ToolDAO extends EntryDAO<Tool> {
 
             Map<String, String> namespaces = (Map<String, String>) jsonObject.get("$namespaces");
 
-            for (Map.Entry<String, String> entry : namespaces.entrySet()) {
-                if (entry.getValue().trim().equals("http://schema.org/")) {
-                    return entry.getKey();
+            if (namespaces != null) {
+                for (Map.Entry<String, String> entry : namespaces.entrySet()) {
+                    if (entry.getValue().trim().equals(SCHEMA)) {
+                        return entry.getKey();
+                    }
                 }
             }
 
