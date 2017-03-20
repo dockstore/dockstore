@@ -23,22 +23,29 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.github.zafarkhaja.semver.UnexpectedCharacterException;
+import com.google.common.collect.ArrayListMultimap;
 import io.dockstore.provision.ProvisionInterface;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.configuration2.SubnodeConfiguration;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemManager;
 import org.apache.commons.vfs2.VFS;
+import com.google.common.collect.Multimap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ro.fortsoft.pf4j.DefaultPluginManager;
 import ro.fortsoft.pf4j.PluginManager;
 import ro.fortsoft.pf4j.PluginWrapper;
 
@@ -53,6 +60,10 @@ public class FileProvisioning {
     private List<ProvisionInterface> plugins = new ArrayList<>();
 
     private INIConfiguration config;
+
+    // map from cwl emitted local file path to info object containing
+    private List<ImmutablePair<String, FileInfo>> registeredFiles = new ArrayList<>();
+
 
     /**
      * Constructor
@@ -138,6 +149,7 @@ public class FileProvisioning {
             String scheme = objectIdentifier.getScheme().toLowerCase();
             for (ProvisionInterface provision : plugins) {
                 if (provision.schemesHandled().contains(scheme.toUpperCase()) || provision.schemesHandled().contains(scheme.toLowerCase())) {
+                    System.out.println("Calling on plugin " + provision.getClass().getName() + " to provision " + targetPath);
                     boolean downloaded = provision.downloadFrom(targetPath, localPath);
                     if (!downloaded) {
                         throw new RuntimeException("Could not provision: " + targetPath + " to " + localPath);
@@ -214,50 +226,50 @@ public class FileProvisioning {
 
     /**
      * Copies files from srcPath to destPath
+     * @param srcPath source file
+     * @param info destination and metddata associated with one file
+     */
+    public void registerOutputFile(String srcPath, FileInfo info) {
+        this.registeredFiles.add(ImmutablePair.of(srcPath, info));
+    }
+
+    /**
+     * Copies files from srcPath to destPath
      *
      * @param srcPath  source file
      * @param destPath destination file
+     * @param metadata metddata associated with one file
+     * @param provisionInterface plugin used for this file
      */
-    public void provisionOutputFile(String srcPath, String destPath) {
-        URI objectIdentifier = URI.create(destPath);    // throws IllegalArgumentException if it isn't a valid URI
+    private void provisionOutputFile(String srcPath, String destPath, String metadata, ProvisionInterface provisionInterface) {
         File sourceFile = new File(srcPath);
         long inputSize = sourceFile.length();
 
-        if (objectIdentifier.getScheme() != null) {
-            String scheme = objectIdentifier.getScheme();
-            for (ProvisionInterface provision : plugins) {
-                if (provision.schemesHandled().contains(scheme.toUpperCase()) || provision.schemesHandled().contains(scheme.toLowerCase())) {
-                    boolean uploaded = provision.uploadTo(destPath, Paths.get(srcPath), null);
-                    if (!uploaded) {
-                        throw new RuntimeException("Could not provision: " + srcPath + " to " + destPath);
-                    }
-                    return;
-                }
+        if (provisionInterface != null) {
+            System.out.println("Calling on plugin " + provisionInterface.getClass().getName() + " to provision to " + destPath);
+            provisionInterface.uploadTo(destPath, Paths.get(srcPath), Optional.ofNullable(metadata));
+        } else {
+            try {
+                FileSystemManager fsManager;
+                // trigger a copy from the URL to a local file path that's a UUID to avoid collision
+                fsManager = VFS.getManager();
+                // check for a local file path
+                Path currentWorkingDir = Paths.get("").toAbsolutePath();
+                FileObject dest = fsManager.resolveFile(currentWorkingDir.toFile(), destPath);
+                FileObject src = fsManager.resolveFile(sourceFile.getAbsolutePath());
+                FileProvisionUtil.copyFromInputStreamToOutputStream(src.getContent().getInputStream(), inputSize, dest.getContent().getOutputStream());
+            } catch (IOException e) {
+                throw new RuntimeException("Could not provision output files", e);
             }
-        }
-        try {
-            FileSystemManager fsManager;
-            // trigger a copy from the URL to a local file path that's a UUID to avoid collision
-            fsManager = VFS.getManager();
-            // check for a local file path
-            Path currentWorkingDir = Paths.get("").toAbsolutePath();
-            FileObject dest = fsManager.resolveFile(currentWorkingDir.toFile(), destPath);
-            FileObject src = fsManager.resolveFile(sourceFile.getAbsolutePath());
-            FileProvisionUtil.copyFromInputStreamToOutputStream(src.getContent().getInputStream(), inputSize, dest.getContent().getOutputStream());
-        } catch (IOException e) {
-            throw new RuntimeException("Could not provision output files", e);
         }
     }
 
     public static void main(String[] args) {
         String userHome = System.getProperty("user.home");
-        String pluginPath = userHome + File.separator + ".dockstore" + File.separator + "plugins";
+        PluginManager manager = FileProvisionUtil
+                .getPluginManager(Utilities.parseConfig(userHome + File.separator + ".dockstore" + File.separator + "config"));
 
-        PluginManager pluginManager = new DefaultPluginManager(new File(pluginPath));
-        pluginManager.loadPlugins();
-        pluginManager.startPlugins();
-
-        List<ProvisionInterface> greetings = pluginManager.getExtensions(ProvisionInterface.class);
+        List<ProvisionInterface> greetings = manager.getExtensions(ProvisionInterface.class);
         for (ProvisionInterface provision : greetings) {
             System.out.println("Plugin: " + provision.getClass().getName());
             System.out.println("\tSchemes handled: " + provision.getClass().getName());
@@ -267,12 +279,64 @@ public class FileProvisioning {
         }
     }
 
+    public void uploadFiles() {
+        Multimap<ProvisionInterface, Pair<String, FileInfo>> map = identifyPlugins();
+        Map<ProvisionInterface, Collection<Pair<String, FileInfo>>> provisionInterfaceCollectionMap = map.asMap();
+        for (Map.Entry<ProvisionInterface, Collection<Pair<String, FileInfo>>> entry : provisionInterfaceCollectionMap.entrySet()) {
+            ProvisionInterface pInterface = entry.getKey();
+            Pair<String, FileInfo>[] pairs = entry.getValue().toArray(new Pair[entry.getValue().size()]);
+            List<Optional<String>> metadataList = Stream.of(pairs).map(pair -> Optional.ofNullable(pair.getValue().getMetadata())).collect(Collectors.toList());
+            List<Path> srcList = Stream.of(pairs).map(pair -> Paths.get(pair.getKey())).collect(Collectors.toList());
+            List<String> destList = Stream.of(pairs).map(pair -> pair.getValue().getUrl()).collect(Collectors.toList());
+
+            try {
+                if (pInterface != null) {
+                    pInterface.prepareFileSet(destList, srcList, metadataList);
+                }
+                for (Pair<String, FileInfo> pair : pairs) {
+                    this.provisionOutputFile(pair.getLeft(), pair.getRight().getUrl(), pair.getRight().getMetadata(), pInterface);
+                }
+                if (pInterface != null) {
+                    pInterface.finalizeFileSet(destList, srcList, metadataList);
+                }
+            } catch (Exception e) {
+                LOG.error("plugin threw an exception", e);
+                throw new RuntimeException("plugin threw an exception", e);
+            }
+        }
+
+    }
+
+    private Multimap<ProvisionInterface, Pair<String, FileInfo>> identifyPlugins() {
+        Multimap<ProvisionInterface, Pair<String, FileInfo>> map = ArrayListMultimap.create();
+
+        for (ImmutablePair<String, FileInfo> pair : this.registeredFiles) {
+            String destPath = pair.getRight().getUrl();
+            URI objectIdentifier = URI.create(destPath);    // throws IllegalArgumentException if it isn't a valid URI
+            boolean handled = false;
+            if (objectIdentifier.getScheme() != null) {
+                String scheme = objectIdentifier.getScheme();
+                for (ProvisionInterface provision : plugins) {
+                    if (provision.schemesHandled().contains(scheme.toUpperCase()) || provision.schemesHandled().contains(scheme.toLowerCase())) {
+                        map.put(provision, pair);
+                        handled = true;
+                    }
+                }
+            }
+            if (!handled) {
+                map.put(null, pair);
+            }
+        }
+        return map;
+    }
+
     /**
      * Describes a single File
      */
     public static class FileInfo {
         private String localPath;
         private String url;
+        private String metadata;
 
         public String getLocalPath() {
             return localPath;
@@ -288,6 +352,14 @@ public class FileProvisioning {
 
         public void setUrl(String url) {
             this.url = url;
+        }
+
+        public String getMetadata() {
+            return metadata;
+        }
+
+        public void setMetadata(String metadata) {
+            this.metadata = metadata;
         }
     }
 }

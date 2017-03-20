@@ -140,6 +140,7 @@ public abstract class AbstractImageRegistry {
         List<Tool> apiTools = new ArrayList<>();
 
         // Find a tool with the given tool's path and is not manual
+        // This looks like we wanted to refresh tool information when not manually entered as to not destroy manually entered information
         Tool duplicatePath = null;
         List<Tool> toolList = toolDAO.findByPath(tool.getPath());
         for (Tool t : toolList) {
