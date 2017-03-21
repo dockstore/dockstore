@@ -18,7 +18,6 @@ package io.dockstore.webservice;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.SourceFile;
@@ -114,21 +113,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
     public static void main(String[] args) throws Exception {
         new DockstoreWebserviceApplication().run(args);
-    }
-
-    public static String yaml2json(String yaml) {
-        String json = "";
-
-        try {
-            ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
-            Object yamlObj = yamlReader.readValue(yaml, Object.class);
-            ObjectMapper jsonWriter = new ObjectMapper();
-            json = jsonWriter.writeValueAsString(yamlObj);
-        } catch (IOException e) {
-            throw new RuntimeException("Issue converting yaml to json", e);
-        }
-
-        return json;
     }
 
     @Override

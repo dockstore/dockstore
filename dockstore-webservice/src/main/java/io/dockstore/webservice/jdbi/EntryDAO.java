@@ -16,13 +16,13 @@
 
 package io.dockstore.webservice.jdbi;
 
+import java.lang.reflect.ParameterizedType;
+import java.util.List;
+
 import io.dockstore.webservice.core.Entry;
 import io.dropwizard.hibernate.AbstractDAO;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-
-import java.lang.reflect.ParameterizedType;
-import java.util.List;
 
 /**
  * @author dyuen
