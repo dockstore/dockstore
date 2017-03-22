@@ -1,0 +1,22 @@
+token: test
+server-url: https://www.dockstore.org:8443
+file-plugins-location: src/test/resources/pluginsTest2/plugins
+
+[dockstore-icgc-get-plugin]
+client = /home/gluu/icgc-get/icgc-get
+config-file-location = /home/gluu/.icgc-get/config.yaml
+
+[dockstore-s3cmd-plugin]
+client = /usr/bin/s3cmd
+config-file-location = /home/gluu/.s3cfg
+
+[dockstore-file-icgc-storage-client-plugin]
+client = asdf
+
+[dockstore-file-s3-plugin]
+client = asdf
+
+[dockstore-file-synpase-plugin]
+client = asdf
+
+

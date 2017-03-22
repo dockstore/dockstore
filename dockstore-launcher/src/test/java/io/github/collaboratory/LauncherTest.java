@@ -61,7 +61,7 @@ public class LauncherTest {
         File jobFile = FileUtils.getFile("src", "test", "resources", "collab-cwl-job-pre.json");
 
         if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
-            expectedEx.expectMessage("Access Denied");
+            expectedEx.expectMessage("plugin threw an exception");
         }
         final LauncherCWL launcherCWL = new LauncherCWL(
                 new String[] { "--config", iniFile.getAbsolutePath(), "--descriptor", cwlFile.getAbsolutePath(), "--job",
@@ -78,7 +78,7 @@ public class LauncherTest {
         ByteArrayOutputStream stderr = new ByteArrayOutputStream();
 
         if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
-            expectedEx.expectMessage("Access Denied");
+            expectedEx.expectMessage("plugin threw an exception");
         }
         final LauncherCWL launcherCWL = new LauncherCWL(iniFile.getAbsolutePath(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath(),
                 stdout, stderr);
@@ -96,7 +96,7 @@ public class LauncherTest {
         ByteArrayOutputStream stderr = new ByteArrayOutputStream();
 
         if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
-            expectedEx.expectMessage("Access Denied");
+            expectedEx.expectMessage("plugin threw an exception");
         }
         final LauncherCWL launcherCWL = new LauncherCWL(iniFile.getAbsolutePath(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath(),
                 stdout, stderr);

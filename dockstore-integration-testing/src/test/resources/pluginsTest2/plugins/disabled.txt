@@ -1,0 +1,2 @@
+dockstore-file-s3-plugin
+dockstore-file-synapse-plugin
