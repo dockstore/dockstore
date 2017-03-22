@@ -676,6 +676,10 @@
                                 <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
                             </manifest>
                         </archive>
+                        <!-- exclude logback.xml -->
+                        <excludes>
+                            <exclude>**/logback.xml</exclude>
+                        </excludes>
                     </configuration>
                 </plugin>
                 <plugin>
