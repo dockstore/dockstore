@@ -16,12 +16,8 @@
 
 package io.dockstore.client.cli;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Map;
-
 import com.google.gson.Gson;
+import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.client.cli.nested.WorkflowClient;
 import io.dropwizard.testing.ResourceHelpers;
@@ -32,10 +28,14 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.contrib.java.lang.system.Assertion;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Map;
 
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
@@ -51,6 +51,8 @@ public class LaunchTestIT {
     public final ExpectedSystemExit exit = ExpectedSystemExit.none();
     @Rule
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog();
+
+    private static AbstractEntryClient entryClient = new ToolClient(null, true);
 
     @Test
     public void wdlCorrect() throws IOException {
@@ -737,5 +739,95 @@ public class LaunchTestIT {
         exit.checkAssertionAfterwards(
                 () -> assertTrue("Out should suggest to run as workflow instead", systemErrRule.getLog().contains("Expected a tool but the")));
         runClientCommand(args, false);
+    }
+
+    @Test
+    public void cwlNoOutput() throws IOException {
+        File file = new File(ResourceHelpers.resourceFilePath("noOutput.cwl"));
+        File json = new File(ResourceHelpers.resourceFilePath("1st-workflow-job.json"));
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("tool");
+            add("launch");
+            add("--local-entry");
+            add(file.getAbsolutePath());
+            add("--json");
+            add(json.getAbsolutePath());
+        }};
+        exit.expectSystemExit();
+        exit.checkAssertionAfterwards(
+                () -> assertTrue("output should include an error message and exit",
+                        systemErrRule.getLog().contains("Required fields that are missing from CWL file : 'outputs'")));
+        runClientCommand(args, false);
+    }
+
+    @Test
+    public void cwlIncompleteOutput() throws IOException {
+        File file = new File(ResourceHelpers.resourceFilePath("incompleteOutput.cwl"));
+        File json = new File(ResourceHelpers.resourceFilePath("1st-workflow-job.json"));
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("tool");
+            add("launch");
+            add("--local-entry");
+            add(file.getAbsolutePath());
+            add("--json");
+            add(json.getAbsolutePath());
+        }};
+
+        runClientCommand(args, false);
+
+        assertTrue("output should include an error message", systemErrRule.getLog().contains("The error was: 'NoneType' object is not iterable"));
+    }
+
+    @Test
+    public void cwlIdContainsNonWord() throws IOException {
+        File file = new File(ResourceHelpers.resourceFilePath("idNonWord.cwl"));
+        File json = new File(ResourceHelpers.resourceFilePath("1st-workflow-job.json"));
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("tool");
+            add("launch");
+            add("--local-entry");
+            add(file.getAbsolutePath());
+            add("--json");
+            add(json.getAbsolutePath());
+        }};
+        exit.expectSystemExit();
+        exit.checkAssertionAfterwards(
+                () -> assertTrue("output should have started provisioning",
+                        systemOutRule.getLog().contains("Provisioning your input files to your local machine")));
+        runClientCommand(args, false);
+    }
+
+    @Test
+    public void cwlMissingIdParameters() throws IOException {
+        File file = new File(ResourceHelpers.resourceFilePath("missingIdParameters.cwl"));
+        File json = new File(ResourceHelpers.resourceFilePath("1st-workflow-job.json"));
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("tool");
+            add("launch");
+            add("--local-entry");
+            add(file.getAbsolutePath());
+            add("--json");
+            add(json.getAbsolutePath());
+        }};
+
+        runClientCommand(args, false);
+
+        assertTrue("output should include an error message", systemErrRule.getLog().contains("Syntax error while parsing a block collection"));
+    }
+
+    @Test
+    public void cwl2jsonNoOutput() throws IOException {
+        File file = new File(ResourceHelpers.resourceFilePath("noOutput.cwl"));
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("tool");
+            add("convert");
+            add("cwl2json");
+            add("--cwl");
+            add(file.getAbsolutePath());
+        }};
+
+        runClientCommand(args, false);
+
+        assertTrue("output should include an error message", systemErrRule.getLog().contains("missing required field `outputs`"));
     }
 }
