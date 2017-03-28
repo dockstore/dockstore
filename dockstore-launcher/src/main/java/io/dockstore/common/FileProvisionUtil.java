@@ -127,7 +127,7 @@ public final class FileProvisionUtil {
         Path path = Paths.get(filePluginLocation);
         if (!Files.exists(path)) {
             try {
-                Files.createDirectory(path);
+                Files.createDirectories(path);
             } catch (IOException e) {
                 throw new RuntimeException("Could not create plugin directory", e);
             }
