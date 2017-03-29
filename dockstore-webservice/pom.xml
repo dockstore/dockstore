@@ -520,6 +520,16 @@
             <groupId>org.broadinstitute</groupId>
             <artifactId>wdl4s_2.11</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.jsonld-java</groupId>
+            <artifactId>jsonld-java</artifactId>
+            <version>0.8.3</version>
+        </dependency>
     </dependencies>
 
 

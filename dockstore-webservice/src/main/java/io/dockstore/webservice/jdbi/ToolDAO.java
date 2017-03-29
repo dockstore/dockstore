@@ -16,11 +16,12 @@
 
 package io.dockstore.webservice.jdbi;
 
-import java.util.List;
-
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
+import io.dockstore.webservice.helpers.JsonLdRetriever;
 import org.hibernate.SessionFactory;
+
+import java.util.List;
 
 /**
  * @author xliu
@@ -50,5 +51,15 @@ public class ToolDAO extends EntryDAO<Tool> {
     public Tool findPublishedByToolPath(String path, String tool) {
         return uniqueResult(namedQuery("io.dockstore.webservice.core.Tool.findPublishedByToolPath").setParameter("path", path)
                 .setParameter("toolname", tool));
+    }
+
+    /**
+     * Return map containing schema.org info retrieved from the specified tool's descriptor cwl
+     * @param id of specified tool
+     * @return map containing schema.org info to be used as json-ld data
+     */
+    public List findPublishedSchemaById(long id) {
+        Tool tool = findPublishedById(id);
+        return JsonLdRetriever.getSchema(tool);
     }
 }
