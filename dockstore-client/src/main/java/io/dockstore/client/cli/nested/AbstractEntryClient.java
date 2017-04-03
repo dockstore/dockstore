@@ -16,30 +16,9 @@
 
 package io.dockstore.client.cli.nested;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
@@ -74,6 +53,28 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static io.dockstore.client.cli.ArgumentUtility.CONVERT;
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
@@ -111,24 +112,20 @@ import static io.dockstore.client.cli.Client.SCRIPT;
  * @author dyuen
  */
 public abstract class AbstractEntryClient {
-    public static final String CROMWELL_LOCATION = "https://github.com/broadinstitute/cromwell/releases/download/0.21/cromwell-0.21.jar";
+    private static final String CROMWELL_LOCATION = "https://github.com/broadinstitute/cromwell/releases/download/0.21/cromwell-0.21.jar";
     private static final Logger LOG = LoggerFactory.getLogger(AbstractEntryClient.class);
-    public boolean isAdmin = false;
-    private final CWL cwlUtil = new CWL();
+    private static final CWL CWL_UTIL = new CWL();
+    boolean isAdmin = false;
 
-    public enum Type {
-        CWL("cwl"), WDL("wdl"), NONE("none");
-        private final String desc;
-
-        Type(String name) {
-            desc = name;
+    static String getCleanedDescription(String description) {
+        if (description != null) {
+            // strip control characters
+            description = CharMatcher.JAVA_ISO_CONTROL.removeFrom(description);
+            if (description.length() > MAX_DESCRIPTION) {
+                description = description.substring(0, MAX_DESCRIPTION - Client.PADDING) + "...";
+            }
         }
-
-        @Override
-        public String toString() {
-            return desc;
-        }
-
+        return description;
     }
 
     public abstract String getConfigFile();
@@ -328,8 +325,8 @@ public abstract class AbstractEntryClient {
     protected abstract void handlePublishUnpublish(String entryPath, String newName, boolean unpublishRequest);
 
     /**
-     * @param entryPath         a unique identifier for an entry, called a path for workflows and tools
-     * @param unstarRequest     true to star, false to unstar
+     * @param entryPath     a unique identifier for an entry, called a path for workflows and tools
+     * @param unstarRequest true to star, false to unstar
      */
     protected abstract void handleStarUnstar(String entryPath, boolean unstarRequest);
 
@@ -406,7 +403,7 @@ public abstract class AbstractEntryClient {
         }
     }
 
-    public void star(List<String> args) {
+    private void star(List<String> args) {
         if (args.isEmpty()) {
             handleListUnstarredEntries();
         } else if (containsHelpRequest(args)) {
@@ -560,10 +557,16 @@ public abstract class AbstractEntryClient {
             }
         } else {
             final String cwlPath = reqVal(args, "--cwl");
-            final ImmutablePair<String, String> output = cwlUtil.parseCWL(cwlPath);
+          
+            final ImmutablePair<String, String> output = CWL_UTIL.parseCWL(cwlPath);
+          
+            // do not continue to convert to json if cwl is invalid
+            if (!validateCWL(cwlPath)) {
+                return;
+            }
 
             try {
-                final Map<String, Object> runJson = cwlUtil.extractRunJson(output.getLeft());
+                final Map<String, Object> runJson = CWL_UTIL.extractRunJson(output.getLeft());
                 if (json) {
                     final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
                     out(gson.toJson(runJson));
@@ -594,7 +597,7 @@ public abstract class AbstractEntryClient {
         }
     }
 
-    private void handleEntry2json(List<String> args) throws ApiException, IOException {
+    public void handleEntry2json(List<String> args) throws ApiException, IOException {
         if (args.isEmpty() || containsHelpRequest(args)) {
             entry2jsonHelp();
         } else {
@@ -603,12 +606,30 @@ public abstract class AbstractEntryClient {
         }
     }
 
-    private void handleEntry2tsv(List<String> args) throws ApiException, IOException {
+    public void handleEntry2tsv(List<String> args) throws ApiException, IOException {
         if (args.isEmpty() || containsHelpRequest(args)) {
             entry2tsvHelp();
         } else {
             final String runString = runString(args, false);
             out(runString);
+        }
+    }
+
+    /**
+     * this function will validate CWL file
+     * using this command: cwltool --non-strict --validate <file_path>
+     * @param cwlFilePath
+     */
+    private boolean validateCWL(String cwlFilePath) {
+        final String[] s = { "cwltool", "--non-strict", "--validate", cwlFilePath };
+        try {
+            io.cwl.avro.Utilities.executeCommand(Joiner.on(" ").join(Arrays.asList(s)), false,  Optional.absent(), Optional.absent());
+            return true;
+        } catch (RuntimeException e) {
+            // when invalid, executeCommand will throw a RuntimeException
+            return false;
+        } catch (Exception e) {
+            throw new RuntimeException("An unexpected exception unrelated to validation has occurred");
         }
     }
 
@@ -623,7 +644,7 @@ public abstract class AbstractEntryClient {
      * false if it's not a CWL file (could be WDL or something else)
      * errormsg & exit if >=1 required field not found in the file
      */
-    public Boolean checkCWL(File content) {
+    private Boolean checkCWL(File content) {
         /* CWL: check for 'class:CommandLineTool', 'inputs: ','outputs: ', and 'baseCommand'. Optional: 'cwlVersion'
          CWL: check for 'class:Workflow', 'inputs: ','outputs: ', and 'steps'. Optional: 'cwlVersion'*/
         Pattern inputPattern = Pattern.compile("(.*)(inputs)(.*)(:)(.*)");
@@ -723,7 +744,7 @@ public abstract class AbstractEntryClient {
      * false if it's not a WDL file (could be CWL or something else)
      * errormsg and exit if >=1 required field not found in the file
      */
-    public Boolean checkWDL(File content) {
+    private Boolean checkWDL(File content) {
         /* WDL: check for 'task' (must be >=1) ,'call', 'command', 'output' and 'workflow' */
         Pattern taskPattern = Pattern.compile("(.*)(task)(\\s)(.*)(\\{)");
         Pattern wfPattern = Pattern.compile("(.*)(workflow)(\\s)(.*)(\\{)");
@@ -841,7 +862,7 @@ public abstract class AbstractEntryClient {
      * Type.WDL if file content is WDL
      * Type.NONE if file content is neither WDL nor CWL
      */
-    private Type checkFileContent(File content) {
+    Type checkFileContent(File content) {
         if (checkCWL(content)) {
             return Type.CWL;
         } else if (checkWDL(content)) {
@@ -858,7 +879,7 @@ public abstract class AbstractEntryClient {
      * Type.WDL if file extension is WDL
      * Type.NONE if file extension is neither WDL nor CWL, could be no extension or some other random extension(e.g .txt)
      */
-    private Type checkFileExtension(String path) {
+    Type checkFileExtension(String path) {
         if (FilenameUtils.getExtension(path).toLowerCase().equals(CWL_STRING)) {
             return Type.CWL;
         } else if (FilenameUtils.getExtension(path).toLowerCase().equals(WDL_STRING)) {
@@ -893,6 +914,10 @@ public abstract class AbstractEntryClient {
 
         if (ext.equals(Type.CWL)) {
             if (content.equals(Type.CWL)) {
+                // do not continue to check file if the cwl is invalid
+                if (!validateCWL(localFilePath)) {
+                    return;
+                }
                 try {
                     launchCwl(localFilePath, argsList, true);
                 } catch (ApiException e) {
@@ -980,9 +1005,9 @@ public abstract class AbstractEntryClient {
      * TODO: this may need to be moved to ToolClient depending on whether we can re-use
      * this for workflows.
      *
-     * @param args
+     * @param args Arguments entered into the CLI
      */
-    private void launch(final List<String> args) {
+    public void launch(final List<String> args) {
         if (args.isEmpty() || containsHelpRequest(args)) {
             launchHelp();
         } else {
@@ -1048,8 +1073,8 @@ public abstract class AbstractEntryClient {
      * @throws IOException
      * @throws ApiException
      */
-    public void handleCWLLaunch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns,
-            OutputStream stdoutStream, OutputStream stderrStream) throws IOException, ApiException {
+    void handleCWLLaunch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns, OutputStream stdoutStream,
+            OutputStream stderrStream) throws IOException, ApiException {
 
         if (!SCRIPT.get()) {
             Client.checkForCWLDependencies();
@@ -1310,6 +1335,7 @@ public abstract class AbstractEntryClient {
                 Map<String, String> outputJson = gson.fromJson(bracketContents, HashMap.class);
                 System.out.println("Provisioning your output files to their final destinations");
                 final List<String> outputFiles = bridge.getOutputFiles(tmp);
+                FileProvisioning fileProvisioning = new FileProvisioning(this.getConfigFile());
                 for (String outFile : outputFiles) {
                     // find file path from output
                     final File resultFile = new File(outputJson.get(outFile));
@@ -1318,9 +1344,9 @@ public abstract class AbstractEntryClient {
                     new1.setUrl(wdlOutputTarget + "/" + outFile);
                     new1.setLocalPath(resultFile.getAbsolutePath());
                     System.out.println("Uploading: " + outFile + " from " + resultFile + " to : " + new1.getUrl());
-                    FileProvisioning fileProvisioning = new FileProvisioning(this.getConfigFile());
-                    fileProvisioning.provisionOutputFile(resultFile.getAbsolutePath(), new1.getUrl());
+                    fileProvisioning.registerOutputFile(resultFile.getAbsolutePath(), new1);
                 }
+                fileProvisioning.uploadFiles();
             } else {
                 System.out.println("Output files left in place");
             }
@@ -1343,7 +1369,7 @@ public abstract class AbstractEntryClient {
      * @return
      * @throws IOException
      */
-    private File resolveImportsForDescriptor(File tempDir, File tempDescriptor) throws IOException {
+    File resolveImportsForDescriptor(File tempDir, File tempDescriptor) throws IOException {
         File tmp;
         Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"(.*)");
         File file = new File(tempDescriptor.getAbsolutePath());
@@ -1369,24 +1395,26 @@ public abstract class AbstractEntryClient {
         return tmp;
     }
 
-    public abstract List<SourceFile> downloadDescriptors(String entry, String descriptor, File tempDir);
-
-    private String runString(List<String> args, final boolean json) throws ApiException, IOException {
-        final String entry = reqVal(args, "--entry");
-        final String descriptor = optVal(args, "--descriptor", CWL_STRING);
-
+    /**
+     * @param entry      Full path of the tool/workflow
+     * @param descriptor Descriptor type
+     * @param json       Whether to return json or not
+     * @return The json or tsv output
+     * @throws ApiException
+     * @throws IOException
+     */
+    String runString2(String entry, String descriptor, final boolean json) throws ApiException, IOException {
         final File tempDir = Files.createTempDir();
         final SourceFile descriptorFromServer = getDescriptorFromServer(entry, descriptor);
         final File tempDescriptor = File.createTempFile("temp", "." + descriptor, tempDir);
         Files.write(descriptorFromServer.getContent(), tempDescriptor, StandardCharsets.UTF_8);
-
         // Download imported descriptors (secondary descriptors)
         downloadDescriptors(entry, descriptor, tempDir);
 
         if (descriptor.equals(CWL_STRING)) {
             // need to suppress output
-            final ImmutablePair<String, String> output = cwlUtil.parseCWL(tempDescriptor.getAbsolutePath());
-            final Map<String, Object> stringObjectMap = cwlUtil.extractRunJson(output.getLeft());
+            final ImmutablePair<String, String> output = CWL_UTIL.parseCWL(tempDescriptor.getAbsolutePath());
+            final Map<String, Object> stringObjectMap = CWL_UTIL.extractRunJson(output.getLeft());
             if (json) {
                 try {
                     final Gson gson = CWL.getTypeSafeCWLToolDocument();
@@ -1398,7 +1426,7 @@ public abstract class AbstractEntryClient {
                 }
             } else {
                 // re-arrange as rows and columns
-                final Map<String, String> typeMap = cwlUtil.extractCWLTypes(output.getLeft());
+                final Map<String, String> typeMap = CWL_UTIL.extractCWLTypes(output.getLeft());
                 final List<String> headers = new ArrayList<>();
                 final List<String> types = new ArrayList<>();
                 final List<String> entries = new ArrayList<>();
@@ -1439,6 +1467,14 @@ public abstract class AbstractEntryClient {
             }
         }
         return null;
+    }
+
+    public abstract List<SourceFile> downloadDescriptors(String entry, String descriptor, File tempDir);
+
+    private String runString(List<String> args, final boolean json) throws ApiException, IOException {
+        final String entry = reqVal(args, "--entry");
+        final String descriptor = optVal(args, "--descriptor", CWL_STRING);
+        return runString2(entry, descriptor, json);
     }
 
     /**
@@ -1712,14 +1748,18 @@ public abstract class AbstractEntryClient {
         out("");
     }
 
-    static String getCleanedDescription(String description) {
-        if (description != null) {
-            // strip control characters
-            description = CharMatcher.JAVA_ISO_CONTROL.removeFrom(description);
-            if (description.length() > MAX_DESCRIPTION) {
-                description = description.substring(0, MAX_DESCRIPTION - Client.PADDING) + "...";
-            }
+    public enum Type {
+        CWL("cwl"), WDL("wdl"), NONE("none");
+        private final String desc;
+
+        Type(String name) {
+            desc = name;
         }
-        return description;
+
+        @Override
+        public String toString() {
+            return desc;
+        }
+
     }
 }

@@ -132,7 +132,7 @@ public abstract class AbstractImageRegistry {
      * @return
      */
     @SuppressWarnings("checkstyle:parameternumber")
-    public Tool refreshTool(final long toolId, final Long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
+    Tool refreshTool(final long toolId, final Long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
             final FileDAO fileDAO, final HttpClient client, final Token githubToken, final Token bitbucketToken, final Token gitlabToken) {
 
         // Find tool of interest and store in a List (Allows for reuse of code)
@@ -140,6 +140,7 @@ public abstract class AbstractImageRegistry {
         List<Tool> apiTools = new ArrayList<>();
 
         // Find a tool with the given tool's path and is not manual
+        // This looks like we wanted to refresh tool information when not manually entered as to not destroy manually entered information
         Tool duplicatePath = null;
         List<Tool> toolList = toolDAO.findByPath(tool.getPath());
         for (Tool t : toolList) {

@@ -22,6 +22,10 @@ import io.swagger.annotations.ApiModel;
  * This enumerates the types of containers (really, images) that we can add to the dockstore. This will become more prominent later if we
  * proceed with privacy and http link support.
  *
+ * The convention here seems to be that auto-detected tools can become mixed mode tools. However, neither of these two can become manual or vice versa.
+ * Exception: If a user wants to add two tools based on the same Docker image but with different descriptors, then we currently have them add a new tool with the same
+ * namespace and repo, but add a toolname to distinguish the two. These can get converted to auto-detected builds.
+ *
  * @author dyuen
  */
 @ApiModel(description = "This enumerates the types of containers (really, images) that we can add to the dockstore. Implementation specific.")
