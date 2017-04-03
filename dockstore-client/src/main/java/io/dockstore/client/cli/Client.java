@@ -655,12 +655,14 @@ public class Client {
     private void run(String[] argv) {
         List<String> args = new ArrayList<>(Arrays.asList(argv));
 
+        ch.qos.logback.classic.Logger root = (ch.qos.logback.classic.Logger)org.slf4j.LoggerFactory
+                .getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME);
         if (flag(args, "--debug") || flag(args, "--d")) {
             DEBUG.set(true);
             // turn on logback
-            ch.qos.logback.classic.Logger root = (ch.qos.logback.classic.Logger)org.slf4j.LoggerFactory
-                    .getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME);
             root.setLevel(Level.DEBUG);
+        } else {
+            root.setLevel(Level.ERROR);
         }
         if (flag(args, "--script") || flag(args, "--s")) {
             SCRIPT.set(true);
