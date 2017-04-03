@@ -16,13 +16,6 @@
 
 package io.dockstore.webservice;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.util.EnumSet;
-import java.util.concurrent.TimeUnit;
-
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.webservice.core.Group;
@@ -84,6 +77,13 @@ import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.util.EnumSet;
+import java.util.concurrent.TimeUnit;
 
 import static javax.servlet.DispatcherType.REQUEST;
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ACCESS_CONTROL_ALLOW_METHODS_HEADER;

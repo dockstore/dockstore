@@ -1,0 +1,42 @@
+[
+  {
+    "recipeCategory": "Italian",
+    "@context": "http://schema.org/",
+    "@type": "Recipe",
+    "cookingMethod": "Steaming"
+  },
+  {
+    "keywords": [
+      "Bioinformatics",
+      "DNA"
+    ],
+    "@context": "http://schema.org/",
+    "operatingSystem": "All",
+    "@type": "SoftwareApplication",
+    "potentialAction": {
+      "result": {
+        "@type": "Dataset",
+        "additionalType": "http://edamontology.org/data_0896"
+      },
+      "@type": "ControlAction",
+      "object": [
+        {
+          "@type": "Dataset",
+          "additionalType": "http://edamontology.org/data_3021"
+        },
+        {
+          "@type": "Dataset",
+          "additionalType": "http://edamontology.org/data_8888"
+        }
+      ]
+    }
+  },
+  {
+    "@context": "http://schema.org/",
+    "operatingSystem": [
+      "Linux",
+      "Windows"
+    ],
+    "@type": "SoftwareApplication"
+  }
+]

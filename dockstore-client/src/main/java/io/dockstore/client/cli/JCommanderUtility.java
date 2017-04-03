@@ -2,6 +2,7 @@ package io.dockstore.client.cli;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import com.beust.jcommander.JCommander;
@@ -21,11 +22,12 @@ public final class JCommanderUtility {
         // hide the constructor for utility classes
     }
 
-    // Have to override printJCommanderHelp because launch has --entry OR --local-entry as required parameters
+    // Have to override printJCommanderHelp because launch has --entry OR --local-entry as required parameters.
+    // It's probably better to just have them as two separate commands.
     public static void printJCommanderHelpLaunch(JCommander jc, String programName, String commandName) {
         String description = jc.getCommandDescription(commandName);
         printHelpHeader();
-        printJCommanderHelpUsage(programName, commandName);
+        printJCommanderHelpUsage(programName, commandName, jc);
         printJCommanderHelpDescription(description);
         out("Required parameters:\n"
                 + "  --entry <entry>                     Complete workflow path in the Dockstore (ex. NCI-GDC/gdc-dnaseq-cwl/GDC_DNASeq:master)\n"
@@ -45,17 +47,33 @@ public final class JCommanderUtility {
         List<ParameterDescription> sorted = commander.getParameters();
 
         printHelpHeader();
-        printJCommanderHelpUsage(programName, commandName);
+        printJCommanderHelpUsage(programName, commandName, jc);
         printJCommanderHelpDescription(description);
+        printJCommanderHelpCommand(commander);
         printJCommanderHelpRequiredParameters(sorted);
         printJCommanderHelpOptionalParameters(sorted);
         printJCommanderHelpFooter();
     }
 
-    private static void printJCommanderHelpUsage(String programName, String commandName) {
+    private static void printJCommanderHelpUsage(String programName, String commandName, JCommander jc) {
         ArgumentUtility.out("Usage: " + programName + " " + commandName + " --help");
-        ArgumentUtility.out("       " + programName + " " + commandName + " [parameters]");
+        if (jc.getCommands().isEmpty()) {
+            ArgumentUtility.out("       " + programName + " " + commandName + " [parameters]");
+        } else {
+            ArgumentUtility.out("       " + programName + " " + commandName + " [parameters] [command]");
+        }
         ArgumentUtility.out("");
+    }
+
+    private static void printJCommanderHelpCommand(JCommander jc) {
+        Map<String, JCommander> commands = jc.getCommands();
+        if (!commands.isEmpty()) {
+            ArgumentUtility.out("Commands: ");
+            for (Map.Entry<String, JCommander> commanderEntry : commands.entrySet()) {
+                ArgumentUtility.out("  " + commanderEntry.getKey());
+                ArgumentUtility.out("    " + jc.getCommandDescription(commanderEntry.getKey()));
+            }
+        }
     }
 
     private static void printJCommanderHelpDescription(String commandDescription) {

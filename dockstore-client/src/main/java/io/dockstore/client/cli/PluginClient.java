@@ -18,6 +18,9 @@ package io.dockstore.client.cli;
 import java.util.List;
 
 import avro.shaded.com.google.common.base.Joiner;
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
+import com.beust.jcommander.Parameters;
 import io.dockstore.common.FileProvisionUtil;
 import io.dockstore.common.TabExpansionUtil;
 import io.dockstore.provision.ProvisionInterface;
@@ -28,7 +31,7 @@ import ro.fortsoft.pf4j.PluginManager;
 import ro.fortsoft.pf4j.PluginWrapper;
 
 import static io.dockstore.client.cli.ArgumentUtility.out;
-import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
+import static io.dockstore.client.cli.JCommanderUtility.printJCommanderHelp;
 
 /**
  *
@@ -37,55 +40,113 @@ public final class PluginClient {
 
     private static final Logger LOG = LoggerFactory.getLogger(PluginClient.class);
 
-
     private PluginClient() {
         // disable constructor for utility class
     }
 
     /**
+     * This function is used when nesting commands within commands (ex. list and download within plugin)
      *
+     * @param parentCommand The parent command (ex. plugin)
+     * @param commandName   The nested command name (ex. "list")
+     * @param commandObject The nested command (ex. list)
+     * @return
+     */
+    private static JCommander addCommand(JCommander parentCommand, String commandName, Object commandObject) {
+        parentCommand.addCommand(commandName, commandObject);
+        return parentCommand.getCommands().get(commandName);
+    }
+
+    /**
      * @param args
      * @param configFile
      */
     public static boolean handleCommand(List<String> args, INIConfiguration configFile) {
-        String cmd = args.size() > 0 ? args.remove(0) : null;
-        // see if this is a general command
+        String[] argv = args.toArray(new String[args.size()]);
+        JCommander jc = new JCommander();
 
-        if (null != cmd) {
-            switch (cmd) {
-            case "list":
-                PluginManager pluginManager = FileProvisionUtil.getPluginManager(configFile);
-                List<PluginWrapper> plugins = pluginManager.getStartedPlugins();
-                StringBuilder builder = new StringBuilder();
-                builder.append("PluginId\tPlugin Version\tPlugin Path\tSchemes handled\n");
-                for (PluginWrapper plugin : plugins) {
-                    builder.append(plugin.getPluginId());
-                    builder.append("\t");
-                    builder.append(plugin.getPlugin().getWrapper().getDescriptor().getVersion());
-                    builder.append("\t");
-                    builder.append(FileProvisionUtil.getFilePluginLocation(configFile))
-                            .append(plugin.getPlugin().getWrapper().getPluginPath()).append("(.zip)");
-                    builder.append("\t");
-                    List<ProvisionInterface> extensions = pluginManager.getExtensions(ProvisionInterface.class, plugin.getPluginId());
-                    extensions.forEach(extension -> Joiner.on(',').appendTo(builder, extension.schemesHandled()));
-                    builder.append("\n");
+        CommandPlugin commandPlugin = new CommandPlugin();
+        JCommander jcPlugin = addCommand(jc, "plugin", commandPlugin);
+
+        CommandPluginList commandPluginList = new CommandPluginList();
+        addCommand(jcPlugin, "list", commandPluginList);
+
+        CommandPluginDownload commandPluginDownload = new CommandPluginDownload();
+        addCommand(jcPlugin, "download", commandPluginDownload);
+        // Not parsing with jc because we know the first command was plugin.  jc's purpose is to display help
+        jcPlugin.parse(argv);
+        try {
+            if (commandPlugin.help) {
+                printJCommanderHelp(jc, "dockstore", "plugin");
+            } else {
+                switch (jcPlugin.getParsedCommand()) {
+                case "list":
+                    if (commandPluginList.help) {
+                        printJCommanderHelp(jc, "dockstore", "plugin");
+                    } else {
+                        return handleList(configFile);
+                    }
+                    break;
+                case "download":
+                    if (commandPluginDownload.help) {
+                        printJCommanderHelp(jc, "dockstore", "plugin");
+                    } else {
+                        return handleDownload(configFile);
+                    }
+                    break;
+                default:
+                    // fall through
                 }
-                out(TabExpansionUtil.aligned(builder.toString()));
-                return true;
-            case "download":
-                FileProvisionUtil.downloadPlugins(configFile);
-                return true;
-            default:
-                // fall through
             }
+        } catch (Exception e) {
+            printJCommanderHelp(jc, "dockstore", "plugin");
         }
-        printHelpHeader();
-        out("");
-        out("Commands:");
-        out("");
-        out("  list                 :  List currently activated file provisioning plugins");
-        out("");
-        out("  download             :  Download default file provisioning plugins");
+        return true;
+
+    }
+
+    private static boolean handleList(INIConfiguration configFile) {
+        PluginManager pluginManager = FileProvisionUtil.getPluginManager(configFile);
+        List<PluginWrapper> plugins = pluginManager.getStartedPlugins();
+        StringBuilder builder = new StringBuilder();
+        builder.append("PluginId\tPlugin Version\tPlugin Path\tSchemes handled\n");
+        for (PluginWrapper plugin : plugins) {
+            builder.append(plugin.getPluginId());
+            builder.append("\t");
+            builder.append(plugin.getPlugin().getWrapper().getDescriptor().getVersion());
+            builder.append("\t");
+            builder.append(FileProvisionUtil.getFilePluginLocation(configFile)).append(plugin.getPlugin().getWrapper().getPluginPath())
+                    .append("(.zip)");
+            builder.append("\t");
+            List<ProvisionInterface> extensions = pluginManager.getExtensions(ProvisionInterface.class, plugin.getPluginId());
+            extensions.forEach(extension -> Joiner.on(',').appendTo(builder, extension.schemesHandled()));
+            builder.append("\n");
+        }
+        out(TabExpansionUtil.aligned(builder.toString()));
         return true;
     }
+
+    private static boolean handleDownload(INIConfiguration configFile) {
+        FileProvisionUtil.downloadPlugins(configFile);
+        return true;
+    }
+
+    @Parameters(separators = "=", commandDescription = "Configure and debug plugins")
+    private static class CommandPlugin {
+        @Parameter(names = "--help", description = "Prints help for plugin command", help = true)
+        private boolean help = false;
+    }
+
+    @Parameters(separators = "=", commandDescription = "List currently activated file provision plugins")
+    private static class CommandPluginList {
+        @Parameter(names = "--help", description = "Prints help for list command", help = true)
+        private boolean help = false;
+    }
+
+    @Parameters(separators = "=", commandDescription = "Download default file provisioning plugins")
+    private static class CommandPluginDownload {
+        @Parameter(names = "--help", description = "Prints help for download command", help = true)
+        private boolean help = false;
+    }
+
 }

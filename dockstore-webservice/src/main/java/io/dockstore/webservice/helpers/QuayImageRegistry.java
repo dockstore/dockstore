@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
@@ -203,6 +204,26 @@ public class QuayImageRegistry extends AbstractImageRegistry {
 
                         if (triggerMetadata != null) {
                             gitUrl = triggerMetadata.get("git_url");
+                        }
+                        // alternative hack for GA4GH importer (should be removed if we can create triggers on quay.io repos)
+                        String autoGenerateTag = "GA4GH-generated-do-not-edit";
+                        try {
+                            if (tool.getDescription().contains(autoGenerateTag)) {
+                                String[] split = tool.getDescription().split("\n");
+                                for (String line : split) {
+                                    if (line.contains(autoGenerateTag)) {
+                                        String[] splitLine = line.split("<>");
+                                        String trimmed = splitLine[1].trim();
+                                        // strip the brackets
+                                        String substring = trimmed.substring(1, trimmed.length() - 1);
+                                        Map<String, String> map = new Gson().fromJson(substring,
+                                                new TypeToken<Map<String, String>>() { }.getType());
+                                        gitUrl = "git@github.com:" + map.get("namespace") + "/" + map.get("repo") + ".git";
+                                    }
+                                }
+                            }
+                        } catch (Exception e) {
+                            LOG.info("Found GA4GH tag in description for " + tool.getPath() + " but could not process it into a git url");
                         }
 
                         // Get lastbuild time

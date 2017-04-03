@@ -946,6 +946,24 @@ paths:
           schema: {$ref: '#/definitions/DockstoreTool'}
       summary: Register an image manually, along with tags
       tags: [containers]
+  /containers/schema/{containerId}/published:
+    get:
+      description: NO authentication
+      operationId: getPublishedContainerSchema
+      parameters:
+      - {description: Tool ID, format: int64, in: path, name: containerId, required: true,
+        type: integer}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema:
+            items:
+              items: {type: object}
+              type: array
+            type: array
+      summary: Get a published container's schema by ID
+      tags: [containers]
   /containers/search:
     get:
       description: Search on the name (full path name) and description. NO authentication

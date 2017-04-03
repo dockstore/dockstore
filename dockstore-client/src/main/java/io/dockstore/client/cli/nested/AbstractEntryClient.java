@@ -16,30 +16,9 @@
 
 package io.dockstore.client.cli.nested;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
@@ -74,6 +53,28 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static io.dockstore.client.cli.ArgumentUtility.CONVERT;
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
@@ -556,7 +557,13 @@ public abstract class AbstractEntryClient {
             }
         } else {
             final String cwlPath = reqVal(args, "--cwl");
+          
             final ImmutablePair<String, String> output = CWL_UTIL.parseCWL(cwlPath);
+          
+            // do not continue to convert to json if cwl is invalid
+            if (!validateCWL(cwlPath)) {
+                return;
+            }
 
             try {
                 final Map<String, Object> runJson = CWL_UTIL.extractRunJson(output.getLeft());
@@ -605,6 +612,24 @@ public abstract class AbstractEntryClient {
         } else {
             final String runString = runString(args, false);
             out(runString);
+        }
+    }
+
+    /**
+     * this function will validate CWL file
+     * using this command: cwltool --non-strict --validate <file_path>
+     * @param cwlFilePath
+     */
+    private boolean validateCWL(String cwlFilePath) {
+        final String[] s = { "cwltool", "--non-strict", "--validate", cwlFilePath };
+        try {
+            io.cwl.avro.Utilities.executeCommand(Joiner.on(" ").join(Arrays.asList(s)), false,  Optional.absent(), Optional.absent());
+            return true;
+        } catch (RuntimeException e) {
+            // when invalid, executeCommand will throw a RuntimeException
+            return false;
+        } catch (Exception e) {
+            throw new RuntimeException("An unexpected exception unrelated to validation has occurred");
         }
     }
 
@@ -889,6 +914,10 @@ public abstract class AbstractEntryClient {
 
         if (ext.equals(Type.CWL)) {
             if (content.equals(Type.CWL)) {
+                // do not continue to check file if the cwl is invalid
+                if (!validateCWL(localFilePath)) {
+                    return;
+                }
                 try {
                     launchCwl(localFilePath, argsList, true);
                 } catch (ApiException e) {
