@@ -14,8 +14,7 @@
   ~    limitations under the License.
   -->
 
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>dockstore-webservice</artifactId>
@@ -28,7 +27,7 @@
     </properties>
 
     <parent>
-        <version>1.2.0-alpha.6-SNAPSHOT</version>
+        <version>1.2.0-alpha.6</version>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
         <relativePath>../pom.xml</relativePath>
@@ -38,12 +37,12 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-quay-client</artifactId>
-            <version>1.2.0-alpha.6-SNAPSHOT</version>
+            <version>1.2.0-alpha.6</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.2.0-alpha.6-SNAPSHOT</version>
+            <version>1.2.0-alpha.6</version>
         </dependency>
         <dependency>
             <groupId>io.swagger</groupId>
@@ -453,7 +452,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-client</artifactId>
-            <version>1.2.0-alpha.6-SNAPSHOT</version>
+            <version>1.2.0-alpha.6</version>
             <exclusions>
                 <exclusion>
                     <groupId>ch.qos.logback</groupId>
@@ -470,7 +469,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.2.0-alpha.6-SNAPSHOT</version>
+            <version>1.2.0-alpha.6</version>
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
@@ -645,7 +644,7 @@
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
                                     <resource>reference.conf</resource>
                                 </transformer>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>io.dockstore.webservice.DockstoreWebserviceApplication</mainClass>
                                 </transformer>
