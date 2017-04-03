@@ -47,6 +47,8 @@ import io.dockstore.webservice.resources.TemplateHealthCheck;
 import io.dockstore.webservice.resources.TokenResource;
 import io.dockstore.webservice.resources.UserResource;
 import io.dockstore.webservice.resources.WorkflowResource;
+import io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl;
+import io.dockstore.webservice.resources.proposedGA4GH.ToolsExtendedApi;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.auth.AuthDynamicFeature;
@@ -242,7 +244,13 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         ToolsApiServiceImpl.setToolDAO(toolDAO);
         ToolsApiServiceImpl.setWorkflowDAO(workflowDAO);
         ToolsApiServiceImpl.setConfig(configuration);
+
+        ToolsApiExtendedServiceImpl.setToolDAO(toolDAO);
+        ToolsApiExtendedServiceImpl.setWorkflowDAO(workflowDAO);
+        ToolsApiExtendedServiceImpl.setConfig(configuration);
+
         environment.jersey().register(new ToolsApi());
+        environment.jersey().register(new ToolsExtendedApi());
         environment.jersey().register(new MetadataApi());
         environment.jersey().register(new ToolClassesApi());
 

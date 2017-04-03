@@ -34,6 +34,7 @@ import io.swagger.annotations.Tag;
         @Tag(name = "containers", description = "List and register entries in the dockstore (pairs of images + metadata (CWL and Dockerfile))"),
         @Tag(name = "containertags", description = "List and modify tags for containers"),
         @Tag(name = "GA4GH", description = "A curated subset of resources proposed as a common standard for tool repositories"),
+        @Tag(name = "extendedGA4GH", description = "An extension of GA4GH"),
         @Tag(name = "github.repo", description = "List source code repositories (should be generalized from github)"),
         @Tag(name = "integration.bitbucket.org", description = "stop-gap allowing developers to associate with bitbucket"),
         @Tag(name = "integration.github.com", description = "stop-gap allowing developers to associate with github"),
