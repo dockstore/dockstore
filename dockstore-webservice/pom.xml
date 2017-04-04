@@ -609,12 +609,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
                 <configuration>
-                    <artifactSet>
-                        <excludes>
-                            <exclude>ch.qos.logback:logback-core</exclude>
-                            <exclude>ch.qos.logback:logback-classic</exclude>
-                        </excludes>
-                    </artifactSet>
                     <filters>
                         <filter>
                             <artifact>io.dockstore:dockstore-client</artifact>
