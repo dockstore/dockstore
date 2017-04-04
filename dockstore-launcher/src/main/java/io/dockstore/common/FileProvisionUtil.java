@@ -75,10 +75,11 @@ public final class FileProvisionUtil {
             FileSystemManager fsManager = VFS.getManager();
             org.apache.commons.vfs2.FileObject src = fsManager.resolveFile(path, opts);
             org.apache.commons.vfs2.FileObject dest = fsManager.resolveFile(new File(targetFilePath).getAbsolutePath());
-            InputStream inputStream = src.getContent().getInputStream();
             long inputSize = src.getContent().getSize();
-            OutputStream outputSteam = dest.getContent().getOutputStream();
-            copyFromInputStreamToOutputStream(inputStream, inputSize, outputSteam);
+            try (InputStream inputStream = src.getContent().getInputStream();
+                    OutputStream outputSteam = dest.getContent().getOutputStream()) {
+                copyFromInputStreamToOutputStream(inputStream, inputSize, outputSteam);
+            }
             return true;
         } catch (IOException e) {
             LOG.error(e.getMessage());
