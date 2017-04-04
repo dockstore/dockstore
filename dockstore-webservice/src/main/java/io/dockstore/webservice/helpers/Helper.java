@@ -495,12 +495,7 @@ public final class Helper {
 
             if (isOrg) {
                 List<String> namespaces = factory.getNamespaces();
-                for (String nm : namespaces) {
-                    if (nm.equals(namespace)) {
-                        return true;
-                    }
-                    return false;
-                }
+                return namespaces.stream().anyMatch(nm -> nm.equals(namespace));
             } else {
                 return (namespace.equals(quayUsername));
             }
