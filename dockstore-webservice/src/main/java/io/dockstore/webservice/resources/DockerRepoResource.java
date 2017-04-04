@@ -299,6 +299,17 @@ public class DockerRepoResource {
     @GET
     @Timed
     @UnitOfWork
+    @Path("/namespace/{namespace}/published")
+    @ApiOperation(value = "List all published containers belonging to the specified namespace", notes = "NO authentication", response = Tool.class, responseContainer = "List")
+    public List<Tool> getPublishedContainersByNamespace(@ApiParam(value = "namespace", required = true) @PathParam("namespace") String namespace) {
+        List<Tool> tools = toolDAO.findPublishedByNamespace(namespace);
+        entryVersionHelper.filterContainersForHiddenTags(tools);
+        return tools;
+    }
+  
+    @GET
+    @Timed
+    @UnitOfWork
     @Path("/schema/{containerId}/published")
     @ApiOperation(value = "Get a published container's schema by ID", notes = "NO authentication", responseContainer = "List")
     public List getPublishedContainerSchema(@ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {

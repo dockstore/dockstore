@@ -16,10 +16,10 @@
 
 package io.dockstore.webservice.jdbi;
 
-import java.util.List;
-
 import io.dockstore.webservice.core.Workflow;
 import org.hibernate.SessionFactory;
+
+import java.util.List;
 
 /**
  * @author dyuen
@@ -39,5 +39,9 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
 
     public List<Workflow> findByGitUrl(String giturl) {
         return list(namedQuery("io.dockstore.webservice.core.Workflow.findByGitUrl").setParameter("gitUrl", giturl));
+    }
+
+    public List<Workflow> findPublishedByOrganization(String organization) {
+        return list(namedQuery("io.dockstore.webservice.core.Workflow.findPublishedByOrganization").setParameter("organization", organization));
     }
 }

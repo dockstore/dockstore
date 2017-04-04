@@ -53,6 +53,10 @@ public class ToolDAO extends EntryDAO<Tool> {
                 .setParameter("toolname", tool));
     }
 
+    public List<Tool> findPublishedByNamespace(String namespace) {
+        return list(namedQuery("io.dockstore.webservice.core.Tool.findPublishedByNamespace").setParameter("namespace", namespace));
+    }
+  
     /**
      * Return map containing schema.org info retrieved from the specified tool's descriptor cwl
      * @param id of specified tool
