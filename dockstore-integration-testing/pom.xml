@@ -189,6 +189,18 @@
                                         <include>Cromwell.stdout.txt</include>
                                     </includes>
                                 </fileset>
+                                <fileset>
+                                    <directory>src/test/resources/pluginsTest1/plugins</directory>
+                                    <excludes>
+                                        <exclude>*abled.txt</exclude>
+                                    </excludes>
+                                </fileset>
+                                <fileset>
+                                    <directory>src/test/resources/pluginsTest2/plugins</directory>
+                                    <excludes>
+                                        <exclude>*abled.txt</exclude>
+                                    </excludes>
+                                </fileset>
                             </filesets>
                         </configuration>
                     </execution>
