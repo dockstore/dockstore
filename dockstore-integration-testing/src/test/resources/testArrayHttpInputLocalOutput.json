@@ -14,7 +14,7 @@
     }
   ],
   "hello_input": {
-    "path": "https://raw.githubusercontent.com/ga4gh/dockstore/2.0/README.md",
+    "path": "https://raw.githubusercontent.com/ga4gh/dockstore/1.0/README.md",
     "class": "File"
   },
   "hello_output": {
