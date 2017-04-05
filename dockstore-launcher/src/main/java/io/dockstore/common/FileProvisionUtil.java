@@ -63,7 +63,7 @@ public final class FileProvisionUtil {
         // disable utility constructor
     }
 
-    static void downloadFromVFS2(String path, String targetFilePath) {
+    static boolean downloadFromVFS2(String path, String targetFilePath) {
         // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
         // https://commons.apache.org/proper/commons-vfs/filesystems.html
         try {
@@ -75,14 +75,15 @@ public final class FileProvisionUtil {
             FileSystemManager fsManager = VFS.getManager();
             org.apache.commons.vfs2.FileObject src = fsManager.resolveFile(path, opts);
             org.apache.commons.vfs2.FileObject dest = fsManager.resolveFile(new File(targetFilePath).getAbsolutePath());
-            InputStream inputStream = src.getContent().getInputStream();
             long inputSize = src.getContent().getSize();
-            OutputStream outputSteam = dest.getContent().getOutputStream();
-            copyFromInputStreamToOutputStream(inputStream, inputSize, outputSteam);
-            // dest.copyFrom(src, Selectors.SELECT_SELF);
+            try (InputStream inputStream = src.getContent().getInputStream();
+                    OutputStream outputSteam = dest.getContent().getOutputStream()) {
+                copyFromInputStreamToOutputStream(inputStream, inputSize, outputSteam);
+            }
+            return true;
         } catch (IOException e) {
             LOG.error(e.getMessage());
-            throw new RuntimeException("Could not provision input files", e);
+            return false;
         }
     }
 

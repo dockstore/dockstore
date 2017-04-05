@@ -34,6 +34,7 @@ import java.util.stream.Stream;
 
 import com.github.zafarkhaja.semver.UnexpectedCharacterException;
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import io.dockstore.provision.ProvisionInterface;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.configuration2.INIConfiguration;
@@ -43,7 +44,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemManager;
 import org.apache.commons.vfs2.VFS;
-import com.google.common.collect.Multimap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ro.fortsoft.pf4j.PluginManager;
@@ -55,6 +55,8 @@ import ro.fortsoft.pf4j.PluginWrapper;
  */
 public class FileProvisioning {
 
+    private static final int DEFAULT_RETRIES = 3;
+    private static final String FILE_PROVISION_RETRIES = "file-provision-retries";
     private static final Logger LOG = LoggerFactory.getLogger(FileProvisioning.class);
 
     private List<ProvisionInterface> plugins = new ArrayList<>();
@@ -63,7 +65,6 @@ public class FileProvisioning {
 
     // map from cwl emitted local file path to info object containing
     private List<ImmutablePair<String, FileInfo>> registeredFiles = new ArrayList<>();
-
 
     /**
      * Constructor
@@ -150,10 +151,7 @@ public class FileProvisioning {
             for (ProvisionInterface provision : plugins) {
                 if (provision.schemesHandled().contains(scheme.toUpperCase()) || provision.schemesHandled().contains(scheme.toLowerCase())) {
                     System.out.println("Calling on plugin " + provision.getClass().getName() + " to provision " + targetPath);
-                    boolean downloaded = provision.downloadFrom(targetPath, localPath);
-                    if (!downloaded) {
-                        throw new RuntimeException("Could not provision: " + targetPath + " to " + localPath);
-                    }
+                    handleProvisionWithRetries(targetPath, localPath, provision);
                 }
             }
         }
@@ -161,9 +159,8 @@ public class FileProvisioning {
         if (!Files.exists(localPath)) {
             // check if we can use a plugin
             boolean localFileType = objectIdentifier.getScheme() == null;
-
             if (!localFileType) {
-                FileProvisionUtil.downloadFromVFS2(targetPath, localPath.toFile().getAbsolutePath());
+                handleProvisionWithRetries(targetPath, localPath, null);
             } else {
                 // hard link into target location
                 Path actualTargetPath = null;
@@ -213,6 +210,45 @@ public class FileProvisioning {
                 }
             }
         }
+    }
+
+    private void handleProvisionWithRetries(String targetPath, Path localPath, ProvisionInterface provision) {
+        int maxRetries = config.getInt(FILE_PROVISION_RETRIES, DEFAULT_RETRIES);
+        boolean success;
+        int retries = 0;
+        do {
+            if (retries > 0) {
+                long waitTime = getWaitTimeExp(retries);
+                System.out.print("Waiting for " + waitTime + " milliseconds due to failure\n");
+                // Wait for the result.
+                try {
+                    Thread.sleep(waitTime);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException("Could not wait for retry");
+                }
+            }
+            if (provision != null) {
+                success = provision.downloadFrom(targetPath, localPath);
+            } else {
+                success = FileProvisionUtil.downloadFromVFS2(targetPath, localPath.toFile().getAbsolutePath());
+            }
+
+            if (!success) {
+                LOG.info("Could not provision " + targetPath + " to " + localPath + " , for retry " + retries);
+            }
+        } while (!success && retries++ < maxRetries);
+        if (!success) {
+            throw new RuntimeException("Could not provision: " + targetPath + " to " + localPath);
+        }
+    }
+
+    /*
+     * Returns the next wait interval, in milliseconds, using an exponential
+     * backoff algorithm.
+    */
+    public static long getWaitTimeExp(int retryCount) {
+        final long retryMultiplier = 100L;
+        return (long)Math.pow(2, retryCount) * retryMultiplier;
     }
 
     public static String getCacheDirectory(INIConfiguration config) {
