@@ -216,9 +216,10 @@ public class WorkflowClient extends AbstractEntryClient {
 
     @Override
     protected void printClientSpecificHelp() {
+        out("");
         out("  manual_publish   :  registers a Github, Gitlab or Bitbucket workflow in the dockstore and then attempts to publish");
         out("");
-        out("  " + UPDATE_WORKFLOW + "  :   updates certain fields of a workflow");
+        out("  " + UPDATE_WORKFLOW + "  :  updates certain fields of a workflow");
         out("");
         out("  version_tag      :  updates an existing version tag of a workflow");
         out("");
@@ -245,7 +246,7 @@ public class WorkflowClient extends AbstractEntryClient {
                 out(runString);
             }
         } catch (Exception e) {
-            exceptionMessage(e, e.getMessage(), COMMAND_ERROR);
+            out(e.getMessage());
             printJCommanderHelp(jc, "dockstore workflow convert", commandName);
         }
     }
@@ -269,7 +270,7 @@ public class WorkflowClient extends AbstractEntryClient {
                 out(runString);
             }
         } catch (Exception e) {
-            exceptionMessage(e, e.getMessage(), COMMAND_ERROR);
+            out(e.getMessage());
             printJCommanderHelp(jc, "dockstore workflow convert", commandName);
         }
     }
@@ -333,14 +334,14 @@ public class WorkflowClient extends AbstractEntryClient {
                             }
                         }
                     } catch (ApiException e) {
-                        errorMessage("Could not get workflow: " + path, ENTRY_NOT_FOUND);
+                        out("Could not get workflow: " + path, ENTRY_NOT_FOUND);
                     }
                 } else {
                     checkEntryFile(localEntry, jsonRun, yamlRun, tsvRun, wdlOutputTarget);
                 }
             } else {
-                errorMessage("You can only use one of --local-entry and --entry at a time. Please use --help for more information.",
-                        CLIENT_ERROR);
+                out("You can only use one of --local-entry and --entry at a time. Please use --help for more information.");
+                JCommanderUtility.printJCommanderHelpLaunch(jCommander, "dockstore workflow", commandName);
             }
         }
     }
