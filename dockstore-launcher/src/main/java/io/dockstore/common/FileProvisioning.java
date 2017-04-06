@@ -18,6 +18,8 @@ package io.dockstore.common;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -98,6 +100,39 @@ public class FileProvisioning {
         }
     }
 
+    /*
+     * Returns the next wait interval, in milliseconds, using an exponential
+     * backoff algorithm.
+    */
+    public static long getWaitTimeExp(int retryCount) {
+        final long retryMultiplier = 100L;
+        return (long)Math.pow(2, retryCount) * retryMultiplier;
+    }
+
+    public static String getCacheDirectory(INIConfiguration config) {
+        return config.getString("cache-dir", System.getProperty("user.home") + File.separator + ".dockstore" + File.separator + "cache");
+    }
+
+    private static boolean isCacheOn(INIConfiguration config) {
+        final String useCache = config.getString("use-cache", "false");
+        return "true".equalsIgnoreCase(useCache) || "use".equalsIgnoreCase(useCache) || "T".equalsIgnoreCase(useCache);
+    }
+
+    public static void main(String[] args) {
+        String userHome = System.getProperty("user.home");
+        PluginManager manager = FileProvisionUtil
+                .getPluginManager(Utilities.parseConfig(userHome + File.separator + ".dockstore" + File.separator + "config"));
+
+        List<ProvisionInterface> greetings = manager.getExtensions(ProvisionInterface.class);
+        for (ProvisionInterface provision : greetings) {
+            System.out.println("Plugin: " + provision.getClass().getName());
+            System.out.println("\tSchemes handled: " + provision.getClass().getName());
+            for (String prefix : provision.schemesHandled()) {
+                System.out.println("\t\t " + prefix);
+            }
+        }
+    }
+
     /**
      * This method downloads both local and remote files into the working directory
      *
@@ -149,7 +184,8 @@ public class FileProvisioning {
         if (objectIdentifier.getScheme() != null) {
             String scheme = objectIdentifier.getScheme().toLowerCase();
             for (ProvisionInterface provision : plugins) {
-                if (provision.schemesHandled().contains(scheme.toUpperCase()) || provision.schemesHandled().contains(scheme.toLowerCase())) {
+                if (provision.schemesHandled().contains(scheme.toUpperCase()) || provision.schemesHandled()
+                        .contains(scheme.toLowerCase())) {
                     System.out.println("Calling on plugin " + provision.getClass().getName() + " to provision " + targetPath);
                     handleProvisionWithRetries(targetPath, localPath, provision);
                 }
@@ -242,28 +278,11 @@ public class FileProvisioning {
         }
     }
 
-    /*
-     * Returns the next wait interval, in milliseconds, using an exponential
-     * backoff algorithm.
-    */
-    public static long getWaitTimeExp(int retryCount) {
-        final long retryMultiplier = 100L;
-        return (long)Math.pow(2, retryCount) * retryMultiplier;
-    }
-
-    public static String getCacheDirectory(INIConfiguration config) {
-        return config.getString("cache-dir", System.getProperty("user.home") + File.separator + ".dockstore" + File.separator + "cache");
-    }
-
-    private static boolean isCacheOn(INIConfiguration config) {
-        final String useCache = config.getString("use-cache", "false");
-        return "true".equalsIgnoreCase(useCache) || "use".equalsIgnoreCase(useCache) || "T".equalsIgnoreCase(useCache);
-    }
-
     /**
      * Copies files from srcPath to destPath
+     *
      * @param srcPath source file
-     * @param info destination and metddata associated with one file
+     * @param info    destination and metddata associated with one file
      */
     public void registerOutputFile(String srcPath, FileInfo info) {
         this.registeredFiles.add(ImmutablePair.of(srcPath, info));
@@ -272,9 +291,9 @@ public class FileProvisioning {
     /**
      * Copies files from srcPath to destPath
      *
-     * @param srcPath  source file
-     * @param destPath destination file
-     * @param metadata metddata associated with one file
+     * @param srcPath            source file
+     * @param destPath           destination file
+     * @param metadata           metddata associated with one file
      * @param provisionInterface plugin used for this file
      */
     private void provisionOutputFile(String srcPath, String destPath, String metadata, ProvisionInterface provisionInterface) {
@@ -286,31 +305,20 @@ public class FileProvisioning {
             provisionInterface.uploadTo(destPath, Paths.get(srcPath), Optional.ofNullable(metadata));
         } else {
             try {
-                FileSystemManager fsManager;
-                // trigger a copy from the URL to a local file path that's a UUID to avoid collision
-                fsManager = VFS.getManager();
-                // check for a local file path
+                FileSystemManager fsManager = VFS.getManager();
                 Path currentWorkingDir = Paths.get("").toAbsolutePath();
                 FileObject dest = fsManager.resolveFile(currentWorkingDir.toFile(), destPath);
                 FileObject src = fsManager.resolveFile(sourceFile.getAbsolutePath());
-                FileProvisionUtil.copyFromInputStreamToOutputStream(src.getContent().getInputStream(), inputSize, dest.getContent().getOutputStream());
+                try (InputStream inputStream = src.getContent().getInputStream();
+                        OutputStream outputSteam = dest.getContent().getOutputStream()) {
+                    // trigger a copy from the URL to a local file path that's a UUID to avoid collision
+                    // check for a local file path
+                    FileProvisionUtil.copyFromInputStreamToOutputStream(inputStream, inputSize, outputSteam);
+                } catch (IOException e) {
+                    throw new RuntimeException("Could not provision output files", e);
+                }
             } catch (IOException e) {
-                throw new RuntimeException("Could not provision output files", e);
-            }
-        }
-    }
-
-    public static void main(String[] args) {
-        String userHome = System.getProperty("user.home");
-        PluginManager manager = FileProvisionUtil
-                .getPluginManager(Utilities.parseConfig(userHome + File.separator + ".dockstore" + File.separator + "config"));
-
-        List<ProvisionInterface> greetings = manager.getExtensions(ProvisionInterface.class);
-        for (ProvisionInterface provision : greetings) {
-            System.out.println("Plugin: " + provision.getClass().getName());
-            System.out.println("\tSchemes handled: " + provision.getClass().getName());
-            for (String prefix: provision.schemesHandled()) {
-                System.out.println("\t\t " + prefix);
+                LOG.error(e.getMessage());
             }
         }
     }
@@ -321,7 +329,8 @@ public class FileProvisioning {
         for (Map.Entry<ProvisionInterface, Collection<Pair<String, FileInfo>>> entry : provisionInterfaceCollectionMap.entrySet()) {
             ProvisionInterface pInterface = entry.getKey();
             Pair<String, FileInfo>[] pairs = entry.getValue().toArray(new Pair[entry.getValue().size()]);
-            List<Optional<String>> metadataList = Stream.of(pairs).map(pair -> Optional.ofNullable(pair.getValue().getMetadata())).collect(Collectors.toList());
+            List<Optional<String>> metadataList = Stream.of(pairs).map(pair -> Optional.ofNullable(pair.getValue().getMetadata()))
+                    .collect(Collectors.toList());
             List<Path> srcList = Stream.of(pairs).map(pair -> Paths.get(pair.getKey())).collect(Collectors.toList());
             List<String> destList = Stream.of(pairs).map(pair -> pair.getValue().getUrl()).collect(Collectors.toList());
 
@@ -353,7 +362,8 @@ public class FileProvisioning {
             if (objectIdentifier.getScheme() != null) {
                 String scheme = objectIdentifier.getScheme();
                 for (ProvisionInterface provision : plugins) {
-                    if (provision.schemesHandled().contains(scheme.toUpperCase()) || provision.schemesHandled().contains(scheme.toLowerCase())) {
+                    if (provision.schemesHandled().contains(scheme.toUpperCase()) || provision.schemesHandled()
+                            .contains(scheme.toLowerCase())) {
                         map.put(provision, pair);
                         handled = true;
                     }

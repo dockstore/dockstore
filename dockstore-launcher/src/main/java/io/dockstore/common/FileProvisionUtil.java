@@ -38,7 +38,6 @@ import com.google.gson.stream.JsonReader;
 import io.dockstore.provision.ProgressPrinter;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.net.io.CopyStreamEvent;
 import org.apache.commons.net.io.CopyStreamListener;
 import org.apache.commons.net.io.Util;
@@ -116,9 +115,6 @@ public final class FileProvisionUtil {
             Util.copyStream(inputStream, outputStream, Util.DEFAULT_COPY_BUFFER_SIZE * largeBuffer, inputSize, listener);
         } catch (IOException e) {
             throw new RuntimeException("Could not provision input files", e);
-        } finally {
-            IOUtils.closeQuietly(inputStream);
-            System.out.println();
         }
     }
 
