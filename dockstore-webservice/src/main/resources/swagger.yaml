@@ -460,6 +460,68 @@ info:
   title: Dockstore API
   version: 1.0.2
 paths:
+  /api/ga4gh/v1/extended/containers/{organization}:
+    get:
+      description: 'This endpoint returns entries of an organization. '
+      operationId: entriesOrgGet
+      parameters:
+      - {description: 'An organization, for example `cancercollaboratory`', in: path,
+        name: organization, required: true, type: string}
+      produces: [application/json, text/plain]
+      responses:
+        200:
+          description: An array of Tools of the input organization.
+          schema:
+            items: {$ref: '#/definitions/Tool'}
+            type: array
+      summary: List entries of an organization
+      tags: [GA4GH]
+  /api/ga4gh/v1/extended/organizations:
+    get:
+      description: 'This endpoint returns list of all organizations. '
+      operationId: entriesOrgGet
+      parameters: []
+      produces: [application/json, text/plain]
+      responses:
+        200:
+          description: An array of organizations' names.
+          schema:
+            items: {type: string}
+            type: array
+      summary: List all organizations
+      tags: [GA4GH]
+  /api/ga4gh/v1/extended/tools/{organization}:
+    get:
+      description: 'This endpoint returns tools of an organization. '
+      operationId: toolsOrgGet
+      parameters:
+      - {description: 'An organization, for example `cancercollaboratory`', in: path,
+        name: organization, required: true, type: string}
+      produces: [application/json, text/plain]
+      responses:
+        200:
+          description: An array of Tools of the input organization.
+          schema:
+            items: {$ref: '#/definitions/Tool'}
+            type: array
+      summary: List tools of an organization
+      tags: [GA4GH]
+  /api/ga4gh/v1/extended/workflows/{organization}:
+    get:
+      description: 'This endpoint returns workflows of an organization. '
+      operationId: workflowsOrgGet
+      parameters:
+      - {description: 'An organization, for example `cancercollaboratory`', in: path,
+        name: organization, required: true, type: string}
+      produces: [application/json, text/plain]
+      responses:
+        200:
+          description: An array of Tools of the input organization.
+          schema:
+            items: {$ref: '#/definitions/Tool'}
+            type: array
+      summary: List workflows of an organization
+      tags: [GA4GH]
   /api/ga4gh/v1/metadata:
     get:
       description: Return some metadata that is useful for describing this registry
@@ -809,6 +871,21 @@ paths:
               type: object
             type: array
       summary: Get the list of docker registries supported on Dockstore.
+      tags: [containers]
+  /containers/namespace/{namespace}/published:
+    get:
+      description: NO authentication
+      operationId: getPublishedContainersByNamespace
+      parameters:
+      - {description: namespace, in: path, name: namespace, required: true, type: string}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema:
+            items: {$ref: '#/definitions/DockstoreTool'}
+            type: array
+      summary: List all published containers belonging to the specified namespace
       tags: [containers]
   /containers/path/tool/{repository}:
     get:
@@ -1938,6 +2015,22 @@ paths:
           schema: {$ref: '#/definitions/Workflow'}
       summary: Manually register a workflow
       tags: [workflows]
+  /workflows/organization/{organization}/published:
+    get:
+      description: NO authentication
+      operationId: getPublishedWorkflowsByOrganization
+      parameters:
+      - {description: organization, in: path, name: organization, required: true,
+        type: string}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema:
+            items: {$ref: '#/definitions/Workflow'}
+            type: array
+      summary: List all published workflows belonging to the specified namespace
+      tags: [workflows]
   /workflows/path/workflow/{repository}:
     get:
       description: Lists info of workflow. Enter full path.
@@ -2470,6 +2563,7 @@ tags:
 - {description: List and modify tags for containers, name: containertags}
 - {description: A curated subset of resources proposed as a common standard for tool repositories,
   name: GA4GH}
+- {description: An extension of GA4GH, name: extendedGA4GH}
 - {description: List source code repositories (should be generalized from github),
   name: github.repo}
 - {description: stop-gap allowing developers to associate with bitbucket, name: integration.bitbucket.org}
