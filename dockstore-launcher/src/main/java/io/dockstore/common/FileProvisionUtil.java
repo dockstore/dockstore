@@ -94,7 +94,7 @@ public final class FileProvisionUtil {
      * @param outputSteam destination
      * @throws IOException throws an exception if unable to provision input files
      */
-    static void copyFromInputStreamToOutputStream(InputStream inputStream, long inputSize, OutputStream outputSteam) throws IOException {
+    static void copyFromInputStreamToOutputStream(InputStream inputStream, long inputSize, OutputStream outputStream) throws IOException {
         CopyStreamListener listener = new CopyStreamListener() {
             ProgressPrinter printer = new ProgressPrinter();
 
@@ -108,7 +108,7 @@ public final class FileProvisionUtil {
                 printer.handleProgress(totalBytesTransferred, streamSize);
             }
         };
-        try (OutputStream outputStream = outputSteam) {
+        try {
             // a larger buffer improves copy performance
             // we can also split this (local file copy) out into a plugin later
             final int largeBuffer = 100;
