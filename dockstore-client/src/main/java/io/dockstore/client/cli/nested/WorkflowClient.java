@@ -248,6 +248,7 @@ public class WorkflowClient extends AbstractEntryClient {
         } catch (Exception e) {
             out(e.getMessage());
             printJCommanderHelp(jc, "dockstore workflow convert", commandName);
+            System.exit(CLIENT_ERROR);
         }
     }
 
@@ -272,6 +273,7 @@ public class WorkflowClient extends AbstractEntryClient {
         } catch (Exception e) {
             out(e.getMessage());
             printJCommanderHelp(jc, "dockstore workflow convert", commandName);
+            System.exit(CLIENT_ERROR);
         }
     }
 
@@ -334,7 +336,7 @@ public class WorkflowClient extends AbstractEntryClient {
                             }
                         }
                     } catch (ApiException e) {
-                        out("Could not get workflow: " + path, ENTRY_NOT_FOUND);
+                        errorMessage("Could not get workflow: " + path, ENTRY_NOT_FOUND);
                     }
                 } else {
                     checkEntryFile(localEntry, jsonRun, yamlRun, tsvRun, wdlOutputTarget);
@@ -342,6 +344,7 @@ public class WorkflowClient extends AbstractEntryClient {
             } else {
                 out("You can only use one of --local-entry and --entry at a time. Please use --help for more information.");
                 JCommanderUtility.printJCommanderHelpLaunch(jCommander, "dockstore workflow", commandName);
+                System.exit(CLIENT_ERROR);
             }
         }
     }
