@@ -91,7 +91,7 @@ public final class FileProvisionUtil {
      *
      * @param inputStream source
      * @param inputSize   total size
-     * @param outputSteam destination
+     * @param outputStream destination
      * @throws IOException throws an exception if unable to provision input files
      */
     static void copyFromInputStreamToOutputStream(InputStream inputStream, long inputSize, OutputStream outputStream) throws IOException {
@@ -115,6 +115,8 @@ public final class FileProvisionUtil {
             Util.copyStream(inputStream, outputStream, Util.DEFAULT_COPY_BUFFER_SIZE * largeBuffer, inputSize, listener);
         } catch (IOException e) {
             throw new RuntimeException("Could not provision input files", e);
+        } finally {
+            System.out.println();
         }
     }
 
