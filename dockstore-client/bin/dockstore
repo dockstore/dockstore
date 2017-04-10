@@ -49,7 +49,9 @@ export DOCKSTORE_SETTINGS="${DOCKSTORE_SETTINGS:-"$DOCKSTORE_HOME/config"}"
 # normalize $0 on certain BSDs
 if [ "$(dirname "$0")" = "." ]; then
     if ! SCRIPT="$(which $(basename "$0"))"; then
-        echo "dockstore needs to be on PATH for certain commands to work (like --upgrade)"
+         if [[ "$@" != *"--script"* ]]; then
+            echo "dockstore needs to be on PATH for certain commands to work (like --upgrade)"
+        fi
     fi
 else
     SCRIPT="$0"
