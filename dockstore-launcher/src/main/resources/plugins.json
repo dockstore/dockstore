@@ -5,6 +5,12 @@
     "name": "dockstore-file-s3-plugin",
     "version": "0.0.3"
   },{
+    "name": "dockstore-file-s3cmd-plugin",
+    "version": "0.0.4"
+  },{
+    "name": "dockstore-file-icgc-get-plugin",
+    "version": "0.0.4"
+  },{
     "name": "dockstore-file-synapse-plugin",
     "version": "0.0.5"
   }]
