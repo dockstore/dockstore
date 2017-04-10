@@ -365,27 +365,23 @@ public class SystemClientIT {
         final String basePath = client.getBasePath();
         String encodedID = "registry.hub.docker.com%2Fseqware%2Fseqware%2Ftest5";
         URL url = new URL(
-                basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/cwl-plain/descriptor");
+                basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/plain-CWL/descriptor");
         List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
         assertTrue(strings.size() == 1 && strings.get(0).equals("cwlstuff"));
 
         //hit up the relative path version
         String encodedPath = "%2FDockstore.cwl";
         url = new URL(
-                basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/cwl-plain/descriptor/"
+                basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/plain-CWL/descriptor/"
                         + encodedPath);
         strings = Resources.readLines(url, Charset.forName("UTF-8"));
         assertTrue(strings.size() == 1 && strings.get(0).equals("cwlstuff"));
 
         // Get test files
-        url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/cwl-plain/tests/");
+        url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/plain-CWL/tests/");
         strings = Resources.readLines(url, Charset.forName("UTF-8"));
-        Gson gson = new Gson();
-        List<SourceFile> files = gson.fromJson(strings.get(0), new TypeToken<List<SourceFile>>(){}.getType());
-        assertTrue(files.size() == 2);
-        assertTrue(files.get(0).getContent().equals("testparameterstuff"));
-        assertTrue(files.get(1).getContent().equals("moretestparameterstuff"));
-
+        assertTrue(strings.get(0).equals("testparameterstuff"));
+        assertTrue(strings.get(1).equals("moretestparameterstuff"));
     }
 
     @Test
