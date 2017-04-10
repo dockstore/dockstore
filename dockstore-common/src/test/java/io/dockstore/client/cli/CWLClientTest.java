@@ -69,7 +69,7 @@ public class CWLClientTest {
     @Test
     public void testFileConversions() throws Exception {
         final Object file1 = CWL.getStub("File", null);
-        assertTrue(file1 instanceof Map && "fill me in".equals(((Map)file1).get("path")));
+        assertTrue(file1 instanceof Map && "/tmp/fill_me_in.txt".equals(((Map)file1).get("path")));
         final Object file2 = CWL.getStub("File", "foobar");
         assertTrue(file2 instanceof Map && "foobar".equals(((Map)file2).get("path")));
     }
