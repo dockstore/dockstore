@@ -89,8 +89,8 @@ public final class FileProvisionUtil {
     /**
      * Copy from stream to stream while displaying progress
      *
-     * @param inputStream source
-     * @param inputSize   total size
+     * @param inputStream  source
+     * @param inputSize    total size
      * @param outputStream destination
      * @throws IOException throws an exception if unable to provision input files
      */
@@ -174,6 +174,7 @@ public final class FileProvisionUtil {
                 System.exit(1);
             } else {
                 createPluginJSONFile(pluginJSONPath);
+                LOG.info("Created plugins.json file");
             }
         }
         Gson gson = new Gson();
@@ -246,9 +247,8 @@ public final class FileProvisionUtil {
      * @param location Location of where to create the file
      */
     static boolean createPluginJSONFile(String location) {
-        InputStream in = FileProvisionUtil.class.getResourceAsStream("/" + PLUGINS_JSON_FILENAME);
-        File targetFile = new File(location);
-        try {
+        try (InputStream in = FileProvisionUtil.class.getResourceAsStream("/" + PLUGINS_JSON_FILENAME)) {
+            File targetFile = new File(location);
             FileUtils.copyInputStreamToFile(in, targetFile);
             return true;
         } catch (IOException e) {
