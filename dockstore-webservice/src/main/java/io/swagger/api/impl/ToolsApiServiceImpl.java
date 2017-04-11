@@ -158,10 +158,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         if (fileType == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-        MediaType mediaType = value.getMediaType();
-        MediaType plainTextType = MediaType.valueOf(MediaType.TEXT_PLAIN);
-
-        return getFileByToolVersionID(id, versionId, fileType, null, Objects.equals(mediaType, plainTextType) || StringUtils.containsIgnoreCase(type, "plain"));
+        return getFileByToolVersionID(id, versionId, fileType, null, value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || StringUtils.containsIgnoreCase(type, "plain"));
     }
 
     @Override
@@ -175,10 +172,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
 
-        MediaType mediaType = value.getMediaType();
-        MediaType plainTextType = MediaType.valueOf(MediaType.TEXT_PLAIN);
-
-        return getFileByToolVersionID(id, versionId, fileType, relativePath, Objects.equals(mediaType, plainTextType) || StringUtils.containsIgnoreCase(type, "plain"));
+        return getFileByToolVersionID(id, versionId, fileType, relativePath, value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || StringUtils.containsIgnoreCase(type, "plain"));
     }
 
     @Override
@@ -192,17 +186,18 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
 
-        MediaType mediaType = value.getMediaType();
-        MediaType plainTextType = MediaType.valueOf(MediaType.TEXT_PLAIN);
-
         // The getFileType version never returns *TEST_JSON filetypes.  Linking CWL_TEST_JSON with DOCKSTORE_CWL and etc until solved.
+        boolean plainTextResponse = value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || type.contains("plain");
+
         switch (fileType) {
         case CWL_TEST_JSON:
         case DOCKSTORE_CWL:
-            return getFileByToolVersionID(id, versionId, CWL_TEST_JSON, null, Objects.equals(mediaType, plainTextType) || type.contains("plain"));
+            return getFileByToolVersionID(id, versionId, CWL_TEST_JSON, null,
+                    plainTextResponse);
         case WDL_TEST_JSON:
         case DOCKSTORE_WDL:
-            return getFileByToolVersionID(id, versionId, WDL_TEST_JSON, null, Objects.equals(mediaType, plainTextType) || type.contains("plain"));
+            return getFileByToolVersionID(id, versionId, WDL_TEST_JSON, null,
+                    plainTextResponse);
         case DOCKERFILE:
             return Response.status(Response.Status.BAD_REQUEST).build();
 
@@ -230,9 +225,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     @Override
     public Response toolsIdVersionsVersionIdDockerfileGet(String id, String versionId, SecurityContext securityContext, ContainerRequestContext value)
             throws NotFoundException {
-        MediaType mediaType = value.getMediaType();
-        MediaType plainTextType = MediaType.valueOf(MediaType.TEXT_PLAIN);
-        return getFileByToolVersionID(id, versionId, DOCKERFILE, null, Objects.equals(mediaType, plainTextType));
+        return getFileByToolVersionID(id, versionId, DOCKERFILE, null, value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE));
     }
 
     @SuppressWarnings("CheckStyle")
