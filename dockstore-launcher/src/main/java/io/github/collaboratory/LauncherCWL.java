@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -395,10 +396,12 @@ public class LauncherCWL {
     }
 
     private Map<String, Object> loadJob(String jobPath) {
-        try {
-            return (Map<String, Object>)yaml.load(new FileInputStream(jobPath));
+        try (InputStream inputStream = new FileInputStream(jobPath)) {
+            return (Map<String, Object>)yaml.load(inputStream);
         } catch (FileNotFoundException e) {
-            throw new RuntimeException("could not load job from yaml", e);
+            throw new RuntimeException("Could not load job from yaml", e);
+        } catch (IOException e) {
+            throw new RuntimeException("Could not load job from yaml", e);
         }
     }
 
@@ -709,17 +712,22 @@ public class LauncherCWL {
      */
     private void copyIndividualFile(String key, String path, Map<String, FileProvisioning.FileInfo> fileMap, File downloadDirFileObj,
             boolean record) {
-        String shortfileName = Paths.get(path).getFileName().toString();
+        Path fileNamePath = Paths.get(path).getFileName();
+        if (fileNamePath == null) {
+            throw new RuntimeException("Could not get filename");
+        }
+        String shortFileName = fileNamePath.toString();
+
         // will need to be handled by plug-ins, sanitize file names
         StringBuilder cleanShortFileName = new StringBuilder();
-        for (char c : shortfileName.toCharArray()) {
+        for (char c : shortFileName.toCharArray()) {
             if (c == '.' || Character.isJavaIdentifierPart(c)) {
                 cleanShortFileName.append(c);
             }
         }
-        shortfileName = cleanShortFileName.toString();
+        shortFileName = cleanShortFileName.toString();
 
-        final Path targetFilePath = Paths.get(downloadDirFileObj.getAbsolutePath(), shortfileName);
+        final Path targetFilePath = Paths.get(downloadDirFileObj.getAbsolutePath(), shortFileName);
         fileProvisioning.provisionInputFile(path, targetFilePath);
         // now add this info to a hash so I can later reconstruct a docker -v command
         FileProvisioning.FileInfo info = new FileProvisioning.FileInfo();
@@ -729,7 +737,7 @@ public class LauncherCWL {
         if (record) {
             fileMap.put(key, info);
         }
-        LOG.info("DOWNLOADED FILE: LOCAL: {} URL: {}", shortfileName, path);
+        LOG.info("DOWNLOADED FILE: LOCAL: {} URL: {}", shortFileName, path);
     }
 
     private CommandLine parseCommandLine(CommandLineParser parser, String[] args) {

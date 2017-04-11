@@ -18,6 +18,7 @@ package io.github.collaboratory;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 
 import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.Workflow;
@@ -84,7 +85,7 @@ public class LauncherTest {
                 stdout, stderr);
         launcherCWL.run(CommandLineTool.class);
 
-        assertTrue(!stdout.toString().isEmpty());
+        assertTrue(!stdout.toString("UTF-8").isEmpty());
     }
 
     @Test
@@ -102,7 +103,7 @@ public class LauncherTest {
                 stdout, stderr);
         launcherCWL.run(Workflow.class);
 
-        assertTrue(!stdout.toString().isEmpty());
+        assertTrue(!stdout.toString("UTF-8").isEmpty());
     }
 
 

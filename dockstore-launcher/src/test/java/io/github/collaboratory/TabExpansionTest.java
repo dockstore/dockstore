@@ -33,6 +33,6 @@ public class TabExpansionTest {
 
     @Test
     public void testForNonCrashing() {
-        TabExpansionUtil.main(null);
+        TabExpansionUtil.main();
     }
 }
