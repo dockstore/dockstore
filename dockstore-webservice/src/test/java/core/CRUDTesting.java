@@ -229,9 +229,4 @@ public class CRUDTesting {
 
         flushSession();
     }
-
-    @Test
-    public void testGA4GHTestfileFormats() {
-
-    }
 }
