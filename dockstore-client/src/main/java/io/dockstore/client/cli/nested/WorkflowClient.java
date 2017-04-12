@@ -249,10 +249,6 @@ public class WorkflowClient extends AbstractEntryClient {
         } catch (ParameterException e1) {
             out(e1.getMessage());
             printJCommanderHelp(jc, "dockstore workflow convert", commandName);
-        } catch (Exception e) {
-            out(e.getMessage());
-            printJCommanderHelp(jc, "dockstore workflow convert", commandName);
-            System.exit(0);
         }
     }
 
@@ -277,10 +273,6 @@ public class WorkflowClient extends AbstractEntryClient {
         } catch (ParameterException e1) {
             out(e1.getMessage());
             printJCommanderHelp(jc, "dockstore workflow convert", commandName);
-        } catch (Exception e) {
-            out(e.getMessage());
-            printJCommanderHelp(jc, "dockstore workflow convert", commandName);
-            System.exit(CLIENT_ERROR);
         }
     }
 
@@ -390,6 +382,7 @@ public class WorkflowClient extends AbstractEntryClient {
                             CLIENT_ERROR);
                     break;
                 }
+                break;
             case WDL:
                 switch (content) {
                 case WDL:
@@ -405,6 +398,7 @@ public class WorkflowClient extends AbstractEntryClient {
                             CLIENT_ERROR);
                     break;
                 }
+                break;
             default:
                 switch (content) {
                 case CWL:
