@@ -218,6 +218,24 @@ public class ClientIT {
 
     @Test
     public void touchOnAllHelpMessages() throws IOException {
+
+        checkCommandForHelp(new String[] { "tool", "search"});
+        checkCommandForHelp(new String[] { "tool", "info"});
+        checkCommandForHelp(new String[] { "tool", "cwl"});
+        checkCommandForHelp(new String[] { "tool", "wdl"});
+        checkCommandForHelp(new String[] { "tool", "label"});
+        checkCommandForHelp(new String[] { "tool", "test_parameter"});
+        checkCommandForHelp(new String[] { "tool", "convert"});
+        checkCommandForHelp(new String[] { "tool", "launch"});
+        checkCommandForHelp(new String[] { "tool", "version_tag"});
+        checkCommandForHelp(new String[] { "tool", "update_tool"});
+
+        checkCommandForHelp(new String[] {"tool", "convert", "entry2json"});
+        checkCommandForHelp(new String[] {"tool", "convert", "entry2tsv"});
+        checkCommandForHelp(new String[] {"tool", "convert", "cwl2yaml"});
+        checkCommandForHelp(new String[] {"tool", "convert", "cwl2json"});
+        checkCommandForHelp(new String[] {"tool", "convert", "wdl2json"});
+
         checkCommandForHelp(new String[] {});
         checkCommandForHelp(new String[] { "tool" });
         checkCommandForHelp(new String[] { "tool", "list", "--help" });
@@ -245,6 +263,25 @@ public class ClientIT {
         checkCommandForHelp(new String[] { "tool", "test_parameter", "--help" });
         checkCommandForHelp(new String[] { "tool", "verify", "--help" });
         checkCommandForHelp(new String[] { "tool" });
+
+        checkCommandForHelp(new String[] {"workflow", "convert", "entry2json"});
+        checkCommandForHelp(new String[] {"workflow", "convert", "entry2tsv"});
+        checkCommandForHelp(new String[] {"workflow", "convert", "cwl2yaml"});
+        checkCommandForHelp(new String[] {"workflow", "convert", "cwl2json"});
+        checkCommandForHelp(new String[] {"workflow", "convert", "wdl2json"});
+
+
+        checkCommandForHelp(new String[] { "workflow", "search"});
+        checkCommandForHelp(new String[] { "workflow", "info"});
+        checkCommandForHelp(new String[] { "workflow", "cwl"});
+        checkCommandForHelp(new String[] { "workflow", "wdl"});
+        checkCommandForHelp(new String[] { "workflow", "label"});
+        checkCommandForHelp(new String[] { "workflow", "test_parameter"});
+        checkCommandForHelp(new String[] { "workflow", "convert"});
+        checkCommandForHelp(new String[] { "workflow", "launch"});
+        checkCommandForHelp(new String[] { "workflow", "version_tag"});
+        checkCommandForHelp(new String[] { "workflow", "update_workflow"});
+        checkCommandForHelp(new String[] { "workflow", "restub"});
 
         checkCommandForHelp(new String[] { "workflow", "list", "--help" });
         checkCommandForHelp(new String[] { "workflow", "search", "--help" });
@@ -281,7 +318,7 @@ public class ClientIT {
         strings.add(TestUtility.getConfigFileLocation(true));
 
         Client.main(strings.toArray(new String[strings.size()]));
-        Assert.assertTrue(systemOutRule.getLog().contains("Usage"));
+        Assert.assertTrue(systemOutRule.getLog().contains("Usage: dockstore"));
         systemOutRule.clearLog();
     }
 

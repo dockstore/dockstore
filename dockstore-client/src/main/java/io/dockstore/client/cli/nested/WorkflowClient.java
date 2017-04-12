@@ -28,6 +28,7 @@ import java.util.Set;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import com.beust.jcommander.ParameterException;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Joiner;
 import com.google.common.io.Files;
@@ -216,9 +217,10 @@ public class WorkflowClient extends AbstractEntryClient {
 
     @Override
     protected void printClientSpecificHelp() {
+        out("");
         out("  manual_publish   :  registers a Github, Gitlab or Bitbucket workflow in the dockstore and then attempts to publish");
         out("");
-        out("  " + UPDATE_WORKFLOW + "  :   updates certain fields of a workflow");
+        out("  " + UPDATE_WORKFLOW + "  :  updates certain fields of a workflow");
         out("");
         out("  version_tag      :  updates an existing version tag of a workflow");
         out("");
@@ -244,9 +246,13 @@ public class WorkflowClient extends AbstractEntryClient {
                 final String runString = runString(commandEntry2json.entry, true);
                 out(runString);
             }
-        } catch (Exception e) {
-            exceptionMessage(e, e.getMessage(), COMMAND_ERROR);
+        } catch (ParameterException e1) {
+            out(e1.getMessage());
             printJCommanderHelp(jc, "dockstore workflow convert", commandName);
+        } catch (Exception e) {
+            out(e.getMessage());
+            printJCommanderHelp(jc, "dockstore workflow convert", commandName);
+            System.exit(0);
         }
     }
 
@@ -268,9 +274,13 @@ public class WorkflowClient extends AbstractEntryClient {
                 final String runString = runString(commandEntry2tsv.entry, false);
                 out(runString);
             }
-        } catch (Exception e) {
-            exceptionMessage(e, e.getMessage(), COMMAND_ERROR);
+        } catch (ParameterException e1) {
+            out(e1.getMessage());
             printJCommanderHelp(jc, "dockstore workflow convert", commandName);
+        } catch (Exception e) {
+            out(e.getMessage());
+            printJCommanderHelp(jc, "dockstore workflow convert", commandName);
+            System.exit(CLIENT_ERROR);
         }
     }
 
@@ -339,8 +349,8 @@ public class WorkflowClient extends AbstractEntryClient {
                     checkEntryFile(localEntry, jsonRun, yamlRun, tsvRun, wdlOutputTarget);
                 }
             } else {
-                errorMessage("You can only use one of --local-entry and --entry at a time. Please use --help for more information.",
-                        CLIENT_ERROR);
+                out("You can only use one of --local-entry and --entry at a time.");
+                JCommanderUtility.printJCommanderHelpLaunch(jCommander, "dockstore workflow", commandName);
             }
         }
     }

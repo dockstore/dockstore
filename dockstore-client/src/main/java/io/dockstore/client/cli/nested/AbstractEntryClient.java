@@ -1491,7 +1491,7 @@ public abstract class AbstractEntryClient {
         out("Description:");
         out("  Publish/unpublish a registered " + getEntryType() + ".");
         out("  No arguments will list the current and potential " + getEntryType() + "s to share.");
-        out("Optional Parameters:");
+        out("Required Parameters:");
         out("  --entry <entry>             Complete " + getEntryType()
                 + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
         out("  --entryname <" + getEntryType() + "name>      " + getEntryType() + "name of new entry");
@@ -1508,7 +1508,7 @@ public abstract class AbstractEntryClient {
         out("Description:");
         out("  Star/unstar a registered " + getEntryType() + ".");
         out("  No arguments will list the current and potential " + getEntryType() + "s to share.");
-        out("Optional Parameters:");
+        out("Required Parameters:");
         out("  --entry <" + getEntryType() + ">             Complete " + getEntryType()
                 + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
         printHelpFooter();
