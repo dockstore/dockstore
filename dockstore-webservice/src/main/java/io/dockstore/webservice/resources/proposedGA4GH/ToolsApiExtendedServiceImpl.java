@@ -16,6 +16,14 @@
 
 package io.dockstore.webservice.resources.proposedGA4GH;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
+
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Tool;
@@ -24,11 +32,6 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.swagger.api.NotFoundException;
 import io.swagger.api.impl.ToolsImplCommon;
-
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by kcao on 01/03/17.
@@ -53,50 +56,44 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         ToolsApiExtendedServiceImpl.config = config;
     }
 
+    /**
+     * Avoid using this one, this is quite slow
+     * @return
+     */
     private List<Entry> getPublished() {
         final List<Entry> published = new ArrayList<>();
         published.addAll(toolDAO.findAllPublished());
         published.addAll(workflowDAO.findAllPublished());
-        published.sort((o1, o2) -> o1.getGitUrl().compareTo(o2.getGitUrl()));
+        published.sort(Comparator.comparing(Entry::getGitUrl));
+        return published;
+    }
+
+    /**
+     * More optimized
+     * @param organization
+     * @return
+     */
+    private List<Entry> getPublishedByOrganization(String organization) {
+        final List<Entry> published = new ArrayList<>();
+        published.addAll(workflowDAO.findPublishedByOrganization(organization));
+        published.addAll(toolDAO.findPublishedByNamespace(organization));
+        published.sort(Comparator.comparing(Entry::getGitUrl));
         return published;
     }
 
     @Override
     public Response toolsOrgGet(String organization, SecurityContext securityContext) throws NotFoundException {
-        List<io.swagger.model.Tool> responseList = new ArrayList<>();
-        responseList.addAll(workflowOrgGetList(organization));
-        responseList.addAll(entriesOrgGetList(organization));
-        return Response.ok().entity(responseList).build();
+        return Response.ok().entity(getPublishedByOrganization(organization)).build();
     }
 
     private List<io.swagger.model.Tool> workflowOrgGetList(String organization) {
-        List<io.swagger.model.Tool> results = new ArrayList<>();
-        for (Entry c : getPublished()) {
-            if (c instanceof Workflow) {
-                if (((Workflow) c).getOrganization().equalsIgnoreCase(organization)) {
-                    io.swagger.model.Tool tool = ToolsImplCommon.convertContainer2Tool(c, config).getLeft();
-                    if (tool != null) {
-                        results.add(tool);
-                    }
-                }
-            }
-        }
-        return results;
+        List<Workflow> published = workflowDAO.findPublishedByOrganization(organization);
+        return published.stream().map(c -> ToolsImplCommon.convertContainer2Tool(c, config).getLeft()).collect(Collectors.toList());
     }
 
     private List<io.swagger.model.Tool> entriesOrgGetList(String organization) {
-        List<io.swagger.model.Tool> results = new ArrayList<>();
-        for (Entry c : getPublished()) {
-            if (c instanceof Tool) {
-                if (((Tool) c).getNamespace().toLowerCase().equalsIgnoreCase(organization)) {
-                    io.swagger.model.Tool tool = ToolsImplCommon.convertContainer2Tool(c, config).getLeft();
-                    if (tool != null) {
-                        results.add(tool);
-                    }
-                }
-            }
-        }
-        return results;
+        List<Tool> published = toolDAO.findPublishedByNamespace(organization);
+        return published.stream().map(c -> ToolsImplCommon.convertContainer2Tool(c, config).getLeft()).collect(Collectors.toList());
     }
 
     @Override

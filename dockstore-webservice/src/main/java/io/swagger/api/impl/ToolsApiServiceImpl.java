@@ -41,9 +41,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -51,10 +53,12 @@ import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static io.dockstore.webservice.core.SourceFile.FileType.CWL_TEST_JSON;
 import static io.dockstore.webservice.core.SourceFile.FileType.DOCKERFILE;
@@ -83,14 +87,14 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     }
 
     @Override
-    public Response toolsIdGet(String id, SecurityContext securityContext) throws NotFoundException {
+    public Response toolsIdGet(String id, SecurityContext securityContext, ContainerRequestContext value) throws NotFoundException {
         ParsedRegistryID parsedID = new ParsedRegistryID(id);
         Entry entry = getEntry(parsedID);
         return buildToolResponse(entry, null, false);
     }
 
     @Override
-    public Response toolsIdVersionsGet(String id, SecurityContext securityContext) throws NotFoundException {
+    public Response toolsIdVersionsGet(String id, SecurityContext securityContext, ContainerRequestContext value) throws NotFoundException {
         ParsedRegistryID parsedID = new ParsedRegistryID(id);
         Entry entry = getEntry(parsedID);
         return buildToolResponse(entry, null, true);
@@ -126,7 +130,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     }
 
     @Override
-    public Response toolsIdVersionsVersionIdGet(String id, String versionId, SecurityContext securityContext) throws NotFoundException {
+    public Response toolsIdVersionsVersionIdGet(String id, String versionId, SecurityContext securityContext, ContainerRequestContext value) throws NotFoundException {
         ParsedRegistryID parsedID = new ParsedRegistryID(id);
         try {
             versionId = URLDecoder.decode(versionId, StandardCharsets.UTF_8.displayName());
@@ -148,18 +152,21 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     }
 
     @Override
-    public Response toolsIdVersionsVersionIdTypeDescriptorGet(String type, String id, String versionId, SecurityContext securityContext)
+    public Response toolsIdVersionsVersionIdTypeDescriptorGet(String type, String id, String versionId, SecurityContext securityContext, ContainerRequestContext value)
             throws NotFoundException {
         SourceFile.FileType fileType = getFileType(type);
         if (fileType == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-        return getFileByToolVersionID(id, versionId, fileType, null, StringUtils.containsIgnoreCase(type, "plain"));
+        MediaType mediaType = value.getMediaType();
+        MediaType plainTextType = MediaType.valueOf(MediaType.TEXT_PLAIN);
+
+        return getFileByToolVersionID(id, versionId, fileType, null, Objects.equals(mediaType, plainTextType) || StringUtils.containsIgnoreCase(type, "plain"));
     }
 
     @Override
     public Response toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(String type, String id, String versionId, String relativePath,
-            SecurityContext securityContext) throws NotFoundException {
+            SecurityContext securityContext, ContainerRequestContext value) throws NotFoundException {
         if (type == null) {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
@@ -168,13 +175,15 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
 
-        return getFileByToolVersionID(id, versionId, fileType, relativePath, StringUtils.containsIgnoreCase(type, "plain"));
+        MediaType mediaType = value.getMediaType();
+        MediaType plainTextType = MediaType.valueOf(MediaType.TEXT_PLAIN);
+
+        return getFileByToolVersionID(id, versionId, fileType, relativePath, Objects.equals(mediaType, plainTextType) || StringUtils.containsIgnoreCase(type, "plain"));
     }
 
     @Override
-    public Response toolsIdVersionsVersionIdTypeTestsGet(String type, String id, String versionId, SecurityContext securityContext)
+    public Response toolsIdVersionsVersionIdTypeTestsGet(String type, String id, String versionId, SecurityContext securityContext, ContainerRequestContext value)
             throws NotFoundException {
-        /** we do not have test data implemented */
         if (type == null) {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
@@ -182,15 +191,18 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         if (fileType == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
+
+        MediaType mediaType = value.getMediaType();
+        MediaType plainTextType = MediaType.valueOf(MediaType.TEXT_PLAIN);
 
         // The getFileType version never returns *TEST_JSON filetypes.  Linking CWL_TEST_JSON with DOCKSTORE_CWL and etc until solved.
         switch (fileType) {
         case CWL_TEST_JSON:
         case DOCKSTORE_CWL:
-            return getFileByToolVersionID(id, versionId, CWL_TEST_JSON, null, false);
+            return getFileByToolVersionID(id, versionId, CWL_TEST_JSON, null, Objects.equals(mediaType, plainTextType) || type.contains("plain"));
         case WDL_TEST_JSON:
         case DOCKSTORE_WDL:
-            return getFileByToolVersionID(id, versionId, WDL_TEST_JSON, null, false);
+            return getFileByToolVersionID(id, versionId, WDL_TEST_JSON, null, Objects.equals(mediaType, plainTextType) || type.contains("plain"));
         case DOCKERFILE:
             return Response.status(Response.Status.BAD_REQUEST).build();
 
@@ -216,18 +228,21 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     }
 
     @Override
-    public Response toolsIdVersionsVersionIdDockerfileGet(String id, String versionId, SecurityContext securityContext)
+    public Response toolsIdVersionsVersionIdDockerfileGet(String id, String versionId, SecurityContext securityContext, ContainerRequestContext value)
             throws NotFoundException {
-        return getFileByToolVersionID(id, versionId, DOCKERFILE, null, false);
+        MediaType mediaType = value.getMediaType();
+        MediaType plainTextType = MediaType.valueOf(MediaType.TEXT_PLAIN);
+        return getFileByToolVersionID(id, versionId, DOCKERFILE, null, Objects.equals(mediaType, plainTextType));
     }
 
+    @SuppressWarnings("CheckStyle")
     @Override
     public Response toolsGet(String registryId, String registry, String organization, String name, String toolname, String description,
-            String author, String offset, Integer limit, SecurityContext securityContext) throws NotFoundException {
+            String author, String offset, Integer limit, SecurityContext securityContext, ContainerRequestContext value) throws NotFoundException {
         final List<Entry> all = new ArrayList<>();
         all.addAll(toolDAO.findAllPublished());
         all.addAll(workflowDAO.findAllPublished());
-        all.sort((o1, o2) -> o1.getGitUrl().compareTo(o2.getGitUrl()));
+        all.sort(Comparator.comparing(Entry::getGitUrl));
 
         List<io.swagger.model.Tool> results = new ArrayList<>();
         for (Entry c : all) {
@@ -385,9 +400,8 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             case CWL_TEST_JSON:
                 final EntryVersionHelper<Tool> entryVersionHelper = new EntryVersionHelper<>(toolDAO);
                 List<SourceFile> sourceFile = entryVersionHelper.getAllSourceFiles(entry.getId(), versionId, type);
-                // TODO: Return proper entities depending on requirements
                 return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                        .entity(unwrap ? sourceFile : sourceFile).build();
+                        .entity(unwrap ? sourceFile.stream().map(SourceFile::getContent).filter(Objects::nonNull).collect(Collectors.joining("\n")) : sourceFile).build();
             case DOCKERFILE:
                 final ToolDockerfile dockerfile = (ToolDockerfile)table.get(toolVersionName, SourceFile.FileType.DOCKERFILE);
                 return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)

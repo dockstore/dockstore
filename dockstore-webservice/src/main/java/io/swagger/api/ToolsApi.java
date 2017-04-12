@@ -20,6 +20,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
@@ -59,8 +60,8 @@ public class ToolsApi {
             @ApiParam(value = "The author of the tool (TODO a thought occurs, are we assuming that the author of the CWL and the image are the same?).") @QueryParam("author") String author,
             @ApiParam(value = "Start index of paging. Pagination results can be based on numbers or other values chosen by the registry implementor (for example, SHA values). If this exceeds the current result set return an empty set.  If not specified in the request this will start at the beginning of the results.") @QueryParam("offset") String offset,
             @ApiParam(value = "Amount of records to return in a given page.  By default it is 1000.") @QueryParam("limit") Integer limit,
-            @Context SecurityContext securityContext) throws NotFoundException {
-        return delegate.toolsGet(id, registry, organization, name, toolname, description, author, offset, limit, securityContext);
+            @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
+        return delegate.toolsGet(id, registry, organization, name, toolname, description, author, offset, limit, securityContext, value);
     }
 
     @GET
@@ -73,8 +74,8 @@ public class ToolsApi {
             @io.swagger.annotations.ApiResponse(code = 200, message = "A tool.", response = Tool.class) })
     public Response toolsIdGet(
             @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
-            @Context SecurityContext securityContext) throws NotFoundException {
-        return delegate.toolsIdGet(id, securityContext);
+            @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
+        return delegate.toolsIdGet(id, securityContext, value);
     }
 
     @GET
@@ -87,8 +88,8 @@ public class ToolsApi {
             @io.swagger.annotations.ApiResponse(code = 200, message = "An array of tool versions", response = ToolVersion.class, responseContainer = "List") })
     public Response toolsIdVersionsGet(
             @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
-            @Context SecurityContext securityContext) throws NotFoundException {
-        return delegate.toolsIdVersionsGet(id, securityContext);
+            @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
+        return delegate.toolsIdVersionsGet(id, securityContext, value);
     }
 
     @GET
@@ -104,8 +105,8 @@ public class ToolsApi {
     public Response toolsIdVersionsVersionIdDockerfileGet(
             @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
             @ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`", required = true) @PathParam("version-id") String versionId,
-            @Context SecurityContext securityContext) throws NotFoundException {
-        return delegate.toolsIdVersionsVersionIdDockerfileGet(id, versionId, securityContext);
+            @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
+        return delegate.toolsIdVersionsVersionIdDockerfileGet(id, versionId, securityContext, value);
     }
 
     @GET
@@ -119,8 +120,8 @@ public class ToolsApi {
     public Response toolsIdVersionsVersionIdGet(
             @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
             @ApiParam(value = "An identifier of the tool version, scoped to this registry, for example `v1`", required = true) @PathParam("version-id") String versionId,
-            @Context SecurityContext securityContext) throws NotFoundException {
-        return delegate.toolsIdVersionsVersionIdGet(id, versionId, securityContext);
+            @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
+        return delegate.toolsIdVersionsVersionIdGet(id, versionId, securityContext, value);
     }
 
     @GET
@@ -137,8 +138,8 @@ public class ToolsApi {
             @ApiParam(value = "The output type of the descriptor. If not specified it is up to the underlying implementation to determine which output type to return. Plain types return the bare descriptor while the \"non-plain\" types return a descriptor wrapped with metadata", required = true, allowableValues = "CWL, WDL, plain-CWL, plain-WDL") @PathParam("type") String type,
             @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
             @ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`", required = true) @PathParam("version-id") String versionId,
-            @Context SecurityContext securityContext) throws NotFoundException {
-        return delegate.toolsIdVersionsVersionIdTypeDescriptorGet(type, id, versionId, securityContext);
+            @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
+        return delegate.toolsIdVersionsVersionIdTypeDescriptorGet(type, id, versionId, securityContext, value);
     }
 
     @GET
@@ -156,8 +157,8 @@ public class ToolsApi {
             @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
             @ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`", required = true) @PathParam("version-id") String versionId,
             @ApiParam(value = "A relative path to the additional file (same directory or subdirectories), for example 'foo.cwl' would return a 'foo.cwl' from the same directory as the main descriptor", required = true) @PathParam("relative-path") String relativePath,
-            @Context SecurityContext securityContext) throws NotFoundException {
-        return delegate.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(type, id, versionId, relativePath, securityContext);
+            @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
+        return delegate.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(type, id, versionId, relativePath, securityContext, value);
     }
 
     @GET
@@ -174,7 +175,7 @@ public class ToolsApi {
             @ApiParam(value = "The output type of the descriptor. If not specified it is up to the underlying implementation to determine which output type to return. Plain types return the bare descriptor while the \"non-plain\" types return a descriptor wrapped with metadata", required = true, allowableValues = "CWL, WDL, plain-CWL, plain-WDL") @PathParam("type") String type,
             @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
             @ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`", required = true) @PathParam("version-id") String versionId,
-            @Context SecurityContext securityContext) throws NotFoundException {
-        return delegate.toolsIdVersionsVersionIdTypeTestsGet(type, id, versionId, securityContext);
+            @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
+        return delegate.toolsIdVersionsVersionIdTypeTestsGet(type, id, versionId, securityContext, value);
     }
 }
