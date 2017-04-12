@@ -312,7 +312,7 @@ public class FileProvisioning {
                         FileObject src = fsManager.resolveFile(sourceFile.getAbsolutePath())) {
                     // trigger a copy from the URL to a local file path that's a UUID to avoid collision
                     // check for a local file path
-                    FileProvisionUtil.copyFromInputStreamToOutputStream(dest, src);
+                    FileProvisionUtil.copyFromInputStreamToOutputStream(src, dest);
                 } catch (IOException e) {
                     throw new RuntimeException("Could not provision output files", e);
                 } finally {
