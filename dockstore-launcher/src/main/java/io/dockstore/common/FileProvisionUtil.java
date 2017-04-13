@@ -72,11 +72,11 @@ public final class FileProvisionUtil {
 
             // trigger a copy from the URL to a local file path that's a UUID to avoid collision
             FileSystemManager fsManager = VFS.getManager();
-            org.apache.commons.vfs2.FileObject src = fsManager.resolveFile(path, opts);
-            org.apache.commons.vfs2.FileObject dest = fsManager.resolveFile(new File(targetFilePath).getAbsolutePath());
-            long inputSize = src.getContent().getSize();
-            try (InputStream inputStream = src.getContent().getInputStream();
+            try (org.apache.commons.vfs2.FileObject src = fsManager.resolveFile(path, opts);
+                    org.apache.commons.vfs2.FileObject dest = fsManager.resolveFile(new File(targetFilePath).getAbsolutePath());
+                    InputStream inputStream = src.getContent().getInputStream();
                     OutputStream outputSteam = dest.getContent().getOutputStream()) {
+                long inputSize = src.getContent().getSize();
                 copyFromInputStreamToOutputStream(inputStream, inputSize, outputSteam);
             }
             return true;
@@ -89,12 +89,12 @@ public final class FileProvisionUtil {
     /**
      * Copy from stream to stream while displaying progress
      *
-     * @param inputStream source
-     * @param inputSize   total size
-     * @param outputSteam destination
+     * @param inputStream  source
+     * @param inputSize    total size
+     * @param outputStream destination
      * @throws IOException throws an exception if unable to provision input files
      */
-    static void copyFromInputStreamToOutputStream(InputStream inputStream, long inputSize, OutputStream outputSteam) throws IOException {
+    static void copyFromInputStreamToOutputStream(InputStream inputStream, long inputSize, OutputStream outputStream) throws IOException {
         CopyStreamListener listener = new CopyStreamListener() {
             ProgressPrinter printer = new ProgressPrinter();
 
@@ -108,13 +108,15 @@ public final class FileProvisionUtil {
                 printer.handleProgress(totalBytesTransferred, streamSize);
             }
         };
-        try (OutputStream outputStream = outputSteam) {
+        try {
             // a larger buffer improves copy performance
             // we can also split this (local file copy) out into a plugin later
             final int largeBuffer = 100;
             Util.copyStream(inputStream, outputStream, Util.DEFAULT_COPY_BUFFER_SIZE * largeBuffer, inputSize, listener);
         } catch (IOException e) {
             throw new RuntimeException("Could not provision input files", e);
+        } finally {
+            System.out.println();
         }
     }
 
@@ -172,6 +174,7 @@ public final class FileProvisionUtil {
                 System.exit(1);
             } else {
                 createPluginJSONFile(pluginJSONPath);
+                LOG.info("Created plugins.json file");
             }
         }
         Gson gson = new Gson();
@@ -244,9 +247,8 @@ public final class FileProvisionUtil {
      * @param location Location of where to create the file
      */
     static boolean createPluginJSONFile(String location) {
-        InputStream in = FileProvisionUtil.class.getResourceAsStream("/" + PLUGINS_JSON_FILENAME);
-        File targetFile = new File(location);
-        try {
+        try (InputStream in = FileProvisionUtil.class.getResourceAsStream("/" + PLUGINS_JSON_FILENAME)) {
+            File targetFile = new File(location);
             FileUtils.copyInputStreamToFile(in, targetFile);
             return true;
         } catch (IOException e) {

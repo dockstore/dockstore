@@ -29,6 +29,7 @@ public class FileProvisionUtilTest {
         FileProvisionUtil.createPluginJSONFile(pluginFile);
         File f = new File(pluginFile);
         assertTrue(f.exists() && !f.isDirectory());
-        f.delete();
+        boolean deleted = f.delete();
+        assertTrue(deleted);
     }
 }

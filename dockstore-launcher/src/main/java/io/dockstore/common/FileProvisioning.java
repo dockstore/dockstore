@@ -163,8 +163,12 @@ public class FileProvisioning {
                 System.out.println("Found file " + targetPath + " in cache, hard-linking");
                 try {
                     final Path parentPath = localPath.getParent();
-                    if (Files.notExists(parentPath)) {
-                        Files.createDirectory(parentPath);
+                    if (parentPath != null) {
+                        if (Files.notExists(parentPath)) {
+                            Files.createDirectory(parentPath);
+                        }
+                    } else {
+                        throw new RuntimeException("Could not get parent path");
                     }
                     Files.createLink(localPath, potentialCachedFile);
                 } catch (IOException e) {
@@ -237,8 +241,12 @@ public class FileProvisioning {
                 try {
                     // create parent directory
                     final Path parentPath = potentialCachedFile.getParent();
-                    if (Files.notExists(parentPath)) {
-                        Files.createDirectory(parentPath);
+                    if (parentPath != null) {
+                        if (Files.notExists(parentPath)) {
+                            Files.createDirectory(parentPath);
+                        } else {
+                            throw new RuntimeException("Could not get parent path");
+                        }
                     }
                     Files.createLink(potentialCachedFile, localPath);
                 } catch (IOException e) {
