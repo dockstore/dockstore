@@ -18,8 +18,6 @@ package io.dockstore.common;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,6 +29,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -250,12 +249,19 @@ public class FileProvisioning {
 
     private void handleProvisionWithRetries(String targetPath, Path localPath, ProvisionInterface provision) {
         int maxRetries = config.getInt(FILE_PROVISION_RETRIES, DEFAULT_RETRIES);
+        retryWrapper(provision, targetPath, localPath, maxRetries);
+    }
+
+    public static void retryWrapper(ProvisionInterface provisionInterface, String targetPath, Path destinationPath, int maxRetries) {
+        if (provisionInterface == null) {
+            provisionInterface = new FileProvisionUtilPluginWrapper();
+        }
         boolean success;
         int retries = 0;
         do {
             if (retries > 0) {
                 long waitTime = getWaitTimeExp(retries);
-                System.out.print("Waiting for " + waitTime + " milliseconds due to failure\n");
+                System.err.print("Waiting for " + waitTime + " milliseconds due to failure\n");
                 // Wait for the result.
                 try {
                     Thread.sleep(waitTime);
@@ -263,18 +269,14 @@ public class FileProvisioning {
                     throw new RuntimeException("Could not wait for retry");
                 }
             }
-            if (provision != null) {
-                success = provision.downloadFrom(targetPath, localPath);
-            } else {
-                success = FileProvisionUtil.downloadFromVFS2(targetPath, localPath.toFile().getAbsolutePath());
-            }
+            success = provisionInterface.downloadFrom(targetPath, destinationPath);
 
             if (!success) {
-                LOG.info("Could not provision " + targetPath + " to " + localPath + " , for retry " + retries);
+                LOG.error("Could not provision " + targetPath + " to " + destinationPath + " , for retry " + retries);
             }
         } while (!success && retries++ < maxRetries);
         if (!success) {
-            throw new RuntimeException("Could not provision: " + targetPath + " to " + localPath);
+            throw new RuntimeException("Could not provision: " + targetPath + " to " + destinationPath);
         }
     }
 
@@ -298,7 +300,6 @@ public class FileProvisioning {
      */
     private void provisionOutputFile(String srcPath, String destPath, String metadata, ProvisionInterface provisionInterface) {
         File sourceFile = new File(srcPath);
-        long inputSize = sourceFile.length();
 
         if (provisionInterface != null) {
             System.out.println("Calling on plugin " + provisionInterface.getClass().getName() + " to provision to " + destPath);
@@ -307,15 +308,16 @@ public class FileProvisioning {
             try {
                 FileSystemManager fsManager = VFS.getManager();
                 Path currentWorkingDir = Paths.get("").toAbsolutePath();
-                FileObject dest = fsManager.resolveFile(currentWorkingDir.toFile(), destPath);
-                FileObject src = fsManager.resolveFile(sourceFile.getAbsolutePath());
-                try (InputStream inputStream = src.getContent().getInputStream();
-                        OutputStream outputSteam = dest.getContent().getOutputStream()) {
+                try (FileObject dest = fsManager.resolveFile(currentWorkingDir.toFile(), destPath);
+                        FileObject src = fsManager.resolveFile(sourceFile.getAbsolutePath())) {
                     // trigger a copy from the URL to a local file path that's a UUID to avoid collision
                     // check for a local file path
-                    FileProvisionUtil.copyFromInputStreamToOutputStream(inputStream, inputSize, outputSteam);
+                    FileProvisionUtil.copyFromInputStreamToOutputStream(src, dest);
                 } catch (IOException e) {
                     throw new RuntimeException("Could not provision output files", e);
+                } finally {
+                    // finalize output from the printer
+                    System.out.println();
                 }
             } catch (IOException e) {
                 LOG.error(e.getMessage());
@@ -406,6 +408,32 @@ public class FileProvisioning {
 
         public void setMetadata(String metadata) {
             this.metadata = metadata;
+        }
+    }
+
+    /**
+     * Create a facade to treat normal vfs2 downloading as a plugin
+     */
+    public static class FileProvisionUtilPluginWrapper implements ProvisionInterface {
+
+        @Override
+        public Set<String> schemesHandled() {
+            return null;
+        }
+
+        @Override
+        public boolean downloadFrom(String sourcePath, Path destination) {
+            return FileProvisionUtil.downloadFromVFS2(sourcePath, destination);
+        }
+
+        @Override
+        public boolean uploadTo(String destPath, Path sourceFile, Optional<String> metadata) {
+            return false;
+        }
+
+        @Override
+        public void setConfiguration(Map<String, String> config) {
+            /*** do nothing */
         }
     }
 }

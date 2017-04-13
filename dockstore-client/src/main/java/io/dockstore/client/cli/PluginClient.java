@@ -20,6 +20,7 @@ import java.util.List;
 import avro.shaded.com.google.common.base.Joiner;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import com.beust.jcommander.ParameterException;
 import com.beust.jcommander.Parameters;
 import io.dockstore.common.FileProvisionUtil;
 import io.dockstore.common.TabExpansionUtil;
@@ -76,7 +77,7 @@ public final class PluginClient {
         // Not parsing with jc because we know the first command was plugin.  jc's purpose is to display help
         jcPlugin.parse(argv);
         try {
-            if (commandPlugin.help) {
+            if (args.isEmpty() || commandPlugin.help) {
                 printJCommanderHelp(jc, "dockstore", "plugin");
             } else {
                 switch (jcPlugin.getParsedCommand()) {
@@ -98,7 +99,7 @@ public final class PluginClient {
                     // fall through
                 }
             }
-        } catch (Exception e) {
+        } catch (ParameterException e) {
             printJCommanderHelp(jc, "dockstore", "plugin");
         }
         return true;
