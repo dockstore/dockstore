@@ -151,9 +151,9 @@ public class CRUDTesting {
         // json version is very verbose
         Assert.assertTrue((collect.startsWith("{") || collect.startsWith("[")) && collect.length() > contentCheck.length());
         // plain versions
-        // 1) plain version via the content-type
+        // 1) plain version via the Accept
         HttpGet get = new HttpGet("http://localhost:" + RULE.getLocalPort() + DockstoreWebserviceApplication.GA4GH_API_PATH + targetURL);
-        get.setHeader("Content-Type", "text/plain");
+        get.setHeader("Accept", "text/plain");
         HttpClient httpClient = new DefaultHttpClient();
         HttpResponse execute = httpClient.execute(get);
         String result = IOUtils.toString(execute.getEntity().getContent(), StandardCharsets.UTF_8);
