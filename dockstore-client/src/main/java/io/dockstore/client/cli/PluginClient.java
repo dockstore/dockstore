@@ -77,7 +77,7 @@ public final class PluginClient {
         // Not parsing with jc because we know the first command was plugin.  jc's purpose is to display help
         jcPlugin.parse(argv);
         try {
-            if (commandPlugin.help) {
+            if (args.isEmpty() || commandPlugin.help) {
                 printJCommanderHelp(jc, "dockstore", "plugin");
             } else {
                 switch (jcPlugin.getParsedCommand()) {
