@@ -548,10 +548,6 @@
             <artifactId>jsonld-java</artifactId>
             <version>0.8.3</version>
         </dependency>
-        <dependency>
-            <groupId>commons-lang</groupId>
-            <artifactId>commons-lang</artifactId>
-        </dependency>
     </dependencies>
 
 
