@@ -348,7 +348,9 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
      */
     private String getFileContentsFromIdV4(String id, String branch, String filepath) {
         if (id != null && branch != null && filepath != null) {
+            // TODO: Figure out how to url encode properly
             String fileURL = filepath.replace(".", "%2E");
+            fileURL = fileURL.replace("/", "%2F");
             String fileUrl = GITLAB_API_URL_V4 + "projects/" + id + "/repository/files/" + fileURL + "/raw?ref=" + branch;
             Optional<String> fileAsString = ResourceUtilities.asString(fileUrl, gitlabTokenContent, client);
             if (fileAsString.isPresent()) {
