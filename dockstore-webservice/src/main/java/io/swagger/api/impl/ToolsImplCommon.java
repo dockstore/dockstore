@@ -1,5 +1,6 @@
 package io.swagger.api.impl;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
@@ -16,6 +17,7 @@ import io.swagger.model.ToolClass;
 import io.swagger.model.ToolDescriptor;
 import io.swagger.model.ToolDockerfile;
 import io.swagger.model.ToolVersion;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -53,15 +55,21 @@ public final class ToolsImplCommon {
      * @param file a file with content for the descriptor
      */
     public static ToolDescriptor buildSourceFile(String url, SourceFile file) {
-        ToolDescriptor wdlDescriptor = new ToolDescriptor();
+        ToolDescriptor descriptor = new ToolDescriptor();
         if (file.getType() == DOCKSTORE_CWL) {
-            wdlDescriptor.setType(ToolDescriptor.TypeEnum.CWL);
+            descriptor.setType(ToolDescriptor.TypeEnum.CWL);
         } else if (file.getType() == DOCKSTORE_WDL) {
-            wdlDescriptor.setType(ToolDescriptor.TypeEnum.WDL);
+            descriptor.setType(ToolDescriptor.TypeEnum.WDL);
         }
-        wdlDescriptor.setDescriptor(file.getContent());
-        wdlDescriptor.setUrl(url);
-        return wdlDescriptor;
+        descriptor.setDescriptor(file.getContent());
+
+        List<String> splitPathList = Lists.newArrayList(url.split("/"));
+        splitPathList.remove(splitPathList.size() - 1);
+        splitPathList.add(StringUtils.stripStart(file.getPath(), "/"));
+        final String join = Joiner.on("/").join(splitPathList);
+
+        descriptor.setUrl(join);
+        return descriptor;
     }
 
     /**
@@ -212,9 +220,11 @@ public final class ToolsImplCommon {
                             fileTable.put(inputVersion.getName(), DOCKERFILE, dockerfile);
                             break;
                         case DOCKSTORE_CWL:
-                            version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);
-                            fileTable.put(inputVersion.getName(), DOCKSTORE_CWL,
-                                    buildSourceFile(urlBuilt + ((Tag)inputVersion).getCwlPath(), file));
+                            if (((Tag)inputVersion).getCwlPath().equalsIgnoreCase(file.getPath())) {
+                                version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);
+                                fileTable.put(inputVersion.getName(), DOCKSTORE_CWL,
+                                        buildSourceFile(urlBuilt + ((Tag)inputVersion).getCwlPath(), file));
+                            }
                             break;
                         case DOCKSTORE_WDL:
                             version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);
@@ -225,9 +235,12 @@ public final class ToolsImplCommon {
                 } else if (inputVersion instanceof WorkflowVersion) {
                     switch (file.getType()) {
                         case DOCKSTORE_CWL:
-                            version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);
-                            fileTable.put(inputVersion.getName(), DOCKSTORE_CWL,
-                                    buildSourceFile(urlBuilt + ((WorkflowVersion)inputVersion).getWorkflowPath(), file));
+                            // get the "main" workflow file
+                            if (((WorkflowVersion)inputVersion).getWorkflowPath().equalsIgnoreCase(file.getPath())) {
+                                version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);
+                                fileTable.put(inputVersion.getName(), DOCKSTORE_CWL,
+                                        buildSourceFile(urlBuilt + ((WorkflowVersion)inputVersion).getWorkflowPath(), file));
+                            }
                             break;
                         case DOCKSTORE_WDL:
                             version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);

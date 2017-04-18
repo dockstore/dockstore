@@ -21,6 +21,7 @@ import java.math.RoundingMode;
 
 /**
  * A printer of the progress for file provisoning plugins.
+ *
  * @author dyuen
  */
 public class ProgressPrinter {
@@ -30,6 +31,7 @@ public class ProgressPrinter {
 
     /**
      * Call to report on progress
+     *
      * @param totalBytesTransferred bytes transferred so far
      * @param streamSize            total bytes to be transferred
      */

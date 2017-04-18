@@ -41,6 +41,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.net.io.CopyStreamEvent;
 import org.apache.commons.net.io.CopyStreamListener;
 import org.apache.commons.net.io.Util;
+import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemManager;
 import org.apache.commons.vfs2.FileSystemOptions;
 import org.apache.commons.vfs2.VFS;
@@ -62,7 +63,7 @@ public final class FileProvisionUtil {
         // disable utility constructor
     }
 
-    static boolean downloadFromVFS2(String path, String targetFilePath) {
+    static boolean downloadFromVFS2(String path, Path targetFilePath) {
         // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
         // https://commons.apache.org/proper/commons-vfs/filesystems.html
         try {
@@ -72,12 +73,9 @@ public final class FileProvisionUtil {
 
             // trigger a copy from the URL to a local file path that's a UUID to avoid collision
             FileSystemManager fsManager = VFS.getManager();
-            org.apache.commons.vfs2.FileObject src = fsManager.resolveFile(path, opts);
-            org.apache.commons.vfs2.FileObject dest = fsManager.resolveFile(new File(targetFilePath).getAbsolutePath());
-            long inputSize = src.getContent().getSize();
-            try (InputStream inputStream = src.getContent().getInputStream();
-                    OutputStream outputSteam = dest.getContent().getOutputStream()) {
-                copyFromInputStreamToOutputStream(inputStream, inputSize, outputSteam);
+            try (org.apache.commons.vfs2.FileObject src = fsManager.resolveFile(path, opts);
+                    org.apache.commons.vfs2.FileObject dest = fsManager.resolveFile(targetFilePath.toFile().getAbsolutePath())) {
+                copyFromInputStreamToOutputStream(src, dest);
             }
             return true;
         } catch (IOException e) {
@@ -87,14 +85,11 @@ public final class FileProvisionUtil {
     }
 
     /**
-     * Copy from stream to stream while displaying progress
+     * Copy from file object to file object while displaying progress, will not close streams
      *
-     * @param inputStream source
-     * @param inputSize   total size
-     * @param outputSteam destination
      * @throws IOException throws an exception if unable to provision input files
      */
-    static void copyFromInputStreamToOutputStream(InputStream inputStream, long inputSize, OutputStream outputSteam) throws IOException {
+    static void copyFromInputStreamToOutputStream(FileObject src, FileObject dest) throws IOException {
         CopyStreamListener listener = new CopyStreamListener() {
             ProgressPrinter printer = new ProgressPrinter();
 
@@ -105,16 +100,20 @@ public final class FileProvisionUtil {
 
             @Override
             public void bytesTransferred(long totalBytesTransferred, int bytesTransferred, long streamSize) {
-                printer.handleProgress(totalBytesTransferred, streamSize);
+                synchronized (System.out) {
+                    printer.handleProgress(totalBytesTransferred, streamSize);
+                }
             }
         };
-        try (OutputStream outputStream = outputSteam) {
+        try (InputStream inputStream = src.getContent().getInputStream();
+                OutputStream outputStream = dest.getContent().getOutputStream()) {
             // a larger buffer improves copy performance
             // we can also split this (local file copy) out into a plugin later
             final int largeBuffer = 100;
-            Util.copyStream(inputStream, outputStream, Util.DEFAULT_COPY_BUFFER_SIZE * largeBuffer, inputSize, listener);
-        } catch (IOException e) {
-            throw new RuntimeException("Could not provision input files", e);
+            Util.copyStream(inputStream, outputStream, Util.DEFAULT_COPY_BUFFER_SIZE * largeBuffer, src.getContent().getSize(), listener);
+        } finally {
+            // finalize output from the printer
+            System.out.println();
         }
     }
 
@@ -205,7 +204,8 @@ public final class FileProvisionUtil {
             return false;
         } else {
             System.out.println("Downloading " + sourceLocation + " to " + destinationLocation);
-            FileProvisionUtil.downloadFromVFS2(sourceLocation, destinationLocation);
+            final int pluginDownloadAttempts = 1;
+            FileProvisioning.retryWrapper(null, sourceLocation, Paths.get(destinationLocation), pluginDownloadAttempts);
             return true;
         }
     }
