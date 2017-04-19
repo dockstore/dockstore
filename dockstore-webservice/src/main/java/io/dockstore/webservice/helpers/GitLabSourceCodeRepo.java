@@ -16,6 +16,9 @@
 
 package io.dockstore.webservice.helpers;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -348,10 +351,17 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
      */
     private String getFileContentsFromIdV4(String id, String branch, String filepath) {
         if (id != null && branch != null && filepath != null) {
-            // TODO: Figure out how to url encode properly
-            String fileURL = filepath.replace(".", "%2E");
-            fileURL = fileURL.replace("/", "%2F");
-            String fileUrl = GITLAB_API_URL_V4 + "projects/" + id + "/repository/files/" + fileURL + "/raw?ref=" + branch;
+
+            String fileURI = null;
+            try {
+                fileURI = URLEncoder.encode(filepath, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                LOG.error(e.getMessage());
+            }
+            // TODO: Figure out how to url encode the periods properly
+            fileURI = fileURI.replace(".", "%2E");
+
+            String fileUrl = GITLAB_API_URL_V4 + "projects/" + id + "/repository/files/" + fileURI + "/raw?ref=" + branch;
             Optional<String> fileAsString = ResourceUtilities.asString(fileUrl, gitlabTokenContent, client);
             if (fileAsString.isPresent()) {
                 return fileAsString.get();
