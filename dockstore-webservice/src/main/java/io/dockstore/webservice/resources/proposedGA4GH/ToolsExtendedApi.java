@@ -1,5 +1,13 @@
 package io.dockstore.webservice.resources.proposedGA4GH;
 
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
+
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
@@ -10,14 +18,6 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.api.NotFoundException;
 import io.swagger.model.Tool;
 import org.apache.http.HttpStatus;
-
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
 
 /**
  * GET methods for organization related information on path: /api/ga4gh/v1/tools
@@ -40,6 +40,17 @@ public class ToolsExtendedApi {
             @ApiParam(value = "An organization, for example `cancercollaboratory`", required = true) @PathParam("organization") String organization,
             @Context SecurityContext securityContext) throws NotFoundException {
         return delegate.toolsOrgGet(organization, securityContext);
+    }
+
+    @GET
+    @Path("/tools/index")
+    @UnitOfWork
+    @Produces({ "application/json" })
+    @ApiOperation(value = "List tools of an organization as an index", notes = "This endpoint returns tools of an organization. ", response = Tool.class, responseContainer = "List", tags = {
+            "GA4GH", })
+    @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_OK, message = "An array of Tools of the input organization.") })
+    public Response toolsIndexGet(@Context SecurityContext securityContext) throws NotFoundException {
+        return delegate.toolsIndexGet(securityContext);
     }
 
     @GET

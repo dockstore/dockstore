@@ -18,18 +18,25 @@ package io.dockstore.webservice.resources.proposedGA4GH;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
+import io.dropwizard.jackson.Jackson;
 import io.swagger.api.NotFoundException;
 import io.swagger.api.impl.ToolsImplCommon;
 
@@ -122,4 +129,30 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         }
         return Response.ok(organizations).build();
     }
+
+    @Override
+    public Response toolsIndexGet(SecurityContext securityContext) throws NotFoundException {
+        List<Entry> published = getPublished();
+        StringBuilder builder = new StringBuilder();
+        ObjectMapper mapper = Jackson.newObjectMapper();
+        Gson gson = new GsonBuilder().create();
+
+        published.forEach(entry -> {
+            Map<String, Map<String, String>> index = new HashMap<>();
+            Map<String, String> internal = new HashMap<>();
+            internal.put("_id", String.valueOf(entry.getId()));
+            index.put("index", internal);
+            builder.append(gson.toJson(index));
+            builder.append('\n');
+            try {
+                builder.append(mapper.writeValueAsString(entry));
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+            builder.append('\n');
+        });
+        return Response.ok().entity(builder.toString().trim()).build();
+    }
+
+
 }
