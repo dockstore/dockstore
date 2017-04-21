@@ -1,42 +1,42 @@
 {
-   "arrayed_input":[
-      {
+  "arrayed_input": [
+    {
       "path": "https://raw.githubusercontent.com/ga4gh/dockstore/1.0/README.md",
-         "class":"File"
-      },
-      {
+      "class": "File"
+    },
+    {
       "path": "https://raw.githubusercontent.com/ga4gh/dockstore/1.0/README.md",
-         "class":"File"
-      },
-      {
+      "class": "File"
+    },
+    {
       "path": "https://raw.githubusercontent.com/ga4gh/dockstore/1.0/README.md",
-         "class":"File"
-      }
-   ],
-   "hello_input":{
+      "class": "File"
+    }
+  ],
+  "hello_input": {
     "path": "https://raw.githubusercontent.com/ga4gh/dockstore/1.0/README.md",
-      "class":"File"
-   },
-   "hello_output":{
-      "path":"file:///tmp/example.bedGraph",
-      "class":"File"
-   },
-   "wc_output":[
-      {
-         "path":"file:///tmp/wc1.out",
-         "class":"File"
-      },
-      {
-         "path":"file:///tmp/wc2.out",
-         "class":"File"
-      }
-   ],
-   "ref_file_1":{
+    "class": "File"
+  },
+  "hello_output": {
+    "path": "file:///tmp/example.bedGraph",
+    "class": "File"
+  },
+  "wc_output": [
+    {
+      "path": "file:///tmp/wc1.out",
+      "class": "File"
+    },
+    {
+      "path": "file:///tmp/wc2.out",
+      "class": "File"
+    }
+  ],
+  "ref_file_1": {
     "path": "https://raw.githubusercontent.com/ga4gh/dockstore/1.0/README.md",
-      "class":"File"
-   },
-   "ref_file_2":{
+    "class": "File"
+  },
+  "ref_file_2": {
     "path": "https://raw.githubusercontent.com/ga4gh/dockstore/1.0/README.md",
-      "class":"File"
-   }
+    "class": "File"
+  }
 }

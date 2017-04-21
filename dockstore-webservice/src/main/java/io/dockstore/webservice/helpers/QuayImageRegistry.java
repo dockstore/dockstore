@@ -16,10 +16,23 @@
 
 package io.dockstore.webservice.helpers;
 
+import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
-import io.dockstore.webservice.core.Registry;
+import com.google.gson.reflect.TypeToken;
+import io.dockstore.common.Registry;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
@@ -34,18 +47,6 @@ import io.swagger.quay.client.model.UserView;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * @author dyuen
@@ -84,7 +85,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
             final String json = asStringBuilds.get();
             Gson gson = new Gson();
             Map<String, Map<String, Map<String, String>>> map = new HashMap<>();
-            map = (Map<String, Map<String, Map<String, String>>>) gson.fromJson(json, map.getClass());
+            map = (Map<String, Map<String, Map<String, String>>>)gson.fromJson(json, map.getClass());
 
             final Map<String, Map<String, String>> listOfTags = map.get("tags");
 
@@ -115,7 +116,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
             final UserView loggedInUser = api.getLoggedInUser();
             final List organizations = loggedInUser.getOrganizations();
             for (Object organization : organizations) {
-                Map<String, String> organizationMap = (Map) organization;
+                Map<String, String> organizationMap = (Map)organization;
                 namespaces.add(organizationMap.get("name"));
             }
         } catch (ApiException e) {
@@ -186,7 +187,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
 
                 // Store the json file into a map for parsing
                 Map<String, ArrayList> buildMap = new HashMap<>();
-                buildMap = (Map<String, ArrayList>) gson.fromJson(json, buildMap.getClass());
+                buildMap = (Map<String, ArrayList>)gson.fromJson(json, buildMap.getClass());
 
                 // Grad build information
                 ArrayList builds = buildMap.get("builds");
@@ -196,7 +197,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
                     // ASSUMPTION : We are assuming that for a given Quay repo users are only using one git trigger
                     if (!builds.isEmpty()) {
                         // If a build exists, grab data from it and update the tool
-                        Map<String, Map<String, String>> individualBuild = (Map<String, Map<String, String>>) builds.get(0);
+                        Map<String, Map<String, String>> individualBuild = (Map<String, Map<String, String>>)builds.get(0);
 
                         // Get the git url
                         Map<String, String> triggerMetadata = individualBuild.get("trigger_metadata");
@@ -204,9 +205,29 @@ public class QuayImageRegistry extends AbstractImageRegistry {
                         if (triggerMetadata != null) {
                             gitUrl = triggerMetadata.get("git_url");
                         }
+                        // alternative hack for GA4GH importer (should be removed if we can create triggers on quay.io repos)
+                        String autoGenerateTag = "GA4GH-generated-do-not-edit";
+                        try {
+                            if (tool.getDescription().contains(autoGenerateTag)) {
+                                String[] split = tool.getDescription().split("\n");
+                                for (String line : split) {
+                                    if (line.contains(autoGenerateTag)) {
+                                        String[] splitLine = line.split("<>");
+                                        String trimmed = splitLine[1].trim();
+                                        // strip the brackets
+                                        String substring = trimmed.substring(1, trimmed.length() - 1);
+                                        Map<String, String> map = new Gson().fromJson(substring,
+                                                new TypeToken<Map<String, String>>() { }.getType());
+                                        gitUrl = "git@github.com:" + map.get("namespace") + "/" + map.get("repo") + ".git";
+                                    }
+                                }
+                            }
+                        } catch (Exception e) {
+                            LOG.info("Found GA4GH tag in description for " + tool.getPath() + " but could not process it into a git url");
+                        }
 
                         // Get lastbuild time
-                        Map<String, String> individualBuildStringMap = (Map<String, String>) builds.get(0);
+                        Map<String, String> individualBuildStringMap = (Map<String, String>)builds.get(0);
                         String lastBuild = individualBuildStringMap.get("started");
 
                         Date date;
@@ -214,7 +235,8 @@ public class QuayImageRegistry extends AbstractImageRegistry {
                             date = formatter.parse(lastBuild);
                             tool.setLastBuild(date);
                         } catch (ParseException ex) {
-                            LOG.warn(quayToken.getUsername() + ": "  + quayToken.getUsername() + " Build date did not match format 'EEE, d MMM yyyy HH:mm:ss Z'");
+                            LOG.warn(quayToken.getUsername() + ": " + quayToken.getUsername()
+                                    + " Build date did not match format 'EEE, d MMM yyyy HH:mm:ss Z'");
                         }
                     }
 
@@ -241,20 +263,20 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         if (asStringBuilds.isPresent()) {
             String json = asStringBuilds.get();
             Map<String, ArrayList> map = new HashMap<>();
-            map = (Map<String, ArrayList>) gson.fromJson(json, map.getClass());
+            map = (Map<String, ArrayList>)gson.fromJson(json, map.getClass());
             builds = map.get("builds");
 
             // Set up tags with build information
             for (Tag tag : tags) {
                 // Set tag information based on build info
                 for (Object build : builds) {
-                    Map<String, ArrayList<String>> tagsMap = (Map<String, ArrayList<String>>) build;
+                    Map<String, ArrayList<String>> tagsMap = (Map<String, ArrayList<String>>)build;
                     List<String> buildTags = tagsMap.get("tags");
 
                     // If build is for given tag
                     if (buildTags.contains(tag.getName())) {
                         // Find if tag has a git reference
-                        Map<String, Map<String, String>> triggerMetadataMap = (Map<String, Map<String, String>>) build;
+                        Map<String, Map<String, String>> triggerMetadataMap = (Map<String, Map<String, String>>)build;
                         Map<String, String> triggerMetadata = triggerMetadataMap.get("trigger_metadata");
                         if (triggerMetadata != null) {
                             String ref = triggerMetadata.get("ref");
@@ -287,10 +309,11 @@ public class QuayImageRegistry extends AbstractImageRegistry {
     /**
      * Get the map of the given Quay tool
      * Todo: this should be implemented with the Quay API, but they currently don't have a return model for this call
+     *
      * @param tool
      * @return
      */
-    public Map<String, Object> getQuayInfo(final Tool tool){
+    public Map<String, Object> getQuayInfo(final Tool tool) {
         final String repo = tool.getNamespace() + '/' + tool.getName();
         final String repoUrl = QUAY_URL + "repository/" + repo;
         final Optional<String> asStringBuilds = ResourceUtilities.asString(repoUrl, quayToken.getContent(), client);
@@ -300,7 +323,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
 
             Gson gson = new Gson();
             Map<String, Object> map = new HashMap<>();
-            map = (Map<String,Object>) gson.fromJson(json, map.getClass());
+            map = (Map<String, Object>)gson.fromJson(json, map.getClass());
             return map;
 
         }
@@ -308,8 +331,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
     }
 
     /**
-     * @param reference
-     *            a raw reference from git like "refs/heads/master"
+     * @param reference a raw reference from git like "refs/heads/master"
      * @return the last segment like master
      */
     public static String parseReference(String reference) {
@@ -330,5 +352,8 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         return reference;
     }
 
-
+    @Override
+    public Registry getRegistry() {
+        return Registry.QUAY_IO;
+    }
 }

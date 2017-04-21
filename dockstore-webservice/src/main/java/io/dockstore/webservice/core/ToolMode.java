@@ -21,7 +21,11 @@ import io.swagger.annotations.ApiModel;
 /**
  * This enumerates the types of containers (really, images) that we can add to the dockstore. This will become more prominent later if we
  * proceed with privacy and http link support.
- * 
+ *
+ * The convention here seems to be that auto-detected tools can become mixed mode tools. However, neither of these two can become manual or vice versa.
+ * Exception: If a user wants to add two tools based on the same Docker image but with different descriptors, then we currently have them add a new tool with the same
+ * namespace and repo, but add a toolname to distinguish the two. These can get converted to auto-detected builds.
+ *
  * @author dyuen
  */
 @ApiModel(description = "This enumerates the types of containers (really, images) that we can add to the dockstore. Implementation specific.")
@@ -31,14 +35,12 @@ public enum ToolMode {
      * Dockerfiles and dockstore.cwl for all tags, track back to git identifier via quay.io API, find documents in default location
      * specified by wizard
      */
-    AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS,
-    /**
+    AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS, /**
      * from quay.io automated builds or not, try to track back to source control regardless of whether it is github or bitbucket and find
      * Dockerfiles and dockstore.cwl if automated, track back to git identifier via quay.io API, find documents in default location
      * specified by wizard if not automated, cannot track back, skip until specified, find documents in default location specified by wizard
      */
-    AUTO_DETECT_QUAY_TAGS_WITH_MIXED,
-    /**
+    AUTO_DETECT_QUAY_TAGS_WITH_MIXED, /**
      * from quay.io or Docker Hub, the user simply enters an image path (ex: org/foobar or quay.io/org/foobar) and then picks a source repo
      * and then enters most remaining info (source tag, image tag, paths)
      */

@@ -32,48 +32,48 @@ import io.swagger.annotations.ApiOperation;
 @Api("/integration.gitlab.com")
 @Produces(MediaType.TEXT_HTML)
 public class GitLabComAuthenticationResource {
-        private final String clientID;
-        private final String redirectURI;
+    private final String clientID;
+    private final String redirectURI;
 
-        public GitLabComAuthenticationResource(String clientID, String redirectURI) {
-                this.clientID = clientID;
-                this.redirectURI = redirectURI;
-        }
+    public GitLabComAuthenticationResource(String clientID, String redirectURI) {
+        this.clientID = clientID;
+        this.redirectURI = redirectURI;
+    }
 
-        @GET
-        @ApiOperation(value = "Display an authorization link for gitlab.com", notes = "This is a stop-gap GUI for displaying a link that allows a user to start the OAuth 2 web flow", response = GitlabComView.class)
-        public GitlabComView getView() {
-                return new GitlabComView();
+    @GET
+    @ApiOperation(value = "Display an authorization link for gitlab.com", notes = "This is a stop-gap GUI for displaying a link that allows a user to start the OAuth 2 web flow", response = GitlabComView.class)
+    public GitlabComView getView() {
+        return new GitlabComView();
+    }
+
+    /**
+     * @return the clientID
+     */
+    public String getClientID() {
+        return clientID;
+    }
+
+    /**
+     * @return the redirectURI
+     */
+    public String getRedirectURI() {
+        return redirectURI;
+    }
+
+    public class GitlabComView extends View {
+        private final GitLabComAuthenticationResource parent;
+
+        public GitlabComView() {
+            super("gitlab.com.auth.view.ftl");
+            parent = GitLabComAuthenticationResource.this;
         }
 
         /**
-         * @return the clientID
+         * @return the parent
          */
-        public String getClientID() {
-                return clientID;
+        public GitLabComAuthenticationResource getParent() {
+            return parent;
         }
-
-        /**
-         * @return the redirectURI
-         */
-        public String getRedirectURI() {
-                return redirectURI;
-        }
-
-        public class GitlabComView extends View {
-                private final GitLabComAuthenticationResource parent;
-
-                public GitlabComView() {
-                        super("gitlab.com.auth.view.ftl");
-                        parent = GitLabComAuthenticationResource.this;
-                }
-
-                /**
-                 * @return the parent
-                 */
-                public GitLabComAuthenticationResource getParent() {
-                        return parent;
-                }
-        }
+    }
 
 }

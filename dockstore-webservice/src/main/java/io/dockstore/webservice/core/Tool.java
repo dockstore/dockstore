@@ -16,10 +16,10 @@
 
 package io.dockstore.webservice.core;
 
-import java.util.Date;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.dockstore.common.Registry;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -34,23 +34,23 @@ import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import java.util.Date;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * This describes one tool in the dockstore, extending entry with fields necessary to describe bioinformatics tools.
- *
+ * <p>
  * Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be
  * associated with CWL and Dockerfile documents.
  *
  * @author xliu
  * @author dyuen
  */
-@ApiModel(value = "DockstoreTool", description = "This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be\n"
-        + " * associated with CWL and Dockerfile documents")
+@ApiModel(value = "DockstoreTool", description =
+        "This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be\n"
+                + " * associated with CWL and Dockerfile documents")
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = { "registry", "namespace", "name", "toolname" }))
 @NamedQueries({
@@ -63,6 +63,7 @@ import io.swagger.annotations.ApiModelProperty;
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByToolPath", query = "SELECT c FROM Tool c WHERE c.path = :path AND c.toolname = :toolname AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByMode", query = "SELECT c FROM Tool c WHERE c.mode = :mode"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByPath", query = "SELECT c FROM Tool c WHERE c.path = :path AND c.isPublished = true"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByNamespace", query = "SELECT c FROM Tool c WHERE lower(c.namespace) = lower(:namespace) AND c.isPublished = true ORDER BY gitUrl"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.searchPattern", query = "SELECT c FROM Tool c WHERE ((c.path LIKE :pattern) OR (c.registry LIKE :pattern) OR (c.description LIKE :pattern)) AND c.isPublished = true") })
 public class Tool extends Entry<Tool, Tag> {
 
@@ -91,6 +92,16 @@ public class Tool extends Entry<Tool, Tag> {
     @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the WDL document", required = true)
     private String defaultWdlPath = "/Dockstore.wdl";
 
+    @Column
+    @JsonProperty("tool_maintainer_email")
+    @ApiModelProperty(value = "The email address of the tool maintainer. Required for private repositories", required = false)
+    private String toolMaintainerEmail = "";
+
+    @Column
+    @JsonProperty("private_access")
+    @ApiModelProperty(value = "Is the docker image private or not.", required = true)
+    private boolean privateAccess = false;
+
     @Column(nullable = false)
     @ApiModelProperty(value = "This is the tool name of the container, when not-present this will function just like 0.1 dockstore"
             + "when present, this can be used to distinguish between two containers based on the same image, but associated with different "
@@ -104,7 +115,7 @@ public class Tool extends Entry<Tool, Tag> {
     private String namespace;
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    @ApiModelProperty(value = "This is a specific docker provider like quay.io or dockerhub or n/a?, required: GA4GH", required = true, allowableValues = "QUAY_IO,DOCKER_HUB")
+    @ApiModelProperty(value = "This is a specific docker provider like quay.io or dockerhub or n/a?, required: GA4GH", required = true)
     private Registry registry;
     @Column
     @ApiModelProperty(value = "This is a generated full docker path including registry and namespace, used for docker pull commands", readOnly = true)
@@ -124,11 +135,6 @@ public class Tool extends Entry<Tool, Tag> {
         tags = new TreeSet<>();
     }
 
-    @Override
-    public Set<Tag> getVersions() {
-        return tags;
-    }
-
     public Tool(long id, String name) {
         super(id);
         // this.userId = userId;
@@ -136,16 +142,23 @@ public class Tool extends Entry<Tool, Tag> {
         tags = new TreeSet<>();
     }
 
+    @Override
+    public Set<Tag> getVersions() {
+        return tags;
+    }
+
     /**
-     * Used during refresh to update containers
+     * Used during refresh to update tools
+     *
      * @param tool
      */
     public void update(Tool tool) {
         super.update(tool);
         this.setDescription(tool.getDescription());
         lastBuild = tool.getLastBuild();
+        this.toolMaintainerEmail = tool.getToolMaintainerEmail();
+        this.privateAccess = tool.isPrivateAccess();
     }
-
 
     @JsonProperty
     public String getName() {
@@ -167,11 +180,7 @@ public class Tool extends Entry<Tool, Tag> {
         String repositoryPath;
         if (path == null) {
             StringBuilder builder = new StringBuilder();
-            if (registry == Registry.QUAY_IO) {
-                builder.append("quay.io/");
-            } else {
-                builder.append("registry.hub.docker.com/");
-            }
+            builder.append(registry.toString() + '/');
             builder.append(namespace).append('/').append(name);
             repositoryPath = builder.toString();
         } else {
@@ -198,22 +207,18 @@ public class Tool extends Entry<Tool, Tag> {
     }
 
     /**
-     * @param name
-     *            the repo name to set
+     * @param name the repo name to set
      */
     public void setName(String name) {
         this.name = name;
     }
 
     /**
-     * @param namespace
-     *            the repo name to set
+     * @param namespace the repo name to set
      */
     public void setNamespace(String namespace) {
         this.namespace = namespace;
     }
-
-
 
     public void setRegistry(Registry registry) {
         this.registry = registry;
@@ -222,7 +227,6 @@ public class Tool extends Entry<Tool, Tag> {
     public void setPath(String path) {
         this.path = path;
     }
-
 
     public void setLastBuild(Date lastBuild) {
         this.lastBuild = lastBuild;
@@ -265,7 +269,6 @@ public class Tool extends Entry<Tool, Tag> {
         this.defaultWdlPath = defaultWdlPath;
     }
 
-
     @JsonProperty
     public String getToolname() {
         return toolname;
@@ -279,12 +282,28 @@ public class Tool extends Entry<Tool, Tag> {
     public String getToolPath() {
         return getPath() + (toolname == null || toolname.isEmpty() ? "" : '/' + toolname);
     }
-    
+
+    public String getToolMaintainerEmail() {
+        return toolMaintainerEmail;
+    }
+
+    public void setToolMaintainerEmail(String toolMaintainerEmail) {
+        this.toolMaintainerEmail = toolMaintainerEmail;
+    }
+
+    public boolean isPrivateAccess() {
+        return privateAccess;
+    }
+
+    public void setPrivateAccess(boolean privateAccess) {
+        this.privateAccess = privateAccess;
+    }
 
     /**
      * Updates information from given tool based on the new tool
+     *
      * @param tool
-         */
+     */
     public void updateInfo(Tool tool) {
         // Add descriptor type default paths here
         defaultCwlPath = tool.getDefaultCwlPath();
@@ -294,5 +313,10 @@ public class Tool extends Entry<Tool, Tag> {
 
         toolname = tool.getToolname();
         this.setGitUrl(tool.getGitUrl());
+
+        if (mode == ToolMode.MANUAL_IMAGE_PATH) {
+            toolMaintainerEmail = tool.getToolMaintainerEmail();
+            privateAccess = tool.isPrivateAccess();
+        }
     }
 }

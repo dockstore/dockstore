@@ -16,17 +16,18 @@
 
 package io.swagger.api.impl;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
+
 import io.swagger.api.NotFoundException;
 import io.swagger.api.ToolClassesApiService;
 import io.swagger.model.ToolClass;
 
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
-import java.util.ArrayList;
-import java.util.List;
-
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-27T17:44:39.014Z") public class ToolClassesApiServiceImpl
-        extends ToolClassesApiService {
+@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-07-27T17:44:39.014Z")
+public class ToolClassesApiServiceImpl extends ToolClassesApiService {
     static ToolClass getWorkflowClass() {
         ToolClass type2 = new ToolClass();
         type2.setName("Workflow");
@@ -43,7 +44,8 @@ import java.util.List;
         return type1;
     }
 
-    @Override public Response toolClassesGet(SecurityContext securityContext) throws NotFoundException {
+    @Override
+    public Response toolClassesGet(SecurityContext securityContext) throws NotFoundException {
         final List<ToolClass> toolTypes = new ArrayList<ToolClass>();
         toolTypes.add(getCommandLineToolClass());
         toolTypes.add(getWorkflowClass());

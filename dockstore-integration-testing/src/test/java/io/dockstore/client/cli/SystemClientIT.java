@@ -16,12 +16,22 @@
 
 package io.dockstore.client.cli;
 
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.util.List;
+import java.util.concurrent.TimeoutException;
+
 import com.google.common.io.Resources;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import io.dockstore.common.Constants;
+import io.dockstore.common.Registry;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dockstore.webservice.core.Registry;
 import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit.DropwizardAppRule;
 import io.swagger.client.ApiClient;
@@ -30,11 +40,13 @@ import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.GAGHApi;
 import io.swagger.client.api.UsersApi;
+import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Group;
 import io.swagger.client.model.Metadata;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
+import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Token;
 import io.swagger.client.model.Tool;
@@ -43,7 +55,8 @@ import io.swagger.client.model.ToolDockerfile;
 import io.swagger.client.model.ToolVersion;
 import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import io.swagger.client.model.Workflow;
+import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
 import org.junit.Before;
@@ -51,19 +64,13 @@ import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.charset.Charset;
-import java.util.List;
-import java.util.concurrent.TimeoutException;
-
 import static io.dockstore.common.CommonTestUtilities.clearState;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
  * Tests the actual ApiClient generated via Swagger
+ *
  * @author xliu
  */
 public class SystemClientIT {
@@ -94,19 +101,16 @@ public class SystemClientIT {
 
     private static ApiClient getWebClient(boolean correctUser, boolean admin) throws IOException, TimeoutException {
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
-        HierarchicalINIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         ApiClient client = new ApiClient();
         client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
-        client.addDefaultHeader(
-                "Authorization",
-                "Bearer "
-                        + (correctUser ? parseConfig.getString(admin ? Constants.WEBSERVICE_TOKEN_USER_1
-                                : Constants.WEBSERVICE_TOKEN_USER_2) : "foobar"));
+        client.addDefaultHeader("Authorization", "Bearer " + (correctUser ? parseConfig
+                .getString(admin ? Constants.WEBSERVICE_TOKEN_USER_1 : Constants.WEBSERVICE_TOKEN_USER_2) : "foobar"));
         return client;
     }
 
     @Before
-    public void cleanState(){
+    public void cleanState() {
         clearState();
     }
 
@@ -193,6 +197,7 @@ public class SystemClientIT {
         c.setNamespace("seqware");
         c.setToolname("test5");
         c.setPath("registry.hub.docker.com/seqware/seqware");
+        c.setPrivateAccess(false);
         //c.setToolPath("registry.hub.docker.com/seqware/seqware/test5");
         Tag tag = new Tag();
         tag.setName("master");
@@ -212,7 +217,18 @@ public class SystemClientIT {
         fileDockerFile.setType(SourceFile.TypeEnum.DOCKERFILE);
         fileDockerFile.setPath("/Dockerfile");
         tag.getSourceFiles().add(fileDockerFile);
+        SourceFile testParameterFile = new SourceFile();
+        testParameterFile.setContent("testparameterstuff");
+        testParameterFile.setType(SourceFile.TypeEnum.CWL_TEST_JSON);
+        testParameterFile.setPath("/test1.json");
+        tag.getSourceFiles().add(testParameterFile);
+        SourceFile testParameterFile2 = new SourceFile();
+        testParameterFile2.setContent("moretestparameterstuff");
+        testParameterFile2.setType(SourceFile.TypeEnum.CWL_TEST_JSON);
+        testParameterFile2.setPath("/test2.json");
+        tag.getSourceFiles().add(testParameterFile2);
         c.getTags().add(tag);
+
         return c;
     }
 
@@ -260,7 +276,7 @@ public class SystemClientIT {
         containersApi.registerManual(c);
 
         List<Tool> tools = toolApi.toolsGet(null, null, null, null, null, null, null, null, null);
-        assertTrue(tools.size() == 2);
+        assertTrue(tools.size() == 3);
 
         // test a few constraints
         tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, null, null, null, null, null, null, null, null);
@@ -292,7 +308,7 @@ public class SystemClientIT {
         try {
             final ToolVersion foobar = toolApi.toolsIdVersionsVersionIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, "foobar");
             assertTrue(foobar != null); // this should be unreachable
-        } catch(ApiException e){
+        } catch (ApiException e) {
             assertTrue(e.getCode() == HttpStatus.SC_NOT_FOUND);
         }
     }
@@ -314,14 +330,13 @@ public class SystemClientIT {
         assertTrue(tags.size() == 1);
         Tag tag = tags.get(0);
 
-
         // verify master branch
         assertTrue(!tag.getVerified());
         assertTrue(tag.getVerifiedSource() == null);
         VerifyRequest request = new VerifyRequest();
         request.setVerify(true);
         request.setVerifiedSource("test-source");
-        containertagsApi.verifyToolTag(dockstoreTool.getId(), tag.getId(),request);
+        containertagsApi.verifyToolTag(dockstoreTool.getId(), tag.getId(), request);
 
         // check again
         tags = containertagsApi.getTagsByPath(dockstoreTool.getId());
@@ -339,23 +354,34 @@ public class SystemClientIT {
         DockstoreTool c = getContainer();
         containersApi.registerManual(c);
 
-        final ToolDockerfile toolDockerfile = toolApi.toolsIdVersionsVersionIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5","master");
+        final ToolDockerfile toolDockerfile = toolApi
+                .toolsIdVersionsVersionIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5", "master");
         assertTrue(toolDockerfile.getDockerfile().contains("dockerstuff"));
-        final ToolDescriptor cwl = toolApi.toolsIdVersionsVersionIdTypeDescriptorGet("cwl", "registry.hub.docker.com/seqware/seqware/test5", "master");
+        final ToolDescriptor cwl = toolApi
+                .toolsIdVersionsVersionIdTypeDescriptorGet("cwl", "registry.hub.docker.com/seqware/seqware/test5", "master");
         assertTrue(cwl.getDescriptor().contains("cwlstuff"));
 
         // hit up the plain text versions
         final String basePath = client.getBasePath();
         String encodedID = "registry.hub.docker.com%2Fseqware%2Fseqware%2Ftest5";
-        URL url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/"+encodedID+"/versions/master/cwl-plain/descriptor");
+        URL url = new URL(
+                basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/plain-CWL/descriptor");
         List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
         assertTrue(strings.size() == 1 && strings.get(0).equals("cwlstuff"));
 
         //hit up the relative path version
         String encodedPath = "%2FDockstore.cwl";
-        url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/"+encodedID+"/versions/master/cwl-plain/descriptor/"+encodedPath);
+        url = new URL(
+                basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/plain-CWL/descriptor/"
+                        + encodedPath);
         strings = Resources.readLines(url, Charset.forName("UTF-8"));
         assertTrue(strings.size() == 1 && strings.get(0).equals("cwlstuff"));
+
+        // Get test files
+        url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/plain-CWL/tests/");
+        strings = Resources.readLines(url, Charset.forName("UTF-8"));
+        assertTrue(strings.get(0).equals("testparameterstuff"));
+        assertTrue(strings.get(1).equals("moretestparameterstuff"));
     }
 
     @Test
@@ -373,23 +399,23 @@ public class SystemClientIT {
         // hit up the plain text versions
         final String basePath = client.getBasePath();
         String encodedID = "registry.hub.docker.com%2Fseqware%2Fseqware%2Ftest5";
-        URL url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/"+encodedID);
+        URL url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID);
         List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
         // test root version
         assertTrue(strings.size() == 1 && strings.get(0).contains("\"verified\":true,\"verified-source\":\"[\\\"funky source\\\"]\""));
 
         // TODO: really, we should be using deserialized versions, but this is not currently working
-//        ObjectMapper mapper = new ObjectMapper();
-//        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-//        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-//        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-//        mapper.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
-//        mapper.enable(DeserializationFeature.READ_ENUMS_USING_TO_STRING);
-//        mapper.registerModule(new JodaModule());
-//        final DockstoreTool dockstoreTool = mapper.readValue(strings.get(0), DockstoreTool.class);
+        //        ObjectMapper mapper = new ObjectMapper();
+        //        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        //        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        //        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        //        mapper.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
+        //        mapper.enable(DeserializationFeature.READ_ENUMS_USING_TO_STRING);
+        //        mapper.registerModule(new JodaModule());
+        //        final DockstoreTool dockstoreTool = mapper.readValue(strings.get(0), DockstoreTool.class);
 
         // hit up a specific version
-        url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/"+encodedID+"/versions/master");
+        url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master");
         strings = Resources.readLines(url, Charset.forName("UTF-8"));
         // test nested version
         assertTrue(strings.size() == 1 && strings.get(0).contains("\"verified\":true,\"verified-source\":\"funky source\""));
@@ -459,7 +485,8 @@ public class SystemClientIT {
         ApiClient muggleClient = getWebClient();
         ContainersApi muggleContainersApi = new ContainersApi(muggleClient);
         final DockstoreTool registeredContainer = muggleContainersApi.getPublishedContainer(c.getId());
-        assertTrue("should see no tags as a regular user, saw " + registeredContainer.getTags().size(), registeredContainer.getTags().size() == 0);
+        assertTrue("should see no tags as a regular user, saw " + registeredContainer.getTags().size(),
+                registeredContainer.getTags().size() == 0);
     }
 
     @Test
@@ -508,4 +535,77 @@ public class SystemClientIT {
         assertTrue(!tokens.isEmpty());
     }
 
+    /**
+     * This tests if a tool can be starred twice.
+     * This test will pass if this action cannot be performed.
+     * @throws ApiException
+     * @throws IOException
+     * @throws TimeoutException
+     */
+    @Test (expected = ApiException.class)
+    public void testStarStarredTool() throws ApiException, IOException, TimeoutException {
+        ApiClient client = getWebClient();
+        ContainersApi containersApi = new ContainersApi(client);
+        DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
+        long containerId = container.getId();
+        assertTrue(containerId == 2);
+        StarRequest request = new StarRequest();
+        request.setStar(true);
+        containersApi.starEntry(containerId, request);
+        containersApi.starEntry(containerId, request);
+        }
+
+    /**
+     * This tests if an already unstarred tool can be unstarred again.
+     * This test will pass if this action cannot be performed.
+     * @throws ApiException
+     * @throws IOException
+     * @throws TimeoutException
+     */
+    @Test (expected = ApiException.class)
+    public void testUnstarUnstarredTool() throws ApiException, IOException, TimeoutException {
+        ApiClient client = getWebClient();
+        ContainersApi containersApi = new ContainersApi(client);
+        DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
+        long containerId = container.getId();
+        assertTrue(containerId == 2);
+        containersApi.unstarEntry(containerId);
+    }
+
+    /**
+     * This tests if a workflow can be starred twice.
+     * This test will pass if this action cannot be performed.
+     * @throws ApiException
+     * @throws IOException
+     * @throws TimeoutException
+     */
+    @Test (expected = ApiException.class)
+    public void testStarStarredWorkflow() throws ApiException, IOException, TimeoutException {
+        ApiClient client = getWebClient();
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+        Workflow workflow = workflowsApi.getPublishedWorkflowByPath("A/l");
+        long workflowId = workflow.getId();
+        assertTrue(workflowId == 11);
+        StarRequest request = new StarRequest();
+        request.setStar(true);
+        workflowsApi.starEntry(workflowId, request);
+        workflowsApi.starEntry(workflowId, request);
+    }
+
+    /**
+     * This tests if an already unstarred workflow can be unstarred again.
+     * This test will pass if this action cannot be performed.
+     * @throws ApiException
+     * @throws IOException
+     * @throws TimeoutException
+     */
+    @Test (expected = ApiException.class)
+    public void testUnstarUnstarredWorkflow() throws ApiException, IOException, TimeoutException {
+        ApiClient client = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(client);
+        Workflow workflow = workflowApi.getPublishedWorkflowByPath("A/l");
+        long workflowId = workflow.getId();
+        assertTrue(workflowId == 11);
+        workflowApi.unstarEntry(workflowId);
+    }
 }

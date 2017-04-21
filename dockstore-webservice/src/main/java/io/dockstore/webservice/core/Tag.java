@@ -16,20 +16,20 @@
 
 package io.dockstore.webservice.core;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import java.util.Objects;
 
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
-import java.util.Objects;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 /**
  * This describes one tag associated with a container. For our implementation, this means one tag on quay.io or Docker Hub which is
  * associated with a particular image.
- * 
+ *
  * @author xliu
  * @author dyuen
  */
@@ -37,8 +37,6 @@ import java.util.Objects;
 @Entity
 @DiscriminatorValue("tool")
 public class Tag extends Version<Tag> {
-
-
 
     @Column
     @JsonProperty("image_id")
@@ -65,13 +63,13 @@ public class Tag extends Version<Tag> {
     @ApiModelProperty("Path for the WDL document")
     private String wdlPath = "/Dockstore.wdl";
 
-    public Tag() {
-        super();
-    }
-
     @Column
     @ApiModelProperty("Implementation specific, indicates whether this is an automated build on quay.io")
     private boolean automated;
+
+    public Tag() {
+        super();
+    }
 
     public void updateByUser(final Tag tag) {
         super.updateByUser(tag);
@@ -113,7 +111,6 @@ public class Tag extends Version<Tag> {
 
         dockerfilePath = tag.dockerfilePath;
     }
-
 
     @JsonProperty
     public String getImageId() {
@@ -186,13 +183,12 @@ public class Tag extends Version<Tag> {
         if (!super.equals(obj)) {
             return false;
         }
-        final Tag other = (Tag) obj;
+        final Tag other = (Tag)obj;
         return Objects.equals(this.getId(), other.getId());
     }
 
     public int hashCode() {
         return (int)getId();
     }
-
 
 }

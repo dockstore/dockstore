@@ -16,9 +16,9 @@
 
 package io.dockstore.webservice.core;
 
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
@@ -34,15 +34,13 @@ import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * This describes one workflow in the dockstore, extending Entry with the fields necessary to describe workflows.
- *
+ * <p>
  * Logically, this currently means one WDL or CWL document that may refer to tools in turn.
  *
  * @author dyuen
@@ -56,8 +54,9 @@ import io.swagger.annotations.ApiModelProperty;
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findAll", query = "SELECT c FROM Workflow c"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByPath", query = "SELECT c FROM Workflow c WHERE c.path = :path"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByPath", query = "SELECT c FROM Workflow c WHERE c.path = :path AND c.isPublished = true"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByGitUrl", query = "SELECT c FROM Workflow c WHERE c.gitUrl = :gitUrl"),
-                  @NamedQuery(name = "io.dockstore.webservice.core.Workflow.searchPattern", query = "SELECT c FROM Workflow c WHERE ((c.defaultWorkflowPath LIKE :pattern) OR (c.description LIKE :pattern) OR (c.path LIKE :pattern)) AND c.isPublished = true") })
+        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByGitUrl", query = "SELECT c FROM Workflow c WHERE c.gitUrl = :gitUrl ORDER BY gitUrl"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByOrganization", query = "SELECT c FROM Workflow c WHERE lower(c.organization) = lower(:organization) AND c.isPublished = true"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.searchPattern", query = "SELECT c FROM Workflow c WHERE ((c.defaultWorkflowPath LIKE :pattern) OR (c.description LIKE :pattern) OR (c.path LIKE :pattern)) AND c.isPublished = true") })
 @DiscriminatorValue("workflow")
 public class Workflow extends Entry<Workflow, WorkflowVersion> {
 
@@ -83,7 +82,6 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     @ApiModelProperty(value = "This is a descriptor type for the workflow, either CWL or WDL (Defaults to CWL)", required = true)
     private String descriptorType;
 
-
     // Add for new descriptor types
     @Column(columnDefinition = "text")
     @JsonProperty("workflow_path")
@@ -100,11 +98,6 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         workflowVersions = new TreeSet<>();
     }
 
-    @Override
-    public Set<WorkflowVersion> getVersions() {
-        return workflowVersions;
-    }
-
     public Workflow(long id, String workflowName) {
         super(id);
         // this.userId = userId;
@@ -112,8 +105,14 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         workflowVersions = new TreeSet<>();
     }
 
+    @Override
+    public Set<WorkflowVersion> getVersions() {
+        return workflowVersions;
+    }
+
     /**
      * Used during refresh to update containers
+     *
      * @param workflow
      */
     public void update(Workflow workflow) {
@@ -137,7 +136,6 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         return workflowName;
     }
 
-
     public Set<WorkflowVersion> getWorkflowVersions() {
         return workflowVersions;
     }
@@ -151,13 +149,11 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     }
 
     /**
-     * @param workflowName
-     *            the repo name to set
+     * @param workflowName the repo name to set
      */
     public void setWorkflowName(String workflowName) {
         this.workflowName = workflowName;
     }
-
 
     // Add for new descriptor types
     @JsonProperty
@@ -190,10 +186,10 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     @JsonProperty
     public String getPath() {
         String constructedPath;
-        if (path == null){
-            constructedPath = organization + '/' + repository + (workflowName == null ? "": '/' + workflowName);
+        if (path == null) {
+            constructedPath = organization + '/' + repository + (workflowName == null ? "" : '/' + workflowName);
             path = constructedPath;
-        }else{
+        } else {
             constructedPath = path;
         }
         return constructedPath;

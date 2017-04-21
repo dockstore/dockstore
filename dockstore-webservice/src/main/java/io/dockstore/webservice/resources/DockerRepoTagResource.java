@@ -16,9 +16,24 @@
 
 package io.dockstore.webservice.resources;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Strings;
-
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.VerifyRequest;
 import io.dockstore.webservice.core.Tag;
@@ -32,40 +47,22 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 /**
- *
  * @author dyuen
  */
 @Path("/containers")
 @Api("containertags")
 @Produces(MediaType.APPLICATION_JSON)
 public class DockerRepoTagResource {
+    private static final Logger LOG = LoggerFactory.getLogger(DockerRepoTagResource.class);
 
     private final ToolDAO toolDAO;
     private final TagDAO tagDAO;
-
-    private static final Logger LOG = LoggerFactory.getLogger(DockerRepoTagResource.class);
 
     public DockerRepoTagResource(ToolDAO toolDAO, TagDAO tagDAO) {
         this.tagDAO = tagDAO;
@@ -114,10 +111,8 @@ public class DockerRepoTagResource {
                 Tag existingTag = mapOfExistingTags.get(tag.getId());
 
                 // If any paths have changed then set dirty bit to true
-                boolean dirtyBitCheck = new EqualsBuilder()
-                        .append(existingTag.getCwlPath(), tag.getCwlPath())
-                        .append(existingTag.getWdlPath(), tag.getWdlPath())
-                        .append(existingTag.getDockerfilePath(), tag.getDockerfilePath())
+                boolean dirtyBitCheck = new EqualsBuilder().append(existingTag.getCwlPath(), tag.getCwlPath())
+                        .append(existingTag.getWdlPath(), tag.getWdlPath()).append(existingTag.getDockerfilePath(), tag.getDockerfilePath())
                         .isEquals();
 
                 if (!dirtyBitCheck) {

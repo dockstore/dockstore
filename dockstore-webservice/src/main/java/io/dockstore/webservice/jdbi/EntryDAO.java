@@ -19,17 +19,17 @@ package io.dockstore.webservice.jdbi;
 import java.lang.reflect.ParameterizedType;
 import java.util.List;
 
+import io.dockstore.webservice.core.Entry;
+import io.dropwizard.hibernate.AbstractDAO;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 
-import io.dockstore.webservice.core.Entry;
-import io.dropwizard.hibernate.AbstractDAO;
-
 /**
- *
  * @author dyuen
  */
 public class EntryDAO<T extends Entry> extends AbstractDAO<T> {
+
+    protected static final String SCHEMA = "http://schema.org/";
 
     private Class<T> typeOfT;
 
@@ -38,7 +38,7 @@ public class EntryDAO<T extends Entry> extends AbstractDAO<T> {
         /**
          * ewwww, don't try this at home from https://stackoverflow.com/questions/4837190/java-generics-get-class
          */
-        this.typeOfT = (Class<T>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+        this.typeOfT = (Class<T>)((ParameterizedType)getClass().getGenericSuperclass()).getActualTypeArguments()[0];
     }
 
     public T findById(Long id) {
@@ -61,8 +61,8 @@ public class EntryDAO<T extends Entry> extends AbstractDAO<T> {
     }
 
     public T findPublishedById(long id) {
-        return uniqueResult(namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findPublishedById").setParameter(
-                "id", id));
+        return uniqueResult(
+                namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findPublishedById").setParameter("id", id));
     }
 
     public List<T> findAll() {
@@ -75,7 +75,7 @@ public class EntryDAO<T extends Entry> extends AbstractDAO<T> {
 
     public List<T> searchPattern(String pattern) {
         pattern = '%' + pattern + '%';
-        return list(namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".searchPattern").setParameter("pattern",
-                pattern));
+        return list(
+                namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".searchPattern").setParameter("pattern", pattern));
     }
 }

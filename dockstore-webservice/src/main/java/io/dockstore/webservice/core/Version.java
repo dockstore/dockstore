@@ -38,23 +38,24 @@ import javax.persistence.SequenceGenerator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
-
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 /**
  * This describes one version of either a workflow or a tool.
- * 
+ *
  * @author dyuen
  */
 @Entity
 @ApiModel(value = "Base class for versions of entries in the Dockstore")
-@Inheritance(strategy= InheritanceType.TABLE_PER_CLASS)
-public abstract class Version<T extends Version> implements Comparable<T>{
-    /** re-use existing generator for backwards compatibility */
+@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
+public abstract class Version<T extends Version> implements Comparable<T> {
+    /**
+     * re-use existing generator for backwards compatibility
+     */
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator="tag_id_seq")
-    @SequenceGenerator(name="tag_id_seq", sequenceName="tag_id_seq")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "tag_id_seq")
+    @SequenceGenerator(name = "tag_id_seq", sequenceName = "tag_id_seq")
     @ApiModelProperty("Implementation specific ID for the tag in this web service")
     private long id;
 
@@ -67,15 +68,10 @@ public abstract class Version<T extends Version> implements Comparable<T>{
     @ApiModelProperty(value = "git commit/tag/branch", required = true)
     private String reference;
 
-
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "version_sourcefile", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "sourcefileid", referencedColumnName = "id"))
     @ApiModelProperty("Cached files for each version. Includes Dockerfile and Descriptor files")
     private final Set<SourceFile> sourceFiles;
-
-    public Version() {
-        sourceFiles = new HashSet<>(0);
-    }
 
     @Column
     @ApiModelProperty("Implementation specific, whether this row is visible to other users aside from the owner")
@@ -99,6 +95,10 @@ public abstract class Version<T extends Version> implements Comparable<T>{
     @Column
     @ApiModelProperty("Verified source for the version")
     private String verifiedSource;
+
+    public Version() {
+        sourceFiles = new HashSet<>(0);
+    }
 
     public boolean isVerified() {
         return verified;
@@ -171,7 +171,6 @@ public abstract class Version<T extends Version> implements Comparable<T>{
         sourceFiles.add(file);
     }
 
-
     @JsonProperty
     public boolean isHidden() {
         return hidden;
@@ -189,8 +188,6 @@ public abstract class Version<T extends Version> implements Comparable<T>{
     public void setValid(boolean valid) {
         this.valid = valid;
     }
-
-
 
     @JsonProperty
     public String getName() {
@@ -214,10 +211,10 @@ public abstract class Version<T extends Version> implements Comparable<T>{
         if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        final Version other = (Version) obj;
-        return Objects.equals(this.id, other.id) && Objects.equals(this.lastModified, other.lastModified)
-                && Objects.equals(this.reference, other.reference) && Objects.equals(this.hidden, other.hidden)
-                && Objects.equals(this.valid, other.valid) && Objects.equals(this.name, other.name);
+        final Version other = (Version)obj;
+        return Objects.equals(this.id, other.id) && Objects.equals(this.lastModified, other.lastModified) && Objects
+                .equals(this.reference, other.reference) && Objects.equals(this.hidden, other.hidden) && Objects
+                .equals(this.valid, other.valid) && Objects.equals(this.name, other.name);
     }
 
     @Override
@@ -228,8 +225,8 @@ public abstract class Version<T extends Version> implements Comparable<T>{
                 .compare(this.name, that.getName(), Ordering.natural().nullsLast()).result();
     }
 
-    public void updateVerified(boolean verified, String verifiedSource) {
-        this.verified = verified;
-        this.verifiedSource = verifiedSource;
+    public void updateVerified(boolean newVerified, String newVerifiedSource) {
+        this.verified = newVerified;
+        this.verifiedSource = newVerifiedSource;
     }
 }

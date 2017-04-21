@@ -16,15 +16,15 @@
 
 package io.dockstore.webservice;
 
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.cache.CacheBuilderSpec;
 import io.dropwizard.Configuration;
 import io.dropwizard.client.HttpClientConfiguration;
 import io.dropwizard.db.DataSourceFactory;
 import org.hibernate.validator.constraints.NotEmpty;
-
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 
 public class DockstoreWebserviceConfiguration extends Configuration {
 
@@ -111,8 +111,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     }
 
     /**
-     * @param quayClientID
-     *            the quayClientID to set
+     * @param quayClientID the quayClientID to set
      */
     @JsonProperty
     public void setQuayClientID(String quayClientID) {
@@ -128,8 +127,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     }
 
     /**
-     * @param quayRedirectURI
-     *            the quayRedirectURI to set
+     * @param quayRedirectURI the quayRedirectURI to set
      */
     @JsonProperty
     public void setQuayRedirectURI(String quayRedirectURI) {
@@ -137,8 +135,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     }
 
     /**
-     * @param database
-     *            the database to set
+     * @param database the database to set
      */
     @JsonProperty("database")
     public void setDatabase(DataSourceFactory database) {
@@ -146,12 +143,11 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     }
 
     /**
-     * @param httpClient
-     *            the httpClient to set
+     * @param newHttpClient the httpClient to set
      */
     @JsonProperty("httpClient")
-    public void setHttpClientConfiguration(HttpClientConfiguration httpClient) {
-        this.httpClient = httpClient;
+    public void setHttpClientConfiguration(HttpClientConfiguration newHttpClient) {
+        this.httpClient = newHttpClient;
     }
 
     /**
@@ -163,8 +159,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     }
 
     /**
-     * @param githubClientID
-     *            the githubClientID to set
+     * @param githubClientID the githubClientID to set
      */
     @JsonProperty
     public void setGithubClientID(String githubClientID) {
@@ -180,8 +175,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     }
 
     /**
-     * @param githubRedirectURI
-     *            the githubRedirectURI to set
+     * @param githubRedirectURI the githubRedirectURI to set
      */
     @JsonProperty
     public void setGithubRedirectURI(String githubRedirectURI) {
@@ -197,8 +191,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     }
 
     /**
-     * @param githubClientSecret
-     *            the githubClientSecret to set
+     * @param githubClientSecret the githubClientSecret to set
      */
     @JsonProperty
     public void setGithubClientSecret(String githubClientSecret) {
@@ -214,8 +207,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     }
 
     /**
-     * @param bitbucketClientID
-     *            the bitbucketClientID to set
+     * @param bitbucketClientID the bitbucketClientID to set
      */
     @JsonProperty
     public void setBitbucketClientID(String bitbucketClientID) {
@@ -231,8 +223,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     }
 
     /**
-     * @param bitbucketClientSecret
-     *            the bitbucketClientSecret to set
+     * @param bitbucketClientSecret the bitbucketClientSecret to set
      */
     @JsonProperty
     public void setBitbucketClientSecret(String bitbucketClientSecret) {

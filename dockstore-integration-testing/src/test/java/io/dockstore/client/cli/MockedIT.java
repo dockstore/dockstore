@@ -16,6 +16,10 @@
 
 package io.dockstore.client.cli;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
 import avro.shaded.com.google.common.collect.Lists;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.TestUtility;
@@ -43,10 +47,6 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-
 import static io.dockstore.common.CommonTestUtilities.clearState;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
@@ -58,12 +58,12 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 /**
  * These tests use mocking to simulate responses from GitHub, BitBucket, and Quay.io
- * 
+ *
  * @author dyuen
  */
 @PowerMockIgnore({"org.apache.http.conn.ssl.*", "javax.net.ssl.*", "javax.crypto.*", "javax.management.*", "javax.net.*"})
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({Client.class, ToolClient.class, UserApi.class})
+@PrepareForTest({ Client.class, ToolClient.class, UserApi.class })
 public class MockedIT {
 
     @ClassRule
@@ -94,7 +94,7 @@ public class MockedIT {
         SourceFile file = mock(SourceFile.class);
         when(file.getContent()).thenReturn(sourceFileContents);
         doReturn(file).when(toolClient).getDescriptorFromServer("quay.io/collaboratory/dockstore-tool-linux-sort", "cwl");
-        doReturn(Lists.newArrayList()).when(toolClient).downloadDescriptors(anyString(),anyString(),anyObject());
+        doReturn(Lists.newArrayList()).when(toolClient).downloadDescriptors(anyString(), anyString(), anyObject());
 
         // mock return of a more complicated CWL file
         File sourceFileArrays = new File(ResourceHelpers.resourceFilePath("arrays.cwl"));
@@ -115,7 +115,7 @@ public class MockedIT {
     }
 
     @After
-    public void clearFiles(){
+    public void clearFiles() {
         FileUtils.deleteQuietly(new File("/tmp/wc1.out"));
         FileUtils.deleteQuietly(new File("/tmp/wc2.out"));
         FileUtils.deleteQuietly(new File("/tmp/example.bedGraph"));
@@ -124,9 +124,10 @@ public class MockedIT {
     @Test
     public void runLaunchOneJson() throws IOException, ApiException {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--entry",
-            "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testOneRun.json"), "--script" });
+                "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testOneRun.json"),
+                "--script" });
 
-        Assert.assertTrue("output should contain cwltool command",systemOutRule.getLog().contains("Executing: cwltool"));
+        Assert.assertTrue("output should contain cwltool command", systemOutRule.getLog().contains("Executing: cwltool"));
     }
 
     @Test
@@ -143,16 +144,17 @@ public class MockedIT {
 
     /**
      * Tests local file input in arrays or as single files, output to local file
+     *
      * @throws IOException
      * @throws ApiException
      */
     @Test
     public void runLaunchOneLocalArrayedJson() throws IOException, ApiException {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--entry",
-            "quay.io/collaboratory/arrays", "--json", ResourceHelpers.resourceFilePath("testArrayLocalInputLocalOutput.json") });
+                "quay.io/collaboratory/arrays", "--json", ResourceHelpers.resourceFilePath("testArrayLocalInputLocalOutput.json") });
 
         Assert.assertTrue(new File("/tmp/example.bedGraph").exists());
-        Assert.assertTrue("output should contain cwltool command",systemOutRule.getLog().contains("Executing: cwltool"));
+        Assert.assertTrue("output should contain cwltool command", systemOutRule.getLog().contains("Executing: cwltool"));
     }
 
     /**
@@ -185,18 +187,19 @@ public class MockedIT {
 
     /**
      * Tests http file input in arrays or as single files, output to local file and local array
+     *
      * @throws IOException
      * @throws ApiException
      */
     @Test
     public void runLaunchOneHTTPArrayedJson() throws IOException, ApiException {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--entry",
-            "quay.io/collaboratory/arrays", "--json", ResourceHelpers.resourceFilePath("testArrayHttpInputLocalOutput.json") });
+                "quay.io/collaboratory/arrays", "--json", ResourceHelpers.resourceFilePath("testArrayHttpInputLocalOutput.json") });
 
         Assert.assertTrue(new File("/tmp/wc1.out").exists());
         Assert.assertTrue(new File("/tmp/wc2.out").exists());
         Assert.assertTrue(new File("/tmp/example.bedGraph").exists());
 
-        Assert.assertTrue("output should contain cwltool command",systemOutRule.getLog().contains("Executing: cwltool"));
+        Assert.assertTrue("output should contain cwltool command", systemOutRule.getLog().contains("Executing: cwltool"));
     }
 }

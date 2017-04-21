@@ -47,6 +47,8 @@ import io.dockstore.webservice.resources.TemplateHealthCheck;
 import io.dockstore.webservice.resources.TokenResource;
 import io.dockstore.webservice.resources.UserResource;
 import io.dockstore.webservice.resources.WorkflowResource;
+import io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceImpl;
+import io.dockstore.webservice.resources.proposedGA4GH.ToolsExtendedApi;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.auth.AuthDynamicFeature;
@@ -92,29 +94,28 @@ import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_METHODS_PARAM
 import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_ORIGINS_PARAM;
 
 /**
- *
  * @author dyuen
  */
 public class DockstoreWebserviceApplication extends Application<DockstoreWebserviceConfiguration> {
-
-    private static final Logger LOG = LoggerFactory.getLogger(DockstoreWebserviceApplication.class);
     public static final String GA4GH_API_PATH = "/api/ga4gh/v1";
+    private static final Logger LOG = LoggerFactory.getLogger(DockstoreWebserviceApplication.class);
     private static final int BYTES_IN_KILOBYTE = 1024;
     private static final int KILOBYTES_IN_MEGABYTE = 1024;
     private static final int CACHE_IN_MB = 100;
     private static Cache cache = null;
 
-    public static void main(String[] args) throws Exception {
-        new DockstoreWebserviceApplication().run(args);
-    }
-
     private final HibernateBundle<DockstoreWebserviceConfiguration> hibernate = new HibernateBundle<DockstoreWebserviceConfiguration>(
-            Token.class, Tool.class, User.class, Group.class, Tag.class, Label.class, SourceFile.class, Workflow.class, WorkflowVersion.class) {
+            Token.class, Tool.class, User.class, Group.class, Tag.class, Label.class, SourceFile.class, Workflow.class,
+            WorkflowVersion.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
         }
     };
+
+    public static void main(String[] args) throws Exception {
+        new DockstoreWebserviceApplication().run(args);
+    }
 
     @Override
     public String getName() {
@@ -152,14 +153,15 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             cache = new Cache(tempDir, cacheSize);
         }
         // match HttpURLConnection which does not have a timeout by default
-        OkHttpClient okHttpClient = new OkHttpClient().newBuilder().cache(cache).connectTimeout(0, TimeUnit.SECONDS).readTimeout(0, TimeUnit.SECONDS).writeTimeout(0, TimeUnit.SECONDS).build();
+        OkHttpClient okHttpClient = new OkHttpClient().newBuilder().cache(cache).connectTimeout(0, TimeUnit.SECONDS)
+                .readTimeout(0, TimeUnit.SECONDS).writeTimeout(0, TimeUnit.SECONDS).build();
         try {
             // this can only be called once per JVM, a factory exception is thrown in our tests
             URL.setURLStreamHandlerFactory(new OkUrlFactory(okHttpClient));
-        } catch(Error factoryException){
-            if (factoryException.getMessage().contains("factory already defined")){
+        } catch (Error factoryException) {
+            if (factoryException.getMessage().contains("factory already defined")) {
                 LOG.info("OkHttpClient already registered, skipping");
-            } else{
+            } else {
                 LOG.error("Could no create web cache, factory exception");
                 throw new RuntimeException(factoryException);
             }
@@ -196,12 +198,13 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         LOG.info("Cache directory for OkHttp is: " + cache.directory().getAbsolutePath());
         LOG.info("This is our custom logger saying that we're about to load authenticators");
         // setup authentication to allow session access in authenticators, see https://github.com/dropwizard/dropwizard/pull/1361
-        SimpleAuthenticator authenticator = new UnitOfWorkAwareProxyFactory(getHibernate()).create(SimpleAuthenticator.class,
-            new Class[]{TokenDAO.class, UserDAO.class}, new Object[]{tokenDAO, userDAO});
+        SimpleAuthenticator authenticator = new UnitOfWorkAwareProxyFactory(getHibernate())
+                .create(SimpleAuthenticator.class, new Class[] { TokenDAO.class, UserDAO.class }, new Object[] { tokenDAO, userDAO });
         CachingAuthenticator<String, User> cachingAuthenticator = new CachingAuthenticator<>(environment.metrics(), authenticator,
-                                                                                                configuration.getAuthenticationCachePolicy());
-        environment.jersey().register(new AuthDynamicFeature(new OAuthCredentialAuthFilter.Builder<User>().setAuthenticator(cachingAuthenticator)
-                                                                 .setAuthorizer(new SimpleAuthorizer()).setPrefix("Bearer").setRealm("SUPER SECRET STUFF").buildAuthFilter()));
+                configuration.getAuthenticationCachePolicy());
+        environment.jersey().register(new AuthDynamicFeature(
+                new OAuthCredentialAuthFilter.Builder<User>().setAuthenticator(cachingAuthenticator).setAuthorizer(new SimpleAuthorizer())
+                        .setPrefix("Bearer").setRealm("SUPER SECRET STUFF").buildAuthFilter()));
         environment.jersey().register(new AuthValueFactoryProvider.Binder<>(User.class));
         environment.jersey().register(RolesAllowedDynamicFeature.class);
 
@@ -209,9 +212,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
-        final DockerRepoResource dockerRepoResource = new DockerRepoResource(mapper, httpClient, userDAO, tokenDAO, toolDAO, tagDAO, labelDAO,
-                                                                       fileDAO, configuration.getBitbucketClientID(),
-                                                                       configuration.getBitbucketClientSecret());
+        final DockerRepoResource dockerRepoResource = new DockerRepoResource(mapper, httpClient, userDAO, tokenDAO, toolDAO, tagDAO,
+                labelDAO, fileDAO, configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret());
         environment.jersey().register(dockerRepoResource);
         environment.jersey().register(new GitHubRepoResource(tokenDAO));
         environment.jersey().register(new DockerRepoTagResource(toolDAO, tagDAO));
@@ -232,18 +234,23 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                         configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), configuration.getGitlabClientID(),
                         configuration.getGitlabClientSecret(), configuration.getGitlabRedirectURI(), httpClient, cachingAuthenticator));
 
-        final WorkflowResource workflowResource = new WorkflowResource(httpClient, userDAO, tokenDAO, toolDAO, workflowDAO, workflowVersionDAO,
-                labelDAO, fileDAO, configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret());
+        final WorkflowResource workflowResource = new WorkflowResource(httpClient, userDAO, tokenDAO, toolDAO, workflowDAO,
+                workflowVersionDAO, labelDAO, fileDAO, configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret());
         environment.jersey().register(workflowResource);
 
         environment.jersey().register(new UserResource(httpClient, tokenDAO, userDAO, groupDAO, workflowResource, dockerRepoResource));
-
 
         // attach the container dao statically to avoid too much modification of generated code
         ToolsApiServiceImpl.setToolDAO(toolDAO);
         ToolsApiServiceImpl.setWorkflowDAO(workflowDAO);
         ToolsApiServiceImpl.setConfig(configuration);
+
+        ToolsApiExtendedServiceImpl.setToolDAO(toolDAO);
+        ToolsApiExtendedServiceImpl.setWorkflowDAO(workflowDAO);
+        ToolsApiExtendedServiceImpl.setConfig(configuration);
+
         environment.jersey().register(new ToolsApi());
+        environment.jersey().register(new ToolsExtendedApi());
         environment.jersey().register(new MetadataApi());
         environment.jersey().register(new ToolClassesApi());
 
@@ -269,9 +276,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         filterHolder.setInitParameter(ACCESS_CONTROL_ALLOW_METHODS_HEADER, "GET,POST,DELETE,PUT,OPTIONS");
         filterHolder.setInitParameter(ALLOWED_ORIGINS_PARAM, "*");
         filterHolder.setInitParameter(ALLOWED_METHODS_PARAM, "GET,POST,DELETE,PUT,OPTIONS");
-        filterHolder
-                .setInitParameter(ALLOWED_HEADERS_PARAM,
-                        "Authorization, X-Auth-Username, X-Auth-Password, X-Requested-With,Content-Type,Accept,Origin,Access-Control-Request-Headers,cache-control");
+        filterHolder.setInitParameter(ALLOWED_HEADERS_PARAM,
+                "Authorization, X-Auth-Username, X-Auth-Password, X-Requested-With,Content-Type,Accept,Origin,Access-Control-Request-Headers,cache-control");
 
         // Add URL mapping
         // cors.addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), true, "/*");

@@ -20,28 +20,28 @@
     <parent>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
-        <version>1.1.6-SNAPSHOT</version>
+        <version>1.2.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>dockstore-integration-testing</artifactId>
     <packaging>jar</packaging>
-    
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
-    
+
     <dependencies>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-webservice</artifactId>
-            <version>1.1.6-SNAPSHOT</version>
+            <version>1.2.0</version>
         </dependency>
 
         <!-- testing -->
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.1.6-SNAPSHOT</version>
+            <version>1.2.0</version>
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
@@ -58,15 +58,16 @@
                 </exclusion>
             </exclusions>
         </dependency>
+
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
         </dependency>
         <dependency>
-            <groupId>commons-configuration</groupId>
-            <artifactId>commons-configuration</artifactId>
-            <version>1.10</version>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-configuration2</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
@@ -79,6 +80,18 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-core</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
         <dependency>
             <groupId>com.github.stefanbirkner</groupId>
             <artifactId>system-rules</artifactId>
@@ -117,9 +130,8 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-    
-    
-    
+
+
     <build>
         <plugins>
             <plugin>
@@ -143,9 +155,9 @@
                             <outputXML>true</outputXML>
                             <ignoreNonCompile>true</ignoreNonCompile>
                             <usedDependencies>
-<!--                                <usedDependency>joda-time:joda-time</usedDependency>-->
+                                <!--                                <usedDependency>joda-time:joda-time</usedDependency>-->
                                 <usedDependency>commons-io:commons-io</usedDependency>
-                                <usedDependency>commons-configuration:commons-configuration</usedDependency>
+                                <usedDependency>org.apache.commons:commons-configuration2</usedDependency>
                             </usedDependencies>
                         </configuration>
                     </execution>
@@ -166,7 +178,7 @@
                             <goal>clean</goal>
                         </goals>
                         <configuration>
-			    <excludeDefaultDirectories>true</excludeDefaultDirectories>
+                            <excludeDefaultDirectories>true</excludeDefaultDirectories>
                             <filesets>
                                 <fileset>
                                     <directory>cromwell-workflow-logs</directory>
@@ -177,10 +189,38 @@
                                         <include>Cromwell.stdout.txt</include>
                                     </includes>
                                 </fileset>
+                                <fileset>
+                                    <directory>src/test/resources/pluginsTest1/plugins</directory>
+                                    <excludes>
+                                        <exclude>*abled.txt</exclude>
+                                    </excludes>
+                                </fileset>
+                                <fileset>
+                                    <directory>src/test/resources/pluginsTest2/plugins</directory>
+                                    <excludes>
+                                        <exclude>*abled.txt</exclude>
+                                    </excludes>
+                                </fileset>
                             </filesets>
                         </configuration>
                     </execution>
                 </executions>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>src/test/resources/pluginsTest1/plugins</directory>
+                            <excludes>
+                                <exclude>*abled.txt</exclude>
+                            </excludes>
+                        </fileset>
+                        <fileset>
+                            <directory>src/test/resources/pluginsTest2/plugins</directory>
+                            <excludes>
+                                <exclude>*abled.txt</exclude>
+                            </excludes>
+                        </fileset>
+                    </filesets>
+                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -190,21 +230,21 @@
             <id>confidential-tests</id>
             <build>
                 <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-failsafe-plugin</artifactId>
-                            <version>${maven-fire.version}</version>
-                            <configuration>
-                                <includes>
-                                    <!-- standard inclusions -->
-                                    <include>**/IT*.java</include>
-                                    <include>**/*IT.java</include>
-                                    <include>**/*ITCase.java</include>
-                                    <!-- additional confidential tests-->
-                                    <include>**/*ET.java</include>
-                                </includes>
-                            </configuration>
-                        </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>${maven-fire.version}</version>
+                        <configuration>
+                            <includes>
+                                <!-- standard inclusions -->
+                                <include>**/IT*.java</include>
+                                <include>**/*IT.java</include>
+                                <include>**/*ITCase.java</include>
+                                <!-- additional confidential tests-->
+                                <include>**/*ET.java</include>
+                            </includes>
+                        </configuration>
+                    </plugin>
                 </plugins>
             </build>
 

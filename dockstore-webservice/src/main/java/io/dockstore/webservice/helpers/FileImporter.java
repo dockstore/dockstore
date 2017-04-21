@@ -16,22 +16,6 @@
 
 package io.dockstore.webservice.helpers;
 
-import com.esotericsoftware.yamlbeans.YamlException;
-import com.esotericsoftware.yamlbeans.YamlReader;
-import com.google.common.base.Strings;
-import com.google.common.io.Files;
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.core.Tag;
-import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.core.WorkflowVersion;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.http.HttpStatus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -42,6 +26,21 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.esotericsoftware.yamlbeans.YamlException;
+import com.esotericsoftware.yamlbeans.YamlReader;
+import com.google.common.base.Strings;
+import com.google.common.io.Files;
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Tag;
+import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.WorkflowVersion;
+import org.apache.commons.io.FileUtils;
+import org.apache.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Generically imports files in order to populate Tools and Workflows.
  */
@@ -50,7 +49,7 @@ public class FileImporter {
     public static final Logger LOG = LoggerFactory.getLogger(FileImporter.class);
     private final SourceCodeRepoInterface sourceCodeRepo;
 
-    public FileImporter(SourceCodeRepoInterface sourceCodeRepo){
+    public FileImporter(SourceCodeRepoInterface sourceCodeRepo) {
         this.sourceCodeRepo = sourceCodeRepo;
     }
 
@@ -67,7 +66,7 @@ public class FileImporter {
             return null;
         }
 
-        final String reference = version.getReference();// sourceCodeRepo.getReference(tool.getGitUrl(), tag.getReference());
+        final String reference = version.getReference();
 
         // Do not try to get file if the reference is not available
         if (reference == null) {
@@ -75,7 +74,7 @@ public class FileImporter {
         }
 
         String fileName = "";
-        if (specificPath != null){
+        if (specificPath != null) {
             fileName = specificPath;
         } else if (version instanceof Tag) {
             Tag tag = (Tag)version;
@@ -93,7 +92,7 @@ public class FileImporter {
                 }
                 fileName = tag.getWdlPath();
             }
-        } else if (version instanceof WorkflowVersion){
+        } else if (version instanceof WorkflowVersion) {
             WorkflowVersion workflowVersion = (WorkflowVersion)version;
             fileName = workflowVersion.getWorkflowPath();
         }
@@ -123,14 +122,14 @@ public class FileImporter {
             }
             recursiveImports.putAll(imports);
             return recursiveImports;
-        } else if (fileType == SourceFile.FileType.DOCKSTORE_WDL){
+        } else if (fileType == SourceFile.FileType.DOCKSTORE_WDL) {
             final File tempDesc;
             try {
                 tempDesc = File.createTempFile("temp", ".wdl", Files.createTempDir());
                 Files.write(content, tempDesc, StandardCharsets.UTF_8);
 
                 // Use matcher to get imports
-                List<String> lines = FileUtils.readLines(tempDesc);
+                List<String> lines = FileUtils.readLines(tempDesc, StandardCharsets.UTF_8);
                 ArrayList<String> importPaths = new ArrayList<>();
                 Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"");
 
@@ -149,7 +148,7 @@ public class FileImporter {
                     SourceFile importFile = new SourceFile();
 
                     final String fileResponse = readGitRepositoryFile(fileType, version, importPath);
-                    if (fileResponse == null){
+                    if (fileResponse == null) {
                         SourceCodeRepoInterface.LOG.error("Could not read: " + importPath);
                         continue;
                     }
@@ -159,32 +158,34 @@ public class FileImporter {
                     imports.put(importFile.getPath(), importFile);
                 }
             } catch (IOException e) {
-                throw new CustomWebApplicationException("Internal server error, out of space", HttpStatus.SC_INSUFFICIENT_SPACE_ON_RESOURCE);
+                throw new CustomWebApplicationException("Internal server error, out of space",
+                        HttpStatus.SC_INSUFFICIENT_SPACE_ON_RESOURCE);
             }
 
             return imports;
-        } else{
+        } else {
             throw new CustomWebApplicationException("Invalid file type for import", HttpStatus.SC_BAD_REQUEST);
         }
     }
 
-    private void handleMap(Entry entry, SourceFile.FileType fileType, Version version, Map<String, SourceFile> imports, Map<String, ?> map) {
-        for(Map.Entry<String, ?> e : map.entrySet()){
+    private void handleMap(Entry entry, SourceFile.FileType fileType, Version version, Map<String, SourceFile> imports,
+            Map<String, ?> map) {
+        for (Map.Entry<String, ?> e : map.entrySet()) {
             final Object mapValue = e.getValue();
-            if (e.getKey().equalsIgnoreCase("$import") || e.getKey().equalsIgnoreCase("$include")
-                    || e.getKey().equalsIgnoreCase("import") || e.getKey().equalsIgnoreCase("include")){
+            if (e.getKey().equalsIgnoreCase("$import") || e.getKey().equalsIgnoreCase("$include") || e.getKey().equalsIgnoreCase("import")
+                    || e.getKey().equalsIgnoreCase("include")) {
                 // handle imports and includes
                 if (mapValue instanceof String) {
-                    handleImport(fileType, version, imports, (String) mapValue);
+                    handleImport(fileType, version, imports, (String)mapValue);
                 }
-            } else if (e.getKey().equalsIgnoreCase("run")){
+            } else if (e.getKey().equalsIgnoreCase("run")) {
                 // for workflows, bare files may be referenced. See https://github.com/ga4gh/dockstore/issues/208
                 //ex:
                 //  run: {import: revtool.cwl}
                 //  run: revtool.cwl
-                if (mapValue instanceof String){
-                    handleImport(fileType, version, imports, (String) mapValue);
-                } else if (mapValue instanceof Map){
+                if (mapValue instanceof String) {
+                    handleImport(fileType, version, imports, (String)mapValue);
+                } else if (mapValue instanceof Map) {
                     // this handles the case where an import is used
                     handleMap(entry, fileType, version, imports, (Map)mapValue);
                 }
@@ -194,11 +195,12 @@ public class FileImporter {
         }
     }
 
-    private void handleMapValue(Entry entry, SourceFile.FileType fileType, Version version, Map<String, SourceFile> imports, Object mapValue) {
-        if(mapValue instanceof Map){
-            handleMap(entry, fileType, version, imports, (Map) mapValue);
-        } else if(mapValue instanceof List) {
-            for(Object listMember : (List)mapValue){
+    private void handleMapValue(Entry entry, SourceFile.FileType fileType, Version version, Map<String, SourceFile> imports,
+            Object mapValue) {
+        if (mapValue instanceof Map) {
+            handleMap(entry, fileType, version, imports, (Map)mapValue);
+        } else if (mapValue instanceof List) {
+            for (Object listMember : (List)mapValue) {
                 handleMapValue(entry, fileType, version, imports, listMember);
             }
         }
@@ -207,7 +209,7 @@ public class FileImporter {
     private void handleImport(SourceFile.FileType fileType, Version version, Map<String, SourceFile> imports, String mapValue) {
         // create a new source file
         final String fileResponse = readGitRepositoryFile(fileType, version, mapValue);
-        if (fileResponse == null){
+        if (fileResponse == null) {
             FileImporter.LOG.error("Could not read: " + mapValue);
             return;
         }

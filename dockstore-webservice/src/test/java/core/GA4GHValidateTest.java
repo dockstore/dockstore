@@ -16,6 +16,8 @@
 
 package core;
 
+import java.io.IOException;
+
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -23,12 +25,12 @@ import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit.DropwizardAppRule;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.IOException;
-
 /**
- * Not really a test, this is used to generate a yaml representation of our webservice for future reference.
+ * This is used to run the Python GA4GH tool registry validator to ensure that our implementation is compliant.
+ *
  * @author dyuen
  */
 public class GA4GHValidateTest {
@@ -36,7 +38,6 @@ public class GA4GHValidateTest {
     @ClassRule
     public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
             DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstore.yml"));
-
 
     @Test
     public void validateGA4GH() throws IOException {

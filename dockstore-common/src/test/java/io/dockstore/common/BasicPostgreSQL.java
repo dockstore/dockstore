@@ -16,7 +16,17 @@
 
 package io.dockstore.common;
 
-import org.apache.commons.configuration.HierarchicalINIConfiguration;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.Properties;
+
+import javax.sql.DataSource;
+
+import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.dbcp2.ConnectionFactory;
 import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
 import org.apache.commons.dbcp2.PoolableConnection;
@@ -31,17 +41,7 @@ import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.sql.DataSource;
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.Properties;
-
 /**
- *
  * @author xliu
  */
 public class BasicPostgreSQL {
@@ -49,7 +49,7 @@ public class BasicPostgreSQL {
     protected static final Logger LOG = LoggerFactory.getLogger(BasicPostgreSQL.class);
     private static DataSource dataSource = null;
 
-    public BasicPostgreSQL(HierarchicalINIConfiguration settings) {
+    public BasicPostgreSQL(INIConfiguration settings) {
         if (dataSource == null) {
             try {
                 String nullConfigs = "";
@@ -76,8 +76,8 @@ public class BasicPostgreSQL {
                 String maxConnections = settings.getString(Constants.POSTGRES_MAX_CONNECTIONS, "5");
 
                 if (!nullConfigs.trim().isEmpty()) {
-                    throw new NullPointerException("The following configuration values are null: " + nullConfigs
-                            + ". Please check your configuration file.");
+                    throw new NullPointerException(
+                            "The following configuration values are null: " + nullConfigs + ". Please check your configuration file.");
                 }
 
                 Class.forName("org.postgresql.Driver");
@@ -109,7 +109,7 @@ public class BasicPostgreSQL {
     public void clearDatabase() {
         runUpdateStatement("delete from user_entry;");
         runUpdateStatement("delete from endusergroup;");
-
+        runUpdateStatement("delete from starred;");
         runUpdateStatement("delete from enduser;");
         runUpdateStatement("delete from token;");
         runUpdateStatement("delete from version_sourcefile;");
@@ -165,11 +165,11 @@ public class BasicPostgreSQL {
         }
     }
 
-    protected boolean loadDatabaseDump(String sqlDumpFile){
+    protected boolean loadDatabaseDump(String sqlDumpFile) {
         Statement statement = null;
         try {
             final String s = FileUtils.readFileToString(new File(sqlDumpFile), StandardCharsets.UTF_8);
-            try(Connection connection = dataSource.getConnection()) {
+            try (Connection connection = dataSource.getConnection()) {
                 statement = connection.createStatement();
                 statement.execute(s);
             }
@@ -177,7 +177,7 @@ public class BasicPostgreSQL {
         } catch (SQLException | IOException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
-        } finally{
+        } finally {
             DbUtils.closeQuietly(statement);
         }
     }

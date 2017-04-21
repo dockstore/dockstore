@@ -20,7 +20,7 @@ import io.swagger.annotations.ApiModel;
 
 /**
  * This enumerates the modes of the workflows that are currently known to Dockstore.
- * 
+ *
  * @author dyuen
  */
 @ApiModel(description = "This enumerates the modes of the workflows that are currently known to Dockstore.")
@@ -29,8 +29,7 @@ public enum WorkflowMode {
      * A full workflow entry means that a user has attempted to publish this workflow. We should look at all branches
      * and tags for workflows
      */
-    FULL,
-    /**
+    FULL, /**
      * A stub workflow entry means that we're aware of a repo. However, we should not do a full refresh or scan into that repo
      * to conserve quota
      */

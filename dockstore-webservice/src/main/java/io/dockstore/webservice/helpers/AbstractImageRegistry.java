@@ -22,26 +22,26 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.http.client.HttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.dockstore.client.cli.nested.AbstractEntryClient;
+import io.dockstore.common.Registry;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.Registry;
+import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
+import org.apache.http.client.HttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Abstract class for registries of docker containers.
- **
+ * *
+ *
  * @author dyuen
  */
 public abstract class AbstractImageRegistry {
@@ -71,18 +71,25 @@ public abstract class AbstractImageRegistry {
 
     /**
      * Updates each tool with build/general information
+     *
      * @param apiTools
-         */
+     */
     public abstract void updateAPIToolsWithBuildInformation(List<Tool> apiTools);
 
     /**
+     * Returns the registry associated with the current class
+     * @return registry associated with class
+     */
+    public abstract Registry getRegistry();
+
+    /**
      * Updates/Adds/Deletes tools and their associated tags
+     *
      * @return
      */
     @SuppressWarnings("checkstyle:parameternumber")
-    public List<Tool> refreshTools(final long userId, final UserDAO userDAO, final ToolDAO toolDAO,
-            final TagDAO tagDAO, final FileDAO fileDAO, final HttpClient client,
-            final Token githubToken, final Token bitbucketToken, final Token gitlabToken) {
+    public List<Tool> refreshTools(final long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
+            final FileDAO fileDAO, final HttpClient client, final Token githubToken, final Token bitbucketToken, final Token gitlabToken) {
         // Get all the namespaces for the given registry
         List<String> namespaces = getNamespaces();
 
@@ -97,13 +104,8 @@ public abstract class AbstractImageRegistry {
         List<Tool> dbTools = new ArrayList<>(getToolsFromUser(userId, userDAO));
 
         // Filter DB tools and API tools to only include relevant tools
-        if (this.getClass().equals(QuayImageRegistry.class)) {
-            manualTools.removeIf(test -> !test.getUsers().contains(user) || !test.getRegistry().equals(Registry.QUAY_IO));
-            dbTools.removeIf(test -> !test.getRegistry().equals(Registry.QUAY_IO));
-        } else if (this.getClass().equals(DockerHubRegistry.class)) {
-            manualTools.removeIf(test -> !test.getUsers().contains(user) || !test.getRegistry().equals(Registry.DOCKER_HUB));
-            dbTools.removeIf(test -> !test.getRegistry().equals(Registry.DOCKER_HUB));
-        }
+        manualTools.removeIf(test -> !test.getUsers().contains(user) || !test.getRegistry().equals(getRegistry()));
+        dbTools.removeIf(test -> !test.getRegistry().equals(getRegistry()));
         apiTools.addAll(manualTools);
 
         // Remove tools that can't be updated (Manual tools)
@@ -126,21 +128,22 @@ public abstract class AbstractImageRegistry {
 
     /**
      * Updates/Adds/Deletes a tool and the associated tags
+     *
      * @return
      */
     @SuppressWarnings("checkstyle:parameternumber")
-    public Tool refreshTool(final long toolId, final Long userId, final UserDAO userDAO, final ToolDAO toolDAO,
-            final TagDAO tagDAO, final FileDAO fileDAO, final HttpClient client,
-            final Token githubToken, final Token bitbucketToken, final Token gitlabToken) {
+    Tool refreshTool(final long toolId, final Long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
+            final FileDAO fileDAO, final HttpClient client, final Token githubToken, final Token bitbucketToken, final Token gitlabToken) {
 
         // Find tool of interest and store in a List (Allows for reuse of code)
         Tool tool = toolDAO.findById(toolId);
         List<Tool> apiTools = new ArrayList<>();
 
         // Find a tool with the given tool's path and is not manual
+        // This looks like we wanted to refresh tool information when not manually entered as to not destroy manually entered information
         Tool duplicatePath = null;
         List<Tool> toolList = toolDAO.findByPath(tool.getPath());
-        for(Tool t : toolList) {
+        for (Tool t : toolList) {
             if (t.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
                 duplicatePath = t;
                 break;
@@ -148,8 +151,8 @@ public abstract class AbstractImageRegistry {
         }
 
         // If exists, check conditions to see if it should be changed to auto (in sync with quay tags and git repo)
-        if (tool.getMode() == ToolMode.MANUAL_IMAGE_PATH && duplicatePath != null  && tool.getRegistry().toString().equals(
-                Registry.QUAY_IO.toString()) && duplicatePath.getGitUrl().equals(tool.getGitUrl())) {
+        if (tool.getMode() == ToolMode.MANUAL_IMAGE_PATH && duplicatePath != null  && tool.getRegistry().name().equals(
+                Registry.QUAY_IO.name()) && duplicatePath.getGitUrl().equals(tool.getGitUrl())) {
             tool.setMode(duplicatePath.getMode());
         }
 
@@ -189,31 +192,32 @@ public abstract class AbstractImageRegistry {
 
     /**
      * Updates/Adds/Deletes tags for a specific tool
+     *
      * @param newTags
      * @param tool
      * @param githubToken
      * @param bitbucketToken
      * @param tagDAO
      * @param fileDAO
-         * @param toolDAO
-         * @param client
-         */
+     * @param toolDAO
+     * @param client
+     */
     @SuppressWarnings("checkstyle:parameternumber")
     public void updateTags(List<Tag> newTags, Tool tool, Token githubToken, Token bitbucketToken, Token gitlabToken, final TagDAO tagDAO,
             final FileDAO fileDAO, final ToolDAO toolDAO, final HttpClient client) {
         // Get all existing tags
         List<Tag> existingTags = new ArrayList<>(tool.getTags());
 
-        if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH
-                || (tool.getRegistry() == Registry.QUAY_IO && existingTags.isEmpty())) {
+        if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH || (tool.getRegistry() == Registry.QUAY_IO && existingTags.isEmpty())) {
 
             if (newTags == null) {
-                LOG.info(githubToken.getUsername() + " : Tags for tool {} did not get updated because new tags were not found", tool.getPath());
+                LOG.info(githubToken.getUsername() + " : Tags for tool {} did not get updated because new tags were not found",
+                        tool.getPath());
                 return;
             }
 
             List<Tag> toDelete = new ArrayList<>(0);
-            for (Iterator<Tag> iterator = existingTags.iterator(); iterator.hasNext();) {
+            for (Iterator<Tag> iterator = existingTags.iterator(); iterator.hasNext(); ) {
                 Tag oldTag = iterator.next();
                 boolean exists = false;
                 for (Tag newTag : newTags) {
@@ -298,9 +302,9 @@ public abstract class AbstractImageRegistry {
         Helper.updateFiles(tool, client, fileDAO, githubToken, bitbucketToken, gitlabToken);
 
         // Now grab default/main tag to grab general information (defaults to github/bitbucket "main branch")
-        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(tool.getGitUrl(), client,
-                bitbucketToken == null ? null : bitbucketToken.getContent(), gitlabToken == null ? null : gitlabToken.getContent(),
-                githubToken.getContent());
+        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
+                .createSourceCodeRepo(tool.getGitUrl(), client, bitbucketToken == null ? null : bitbucketToken.getContent(),
+                        gitlabToken == null ? null : gitlabToken.getContent(), githubToken.getContent());
         if (sourceCodeRepo != null) {
             // Grab and parse files to get tool information
             // Add for new descriptor types
@@ -346,26 +350,22 @@ public abstract class AbstractImageRegistry {
     /**
      * Updates the new list of tools to the database. Deletes tools that have no users.
      *
-     * @param apiToolList
-     *            tools retrieved from quay.io and docker hub
-     * @param dbToolList
-     *            tools retrieved from the database for the current user
-     * @param user
-     *            the current user
+     * @param apiToolList tools retrieved from quay.io and docker hub
+     * @param dbToolList  tools retrieved from the database for the current user
+     * @param user        the current user
      * @param toolDAO
      * @return list of newly updated containers
      */
-    public List<Tool> updateTools(final Iterable<Tool> apiToolList, final List<Tool> dbToolList,
-            final User user, final ToolDAO toolDAO) {
+    public List<Tool> updateTools(final Iterable<Tool> apiToolList, final List<Tool> dbToolList, final User user, final ToolDAO toolDAO) {
 
         final List<Tool> toDelete = new ArrayList<>();
         // Find containers that the user no longer has
-        for (final Iterator<Tool> iterator = dbToolList.iterator(); iterator.hasNext();) {
+        for (final Iterator<Tool> iterator = dbToolList.iterator(); iterator.hasNext(); ) {
             final Tool oldTool = iterator.next();
             boolean exists = false;
             for (final Tool newTool : apiToolList) {
-                if ((newTool.getToolPath().equals(oldTool.getToolPath())) || (newTool.getPath().equals(oldTool.getPath()) && newTool.getGitUrl().equals(
-                        oldTool.getGitUrl()))) {
+                if ((newTool.getToolPath().equals(oldTool.getToolPath())) || (newTool.getPath().equals(oldTool.getPath()) && newTool
+                        .getGitUrl().equals(oldTool.getGitUrl()))) {
                     exists = true;
                     break;
                 }
@@ -385,8 +385,8 @@ public abstract class AbstractImageRegistry {
 
             // Find if user already has the container
             for (Tool oldTool : dbToolList) {
-                if ((newTool.getToolPath().equals(oldTool.getToolPath())) || (newTool.getPath().equals(oldTool.getPath()) && newTool.getGitUrl().equals(
-                        oldTool.getGitUrl()))) {
+                if ((newTool.getToolPath().equals(oldTool.getToolPath())) || (newTool.getPath().equals(oldTool.getPath()) && newTool
+                        .getGitUrl().equals(oldTool.getGitUrl()))) {
                     exists = true;
                     oldTool.update(newTool);
                     break;
@@ -437,5 +437,4 @@ public abstract class AbstractImageRegistry {
 
         return dbToolList;
     }
-
 }

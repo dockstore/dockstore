@@ -16,13 +16,22 @@
 
 package io.dockstore.webservice.helpers;
 
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
 import com.google.gson.Gson;
-
+import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.Registry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
 import io.dockstore.webservice.core.Tag;
@@ -41,18 +50,7 @@ import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
 /**
- *
  * @author xliu
  */
 public final class Helper {
@@ -61,20 +59,12 @@ public final class Helper {
 
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
 
-    public static class RepoList {
-
-        private List<Tool> repositories;
-
-        public void setRepositories(List<Tool> repositories) {
-            this.repositories = repositories;
-        }
-
-        public List<Tool> getRepositories() {
-            return repositories;
-        }
+    private Helper() {
+        // hide the constructor for utility classes
     }
 
-    public static void updateFiles(Tool tool, final HttpClient client, final FileDAO fileDAO, final Token githubToken, final Token bitbucketToken, final Token gitlabToken) {
+    public static void updateFiles(Tool tool, final HttpClient client, final FileDAO fileDAO, final Token githubToken,
+            final Token bitbucketToken, final Token gitlabToken) {
         Set<Tag> tags = tool.getTags();
 
         // For each tag, will download files to db and determine if the tag is valid
@@ -97,8 +87,6 @@ public final class Helper {
                 SourceFile file = fileDAO.findById(id);
                 tag.addSourceFile(file);
 
-                // oldFiles.add(newFile);
-                // }
                 if (file.getType() == FileType.DOCKERFILE) {
                     hasDockerfile = true;
                     LOG.info(githubToken.getUsername() + " : HAS Dockerfile");
@@ -114,29 +102,34 @@ public final class Helper {
                 }
             }
 
-            // Add for new descriptor types
-            tag.setValid((hasCwl || hasWdl) && hasDockerfile);
+            // Private tools don't require a dockerfile
+            if (tool.isPrivateAccess()) {
+                tag.setValid((hasCwl || hasWdl));
+            } else {
+                tag.setValid((hasCwl || hasWdl) && hasDockerfile);
+            }
         }
     }
 
     /**
-                // Determine which tags need to be deleted (no longer exist on registry)
-                // Iterate over tags found from registry
-                    // Find if user already has the tool (if so then update)
-                    sourceCodeRepo.updateEntryMetadata(tool, AbstractEntryClient.Type.WDL);
-        // Creates list of tools to delete
-        final List<Tool> toDelete = new ArrayList<>();
-
-                // Does the tool in the database still exist in Quay
-
-            // Add tool to remove list if it is no longer on Quay (Ignore manual DockerHub/Quay tools)
-        // when a tool from the registry (ex: quay.io) has newer content, update it from
-            // Find if user already has the tool, if so just update
-            // Tool does not already exist, add it
-
-        // Save all new and existing tools
-        // delete tool if it has no users
+     * // Determine which tags need to be deleted (no longer exist on registry)
+     * // Iterate over tags found from registry
+     * // Find if user already has the tool (if so then update)
+     * sourceCodeRepo.updateEntryMetadata(tool, AbstractEntryClient.Type.WDL);
+     * // Creates list of tools to delete
+     * final List<Tool> toDelete = new ArrayList<>();
+     * <p>
+     * // Does the tool in the database still exist in Quay
+     * <p>
+     * // Add tool to remove list if it is no longer on Quay (Ignore manual DockerHub/Quay tools)
+     * // when a tool from the registry (ex: quay.io) has newer content, update it from
+     * // Find if user already has the tool, if so just update
+     * // Tool does not already exist, add it
+     * <p>
+     * // Save all new and existing tools
+     * // delete tool if it has no users
      * Check if the given quay tool has tags
+     *
      * @param tool
      * @param client
      * @param objectMapper
@@ -144,13 +137,14 @@ public final class Helper {
      * @param userId
      * @return true if tool has tags, false otherwise
      */
-    public static boolean checkQuayContainerForTags(final Tool tool,final HttpClient client,
-            final ObjectMapper objectMapper, final TokenDAO tokenDAO, final long userId) {
+    public static boolean checkQuayContainerForTags(final Tool tool, final HttpClient client, final ObjectMapper objectMapper,
+            final TokenDAO tokenDAO, final long userId) {
         List<Token> tokens = tokenDAO.findByUserId(userId);
         Token quayToken = extractToken(tokens, TokenType.QUAY_IO.toString());
-        if (quayToken == null){
+        if (quayToken == null) {
             // no quay token extracted
-            throw new CustomWebApplicationException("no quay token found, please link your quay.io account to read from quay.io", HttpStatus.SC_NOT_FOUND);
+            throw new CustomWebApplicationException("no quay token found, please link your quay.io account to read from quay.io",
+                    HttpStatus.SC_NOT_FOUND);
         }
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
 
@@ -170,14 +164,15 @@ public final class Helper {
      * @param tag
      * @return list of SourceFiles containing cwl and dockerfile.
      */
-    private static List<SourceFile> loadFiles(HttpClient client, Token bitbucketToken, Token githubToken, Token gitlabToken, Tool c, Tag tag) {
+    private static List<SourceFile> loadFiles(HttpClient client, Token bitbucketToken, Token githubToken, Token gitlabToken, Tool c,
+            Tag tag) {
         List<SourceFile> files = new ArrayList<>();
 
         final String bitbucketTokenContent = bitbucketToken == null ? null : bitbucketToken.getContent();
         final String gitlabTokenContent = gitlabToken == null ? null : gitlabToken.getContent();
         final String githubTokenContent = githubToken == null ? null : githubToken.getContent();
-        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(c.getGitUrl(), client,
-                bitbucketTokenContent, gitlabTokenContent, githubTokenContent);
+        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
+                .createSourceCodeRepo(c.getGitUrl(), client, bitbucketTokenContent, gitlabTokenContent, githubTokenContent);
         FileImporter importer = new FileImporter(sourceCodeRepo);
 
         // Add for new descriptor types
@@ -205,7 +200,8 @@ public final class Helper {
             } else {
                 // If test json, must grab all
                 if (f == FileType.CWL_TEST_JSON) {
-                    List<SourceFile> cwlTestJson = tag.getSourceFiles().stream().filter((SourceFile u) -> u.getType() == FileType.CWL_TEST_JSON).collect(Collectors.toList());
+                    List<SourceFile> cwlTestJson = tag.getSourceFiles().stream()
+                            .filter((SourceFile u) -> u.getType() == FileType.CWL_TEST_JSON).collect(Collectors.toList());
                     for (SourceFile testJson : cwlTestJson) {
                         String fileResponse = importer.readGitRepositoryFile(f, tag, testJson.getPath());
                         if (fileResponse != null) {
@@ -217,7 +213,8 @@ public final class Helper {
                         }
                     }
                 } else if (f == FileType.WDL_TEST_JSON) {
-                    List<SourceFile> cwlTestJson = tag.getSourceFiles().stream().filter((SourceFile u) -> u.getType() == FileType.WDL_TEST_JSON).collect(Collectors.toList());
+                    List<SourceFile> cwlTestJson = tag.getSourceFiles().stream()
+                            .filter((SourceFile u) -> u.getType() == FileType.WDL_TEST_JSON).collect(Collectors.toList());
                     for (SourceFile testJson : cwlTestJson) {
                         String fileResponse = importer.readGitRepositoryFile(f, tag, testJson.getPath());
                         if (fileResponse != null) {
@@ -250,8 +247,8 @@ public final class Helper {
      * @return list of updated containers
      */
     @SuppressWarnings("checkstyle:parameternumber")
-    public static List<Tool> refresh(final Long userId, final HttpClient client, final ObjectMapper objectMapper,
-            final UserDAO userDAO, final ToolDAO toolDAO, final TokenDAO tokenDAO, final TagDAO tagDAO, final FileDAO fileDAO) {
+    public static List<Tool> refresh(final Long userId, final HttpClient client, final ObjectMapper objectMapper, final UserDAO userDAO,
+            final ToolDAO toolDAO, final TokenDAO tokenDAO, final TagDAO tagDAO, final FileDAO fileDAO) {
         // Get user's quay and git tokens
         List<Token> tokens = tokenDAO.findByUserId(userId);
         Token quayToken = extractToken(tokens, TokenType.QUAY_IO.toString());
@@ -269,23 +266,18 @@ public final class Helper {
         // Get a list of all namespaces from all image registries
         List<Tool> updatedTools = new ArrayList<>();
         for (AbstractImageRegistry abstractImageRegistry : allRegistries) {
-            if (abstractImageRegistry.getClass().equals(QuayImageRegistry.class)) {
-                LOG.info("Grabbing QUAY repos");
+            Registry registry = abstractImageRegistry.getRegistry();
+            LOG.info("Grabbing " + registry.getFriendlyName() + " repos");
 
-            } else {
-                LOG.info("Grabbing DockerHub repos");
-            }
             updatedTools.addAll(abstractImageRegistry
-                    .refreshTools(userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken,
-                            bitbucketToken, gitlabToken));
+                    .refreshTools(userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken, bitbucketToken, gitlabToken));
         }
         return updatedTools;
     }
 
     @SuppressWarnings("checkstyle:parameternumber")
-    public static Tool refreshContainer(final long containerId, final long userId, final HttpClient client,
-            final ObjectMapper objectMapper, final UserDAO userDAO, final ToolDAO toolDAO, final TokenDAO tokenDAO,
-            final TagDAO tagDAO, final FileDAO fileDAO) {
+    public static Tool refreshContainer(final long containerId, final long userId, final HttpClient client, final ObjectMapper objectMapper,
+            final UserDAO userDAO, final ToolDAO toolDAO, final TokenDAO tokenDAO, final TagDAO tagDAO, final FileDAO fileDAO) {
         Tool tool = toolDAO.findById(containerId);
 
         // Check if tool has a valid Git URL (needed to refresh!)
@@ -312,8 +304,7 @@ public final class Helper {
         final AbstractImageRegistry abstractImageRegistry = factory.createImageRegistry(tool.getRegistry());
 
         return abstractImageRegistry
-                .refreshTool(containerId, userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken,
-                        bitbucketToken, gitlabToken);
+                .refreshTool(containerId, userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken, bitbucketToken, gitlabToken);
 
     }
 
@@ -353,7 +344,7 @@ public final class Helper {
 
                 Gson gson = new Gson();
                 Map<String, String> map = new HashMap<>();
-                map = (Map<String, String>) gson.fromJson(json, map.getClass());
+                map = (Map<String, String>)gson.fromJson(json, map.getClass());
 
                 accessToken = map.get("access_token");
                 refreshToken = map.get("refresh_token");
@@ -393,7 +384,8 @@ public final class Helper {
      */
     public static void checkUser(User user, Entry entry) {
         if (!user.getIsAdmin() && (entry.getUsers()).stream().noneMatch(u -> ((User)(u)).getId() == user.getId())) {
-            throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.", HttpStatus.SC_FORBIDDEN);
+            throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
+                    HttpStatus.SC_FORBIDDEN);
         }
     }
 
@@ -406,7 +398,8 @@ public final class Helper {
     public static void checkUser(User user, List<? extends Entry> list) {
         for (Entry entry : list) {
             if (!user.getIsAdmin() && (entry.getUsers()).stream().noneMatch(u -> ((User)(u)).getId() == user.getId())) {
-                throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.", HttpStatus.SC_FORBIDDEN);
+                throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
+                        HttpStatus.SC_FORBIDDEN);
             }
         }
     }
@@ -451,9 +444,7 @@ public final class Helper {
         String gitUsername = m.group(usernameIndex);
         String gitRepository = m.group(reponameIndex);
 
-        String ssh = "git@" + source + ":" + gitUsername + "/" + gitRepository + ".git";
-
-        return ssh;
+        return "git@" + source + ":" + gitUsername + "/" + gitRepository + ".git";
     }
 
     /**
@@ -470,6 +461,7 @@ public final class Helper {
 
     /**
      * Checks if a user owns a given quay repo or is part of an organization that owns the quay repo
+     *
      * @param tool
      * @param client
      * @param objectMapper
@@ -477,7 +469,8 @@ public final class Helper {
      * @param userId
      * @return
      */
-    public static boolean checkIfUserOwns(final Tool tool,final HttpClient client, final ObjectMapper objectMapper, final TokenDAO tokenDAO, final long userId) {
+    public static boolean checkIfUserOwns(final Tool tool, final HttpClient client, final ObjectMapper objectMapper,
+            final TokenDAO tokenDAO, final long userId) {
         List<Token> tokens = tokenDAO.findByUserId(userId);
         // get quay token
         Token quayToken = extractToken(tokens, TokenType.QUAY_IO.toString());
@@ -494,20 +487,15 @@ public final class Helper {
         String quayUsername = quayToken.getUsername();
 
         // call quay api, check if user owns or is part of owning organization
-        Map<String,Object> map = factory.getQuayInfo(tool);
+        Map<String, Object> map = factory.getQuayInfo(tool);
 
-        if (map != null){
+        if (map != null) {
             String namespace = map.get("namespace").toString();
             boolean isOrg = (Boolean)map.get("is_organization");
 
             if (isOrg) {
                 List<String> namespaces = factory.getNamespaces();
-                for(String nm : namespaces) {
-                    if (nm.equals(namespace)) {
-                        return true;
-                    }
-                    return false;
-                }
+                return namespaces.stream().anyMatch(nm -> nm.equals(namespace));
             } else {
                 return (namespace.equals(quayUsername));
             }
@@ -528,10 +516,71 @@ public final class Helper {
         }
         if (quayToken == null) {
             LOG.info("WARNING: QUAY token not found!");
-            //            if (dbTools.stream().filter(tool -> tool.getRegistry().equals(Registry.QUAY_IO)).count() > 0){
-            //                throw new CustomWebApplicationException("quay.io tools found, but quay.io token not found. Please link your quay.io account before refreshing.", HttpStatus.SC_BAD_REQUEST);
-            throw new CustomWebApplicationException("quay.io token not found. Please link your quay.io account before refreshing.", HttpStatus.SC_BAD_REQUEST);
-            //            }
+        }
+    }
+
+    /**
+     * Stars the entry
+     *
+     * @param entry     the entry to star
+     * @param user      the user to star the entry with
+     * @param entryType the entry type which is either "workflow" or "tool"
+     * @param entryPath the path of the entry
+     */
+    public static void starEntryHelper(Entry entry, User user, String entryType, String entryPath) {
+        Helper.checkEntry(entry);
+        Set<User> starredUsers = entry.getStarredUsers();
+        if (!starredUsers.contains(user)) {
+            entry.addStarredUser(user);
+        } else {
+            throw new CustomWebApplicationException("You cannot star the " + entryType + " " + entryPath + " because you have already starred it.", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Unstars the entry
+     *
+     * @param entry     the entry to unstar
+     * @param user      the user to unstar the entry with
+     * @param entryType the entry type which is either "workflow" or "tool"
+     * @param entryPath the path of the entry
+     */
+    public static void unstarEntryHelper(Entry entry, User user, String entryType, String entryPath) {
+        Helper.checkEntry(entry);
+
+        Set<User> starredUsers = entry.getStarredUsers();
+        if (starredUsers.contains(user)) {
+            entry.removeStarredUser(user);
+        } else {
+            throw new CustomWebApplicationException("You cannot unstar the " + entryType + " " + entryPath + " because you have not starred it.", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Updates the given user with metadata from Github
+     * @param user
+     * @param userDAO
+     * @param tokenDAO
+     * @return updated user
+     */
+    public static User updateUserHelper(final User user, final UserDAO userDAO, final TokenDAO tokenDAO) {
+        User existingUser = userDAO.findById(user.getId());
+        Token githubToken = tokenDAO.findGithubByUserId(existingUser.getId()).get(0);
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = new GitHubSourceCodeRepo(existingUser.getUsername(), githubToken.getContent(), null);
+        existingUser.update(gitHubSourceCodeRepo.getUserMetadata(existingUser));
+        return existingUser;
+    }
+
+    public static class RepoList {
+
+        private List<Tool> repositories;
+
+        public void setRepositories(List<Tool> repositories) {
+            this.repositories = repositories;
+        }
+
+        public List<Tool> getRepositories() {
+            return repositories;
         }
     }
 }

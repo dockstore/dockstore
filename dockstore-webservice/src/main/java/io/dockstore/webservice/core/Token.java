@@ -28,20 +28,18 @@ import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 /**
  * Access tokens for this web service and integrated services like quay.io and github.
- * 
+ *
  * @author dyuen
  */
 @ApiModel(value = "Token", description = "Access tokens for this web service and integrated services like quay.io and github")
 @Entity
 @Table(name = "token")
-@NamedQueries({
-        @NamedQuery(name = "io.dockstore.webservice.core.Token.findAll", query = "SELECT t FROM Token t"),
+@NamedQueries({ @NamedQuery(name = "io.dockstore.webservice.core.Token.findAll", query = "SELECT t FROM Token t"),
         @NamedQuery(name = "io.dockstore.webservice.core.Token.findByContent", query = "SELECT t FROM Token t WHERE t.content = :content"),
         @NamedQuery(name = "io.dockstore.webservice.core.Token.findBySource", query = "SELECT t FROM Token t WHERE t.tokenSource = :source"),
         @NamedQuery(name = "io.dockstore.webservice.core.Token.findByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId"),
@@ -114,32 +112,28 @@ public class Token {
     }
 
     /**
-     * @param tokenSource
-     *            the tokenSource to set
+     * @param tokenSource the tokenSource to set
      */
     public void setTokenSource(String tokenSource) {
         this.tokenSource = tokenSource;
     }
 
     /**
-     * @param content
-     *            the content to set
+     * @param content the content to set
      */
     public void setContent(String content) {
         this.content = content;
     }
 
     /**
-     * @param username
-     *            the username to set
+     * @param username the username to set
      */
     public void setUsername(String username) {
         this.username = username;
     }
 
     /**
-     * @param refreshToken
-     *            the refreshToken to set
+     * @param refreshToken the refreshToken to set
      */
     public void setRefreshToken(String refreshToken) {
         this.refreshToken = refreshToken;
@@ -154,7 +148,7 @@ public class Token {
             return false;
         }
 
-        final Token that = (Token) o;
+        final Token that = (Token)o;
 
         return Objects.equals(id, that.id) && Objects.equals(content, that.content);
     }
@@ -173,8 +167,7 @@ public class Token {
     }
 
     /**
-     * @param userId
-     *            the userId to set
+     * @param userId the userId to set
      */
     public void setUserId(long userId) {
         this.userId = userId;

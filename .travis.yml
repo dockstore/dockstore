@@ -20,8 +20,8 @@ jdk:
 - oraclejdk8
 install:
 - docker version
-- pip2.7 install --user setuptools==24.0.3
-- pip2.7 install --user cwl-runner cwltool==1.0.20161114152756 schema-salad==1.18.20161005190847 avro==1.8.1
+- pip2.7 install --user setuptools==34.2.0
+- pip2.7 install --user cwl-runner cwltool==1.0.20170217172322 schema-salad==2.2.20170222151604 avro==1.8.1
 before_script:
 - psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
 - psql -c "ALTER USER dockstore WITH superuser;" -U postgres
@@ -36,7 +36,7 @@ script: ./scripts/run-tests.sh
 
 before_install:
 - mvn dependency:get -Dartifact=org.eluder.coveralls:coveralls-maven-plugin:4.2.0
-- openssl aes-256-cbc -K $encrypted_46c132010f04_key -iv $encrypted_46c132010f04_iv -in dockstore-integration-testing/src/test/resources/secrets.tar.enc -out dockstore-integration-testing/src/test/resources/secrets.tar -d
+- openssl aes-256-cbc -K $encrypted_904bf49fabdb_key -iv $encrypted_904bf49fabdb_iv -in dockstore-integration-testing/src/test/resources/secrets.tar.enc -out dockstore-integration-testing/src/test/resources/secrets.tar -d
 - tar xvf dockstore-integration-testing/src/test/resources/secrets.tar
 
 

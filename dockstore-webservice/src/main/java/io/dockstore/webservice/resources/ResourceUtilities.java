@@ -16,6 +16,11 @@
 
 package io.dockstore.webservice.resources;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+
 import com.google.common.base.Optional;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
@@ -29,26 +34,24 @@ import org.apache.http.impl.client.BasicResponseHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-
 /**
- *
  * @author dyuen
  */
-public class ResourceUtilities {
+public final class ResourceUtilities {
     private static final Logger LOG = LoggerFactory.getLogger(ResourceUtilities.class);
+
+    private ResourceUtilities() {
+        // hide the constructor for utility classes
+    }
 
     // from dropwizard example
     public static Optional<String> asString(String input, String token, HttpClient client) {
         return getResponseAsString(buildHttpGet(input, token), client);
     }
 
-    public static Optional<String> bitbucketPost(String input, String token, HttpClient client, String client_id, String secret,
+    public static Optional<String> bitbucketPost(String input, String token, HttpClient client, String clientId, String secret,
             String payload) throws UnsupportedEncodingException {
-        return getResponseAsString(buildHttpPost(input, token, client_id, secret, payload), client);
+        return getResponseAsString(buildHttpPost(input, token, clientId, secret, payload), client);
     }
 
     private static HttpGet buildHttpGet(String input, String token) {
@@ -59,11 +62,11 @@ public class ResourceUtilities {
         return httpGet;
     }
 
-    private static HttpPost buildHttpPost(String input, String token, String client_id, String secret, String payload)
+    private static HttpPost buildHttpPost(String input, String token, String clientId, String secret, String payload)
             throws UnsupportedEncodingException {
         HttpPost httpPost = new HttpPost(input);
         if (token == null) {
-            String string = client_id + ':' + secret;
+            String string = clientId + ':' + secret;
             byte[] b = string.getBytes(StandardCharsets.UTF_8);
             String encoding = Base64.getEncoder().encodeToString(b);
 
@@ -82,7 +85,8 @@ public class ResourceUtilities {
         final int waitTime = 60000;
         try {
             ResponseHandler<String> responseHandler = new BasicResponseHandler();
-            RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(waitTime).setConnectTimeout(waitTime).setConnectionRequestTimeout(waitTime).build();
+            RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(waitTime).setConnectTimeout(waitTime)
+                    .setConnectionRequestTimeout(waitTime).build();
             httpRequest.setConfig(requestConfig);
             result = Optional.of(client.execute(httpRequest, responseHandler));
         } catch (HttpResponseException httpResponseException) {

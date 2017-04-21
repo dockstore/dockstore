@@ -18,15 +18,14 @@ package io.dockstore.webservice.helpers;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
+import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.Registry;
 import io.dockstore.webservice.core.Token;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.HttpClient;
 
 /**
  * Create image registries
@@ -57,14 +56,15 @@ public class ImageRegistryFactory {
     }
 
     public AbstractImageRegistry createImageRegistry(Registry registry) {
+        // Private only registries should not have a default docker command value
+        boolean validRegistry = Stream.of(Registry.values()).anyMatch(r -> r.name().equals(registry.name()));
         if (registry == Registry.QUAY_IO) {
             if (quayToken == null) {
                 return null;
             }
-
             return new QuayImageRegistry(client, objectMapper, quayToken);
-        } else if (registry == Registry.DOCKER_HUB) {
-            return new DockerHubRegistry(client);
+        } else if (validRegistry) {
+            return new ManualRegistry(client, registry);
         } else {
             throw new CustomWebApplicationException("Sorry, we do not support " + registry + ".", HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE);
         }

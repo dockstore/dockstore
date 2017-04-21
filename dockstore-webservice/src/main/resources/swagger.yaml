@@ -54,16 +54,25 @@ definitions:
           GA4GH', type: string}
       path: {description: 'This is a generated full docker path including registry
           and namespace, used for docker pull commands', readOnly: true, type: string}
+      private_access: {default: false, description: Is the docker image private or not.,
+        type: boolean}
       registry:
         description: 'This is a specific docker provider like quay.io or dockerhub
           or n/a?, required: GA4GH'
-        enum: [QUAY_IO, DOCKER_HUB]
+        enum: [QUAY_IO, DOCKER_HUB, GITLAB, AMAZON_ECR]
         type: string
+      starredUsers:
+        description: This indicates the users that have starred this entry, dockstore specific
+        items: {$ref: '#/definitions/User'}
+        type: array
+        uniqueItems: true
       tags:
         description: Implementation specific tracking of valid build tags for the docker container
         items: {$ref: '#/definitions/Tag'}
         type: array
         uniqueItems: true
+      tool_maintainer_email: {description: The email address of the tool maintainer. Required for private repositories,
+        type: string}
       tool_path: {readOnly: true, type: string}
       toolname: {description: 'This is the tool name of the container, when not-present
           this will function just like 0.1 dockstorewhen present, this can be used
@@ -79,7 +88,42 @@ definitions:
         type: array
         uniqueItems: true
     required: [default_cwl_path, default_dockerfile_path, default_wdl_path, gitUrl,
-      mode, name, namespace, registry, toolname]
+      mode, name, namespace, private_access, registry, toolname]
+    type: object
+  Entry:
+    properties:
+      author: {description: This is the name of the author stated in the Dockstore.cwl,
+        type: string}
+      defaultVersion: {description: This is the default version of the entry, type: string}
+      description: {description: 'This is a human-readable description of this container
+          and what it is trying to accomplish, required GA4GH', type: string}
+      email: {description: This is the email of the git organization, type: string}
+      gitUrl: {description: 'This is a link to the associated repo with a descriptor,
+          required GA4GH', type: string}
+      id: {description: Implementation specific ID for the container in this web service,
+        format: int64, type: integer}
+      is_published: {default: false, description: Implementation specific visibility in this web service,
+        type: boolean}
+      labels:
+        description: Labels (i.e. meta tags) for describing the purpose and contents of containers
+        items: {$ref: '#/definitions/Label'}
+        type: array
+        uniqueItems: true
+      lastUpdated: {description: Implementation specific timestamp for last updated on webservice,
+        format: date-time, type: string}
+      last_modified: {description: Implementation specific timestamp for last modified,
+        format: int32, type: integer}
+      starredUsers:
+        description: This indicates the users that have starred this entry, dockstore specific
+        items: {$ref: '#/definitions/User'}
+        type: array
+        uniqueItems: true
+      users:
+        description: This indicates the users that have control over this entry, dockstore specific
+        items: {$ref: '#/definitions/User'}
+        type: array
+        uniqueItems: true
+    required: [gitUrl]
     type: object
   GitHubComAuthenticationResource:
     properties:
@@ -156,6 +200,10 @@ definitions:
         enum: [DOCKSTORE_CWL, DOCKSTORE_WDL, DOCKERFILE, CWL_TEST_JSON, WDL_TEST_JSON]
         type: string
     required: [path, type]
+    type: object
+  StarRequest:
+    properties:
+      star: {default: false, readOnly: true, type: boolean}
     type: object
   Tag:
     description: This describes one tag associated with a container.
@@ -298,11 +346,21 @@ definitions:
   User:
     description: End users for the dockstore
     properties:
+      avatarUrl: {description: URL of user avatar on Github., type: string}
+      bio: {description: Bio of user, type: string}
+      company: {description: Company of user, type: string}
+      email: {description: Email of user, type: string}
       id: {description: Implementation specific ID for the container in this web service,
         format: int64, readOnly: true, type: integer}
-      isAdmin: {default: false, description: Indicates whetehr this user is an admin,
+      isAdmin: {default: false, description: Indicates whether this user is an admin,
         type: boolean}
+      location: {description: Location of user, type: string}
       name: {type: string}
+      starredEntries:
+        description: Entries in the dockstore that this user starred
+        items: {$ref: '#/definitions/Entry'}
+        type: array
+        uniqueItems: true
       username: {description: Username on dockstore, type: string}
     required: [isAdmin]
     type: object
@@ -345,6 +403,11 @@ definitions:
       path: {description: 'This is a generated full workflow path including organization,
           repository name, and workflow name', readOnly: true, type: string}
       repository: {description: This is a git repository name, type: string}
+      starredUsers:
+        description: This indicates the users that have starred this entry, dockstore specific
+        items: {$ref: '#/definitions/User'}
+        type: array
+        uniqueItems: true
       users:
         description: This indicates the users that have control over this entry, dockstore specific
         items: {$ref: '#/definitions/User'}
@@ -397,6 +460,68 @@ info:
   title: Dockstore API
   version: 1.0.2
 paths:
+  /api/ga4gh/v1/extended/containers/{organization}:
+    get:
+      description: 'This endpoint returns entries of an organization. '
+      operationId: entriesOrgGet
+      parameters:
+      - {description: 'An organization, for example `cancercollaboratory`', in: path,
+        name: organization, required: true, type: string}
+      produces: [application/json, text/plain]
+      responses:
+        200:
+          description: An array of Tools of the input organization.
+          schema:
+            items: {$ref: '#/definitions/Tool'}
+            type: array
+      summary: List entries of an organization
+      tags: [GA4GH]
+  /api/ga4gh/v1/extended/organizations:
+    get:
+      description: 'This endpoint returns list of all organizations. '
+      operationId: entriesOrgGet
+      parameters: []
+      produces: [application/json, text/plain]
+      responses:
+        200:
+          description: An array of organizations' names.
+          schema:
+            items: {type: string}
+            type: array
+      summary: List all organizations
+      tags: [GA4GH]
+  /api/ga4gh/v1/extended/tools/{organization}:
+    get:
+      description: 'This endpoint returns tools of an organization. '
+      operationId: toolsOrgGet
+      parameters:
+      - {description: 'An organization, for example `cancercollaboratory`', in: path,
+        name: organization, required: true, type: string}
+      produces: [application/json, text/plain]
+      responses:
+        200:
+          description: An array of Tools of the input organization.
+          schema:
+            items: {$ref: '#/definitions/Tool'}
+            type: array
+      summary: List tools of an organization
+      tags: [GA4GH]
+  /api/ga4gh/v1/extended/workflows/{organization}:
+    get:
+      description: 'This endpoint returns workflows of an organization. '
+      operationId: workflowsOrgGet
+      parameters:
+      - {description: 'An organization, for example `cancercollaboratory`', in: path,
+        name: organization, required: true, type: string}
+      produces: [application/json, text/plain]
+      responses:
+        200:
+          description: An array of Tools of the input organization.
+          schema:
+            items: {$ref: '#/definitions/Tool'}
+            type: array
+      summary: List workflows of an organization
+      tags: [GA4GH]
   /api/ga4gh/v1/metadata:
     get:
       description: Return some metadata that is useful for describing this registry
@@ -731,6 +856,37 @@ paths:
             type: array
       summary: List all docker containers cached in database
       tags: [containers]
+  /containers/dockerRegistryList:
+    get:
+      description: Does not need authentication
+      operationId: getDockerRegistries
+      parameters: []
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema:
+            items:
+              additionalProperties: {type: object}
+              type: object
+            type: array
+      summary: Get the list of docker registries supported on Dockstore.
+      tags: [containers]
+  /containers/namespace/{namespace}/published:
+    get:
+      description: NO authentication
+      operationId: getPublishedContainersByNamespace
+      parameters:
+      - {description: namespace, in: path, name: namespace, required: true, type: string}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema:
+            items: {$ref: '#/definitions/DockstoreTool'}
+            type: array
+      summary: List all published containers belonging to the specified namespace
+      tags: [containers]
   /containers/path/tool/{repository}:
     get:
       description: Lists info of container. Enter full path (include quay.io in path).
@@ -866,6 +1022,24 @@ paths:
           description: successful operation
           schema: {$ref: '#/definitions/DockstoreTool'}
       summary: Register an image manually, along with tags
+      tags: [containers]
+  /containers/schema/{containerId}/published:
+    get:
+      description: NO authentication
+      operationId: getPublishedContainerSchema
+      parameters:
+      - {description: Tool ID, format: int64, in: path, name: containerId, required: true,
+        type: integer}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema:
+            items:
+              items: {type: object}
+              type: array
+            type: array
+      summary: Get a published container's schema by ID
       tags: [containers]
   /containers/search:
     get:
@@ -1059,6 +1233,39 @@ paths:
             type: array
       summary: Get a list of secondary WDL files from Git.
       tags: [containers]
+  /containers/{containerId}/star:
+    put:
+      description: ''
+      operationId: starEntry
+      parameters:
+      - {description: Tool to star., format: int64, in: path, name: containerId, required: true,
+        type: integer}
+      - description: StarRequest to star a repo for a user
+        in: body
+        name: body
+        required: true
+        schema: {$ref: '#/definitions/StarRequest'}
+      produces: [application/json]
+      responses:
+        default: {description: successful operation}
+      summary: Stars a tool.
+      tags: [containers]
+  /containers/{containerId}/starredUsers:
+    get:
+      description: ''
+      operationId: getStarredUsers
+      parameters:
+      - {description: Tool to grab starred users for., format: int64, in: path, name: containerId,
+        required: true, type: integer}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema:
+            items: {$ref: '#/definitions/User'}
+            type: array
+      summary: Returns list of users who starred the given tool
+      tags: [containers]
   /containers/{containerId}/tags:
     post:
       description: Tag correspond to each row of the versions table listing all information for a docker repo tag
@@ -1190,6 +1397,18 @@ paths:
             type: array
             uniqueItems: true
       summary: Add test parameter files for a given tag.
+      tags: [containers]
+  /containers/{containerId}/unstar:
+    delete:
+      description: ''
+      operationId: unstarEntry
+      parameters:
+      - {description: Tool to unstar., format: int64, in: path, name: containerId,
+        required: true, type: integer}
+      produces: [application/json]
+      responses:
+        default: {description: successful operation}
+      summary: Unstars a tool.
       tags: [containers]
   /containers/{containerId}/updateTagPaths:
     put:
@@ -1439,6 +1658,48 @@ paths:
             type: array
       summary: Get users that belongs to a group
       tags: [users]
+  /users/starredTools:
+    get:
+      description: ''
+      operationId: getStarredTools
+      parameters: []
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema:
+            items: {$ref: '#/definitions/Entry'}
+            type: array
+      summary: Get the logged-in user's starred tools
+      tags: [users]
+  /users/starredWorkflows:
+    get:
+      description: ''
+      operationId: getStarredWorkflows
+      parameters: []
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema:
+            items: {$ref: '#/definitions/Entry'}
+            type: array
+      summary: Get the logged-in user's starred workflows
+      tags: [users]
+  /users/updateUserMetatdata:
+    get:
+      description: Update all users metadata. Admin only.
+      operationId: updateUserMetadata
+      parameters: []
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema:
+            items: {$ref: '#/definitions/User'}
+            type: array
+      summary: Update metadata of all users
+      tags: [users]
   /users/user:
     get:
       description: ''
@@ -1450,6 +1711,18 @@ paths:
           description: successful operation
           schema: {$ref: '#/definitions/User'}
       summary: Get the logged-in user
+      tags: [users]
+  /users/user/updateUserMetatdata:
+    get:
+      description: Update metadata for logged in user.
+      operationId: updateLoggedInUserMetadata
+      parameters: []
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema: {$ref: '#/definitions/User'}
+      summary: Update metadata for logged in user
       tags: [users]
   /users/username/{username}:
     get:
@@ -1742,6 +2015,22 @@ paths:
           schema: {$ref: '#/definitions/Workflow'}
       summary: Manually register a workflow
       tags: [workflows]
+  /workflows/organization/{organization}/published:
+    get:
+      description: NO authentication
+      operationId: getPublishedWorkflowsByOrganization
+      parameters:
+      - {description: organization, in: path, name: organization, required: true,
+        type: string}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema:
+            items: {$ref: '#/definitions/Workflow'}
+            type: array
+      summary: List all published workflows belonging to the specified namespace
+      tags: [workflows]
   /workflows/path/workflow/{repository}:
     get:
       description: Lists info of workflow. Enter full path.
@@ -2027,6 +2316,39 @@ paths:
             type: array
       summary: Get the corresponding Dockstore.wdl file on Github.
       tags: [workflows]
+  /workflows/{workflowId}/star:
+    put:
+      description: ''
+      operationId: starEntry
+      parameters:
+      - {description: Tool to star., format: int64, in: path, name: workflowId, required: true,
+        type: integer}
+      - description: StarRequest to star a repo for a user
+        in: body
+        name: body
+        required: true
+        schema: {$ref: '#/definitions/StarRequest'}
+      produces: [application/json]
+      responses:
+        default: {description: successful operation}
+      summary: Stars a workflow.
+      tags: [workflows]
+  /workflows/{workflowId}/starredUsers:
+    get:
+      description: ''
+      operationId: getStarredUsers
+      parameters:
+      - {description: Workflow to grab starred users for., format: int64, in: path,
+        name: workflowId, required: true, type: integer}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema:
+            items: {$ref: '#/definitions/User'}
+            type: array
+      summary: Returns list of users who starred the given Workflow
+      tags: [workflows]
   /workflows/{workflowId}/testParameterFiles:
     delete:
       description: ''
@@ -2112,6 +2434,18 @@ paths:
           description: successful operation
           schema: {type: string}
       summary: Get the Tools for a given workflow version
+      tags: [workflows]
+  /workflows/{workflowId}/unstar:
+    delete:
+      description: ''
+      operationId: unstarEntry
+      parameters:
+      - {description: Workflow to unstar., format: int64, in: path, name: workflowId,
+        required: true, type: integer}
+      produces: [application/json]
+      responses:
+        default: {description: successful operation}
+      summary: Unstars a workflow.
       tags: [workflows]
   /workflows/{workflowId}/users:
     get:
@@ -2229,6 +2563,7 @@ tags:
 - {description: List and modify tags for containers, name: containertags}
 - {description: A curated subset of resources proposed as a common standard for tool repositories,
   name: GA4GH}
+- {description: An extension of GA4GH, name: extendedGA4GH}
 - {description: List source code repositories (should be generalized from github),
   name: github.repo}
 - {description: stop-gap allowing developers to associate with bitbucket, name: integration.bitbucket.org}
