@@ -26,6 +26,7 @@ import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
@@ -57,8 +58,7 @@ public class Token {
     @Column(nullable = false)
     @ApiModelProperty("Source website for this token")
     private String tokenSource;
-    @ApiModelProperty("Contents of the access token")
-    private String token;
+
     @Column(nullable = false)
     @ApiModelProperty("Contents of the access token")
     private String content;
@@ -81,7 +81,6 @@ public class Token {
         this.userId = userId;
         this.tokenSource = tokenSource;
         this.content = content;
-        this.token = content;
     }
 
     @JsonProperty
@@ -90,8 +89,9 @@ public class Token {
     }
 
     @JsonProperty
+    @ApiModelProperty("Contents of the access token")
     public String getToken() {
-        return token;
+        return content;
     }
 
     @JsonProperty
@@ -131,7 +131,6 @@ public class Token {
      */
     public void setContent(String content) {
         this.content = content;
-        this.token = content;
     }
 
     /**
