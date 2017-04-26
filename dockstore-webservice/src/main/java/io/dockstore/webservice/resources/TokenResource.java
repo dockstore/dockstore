@@ -27,6 +27,7 @@ import java.util.Random;
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -49,6 +50,8 @@ import com.google.common.base.Optional;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
@@ -273,6 +276,23 @@ public class TokenResource {
             throw new CustomWebApplicationException("User not found", HttpStatus.SC_CONFLICT);
         }
 
+    }
+
+    @POST
+    @Timed
+    @UnitOfWork
+    @Path("/github")
+    @ApiOperation(value = "Allow satellizer to post a new GitHub token to dockstore",
+        notes = "A post method is required by saetillizer to send the GitHub token",
+        response = Token.class)
+    public Token addToken(@ApiParam("code") String satellizerJson) {
+        Gson gson = new Gson();
+        JsonElement element = gson.fromJson(satellizerJson, JsonElement.class);
+        JsonObject satellizerObject = element.getAsJsonObject();
+
+        final String code = satellizerObject.get("code").getAsString();
+
+        return addGithubToken(code);
     }
 
     @GET
