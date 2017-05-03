@@ -49,7 +49,7 @@ import io.swagger.annotations.ApiModelProperty;
  */
 @Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
-public abstract class Entry<S extends Entry, T extends Version> {
+public abstract class Entry<S extends Entry, T extends Version> implements Comparable<Entry> {
 
     /**
      * re-use existing generator for backwards compatibility
@@ -279,4 +279,17 @@ public abstract class Entry<S extends Entry, T extends Version> {
      */
     @JsonIgnore
     public abstract Set<T> getVersions();
+
+    @Override
+    public int compareTo(Entry that) {
+        if (that.getId() < this.getId()) {
+            return 1;
+        } else {
+            if (that.getId() == this.getId()) {
+                return 0;
+            } else {
+                return -1;
+            }
+        }
+    }
 }
