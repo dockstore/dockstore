@@ -20,8 +20,6 @@ import java.security.Principal;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -35,11 +33,12 @@ import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
-import javax.persistence.OrderBy;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import io.dockstore.webservice.helpers.UserStarredSerializer;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
@@ -103,14 +102,13 @@ public class User implements Principal {
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "starred", inverseJoinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty("Entries in the dockstore that this user starred")
-    @JsonIgnore
-    @OrderBy("id")
-    private final SortedSet<Entry> starredEntries;
+    @JsonSerialize(using = UserStarredSerializer.class)
+    private final Set<Entry> starredEntries;
 
     public User() {
         groups = new HashSet<>(0);
         entries = new HashSet<>(0);
-        starredEntries = new TreeSet<>();
+        starredEntries = new HashSet<>(0);
     }
 
     @JsonProperty
@@ -160,7 +158,7 @@ public class User implements Principal {
         return entries.remove(entry);
     }
 
-    public SortedSet<Entry> getStarredEntries() {
+    public Set<Entry> getStarredEntries() {
         return starredEntries;
     }
 

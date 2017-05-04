@@ -17,10 +17,13 @@
 package io.dockstore.webservice.resources;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
-import java.util.SortedSet;
+import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.DELETE;
@@ -440,9 +443,12 @@ public class UserResource {
     @UnitOfWork
     @Path("/starredTools")
     @ApiOperation(value = "Get the logged-in user's starred tools", response = Entry.class, responseContainer = "List")
-    public SortedSet<Entry> getStarredTools(@ApiParam(hidden = true) @Auth User user) {
+    public Set<Entry> getStarredTools(@ApiParam(hidden = true) @Auth User user) {
         User u = userDAO.findById(user.getId());
-        return filter(u.getStarredEntries(), Tool.class);
+        Comparator<Entry> byEntryId = Comparator.comparingLong(Entry::getId);
+        Supplier<TreeSet<Entry>> supplier = () -> new TreeSet<>(byEntryId);
+        return u.getStarredEntries().stream().filter(element -> element instanceof Tool).sorted(byEntryId)
+                .collect(Collectors.toCollection(supplier));
     }
 
     @GET
@@ -450,19 +456,12 @@ public class UserResource {
     @UnitOfWork
     @Path("/starredWorkflows")
     @ApiOperation(value = "Get the logged-in user's starred workflows", response = Entry.class, responseContainer = "List")
-    public SortedSet<Entry> getStarredWorkflows(@ApiParam(hidden = true) @Auth User user) {
+    public Set<Entry> getStarredWorkflows(@ApiParam(hidden = true) @Auth User user) {
         User u = userDAO.findById(user.getId());
-        return filter(u.getStarredEntries(), Workflow.class);
-    }
-
-    private SortedSet<Entry> filter(SortedSet<Entry> set, Class someClass) {
-        SortedSet filteredSet = new TreeSet();
-        for (Entry entry : set) {
-            if (someClass.isInstance(entry)) {
-                filteredSet.add(entry);
-            }
-        }
-        return filteredSet;
+        Comparator<Entry> byEntryId = Comparator.comparingLong(Entry::getId);
+        Supplier<TreeSet<Entry>> supplier = () -> new TreeSet<>(byEntryId);
+        return u.getStarredEntries().stream().filter(element -> element instanceof Workflow).sorted(byEntryId)
+                .collect(Collectors.toCollection(supplier));
     }
 
     @GET
