@@ -27,7 +27,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -48,6 +47,7 @@ import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.CommandOutputParameter;
 import io.cwl.avro.Workflow;
 import io.cwl.avro.WorkflowOutputParameter;
+import io.dockstore.client.cwlrunner.CWLRunnerFactory;
 import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.Utilities;
 import org.apache.commons.cli.CommandLine;
@@ -182,7 +182,7 @@ public class LauncherCWL {
         String newJsonPath = createUpdatedInputsAndOutputsJson(inputsId2dockerMountMap, outputMap, inputsAndOutputsJson);
 
         // run command
-        System.out.println("Calling out to cwltool to run your " + (cwlObject instanceof Workflow ? "workflow" : "tool"));
+        System.out.println("Calling out to a cwl-runner to run your " + (cwlObject instanceof Workflow ? "workflow" : "tool"));
         Map<String, Object> outputObj = runCWLCommand(imageDescriptorPath, newJsonPath, globalWorkingDir + "/outputs/",
                 globalWorkingDir + "/working/", globalWorkingDir + "/tmp/", stdoutStream, stderrStream);
         System.out.println();
@@ -445,10 +445,10 @@ public class LauncherCWL {
         extraFlags = extraFlags.stream().map(this::trimAndPrintInput).collect(Collectors.toList());
 
         // Create cwltool command
-        List<String> command = new ArrayList<>(
-                Arrays.asList("cwltool", "--enable-dev", "--non-strict", "--outdir", outputDir, "--tmpdir-prefix", tmpDir, "--tmp-outdir-prefix", workingDir, cwlFile,
-                        jsonSettings));
+        CWLRunnerInterface cwlRunner = CWLRunnerFactory.createCWLRunner();
+        List<String> command = cwlRunner.getExecutionCommand(outputDir, tmpDir, workingDir, cwlFile, jsonSettings);
         command.addAll(1, extraFlags);
+
 
         final String joined = Joiner.on(" ").join(command);
         System.out.println("Executing: " + joined);

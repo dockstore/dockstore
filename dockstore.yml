@@ -8,10 +8,17 @@ githubClientSecret: <fill me in>
 githubRedirectURI: http://<fill me in>:9000/login
 bitbucketClientID: <fill me in>
 bitbucketClientSecret:  <fill me in>
+
+gitlabClientID: test
+gitlabClientSecret: test
+gitlabRedirectURI: test
+
+
+        
 # the following values describe where the webservice is being run (and on what port and using what scheme) to configure swagger
-hostname: <fill me in>
-scheme: https
-port: 8443
+hostname: 10.0.29.54
+scheme: http
+port: 8080
 
 authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
 
@@ -30,13 +37,13 @@ database:
   driverClass: org.postgresql.Driver
 
   # the username
-  user: webservice
+  user: dockstore
 
   # the password
-  password: iAMs00perSecrEET
+  password: dockstore
 
   # the JDBC URL
-  url: jdbc:postgresql://localhost:5432/webservice
+  url: jdbc:postgresql://localhost:5432/webservice_test
 
   # any properties specific to your JDBC driver:
   properties:

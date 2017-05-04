@@ -73,8 +73,8 @@ public final class FileProvisionUtil {
 
             // trigger a copy from the URL to a local file path that's a UUID to avoid collision
             FileSystemManager fsManager = VFS.getManager();
-            try (org.apache.commons.vfs2.FileObject src = fsManager.resolveFile(path, opts);
-                    org.apache.commons.vfs2.FileObject dest = fsManager.resolveFile(targetFilePath.toFile().getAbsolutePath())) {
+            try (FileObject src = fsManager.resolveFile(path, opts);
+                    FileObject dest = fsManager.resolveFile(targetFilePath.toFile().getAbsolutePath())) {
                 copyFromInputStreamToOutputStream(src, dest);
             }
             return true;
