@@ -17,12 +17,10 @@
 package io.dockstore.webservice.resources;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
@@ -445,10 +443,8 @@ public class UserResource {
     @ApiOperation(value = "Get the logged-in user's starred tools", response = Entry.class, responseContainer = "List")
     public Set<Entry> getStarredTools(@ApiParam(hidden = true) @Auth User user) {
         User u = userDAO.findById(user.getId());
-        Comparator<Entry> byEntryId = Comparator.comparingLong(Entry::getId);
-        Supplier<TreeSet<Entry>> supplier = () -> new TreeSet<>(byEntryId);
-        return u.getStarredEntries().stream().filter(element -> element instanceof Tool).sorted(byEntryId)
-                .collect(Collectors.toCollection(supplier));
+        return u.getStarredEntries().stream().filter(element -> element instanceof Tool)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     @GET
@@ -458,10 +454,8 @@ public class UserResource {
     @ApiOperation(value = "Get the logged-in user's starred workflows", response = Entry.class, responseContainer = "List")
     public Set<Entry> getStarredWorkflows(@ApiParam(hidden = true) @Auth User user) {
         User u = userDAO.findById(user.getId());
-        Comparator<Entry> byEntryId = Comparator.comparingLong(Entry::getId);
-        Supplier<TreeSet<Entry>> supplier = () -> new TreeSet<>(byEntryId);
-        return u.getStarredEntries().stream().filter(element -> element instanceof Workflow).sorted(byEntryId)
-                .collect(Collectors.toCollection(supplier));
+        return u.getStarredEntries().stream().filter(element -> element instanceof Workflow)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     @GET
