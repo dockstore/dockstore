@@ -180,7 +180,7 @@ public class Tool extends Entry<Tool, Tag> {
         String repositoryPath;
         if (path == null) {
             StringBuilder builder = new StringBuilder();
-            builder.append(registry.toString() + '/');
+            builder.append((registry != null ? registry.toString() : "invalid") + '/');
             builder.append(namespace).append('/').append(name);
             repositoryPath = builder.toString();
         } else {
