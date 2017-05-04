@@ -42,6 +42,7 @@ import io.swagger.client.api.GAGHApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
+import io.swagger.client.model.Entry;
 import io.swagger.client.model.Group;
 import io.swagger.client.model.Metadata;
 import io.swagger.client.model.PublishRequest;
@@ -56,6 +57,7 @@ import io.swagger.client.model.ToolVersion;
 import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
 import io.swagger.client.model.Workflow;
+import io.swagger.quay.client.api.UserApi;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
@@ -607,5 +609,24 @@ public class SystemClientIT {
         long workflowId = workflow.getId();
         assertTrue(workflowId == 11);
         workflowApi.unstarEntry(workflowId);
+    }
+
+    @Test
+    public void testStarredToolsOrder() throws  ApiException, IOException, TimeoutException{
+        ApiClient apiClient = getWebClient();
+        UsersApi usersApi = new UsersApi(apiClient);
+        ContainersApi containersApi = new ContainersApi(apiClient);
+        StarRequest request = new StarRequest();
+        request.setStar(true);
+        containersApi.starEntry((long)1, request);
+        containersApi.starEntry((long)2, request);
+        for (int i = 0; i < 20; i++) {
+            List<Entry> starredTools = usersApi.getStarredTools();
+            Long firstId = starredTools.get(0).getId();
+            Long secondId = starredTools.get(1).getId();
+
+            assertTrue("Wrong order of starred tools returned, should be in ascending order.  Got" + firstId + ". Should be 1", firstId==1);
+            assertTrue("Wrong order of starred tools returned, should be in ascending order.  Got" + secondId + ". Should be 2", secondId==2);
+        }
     }
 }
