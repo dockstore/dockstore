@@ -462,7 +462,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @RolesAllowed("admin")
-    @Path("/updateUserMetatdata")
+    @Path("/updateUserMetadata")
     @ApiOperation(value = "Update metadata of all users", notes = "Update all users metadata. Admin only.", response = User.class, responseContainer = "List")
     public List<User> updateUserMetadata(@ApiParam(hidden = true) @Auth User user) {
         List<User> users = userDAO.findAll();
@@ -476,7 +476,7 @@ public class UserResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/user/updateUserMetatdata")
+    @Path("/user/updateUserMetadata")
     @ApiOperation(value = "Update metadata for logged in user", notes = "Update metadata for logged in user.", response = User.class)
     public User updateLoggedInUserMetadata(@ApiParam(hidden = true) @Auth User user) {
         Helper.updateUserHelper(user, userDAO, tokenDAO);

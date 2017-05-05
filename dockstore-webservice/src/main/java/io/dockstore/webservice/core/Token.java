@@ -57,6 +57,7 @@ public class Token {
     @Column(nullable = false)
     @ApiModelProperty("Source website for this token")
     private String tokenSource;
+
     @Column(nullable = false)
     @ApiModelProperty("Contents of the access token")
     private String content;
@@ -84,6 +85,12 @@ public class Token {
     @JsonProperty
     public long getId() {
         return id;
+    }
+
+    @JsonProperty
+    @ApiModelProperty("Contents of the access token")
+    public String getToken() {
+        return content;
     }
 
     @JsonProperty
