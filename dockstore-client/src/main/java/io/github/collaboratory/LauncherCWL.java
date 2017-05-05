@@ -24,6 +24,7 @@ import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -416,19 +417,32 @@ public class LauncherCWL {
 
         LOG.info("MAKING DIRECTORIES...");
         // directory to use, typically a large, encrypted filesystem
-        String workingDir = config.getString(WORKING_DIRECTORY, "./datastore/");
+        String workingDir = config.getString(WORKING_DIRECTORY,  System.getProperty("user.dir") + "/datastore/");
         // make UUID
         UUID uuid = UUID.randomUUID();
         // setup directories
         globalWorkingDir = workingDir + "/launcher-" + uuid;
         System.out.println("Creating directories for run of Dockstore launcher at: " + globalWorkingDir);
-        Utilities.executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid);
-        Utilities.executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid + "/working");
-        Utilities.executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid + "/inputs");
-        Utilities.executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid + "/outputs");
-        Utilities.executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid + "/tmp");
 
-        return new File(workingDir + "/launcher-" + uuid).getAbsolutePath();
+        Path globalWorkingPath = Paths.get(globalWorkingDir);
+
+        try {
+            Files.createDirectories(Paths.get(workingDir));
+            try {
+                Utilities.executeCommand("setfacl -d -m o::rwx " + workingDir);
+            } catch (Exception e) {
+                System.err.println("WARNING: Unable to set default permissions on working dir, may "
+                        + "result in problems with Docker containers that change users : setfacl -d -m o::rwx " + workingDir);
+            }
+            Files.createDirectories(globalWorkingPath);
+            Files.createDirectories(Paths.get(globalWorkingDir, "working"));
+            Files.createDirectories(Paths.get(globalWorkingDir, "inputs"));
+            Files.createDirectories(Paths.get(globalWorkingDir, "outputs"));
+            Files.createDirectories(Paths.get(globalWorkingDir, "tmp"));
+        } catch (IOException e) {
+            throw new RuntimeException("unable to create datastore directories", e);
+        }
+        return globalWorkingDir;
     }
 
     private Map<String, Object> runCWLCommand(String cwlFile, String jsonSettings, String outputDir, String workingDir, String tmpDir,
