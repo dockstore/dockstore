@@ -795,12 +795,6 @@ public class DockerRepoResource {
                     HttpStatus.SC_BAD_REQUEST);
         }
 
-        if (!tag.isValid()) {
-            LOG.info("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' is invalid.");
-            throw new CustomWebApplicationException("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' is invalid.",
-                    HttpStatus.SC_BAD_REQUEST);
-        }
-
         Set<SourceFile> sourceFiles = tag.getSourceFiles();
 
         // Add new test parameter files
@@ -841,12 +835,6 @@ public class DockerRepoResource {
         if (tag == null) {
             LOG.info("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.");
             throw new CustomWebApplicationException("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.",
-                    HttpStatus.SC_BAD_REQUEST);
-        }
-
-        if (!tag.isValid()) {
-            LOG.info("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' is invalid.");
-            throw new CustomWebApplicationException("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' is invalid.",
                     HttpStatus.SC_BAD_REQUEST);
         }
 
