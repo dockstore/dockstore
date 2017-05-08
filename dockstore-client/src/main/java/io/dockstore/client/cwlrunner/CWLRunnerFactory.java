@@ -15,10 +15,11 @@
  */
 package io.dockstore.client.cwlrunner;
 
-import io.github.collaboratory.CWLRunnerInterface;
 import org.apache.commons.configuration2.INIConfiguration;
 
 public final class CWLRunnerFactory {
+
+    public enum CWLRunner { BUNNY, CWLTOOL }
 
     private static INIConfiguration config = null;
 
@@ -30,10 +31,10 @@ public final class CWLRunnerFactory {
         if (config == null) {
             throw new UnsupportedOperationException("configuration is not setup");
         }
-        String string = config.getString("cwlrunner", "cwltool");
-        if ("cwltool".equalsIgnoreCase(string)) {
+        String string = getCWLRunner();
+        if (CWLRunner.CWLTOOL.toString().equalsIgnoreCase(string)) {
             return new CWLToolWrapper();
-        } else if ("bunny".equalsIgnoreCase(string)) {
+        } else if (CWLRunner.BUNNY.toString().equalsIgnoreCase(string)) {
             return new BunnyWrapper();
         } else {
             throw new UnsupportedOperationException("Improper CWL-runner specified");
@@ -42,5 +43,9 @@ public final class CWLRunnerFactory {
 
     public static void setConfig(INIConfiguration config) {
         CWLRunnerFactory.config = config;
+    }
+
+    public static String getCWLRunner() {
+        return config.getString("cwlrunner", CWLRunner.CWLTOOL.toString());
     }
 }

@@ -13,7 +13,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.github.collaboratory;
+package io.dockstore.client.cwlrunner;
 
 import java.util.List;
 

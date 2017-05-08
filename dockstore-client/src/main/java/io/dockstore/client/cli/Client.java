@@ -49,7 +49,7 @@ import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.client.cli.nested.WorkflowClient;
 import io.dockstore.client.cwlrunner.CWLRunnerFactory;
 import io.dockstore.common.Utilities;
-import io.github.collaboratory.CWLRunnerInterface;
+import io.dockstore.client.cwlrunner.CWLRunnerInterface;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;

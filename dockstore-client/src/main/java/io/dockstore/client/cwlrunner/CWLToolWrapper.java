@@ -21,7 +21,6 @@ import java.util.List;
 import com.google.common.base.Joiner;
 import io.dockstore.client.cli.ArgumentUtility;
 import io.dockstore.client.cli.Client;
-import io.github.collaboratory.CWLRunnerInterface;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
 public class CWLToolWrapper implements CWLRunnerInterface {

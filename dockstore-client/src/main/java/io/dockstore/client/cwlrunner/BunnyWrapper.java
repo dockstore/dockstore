@@ -20,7 +20,6 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import io.cwl.avro.CWL;
-import io.github.collaboratory.CWLRunnerInterface;
 
 public class BunnyWrapper implements CWLRunnerInterface {
     @Override
