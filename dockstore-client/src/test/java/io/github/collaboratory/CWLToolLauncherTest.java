@@ -22,7 +22,7 @@ import org.apache.commons.io.FileUtils;
  */
 public class CWLToolLauncherTest extends LauncherTest {
 
-    public String getConfigFile(){
+    public String getConfigFile() {
         return FileUtils.getFile("src", "test", "resources", "launcher.cwltool.ini").getAbsolutePath();
     }
 }

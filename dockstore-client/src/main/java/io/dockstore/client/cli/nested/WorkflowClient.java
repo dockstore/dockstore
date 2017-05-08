@@ -1069,6 +1069,11 @@ public class WorkflowClient extends AbstractEntryClient {
         return result;
     }
 
+    @Override
+    public Client getClient() {
+        return client;
+    }
+
     @Parameters(separators = "=", commandDescription = "Spit out a json run file for a given entry.")
     private static class CommandEntry2json {
         @Parameter(names = "--entry", description = "Complete workflow path in the Dockstore (ex. NCI-GDC/gdc-dnaseq-cwl/GDC_DNASeq:master)", required = true)

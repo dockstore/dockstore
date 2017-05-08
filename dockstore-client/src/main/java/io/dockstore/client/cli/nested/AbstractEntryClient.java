@@ -1082,7 +1082,7 @@ public abstract class AbstractEntryClient {
             OutputStream stderrStream) throws IOException, ApiException {
 
         if (!SCRIPT.get()) {
-            Client.checkForCWLDependencies();
+            getClient().checkForCWLDependencies();
         }
 
         final File tempDir = Files.createTempDir();
@@ -1473,6 +1473,8 @@ public abstract class AbstractEntryClient {
         }
         return null;
     }
+
+    public abstract Client getClient();
 
     public abstract List<SourceFile> downloadDescriptors(String entry, String descriptor, File tempDir);
 

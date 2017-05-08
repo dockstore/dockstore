@@ -1010,6 +1010,11 @@ public class ToolClient extends AbstractEntryClient {
         return file;
     }
 
+    @Override
+    public Client getClient() {
+        return client;
+    }
+
     public List<SourceFile> downloadDescriptors(String entry, String descriptor, File tempDir) {
         // In the future, delete tmp files
         DockstoreTool tool = null;

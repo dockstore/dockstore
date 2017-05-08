@@ -436,7 +436,8 @@ public class Client {
     /**
      * Check our dependencies and warn if they are not what we tested with
      */
-    public static void checkForCWLDependencies() {
+    public void checkForCWLDependencies() {
+        CWLRunnerFactory.setConfig(Utilities.parseConfig(getConfigFile()));
         CWLRunnerInterface cwlrunner = CWLRunnerFactory.createCWLRunner();
         cwlrunner.checkForCWLDependencies();
     }

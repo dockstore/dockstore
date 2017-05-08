@@ -80,6 +80,10 @@
             <artifactId>httpcore</artifactId>
         </dependency>
         <dependency>
+            <groupId>commons-httpclient</groupId>
+            <artifactId>commons-httpclient</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>3.4</version>
@@ -298,6 +302,7 @@
                             <usedDependencies>
                                 <usedDependency>org.apache.httpcomponents:httpcore</usedDependency>
                                 <usedDependency>javax.annotation:javax.annotation-api</usedDependency>
+                                <usedDependency>commons-httpclient:commons-httpclient</usedDependency>
                             </usedDependencies>
 
                         </configuration>

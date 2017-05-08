@@ -15,31 +15,14 @@
  */
 package io.github.collaboratory;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-
-import io.cwl.avro.CommandLineTool;
-import io.cwl.avro.Workflow;
-import io.dockstore.common.FileProvisionUtil;
-import io.dockstore.common.Utilities;
-import org.apache.commons.configuration2.INIConfiguration;
-import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.io.FileUtils;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-
-import static io.dockstore.common.FileProvisioning.getCacheDirectory;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author dyuen
  */
 public class BunnyLauncherTest extends LauncherTest {
 
-    public String getConfigFile(){
+    public String getConfigFile() {
         return FileUtils.getFile("src", "test", "resources", "launcher.bunny.ini").getAbsolutePath();
     }
 }
