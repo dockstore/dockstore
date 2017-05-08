@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.core;
 
+import java.io.File;
 import java.util.Objects;
 
 import javax.persistence.Column;
@@ -25,6 +26,7 @@ import javax.persistence.Entity;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import org.apache.commons.io.FilenameUtils;
 
 /**
  * This describes one tag associated with a container. For our implementation, this means one tag on quay.io or Docker Hub which is
@@ -69,6 +71,19 @@ public class Tag extends Version<Tag> {
 
     public Tag() {
         super();
+    }
+
+    @Override
+    public String getWorkingDirectory() {
+        if (!cwlPath.isEmpty()) {
+            File file = new File(cwlPath);
+            return file.getAbsoluteFile().getParent();
+        }
+        if (!wdlPath.isEmpty()) {
+            File file = new File(wdlPath);
+            return file.getAbsoluteFile().getParent();
+        }
+        return "";
     }
 
     public void updateByUser(final Tag tag) {

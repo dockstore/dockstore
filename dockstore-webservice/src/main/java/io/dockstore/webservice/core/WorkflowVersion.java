@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.core;
 
+import java.io.File;
 import java.util.Objects;
 
 import javax.persistence.Column;
@@ -43,6 +44,15 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     public WorkflowVersion() {
         super();
+    }
+
+    @Override
+    public String getWorkingDirectory() {
+        if (!workflowPath.isEmpty()) {
+            File file = new File(workflowPath);
+            return file.getAbsoluteFile().getParent();
+        }
+        return "";
     }
 
     public void updateByUser(final WorkflowVersion workflowVersion) {
