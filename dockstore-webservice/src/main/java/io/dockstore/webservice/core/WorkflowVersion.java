@@ -16,7 +16,6 @@
 
 package io.dockstore.webservice.core;
 
-import java.io.File;
 import java.util.Objects;
 
 import javax.persistence.Column;
