@@ -18,6 +18,7 @@ package io.dockstore.webservice.core;
 
 import java.security.Principal;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
 
@@ -33,6 +34,7 @@ import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.OrderBy;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -100,13 +102,14 @@ public class User implements Principal {
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "starred", inverseJoinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty("Entries in the dockstore that this user starred")
+    @OrderBy("id")
     @JsonIgnore
     private final Set<Entry> starredEntries;
 
     public User() {
         groups = new HashSet<>(0);
         entries = new HashSet<>(0);
-        starredEntries = new HashSet<>(0);
+        starredEntries = new LinkedHashSet<>();
     }
 
     @JsonProperty
@@ -119,13 +122,13 @@ public class User implements Principal {
         return username;
     }
 
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
     @JsonProperty
     public boolean getIsAdmin() {
         return isAdmin;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
     }
 
     public void setIsAdmin(boolean isAdmin) {
