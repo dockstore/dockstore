@@ -114,6 +114,10 @@ If you maven build in the root directory this will build not only the web servic
 
     mvn clean install
     
+If you're running tests on Travis-CI, certain tests can be rather slow. Skip them via:
+
+    mvn clean install -DexcludedGroups=io.dockstore.common.SlowTest
+    
 If you have access to our confidential data package for extended testing, you can activate that profile via
 
     mvn clean install -Pconfidential-tests
