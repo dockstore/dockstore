@@ -23,10 +23,8 @@ import java.util.Map;
 import com.google.common.io.Resources;
 import com.google.gson.Gson;
 import io.cwl.avro.CWL;
-import io.dockstore.common.SlowTest;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 import static org.junit.Assert.assertTrue;
 
@@ -36,7 +34,6 @@ import static org.junit.Assert.assertTrue;
 public class CWLClientTest {
 
     @Test
-    @Category(SlowTest.class)
     public void serializeToJson() throws Exception {
         final URL resource = Resources.getResource("cwl.json");
         final String cwlJson = Resources.toString(resource, StandardCharsets.UTF_8);
