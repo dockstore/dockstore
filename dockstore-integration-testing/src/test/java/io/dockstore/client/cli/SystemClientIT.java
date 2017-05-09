@@ -21,6 +21,9 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
@@ -34,6 +37,7 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit.DropwizardAppRule;
+import io.swagger.annotations.Api;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
@@ -42,6 +46,7 @@ import io.swagger.client.api.GAGHApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
+import io.swagger.client.model.Entry;
 import io.swagger.client.model.Group;
 import io.swagger.client.model.Metadata;
 import io.swagger.client.model.PublishRequest;
@@ -56,6 +61,7 @@ import io.swagger.client.model.ToolVersion;
 import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
 import io.swagger.client.model.Workflow;
+import io.swagger.quay.client.api.UserApi;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
@@ -67,6 +73,7 @@ import org.junit.Test;
 import static io.dockstore.common.CommonTestUtilities.clearState;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Tests the actual ApiClient generated via Swagger
@@ -607,5 +614,51 @@ public class SystemClientIT {
         long workflowId = workflow.getId();
         assertTrue(workflowId == 11);
         workflowApi.unstarEntry(workflowId);
+    }
+
+    /**
+     * This tests many combinations of starred tools would be returned in the same order
+     * This test will pass if the order returned is always the same
+     * @throws ApiException
+     * @throws IOException
+     * @throws TimeoutException
+     */
+    @Test
+    public void testStarredToolsOrder() throws  ApiException, IOException, TimeoutException{
+        ApiClient apiClient = getWebClient();
+        UsersApi usersApi = new UsersApi(apiClient);
+        ContainersApi containersApi = new ContainersApi(apiClient);
+        List<Long> containerIds1 = Arrays.asList((long)1, (long)2, (long)3, (long)4, (long)5);
+        List<Long> containerIds2 = Arrays.asList((long)1, (long)3, (long)5, (long)2, (long)4);
+        List<Long> containerIds3 = Arrays.asList((long)2, (long)4, (long)1, (long)3, (long)5);
+        List<Long> containerIds4 = Arrays.asList((long)5, (long)4, (long)3, (long)2, (long)1);
+        starring(containerIds1, containersApi, usersApi);
+        starring(containerIds2, containersApi, usersApi);
+        starring(containerIds3, containersApi, usersApi);
+        starring(containerIds4, containersApi, usersApi);
+        }
+
+    private void starring(List<Long> containerIds, ContainersApi containersApi, UsersApi usersApi) throws ApiException, IOException, TimeoutException {
+        StarRequest request = new StarRequest();
+        request.setStar(true);
+        containerIds.forEach(containerId -> {
+            try {
+                containersApi.starEntry(containerId, request);
+            } catch (ApiException e) {
+                fail("Couldn't star entry");
+            }
+        });
+        List<Entry> starredTools = usersApi.getStarredTools();
+        for (int i = 0; i< 5; i++) {
+            Long id = starredTools.get(i).getId();
+            assertTrue("Wrong order of starred tools returned, should be in ascending order.  Got" + id + ". Should be " + i+1, id==i+1);
+        }
+        containerIds.parallelStream().forEach(containerId -> {
+            try {
+                containersApi.unstarEntry(containerId);
+            } catch (ApiException e) {
+                fail("Couldn't unstar entry");
+            }
+        });
     }
 }

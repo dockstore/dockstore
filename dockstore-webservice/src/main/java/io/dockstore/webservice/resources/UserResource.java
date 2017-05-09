@@ -18,7 +18,10 @@ package io.dockstore.webservice.resources;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.DELETE;
@@ -59,8 +62,6 @@ import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Set;
-import java.util.stream.Collectors;
 /**
  * @author xliu
  */
@@ -435,7 +436,6 @@ public class UserResource {
         return FluentIterable.from(byId.getEntries()).filter(Tool.class).toList();
     }
 
-
     @GET
     @Timed
     @UnitOfWork
@@ -443,7 +443,8 @@ public class UserResource {
     @ApiOperation(value = "Get the logged-in user's starred tools", response = Entry.class, responseContainer = "List")
     public Set<Entry> getStarredTools(@ApiParam(hidden = true) @Auth User user) {
         User u = userDAO.findById(user.getId());
-        return u.getStarredEntries().stream().filter(element -> element instanceof Tool).collect(Collectors.toSet());
+        return u.getStarredEntries().stream().filter(element -> element instanceof Tool)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     @GET
@@ -453,7 +454,8 @@ public class UserResource {
     @ApiOperation(value = "Get the logged-in user's starred workflows", response = Entry.class, responseContainer = "List")
     public Set<Entry> getStarredWorkflows(@ApiParam(hidden = true) @Auth User user) {
         User u = userDAO.findById(user.getId());
-        return u.getStarredEntries().stream().filter(element -> element instanceof Workflow).collect(Collectors.toSet());
+        return u.getStarredEntries().stream().filter(element -> element instanceof Workflow)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     @GET
