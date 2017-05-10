@@ -24,10 +24,10 @@ import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -48,6 +48,8 @@ import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.CommandOutputParameter;
 import io.cwl.avro.Workflow;
 import io.cwl.avro.WorkflowOutputParameter;
+import io.dockstore.client.cwlrunner.CWLRunnerFactory;
+import io.dockstore.client.cwlrunner.CWLRunnerInterface;
 import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.Utilities;
 import org.apache.commons.cli.CommandLine;
@@ -130,7 +132,9 @@ public class LauncherCWL {
         config = Utilities.parseConfig(configFilePath);
 
         // parse the CWL tool definition without validation
-        CWL cwlUtil = new CWL();
+        CWLRunnerFactory.setConfig(config);
+        String cwlRunner = CWLRunnerFactory.getCWLRunner();
+        CWL cwlUtil = new CWL(cwlRunner.equalsIgnoreCase(CWLRunnerFactory.CWLRunner.BUNNY.toString()));
         final String imageDescriptorContent = cwlUtil.parseCWL(imageDescriptorPath).getLeft();
         Object cwlObject;
         try {
@@ -182,7 +186,7 @@ public class LauncherCWL {
         String newJsonPath = createUpdatedInputsAndOutputsJson(inputsId2dockerMountMap, outputMap, inputsAndOutputsJson);
 
         // run command
-        System.out.println("Calling out to cwltool to run your " + (cwlObject instanceof Workflow ? "workflow" : "tool"));
+        System.out.println("Calling out to a cwl-runner to run your " + (cwlObject instanceof Workflow ? "workflow" : "tool"));
         Map<String, Object> outputObj = runCWLCommand(imageDescriptorPath, newJsonPath, globalWorkingDir + "/outputs/",
                 globalWorkingDir + "/working/", globalWorkingDir + "/tmp/", stdoutStream, stderrStream);
         System.out.println();
@@ -416,19 +420,35 @@ public class LauncherCWL {
 
         LOG.info("MAKING DIRECTORIES...");
         // directory to use, typically a large, encrypted filesystem
-        String workingDir = config.getString(WORKING_DIRECTORY, "./datastore/");
+        String workingDir = config.getString(WORKING_DIRECTORY,  System.getProperty("user.dir") + "/datastore/");
         // make UUID
         UUID uuid = UUID.randomUUID();
         // setup directories
         globalWorkingDir = workingDir + "/launcher-" + uuid;
         System.out.println("Creating directories for run of Dockstore launcher at: " + globalWorkingDir);
-        Utilities.executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid);
-        Utilities.executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid + "/working");
-        Utilities.executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid + "/inputs");
-        Utilities.executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid + "/outputs");
-        Utilities.executeCommand("mkdir -p " + workingDir + "/launcher-" + uuid + "/tmp");
 
-        return new File(workingDir + "/launcher-" + uuid).getAbsolutePath();
+        Path globalWorkingPath = Paths.get(globalWorkingDir);
+
+        try {
+            Files.createDirectories(Paths.get(workingDir));
+            try {
+                boolean useBunny = config.getString("cwlrunner", "cwltool").equalsIgnoreCase(CWLRunnerFactory.CWLRunner.BUNNY.toString());
+                if (useBunny) {
+                    Utilities.executeCommand("setfacl -d -m o::rwx " + workingDir);
+                }
+            } catch (Exception e) {
+                System.err.println("WARNING: Unable to set default permissions on working dir, may "
+                        + "result in problems with Docker containers that change users : setfacl -d -m o::rwx " + workingDir);
+            }
+            Files.createDirectories(globalWorkingPath);
+            Files.createDirectories(Paths.get(globalWorkingDir, "working"));
+            Files.createDirectories(Paths.get(globalWorkingDir, "inputs"));
+            Files.createDirectories(Paths.get(globalWorkingDir, "outputs"));
+            Files.createDirectories(Paths.get(globalWorkingDir, "tmp"));
+        } catch (IOException e) {
+            throw new RuntimeException("unable to create datastore directories", e);
+        }
+        return globalWorkingDir;
     }
 
     private Map<String, Object> runCWLCommand(String cwlFile, String jsonSettings, String outputDir, String workingDir, String tmpDir,
@@ -445,10 +465,10 @@ public class LauncherCWL {
         extraFlags = extraFlags.stream().map(this::trimAndPrintInput).collect(Collectors.toList());
 
         // Create cwltool command
-        List<String> command = new ArrayList<>(
-                Arrays.asList("cwltool", "--enable-dev", "--non-strict", "--outdir", outputDir, "--tmpdir-prefix", tmpDir, "--tmp-outdir-prefix", workingDir, cwlFile,
-                        jsonSettings));
+        CWLRunnerInterface cwlRunner = CWLRunnerFactory.createCWLRunner();
+        List<String> command = cwlRunner.getExecutionCommand(outputDir, tmpDir, workingDir, cwlFile, jsonSettings);
         command.addAll(1, extraFlags);
+
 
         final String joined = Joiner.on(" ").join(command);
         System.out.println("Executing: " + joined);

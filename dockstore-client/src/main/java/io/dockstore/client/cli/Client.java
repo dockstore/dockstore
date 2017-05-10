@@ -41,14 +41,15 @@ import ch.qos.logback.classic.Level;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
-import com.google.common.base.Joiner;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 import io.cwl.avro.CWL;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.client.cli.nested.WorkflowClient;
+import io.dockstore.client.cwlrunner.CWLRunnerFactory;
 import io.dockstore.common.Utilities;
+import io.dockstore.client.cwlrunner.CWLRunnerInterface;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;
@@ -61,7 +62,6 @@ import io.swagger.client.model.Metadata;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -436,29 +436,10 @@ public class Client {
     /**
      * Check our dependencies and warn if they are not what we tested with
      */
-    public static void checkForCWLDependencies() {
-        final String[] s1 = { "cwltool", "--version" };
-        final ImmutablePair<String, String> pair1 = io.cwl.avro.Utilities
-                .executeCommand(Joiner.on(" ").join(Arrays.asList(s1)), false, com.google.common.base.Optional.absent(),
-                        com.google.common.base.Optional.absent());
-        final String cwlToolVersion = pair1.getKey().split(" ")[1].trim();
-
-        final String[] s2 = { "schema-salad-tool", "--version", "schema" };
-        final ImmutablePair<String, String> pair2 = io.cwl.avro.Utilities
-                .executeCommand(Joiner.on(" ").join(Arrays.asList(s2)), false, com.google.common.base.Optional.absent(),
-                        com.google.common.base.Optional.absent());
-        final String schemaSaladVersion = pair2.getKey().split(" ")[1].trim();
-
-        final String expectedCwltoolVersion = "1.0.20170217172322";
-        if (!cwlToolVersion.equals(expectedCwltoolVersion)) {
-            errorMessage("cwltool version is " + cwlToolVersion + " , Dockstore is tested with " + expectedCwltoolVersion
-                    + "\nOverride and run with `--script`", COMMAND_ERROR);
-        }
-        final String expectedSchemaSaladVersion = "2.2.20170222151604";
-        if (!schemaSaladVersion.equals(expectedSchemaSaladVersion)) {
-            errorMessage("schema-salad version is " + cwlToolVersion + " , Dockstore is tested with " + expectedSchemaSaladVersion
-                    + "\nOverride and run with `--script`", COMMAND_ERROR);
-        }
+    public void checkForCWLDependencies() {
+        CWLRunnerFactory.setConfig(Utilities.parseConfig(getConfigFile()));
+        CWLRunnerInterface cwlrunner = CWLRunnerFactory.createCWLRunner();
+        cwlrunner.checkForCWLDependencies();
     }
 
     /**
@@ -790,6 +771,7 @@ public class Client {
         this.workflowClient = new WorkflowClient(new WorkflowsApi(defaultApiClient), usersApi, this, isAdmin);
 
         defaultApiClient.setDebugging(DEBUG.get());
+        CWLRunnerFactory.setConfig(config);
     }
 
     private INIConfiguration getIniConfiguration(List<String> args) {

@@ -1,0 +1,6 @@
+{
+  "hello_input": {
+    "class": "File",
+    "path": "hello-input.txt"
+  }
+}

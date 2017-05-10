@@ -18,7 +18,7 @@ import static io.dockstore.common.FileProvisionUtil.PLUGINS_JSON_FILENAME;
 public class FileProvisionUtilTest {
     @Test
     public void downloadPlugins() throws Exception {
-        File iniFile = FileUtils.getFile("src", "test", "resources", "launcher.ini");
+        File iniFile = FileUtils.getFile("src", "test", "resources", "launcher.cwltool.ini");
         INIConfiguration config = Utilities.parseConfig(iniFile.getAbsolutePath());
         FileProvisionUtil.downloadPlugins(config);
     }

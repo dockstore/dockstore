@@ -54,11 +54,11 @@ public class FileImporter {
     }
 
     /**
-     * Read a file from the tool's git repository.
-     *
+     * Look in a source code repo for a particular file
      * @param fileType
      * @param version
-     * @return a FileResponse instance
+     * @param specificPath if specified, look for a specific file, otherwise return the "default" for a fileType
+     * @return  a FileResponse instance
      */
     public String readGitRepositoryFile(SourceFile.FileType fileType, Version version, String specificPath) {
 
@@ -75,7 +75,9 @@ public class FileImporter {
 
         String fileName = "";
         if (specificPath != null) {
-            fileName = specificPath;
+            String workingDirectory = version.getWorkingDirectory();
+            // if the working directory is different from the root, take it into account
+            fileName = (!workingDirectory.isEmpty() && !"/".equals(workingDirectory) ? workingDirectory + "/" +  specificPath : specificPath);
         } else if (version instanceof Tag) {
             Tag tag = (Tag)version;
             // Add for new descriptor types

@@ -244,6 +244,7 @@ definitions:
       id: {description: Implementation specific ID for the token in this web service,
         format: int64, readOnly: true, type: integer}
       refreshToken: {type: string}
+      token: {description: Contents of the access token, readOnly: true, type: string}
       tokenSource: {description: Source website for this token, type: string}
       userId: {format: int64, type: integer}
       username: {description: 'When an integrated service is not aware of the username,
@@ -356,11 +357,6 @@ definitions:
         type: boolean}
       location: {description: Location of user, type: string}
       name: {type: string}
-      starredEntries:
-        description: Entries in the dockstore that this user starred
-        items: {$ref: '#/definitions/Entry'}
-        type: array
-        uniqueItems: true
       username: {description: Username on dockstore, type: string}
     required: [isAdmin]
     type: object
@@ -775,6 +771,23 @@ paths:
           description: successful operation
           schema: {$ref: '#/definitions/Token'}
       summary: Refresh Bitbucket token
+      tags: [tokens]
+  /auth/tokens/github:
+    post:
+      description: A post method is required by saetillizer to send the GitHub token
+      operationId: addToken
+      parameters:
+      - description: code
+        in: body
+        name: body
+        required: false
+        schema: {type: string}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema: {$ref: '#/definitions/Token'}
+      summary: Allow satellizer to post a new GitHub token to dockstore
       tags: [tokens]
   /auth/tokens/github.com:
     get:
@@ -1686,7 +1699,7 @@ paths:
             type: array
       summary: Get the logged-in user's starred workflows
       tags: [users]
-  /users/updateUserMetatdata:
+  /users/updateUserMetadata:
     get:
       description: Update all users metadata. Admin only.
       operationId: updateUserMetadata
@@ -1712,7 +1725,7 @@ paths:
           schema: {$ref: '#/definitions/User'}
       summary: Get the logged-in user
       tags: [users]
-  /users/user/updateUserMetatdata:
+  /users/user/updateUserMetadata:
     get:
       description: Update metadata for logged in user.
       operationId: updateLoggedInUserMetadata

@@ -37,8 +37,8 @@ import io.dockstore.client.cli.JCommanderUtility;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.Body2;
 import io.swagger.client.model.Body3;
+import io.swagger.client.model.Body4;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
@@ -193,7 +193,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
             String combinedLabelString = generateLabelString(addsSet, removesSet, existingLabels);
 
-            Workflow updatedWorkflow = workflowsApi.updateLabels(workflowId, combinedLabelString, new Body2());
+            Workflow updatedWorkflow = workflowsApi.updateLabels(workflowId, combinedLabelString, new Body3());
 
             List<Label> newLabels = updatedWorkflow.getLabels();
             if (!newLabels.isEmpty()) {
@@ -891,7 +891,7 @@ public class WorkflowClient extends AbstractEntryClient {
             long workflowId = workflow.getId();
 
             if (adds.size() > 0) {
-                workflowsApi.addTestParameterFiles(workflowId, adds, new Body3(), versionName);
+                workflowsApi.addTestParameterFiles(workflowId, adds, new Body4(), versionName);
             }
 
             if (removes.size() > 0) {
@@ -1067,6 +1067,11 @@ public class WorkflowClient extends AbstractEntryClient {
             }
         }
         return result;
+    }
+
+    @Override
+    public Client getClient() {
+        return client;
     }
 
     @Parameters(separators = "=", commandDescription = "Spit out a json run file for a given entry.")
