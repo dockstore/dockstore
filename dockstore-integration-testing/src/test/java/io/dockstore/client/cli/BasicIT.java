@@ -21,6 +21,7 @@ import java.util.concurrent.TimeoutException;
 
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SlowTest;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -46,7 +47,8 @@ import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
  *
  * @author aduncan
  */
-public class BasicET {
+@Category(ConfidentialTest.class)
+public class BasicIT {
     @ClassRule
     public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
             DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstoreTest.yml"));
