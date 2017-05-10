@@ -45,7 +45,7 @@
         <aws.version>1.11.86</aws.version>
         <powermock.version>1.6.5</powermock.version>
         <mockito.version>1.10.19</mockito.version>
-        <cwlavro.version>1.0.8</cwlavro.version>
+        <cwlavro.version>2.0.0</cwlavro.version>
         <okhttp.version>3.2.0</okhttp.version>
         <slf4j.version>1.7.21</slf4j.version>
         <swagger-ui.version>2.1.4</swagger-ui.version>
@@ -141,7 +141,6 @@
     <modules>
         <module>dockstore-common</module>
         <module>dockstore-file-plugin-parent</module>
-        <module>dockstore-launcher</module>
         <module>dockstore-webservice</module>
         <module>swagger-java-client</module>
         <module>swagger-java-quay-client</module>
@@ -614,6 +613,11 @@
                 <groupId>ro.fortsoft.pf4j</groupId>
                 <artifactId>pf4j</artifactId>
                 <version>1.1.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>1.13</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

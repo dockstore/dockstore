@@ -37,7 +37,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author dyuen
  */
-public class LauncherTest {
+public abstract class LauncherTest {
 
     @Rule
     public ExpectedException expectedEx = ExpectedException.none();
@@ -45,8 +45,7 @@ public class LauncherTest {
     @Before
     public void cleanCache() throws ConfigurationException, IOException {
         // need to clean cache to make tests predictable
-        File iniFile = FileUtils.getFile("src", "test", "resources", "launcher.ini");
-        INIConfiguration config = Utilities.parseConfig(iniFile.getAbsolutePath());
+        INIConfiguration config = Utilities.parseConfig(getConfigFile());
         final String cacheDirectory = getCacheDirectory(config);
         FileUtils.deleteDirectory(new File(cacheDirectory));
 
@@ -54,9 +53,10 @@ public class LauncherTest {
         FileProvisionUtil.downloadPlugins(config);
     }
 
+    public abstract String getConfigFile();
+
     @Test
     public void testCWL() throws Exception {
-        File iniFile = FileUtils.getFile("src", "test", "resources", "launcher.ini");
         File cwlFile = FileUtils.getFile("src", "test", "resources", "collab.cwl");
         File jobFile = FileUtils.getFile("src", "test", "resources", "collab-cwl-job-pre.json");
 
@@ -64,14 +64,13 @@ public class LauncherTest {
             expectedEx.expectMessage("plugin threw an exception");
         }
         final LauncherCWL launcherCWL = new LauncherCWL(
-                new String[] { "--config", iniFile.getAbsolutePath(), "--descriptor", cwlFile.getAbsolutePath(), "--job",
+                new String[] { "--config", getConfigFile(), "--descriptor", cwlFile.getAbsolutePath(), "--job",
                         jobFile.getAbsolutePath() });
         launcherCWL.run(CommandLineTool.class);
     }
 
     @Test
     public void testCWLProgrammatic() throws Exception {
-        File iniFile = FileUtils.getFile("src", "test", "resources", "launcher.ini");
         File cwlFile = FileUtils.getFile("src", "test", "resources", "collab.cwl");
         File jobFile = FileUtils.getFile("src", "test", "resources", "collab-cwl-job-pre.json");
         ByteArrayOutputStream stdout = new ByteArrayOutputStream();
@@ -80,7 +79,7 @@ public class LauncherTest {
         if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
             expectedEx.expectMessage("plugin threw an exception");
         }
-        final LauncherCWL launcherCWL = new LauncherCWL(iniFile.getAbsolutePath(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath(),
+        final LauncherCWL launcherCWL = new LauncherCWL(getConfigFile(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath(),
                 stdout, stderr);
         launcherCWL.run(CommandLineTool.class);
 
@@ -89,7 +88,6 @@ public class LauncherTest {
 
     @Test
     public void testCWLWorkflowProgrammatic() throws Exception {
-        File iniFile = FileUtils.getFile("src", "test", "resources", "launcher.ini");
         File cwlFile = FileUtils.getFile("src", "test", "resources", "filtercount.cwl.yaml");
         File jobFile = FileUtils.getFile("src", "test", "resources", "filtercount-job.json");
         ByteArrayOutputStream stdout = new ByteArrayOutputStream();
@@ -98,7 +96,7 @@ public class LauncherTest {
         if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
             expectedEx.expectMessage("plugin threw an exception");
         }
-        final LauncherCWL launcherCWL = new LauncherCWL(iniFile.getAbsolutePath(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath(),
+        final LauncherCWL launcherCWL = new LauncherCWL(getConfigFile(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath(),
                 stdout, stderr);
         launcherCWL.run(Workflow.class);
 
