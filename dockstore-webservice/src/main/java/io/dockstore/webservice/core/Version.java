@@ -129,6 +129,8 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         hidden = version.hidden;
     }
 
+    public abstract String getWorkingDirectory();
+
     public void update(T version) {
         valid = version.isValid();
         lastModified = version.getLastModified();

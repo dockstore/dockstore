@@ -26,6 +26,7 @@ import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import org.apache.commons.io.FilenameUtils;
 
 /**
  * This implements version for a Workflow.
@@ -43,6 +44,14 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     public WorkflowVersion() {
         super();
+    }
+
+    @Override
+    public String getWorkingDirectory() {
+        if (!workflowPath.isEmpty()) {
+            return FilenameUtils.getPathNoEndSeparator(workflowPath);
+        }
+        return "";
     }
 
     public void updateByUser(final WorkflowVersion workflowVersion) {

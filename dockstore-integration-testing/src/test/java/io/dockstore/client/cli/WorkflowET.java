@@ -62,6 +62,7 @@ public class WorkflowET {
     private static final String DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW = "DockstoreTestUser2/hello-dockstore-workflow";
     private static final String DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW = "dockstore_testuser2/dockstore-workflow";
     private static final String DOCKSTORE_TEST_USER2_IMPORTS_DOCKSTORE_WORKFLOW = "DockstoreTestUser2/dockstore-whalesay-imports";
+    private static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW = "DockstoreTestUser2/dockstore_workflow_cnv";
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
@@ -320,5 +321,31 @@ public class WorkflowET {
         // get secondary files by path
         SourceFile argumentsTool = workflowApi.secondaryCwlPath(workflow.getId(), "arguments.cwl", "master");
         assertTrue("argumentstool content incorrect", argumentsTool.getContent().contains("Example trivial wrapper for Java 7 compiler"));
+    }
+
+    @Test
+    public void testRelativeSecondaryFileOperations() throws IOException, TimeoutException, ApiException {
+        final ApiClient webClient = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
+        workflowApi.manualRegister("github", DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "/workflow/cnv.cwl", "", "cwl");
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW);
+        final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
+        // test out methods to access secondary files
+
+        final List<SourceFile> masterImports = workflowApi.secondaryCwl(workflow.getId(), "master");
+        assertTrue("should find 3 imports, found " + masterImports.size(), masterImports.size() == 3);
+        final List<SourceFile> rootImports = workflowApi.secondaryCwl(workflow.getId(), "rootTest");
+        assertTrue("should find 0 imports, found " + rootImports.size(), rootImports.size() == 0);
+
+        // next, change a path for the root imports version
+        List<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
+        workflowVersions.stream().filter(v -> v.getName().equals("rootTest")).findFirst().get().setWorkflowPath("/cnv.cwl");
+        workflowApi.updateWorkflowVersion(workflow.getId(), workflowVersions);
+        workflowApi.refresh(workflowByPathGithub.getId());
+        final List<SourceFile> newMasterImports = workflowApi.secondaryCwl(workflow.getId(), "master");
+        assertTrue("should find 3 imports, found " + newMasterImports.size(), newMasterImports.size() == 3);
+        final List<SourceFile> newRootImports = workflowApi.secondaryCwl(workflow.getId(), "rootTest");
+        assertTrue("should find 3 imports, found " + newRootImports.size(), newRootImports.size() == 3);
     }
 }
