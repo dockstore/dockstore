@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 
 import com.google.common.io.Resources;
+import io.dockstore.common.ConfidentialTest;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.ResourceHelpers;
@@ -43,12 +44,14 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemOutRule;
+import org.junit.experimental.categories.Category;
 
 import static io.dockstore.common.CommonTestUtilities.clearStateMakePrivate2;
 
 /**
  * @author jpatricia on 04/07/16.
  */
+@Category(ConfidentialTest.class)
 public class ToolsWorkflowTestIT {
 
     @ClassRule
@@ -67,7 +70,7 @@ public class ToolsWorkflowTestIT {
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
 
     private WorkflowsApi setupWebService() throws IOException, TimeoutException, ApiException {
-        ApiClient webClient = WorkflowET.getWebClient();
+        ApiClient webClient = WorkflowIT.getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         UsersApi usersApi = new UsersApi(webClient);
@@ -94,7 +97,7 @@ public class ToolsWorkflowTestIT {
                 .findFirst();
 
         //getting the dag json string
-        final String basePath = WorkflowET.getWebClient().getBasePath();
+        final String basePath = WorkflowIT.getWebClient().getBasePath();
         URL url = new URL(basePath + "/workflows/" + githubWorkflow.getId() + "/tools/" + master.get().getId());
         List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
 

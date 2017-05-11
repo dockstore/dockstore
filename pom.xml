@@ -49,7 +49,8 @@
         <okhttp.version>3.2.0</okhttp.version>
         <slf4j.version>1.7.21</slf4j.version>
         <swagger-ui.version>2.1.4</swagger-ui.version>
-        <maven-fire.version>2.19.1</maven-fire.version>
+        <maven-surefire.version>2.20</maven-surefire.version>
+        <maven-failsafe.version>2.19.1</maven-failsafe.version>
     </properties>
 
     <organization>
@@ -765,12 +766,18 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>${maven-fire.version}</version>
+                    <version>${maven-surefire.version}</version>
+                    <configuration>
+                        <excludedGroups>${excludeGroups}</excludedGroups>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
-                    <version>${maven-fire.version}</version>
+                    <version>${maven-failsafe.version}</version>
+                    <configuration>
+                        <excludedGroups>${excludeGroups}</excludedGroups>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -991,7 +998,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>2.19.1</version>
                 <executions>
                     <execution>
                         <id>integration-test</id>
@@ -1064,37 +1070,29 @@
     </reporting>
 
     <profiles>
-        <!-- Jenkins by default defines a property BUILD_NUMBER which is used to
-        enable the profile. -->
         <profile>
-            <id>jenkins</id>
+            <id>default</id>
+            <!-- run only non-confidential, relatively fast tests -->
             <activation>
-                <property>
-                    <name>env.BUILD_NUMBER</name>
-                </property>
+                <activeByDefault>true</activeByDefault>
             </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>cobertura-maven-plugin</artifactId>
-                        <configuration>
-                            <check />
-                            <formats>
-                                <format>xml</format>
-                            </formats>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>cobertura</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
+            <properties>
+                <excludeGroups>io.dockstore.common.ConfidentialTest,io.dockstore.common.SlowTest</excludeGroups>
+            </properties>
+        </profile>
+        <profile>
+            <id>travis-tests</id>
+            <!-- travis has access to our confidential data bundle -->
+            <properties>
+                <excludeGroups>io.dockstore.common.SlowTest</excludeGroups>
+            </properties>
+        </profile>
+        <profile>
+            <id>jenkins-tests</id>
+            <!-- run all tests in-house -->
+            <properties>
+                <excludeGroups></excludeGroups>
+            </properties>
         </profile>
     </profiles>
 </project>
