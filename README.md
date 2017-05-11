@@ -114,9 +114,13 @@ If you maven build in the root directory this will build not only the web servic
 
     mvn clean install
     
-If you have access to our confidential data package for extended testing, you can activate that profile via
+If you're running tests on Travis-CI (or otherwise have access to the confidential data bundle) Run them via:
 
-    mvn clean install -Pconfidential-tests
+    mvn clean install -Ptravis-tests
+    
+If you're running in an environment that can run our slower tests, run them in addition to the confidential tests with: 
+
+    mvn clean install -Pjenkins-tests
 
 ### Running Locally
 

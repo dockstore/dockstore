@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.concurrent.TimeoutException;
 
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Constants;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -44,6 +45,7 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
+import org.junit.experimental.categories.Category;
 
 import static io.dockstore.common.CommonTestUtilities.clearStateMakePrivate2;
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
@@ -54,7 +56,8 @@ import static org.junit.Assert.assertTrue;
  *
  * @author dyuen
  */
-public class WorkflowET {
+@Category(ConfidentialTest.class)
+public class WorkflowIT {
 
     @ClassRule
     public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(

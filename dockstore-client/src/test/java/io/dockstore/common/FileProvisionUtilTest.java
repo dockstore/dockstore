@@ -6,9 +6,10 @@ import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import ro.fortsoft.pf4j.PluginManager;
+import org.junit.experimental.categories.Category;
+import static org.junit.Assert.assertTrue;
 
 import static io.dockstore.common.FileProvisionUtil.PLUGINS_JSON_FILENAME;
-import static org.junit.Assert.*;
 
 /**
  * @author gluu
