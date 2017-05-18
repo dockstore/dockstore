@@ -194,6 +194,7 @@ public class LaunchTestIT {
         for (char y = 'a'; y <= 'f'; y++) {
             assertTrue("output should provision out to correct locations",
                     systemOutRule.getLog().contains("/tmp/provision_out_with_files/"));
+            assertTrue(new File("/tmp/provision_out_with_files/test.a" + y).exists());
         }
     }
 
