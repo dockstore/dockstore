@@ -64,6 +64,16 @@ public class Tag extends Version<Tag> {
     @ApiModelProperty("Path for the WDL document")
     private String wdlPath = "/Dockstore.wdl";
 
+    @Column(columnDefinition = "text", nullable = false)
+    @JsonProperty("cwl_test_parameter_file")
+    @ApiModelProperty("Path for the CWL test parameter file")
+    private String cwlTestFile = "/test.cwl.json";
+
+    @Column(columnDefinition = "text", nullable = false)
+    @JsonProperty("wdl_test_parameter_file")
+    @ApiModelProperty("Path for the WDL test parameter file")
+    private String wdlTestFile = "/test.wdl.json";
+
     @Column
     @ApiModelProperty("Implementation specific, indicates whether this is an automated build on quay.io")
     private boolean automated;
@@ -203,4 +213,19 @@ public class Tag extends Version<Tag> {
         return (int)getId();
     }
 
+    public String getWdlTestFile() {
+        return wdlTestFile;
+    }
+
+    public void setWdlTestFile(String wdlTestFile) {
+        this.wdlTestFile = wdlTestFile;
+    }
+
+    public String getCwlTestFile() {
+        return cwlTestFile;
+    }
+
+    public void setCwlTestFile(String cwlTestFile) {
+        this.cwlTestFile = cwlTestFile;
+    }
 }

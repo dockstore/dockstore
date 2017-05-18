@@ -26,6 +26,7 @@ import java.util.Set;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
@@ -268,6 +269,16 @@ public abstract class AbstractImageRegistry {
                             oldTag.setCwlPath(tool.getDefaultCwlPath());
                             oldTag.setWdlPath(tool.getDefaultWdlPath());
                             oldTag.setDockerfilePath(tool.getDefaultDockerfilePath());
+                            oldTag.setCwlTestFile(tool.getDefaultTestCwlParameterFile());
+                            oldTag.setWdlTestFile(tool.getDefaultTestWdlParameterFile());
+                            SourceFile sourcefile = new SourceFile();
+                            sourcefile.setPath(tool.getDefaultTestCwlParameterFile());
+                            sourcefile.setType(SourceFile.FileType.CWL_TEST_JSON);
+                            SourceFile sourcefile2 = new SourceFile();
+                            sourcefile2.setPath(tool.getDefaultTestWdlParameterFile());
+                            sourcefile2.setType(SourceFile.FileType.WDL_TEST_JSON);
+                            oldTag.getSourceFiles().add(sourcefile);
+                            oldTag.getSourceFiles().add(sourcefile2);
                         }
 
                         break;
@@ -279,6 +290,14 @@ public abstract class AbstractImageRegistry {
                     // this could result in the same tag being added to multiple containers with the same path, need to clone
                     Tag clonedTag = new Tag();
                     clonedTag.clone(newTag);
+                    SourceFile sourcefile = new SourceFile();
+                    sourcefile.setPath(tool.getDefaultTestCwlParameterFile());
+                    sourcefile.setType(SourceFile.FileType.CWL_TEST_JSON);
+                    SourceFile sourcefile2 = new SourceFile();
+                    sourcefile2.setPath(tool.getDefaultTestWdlParameterFile());
+                    sourcefile2.setType(SourceFile.FileType.WDL_TEST_JSON);
+                    clonedTag.getSourceFiles().add(sourcefile);
+                    clonedTag.getSourceFiles().add(sourcefile2);
                     existingTags.add(clonedTag);
                 }
 
@@ -342,7 +361,6 @@ public abstract class AbstractImageRegistry {
                 LOG.info(githubToken.getUsername() + " : Parsing WDL...");
                 sourceCodeRepo.updateEntryMetadata(tool, AbstractEntryClient.Type.WDL);
             }
-
         }
         toolDAO.create(tool);
 

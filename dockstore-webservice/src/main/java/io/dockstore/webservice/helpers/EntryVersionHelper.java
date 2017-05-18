@@ -171,6 +171,7 @@ public class EntryVersionHelper<T extends Entry> {
                 final Tool tool = (Tool)entry;
                 final Tag toolTag = (Tag)tagInstance;
                 for (SourceFile file : toolTag.getSourceFiles()) {
+
                     // dockerfile is a special case since there always is only a max of one
                     if (fileType == SourceFile.FileType.DOCKERFILE) {
                         if (file.getType() == SourceFile.FileType.DOCKERFILE) {

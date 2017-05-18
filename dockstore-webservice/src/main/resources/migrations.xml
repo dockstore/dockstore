@@ -406,5 +406,11 @@
                                  referencedColumnNames="id"
                                  referencedTableName="enduser"/>
     </changeSet>
+    <changeSet id="testFiles" author="gluu">
+        <addColumn tableName="tag">
+            <column name="cwltestfile" type="varchar(255)"></column>
+            <column name="wdltestfile" type="varchar(255)"></column>
+        </addColumn>
+    </changeSet>
 
 </databaseChangeLog>

@@ -283,6 +283,64 @@ public abstract class SourceCodeRepoInterface {
         return workflow;
     }
 
+    public Entry updateTestParameterFiles(Entry entry, AbstractEntryClient.Type type) {
+        // Determine which branch to use
+        String repositoryId = getRepositoryId(entry);
+        if (repositoryId == null) {
+            LOG.info("Could not find repository information.");
+            return entry;
+        }
+        String branch = getMainBranch(entry, repositoryId);
+        if (branch == null) {
+            LOG.info(repositoryId + " : Error getting the main branch.");
+            return entry;
+        }
+        // Determine the file path of the test parameter file
+        String filePath = null;
+        // If entry is a tool
+        if (entry.getClass().equals(Tool.class)) {
+            // If no tags exist on quay
+            if (((Tool)entry).getVersions().size() == 0) {
+                return entry;
+            }
+
+            // Find filepath to parse
+            for (Tag tag : ((Tool)entry).getVersions()) {
+                if (tag.getReference() != null && tag.getReference().equals(branch)) {
+                    if (type == AbstractEntryClient.Type.CWL) {
+                        filePath = tag.getCwlTestFile();
+                    } else {
+                        filePath = tag.getWdlTestFile();
+                    }
+                }
+            }
+        } else {
+            // No idea what to do
+            return entry;
+        }
+
+        if (Strings.isNullOrEmpty(filePath)) {
+            LOG.info(repositoryId + " : No descriptor found for " + branch + ".");
+            return entry;
+        }
+
+        // Why is this needed?
+        if (filePath.startsWith("/")) {
+            filePath = filePath.substring(1);
+        }
+
+        // Get file contents
+        // Does this need to be an API call? can't we just use the files we have in the database?
+        String content = getFileContents(filePath, branch, repositoryId);
+
+        if (content == null) {
+            LOG.info(repositoryId + " : Error getting descriptor for " + branch + " with path " + filePath);
+            return entry;
+        }
+
+        return entry;
+    }
+
     /**
      * Update an entry with the contents of the descriptor file from a source code repo
      *
