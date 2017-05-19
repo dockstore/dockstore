@@ -157,7 +157,7 @@ public class LaunchTestIT {
         // do not use a cache
         runTool(cwlFile, args, api, usersApi, client, true);
 
-        final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Uploading");
+        final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
         assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
         for (char y = 'a'; y <= 'f'; y++) {
             assertTrue("output should provision out to correct locations",
@@ -189,7 +189,7 @@ public class LaunchTestIT {
         // do not use a cache
         runTool(cwlFile, args, api, usersApi, client, true);
 
-        final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Uploading");
+        final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
         assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 7);
         for (char y = 'a'; y <= 'f'; y++) {
             assertTrue("output should provision out to correct locations",
