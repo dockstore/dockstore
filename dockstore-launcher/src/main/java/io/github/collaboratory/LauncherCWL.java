@@ -543,7 +543,7 @@ public class LauncherCWL {
             return;
         }
         LOG.info("NAME: {} URL: {} FILENAME: {} CWL OUTPUT PATH: {}", file.getLocalPath(), file.getUrl(), key, cwlOutputPath);
-        System.out.println("Uploading: #" + key + " from " + cwlOutputPath + " to : " + file.getUrl());
+        System.out.println("Registering: #" + key + " to provision from " + cwlOutputPath + " to : " + file.getUrl());
         fileProvisioning.registerOutputFile(cwlOutputPath, file);
 
         if (fileMapDataStructure.containsKey("secondaryFiles")) {

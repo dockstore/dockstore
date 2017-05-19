@@ -303,22 +303,22 @@ public class FileProvisioning {
         File sourceFile = new File(srcPath);
 
         if (provisionInterface != null) {
-            System.out.println("Calling on plugin " + provisionInterface.getClass().getName() + " to provision to " + destPath);
+            System.out.println("Calling on plugin " + provisionInterface.getClass().getName() + " to provision from " + srcPath + " to " + destPath);
             provisionInterface.uploadTo(destPath, Paths.get(srcPath), Optional.ofNullable(metadata));
+            // finalize output from the printer
+            System.out.println();
         } else {
             try {
                 FileSystemManager fsManager = VFS.getManager();
                 Path currentWorkingDir = Paths.get("").toAbsolutePath();
                 try (FileObject dest = fsManager.resolveFile(currentWorkingDir.toFile(), destPath);
                         FileObject src = fsManager.resolveFile(sourceFile.getAbsolutePath())) {
+                    System.out.println("Provisioning from " + srcPath + " to " + destPath);
                     // trigger a copy from the URL to a local file path that's a UUID to avoid collision
                     // check for a local file path
                     FileProvisionUtil.copyFromInputStreamToOutputStream(src, dest);
                 } catch (IOException e) {
                     throw new RuntimeException("Could not provision output files", e);
-                } finally {
-                    // finalize output from the printer
-                    System.out.println();
                 }
             } catch (IOException e) {
                 LOG.error(e.getMessage());
