@@ -269,8 +269,6 @@ public abstract class AbstractImageRegistry {
                             oldTag.setCwlPath(tool.getDefaultCwlPath());
                             oldTag.setWdlPath(tool.getDefaultWdlPath());
                             oldTag.setDockerfilePath(tool.getDefaultDockerfilePath());
-                            oldTag.setCwlTestFile(tool.getDefaultTestCwlParameterFile());
-                            oldTag.setWdlTestFile(tool.getDefaultTestWdlParameterFile());
                             oldTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestCwlParameterFile(), SourceFile.FileType.CWL_TEST_JSON));
                             oldTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestWdlParameterFile(), SourceFile.FileType.WDL_TEST_JSON));
                         }
