@@ -22,6 +22,7 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
 
+    <!--1-->
     <changeSet id="1" author="agduncan" context="descriptor-paths-not-null">
         <addNotNullConstraint tableName="container" columnName="defaultwdlpath" defaultNullValue="/Dockstore.wdl"></addNotNullConstraint>
         <addNotNullConstraint tableName="container" columnName="defaultcwlpath" defaultNullValue="/Dockstore.cwl"></addNotNullConstraint>
@@ -32,6 +33,7 @@
         <addNotNullConstraint tableName="tag" columnName="dockerfilepath" defaultNullValue="/Dockerfile"></addNotNullConstraint>
     </changeSet>
 
+    <!--2-->
     <changeSet author="dyuen" id="renameTable-container">
         <renameTable newTableName="tool"
                      oldTableName="container"/>
@@ -45,6 +47,7 @@
                      oldTableName="usercontainer"/>
     </changeSet>
 
+    <!--3-->
     <changeSet author="dyuen" id="renameColumns">
         <renameColumn newColumnName="toolid"
                       oldColumnName="containerid"
@@ -60,6 +63,7 @@
                       tableName="user_entry"/>
     </changeSet>
 
+    <!--4-->
     <changeSet author="dyuen (generated)" id="1456852002496-13">
         <createTable tableName="workflow">
             <column name="id" type="BIGINT">
@@ -90,6 +94,8 @@
 
         </createTable>
     </changeSet>
+
+    <!--5-->
     <changeSet author="dyuen (generated)" id="1456852002496-14">
         <createTable tableName="workflow_workflowversion">
             <column name="workflowid" type="BIGINT">
@@ -100,6 +106,8 @@
             </column>
         </createTable>
     </changeSet>
+
+    <!--6-->
     <changeSet author="dyuen (generated)" id="1456852002496-15">
         <createTable tableName="workflowversion">
             <column name="id" type="BIGINT">
@@ -113,24 +121,30 @@
         </createTable>
     </changeSet>
 
+    <!--7-->
     <changeSet author="dyuen (generated)" id="1456852002496-21">
         <addPrimaryKey columnNames="id" constraintName="workflow_pkey" tableName="workflow"/>
     </changeSet>
+
+    <!--8-->
     <changeSet author="dyuen (generated)" id="1456852002496-22">
         <addPrimaryKey columnNames="workflowid, workflowversionid" constraintName="workflow_workflowversion_pkey"
                        tableName="workflow_workflowversion"/>
     </changeSet>
+
+    <!--9-->
     <changeSet author="dyuen (generated)" id="1456852002496-23">
         <addPrimaryKey columnNames="id" constraintName="workflowversion_pkey" tableName="workflowversion"/>
     </changeSet>
 
+    <!--10-->
     <changeSet author="dyuen (generated)" id="1456852002496-30">
         <addUniqueConstraint columnNames="workflowversionid" constraintName="uk_encl8hnebnkcaxj9tlugr9cxh"
                              deferrable="false" disabled="false" initiallyDeferred="false"
                              tableName="workflow_workflowversion"/>
     </changeSet>
 
-
+    <!--11-->
     <changeSet author="dyuen (generated)" id="1456852285299-36">
         <addForeignKeyConstraint baseColumnNames="workflowversionid"
                                  baseTableName="workflow_workflowversion"
@@ -140,6 +154,7 @@
         />
     </changeSet>
 
+    <!--12-->
     <changeSet author="dyuen (generated)" id="1456852285299-37">
         <addForeignKeyConstraint baseColumnNames="workflowid"
                                  baseTableName="workflow_workflowversion"
@@ -149,6 +164,7 @@
         />
     </changeSet>
 
+    <!--13-->
     <changeSet id="75426534536" author="agduncan" context="sourcefile-add-path-column">
         <addColumn tableName="sourcefile">
             <column name="path" type="varchar(255)"></column>
@@ -170,6 +186,7 @@
         </sql>
     </changeSet>
 
+    <!--14-->
     <changeSet id="54375756377" author="agduncan" context="change-isregistered-to-ispublished">
         <dropColumn tableName="tool" columnName="hascollab"></dropColumn>
         <dropColumn tableName="tool" columnName="isstarred"></dropColumn>
@@ -184,6 +201,7 @@
         <dropColumn tableName="tool" columnName="isregistered"></dropColumn>
     </changeSet>
 
+    <!--15-->
     <changeSet author="agduncan" id="dropForeignKeyConstraintEntries">
         <dropAllForeignKeyConstraints baseTableName="user_entry"/>
         <dropPrimaryKey tableName="user_entry"/>
@@ -255,12 +273,14 @@
                 tableName="tool"/>
     </changeSet>
 
+    <!--16-->
     <changeSet id="change_workflow_git_format" author="dyuen">
         <sql dbms="postgresql">
             update workflow set giturl = replace(giturl, 'git://github.com', 'git@github.com');
         </sql>
     </changeSet>
 
+    <!--17-->
     <changeSet id="default_branch" author="agduncan" context="removes_validtrigger_adds_default_branch">
         <dropColumn tableName="tool" columnName="validtrigger"></dropColumn>
         <addColumn tableName="tool">
@@ -271,6 +291,7 @@
         </addColumn>
     </changeSet>
 
+    <!--18-->
     <changeSet id="dirtybit" author="agduncan" context="adds_dirtybit_to_track_version_mods">
         <addColumn tableName="tag">
             <column name="dirtybit" type="boolean"></column>
@@ -288,6 +309,7 @@
         </sql>
     </changeSet>
 
+    <!--19-->
     <changeSet id="testjson" author="agduncan" context="adds_testjson">
         <addColumn tableName="tag">
             <column name="cwltestparameterfile" type="varchar(255)"></column>
@@ -316,6 +338,7 @@
         <addDefaultValue tableName="workflow" columnName="defaulttestparameterfile" defaultValue="/test.json"/>
     </changeSet>
 
+    <!--20-->
     <changeSet id="verified_versions" author="agduncan" context="adds_verified_to_versions">
         <addColumn tableName="tag">
             <column name="verified" type="boolean"></column>
@@ -340,6 +363,7 @@
         </addColumn>
     </changeSet>
 
+    <!--21-->
     <changeSet id="multitestjson" author="agduncan" context="adds_multi_testjson">
         <dropColumn tableName="tag" columnName="cwltestparameterfile"></dropColumn>
         <dropColumn tableName="tag" columnName="wdltestparameterfile"></dropColumn>
@@ -349,6 +373,7 @@
         <dropColumn tableName="workflow" columnName="defaulttestparameterfile"></dropColumn>
     </changeSet>
 
+    <!--22-->
     <changeSet id="removemailto" author="agduncan" context="removes_mail_to_from_existing_entries">
         <sql dbms="postgresql">
             update tool set email = replace(email, 'mailto:', '');
@@ -358,6 +383,7 @@
         </sql>
     </changeSet>
 
+    <!--23-->
     <changeSet id="privatetools" author="agduncan" context="adds_private_tools">
         <addColumn tableName="tool">
             <column name="privateaccess" type="boolean"></column>
@@ -371,6 +397,9 @@
         </addColumn>
     </changeSet>
 
+    <!--This is where the db_dump.sql from dockstore-ui ends-->
+
+    <!--24-->
     <changeSet id="starredentries" author="agduncan" context="adds_starred_entries">
         <addColumn tableName="enduser">
             <column name="company" type="varchar(255)"></column>
@@ -406,4 +435,13 @@
                                  referencedColumnNames="id"
                                  referencedTableName="enduser"/>
     </changeSet>
+
+    <!--25-->
+    <changeSet id="testFiles" author="gluu">
+        <addColumn tableName="tool">
+            <column name="defaulttestcwlparameterfile" type="varchar(255)"/>
+            <column name="defaulttestwdlparameterfile" type="varchar(255)"/>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>
