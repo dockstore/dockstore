@@ -40,6 +40,7 @@ import io.dockstore.provision.ProvisionInterface;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.configuration2.SubnodeConfiguration;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.vfs2.FileObject;
@@ -302,22 +303,22 @@ public class FileProvisioning {
         File sourceFile = new File(srcPath);
 
         if (provisionInterface != null) {
-            System.out.println("Calling on plugin " + provisionInterface.getClass().getName() + " to provision to " + destPath);
+            System.out.println("Calling on plugin " + provisionInterface.getClass().getName() + " to provision from " + srcPath + " to " + destPath);
             provisionInterface.uploadTo(destPath, Paths.get(srcPath), Optional.ofNullable(metadata));
+            // finalize output from the printer
+            System.out.println();
         } else {
             try {
                 FileSystemManager fsManager = VFS.getManager();
                 Path currentWorkingDir = Paths.get("").toAbsolutePath();
                 try (FileObject dest = fsManager.resolveFile(currentWorkingDir.toFile(), destPath);
                         FileObject src = fsManager.resolveFile(sourceFile.getAbsolutePath())) {
+                    System.out.println("Provisioning from " + srcPath + " to " + destPath);
                     // trigger a copy from the URL to a local file path that's a UUID to avoid collision
                     // check for a local file path
                     FileProvisionUtil.copyFromInputStreamToOutputStream(src, dest);
                 } catch (IOException e) {
                     throw new RuntimeException("Could not provision output files", e);
-                } finally {
-                    // finalize output from the printer
-                    System.out.println();
                 }
             } catch (IOException e) {
                 LOG.error(e.getMessage());
@@ -334,14 +335,18 @@ public class FileProvisioning {
             List<Optional<String>> metadataList = Stream.of(pairs).map(pair -> Optional.ofNullable(pair.getValue().getMetadata()))
                     .collect(Collectors.toList());
             List<Path> srcList = Stream.of(pairs).map(pair -> Paths.get(pair.getKey())).collect(Collectors.toList());
-            List<String> destList = Stream.of(pairs).map(pair -> pair.getValue().getUrl()).collect(Collectors.toList());
+            List<String> destList = Stream.of(pairs)
+                    .map(pair -> pair.getValue().isDirectory() ? pair.getValue().getUrl() + FilenameUtils.getName(pair.getKey())
+                            : pair.getValue().getUrl()).collect(Collectors.toList());
 
             try {
                 if (pInterface != null) {
                     pInterface.prepareFileSet(destList, srcList, metadataList);
                 }
-                for (Pair<String, FileInfo> pair : pairs) {
-                    this.provisionOutputFile(pair.getLeft(), pair.getRight().getUrl(), pair.getRight().getMetadata(), pInterface);
+                for (int i = 0; i < pairs.length; i++) {
+                    Pair<String, FileInfo> pair = pairs[i];
+                    String dest = destList.get(i);
+                    this.provisionOutputFile(pair.getLeft(), dest, pair.getRight().getMetadata(), pInterface);
                 }
                 if (pInterface != null) {
                     pInterface.finalizeFileSet(destList, srcList, metadataList);
@@ -385,6 +390,7 @@ public class FileProvisioning {
         private String localPath;
         private String url;
         private String metadata;
+        private boolean directory;
 
         public String getLocalPath() {
             return localPath;
@@ -408,6 +414,14 @@ public class FileProvisioning {
 
         public void setMetadata(String metadata) {
             this.metadata = metadata;
+        }
+
+        public boolean isDirectory() {
+            return directory;
+        }
+
+        public void setDirectory(boolean directory) {
+            this.directory = directory;
         }
     }
 
