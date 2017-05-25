@@ -66,6 +66,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static io.dockstore.client.cli.ArgumentUtility.Kill;
+import static io.dockstore.client.cli.ArgumentUtility.err;
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.ArgumentUtility.flag;
@@ -494,16 +495,16 @@ public class Client {
                         // Check for update if it has been at least 3 months since last update
                         if (minUpdateCheck.before(new Date())) {
                             String latestVersion = getLatestVersion();
-                            out("Current version : " + currentVersion);
-
                             if (currentVersion.equals(latestVersion)) {
+                                out("Current version : " + currentVersion);
                                 out("You have the most recent stable release.");
                                 out("If you wish to upgrade to the latest unstable version, please use the following command:");
                                 out("   dockstore --upgrade-unstable"); // takes you to the newest unstable version
                             } else {
+                                err("Current version : " + currentVersion);
                                 //not the latest stable version, could be on the newest unstable or older unstable/stable version
-                                out("Latest version : " + latestVersion);
-                                out("You do not have the most recent stable release of Dockstore.");
+                                err("Latest version : " + latestVersion);
+                                err("You do not have the most recent stable release of Dockstore.");
                                 displayUpgradeMessage(currentVersion);
                             }
                         }

@@ -280,10 +280,6 @@ public class LauncherCWL {
      * @param param   the parameter from the json input file
      */
     private void handleOutputFile(Map<String, List<FileProvisioning.FileInfo>> fileMap, final String cwlID, Map<String, Object> param) {
-        if (param.containsKey("class") && param.get("class").toString().equalsIgnoreCase("Directory")) {
-            // ignore directory output
-            return;
-        }
         String path = (String)param.get("path");
         // if it's the current one
         LOG.info("PATH TO UPLOAD TO: {} FOR {}", path, cwlID);
@@ -308,6 +304,11 @@ public class LauncherCWL {
         }
         fileMap.putIfAbsent(cwlID, new ArrayList<>());
         fileMap.get(cwlID).add(new1);
+
+        if (param.containsKey("class") && param.get("class").toString().equalsIgnoreCase("Directory")) {
+            Utilities.executeCommand("mkdir -p " + uuidPath);
+            new1.setDirectory(true);
+        }
 
         LOG.info("UPLOAD FILE: LOCAL: {} URL: {}", cwlID, path);
     }
@@ -503,13 +504,21 @@ public class LauncherCWL {
 
             if ((outputObject.get(key) instanceof List)) {
                 List<Map<String, Object>> cwltoolOutput = (List)outputObject.get(key);
-                // lengths should be the same
-                assert (cwltoolOutput.size() == files.size());
-                // for through each one and handle it, we have to assume that the order matches?
-                final Iterator<Map<String, Object>> iterator = cwltoolOutput.iterator();
-                for (FileProvisioning.FileInfo info : files) {
-                    final Map<String, Object> cwlToolOutputEntry = iterator.next();
-                    provisionOutputFile(key, info, cwlToolOutputEntry);
+                FileProvisioning.FileInfo file = files.get(0);
+                if (files.size() == 1 && file.isDirectory()) {
+                    // we're provisoning a number of files into a directory
+                    for (Map<String, Object> map : cwltoolOutput) {
+                        provisionOutputFile(key, file, map);
+                    }
+                } else {
+                    // lengths should be the same when not dealing with directories
+                    assert (cwltoolOutput.size() == files.size());
+                    // for through each one and handle it, we have to assume that the order matches?
+                    final Iterator<Map<String, Object>> iterator = cwltoolOutput.iterator();
+                    for (FileProvisioning.FileInfo info : files) {
+                        final Map<String, Object> cwlToolOutputEntry = iterator.next();
+                        provisionOutputFile(key, info, cwlToolOutputEntry);
+                    }
                 }
             } else {
                 assert (files.size() == 1);
@@ -534,7 +543,7 @@ public class LauncherCWL {
             return;
         }
         LOG.info("NAME: {} URL: {} FILENAME: {} CWL OUTPUT PATH: {}", file.getLocalPath(), file.getUrl(), key, cwlOutputPath);
-        System.out.println("Uploading: #" + key + " from " + cwlOutputPath + " to : " + file.getUrl());
+        System.out.println("Registering: #" + key + " to provision from " + cwlOutputPath + " to : " + file.getUrl());
         fileProvisioning.registerOutputFile(cwlOutputPath, file);
 
         if (fileMapDataStructure.containsKey("secondaryFiles")) {

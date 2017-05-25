@@ -35,6 +35,7 @@ env:
 script: ./scripts/run-tests.sh
 
 before_install:
+- pip install --upgrade pip
 - mvn dependency:get -Dartifact=org.eluder.coveralls:coveralls-maven-plugin:4.2.0
 - openssl aes-256-cbc -K $encrypted_904bf49fabdb_key -iv $encrypted_904bf49fabdb_iv -in dockstore-integration-testing/src/test/resources/secrets.tar.enc -out dockstore-integration-testing/src/test/resources/secrets.tar -d
 - tar xvf dockstore-integration-testing/src/test/resources/secrets.tar

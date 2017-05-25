@@ -16,6 +16,8 @@
 
 package io.dockstore.webservice.helpers;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -43,6 +45,7 @@ import org.slf4j.LoggerFactory;
  */
 public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
     private static final String GITLAB_API_URL = "https://gitlab.com/api/v3/";
+    private static final String GITLAB_API_URL_V4 = "https://gitlab.com/api/v4/";
     private static final String GITLAB_GIT_URL_PREFIX = "git@gitlab.com:";
     private static final String GITLAB_GIT_URL_SUFFIX = ".git";
 
@@ -97,7 +100,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
 
         // Get file contents
         if (id != null || branch != null) {
-            return getFileContentsFromId(id, branch, fileName);
+            return getFileContentsFromIdV4(id, branch, fileName);
         }
 
         return content;
@@ -249,7 +252,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public String getFileContents(String filePath, String branch, String repositoryId) {
-        return getFileContentsFromId(getProjectId(repositoryId), branch, filePath);
+        return getFileContentsFromIdV4(getProjectId(repositoryId), branch, filePath);
     }
 
     /**
@@ -293,7 +296,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         // TODO: should we even be creating a sourcefile before checking that it is valid?
         // I think it is fine since in the next part we just check that source file has content or not (no content is like null)
         SourceFile file = new SourceFile();
-        String content = getFileContentsFromId(id, branch, path);
+        String content = getFileContentsFromIdV4(id, branch, path);
 
         if (content != null) {
             // Is workflow descriptor valid?
@@ -329,6 +332,35 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         if (id != null && branch != null && filepath != null) {
             String fileUrl = GITLAB_API_URL + "projects/" + id + "/repository/blobs/" + branch + "?filepath=" + filepath;
 
+            Optional<String> fileAsString = ResourceUtilities.asString(fileUrl, gitlabTokenContent, client);
+            if (fileAsString.isPresent()) {
+                return fileAsString.get();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Given a gitlab project id, branch name and filepath, find the contents of a file with API V4
+     *
+     * @param id
+     * @param branch
+     * @param filepath
+     * @return contents of a file
+     */
+    private String getFileContentsFromIdV4(String id, String branch, String filepath) {
+        if (id != null && branch != null && filepath != null) {
+
+            String fileURI = null;
+            try {
+                fileURI = URLEncoder.encode(filepath, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                LOG.error(e.getMessage());
+            }
+            // TODO: Figure out how to url encode the periods properly
+            fileURI = fileURI.replace(".", "%2E");
+
+            String fileUrl = GITLAB_API_URL_V4 + "projects/" + id + "/repository/files/" + fileURI + "/raw?ref=" + branch;
             Optional<String> fileAsString = ResourceUtilities.asString(fileUrl, gitlabTokenContent, client);
             if (fileAsString.isPresent()) {
                 return fileAsString.get();
