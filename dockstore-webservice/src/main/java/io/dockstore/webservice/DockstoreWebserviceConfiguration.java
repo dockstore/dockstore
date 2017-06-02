@@ -21,6 +21,7 @@ import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.cache.CacheBuilderSpec;
 import io.dropwizard.Configuration;
@@ -156,6 +157,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
      * @return the githubClientID
      */
     @JsonProperty
+    @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
     public List<String> getGithubClientID() {
         return githubClientID;
     }
@@ -188,6 +190,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
      * @return the githubClientSecret
      */
     @JsonProperty
+    @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
     public List<String> getGithubClientSecret() {
         return githubClientSecret;
     }
