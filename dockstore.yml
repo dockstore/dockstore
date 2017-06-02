@@ -2,8 +2,10 @@ template: Hello, %s!
 quayClientID: <fill me in>
 # port should match the port where the UI is being hosted, 9000 by default
 quayRedirectURI: http://<fill me in>:9000/accounts
-githubClientID: <fill me in>
-githubClientSecret: <fill me in>
+githubClientID: 
+  <fill me in>
+githubClientSecret: 
+  <fill me in>
 # port should match the port where the UI is being hosted, 9000 by default
 githubRedirectURI: http://<fill me in>:9000/login
 bitbucketClientID: <fill me in>
