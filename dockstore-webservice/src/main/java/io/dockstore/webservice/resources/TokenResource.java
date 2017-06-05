@@ -103,8 +103,8 @@ public class TokenResource {
     private final TokenDAO tokenDAO;
     private final UserDAO userDAO;
 
-    private final String githubClientID;
-    private final String githubClientSecret;
+    private final List<String> githubClientID;
+    private final List<String> githubClientSecret;
     private final String bitbucketClientID;
     private final String bitbucketClientSecret;
     private final String gitlabClientID;
@@ -114,7 +114,7 @@ public class TokenResource {
     private final CachingAuthenticator<String, User> cachingAuthenticator;
 
     @SuppressWarnings("checkstyle:parameternumber")
-    public TokenResource(TokenDAO tokenDAO, UserDAO enduserDAO, String githubClientID, String githubClientSecret, String bitbucketClientID,
+    public TokenResource(TokenDAO tokenDAO, UserDAO enduserDAO, List<String> githubClientID, List<String> githubClientSecret, String bitbucketClientID,
             String bitbucketClientSecret, String gitlabClientID, String gitlabClientSecret, String gitlabRedirectUri, HttpClient client,
             CachingAuthenticator<String, User> cachingAuthenticator) {
         this.tokenDAO = tokenDAO;
@@ -303,19 +303,21 @@ public class TokenResource {
             + "Once a user has approved permissions for Collaboratory"
             + "Their browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addGithubToken(@QueryParam("code") String code) {
-        final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
-                JSON_FACTORY, new GenericUrl("https://github.com/login/oauth/access_token"),
-                new ClientParametersAuthentication(githubClientID, githubClientSecret), githubClientID,
-                "https://github.com/login/oauth/authorize").build();
 
-        String accessToken;
-        try {
-            TokenResponse tokenResponse = flow.newTokenRequest(code)
-                    .setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
-            accessToken = tokenResponse.getAccessToken();
-        } catch (IOException e) {
-            LOG.error("Retrieving accessToken was unsuccessful");
-            throw new CustomWebApplicationException("Could not retrieve github.com token based on code", HttpStatus.SC_BAD_REQUEST);
+
+        String accessToken = null;
+        for (int i = 0; i < githubClientID.size() && accessToken == null; i++) {
+            final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
+                    JSON_FACTORY, new GenericUrl("https://github.com/login/oauth/access_token"),
+                    new ClientParametersAuthentication(githubClientID.get(i), githubClientSecret.get(i)), githubClientID.get(i),
+                    "https://github.com/login/oauth/authorize").build();
+            try {
+                TokenResponse tokenResponse = flow.newTokenRequest(code).setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
+                accessToken = tokenResponse.getAccessToken();
+            } catch (IOException e) {
+                LOG.error("Retrieving accessToken was unsuccessful");
+                throw new CustomWebApplicationException("Could not retrieve github.com token based on code", HttpStatus.SC_BAD_REQUEST);
+            }
         }
 
         GitHubClient githubClient = new GitHubClient();
