@@ -120,10 +120,10 @@ public final class SearchClient {
             String s = api.toolsIndexSearch(body);
             Gson gson = new GsonBuilder().registerTypeAdapter(ElasticSearchObject.HitsInternal.class, new ToolWorkflowDeserializer()).create();
             ElasticSearchObject elasticSearchObject = gson.fromJson(s, ElasticSearchObject.class);
-            for (ElasticSearchObject.HitsInternal hit : elasticSearchObject.hits.hits){
-                if (hit.source instanceof Tool){
+            for (ElasticSearchObject.HitsInternal hit : elasticSearchObject.hits.hits) {
+                if (hit.source instanceof Tool) {
                     System.out.println("Found deserialized tool");
-                } else{
+                } else {
                     System.out.println("Found deserialized workflow");
                 }
             }
