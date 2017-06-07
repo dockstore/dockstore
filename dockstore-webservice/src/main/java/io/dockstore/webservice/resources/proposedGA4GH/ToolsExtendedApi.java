@@ -1,12 +1,14 @@
 package io.dockstore.webservice.resources.proposedGA4GH;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+import javax.ws.rs.core.UriInfo;
 
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dropwizard.hibernate.UnitOfWork;
@@ -42,12 +44,22 @@ public class ToolsExtendedApi {
         return delegate.toolsOrgGet(organization, securityContext);
     }
 
-    @GET
-    @Path("/tools/index")
+    @POST
+    @Path("/tools/entry/_search")
     @UnitOfWork
     @Produces({ "application/json" })
-    @ApiOperation(value = "List tools of an organization as an index", notes = "This endpoint returns tools of an organization. ", response = Tool.class, responseContainer = "List", tags = {
-            "GA4GH", })
+    @ApiOperation(value = "Search the index of tools", notes = "This endpoint searches the index for all published tools and workflows. Used by utilities that expect to talk to an elastic search endpoint", tags = { "GA4GH", }, response = String.class)
+    @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_OK, message = "An elastic search result.", response = String.class) })
+    public Response toolsIndexSearch(@ApiParam(value = "elastic search query", required = true) String query, @Context UriInfo uriInfo, @Context SecurityContext securityContext) throws NotFoundException {
+        return delegate.toolsIndexSearch(query, uriInfo.getQueryParameters(), securityContext);
+    }
+
+
+    @POST
+    @Path("/tools/index")
+    @UnitOfWork
+    @Produces({ "text/plain" })
+    @ApiOperation(value = "Update the index of tools", notes = "This endpoint updates the index for all published tools and workflows. ", response = Integer.class, tags = { "GA4GH", })
     @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_OK, message = "An array of Tools of the input organization.") })
     public Response toolsIndexGet(@Context SecurityContext securityContext) throws NotFoundException {
         return delegate.toolsIndexGet(securityContext);

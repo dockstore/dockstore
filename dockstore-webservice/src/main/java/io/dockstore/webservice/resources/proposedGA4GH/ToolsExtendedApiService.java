@@ -2,6 +2,7 @@ package io.dockstore.webservice.resources.proposedGA4GH;
 
 import io.swagger.api.NotFoundException;
 
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 
@@ -17,4 +18,6 @@ public abstract class ToolsExtendedApiService {
     public abstract Response organizationsGet(SecurityContext securityContext);
 
     public abstract Response toolsIndexGet(SecurityContext securityContext) throws NotFoundException;
+
+    public abstract Response toolsIndexSearch(String query, MultivaluedMap<String, String> queryParameters, SecurityContext securityContext);
 }
