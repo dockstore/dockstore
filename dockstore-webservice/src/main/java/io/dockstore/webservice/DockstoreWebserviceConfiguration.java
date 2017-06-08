@@ -39,6 +39,9 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     @NotNull
     private HttpClientConfiguration httpClient = new HttpClientConfiguration();
 
+    @Valid
+    private ElasticSearchConfig esConfiguration = new ElasticSearchConfig();
+
     @NotEmpty
     private String template;
 
@@ -289,5 +292,35 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     public void setPort(String port) {
         this.port = port;
+    }
+
+    @JsonProperty("esconfiguration")
+    public ElasticSearchConfig getEsConfiguration() {
+        return esConfiguration;
+    }
+
+    public void setEsConfiguration(ElasticSearchConfig esConfiguration) {
+        this.esConfiguration = esConfiguration;
+    }
+
+    public class ElasticSearchConfig {
+        private String hostname;
+        private int port;
+
+        public String getHostname() {
+            return hostname;
+        }
+
+        public void setHostname(String hostname) {
+            this.hostname = hostname;
+        }
+
+        public int getPort() {
+            return port;
+        }
+
+        public void setPort(int port) {
+            this.port = port;
+        }
     }
 }

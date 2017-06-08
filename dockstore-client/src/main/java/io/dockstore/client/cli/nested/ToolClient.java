@@ -38,8 +38,8 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.UsersApi;
-import io.swagger.client.model.Body1;
 import io.swagger.client.model.Body2;
+import io.swagger.client.model.Body3;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.PublishRequest;
@@ -254,7 +254,7 @@ public class ToolClient extends AbstractEntryClient {
             long containerId = container.getId();
 
             if (adds.size() > 0) {
-                containersApi.addTestParameterFiles(containerId, adds, new Body2(), versionName, descriptorType);
+                containersApi.addTestParameterFiles(containerId, adds, new Body3(), versionName, descriptorType);
             }
 
             if (removes.size() > 0) {
@@ -596,7 +596,7 @@ public class ToolClient extends AbstractEntryClient {
 
             String combinedLabelString = generateLabelString(addsSet, removesSet, existingLabels);
 
-            DockstoreTool updatedContainer = containersApi.updateLabels(containerId, combinedLabelString, new Body1());
+            DockstoreTool updatedContainer = containersApi.updateLabels(containerId, combinedLabelString, new Body2());
 
             List<Label> newLabels = updatedContainer.getLabels();
             if (!newLabels.isEmpty()) {

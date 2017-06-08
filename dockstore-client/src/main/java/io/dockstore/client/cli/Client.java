@@ -674,6 +674,8 @@ public class Client {
                         targetClient = getWorkflowClient();
                     } else if ("plugin".equals(mode)) {
                         handled = PluginClient.handleCommand(args, Utilities.parseConfig(configFile));
+                    } else if ("search".equals(mode)) {
+                        handled = SearchClient.handleCommand(args, Utilities.parseConfig(configFile), this.ga4ghApi);
                     }
 
                     if (targetClient != null) {

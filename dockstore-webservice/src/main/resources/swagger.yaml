@@ -235,6 +235,7 @@ definitions:
         type: boolean}
       verifiedSource: {description: Verified source for the version, type: string}
       wdl_path: {description: Path for the WDL document, type: string}
+      workingDirectory: {type: string}
     required: [image_id, name, reference]
     type: object
   Token:
@@ -444,6 +445,7 @@ definitions:
         type: boolean}
       verifiedSource: {description: Verified source for the version, type: string}
       workflow_path: {description: Path for the workflow, type: string}
+      workingDirectory: {type: string}
     required: [name, reference]
     type: object
 externalDocs: {description: Dockstore documentation, url: 'https://www.dockstore.org/docs/getting-started'}
@@ -485,6 +487,33 @@ paths:
             items: {type: string}
             type: array
       summary: List all organizations
+      tags: [GA4GH]
+  /api/ga4gh/v1/extended/tools/entry/_search:
+    post:
+      description: This endpoint searches the index for all published tools and workflows. Used by utilities that expect to talk to an elastic search endpoint
+      operationId: toolsIndexSearch
+      parameters:
+      - description: elastic search query
+        in: body
+        name: body
+        required: true
+        schema: {type: string}
+      produces: [application/json]
+      responses:
+        200:
+          description: An elastic search result.
+          schema: {type: string}
+      summary: Search the index of tools
+      tags: [GA4GH]
+  /api/ga4gh/v1/extended/tools/index:
+    post:
+      description: 'This endpoint updates the index for all published tools and workflows. '
+      operationId: toolsIndexGet
+      parameters: []
+      produces: [text/plain]
+      responses:
+        200: {description: An array of Tools of the input organization.}
+      summary: Update the index of tools
       tags: [GA4GH]
   /api/ga4gh/v1/extended/tools/{organization}:
     get:

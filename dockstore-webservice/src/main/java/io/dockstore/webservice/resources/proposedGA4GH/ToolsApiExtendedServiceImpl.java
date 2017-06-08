@@ -16,22 +16,39 @@
 
 package io.dockstore.webservice.resources.proposedGA4GH;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
+import io.dropwizard.jackson.Jackson;
 import io.swagger.api.NotFoundException;
 import io.swagger.api.impl.ToolsImplCommon;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpStatus;
+import org.apache.http.entity.ContentType;
+import org.apache.http.nio.entity.NStringEntity;
+import org.elasticsearch.client.RestClient;
 
 /**
  * Created by kcao on 01/03/17.
@@ -121,5 +138,72 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             }
         }
         return Response.ok(organizations).build();
+    }
+
+    @Override
+    public Response toolsIndexGet(SecurityContext securityContext) throws NotFoundException {
+        List<Entry> published = getPublished();
+        ObjectMapper mapper = Jackson.newObjectMapper();
+        Gson gson = new GsonBuilder().create();
+
+        if (!config.getEsConfiguration().getHostname().isEmpty() && !published.isEmpty()) {
+            StringBuilder builder = new StringBuilder();
+            try (RestClient restClient = RestClient
+                    .builder(new HttpHost(config.getEsConfiguration().getHostname(), config.getEsConfiguration().getPort(), "http"))
+                    .build()) {
+                published.forEach(entry -> {
+                    Map<String, Map<String, String>> index = new HashMap<>();
+                    Map<String, String> internal = new HashMap<>();
+                    internal.put("_id", String.valueOf(entry.getId()));
+                    internal.put("_type", entry instanceof Tool ? "tool" : "workflow");
+                    index.put("index", internal);
+                    builder.append(gson.toJson(index));
+                    builder.append('\n');
+                    try {
+                        builder.append(mapper.writeValueAsString(entry));
+                    } catch (JsonProcessingException e) {
+                        e.printStackTrace();
+                    }
+                    builder.append('\n');
+                });
+
+                //index a document
+                HttpEntity entity = new NStringEntity(builder.toString(), ContentType.APPLICATION_JSON);
+
+                org.elasticsearch.client.Response post = restClient.performRequest("POST", "/entry/_bulk", Collections.emptyMap(), entity);
+                if (post.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+                    throw new CustomWebApplicationException("Could not submit index to elastic search",
+                            HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                }
+            } catch (IOException e) {
+                throw new CustomWebApplicationException("io exception", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            }
+            return Response.ok().entity(published.size()).build();
+        }
+        return Response.ok().entity(0).build();
+    }
+
+    @Override
+    public Response toolsIndexSearch(String query, MultivaluedMap<String, String> queryParameters, SecurityContext securityContext) {
+        if (!config.getEsConfiguration().getHostname().isEmpty()) {
+            try (RestClient restClient = RestClient
+                    .builder(new HttpHost(config.getEsConfiguration().getHostname(), config.getEsConfiguration().getPort(), "http"))
+                    .build()) {
+                HttpEntity entity = query == null ? null : new NStringEntity(query, ContentType.APPLICATION_JSON);
+                Map<String, String> parameters = new HashMap<>();
+                // TODO: note that this is lossy if there are repeated parameters
+                // but it looks like the elastic search http client classes don't handle it
+                queryParameters.forEach((key, value) -> parameters.put(key, value.get(0)));
+                org.elasticsearch.client.Response get = restClient.performRequest("GET", "/entry/_search", parameters, entity);
+                if (get.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+                    throw new CustomWebApplicationException("Could not submit index to elastic search",
+                            HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                }
+                return Response.ok().entity(get.getEntity().getContent()).build();
+            } catch (IOException e) {
+                throw new CustomWebApplicationException("io exception", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            }
+        }
+        return Response.ok().entity(0).build();
     }
 }
