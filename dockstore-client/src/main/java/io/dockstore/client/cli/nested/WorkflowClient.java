@@ -1046,21 +1046,13 @@ public class WorkflowClient extends AbstractEntryClient {
         List<SourceFile> result = new ArrayList<>();
         if (workflow != null) {
             try {
+                List<SourceFile> files;
                 if (descriptor.toLowerCase().equals("cwl")) {
-                    List<SourceFile> files = workflowsApi.secondaryCwl(workflow.getId(), version);
-                    for (SourceFile sourceFile : files) {
-                        File tempDescriptor = new File(tempDir.getAbsolutePath(), sourceFile.getPath());
-                        Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
-                        result.add(sourceFile);
-                    }
+                    files = workflowsApi.secondaryCwl(workflow.getId(), version);
                 } else {
-                    List<SourceFile> files = workflowsApi.secondaryWdl(workflow.getId(), version);
-                    for (SourceFile sourceFile : files) {
-                        File tempDescriptor = new File(tempDir.getAbsolutePath(), sourceFile.getPath());
-                        Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
-                        result.add(sourceFile);
-                    }
+                    files = workflowsApi.secondaryWdl(workflow.getId(), version);
                 }
+                writeSourceFiles(tempDir, result, files);
             } catch (ApiException e) {
                 exceptionMessage(e, "Error getting file(s) from server", Client.API_ERROR);
             } catch (IOException e) {
@@ -1068,6 +1060,22 @@ public class WorkflowClient extends AbstractEntryClient {
             }
         }
         return result;
+    }
+
+    /**
+     *
+     * @param tempDir directory where to create file structures
+     * @param files files from the webservice
+     * @param result files that we have tracked so far
+     * @throws IOException
+     */
+    private void writeSourceFiles(File tempDir, List<SourceFile> result, List<SourceFile> files) throws IOException {
+        for (SourceFile sourceFile : files) {
+            File tempDescriptor = new File(tempDir.getAbsolutePath(), sourceFile.getPath());
+            tempDescriptor.getParentFile().mkdirs();
+            Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
+            result.add(sourceFile);
+        }
     }
 
     @Parameters(separators = "=", commandDescription = "Spit out a json run file for a given entry.")
