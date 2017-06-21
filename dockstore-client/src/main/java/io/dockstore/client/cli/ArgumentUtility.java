@@ -43,20 +43,24 @@ public final class ArgumentUtility {
         // hide the constructor for utility classes
     }
 
-    public static void out(String format, Object... args) {
+    public static void outFormatted(String format, Object... args) {
         System.out.println(String.format(format, args));
     }
 
-    static void out(String arg) {
+    public static void out(String arg) {
         System.out.println(arg);
     }
 
-    static void err(String format, Object... args) {
+    static void err(String arg) {
+        System.err.println(arg);
+    }
+
+    static void errFormatted(String format, Object... args) {
         System.err.println(String.format(format, args));
     }
 
     public static void kill(String format, Object... args) {
-        err(format, args);
+        errFormatted(format, args);
         throw new Kill();
     }
 

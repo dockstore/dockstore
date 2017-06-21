@@ -63,6 +63,7 @@ import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.ArgumentUtility.getGitRegistry;
 import static io.dockstore.client.cli.ArgumentUtility.optVal;
 import static io.dockstore.client.cli.ArgumentUtility.out;
+import static io.dockstore.client.cli.ArgumentUtility.outFormatted;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
 import static io.dockstore.client.cli.ArgumentUtility.printLineBreak;
@@ -105,7 +106,7 @@ public class WorkflowClient extends AbstractEntryClient {
         int descWidth = maxWidths[1] + Client.PADDING;
         int gitWidth = maxWidths[2] + Client.PADDING;
         String format = "%-" + nameWidth + "s%-" + descWidth + "s%-" + gitWidth + "s%-16s";
-        out(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "On Dockstore?");
+        outFormatted(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "On Dockstore?");
 
         for (Workflow workflow : workflows) {
             String gitUrl = "";
@@ -116,7 +117,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
             String description = getCleanedDescription(workflow.getDescription());
 
-            out(format, workflow.getPath(), description, gitUrl, boolWord(workflow.getIsPublished()));
+            outFormatted(format, workflow.getPath(), description, gitUrl, boolWord(workflow.getIsPublished()));
         }
     }
 
