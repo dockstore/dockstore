@@ -283,7 +283,7 @@ public class WorkflowClient extends AbstractEntryClient {
         String path = parts[0];
         Workflow workflow = workflowsApi.getPublishedWorkflowByPath(path);
         String descriptor = workflow.getDescriptorType();
-        return runString2(entry, descriptor, json);
+        return downloadAndReturnDescriptors(entry, descriptor, json);
     }
 
     /**

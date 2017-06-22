@@ -538,10 +538,6 @@ public class LauncherCWL {
      */
     private void provisionOutputFile(final String key, FileProvisioning.FileInfo file, final Map<String, Object> fileMapDataStructure) {
         String cwlOutputPath = (String)fileMapDataStructure.get("path");
-        if (!((String)fileMapDataStructure.get("class")).equalsIgnoreCase("File")) {
-            System.err.println(cwlOutputPath + " is not a file, ignoring");
-            return;
-        }
         LOG.info("NAME: {} URL: {} FILENAME: {} CWL OUTPUT PATH: {}", file.getLocalPath(), file.getUrl(), key, cwlOutputPath);
         System.out.println("Registering: #" + key + " to provision from " + cwlOutputPath + " to : " + file.getUrl());
         fileProvisioning.registerOutputFile(cwlOutputPath, file);

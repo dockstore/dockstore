@@ -43,6 +43,8 @@ import org.apache.commons.configuration2.SubnodeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.vfs2.AllFileSelector;
+import org.apache.commons.vfs2.FileName;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemManager;
 import org.apache.commons.vfs2.VFS;
@@ -296,27 +298,42 @@ public class FileProvisioning {
      *
      * @param srcPath            source file
      * @param destPath           destination file
-     * @param metadata           metddata associated with one file
+     * @param metadata           metaddata associated with one file
      * @param provisionInterface plugin used for this file
      */
     private void provisionOutputFile(String srcPath, String destPath, String metadata, ProvisionInterface provisionInterface) {
         File sourceFile = new File(srcPath);
 
         if (provisionInterface != null) {
-            System.out.println("Calling on plugin " + provisionInterface.getClass().getName() + " to provision from " + srcPath + " to " + destPath);
+            System.out.println(
+                    "Calling on plugin " + provisionInterface.getClass().getName() + " to provision from " + srcPath + " to " + destPath);
             provisionInterface.uploadTo(destPath, Paths.get(srcPath), Optional.ofNullable(metadata));
             // finalize output from the printer
             System.out.println();
         } else {
             try {
                 FileSystemManager fsManager = VFS.getManager();
-                Path currentWorkingDir = Paths.get("").toAbsolutePath();
-                try (FileObject dest = fsManager.resolveFile(currentWorkingDir.toFile(), destPath);
+                File destinationFile = new File(destPath);
+                try (FileObject dest = fsManager.resolveFile(destinationFile.getAbsolutePath());
                         FileObject src = fsManager.resolveFile(sourceFile.getAbsolutePath())) {
                     System.out.println("Provisioning from " + srcPath + " to " + destPath);
-                    // trigger a copy from the URL to a local file path that's a UUID to avoid collision
-                    // check for a local file path
-                    FileProvisionUtil.copyFromInputStreamToOutputStream(src, dest);
+                    if (src.isFolder()) {
+                        FileObject[] files = src.findFiles(new AllFileSelector());
+                        for (FileObject file : files) {
+                            if (file.isFolder()) {
+                                continue;
+                            }
+                            FileName name = file.getName();
+                            String relativePath = name.getURI().replace(src.getName().getURI(), "");
+                            FileObject nestedFile = fsManager.resolveFile(destinationFile + relativePath);
+                            System.out.println("Provisioning from nested file " + file + " to " + nestedFile);
+                            FileProvisionUtil.copyFromInputStreamToOutputStream(file, nestedFile);
+                        }
+                    } else {
+                        // trigger a copy from the URL to a local file path that's a UUID to avoid collision
+                        // check for a local file path
+                        FileProvisionUtil.copyFromInputStreamToOutputStream(src, dest);
+                    }
                 } catch (IOException e) {
                     throw new RuntimeException("Could not provision output files", e);
                 }
