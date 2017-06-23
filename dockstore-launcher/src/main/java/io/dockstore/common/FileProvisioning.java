@@ -40,6 +40,7 @@ import io.dockstore.provision.ProvisionInterface;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.configuration2.SubnodeConfiguration;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -222,7 +223,11 @@ public class FileProvisioning {
                 } catch (IOException e) {
                     LOG.info("Could not link " + targetPath + " to " + localPath + " , copying instead", e);
                     try {
-                        Files.copy(actualTargetPath, localPath);
+                        if (actualTargetPath.toFile().isDirectory()) {
+                            FileUtils.copyDirectory(actualTargetPath.toFile(), localPath.toFile());
+                        } else {
+                            Files.copy(actualTargetPath, localPath);
+                        }
                     } catch (IOException e1) {
                         LOG.error("Could not copy " + targetPath + " to " + localPath, e);
                         throw new RuntimeException("Could not copy " + targetPath + " to " + localPath, e1);
@@ -233,6 +238,10 @@ public class FileProvisioning {
 
         // cache the file if we got it successfully
         if (useCache) {
+            // do not cache directories
+            if (localPath.toFile().isDirectory()) {
+                return;
+            }
             // populate cache
             if (Files.notExists(potentialCachedFile)) {
                 System.out.println("Caching file " + localPath + " in cache, hard-linking");
