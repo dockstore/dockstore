@@ -1,6 +1,6 @@
 {
   "indir": {
-    "path": "../../../bin",
+    "path": "bin",
     "class": "Directory"
   }
 }
