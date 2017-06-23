@@ -1,0 +1,185 @@
+{
+  "mappings": {
+    "tool": {
+      "properties": {
+        "author": {
+          "type": "string",
+          "index": "not_analyzed"
+        },
+        "default_cwl_path": {
+          "type": "string"
+        },
+        "default_dockerfile_path": {
+          "type": "string"
+        },
+        "default_wdl_path": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "gitUrl": {
+          "type": "string"
+        },
+        "id": {
+          "type": "long"
+        },
+        "is_published": {
+          "type": "boolean"
+        },
+        "labels": {
+          "type": "nested",
+          "include_in_root": true,
+          "properties": {
+            "id": {
+              "type": "long"
+            },
+            "value": {
+              "type": "string"
+            }
+          }
+        },
+        "lastBuild": {
+          "format": "epoch_millis",
+          "type": "date"
+        },
+        "lastUpdated": {
+          "format": "epoch_millis",
+          "type": "date"
+        },
+        "mode": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "private_access": {
+          "type": "boolean"
+        },
+        "registry": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "nested",
+          "include_in_root": true,
+          "properties": {
+            "automated": {
+              "type": "boolean"
+            },
+            "cwl_path": {
+              "type": "string"
+            },
+            "dirtyBit": {
+              "type": "boolean"
+            },
+            "dockerfile_path": {
+              "type": "string"
+            },
+            "hidden": {
+              "type": "boolean"
+            },
+            "id": {
+              "type": "long"
+            },
+            "image_id": {
+              "type": "string"
+            },
+            "last_modified": {
+              "format": "epoch_millis",
+              "type": "date"
+            },
+            "name": {
+              "type": "string"
+            },
+            "reference": {
+              "type": "string"
+            },
+            "size": {
+              "type": "long"
+            },
+            "sourceFiles": {
+              "type": "nested",
+              "include_in_root": true,
+              "properties": {
+                "content": {
+                  "type": "string"
+                },
+                "id": {
+                  "type": "long"
+                },
+                "path": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                }
+              }
+            },
+            "valid": {
+              "type": "boolean"
+            },
+            "verified": {
+              "type": "boolean"
+            },
+            "wdl_path": {
+              "type": "string"
+            },
+            "workingDirectory": {
+              "type": "string"
+            }
+          }
+        },
+        "tool_maintainer_email": {
+          "type": "string"
+        },
+        "tool_path": {
+          "type": "string"
+        },
+        "toolname": {
+          "type": "string"
+        },
+        "users": {
+          "type": "nested",
+          "properties": {
+            "avatarUrl": {
+              "type": "string"
+            },
+            "bio": {
+              "type": "string"
+            },
+            "company": {
+              "type": "string"
+            },
+            "email": {
+              "type": "string"
+            },
+            "id": {
+              "type": "long"
+            },
+            "isAdmin": {
+              "type": "boolean"
+            },
+            "location": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+            "username": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

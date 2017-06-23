@@ -17,6 +17,8 @@
 package io.dockstore.webservice.resources.proposedGA4GH;
 
 import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -31,6 +33,7 @@ import javax.ws.rs.core.SecurityContext;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.io.Resources;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -168,9 +171,20 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 });
 
                 //index a document
-                HttpEntity entity = new NStringEntity(builder.toString(), ContentType.APPLICATION_JSON);
+                try {
+                    restClient.performRequest("DELETE", "/entry");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
 
-                org.elasticsearch.client.Response post = restClient.performRequest("POST", "/entry/_bulk", Collections.emptyMap(), entity);
+                URL url = Resources.getResource("queries/mapping.json");
+                String text = Resources.toString(url, StandardCharsets.UTF_8);
+
+                HttpEntity mappingEntity = new NStringEntity(text, ContentType.APPLICATION_JSON);
+                restClient.performRequest("PUT", "/entry", Collections.emptyMap(), mappingEntity);
+
+                HttpEntity bulkEntity = new NStringEntity(builder.toString(), ContentType.APPLICATION_JSON);
+                org.elasticsearch.client.Response post = restClient.performRequest("POST", "/entry/_bulk", Collections.emptyMap(), bulkEntity);
                 if (post.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
                     throw new CustomWebApplicationException("Could not submit index to elastic search",
                             HttpStatus.SC_INTERNAL_SERVER_ERROR);

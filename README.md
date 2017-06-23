@@ -285,3 +285,20 @@ Probably the best way to run this since it includes a bundled postgres.  Keep in
 You can also run with defaults using
 
 1. `docker run -P -ti --rm dockstore`
+
+### Search Demo
+
+To run the search demo, you will need the following components:
+
+1. A running elasticsearch instance, for development `docker run -p 9200:9200 -p 9300:9300  -d elasticsearch:2.4.5` is sufficient. 
+2. A dockstore web service that includes the search and index endpoints (at least c291cfb471a575766194561934d5789b3882de1b )
+3. This web service will need to be aware of elastic search via the configuration yml file 
+```
+esconfiguration:
+  port: 9200
+  hostname: localhost
+```
+4. A ui2 instance that includes the search demo at. This will require at least commit version 75b98bb48d02cafbfd0a9327a0d8e963f5d86cce )
+5. While the webservice is running and with some relevant content, hit up http://localhost:8080/static/swagger-ui/index.html#!/GA4GH/toolsIndexGet to generate index data. 
+6. Browse to [http://localhost:8080/static/elastic_demo_ui/demo.html](http://localhost:8080/static/elastic_demo_ui/demo.html) for a hard-coded angularJS demo. 
+7. Browse to [http://localhost:4200/admin-search](http://localhost:4200/admin-search) to view a Angular 2 prototype in progress. 

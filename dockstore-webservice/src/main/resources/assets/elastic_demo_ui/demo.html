@@ -39,12 +39,24 @@
 
         <div class="row">
             <div class="col-xs-3 sidebar">
-                <h3>Search</h3>
-                <eui-searchbox field="'description'"></eui-searchbox> <!-- ACTION: change to field to search on -->
-                <h3>Single select facet</h3>
-                <eui-singleselect field="'registry'" size="5"></eui-singleselect> <!-- ACTION: change to field to use as facet -->
-                <h3>Multi select facet</h3>
-                <eui-checklist field="'author'" size="10"></eui-checklist> <!-- ACTION: change to field to use as facet -->
+                <h3>Search Description</h3>
+                <eui-searchbox field="'description'"></eui-searchbox>
+                <h3>Tool Type</h3>
+                <eui-singleselect field="'_type'" size="10000"></eui-singleselect>
+                <h3>Docker Registry</h3>
+                <eui-singleselect field="'registry'" size="10000"></eui-singleselect>
+                <h3>Private</h3>
+                <eui-singleselect field="'private_access'" size="10000"></eui-singleselect>
+                <h3>Verified</h3>
+                <eui-singleselect field="'tags.verified'" size="10000"></eui-singleselect>
+                <h3>Author</h3>
+                <eui-checklist field="'author'" size="10000"></eui-checklist>
+                <h3>Namespace</h3>
+                <eui-checklist field="'namespace'" size="10000"></eui-checklist>
+                <h3>Labels</h3>
+                <eui-checklist field="'labels.value'" size="10000"></eui-checklist>
+                <h3>Verified Source</h3>
+                <eui-checklist field="'tags.verifiedSource'" size="10000"></eui-checklist>
                 <h3>Results Per Page</h3>
                 <select ng-model="indexVM.pageSize">
                     <option ng-repeat="item in [10, 20, 50, 100]">{{item}}</option>
