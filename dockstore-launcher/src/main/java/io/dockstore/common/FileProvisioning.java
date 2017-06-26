@@ -19,6 +19,7 @@ package io.dockstore.common;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -53,6 +54,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ro.fortsoft.pf4j.PluginManager;
 import ro.fortsoft.pf4j.PluginWrapper;
+import sun.net.util.URLUtil;
 
 /**
  * The purpose of this class is to provide general functions to deal with workflow file provisioning.
@@ -323,6 +325,13 @@ public class FileProvisioning {
             try {
                 FileSystemManager fsManager = VFS.getManager();
                 File destinationFile = new File(destPath);
+                // if it is a URL, we need to treat it differently
+                try {
+                    URI uri = URI.create(destPath);
+                    destinationFile = new File(uri);
+                } catch (IllegalArgumentException e) {
+                    // do nothing
+                }
                 try (FileObject dest = fsManager.resolveFile(destinationFile.getAbsolutePath());
                         FileObject src = fsManager.resolveFile(sourceFile.getAbsolutePath())) {
                     System.out.println("Provisioning from " + srcPath + " to " + destPath);
@@ -362,7 +371,7 @@ public class FileProvisioning {
                     .collect(Collectors.toList());
             List<Path> srcList = Stream.of(pairs).map(pair -> Paths.get(pair.getKey())).collect(Collectors.toList());
             List<String> destList = Stream.of(pairs)
-                    .map(pair -> pair.getValue().isDirectory() ? pair.getValue().getUrl() + FilenameUtils.getName(pair.getKey())
+                    .map(pair -> pair.getValue().isDirectory() ? pair.getValue().getUrl() + '/' + FilenameUtils.getName(pair.getKey())
                             : pair.getValue().getUrl()).collect(Collectors.toList());
 
             try {
