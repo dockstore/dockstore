@@ -316,7 +316,7 @@ public class FileProvisioning {
         if (provisionInterface != null) {
             if (sourceFile.isDirectory()) {
                 // file provisioning plugins do not really support directories
-              return;
+                return;
             }
             System.out.println(
                     "Calling on plugin " + provisionInterface.getClass().getName() + " to provision from " + srcPath + " to " + destPath);
