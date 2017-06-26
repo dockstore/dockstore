@@ -19,7 +19,6 @@ package io.dockstore.common;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -54,7 +53,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ro.fortsoft.pf4j.PluginManager;
 import ro.fortsoft.pf4j.PluginWrapper;
-import sun.net.util.URLUtil;
 
 /**
  * The purpose of this class is to provide general functions to deal with workflow file provisioning.
@@ -316,6 +314,10 @@ public class FileProvisioning {
         File sourceFile = new File(srcPath);
 
         if (provisionInterface != null) {
+            if (sourceFile.isDirectory()) {
+                // file provisioning plugins do not really support directories
+              return;
+            }
             System.out.println(
                     "Calling on plugin " + provisionInterface.getClass().getName() + " to provision from " + srcPath + " to " + destPath);
             provisionInterface.uploadTo(destPath, Paths.get(srcPath), Optional.ofNullable(metadata));
@@ -331,6 +333,7 @@ public class FileProvisioning {
                     destinationFile = new File(uri);
                 } catch (IllegalArgumentException e) {
                     // do nothing
+                    LOG.debug(destPath + " not a uri");
                 }
                 try (FileObject dest = fsManager.resolveFile(destinationFile.getAbsolutePath());
                         FileObject src = fsManager.resolveFile(sourceFile.getAbsolutePath())) {
