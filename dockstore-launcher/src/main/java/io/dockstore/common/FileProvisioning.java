@@ -376,9 +376,17 @@ public class FileProvisioning {
             List<Optional<String>> metadataList = Stream.of(pairs).map(pair -> Optional.ofNullable(pair.getValue().getMetadata()))
                     .collect(Collectors.toList());
             List<Path> srcList = Stream.of(pairs).map(pair -> Paths.get(pair.getKey())).collect(Collectors.toList());
-            List<String> destList = Stream.of(pairs)
-                    .map(pair -> pair.getValue().isDirectory() ? pair.getValue().getUrl() + '/' + FilenameUtils.getName(pair.getKey())
-                            : pair.getValue().getUrl()).collect(Collectors.toList());
+            List<String> destList = Stream.of(pairs).map(pair -> {
+                String targetLocation = pair.getValue().getUrl();
+                if (pair.getValue().isDirectory()) {
+                    if (!targetLocation.endsWith("/")) {
+                        targetLocation = targetLocation + '/';
+                    }
+                    return targetLocation + FilenameUtils.getName(pair.getKey());
+                } else {
+                    return targetLocation;
+                }
+            }).collect(Collectors.toList());
 
             try {
                 if (pInterface != null) {

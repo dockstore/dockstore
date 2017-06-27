@@ -1,0 +1,6 @@
+{
+  "bam_input": {
+    "class": "File",
+    "path": "https://github.com/CancerCollaboratory/dockstore-tool-bamstats/raw/1.25-6_1.0/rna.SRR948778.bam"
+  }
+}

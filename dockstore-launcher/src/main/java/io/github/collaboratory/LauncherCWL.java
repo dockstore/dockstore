@@ -579,7 +579,10 @@ public class LauncherCWL {
                 FileProvisioning.FileInfo fileInfo = new FileProvisioning.FileInfo();
                 fileInfo.setLocalPath(file.getLocalPath());
                 List<String> splitPathList = Lists.newArrayList(file.getUrl().split("/"));
-                splitPathList.remove(splitPathList.size() - 1);
+                if (!file.isDirectory()) {
+                    // when the provision target is a specific file, trim that off
+                    splitPathList.remove(splitPathList.size() - 1);
+                }
                 splitPathList.add((String)secondaryFile.get("basename"));
                 final String join = Joiner.on("/").join(splitPathList);
                 fileInfo.setUrl(join);
@@ -677,13 +680,6 @@ public class LauncherCWL {
                 }
                 // in this case the input is a single instance and not an array
             } else if (stringObjectEntry.getValue() instanceof HashMap) {
-                //Map value = (Map)stringObjectEntry.getValue();
-
-                // ignore local directories when doing file provisioning
-                //if (value.containsKey("class") && (("Directory").equalsIgnoreCase(value.get("class").toString()))) {
-                //    return;
-                //}
-
                 Map param = (HashMap)stringObjectEntry.getValue();
                 String path = getPathOrLocation(param);
                 if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
