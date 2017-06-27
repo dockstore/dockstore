@@ -252,28 +252,31 @@ public class LauncherCWL {
             String cwlID) {
         // now that I have an input name from the CWL I can find it in the JSON parameterization for this run
         LOG.info("JSON: {}", inputsOutputs);
-        for (Entry<String, Object> stringObjectEntry : inputsOutputs.entrySet()) {
-            final Object value = stringObjectEntry.getValue();
-            if (value instanceof Map || value instanceof List) {
-                final String key = stringObjectEntry.getKey();
-                if (key.equals(cwlID)) {
-                    if (value instanceof Map) {
-                        Map param = (Map<String, Object>)stringObjectEntry.getValue();
-                        handleOutputFile(fileMap, cwlID, param);
-                        return;
-                    } else {
-                        assert (value instanceof List);
-                        for (Object entry : (List)value) {
-                            if (entry instanceof Map) {
-                                handleOutputFile(fileMap, cwlID, (Map<String, Object>)entry);
-                                return;
-                            }
+        if (inputsOutputs.containsKey(cwlID)) {
+            Object jsonParameters = inputsOutputs.get(cwlID);
+            if (jsonParameters instanceof Map || jsonParameters instanceof List) {
+                if (jsonParameters instanceof Map) {
+                    Map param = (Map<String, Object>)jsonParameters;
+                    handleOutputFile(fileMap, cwlID, param);
+                } else {
+                    assert (jsonParameters instanceof List);
+                    for (Object entry : (List)jsonParameters) {
+                        if (entry instanceof Map) {
+                            handleOutputFile(fileMap, cwlID, (Map<String, Object>)entry);
                         }
                     }
                 }
+            } else {
+                System.out.println("WARNING: Output malformed for \"" + cwlID + "\" provisioning by default to working directory");
+                handleOutputFileToWorkingDirectory(fileMap, cwlID);
             }
+        } else {
+            System.out.println("WARNING: Output location not found for \"" + cwlID + "\" provisioning by default to working directory");
+            handleOutputFileToWorkingDirectory(fileMap, cwlID);
         }
-        System.out.println("WARNING: Output location not found for \"" + cwlID + "\" provisioning by default to working directory");
+    }
+
+    private void handleOutputFileToWorkingDirectory(Map<String, List<FileProvisioning.FileInfo>> fileMap, String cwlID) {
         Map<String, Object> workDir = new HashMap<>();
         workDir.put("class", "Directory");
         workDir.put("path", ".");
