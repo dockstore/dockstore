@@ -740,15 +740,6 @@ public class LauncherCWL {
     private void copyIndividualFile(String key, String path, Map<String, FileProvisioning.FileInfo> fileMap, File downloadDirFileObj,
             boolean record) {
         String shortfileName = Paths.get(path).getFileName().toString();
-        // will need to be handled by plug-ins, sanitize file names
-        StringBuilder cleanShortFileName = new StringBuilder();
-        for (char c : shortfileName.toCharArray()) {
-            if (c == '.' || Character.isJavaIdentifierPart(c)) {
-                cleanShortFileName.append(c);
-            }
-        }
-        shortfileName = cleanShortFileName.toString();
-
         final Path targetFilePath = Paths.get(downloadDirFileObj.getAbsolutePath(), shortfileName);
         fileProvisioning.provisionInputFile(path, targetFilePath);
         // now add this info to a hash so I can later reconstruct a docker -v command
