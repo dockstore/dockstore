@@ -260,17 +260,24 @@ public class LauncherCWL {
                     if (value instanceof Map) {
                         Map param = (Map<String, Object>)stringObjectEntry.getValue();
                         handleOutputFile(fileMap, cwlID, param);
+                        return;
                     } else {
                         assert (value instanceof List);
                         for (Object entry : (List)value) {
                             if (entry instanceof Map) {
                                 handleOutputFile(fileMap, cwlID, (Map<String, Object>)entry);
+                                return;
                             }
                         }
                     }
                 }
             }
         }
+        System.out.println("WARNING: Output location not found for \"" + cwlID + "\" provisioning by default to working directory");
+        Map<String, Object> workDir = new HashMap<>();
+        workDir.put("class", "Directory");
+        workDir.put("path", ".");
+        handleOutputFile(fileMap, cwlID, workDir);
     }
 
     /**

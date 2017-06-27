@@ -49,6 +49,7 @@ import org.apache.commons.vfs2.FileName;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemManager;
 import org.apache.commons.vfs2.VFS;
+import org.apache.commons.vfs2.impl.DefaultFileSystemManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ro.fortsoft.pf4j.PluginManager;
@@ -326,6 +327,8 @@ public class FileProvisioning {
         } else {
             try {
                 FileSystemManager fsManager = VFS.getManager();
+                ((DefaultFileSystemManager)fsManager).setBaseFile(Paths.get("").toFile());
+
                 File destinationFile = new File(destPath);
                 // if it is a URL, we need to treat it differently
                 try {
@@ -341,12 +344,12 @@ public class FileProvisioning {
                     if (src.isFolder()) {
                         FileObject[] files = src.findFiles(new AllFileSelector());
                         for (FileObject file : files) {
-                            if (file.isFolder()) {
-                                continue;
-                            }
                             FileName name = file.getName();
                             String relativePath = name.getURI().replace(src.getName().getURI(), "");
                             FileObject nestedFile = fsManager.resolveFile(destinationFile + relativePath);
+                            if (file.isFolder()) {
+                                continue;
+                            }
                             System.out.println("Provisioning from nested file " + file + " to " + nestedFile);
                             FileProvisionUtil.copyFromInputStreamToOutputStream(file, nestedFile);
                         }
