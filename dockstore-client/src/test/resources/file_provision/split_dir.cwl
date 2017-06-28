@@ -16,7 +16,7 @@ outputs:
   bamstats_report:
     type: Directory
     outputBinding:
-      glob: .
+      glob: test1
 
-baseCommand: ["split"]
-arguments: ["--bytes=15000000", $(inputs.bam_input), "test."]
+baseCommand: ["mkdir"]
+arguments: ["-p", "test1/test2/test3/test4"]

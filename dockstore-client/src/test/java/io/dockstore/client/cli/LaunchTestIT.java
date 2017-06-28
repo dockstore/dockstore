@@ -211,22 +211,34 @@ public class LaunchTestIT {
         }
     }
 
-//    @Test
-//    public void runToolDirectoryMalformedToCWD() throws IOException {
-//        File cwlFile = new File(ResourceHelpers.resourceFilePath("file_provision/split_dir.cwl"));
-//        File cwlJSON = new File(ResourceHelpers.resourceFilePath("file_provision/split_to_malformed.json"));
-//
-//        FileUtils.forceMkdir(new File("test"));
-//        runTool(cwlFile, cwlJSON);
-//
-//        final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
-//        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
-//        for (char y = 'a'; y <= 'f'; y++) {
-//            String filename = "./test.a" + y;
-//            checkFileAndThenDeleteIt(filename);
-//        }
-//        FileUtils.cleanDirectory(new File("test"));
-//    }
+    @Test(expected = RuntimeException.class)
+    public void runToolToMissingS3() throws IOException {
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("file_provision/split.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("file_provision/split_to_s3_failed.json"));
+
+        runTool(cwlFile, cwlJSON);
+
+        final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
+        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
+        for (char y = 'a'; y <= 'f'; y++) {
+            String filename = "./test.a" + y;
+            checkFileAndThenDeleteIt(filename);
+        }
+    }
+
+    @Test
+    public void runToolDirectoryMalformedToCWD() throws IOException {
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("file_provision/split_dir.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("file_provision/split_to_malformed.json"));
+
+        runTool(cwlFile, cwlJSON);
+
+        final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
+        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 1);
+        String filename = "test1";
+        checkFileAndThenDeleteIt(filename);
+        FileUtils.deleteDirectory(new File(filename));
+    }
 
     private void runTool(File cwlFile, File cwlJSON) {
         ArrayList<String> args = new ArrayList<String>() {{

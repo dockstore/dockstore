@@ -348,8 +348,11 @@ public class FileProvisioning {
                             String relativePath = name.getURI().replace(src.getName().getURI(), "");
                             FileObject nestedFile = fsManager.resolveFile(destinationFile + relativePath);
                             if (file.isFolder()) {
+                                System.out.println("Creating folder from " + file + " to " + nestedFile);
+                                nestedFile.createFolder();
                                 continue;
                             }
+                            nestedFile.createFolder();
                             System.out.println("Provisioning from nested file " + file + " to " + nestedFile);
                             FileProvisionUtil.copyFromInputStreamToOutputStream(file, nestedFile);
                         }
