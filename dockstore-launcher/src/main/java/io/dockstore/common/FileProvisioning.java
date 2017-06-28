@@ -191,7 +191,7 @@ public class FileProvisioning {
                 if (provision.schemesHandled().contains(scheme.toUpperCase()) || provision.schemesHandled()
                         .contains(scheme.toLowerCase())) {
                     System.out.println("Calling on plugin " + provision.getClass().getName() + " to provision " + targetPath);
-                    handleProvisionWithRetries(targetPath, localPath, provision);
+                    handleDownloadProvisionWithRetries(targetPath, localPath, provision);
                 }
             }
         }
@@ -200,7 +200,7 @@ public class FileProvisioning {
             // check if we can use a plugin
             boolean localFileType = objectIdentifier.getScheme() == null;
             if (!localFileType) {
-                handleProvisionWithRetries(targetPath, localPath, null);
+                handleDownloadProvisionWithRetries(targetPath, localPath, null);
             } else {
                 // hard link into target location
                 Path actualTargetPath = null;
@@ -260,12 +260,21 @@ public class FileProvisioning {
         }
     }
 
-    private void handleProvisionWithRetries(String targetPath, Path localPath, ProvisionInterface provision) {
+    private void handleDownloadProvisionWithRetries(String targetPath, Path localPath, ProvisionInterface provision) {
         int maxRetries = config.getInt(FILE_PROVISION_RETRIES, DEFAULT_RETRIES);
-        retryWrapper(provision, targetPath, localPath, maxRetries);
+        retryWrapper(provision, targetPath, localPath, maxRetries, true);
     }
 
-    public static void retryWrapper(ProvisionInterface provisionInterface, String targetPath, Path destinationPath, int maxRetries) {
+    private void handleUploadProvisionWithRetries(String targetPath, Path localPath, ProvisionInterface provision, String metadata) {
+        int maxRetries = config.getInt(FILE_PROVISION_RETRIES, DEFAULT_RETRIES);
+        retryWrapper(provision, targetPath, localPath, maxRetries, false);
+    }
+
+    static void retryWrapper(ProvisionInterface provisionInterface, String targetPath, Path destinationPath, int maxRetries, boolean download) {
+        retryWrapper(provisionInterface, targetPath, destinationPath, maxRetries, download, null);
+    }
+
+    static void retryWrapper(ProvisionInterface provisionInterface, String targetPath, Path destinationPath, int maxRetries, boolean download, String metadata) {
         if (provisionInterface == null) {
             provisionInterface = new FileProvisionUtilPluginWrapper();
         }
@@ -282,7 +291,12 @@ public class FileProvisioning {
                     throw new RuntimeException("Could not wait for retry");
                 }
             }
-            success = provisionInterface.downloadFrom(targetPath, destinationPath);
+            if (download) {
+                success = provisionInterface.downloadFrom(targetPath, destinationPath);
+            } else {
+                // note that this is reversed
+                success = provisionInterface.uploadTo(targetPath, destinationPath, Optional.ofNullable(metadata));
+            }
 
             if (!success) {
                 LOG.error("Could not provision " + targetPath + " to " + destinationPath + " , for retry " + retries);
@@ -319,9 +333,8 @@ public class FileProvisioning {
                 // file provisioning plugins do not really support directories
                 return;
             }
-            System.out.println(
-                    "Calling on plugin " + provisionInterface.getClass().getName() + " to provision from " + srcPath + " to " + destPath);
-            provisionInterface.uploadTo(destPath, Paths.get(srcPath), Optional.ofNullable(metadata));
+            System.out.println("Calling on plugin " + provisionInterface.getClass().getName() + " to provision from " + srcPath + " to " + destPath);
+            handleUploadProvisionWithRetries(destPath, Paths.get(srcPath), provisionInterface, metadata);
             // finalize output from the printer
             System.out.println();
         } else {
