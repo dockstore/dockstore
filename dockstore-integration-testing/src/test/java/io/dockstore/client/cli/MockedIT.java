@@ -94,6 +94,7 @@ public class MockedIT {
         SourceFile file = mock(SourceFile.class);
         when(file.getContent()).thenReturn(sourceFileContents);
         doReturn(file).when(toolClient).getDescriptorFromServer("quay.io/collaboratory/dockstore-tool-linux-sort", "cwl");
+        when(file.getPath()).thenReturn("Dockstore.cwl");
         doReturn(Lists.newArrayList()).when(toolClient).downloadDescriptors(anyString(), anyString(), anyObject());
 
         // mock return of a more complicated CWL file
@@ -101,6 +102,7 @@ public class MockedIT {
         final String sourceFileArraysContents = FileUtils.readFileToString(sourceFileArrays, StandardCharsets.UTF_8);
         SourceFile file2 = mock(SourceFile.class);
         when(file2.getContent()).thenReturn(sourceFileArraysContents);
+        when(file2.getPath()).thenReturn("Dockstore.cwl");
         doReturn(file2).when(toolClient).getDescriptorFromServer("quay.io/collaboratory/arrays", "cwl");
 
         FileUtils.deleteQuietly(new File("/tmp/wc1.out"));

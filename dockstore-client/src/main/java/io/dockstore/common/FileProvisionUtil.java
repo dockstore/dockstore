@@ -205,7 +205,7 @@ public final class FileProvisionUtil {
         } else {
             System.out.println("Downloading " + sourceLocation + " to " + destinationLocation);
             final int pluginDownloadAttempts = 1;
-            FileProvisioning.retryWrapper(null, sourceLocation, Paths.get(destinationLocation), pluginDownloadAttempts);
+            FileProvisioning.retryWrapper(null, sourceLocation, Paths.get(destinationLocation), pluginDownloadAttempts, true);
             return true;
         }
     }

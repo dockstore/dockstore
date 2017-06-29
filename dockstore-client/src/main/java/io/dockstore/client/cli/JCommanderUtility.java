@@ -11,6 +11,7 @@ import com.beust.jcommander.Strings;
 import com.beust.jcommander.WrappedParameter;
 
 import static io.dockstore.client.cli.ArgumentUtility.out;
+import static io.dockstore.client.cli.ArgumentUtility.outFormatted;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
 
 /**
@@ -128,7 +129,7 @@ public final class JCommanderUtility {
     }
 
     private static void printJCommanderHelpParameter(ParameterDescription pd, WrappedParameter parameter, int maxLength) {
-        out("%-" + maxLength + "s %s", "  " + pd.getNames() + " <" + pd.getNames().replaceAll("--", "") + ">", pd.getDescription());
+        outFormatted("%-" + maxLength + "s %s", "  " + pd.getNames() + " <" + pd.getNames().replaceAll("--", "") + ">", pd.getDescription());
         Object def = pd.getDefault();
         if (pd.isDynamicParameter()) {
             ArgumentUtility.out("Syntax: " + parameter.names()[0] + "key" + parameter.getAssignment() + "value");

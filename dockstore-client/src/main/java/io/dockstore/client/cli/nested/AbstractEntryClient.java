@@ -1088,16 +1088,8 @@ public abstract class AbstractEntryClient {
         final File tempDir = Files.createTempDir();
         File tempCWL;
         if (!isLocalEntry) {
-            tempCWL = File.createTempFile("temp", ".cwl", tempDir);
-        } else {
-            tempCWL = new File(entry);
-        }
-
-        if (!isLocalEntry) {
             try {
-                final SourceFile cwlFromServer = getDescriptorFromServer(entry, "cwl");
-                Files.write(cwlFromServer.getContent(), tempCWL, StandardCharsets.UTF_8);
-                downloadDescriptors(entry, "cwl", tempDir);
+                tempCWL = downloadDescriptorFiles(entry, "cwl", tempDir);
             } catch (ApiException e) {
                 if (getEntryType().toLowerCase().equals("tool")) {
                     exceptionMessage(e, "The tool entry does not exist. Did you mean to launch a local tool or a workflow?",
@@ -1106,7 +1098,10 @@ public abstract class AbstractEntryClient {
                     exceptionMessage(e, "The workflow entry does not exist. Did you mean to launch a local workflow or a tool?",
                             ENTRY_NOT_FOUND);
                 }
+                throw new RuntimeException(e);
             }
+        } else {
+            tempCWL = new File(entry);
         }
         jsonRun = convertYamlToJson(yamlRun, jsonRun);
 
@@ -1408,13 +1403,9 @@ public abstract class AbstractEntryClient {
      * @throws ApiException
      * @throws IOException
      */
-    String runString2(String entry, String descriptor, final boolean json) throws ApiException, IOException {
+    String downloadAndReturnDescriptors(String entry, String descriptor, final boolean json) throws ApiException, IOException {
         final File tempDir = Files.createTempDir();
-        final SourceFile descriptorFromServer = getDescriptorFromServer(entry, descriptor);
-        final File tempDescriptor = File.createTempFile("temp", "." + descriptor, tempDir);
-        Files.write(descriptorFromServer.getContent(), tempDescriptor, StandardCharsets.UTF_8);
-        // Download imported descriptors (secondary descriptors)
-        downloadDescriptors(entry, descriptor, tempDir);
+        final File primaryFile = downloadDescriptorFiles(entry, descriptor, tempDir);
 
         if (descriptor.equals(CWL_STRING)) {
             // need to suppress output
@@ -1462,7 +1453,7 @@ public abstract class AbstractEntryClient {
             File tmp;
             if (json) {
 
-                tmp = resolveImportsForDescriptor(tempDir, tempDescriptor);
+                tmp = resolveImportsForDescriptor(tempDir, primaryFile);
 
                 final List<String> wdlDocuments = Lists.newArrayList(tmp.getAbsolutePath());
                 final scala.collection.immutable.List<String> wdlList = scala.collection.JavaConversions.asScalaBuffer(wdlDocuments)
@@ -1476,12 +1467,31 @@ public abstract class AbstractEntryClient {
 
     public abstract Client getClient();
 
+    /**
+     *
+     * @param entry
+     * @param descriptor
+     * @param tempDir
+     * @return
+     * @throws ApiException
+     * @throws IOException
+     */
+    private File downloadDescriptorFiles(String entry, String descriptor, File tempDir) throws ApiException, IOException {
+        final SourceFile descriptorFromServer = getDescriptorFromServer(entry, descriptor);
+        final File primaryFile = new File(tempDir, descriptorFromServer.getPath());
+        primaryFile.getParentFile().mkdirs();
+        Files.write(descriptorFromServer.getContent(), primaryFile, StandardCharsets.UTF_8);
+        // Download imported descriptors (secondary descriptors)
+        downloadDescriptors(entry, descriptor, primaryFile.getParentFile());
+        return primaryFile;
+    }
+
     public abstract List<SourceFile> downloadDescriptors(String entry, String descriptor, File tempDir);
 
     private String runString(List<String> args, final boolean json) throws ApiException, IOException {
         final String entry = reqVal(args, "--entry");
         final String descriptor = optVal(args, "--descriptor", CWL_STRING);
-        return runString2(entry, descriptor, json);
+        return downloadAndReturnDescriptors(entry, descriptor, json);
     }
 
     /**

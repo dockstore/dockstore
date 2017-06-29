@@ -59,6 +59,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -255,25 +256,35 @@ public class LauncherCWL {
             String cwlID) {
         // now that I have an input name from the CWL I can find it in the JSON parameterization for this run
         LOG.info("JSON: {}", inputsOutputs);
-        for (Entry<String, Object> stringObjectEntry : inputsOutputs.entrySet()) {
-            final Object value = stringObjectEntry.getValue();
-            if (value instanceof Map || value instanceof List) {
-                final String key = stringObjectEntry.getKey();
-                if (key.equals(cwlID)) {
-                    if (value instanceof Map) {
-                        Map param = (Map<String, Object>)stringObjectEntry.getValue();
-                        handleOutputFile(fileMap, cwlID, param);
-                    } else {
-                        assert (value instanceof List);
-                        for (Object entry : (List)value) {
-                            if (entry instanceof Map) {
-                                handleOutputFile(fileMap, cwlID, (Map<String, Object>)entry);
-                            }
+        if (inputsOutputs.containsKey(cwlID)) {
+            Object jsonParameters = inputsOutputs.get(cwlID);
+            if (jsonParameters instanceof Map || jsonParameters instanceof List) {
+                if (jsonParameters instanceof Map) {
+                    Map param = (Map<String, Object>)jsonParameters;
+                    handleOutputFile(fileMap, cwlID, param);
+                } else {
+                    assert (jsonParameters instanceof List);
+                    for (Object entry : (List)jsonParameters) {
+                        if (entry instanceof Map) {
+                            handleOutputFile(fileMap, cwlID, (Map<String, Object>)entry);
                         }
                     }
                 }
+            } else {
+                System.out.println("WARNING: Output malformed for \"" + cwlID + "\" provisioning by default to working directory");
+                handleOutputFileToWorkingDirectory(fileMap, cwlID);
             }
+        } else {
+            System.out.println("WARNING: Output location not found for \"" + cwlID + "\" provisioning by default to working directory");
+            handleOutputFileToWorkingDirectory(fileMap, cwlID);
         }
+    }
+
+    private void handleOutputFileToWorkingDirectory(Map<String, List<FileProvisioning.FileInfo>> fileMap, String cwlID) {
+        Map<String, Object> workDir = new HashMap<>();
+        workDir.put("class", "Directory");
+        workDir.put("path", ".");
+        handleOutputFile(fileMap, cwlID, workDir);
     }
 
     /**
@@ -336,19 +347,10 @@ public class LauncherCWL {
             final Object currentParam = entry.getValue();
             if (currentParam instanceof Map) {
                 Map<String, Object> param = (Map<String, Object>)currentParam;
-                String path = (String)param.get("path");
-                LOG.info("PATH: {} PARAM_NAME: {}", path, paramName);
-                // will be null for output
-                if (fileMap.get(paramName) != null) {
-                    final String localPath = fileMap.get(paramName).getLocalPath();
-                    param.put("path", localPath);
-                    LOG.info("NEW FULL PATH: {}", localPath);
-                } else if (outputMap.get(paramName) != null) {
-                    //TODO: just the get the first one for a default? probably not correct
-                    final String localPath = outputMap.get(paramName).get(0).getLocalPath();
-                    param.put("path", localPath);
-                    LOG.info("NEW FULL PATH: {}", localPath);
-                }
+
+                rewriteParamField(fileMap, outputMap, paramName, param, "path");
+                rewriteParamField(fileMap, outputMap, paramName, param, "location");
+
                 // now add to the new JSON structure
                 JSONObject newRecord = new JSONObject();
 
@@ -397,6 +399,34 @@ public class LauncherCWL {
         // make an updated JSON file that will be used to run the workflow
         writeJob(globalWorkingDir + "/workflow_params.json", newJSON);
         return globalWorkingDir + "/workflow_params.json";
+    }
+
+    /**
+     *
+     * @param fileMap map of input files
+     * @param outputMap map of output files
+     * @param paramName parameter name handle
+     * @param param the actual CWL parameter map
+     * @param replacementTarget the parameter path to rewrite
+     */
+    private void rewriteParamField(Map<String, FileProvisioning.FileInfo> fileMap, Map<String, List<FileProvisioning.FileInfo>> outputMap,
+            String paramName, Map<String, Object> param, String replacementTarget) {
+        if (!param.containsKey(replacementTarget)) {
+            return;
+        }
+        String path = (String)param.get(replacementTarget);
+        LOG.info("PATH: {} PARAM_NAME: {}", path, paramName);
+        // will be null for output
+        if (fileMap.get(paramName) != null) {
+            final String localPath = fileMap.get(paramName).getLocalPath();
+            param.put(replacementTarget, localPath);
+            LOG.info("NEW FULL PATH: {}", localPath);
+        } else if (outputMap.get(paramName) != null) {
+            //TODO: just the get the first one for a default? probably not correct
+            final String localPath = outputMap.get(paramName).get(0).getLocalPath();
+            param.put(replacementTarget, localPath);
+            LOG.info("NEW FULL PATH: {}", localPath);
+        }
     }
 
     private Map<String, Object> loadJob(String jobPath) {
@@ -558,10 +588,6 @@ public class LauncherCWL {
      */
     private void provisionOutputFile(final String key, FileProvisioning.FileInfo file, final Map<String, Object> fileMapDataStructure) {
         String cwlOutputPath = (String)fileMapDataStructure.get("path");
-        if (!((String)fileMapDataStructure.get("class")).equalsIgnoreCase("File")) {
-            System.err.println(cwlOutputPath + " is not a file, ignoring");
-            return;
-        }
         LOG.info("NAME: {} URL: {} FILENAME: {} CWL OUTPUT PATH: {}", file.getLocalPath(), file.getUrl(), key, cwlOutputPath);
         System.out.println("Registering: #" + key + " to provision from " + cwlOutputPath + " to : " + file.getUrl());
         fileProvisioning.registerOutputFile(cwlOutputPath, file);
@@ -573,7 +599,10 @@ public class LauncherCWL {
                 FileProvisioning.FileInfo fileInfo = new FileProvisioning.FileInfo();
                 fileInfo.setLocalPath(file.getLocalPath());
                 List<String> splitPathList = Lists.newArrayList(file.getUrl().split("/"));
-                splitPathList.remove(splitPathList.size() - 1);
+                if (!file.isDirectory()) {
+                    // when the provision target is a specific file, trim that off
+                    splitPathList.remove(splitPathList.size() - 1);
+                }
                 splitPathList.add((String)secondaryFile.get("basename"));
                 final String join = Joiner.on("/").join(splitPathList);
                 fileInfo.setUrl(join);
@@ -659,8 +688,9 @@ public class LauncherCWL {
                 for (Object entry : stringObjectEntryList) {
                     if (entry instanceof Map) {
                         Map lhm = (Map)entry;
-                        if (lhm.containsKey("path") && lhm.get("path") instanceof String) {
-                            String path = (String)lhm.get("path");
+                        if ((lhm.containsKey("path") && lhm.get("path") instanceof String)
+                                || (lhm.containsKey("location") && lhm.get("location") instanceof String)) {
+                            String path = getPathOrLocation(lhm);
                             // notice I'm putting key:path together so they are unique in the hash
                             if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
                                 doProcessFile(stringObjectEntry.getKey() + ":" + path, path, cwlInputFileID, fileMap, secondaryFiles);
@@ -670,21 +700,18 @@ public class LauncherCWL {
                 }
                 // in this case the input is a single instance and not an array
             } else if (stringObjectEntry.getValue() instanceof HashMap) {
-                Map value = (Map)stringObjectEntry.getValue();
-
-                // ignore local directories when doing file provisioning
-                if (value.containsKey("class") && (("Directory").equalsIgnoreCase(value.get("class").toString()))) {
-                    return;
-                }
-
                 Map param = (HashMap)stringObjectEntry.getValue();
-                String path = (String)param.get("path");
+                String path = getPathOrLocation(param);
                 if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
                     doProcessFile(stringObjectEntry.getKey(), path, cwlInputFileID, fileMap, secondaryFiles);
                 }
 
             }
         }
+    }
+
+    private String getPathOrLocation(Map param) {
+        return ObjectUtils.firstNonNull((String)param.get("path"), (String)param.get("location"));
     }
 
     /**
@@ -739,15 +766,6 @@ public class LauncherCWL {
     private void copyIndividualFile(String key, String path, Map<String, FileProvisioning.FileInfo> fileMap, File downloadDirFileObj,
             boolean record) {
         String shortfileName = Paths.get(path).getFileName().toString();
-        // will need to be handled by plug-ins, sanitize file names
-        StringBuilder cleanShortFileName = new StringBuilder();
-        for (char c : shortfileName.toCharArray()) {
-            if (c == '.' || Character.isJavaIdentifierPart(c)) {
-                cleanShortFileName.append(c);
-            }
-        }
-        shortfileName = cleanShortFileName.toString();
-
         final Path targetFilePath = Paths.get(downloadDirFileObj.getAbsolutePath(), shortfileName);
         fileProvisioning.provisionInputFile(path, targetFilePath);
         // now add this info to a hash so I can later reconstruct a docker -v command

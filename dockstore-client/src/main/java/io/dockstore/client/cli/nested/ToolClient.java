@@ -65,6 +65,7 @@ import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.ArgumentUtility.optVal;
 import static io.dockstore.client.cli.ArgumentUtility.out;
+import static io.dockstore.client.cli.ArgumentUtility.outFormatted;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
 import static io.dockstore.client.cli.ArgumentUtility.printLineBreak;
@@ -128,7 +129,7 @@ public class ToolClient extends AbstractEntryClient {
         int descWidth = maxWidths[1] + Client.PADDING;
         int gitWidth = maxWidths[2] + Client.PADDING;
         String format = "%-" + nameWidth + "s%-" + descWidth + "s%-" + gitWidth + "s%-16s%-16s%-10s";
-        out(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "On Dockstore?", "Descriptor", "Automated");
+        outFormatted(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "On Dockstore?", "Descriptor", "Automated");
 
         for (DockstoreTool container : containers) {
             String descriptor = "No";
@@ -152,7 +153,7 @@ public class ToolClient extends AbstractEntryClient {
                 }
             }
 
-            out(format, container.getToolPath(), description, gitUrl, boolWord(container.getIsPublished()), descriptor, automated);
+            outFormatted(format, container.getToolPath(), description, gitUrl, boolWord(container.getIsPublished()), descriptor, automated);
         }
     }
 
@@ -165,7 +166,7 @@ public class ToolClient extends AbstractEntryClient {
         int descWidth = maxWidths[1] + Client.PADDING;
         int gitWidth = maxWidths[2] + Client.PADDING;
         String format = "%-" + nameWidth + "s%-" + descWidth + "s%-" + gitWidth + "s";
-        out(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER);
+        outFormatted(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER);
 
         for (DockstoreTool container : containers) {
             String description = "";
@@ -177,7 +178,7 @@ public class ToolClient extends AbstractEntryClient {
 
             description = getCleanedDescription(container.getDescription());
 
-            out(format, container.getToolPath(), description, gitUrl);
+            outFormatted(format, container.getToolPath(), description, gitUrl);
         }
     }
 

@@ -111,7 +111,7 @@ if [ "$HTTP_CLIENT" = "" ]; then
         if [ "$https_proxy" != "" ]; then
             CURL_PROXY="-x $https_proxy"
         fi
-        HTTP_CLIENT="curl $CURL_PROXY -f -L -o"
+        HTTP_CLIENT="curl --retry 20 $CURL_PROXY -f -L -o"
     else
         HTTP_CLIENT="wget -O"
     fi
@@ -165,7 +165,8 @@ if [ "$1" = "self-install" ]; then
     # for testing, if you have a local release version, just use it
         DOCKSTORE_URL="file:///$HOME/.m2/repository/io/dockstore/dockstore-client/$DOCKSTORE_VERSION/dockstore-client-$DOCKSTORE_VERSION-shaded.jar"
     else
-       DOCKSTORE_URL="https://artifacts.oicr.on.ca/artifactory/collab-release/io/dockstore/dockstore-client/$DOCKSTORE_VERSION/dockstore-client-$DOCKSTORE_VERSION-shaded.jar"
+        # DOCKSTORE_URL="https://artifacts.oicr.on.ca/artifactory/collab-release/io/dockstore/dockstore-client/$DOCKSTORE_VERSION/dockstore-client-$DOCKSTORE_VERSION-shaded.jar"
+        DOCKSTORE_URL="https://github.com/ga4gh/dockstore/releases/download/$DOCKSTORE_VERSION/dockstore-client-$DOCKSTORE_VERSION-shaded.jar"
     fi
 
     (>&2 echo "$DOCKSTORE_URL")
