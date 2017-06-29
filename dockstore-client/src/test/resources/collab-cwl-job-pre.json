@@ -1,0 +1,18 @@
+{
+  "hello_input": {
+    "class": "File",
+    "path": "https://raw.githubusercontent.com/ga4gh/dockstore/1.2.0/dockstore-launcher/data/hello-input.txt"
+  },
+  "ref_file_1": {
+    "class": "File",
+    "path": "https://raw.githubusercontent.com/ga4gh/dockstore/1.2.0/dockstore-launcher/data/8e888694-9c56-4529-a750-d6bfbd4a74e7.txt"
+  },
+  "ref_file_2": {
+    "class": "File",
+    "path": "https://raw.githubusercontent.com/ga4gh/dockstore/1.2.0/dockstore-launcher/data/b4cdad91-676a-446c-a635-57453f17617a.txt"
+  },
+  "hello_output": {
+    "class": "File",
+    "path": "s3://oicr.temp/testing-launcher/hello-output.txt"
+  }
+}

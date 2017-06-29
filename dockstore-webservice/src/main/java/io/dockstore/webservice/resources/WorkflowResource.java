@@ -868,7 +868,7 @@ public class WorkflowResource {
 
         String completeWorkflowPath = workflowPath;
         // Check that no duplicate workflow (same WorkflowPath) exists
-        if (!"".equals(workflowName)) {
+        if (workflowName != null && !"".equals(workflowName)) {
             completeWorkflowPath += "/" + workflowName;
         }
 

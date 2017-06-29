@@ -63,6 +63,7 @@ import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.ArgumentUtility.getGitRegistry;
 import static io.dockstore.client.cli.ArgumentUtility.optVal;
 import static io.dockstore.client.cli.ArgumentUtility.out;
+import static io.dockstore.client.cli.ArgumentUtility.outFormatted;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
 import static io.dockstore.client.cli.ArgumentUtility.printLineBreak;
@@ -105,7 +106,7 @@ public class WorkflowClient extends AbstractEntryClient {
         int descWidth = maxWidths[1] + Client.PADDING;
         int gitWidth = maxWidths[2] + Client.PADDING;
         String format = "%-" + nameWidth + "s%-" + descWidth + "s%-" + gitWidth + "s%-16s";
-        out(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "On Dockstore?");
+        outFormatted(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "On Dockstore?");
 
         for (Workflow workflow : workflows) {
             String gitUrl = "";
@@ -116,7 +117,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
             String description = getCleanedDescription(workflow.getDescription());
 
-            out(format, workflow.getPath(), description, gitUrl, boolWord(workflow.getIsPublished()));
+            outFormatted(format, workflow.getPath(), description, gitUrl, boolWord(workflow.getIsPublished()));
         }
     }
 
@@ -282,7 +283,7 @@ public class WorkflowClient extends AbstractEntryClient {
         String path = parts[0];
         Workflow workflow = workflowsApi.getPublishedWorkflowByPath(path);
         String descriptor = workflow.getDescriptorType();
-        return runString2(entry, descriptor, json);
+        return downloadAndReturnDescriptors(entry, descriptor, json);
     }
 
     /**
@@ -1045,21 +1046,13 @@ public class WorkflowClient extends AbstractEntryClient {
         List<SourceFile> result = new ArrayList<>();
         if (workflow != null) {
             try {
+                List<SourceFile> files;
                 if (descriptor.toLowerCase().equals("cwl")) {
-                    List<SourceFile> files = workflowsApi.secondaryCwl(workflow.getId(), version);
-                    for (SourceFile sourceFile : files) {
-                        File tempDescriptor = new File(tempDir.getAbsolutePath(), sourceFile.getPath());
-                        Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
-                        result.add(sourceFile);
-                    }
+                    files = workflowsApi.secondaryCwl(workflow.getId(), version);
                 } else {
-                    List<SourceFile> files = workflowsApi.secondaryWdl(workflow.getId(), version);
-                    for (SourceFile sourceFile : files) {
-                        File tempDescriptor = new File(tempDir.getAbsolutePath(), sourceFile.getPath());
-                        Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
-                        result.add(sourceFile);
-                    }
+                    files = workflowsApi.secondaryWdl(workflow.getId(), version);
                 }
+                writeSourceFiles(tempDir, result, files);
             } catch (ApiException e) {
                 exceptionMessage(e, "Error getting file(s) from server", Client.API_ERROR);
             } catch (IOException e) {
@@ -1067,6 +1060,22 @@ public class WorkflowClient extends AbstractEntryClient {
             }
         }
         return result;
+    }
+
+    /**
+     *
+     * @param tempDir directory where to create file structures
+     * @param files files from the webservice
+     * @param result files that we have tracked so far
+     * @throws IOException
+     */
+    private void writeSourceFiles(File tempDir, List<SourceFile> result, List<SourceFile> files) throws IOException {
+        for (SourceFile sourceFile : files) {
+            File tempDescriptor = new File(tempDir.getAbsolutePath(), sourceFile.getPath());
+            tempDescriptor.getParentFile().mkdirs();
+            Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
+            result.add(sourceFile);
+        }
     }
 
     @Parameters(separators = "=", commandDescription = "Spit out a json run file for a given entry.")

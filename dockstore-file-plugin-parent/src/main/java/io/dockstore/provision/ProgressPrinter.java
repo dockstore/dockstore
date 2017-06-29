@@ -15,6 +15,7 @@
  */
 package io.dockstore.provision;
 
+import java.io.Console;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
@@ -64,7 +65,10 @@ public class ProgressPrinter {
         builder.append("] ");
         builder.append(percentage.setScale(0, BigDecimal.ROUND_HALF_EVEN).toPlainString()).append("%");
 
-        System.out.print(builder);
+        Console console = System.console();
+        if (console != null || numerator.equals(denominator)) {
+            System.out.print(builder);
+        }
         // track progress
         printedBefore = true;
         progress = fraction;

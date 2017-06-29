@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.SlowTest;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.ResourceHelpers;
@@ -38,6 +40,7 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
+import org.junit.experimental.categories.Category;
 
 import static io.dockstore.common.CommonTestUtilities.clearStateMakePrivate2;
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
@@ -46,7 +49,8 @@ import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
  * This test suite will have tests for the workflow mode of the Dockstore Client.
  * Created by aduncan on 05/04/16.
  */
-public class GeneralWorkflowET {
+@Category(ConfidentialTest.class)
+public class GeneralWorkflowIT {
     @ClassRule
     public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
             DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstoreTest.yml"));
@@ -500,7 +504,7 @@ public class GeneralWorkflowET {
     @Test
     public void testUpdateWorkflowPath() throws IOException, TimeoutException, ApiException {
         // Set up webservice
-        ApiClient webClient = WorkflowET.getWebClient();
+        ApiClient webClient = WorkflowIT.getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         UsersApi usersApi = new UsersApi(webClient);
@@ -753,6 +757,7 @@ public class GeneralWorkflowET {
      * This is a high level test to ensure that gitlab basics are working for gitlab as a workflow repo
      */
     @Test
+    @Category(SlowTest.class)
     public void testGitlab() {
         // Setup DB
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();

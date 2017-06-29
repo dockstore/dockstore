@@ -40,12 +40,16 @@ import io.dockstore.provision.ProvisionInterface;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.configuration2.SubnodeConfiguration;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.vfs2.AllFileSelector;
+import org.apache.commons.vfs2.FileName;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemManager;
 import org.apache.commons.vfs2.VFS;
+import org.apache.commons.vfs2.impl.DefaultFileSystemManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ro.fortsoft.pf4j.PluginManager;
@@ -187,7 +191,7 @@ public class FileProvisioning {
                 if (provision.schemesHandled().contains(scheme.toUpperCase()) || provision.schemesHandled()
                         .contains(scheme.toLowerCase())) {
                     System.out.println("Calling on plugin " + provision.getClass().getName() + " to provision " + targetPath);
-                    handleProvisionWithRetries(targetPath, localPath, provision);
+                    handleDownloadProvisionWithRetries(targetPath, localPath, provision);
                 }
             }
         }
@@ -196,7 +200,7 @@ public class FileProvisioning {
             // check if we can use a plugin
             boolean localFileType = objectIdentifier.getScheme() == null;
             if (!localFileType) {
-                handleProvisionWithRetries(targetPath, localPath, null);
+                handleDownloadProvisionWithRetries(targetPath, localPath, null);
             } else {
                 // hard link into target location
                 Path actualTargetPath = null;
@@ -220,7 +224,11 @@ public class FileProvisioning {
                 } catch (IOException e) {
                     LOG.info("Could not link " + targetPath + " to " + localPath + " , copying instead", e);
                     try {
-                        Files.copy(actualTargetPath, localPath);
+                        if (actualTargetPath.toFile().isDirectory()) {
+                            FileUtils.copyDirectory(actualTargetPath.toFile(), localPath.toFile());
+                        } else {
+                            Files.copy(actualTargetPath, localPath);
+                        }
                     } catch (IOException e1) {
                         LOG.error("Could not copy " + targetPath + " to " + localPath, e);
                         throw new RuntimeException("Could not copy " + targetPath + " to " + localPath, e1);
@@ -231,6 +239,10 @@ public class FileProvisioning {
 
         // cache the file if we got it successfully
         if (useCache) {
+            // do not cache directories
+            if (localPath.toFile().isDirectory()) {
+                return;
+            }
             // populate cache
             if (Files.notExists(potentialCachedFile)) {
                 System.out.println("Caching file " + localPath + " in cache, hard-linking");
@@ -248,12 +260,21 @@ public class FileProvisioning {
         }
     }
 
-    private void handleProvisionWithRetries(String targetPath, Path localPath, ProvisionInterface provision) {
+    private void handleDownloadProvisionWithRetries(String targetPath, Path localPath, ProvisionInterface provision) {
         int maxRetries = config.getInt(FILE_PROVISION_RETRIES, DEFAULT_RETRIES);
-        retryWrapper(provision, targetPath, localPath, maxRetries);
+        retryWrapper(provision, targetPath, localPath, maxRetries, true);
     }
 
-    public static void retryWrapper(ProvisionInterface provisionInterface, String targetPath, Path destinationPath, int maxRetries) {
+    private void handleUploadProvisionWithRetries(String targetPath, Path localPath, ProvisionInterface provision, String metadata) {
+        int maxRetries = config.getInt(FILE_PROVISION_RETRIES, DEFAULT_RETRIES);
+        retryWrapper(provision, targetPath, localPath, maxRetries, false);
+    }
+
+    static void retryWrapper(ProvisionInterface provisionInterface, String targetPath, Path destinationPath, int maxRetries, boolean download) {
+        retryWrapper(provisionInterface, targetPath, destinationPath, maxRetries, download, null);
+    }
+
+    static void retryWrapper(ProvisionInterface provisionInterface, String targetPath, Path destinationPath, int maxRetries, boolean download, String metadata) {
         if (provisionInterface == null) {
             provisionInterface = new FileProvisionUtilPluginWrapper();
         }
@@ -270,7 +291,12 @@ public class FileProvisioning {
                     throw new RuntimeException("Could not wait for retry");
                 }
             }
-            success = provisionInterface.downloadFrom(targetPath, destinationPath);
+            if (download) {
+                success = provisionInterface.downloadFrom(targetPath, destinationPath);
+            } else {
+                // note that this is reversed
+                success = provisionInterface.uploadTo(targetPath, destinationPath, Optional.ofNullable(metadata));
+            }
 
             if (!success) {
                 LOG.error("Could not provision " + targetPath + " to " + destinationPath + " , for retry " + retries);
@@ -296,27 +322,58 @@ public class FileProvisioning {
      *
      * @param srcPath            source file
      * @param destPath           destination file
-     * @param metadata           metddata associated with one file
+     * @param metadata           metaddata associated with one file
      * @param provisionInterface plugin used for this file
      */
     private void provisionOutputFile(String srcPath, String destPath, String metadata, ProvisionInterface provisionInterface) {
         File sourceFile = new File(srcPath);
 
         if (provisionInterface != null) {
+            if (sourceFile.isDirectory()) {
+                // file provisioning plugins do not really support directories
+                return;
+            }
             System.out.println("Calling on plugin " + provisionInterface.getClass().getName() + " to provision from " + srcPath + " to " + destPath);
-            provisionInterface.uploadTo(destPath, Paths.get(srcPath), Optional.ofNullable(metadata));
+            handleUploadProvisionWithRetries(destPath, Paths.get(srcPath), provisionInterface, metadata);
             // finalize output from the printer
             System.out.println();
         } else {
             try {
                 FileSystemManager fsManager = VFS.getManager();
-                Path currentWorkingDir = Paths.get("").toAbsolutePath();
-                try (FileObject dest = fsManager.resolveFile(currentWorkingDir.toFile(), destPath);
+                ((DefaultFileSystemManager)fsManager).setBaseFile(Paths.get("").toFile());
+
+                File destinationFile = new File(destPath);
+                // if it is a URL, we need to treat it differently
+                try {
+                    URI uri = URI.create(destPath);
+                    destinationFile = new File(uri);
+                } catch (IllegalArgumentException e) {
+                    // do nothing
+                    LOG.debug(destPath + " not a uri");
+                }
+                try (FileObject dest = fsManager.resolveFile(destinationFile.getAbsolutePath());
                         FileObject src = fsManager.resolveFile(sourceFile.getAbsolutePath())) {
                     System.out.println("Provisioning from " + srcPath + " to " + destPath);
-                    // trigger a copy from the URL to a local file path that's a UUID to avoid collision
-                    // check for a local file path
-                    FileProvisionUtil.copyFromInputStreamToOutputStream(src, dest);
+                    if (src.isFolder()) {
+                        FileObject[] files = src.findFiles(new AllFileSelector());
+                        for (FileObject file : files) {
+                            FileName name = file.getName();
+                            String relativePath = name.getURI().replace(src.getName().getURI(), "");
+                            FileObject nestedFile = fsManager.resolveFile(destinationFile + relativePath);
+                            if (file.isFolder()) {
+                                System.out.println("Creating folder from " + file + " to " + nestedFile);
+                                nestedFile.createFolder();
+                                continue;
+                            }
+                            nestedFile.createFolder();
+                            System.out.println("Provisioning from nested file " + file + " to " + nestedFile);
+                            FileProvisionUtil.copyFromInputStreamToOutputStream(file, nestedFile);
+                        }
+                    } else {
+                        // trigger a copy from the URL to a local file path that's a UUID to avoid collision
+                        // check for a local file path
+                        FileProvisionUtil.copyFromInputStreamToOutputStream(src, dest);
+                    }
                 } catch (IOException e) {
                     throw new RuntimeException("Could not provision output files", e);
                 }
@@ -335,9 +392,17 @@ public class FileProvisioning {
             List<Optional<String>> metadataList = Stream.of(pairs).map(pair -> Optional.ofNullable(pair.getValue().getMetadata()))
                     .collect(Collectors.toList());
             List<Path> srcList = Stream.of(pairs).map(pair -> Paths.get(pair.getKey())).collect(Collectors.toList());
-            List<String> destList = Stream.of(pairs)
-                    .map(pair -> pair.getValue().isDirectory() ? pair.getValue().getUrl() + FilenameUtils.getName(pair.getKey())
-                            : pair.getValue().getUrl()).collect(Collectors.toList());
+            List<String> destList = Stream.of(pairs).map(pair -> {
+                String targetLocation = pair.getValue().getUrl();
+                if (pair.getValue().isDirectory()) {
+                    if (!targetLocation.endsWith("/")) {
+                        targetLocation = targetLocation + '/';
+                    }
+                    return targetLocation + FilenameUtils.getName(pair.getKey());
+                } else {
+                    return targetLocation;
+                }
+            }).collect(Collectors.toList());
 
             try {
                 if (pInterface != null) {

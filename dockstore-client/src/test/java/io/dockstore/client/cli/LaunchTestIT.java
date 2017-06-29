@@ -34,6 +34,8 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -143,6 +145,102 @@ public class LaunchTestIT {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("split.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("split.json"));
 
+        runTool(cwlFile, cwlJSON);
+
+        final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
+        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
+        for (char y = 'a'; y <= 'f'; y++) {
+            String filename = "/tmp/provision_out_with_files/test.a" + y;
+            checkFileAndThenDeleteIt(filename);
+        }
+    }
+
+    private void checkFileAndThenDeleteIt(String filename) {
+        assertTrue("output should provision out to correct locations",
+                systemOutRule.getLog().contains(filename));
+        assertTrue("file does not actually exist", Files.exists(Paths.get(filename)));
+        // cleanup
+        FileUtils.deleteQuietly(Paths.get(filename).toFile());
+    }
+
+    @Test
+    public void runToolSecondaryFilesToDirectory() throws IOException {
+
+        FileUtils.deleteDirectory(new File("/tmp/provision_out_with_files"));
+
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("file_provision/split.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("file_provision/split_to_directory.json"));
+
+        runTool(cwlFile, cwlJSON);
+
+        final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
+        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
+        for (char y = 'a'; y <= 'f'; y++) {
+            String filename = "/tmp/provision_out_with_files/test.a" + y;
+            checkFileAndThenDeleteIt(filename);
+        }
+    }
+
+    @Test
+    public void runToolSecondaryFilesToCWD() throws IOException {
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("file_provision/split.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("file_provision/split_to_missing_directory.json"));
+
+        runTool(cwlFile, cwlJSON);
+
+        final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
+        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
+        for (char y = 'a'; y <= 'f'; y++) {
+            String filename = "./test.a" + y;
+            checkFileAndThenDeleteIt(filename);
+        }
+    }
+
+    @Test
+    public void runToolMalformedToCWD() throws IOException {
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("file_provision/split.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("file_provision/split_to_malformed.json"));
+
+        runTool(cwlFile, cwlJSON);
+
+        final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
+        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
+        for (char y = 'a'; y <= 'f'; y++) {
+            String filename = "./test.a" + y;
+            checkFileAndThenDeleteIt(filename);
+        }
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void runToolToMissingS3() throws IOException {
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("file_provision/split.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("file_provision/split_to_s3_failed.json"));
+
+        runTool(cwlFile, cwlJSON);
+
+        final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
+        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
+        for (char y = 'a'; y <= 'f'; y++) {
+            String filename = "./test.a" + y;
+            checkFileAndThenDeleteIt(filename);
+        }
+    }
+
+    @Test
+    public void runToolDirectoryMalformedToCWD() throws IOException {
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("file_provision/split_dir.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("file_provision/split_to_malformed.json"));
+
+        runTool(cwlFile, cwlJSON);
+
+        final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
+        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 1);
+        String filename = "test1";
+        checkFileAndThenDeleteIt(filename);
+        FileUtils.deleteDirectory(new File(filename));
+    }
+
+    private void runTool(File cwlFile, File cwlJSON) {
         ArrayList<String> args = new ArrayList<String>() {{
             add("--local-entry");
             add("--cwl");
@@ -156,13 +254,6 @@ public class LaunchTestIT {
         Client client = new Client();
         // do not use a cache
         runTool(cwlFile, args, api, usersApi, client, true);
-
-        final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
-        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
-        for (char y = 'a'; y <= 'f'; y++) {
-            assertTrue("output should provision out to correct locations",
-                    systemOutRule.getLog().contains("/tmp/provision_out_with_files/test.a" + y));
-        }
     }
 
     @Test

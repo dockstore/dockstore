@@ -44,6 +44,8 @@ database:
     hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
     # create database as needed, disable in production
     hibernate.hbm2ddl.auto: create
+    # suppress session log to reduce verbosity
+    hibernate.generate_statistics: false
 
   # the maximum amount of time to wait on an empty pool before throwing an exception
   maxWaitForConnection: 1s

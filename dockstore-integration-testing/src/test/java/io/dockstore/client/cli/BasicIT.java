@@ -21,7 +21,9 @@ import java.util.concurrent.TimeoutException;
 
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Registry;
+import io.dockstore.common.SlowTest;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.ResourceHelpers;
@@ -34,6 +36,7 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
+import org.junit.experimental.categories.Category;
 
 import static io.dockstore.common.CommonTestUtilities.clearStateMakePrivate;
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
@@ -44,7 +47,8 @@ import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
  *
  * @author aduncan
  */
-public class BasicET {
+@Category(ConfidentialTest.class)
+public class BasicIT {
     @ClassRule
     public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
             DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstoreTest.yml"));
@@ -531,6 +535,7 @@ public class BasicET {
      * Checks that you can manually publish and unpublish a Quay/Gitlab entry with an alternate structure, if the CWL and Dockerfile paths are defined properly
      */
     @Test
+    @Category(SlowTest.class)
     public void testQuayGitlabManualPublishAndUnpublishAlternateStructure() {
         // Manual Publish
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
@@ -797,6 +802,7 @@ public class BasicET {
      * Tests manual registration and unpublishing of a Dockerhub/Gitlab entry
      */
     @Test
+    @Category(SlowTest.class)
     public void testDockerhubGitlabManualRegistration() {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.name(),
                 Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "dockerhubandgitlab", "--git-url",
@@ -822,6 +828,7 @@ public class BasicET {
      * Will test manually publishing and unpublishing a Dockerhub/Gitlab entry with an alternate structure
      */
     @Test
+    @Category(SlowTest.class)
     public void testDockerhubGitlabAlternateStructure() {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.name(),
                 Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "dockerhubandgitlab", "--git-url",
@@ -847,6 +854,7 @@ public class BasicET {
      * Checks that you can manually publish and unpublish a Dockerhub/Gitlab duplicate if different toolnames are set (but same Path)
      */
     @Test
+    @Category(SlowTest.class)
     public void testDockerhubGitlabManualRegistrationDuplicates() {
                 Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.DOCKER_HUB.name(),
                 Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "dockerhubandgitlab", "--git-url",
@@ -1243,6 +1251,7 @@ public class BasicET {
          * This tests that you can manually publish a gitlab registry image
          */
     @Test
+    @Category(SlowTest.class)
     public void testManualPublishGitlabDocker() {
         // Setup database
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
