@@ -1409,7 +1409,7 @@ public abstract class AbstractEntryClient {
 
         if (descriptor.equals(CWL_STRING)) {
             // need to suppress output
-            final ImmutablePair<String, String> output = getCwlUtil().parseCWL(tempDescriptor.getAbsolutePath());
+            final ImmutablePair<String, String> output = getCwlUtil().parseCWL(primaryFile.getAbsolutePath());
             final Map<String, Object> stringObjectMap = getCwlUtil().extractRunJson(output.getLeft());
             if (json) {
                 try {

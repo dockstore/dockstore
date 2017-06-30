@@ -348,6 +348,11 @@ public class WorkflowClient extends AbstractEntryClient {
         }
     }
 
+    @Override
+    public Client getClient() {
+        return this.client;
+    }
+
     /**
      * this function will check for the content and the extension of entry file
      *
