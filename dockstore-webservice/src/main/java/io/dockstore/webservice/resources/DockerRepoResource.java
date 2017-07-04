@@ -801,7 +801,8 @@ public class DockerRepoResource {
         FileType fileType = (descriptorType.toUpperCase().equals(ToolDescriptor.TypeEnum.CWL.toString())) ? FileType.CWL_TEST_JSON
                 : FileType.WDL_TEST_JSON;
         for (String path : testParameterPaths) {
-            long sourcefileDuplicate = sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType)
+            long sourcefileDuplicate = sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType
+            && v.getContent() != null)
                     .count();
             if (sourcefileDuplicate == 0) {
                 // Sourcefile doesn't exist, add a stub which will have it's content filled on refresh

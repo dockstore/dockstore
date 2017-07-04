@@ -76,8 +76,15 @@ public class FileImporter {
         String fileName = "";
         if (specificPath != null) {
             String workingDirectory = version.getWorkingDirectory();
-            // if the working directory is different from the root, take it into account
-            fileName = (!workingDirectory.isEmpty() && !"/".equals(workingDirectory) ? workingDirectory + "/" +  specificPath : specificPath);
+            if (specificPath.startsWith("/")) {
+                // if we're looking at an absolute path, ignore the working directory
+                fileName = specificPath;
+            } else if (!workingDirectory.isEmpty() && !"/".equals(workingDirectory)) {
+                // if the working directory is different from the root, take it into account
+                fileName = workingDirectory + "/" +  specificPath;
+            } else {
+                fileName = specificPath;
+            }
         } else if (version instanceof Tag) {
             Tag tag = (Tag)version;
             // Add for new descriptor types
