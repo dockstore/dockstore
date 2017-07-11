@@ -567,7 +567,7 @@ public class LauncherCWL {
      * @param fileMapDataStructure the CWLtool output which contains the path to the file after cwltool is done with it
      */
     private void provisionOutputFile(final String key, FileProvisioning.FileInfo file, final Map<String, Object> fileMapDataStructure) {
-        if (fileMapDataStructure == null){
+        if (fileMapDataStructure == null) {
             System.out.println("Skipping: #" + key + " was null from cwl-runner");
             return;
         }
