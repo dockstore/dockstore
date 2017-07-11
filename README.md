@@ -59,6 +59,14 @@ This keeps track of breaking changes when migrating from Dockstore 1.1 to beta r
 2. A new version of cwltool 
 3. The syntax for launching tools has been simplified. `--local-entry` is no longer a flag, but is an alternative to `--entry`.
 
+### Migration to Dockstore 1.2.5
+
+Unfortunately, new unique indexes enforcing better data consistency require a clean-up of unpublished workflows. Published content should remain unaffected. 
+```
+delete from workflow_workflowversion ww where ww.workflowid in (select id from workflow where ispublished='f');
+delete from workflow where ispublished='f';
+```
+
 ### File Provisioning
 
 The following pertains to Dockstore 1.2+ and is currently a BETA feature.
