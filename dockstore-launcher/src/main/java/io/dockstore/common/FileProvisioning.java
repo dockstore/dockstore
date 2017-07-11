@@ -365,7 +365,7 @@ public class FileProvisioning {
                                 nestedFile.createFolder();
                                 continue;
                             }
-                            nestedFile.createFolder();
+                            nestedFile.createFile();
                             System.out.println("Provisioning from nested file " + file + " to " + nestedFile);
                             FileProvisionUtil.copyFromInputStreamToOutputStream(file, nestedFile);
                         }
