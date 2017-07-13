@@ -3,8 +3,8 @@
     "tool": {
       "properties": {
         "author": {
-          "type": "string",
-          "index": "not_analyzed"
+          "index": "not_analyzed",
+          "type": "string"
         },
         "default_cwl_path": {
           "type": "string"
@@ -30,18 +30,6 @@
         "is_published": {
           "type": "boolean"
         },
-        "labels": {
-          "type": "nested",
-          "include_in_root": true,
-          "properties": {
-            "id": {
-              "type": "long"
-            },
-            "value": {
-              "type": "string"
-            }
-          }
-        },
         "lastBuild": {
           "format": "epoch_millis",
           "type": "date"
@@ -57,7 +45,8 @@
           "type": "string"
         },
         "namespace": {
-          "type": "string"
+          "type": "keyword"
+
         },
         "path": {
           "type": "string"
@@ -66,16 +55,26 @@
           "type": "boolean"
         },
         "registry": {
-          "type": "string"
+          "type": "keyword"
+        },
+        "starredUsers": {
+          "properties": {
+            "id": {
+              "type": "long"
+            }
+          }
         },
         "tags": {
-          "type": "nested",
           "include_in_root": true,
           "properties": {
             "automated": {
               "type": "boolean"
             },
             "cwl_path": {
+              "type": "string"
+            },
+            "verifiedSource": {
+              "index": "not_analyzed",
               "type": "string"
             },
             "dirtyBit": {
@@ -107,7 +106,6 @@
               "type": "long"
             },
             "sourceFiles": {
-              "type": "nested",
               "include_in_root": true,
               "properties": {
                 "content": {
@@ -122,7 +120,8 @@
                 "type": {
                   "type": "string"
                 }
-              }
+              },
+              "type": "nested"
             },
             "valid": {
               "type": "boolean"
@@ -136,7 +135,8 @@
             "workingDirectory": {
               "type": "string"
             }
-          }
+          },
+          "type": "nested"
         },
         "tool_maintainer_email": {
           "type": "string"
@@ -148,7 +148,6 @@
           "type": "string"
         },
         "users": {
-          "type": "nested",
           "properties": {
             "avatarUrl": {
               "type": "string"
@@ -178,6 +177,57 @@
               "type": "string"
             }
           }
+        }
+      }
+    },
+    "workflow": {
+      "properties": {
+        "author": {
+          "type": "string",
+          "index": "not_analyzed"
+        },
+        "defaultVersion": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "descriptorType": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "gitUrl": {
+          "type": "string"
+        },
+        "id": {
+          "type": "long"
+        },
+        "is_published": {
+          "type": "boolean"
+        },
+        "lastUpdated": {
+          "format": "epoch_millis",
+          "type": "date"
+        },
+        "mode": {
+          "type": "string"
+        },
+        "organization": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "repository": {
+          "type": "string"
+        },
+        "workflowName": {
+          "type": "string"
+        },
+        "workflow_path": {
+          "type": "string"
         }
       }
     }
