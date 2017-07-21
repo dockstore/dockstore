@@ -24,6 +24,8 @@ definitions:
           repository, the default path to the Dockerfile, required: GA4GH', type: string}
       default_wdl_path: {description: 'This indicates for the associated git repository,
           the default path to the WDL document', type: string}
+      defaultCWLTestParameterFile: {description: 'This indicates for the associated git repository, the default path to the CWL test parameter file', type: string}
+      defaultWDLTestParameterFile: {description: 'This indicates for the associated git repository, the default path to the WDL test parameter file', type: string}
       description: {description: 'This is a human-readable description of this container
           and what it is trying to accomplish, required GA4GH', type: string}
       email: {description: This is the email of the git organization, type: string}
