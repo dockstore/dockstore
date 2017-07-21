@@ -527,13 +527,6 @@ public class WorkflowResource {
         for (WorkflowVersion version : versions) {
             if (!version.isDirtyBit()) {
                 version.setWorkflowPath(workflow.getDefaultWorkflowPath());
-                SourceFile.FileType fileType;
-                if (workflow.getDescriptorType().equals("cwl")) {
-                    fileType = FileType.CWL_TEST_JSON;
-                } else {
-                    fileType = FileType.WDL_TEST_JSON;
-                }
-                version.getSourceFiles().add(createSourceFile(workflow.getDefaultTestParameterFilePath(), fileType));
             }
         }
         elasticManager.handleIndexUpdate(c, ElasticMode.UPDATE);
@@ -963,7 +956,6 @@ public class WorkflowResource {
         newWorkflow.setWorkflowName(workflowName);
         newWorkflow.setPath(completeWorkflowPath);
         newWorkflow.setDescriptorType(descriptorType);
-        LOG.error(defaultTestParameterFilePath);
         newWorkflow.setDefaultTestParameterFilePath(defaultTestParameterFilePath);
 
         final long workflowID = workflowDAO.create(newWorkflow);
