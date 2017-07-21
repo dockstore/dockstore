@@ -299,7 +299,7 @@ You can also run with defaults using
 
 To run the search demo, you will need the following components:
 
-1. A running elasticsearch instance, for development `docker run -p 9200:9200 -p 9300:9300  -d elasticsearch:2.4.5` is sufficient. 
+1. A running elasticsearch instance, for development `docker run -p 9200:9200 -p 9300:9300  -d elasticsearch:5.5` is sufficient.
 2. A dockstore web service that includes the search and index endpoints (at least c291cfb471a575766194561934d5789b3882de1b )
 3. This web service will need to be aware of elastic search via the configuration yml file 
 ```
