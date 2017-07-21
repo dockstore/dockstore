@@ -90,6 +90,11 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL document", required = true)
     private String defaultWorkflowPath = "/Dockstore.cwl";
 
+    @Column(columnDefinition = "text")
+    @JsonProperty("defaultTestParameterFilePath")
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the test parameter file", required = true)
+    private String defaultTestParameterFilePath = "/test.json";
+
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinTable(name = "workflow_workflowversion", joinColumns = @JoinColumn(name = "workflowid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "workflowversionid", referencedColumnName = "id"))
     @ApiModelProperty(value = "Implementation specific tracking of valid build workflowVersions for the docker container")
@@ -207,5 +212,23 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     public String getDescriptorType() {
         return this.descriptorType;
+    }
+
+    // Used to update workflow manually (not refresh)
+    public void updateInfo(Workflow workflow) {
+        workflowName = workflow.getWorkflowName();
+        path = workflow.getPath();
+        descriptorType = workflow.getDescriptorType();
+        defaultWorkflowPath = workflow.getDefaultWorkflowPath();
+        defaultTestParameterFilePath = workflow.getDefaultTestParameterFilePath();
+        this.setDefaultVersion(workflow.getDefaultVersion());
+    }
+
+    public String getDefaultTestParameterFilePath() {
+        return defaultTestParameterFilePath;
+    }
+
+    public void setDefaultTestParameterFilePath(String defaultTestParameterFilePath) {
+        this.defaultTestParameterFilePath = defaultTestParameterFilePath;
     }
 }

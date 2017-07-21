@@ -527,10 +527,24 @@ public class WorkflowResource {
         for (WorkflowVersion version : versions) {
             if (!version.isDirtyBit()) {
                 version.setWorkflowPath(workflow.getDefaultWorkflowPath());
+                SourceFile.FileType fileType;
+                if (workflow.getDescriptorType().equals("cwl")) {
+                    fileType = FileType.CWL_TEST_JSON;
+                } else {
+                    fileType = FileType.WDL_TEST_JSON;
+                }
+                version.getSourceFiles().add(createSourceFile(workflow.getDefaultTestParameterFilePath(), fileType));
             }
         }
         elasticManager.handleIndexUpdate(c, ElasticMode.UPDATE);
         return c;
+    }
+
+    private SourceFile createSourceFile(String path, SourceFile.FileType type) {
+        SourceFile sourcefile = new SourceFile();
+        sourcefile.setPath(path);
+        sourcefile.setType(type);
+        return sourcefile;
     }
 
     @GET
@@ -904,7 +918,8 @@ public class WorkflowResource {
             @ApiParam(value = "Workflow repository", required = true) @QueryParam("workflowPath") String workflowPath,
             @ApiParam(value = "Workflow container new descriptor path (CWL or WDL) and/or name", required = true) @QueryParam("defaultWorkflowPath") String defaultWorkflowPath,
             @ApiParam(value = "Workflow name", required = true) @QueryParam("workflowName") String workflowName,
-            @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType) {
+            @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType,
+            @ApiParam(value = "Default test parameter file path") @QueryParam("defaultTestParameterFilePath") String defaultTestParameterFilePath) {
 
         String completeWorkflowPath = workflowPath;
         // Check that no duplicate workflow (same WorkflowPath) exists
@@ -948,6 +963,8 @@ public class WorkflowResource {
         newWorkflow.setWorkflowName(workflowName);
         newWorkflow.setPath(completeWorkflowPath);
         newWorkflow.setDescriptorType(descriptorType);
+        LOG.error(defaultTestParameterFilePath);
+        newWorkflow.setDefaultTestParameterFilePath(defaultTestParameterFilePath);
 
         final long workflowID = workflowDAO.create(newWorkflow);
         // need to create nested data models

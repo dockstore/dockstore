@@ -395,6 +395,7 @@ definitions:
       author: {description: This is the name of the author stated in the Dockstore.cwl,
         type: string}
       defaultVersion: {description: This is the default version of the entry, type: string}
+      defaultTestParameterFilePath: {description: This is the default test parameter file of the entry, type: string}
       description: {description: 'This is a human-readable description of this container
           and what it is trying to accomplish, required GA4GH', type: string}
       descriptorType: {description: 'This is a descriptor type for the workflow, either
@@ -2297,6 +2298,8 @@ paths:
         type: string}
       - {description: Descriptor type, in: query, name: descriptorType, required: true,
         type: string}
+      - {description: Default test parameter file path, in: query, name: defaultTestParameterFilePath, required: true,
+              type: string}
       produces: [application/json]
       responses:
         200:
