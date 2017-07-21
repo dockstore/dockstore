@@ -442,6 +442,9 @@
             <column name="defaulttestcwlparameterfile" type="varchar(255)"/>
             <column name="defaulttestwdlparameterfile" type="varchar(255)"/>
         </addColumn>
+        <addColumn tableName="workflow">
+            <column name="defaulttestparameterfilepath" type="varchar(255)"></column>
+        </addColumn>
     </changeSet>
 
 </databaseChangeLog>
