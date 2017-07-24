@@ -307,7 +307,6 @@ esconfiguration:
   port: 9200
   hostname: localhost
 ```
-4. A ui2 instance that includes the search demo at. This will require at least commit version 75b98bb48d02cafbfd0a9327a0d8e963f5d86cce )
-5. While the webservice is running and with some relevant content, hit up http://localhost:8080/static/swagger-ui/index.html#!/GA4GH/toolsIndexGet to generate index data. 
-6. Browse to [http://localhost:8080/static/elastic_demo_ui/demo.html](http://localhost:8080/static/elastic_demo_ui/demo.html) for a hard-coded angularJS demo. 
-7. Browse to [http://localhost:4200/admin-search](http://localhost:4200/admin-search) to view a Angular 2 prototype in progress. 
+4. A ui2 instance that includes the search demo at. This will require at least commit version 81fa2f798f3980203b801200f5f73e7b6a4c9939 )
+5. While the webservice is running and with some relevant content, hit up http://localhost:8080/static/swagger-ui/index.html#!/GA4GH/toolsIndexGet to generate index data.
+6. Browse to [http://localhost:4200/admin-search](http://localhost:4200/admin-search) to view a Angular 2 prototype in progress.
