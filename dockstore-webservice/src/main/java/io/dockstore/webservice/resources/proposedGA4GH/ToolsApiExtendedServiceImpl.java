@@ -146,44 +146,30 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     @Override
     public Response toolsIndexGet(SecurityContext securityContext) throws NotFoundException {
         List<Entry> published = getPublished();
-        ObjectMapper mapper = Jackson.newObjectMapper();
-        Gson gson = new GsonBuilder().create();
-
         if (!config.getEsConfiguration().getHostname().isEmpty() && !published.isEmpty()) {
-            StringBuilder builder = new StringBuilder();
+
             try (RestClient restClient = RestClient
                     .builder(new HttpHost(config.getEsConfiguration().getHostname(), config.getEsConfiguration().getPort(), "http"))
                     .build()) {
-                published.forEach(entry -> {
-                    Map<String, Map<String, String>> index = new HashMap<>();
-                    Map<String, String> internal = new HashMap<>();
-                    internal.put("_id", String.valueOf(entry.getId()));
-                    internal.put("_type", entry instanceof Tool ? "tool" : "workflow");
-                    index.put("index", internal);
-                    builder.append(gson.toJson(index));
-                    builder.append('\n');
-                    try {
-                        builder.append(mapper.writeValueAsString(entry));
-                    } catch (JsonProcessingException e) {
-                        e.printStackTrace();
-                    }
-                    builder.append('\n');
-                });
 
-                //index a document
+                // Delete index
                 try {
                     restClient.performRequest("DELETE", "/entry");
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
 
+                // Get index mapping
                 URL url = Resources.getResource("queries/mapping.json");
                 String text = Resources.toString(url, StandardCharsets.UTF_8);
-
                 HttpEntity mappingEntity = new NStringEntity(text, ContentType.APPLICATION_JSON);
+
+                // Create index
                 restClient.performRequest("PUT", "/entry", Collections.emptyMap(), mappingEntity);
 
-                HttpEntity bulkEntity = new NStringEntity(builder.toString(), ContentType.APPLICATION_JSON);
+                // Populate index
+                String newlineDJSON = getNDJSON(published);
+                HttpEntity bulkEntity = new NStringEntity(newlineDJSON, ContentType.APPLICATION_JSON);
                 org.elasticsearch.client.Response post = restClient.performRequest("POST", "/entry/_bulk", Collections.emptyMap(), bulkEntity);
                 if (post.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
                     throw new CustomWebApplicationException("Could not submit index to elastic search",
@@ -195,6 +181,36 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             return Response.ok().entity(published.size()).build();
         }
         return Response.ok().entity(0).build();
+    }
+
+    private String getNDJSONFromIDs(ArrayList<Long> ids) {
+        List<Entry> entries = new ArrayList<>();
+        ids.forEach(id -> {
+            entries.add(toolDAO.findPublishedById(id));
+        });
+        return getNDJSON(entries);
+    }
+
+    private String getNDJSON(List<Entry> published) {
+        ObjectMapper mapper = Jackson.newObjectMapper();
+        Gson gson = new GsonBuilder().create();
+        StringBuilder builder = new StringBuilder();
+        published.forEach(entry -> {
+            Map<String, Map<String, String>> index = new HashMap<>();
+            Map<String, String> internal = new HashMap<>();
+            internal.put("_id", String.valueOf(entry.getId()));
+            internal.put("_type", entry instanceof Tool ? "tool" : "workflow");
+            index.put("index", internal);
+            builder.append(gson.toJson(index));
+            builder.append('\n');
+            try {
+                builder.append(mapper.writeValueAsString(entry));
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+            builder.append('\n');
+        });
+        return builder.toString();
     }
 
     @Override
