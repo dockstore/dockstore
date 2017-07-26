@@ -190,7 +190,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                             HttpStatus.SC_INTERNAL_SERVER_ERROR);
                 }
             } catch (IOException e) {
-                throw new CustomWebApplicationException("io exception", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
             return Response.ok().entity(published.size()).build();
         }
