@@ -31,11 +31,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
@@ -44,7 +40,6 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
-import io.dropwizard.jackson.Jackson;
 import io.swagger.api.NotFoundException;
 import io.swagger.api.impl.ToolsImplCommon;
 import org.apache.http.HttpEntity;
@@ -56,7 +51,7 @@ import org.elasticsearch.client.RestClient;
 
 /**
  * Created by kcao on 01/03/17.
- *
+ * <p>
  * Implementations of methods to return responses containing organization related information
  */
 public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
@@ -65,10 +60,10 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     private static WorkflowDAO workflowDAO = null;
     private static DockstoreWebserviceConfiguration config = null;
 
-
     public static void setToolDAO(ToolDAO toolDAO) {
         ToolsApiExtendedServiceImpl.toolDAO = toolDAO;
     }
+
     public static void setWorkflowDAO(WorkflowDAO workflowDAO) {
         ToolsApiExtendedServiceImpl.workflowDAO = workflowDAO;
     }
@@ -79,6 +74,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     /**
      * Avoid using this one, this is quite slow
+     *
      * @return
      */
     private List<Entry> getPublished() {
@@ -91,6 +87,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     /**
      * More optimized
+     *
      * @param organization
      * @return
      */
@@ -133,9 +130,9 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         for (Entry c : getPublished()) {
             String org;
             if (c instanceof Workflow) {
-                org = ((Workflow) c).getOrganization().toLowerCase();
+                org = ((Workflow)c).getOrganization().toLowerCase();
             } else {
-                org = ((Tool) c).getNamespace().toLowerCase();
+                org = ((Tool)c).getNamespace().toLowerCase();
             }
             if (!organizations.contains(org)) {
                 organizations.add(org);
@@ -173,7 +170,8 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 ElasticManager elasticManager = new ElasticManager();
                 String newlineDJSON = elasticManager.getNDJSON(published);
                 HttpEntity bulkEntity = new NStringEntity(newlineDJSON, ContentType.APPLICATION_JSON);
-                org.elasticsearch.client.Response post = restClient.performRequest("POST", "/entry/_bulk", Collections.emptyMap(), bulkEntity);
+                org.elasticsearch.client.Response post = restClient
+                        .performRequest("POST", "/entry/_bulk", Collections.emptyMap(), bulkEntity);
                 if (post.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
                     throw new CustomWebApplicationException("Could not submit index to elastic search",
                             HttpStatus.SC_INTERNAL_SERVER_ERROR);
