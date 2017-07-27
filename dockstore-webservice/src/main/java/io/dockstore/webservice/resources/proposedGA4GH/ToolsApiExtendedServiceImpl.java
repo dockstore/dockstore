@@ -41,6 +41,7 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dropwizard.jackson.Jackson;
@@ -168,7 +169,9 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 restClient.performRequest("PUT", "/entry", Collections.emptyMap(), mappingEntity);
 
                 // Populate index
-                String newlineDJSON = getNDJSON(published);
+
+                ElasticManager elasticManager = new ElasticManager();
+                String newlineDJSON = elasticManager.getNDJSON(published);
                 HttpEntity bulkEntity = new NStringEntity(newlineDJSON, ContentType.APPLICATION_JSON);
                 org.elasticsearch.client.Response post = restClient.performRequest("POST", "/entry/_bulk", Collections.emptyMap(), bulkEntity);
                 if (post.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
@@ -181,36 +184,6 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             return Response.ok().entity(published.size()).build();
         }
         return Response.ok().entity(0).build();
-    }
-
-    private String getNDJSONFromIDs(ArrayList<Long> ids) {
-        List<Entry> entries = new ArrayList<>();
-        ids.forEach(id -> {
-            entries.add(toolDAO.findPublishedById(id));
-        });
-        return getNDJSON(entries);
-    }
-
-    private String getNDJSON(List<Entry> published) {
-        ObjectMapper mapper = Jackson.newObjectMapper();
-        Gson gson = new GsonBuilder().create();
-        StringBuilder builder = new StringBuilder();
-        published.forEach(entry -> {
-            Map<String, Map<String, String>> index = new HashMap<>();
-            Map<String, String> internal = new HashMap<>();
-            internal.put("_id", String.valueOf(entry.getId()));
-            internal.put("_type", entry instanceof Tool ? "tool" : "workflow");
-            index.put("index", internal);
-            builder.append(gson.toJson(index));
-            builder.append('\n');
-            try {
-                builder.append(mapper.writeValueAsString(entry));
-            } catch (JsonProcessingException e) {
-                e.printStackTrace();
-            }
-            builder.append('\n');
-        });
-        return builder.toString();
     }
 
     @Override
@@ -231,7 +204,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 }
                 return Response.ok().entity(get.getEntity().getContent()).build();
             } catch (IOException e) {
-                throw new CustomWebApplicationException("io exception", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
         }
         return Response.ok().entity(0).build();
