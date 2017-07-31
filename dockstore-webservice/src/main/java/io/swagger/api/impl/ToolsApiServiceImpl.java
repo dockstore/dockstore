@@ -146,7 +146,11 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         if (parsedID.isTool()) {
             entry = toolDAO.findPublishedByToolPath(parsedID.getPath(), parsedID.getToolName());
         } else {
-            entry = workflowDAO.findPublishedByPath(parsedID.getPath());
+            String workflowPath = parsedID.getPath();
+            if (!(parsedID.getToolName() == null)) {
+                workflowPath += "/" + parsedID.getToolName();
+            }
+            entry = workflowDAO.findPublishedByWorkflowPath(workflowPath, parsedID.getToolName());
         }
         return entry;
     }
@@ -357,7 +361,6 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             throw new RuntimeException(e);
         }
         Entry entry = getEntry(parsedID);
-
         // check whether this is registered
         if (!entry.getIsPublished()) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
