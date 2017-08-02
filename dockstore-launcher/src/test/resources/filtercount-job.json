@@ -6,11 +6,11 @@
   "pattern": "one",
   "infile": [
     {
-      "path": "src/test/resources/mock.txt",
+      "path": "mock.txt",
       "class": "File"
     },
     {
-      "path": "src/test/resources/mock2.txt",
+      "path": "mock2.txt",
       "class": "File"
     }
   ]
