@@ -18,18 +18,13 @@ package io.dockstore.client.cli;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
 import com.google.common.io.Resources;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import io.dockstore.common.Constants;
 import io.dockstore.common.Registry;
 import io.dockstore.common.Utilities;
@@ -37,7 +32,6 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit.DropwizardAppRule;
-import io.swagger.annotations.Api;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
@@ -61,7 +55,6 @@ import io.swagger.client.model.ToolVersion;
 import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
 import io.swagger.client.model.Workflow;
-import io.swagger.quay.client.api.UserApi;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
@@ -69,7 +62,6 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 import static io.dockstore.common.CommonTestUtilities.clearState;
 import static org.junit.Assert.assertFalse;
@@ -85,12 +77,6 @@ public class SystemClientIT {
 
     public static final String QUAY_IO_TEST_ORG_TEST6 = "quay.io/test_org/test6";
     public static final String REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE = "registry.hub.docker.com/seqware/seqware/test5";
-
-    @Before
-    public void clearDBandSetup() throws IOException, TimeoutException {
-        clearState();
-    }
-
     @ClassRule
     public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
             DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstore.yml"));
@@ -115,6 +101,11 @@ public class SystemClientIT {
         client.addDefaultHeader("Authorization", "Bearer " + (correctUser ? parseConfig
                 .getString(admin ? Constants.WEBSERVICE_TOKEN_USER_1 : Constants.WEBSERVICE_TOKEN_USER_2) : "foobar"));
         return client;
+    }
+
+    @Before
+    public void clearDBandSetup() throws IOException, TimeoutException {
+        clearState();
     }
 
     @Before
@@ -386,7 +377,8 @@ public class SystemClientIT {
         assertTrue(strings.size() == 1 && strings.get(0).equals("cwlstuff"));
 
         // Get test files
-        url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/plain-CWL/tests/");
+        url = new URL(
+                basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/plain-CWL/tests/");
         strings = Resources.readLines(url, Charset.forName("UTF-8"));
         assertTrue(strings.get(0).equals("testparameterstuff"));
         assertTrue(strings.get(1).equals("moretestparameterstuff"));
@@ -546,11 +538,12 @@ public class SystemClientIT {
     /**
      * This tests if a tool can be starred twice.
      * This test will pass if this action cannot be performed.
+     *
      * @throws ApiException
      * @throws IOException
      * @throws TimeoutException
      */
-    @Test (expected = ApiException.class)
+    @Test(expected = ApiException.class)
     public void testStarStarredTool() throws ApiException, IOException, TimeoutException {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
@@ -561,16 +554,17 @@ public class SystemClientIT {
         request.setStar(true);
         containersApi.starEntry(containerId, request);
         containersApi.starEntry(containerId, request);
-        }
+    }
 
     /**
      * This tests if an already unstarred tool can be unstarred again.
      * This test will pass if this action cannot be performed.
+     *
      * @throws ApiException
      * @throws IOException
      * @throws TimeoutException
      */
-    @Test (expected = ApiException.class)
+    @Test(expected = ApiException.class)
     public void testUnstarUnstarredTool() throws ApiException, IOException, TimeoutException {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
@@ -583,11 +577,12 @@ public class SystemClientIT {
     /**
      * This tests if a workflow can be starred twice.
      * This test will pass if this action cannot be performed.
+     *
      * @throws ApiException
      * @throws IOException
      * @throws TimeoutException
      */
-    @Test (expected = ApiException.class)
+    @Test(expected = ApiException.class)
     public void testStarStarredWorkflow() throws ApiException, IOException, TimeoutException {
         ApiClient client = getWebClient();
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
@@ -603,11 +598,12 @@ public class SystemClientIT {
     /**
      * This tests if an already unstarred workflow can be unstarred again.
      * This test will pass if this action cannot be performed.
+     *
      * @throws ApiException
      * @throws IOException
      * @throws TimeoutException
      */
-    @Test (expected = ApiException.class)
+    @Test(expected = ApiException.class)
     public void testUnstarUnstarredWorkflow() throws ApiException, IOException, TimeoutException {
         ApiClient client = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(client);
@@ -620,12 +616,13 @@ public class SystemClientIT {
     /**
      * This tests many combinations of starred tools would be returned in the same order
      * This test will pass if the order returned is always the same
+     *
      * @throws ApiException
      * @throws IOException
      * @throws TimeoutException
      */
     @Test
-    public void testStarredToolsOrder() throws  ApiException, IOException, TimeoutException{
+    public void testStarredToolsOrder() throws ApiException, IOException, TimeoutException {
         ApiClient apiClient = getWebClient();
         UsersApi usersApi = new UsersApi(apiClient);
         ContainersApi containersApi = new ContainersApi(apiClient);
@@ -637,9 +634,10 @@ public class SystemClientIT {
         starring(containerIds2, containersApi, usersApi);
         starring(containerIds3, containersApi, usersApi);
         starring(containerIds4, containersApi, usersApi);
-        }
+    }
 
-    private void starring(List<Long> containerIds, ContainersApi containersApi, UsersApi usersApi) throws ApiException, IOException, TimeoutException {
+    private void starring(List<Long> containerIds, ContainersApi containersApi, UsersApi usersApi)
+            throws ApiException, IOException, TimeoutException {
         StarRequest request = new StarRequest();
         request.setStar(true);
         containerIds.forEach(containerId -> {
@@ -650,9 +648,10 @@ public class SystemClientIT {
             }
         });
         List<Entry> starredTools = usersApi.getStarredTools();
-        for (int i = 0; i< 5; i++) {
+        for (int i = 0; i < 5; i++) {
             Long id = starredTools.get(i).getId();
-            assertTrue("Wrong order of starred tools returned, should be in ascending order.  Got" + id + ". Should be " + i+1, id==i+1);
+            assertTrue("Wrong order of starred tools returned, should be in ascending order.  Got" + id + ". Should be " + i + 1,
+                    id == i + 1);
         }
         containerIds.parallelStream().forEach(containerId -> {
             try {
