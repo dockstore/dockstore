@@ -36,6 +36,11 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
     public Workflow findPublishedByPath(String path) {
         return uniqueResult(namedQuery("io.dockstore.webservice.core.Workflow.findPublishedByPath").setParameter("path", path));
     }
+    public Workflow findPublishedByWorkflowPath(String path, String name) {
+        return uniqueResult(namedQuery("io.dockstore.webservice.core.Workflow.findPublishedByWorkflowPath")
+                .setParameter("path", path)
+                .setParameter("name", name));
+    }
 
     public List<Workflow> findByGitUrl(String giturl) {
         return list(namedQuery("io.dockstore.webservice.core.Workflow.findByGitUrl").setParameter("gitUrl", giturl));
