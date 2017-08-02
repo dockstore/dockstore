@@ -1,19 +1,19 @@
 template: Hello, %s!
-quayClientID: QL8RTN8D1309J9VC7TJM
+quayClientID: abcdefghijklmnopqrstuvwxyz
 # port should match the port where the UI is being hosted, 9000 by default
-quayRedirectURI: http://10.0.29.120:9000/accounts
+quayRedirectURI: http://localhost:9000/accounts
 
-githubClientID: fc672e5080a4bfa774c2
-githubClientSecret: 48bd7b0c912544754eaf02951552d606e4db4758
+githubClientID: abcdefghijklmnopqrstuvwxyz
+githubClientSecret: abcdefghijklmnopqrstuvwxyz
 # port should match the port where the UI is being hosted, 9000 by default
-githubRedirectURI: http://10.0.29.120:9000/login
+githubRedirectURI: http://localhost:9000/login
 
-bitbucketClientID: uzE3UWkkfdtvHKPAww
-bitbucketClientSecret:  uGEB29uUMqkeexEvpCXmAUeLQwvQ58Yk
+bitbucketClientID: abcdefghijklmnopqrstuvwxyz
+bitbucketClientSecret:  abcdefghijklmnopqrstuvwxyz
 
-gitlabClientID: f4b13f63d1232712da7843b7cf09b6821d3fafc226290a4bba3774c469dc3730
-gitlabClientSecret: 33f57a583704073d10bb6e9cf38ee8c9b491dcb9d7c5be556f5d5d6881738597
-gitlabRedirectURI: http://10.0.29.120:9000/auth/gitlab.com
+gitlabClientID: abcdefghijklmnopqrstuvwxyz
+gitlabClientSecret: abcdefghijklmnopqrstuvwxyz
+gitlabRedirectURI: http://localhost:9000/auth/gitlab.com
 # the following values describe where the webservice is being run (and on what port and using what scheme) to configure swagger
 hostname: localhost
 scheme: http
