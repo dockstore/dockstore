@@ -772,7 +772,7 @@ public class LauncherCWL {
             boolean record) {
         String shortfileName = Paths.get(path).getFileName().toString();
         final Path targetFilePath = Paths.get(downloadDirFileObj.getAbsolutePath(), shortfileName);
-        fileProvisioning.provisionInputFile(path, targetFilePath);
+        fileProvisioning.provisionInputFile(imageDescriptorPath, path, targetFilePath);
         // now add this info to a hash so I can later reconstruct a docker -v command
         FileProvisioning.FileInfo info = new FileProvisioning.FileInfo();
         info.setLocalPath(targetFilePath.toFile().getAbsolutePath());

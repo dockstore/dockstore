@@ -143,7 +143,7 @@ public class FileProvisioning {
      * @param targetPath path for target file
      * @param localPath  the absolute path where we will download files to
      */
-    public void provisionInputFile(String targetPath, Path localPath) {
+    public void provisionInputFile(String imageDescriptorPath, String targetPath, Path localPath) {
 
         Path potentialCachedFile = null;
         final boolean useCache = isCacheOn(config);
@@ -206,6 +206,9 @@ public class FileProvisioning {
                 Path actualTargetPath = null;
                 try {
                     String workingDir = System.getProperty("user.dir");
+                    if (!"".equals(imageDescriptorPath)) {
+                        workingDir = Paths.get(imageDescriptorPath).getParent().toString();
+                    }
                     if (targetPath.startsWith("/")) {
                         // absolute path
                         actualTargetPath = Paths.get(targetPath);
