@@ -147,7 +147,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             entry = toolDAO.findPublishedByToolPath(parsedID.getPath(), parsedID.getToolName());
         } else {
             String workflowPath = parsedID.getPath();
-            if (!(parsedID.getToolName() == null)) {
+            if (parsedID.getToolName() != null) {
                 workflowPath += "/" + parsedID.getToolName();
             }
             entry = workflowDAO.findPublishedByWorkflowPath(workflowPath, parsedID.getToolName());
@@ -178,6 +178,8 @@ public class ToolsApiServiceImpl extends ToolsApiService {
 
         return getFileByToolVersionID(id, versionId, fileType, relativePath, value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || StringUtils.containsIgnoreCase(type, "plain"));
     }
+
+
 
     @Override
     public Response toolsIdVersionsVersionIdTypeTestsGet(String type, String id, String versionId, SecurityContext securityContext, ContainerRequestContext value)
