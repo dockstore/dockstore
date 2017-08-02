@@ -51,7 +51,7 @@ import org.elasticsearch.client.RestClient;
 
 /**
  * Created by kcao on 01/03/17.
- * <p>
+ *
  * Implementations of methods to return responses containing organization related information
  */
 public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {

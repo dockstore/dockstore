@@ -34,15 +34,10 @@ import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
-
 import java.util.Date;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-
-
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 
 /**
  * This describes one tool in the dockstore, extending entry with fields necessary to describe bioinformatics tools.
@@ -56,7 +51,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @ApiModel(value = "DockstoreTool", description =
         "This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be\n"
                 + " * associated with CWL and Dockerfile documents")
-@JsonIgnoreProperties(ignoreUnknown = true)
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = { "registry", "namespace", "name", "toolname" }))
 @NamedQueries({
