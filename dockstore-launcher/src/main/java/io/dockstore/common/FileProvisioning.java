@@ -206,7 +206,8 @@ public class FileProvisioning {
                 Path actualTargetPath = null;
                 try {
                     String workingDir = System.getProperty("user.dir");
-                    if (!"".equals(imageDescriptorPath)) {
+                    // If the descriptor path is not empty and not in a temporary location (when downloaded from Dockstore)
+                    if (!"".equals(imageDescriptorPath) && !imageDescriptorPath.startsWith("/tmp")) {
                         workingDir = Paths.get(imageDescriptorPath).getParent().toString();
                     }
                     if (targetPath.startsWith("/")) {
