@@ -31,7 +31,6 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.User;
-import io.swagger.quay.client.api.UserApi;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
@@ -61,9 +60,9 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
  *
  * @author dyuen
  */
-@PowerMockIgnore({"org.apache.http.conn.ssl.*", "javax.net.ssl.*", "javax.crypto.*", "javax.management.*", "javax.net.*"})
+@PowerMockIgnore({ "org.apache.http.conn.ssl.*", "javax.net.ssl.*", "javax.crypto.*", "javax.management.*", "javax.net.*" })
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ Client.class, ToolClient.class, UserApi.class })
+@PrepareForTest({ Client.class, ToolClient.class, UsersApi.class })
 public class MockedIT {
 
     @ClassRule
@@ -170,20 +169,19 @@ public class MockedIT {
         String configFileLocation = TestUtility.getConfigFileLocation(true, true, true);
         when(client.getConfigFile()).thenReturn(configFileLocation);
 
-        Client.main(new String[] {"--clean-cache", "--config", configFileLocation});
+        Client.main(new String[] { "--clean-cache", "--config", configFileLocation });
         // this is kind of redundant, it looks like we take the mocked config file no matter what
-        Client.main(new String[] {"--config", configFileLocation, "tool", "launch", "--entry",
-                "quay.io/collaboratory/arrays", "--json", ResourceHelpers.resourceFilePath("testArrayLocalInputLocalOutput.json") });
+        Client.main(new String[] { "--config", configFileLocation, "tool", "launch", "--entry", "quay.io/collaboratory/arrays", "--json",
+                ResourceHelpers.resourceFilePath("testArrayLocalInputLocalOutput.json") });
 
         Assert.assertTrue(new File("/tmp/example.bedGraph").exists());
         Assert.assertTrue("output should contain cwltool command", systemOutRule.getLog().contains("Executing: cwltool"));
         systemOutRule.clearLog();
 
         // try again, things should be cached now
-        Client.main(new String[] {"--config", configFileLocation, "tool", "launch", "--entry",
-                "quay.io/collaboratory/arrays", "--json", ResourceHelpers.resourceFilePath("testArrayLocalInputLocalOutput.json") });
-        Assert.assertTrue("output should contain only hard linking",
-                StringUtils.countMatches(systemOutRule.getLog(), "hard-linking") == 6);
+        Client.main(new String[] { "--config", configFileLocation, "tool", "launch", "--entry", "quay.io/collaboratory/arrays", "--json",
+                ResourceHelpers.resourceFilePath("testArrayLocalInputLocalOutput.json") });
+        Assert.assertTrue("output should contain only hard linking", StringUtils.countMatches(systemOutRule.getLog(), "hard-linking") == 6);
         Assert.assertTrue("output should not contain warnings about skipping files", !systemOutRule.getLog().contains("skipping"));
     }
 
