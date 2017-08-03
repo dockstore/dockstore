@@ -14,9 +14,12 @@ public class WorkflowInDirectoryTestIT {
     @Test
     public void testWorkflowRunInDirectory() {
         Client client = new Client();
-        File cwlFile = new File(ResourceHelpers.resourceFilePath("workflow_in_directory/1st-workflow.cwl"));
-        File cwlJSON = new File(ResourceHelpers.resourceFilePath("workflow_in_directory/1st-workflow-job.yml"));
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("workflow_in_directory/directory/1st-workflow.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("workflow_in_directory/directory/1st-workflow-job.yml"));
+        File configFile = new File(ResourceHelpers.resourceFilePath("config"));
         ArrayList<String> args = new ArrayList<String>() {{
+            add("--config");
+            add(configFile.getAbsolutePath());
             add("workflow");
             add("launch");
             add("--local-entry");
