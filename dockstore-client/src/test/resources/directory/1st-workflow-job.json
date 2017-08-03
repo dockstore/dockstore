@@ -1,0 +1,44 @@
+{
+  "inp": {
+    "class": "File",
+    "path": "subDirectory/hello.tar"
+  },
+  "ex": "Hello.java",
+
+  "config__algorithm__variant_regions": [
+    null
+  ],
+  "description": [
+    "NA12878-chr20"
+  ],
+  "reference__genome_context": [
+    [
+      {
+        "class": "File",
+        "path": "../biodata/LCR.bed.gz",
+        "secondaryFiles": [
+          {
+            "class": "File",
+            "path": "../biodata/LCR.bed.gz.tbi"
+          }
+        ]
+      }
+    ]
+  ],
+  "reference__fasta__base": [
+    {
+      "class": "File",
+      "path": "../biodata/testFile.fa",
+      "secondaryFiles": [
+        {
+          "class": "File",
+          "path": "../biodata/testFile.fa.fai"
+        },
+        {
+          "class": "File",
+          "path": "../biodata/testFile.dict"
+        }
+      ]
+    }
+  ]
+}
