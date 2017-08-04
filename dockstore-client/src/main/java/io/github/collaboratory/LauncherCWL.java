@@ -363,11 +363,23 @@ public class LauncherCWL {
                 newJSON.put(paramName, currentParam);
             } else if (currentParam instanceof List) {
                 // this code kinda assumes that if a list exists, its a list of files which is not correct
+                Gson googleJson = new Gson();
                 List currentParamList = (List)currentParam;
                 for (Object entry2 : currentParamList) {
                     if (entry2 instanceof Map) {
-                        Map<String, String> param = (Map<String, String>)entry2;
-                        String path = param.get("path");
+
+                        Map<String, Object> param = (Map<String, Object>)entry2;
+                        String path = (String)param.get("path");
+                        Object secondaryFiles = param.get("secondaryFiles");
+                        if (secondaryFiles != null) {
+                            String json = googleJson.toJson(secondaryFiles);
+                            ArrayList<Map<String, String>> data = googleJson.fromJson(json, ArrayList.class);
+                            for (Map<String, String> thing : data) {
+                                final String localPath = fileMap.get(paramName + ":" + thing.get("path")).getLocalPath();
+                                thing.put("path", localPath);
+                            }
+                            param.put("secondaryFiles", data);
+                        }
                         LOG.info("PATH: {} PARAM_NAME: {}", path, paramName);
                         // will be null for output, only dealing with inputs currently
                         // TODO: can outputs be file arrays too???  Maybe need to do something for globs??? Need to investigate
@@ -755,7 +767,7 @@ public class LauncherCWL {
                     }
                 }
                 sPath = sPath + sFile;
-                copyIndividualFile(key, sPath, fileMap, downloadDirFileObj, false);
+                copyIndividualFile(cwlInputFileID + ":" + sPath, sPath, fileMap, downloadDirFileObj, true);
             }
         }
     }
