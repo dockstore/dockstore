@@ -394,6 +394,7 @@ public class LauncherCWL {
 
                         Map<String, Object> param = (Map<String, Object>)entry2;
                         String path = (String)param.get("path");
+
                         Object secondaryFiles = param.get("secondaryFiles");
                         if (secondaryFiles != null) {
                             String json = googleJson.toJson(secondaryFiles);
@@ -404,6 +405,7 @@ public class LauncherCWL {
                             }
                             param.put("secondaryFiles", data);
                         }
+
                         LOG.info("PATH: {} PARAM_NAME: {}", path, paramName);
                         // will be null for output, only dealing with inputs currently
                         // TODO: can outputs be file arrays too???  Maybe need to do something for globs??? Need to investigate
@@ -422,27 +424,43 @@ public class LauncherCWL {
                         exitingArray.add(newRecord);
                         newJSON.put(paramName, exitingArray);
                     } else if (entry2 instanceof ArrayList) {
-                        JSONArray exitingArray2 = new JSONArray();
-                        // now add to the new JSON structure
-                        JSONArray exitingArray = (JSONArray)newJSON.get(paramName);
-                        if (exitingArray == null) {
-                            exitingArray = new JSONArray();
-                        }
-                        for (Map linkedHashMap : (ArrayList<LinkedHashMap>)entry2) {
-                            Map<String, Object> param = linkedHashMap;
-                            String path = (String)param.get("path");
-                            if (fileMap.get(paramName + ":" + path) != null) {
-                                final String localPath = fileMap.get(paramName + ":" + path).getLocalPath();
-                                param.put("path", localPath);
-                                LOG.info("NEW FULL PATH: {}", localPath);
+                        try {
+                            JSONArray exitingArray2 = new JSONArray();
+                            // now add to the new JSON structure
+                            JSONArray exitingArray = (JSONArray)newJSON.get(paramName);
+                            if (exitingArray == null) {
+                                exitingArray = new JSONArray();
                             }
-                            JSONObject newRecord = new JSONObject();
-                            param.entrySet().forEach(paramEntry -> newRecord.put(paramEntry.getKey(), paramEntry.getValue()));
-                            exitingArray.add(newRecord);
+                            for (Map linkedHashMap : (ArrayList<LinkedHashMap>)entry2) {
+                                Map<String, Object> param = linkedHashMap;
+                                String path = (String)param.get("path");
 
+                                Object secondaryFiles = param.get("secondaryFiles");
+                                if (secondaryFiles != null) {
+                                    String json = googleJson.toJson(secondaryFiles);
+                                    ArrayList<Map<String, String>> data = googleJson.fromJson(json, ArrayList.class);
+                                    for (Map<String, String> thing : data) {
+                                        final String localPath = fileMap.get(paramName + ":" + thing.get("path")).getLocalPath();
+                                        thing.put("path", localPath);
+                                    }
+                                    param.put("secondaryFiles", data);
+                                }
+
+                                if (fileMap.get(paramName + ":" + path) != null) {
+                                    final String localPath = fileMap.get(paramName + ":" + path).getLocalPath();
+                                    param.put("path", localPath);
+                                    LOG.info("NEW FULL PATH: {}", localPath);
+                                }
+                                JSONObject newRecord = new JSONObject();
+                                param.entrySet().forEach(paramEntry -> newRecord.put(paramEntry.getKey(), paramEntry.getValue()));
+                                exitingArray.add(newRecord);
+                            }
+                            exitingArray2.add(exitingArray);
+                            newJSON.put(paramName, exitingArray2);
+                        } catch (ClassCastException e) {
+                            LOG.warn("This is not an array of array of files, it may be an array of array of strings");
+                            newJSON.put(paramName, currentParam);
                         }
-                        exitingArray2.add(exitingArray);
-                        newJSON.put(paramName, exitingArray2);
                     } else {
                         newJSON.put(paramName, currentParam);
                     }
@@ -730,7 +748,7 @@ public class LauncherCWL {
                             String path = getPathOrLocation(lhm);
                             // notice I'm putting key:path together so they are unique in the hash
                             if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
-                                doProcessFile(stringObjectEntry.getKey() + ":" + path, path, cwlInputFileID, fileMap, secondaryFiles);
+                                doProcessFile(stringObjectEntry.getKey() + ":" + path, path, cwlInputFileID, fileMap, secondaryFiles, true);
                             }
                         }
                     } else if (entry instanceof ArrayList) {
@@ -742,7 +760,7 @@ public class LauncherCWL {
                 Map param = (HashMap)stringObjectEntry.getValue();
                 String path = getPathOrLocation(param);
                 if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
-                    doProcessFile(stringObjectEntry.getKey(), path, cwlInputFileID, fileMap, secondaryFiles);
+                    doProcessFile(stringObjectEntry.getKey(), path, cwlInputFileID, fileMap, secondaryFiles, true);
                 }
 
             }
@@ -751,17 +769,22 @@ public class LauncherCWL {
 
     private void processArrayofArrayOfFiles(Object entry, Entry<String, Object> stringObjectEntry, String cwlInputFileID,
             Map<String, FileProvisioning.FileInfo> fileMap, List<String> secondaryFiles) {
-        ArrayList<Map> filesArray = (ArrayList)entry;
-        for (Map file : filesArray) {
-            Map lhm = file;
-            if ((lhm.containsKey("path") && lhm.get("path") instanceof String) || (lhm.containsKey("location") && lhm
-                    .get("location") instanceof String)) {
-                String path = getPathOrLocation(lhm);
-                // notice I'm putting key:path together so they are unique in the hash
-                if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
-                    doProcessFile(stringObjectEntry.getKey() + ":" + path, path, cwlInputFileID, fileMap, secondaryFiles);
+        try {
+            ArrayList<Map> filesArray = (ArrayList)entry;
+            for (Map file : filesArray) {
+                Map lhm = file;
+                if ((lhm.containsKey("path") && lhm.get("path") instanceof String) || (lhm.containsKey("location") && lhm.get("location") instanceof String)) {
+                    String path = getPathOrLocation(lhm);
+                    // notice I'm putting key:path together so they are unique in the hash
+                    boolean getSecondaryFiles = file.containsKey("secondaryFiles");
+//                    boolean getSecondaryFiles = true;
+                    if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
+                        doProcessFile(stringObjectEntry.getKey() + ":" + path, path, cwlInputFileID, fileMap, secondaryFiles, getSecondaryFiles);
+                    }
                 }
             }
+        } catch (ClassCastException e) {
+            LOG.warn("This is not an array of array of files, it may be an array of array of strings");
         }
     }
 
@@ -777,9 +800,10 @@ public class LauncherCWL {
      * @param cwlInputFileID looks like the descriptor for a particular path+class pair in the parameter json file, starts with a hash in the CWL file
      * @param fileMap        store information on each added file as a return type
      * @param secondaryFiles secondary files that also need to be transferred
+     * @param getSecondaryFiles  whether to get the secondary file or not
      */
     private void doProcessFile(final String key, final String path, final String cwlInputFileID,
-            Map<String, FileProvisioning.FileInfo> fileMap, List<String> secondaryFiles) {
+            Map<String, FileProvisioning.FileInfo> fileMap, List<String> secondaryFiles, boolean getSecondaryFiles) {
 
         // key is unique for that key:download URL, cwlInputFileID is just the key
 
@@ -794,7 +818,7 @@ public class LauncherCWL {
         copyIndividualFile(key, path, fileMap, downloadDirFileObj, true);
 
         // also handle secondary files if specified
-        if (secondaryFiles != null) {
+        if (secondaryFiles != null && getSecondaryFiles) {
             for (String sFile : secondaryFiles) {
                 String sPath = path;
                 while (sFile.startsWith("^")) {
