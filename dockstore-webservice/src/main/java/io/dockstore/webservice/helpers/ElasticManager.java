@@ -22,10 +22,10 @@ import io.dropwizard.jackson.Jackson;
 public class ElasticManager {
     private static ToolDAO toolDAO = null;
     private static WorkflowDAO workflowDAO = null;
-    ArrayList<Long> toolIds;
-    ArrayList<Long> workflowIds;
+    List<Long> toolIds;
+    List<Long> workflowIds;
 
-    public ArrayList<Long> getToolIds() {
+    public List<Long> getToolIds() {
         return toolIds;
     }
 
@@ -33,7 +33,7 @@ public class ElasticManager {
         this.toolIds = toolIds;
     }
 
-    public ArrayList<Long> getWorkflowIds() {
+    public List<Long> getWorkflowIds() {
         return workflowIds;
     }
 

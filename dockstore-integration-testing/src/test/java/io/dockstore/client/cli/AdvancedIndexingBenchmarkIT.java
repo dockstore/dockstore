@@ -31,6 +31,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import io.dockstore.common.BenchmarkTest;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -49,6 +50,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,13 +59,14 @@ import static junit.framework.TestCase.assertTrue;
 /**
  * Focuses on creating a large amount of tools to test indexing
  *
- * @author aduncan
+ * @author gluu
  */
-public class AdvancedIndexingIT {
+@Category(BenchmarkTest.class)
+public class AdvancedIndexingBenchmarkIT {
     private static final int TOOL_COUNT = 10;
     private static final int MAX_LABELS_PER_TOOL = 5;
     private static final int MAX_AUTHORS = 10;
-    private static final Logger LOGGER = LoggerFactory.getLogger(AdvancedIndexingIT.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AdvancedIndexingBenchmarkIT.class);
     private static final String CONFIG_PATH = ResourceHelpers.resourceFilePath("advancedIndexingTest.yml");
     @ClassRule
     public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
