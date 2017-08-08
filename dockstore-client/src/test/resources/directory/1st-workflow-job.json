@@ -25,7 +25,53 @@
       }
     ]
   ],
-  "reference__fasta__base": [
+  "reference__viral": [
+    [
+      {
+        "class": "File",
+        "path": "../biodata/viral/gdc-viral.dict"
+      },
+      {
+        "class": "File",
+        "path": "../biodata/viral/gdc-viral.fa",
+        "secondaryFiles": [
+          {
+            "class": "File",
+            "path": "../biodata/viral/gdc-viral.fa.fai"
+          },
+          {
+            "class": "File",
+            "path": "../biodata/viral/gdc-viral.dict"
+          }
+        ]
+      },
+      {
+        "class": "File",
+        "path": "../biodata/viral/gdc-viral.fa.amb"
+      },
+      {
+        "class": "File",
+        "path": "../biodata/viral/gdc-viral.fa.ann"
+      },
+      {
+        "class": "File",
+        "path": "../biodata/viral/gdc-viral.fa.bwt"
+      },
+      {
+        "class": "File",
+        "path": "../biodata/viral/gdc-viral.fa.fai"
+      },
+      {
+        "class": "File",
+        "path": "../biodata/viral/gdc-viral.fa.pac"
+      },
+      {
+        "class": "File",
+        "path": "../biodata/viral/gdc-viral.fa.sa"
+      }
+    ]
+  ],
+  "reference__fasta__base": [[
     {
       "class": "File",
       "path": "../biodata/testFile.fa",
@@ -40,5 +86,5 @@
         }
       ]
     }
-  ]
+  ]]
 }

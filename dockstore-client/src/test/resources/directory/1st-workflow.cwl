@@ -16,12 +16,23 @@ inputs:
     - 'null'
     - string
     type: array
+- id: reference__viral
+  secondaryFiles:
+  - .fai
+  - ^.dict
+  type:
+    items:
+      items: File
+      type: array
+    type: array
 - id: reference__fasta__base
   secondaryFiles:
   - .fai
   - ^.dict
   type:
-    items: File
+    items:
+      items: File
+      type: array
     type: array
 - id: reference__genome_context
   secondaryFiles:
@@ -51,6 +62,8 @@ steps:
     source: reference__fasta__base
   - id: description
     source: description
+  - id : reference__genome_context
+    source: reference__genome_context
   out:
   - id: prep_samples_rec
   run: steps/prep_samples_to_rec.cwl

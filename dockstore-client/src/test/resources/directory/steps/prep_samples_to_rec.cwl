@@ -28,11 +28,21 @@ inputs:
   - .fai
   - ^.dict
   type:
-    items: File
+    items:
+      items: File
+      type: array
     type: array
 - id: description
   type:
     items: string
+    type: array
+- id: reference__genome_context
+  secondaryFiles:
+  - .tbi
+  type:
+    items:
+      items: File
+      type: array
     type: array
 outputs:
 - id: prep_samples_rec
