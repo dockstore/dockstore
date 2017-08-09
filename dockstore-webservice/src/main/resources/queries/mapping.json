@@ -7,19 +7,19 @@
           "type": "string"
         },
         "default_cwl_path": {
-          "type": "string"
+          "type": "text"
         },
         "default_dockerfile_path": {
-          "type": "string"
+          "type": "text"
         },
         "default_wdl_path": {
-          "type": "string"
+          "type": "text"
         },
         "description": {
-          "type": "string"
+          "type": "text"
         },
         "email": {
-          "type": "string"
+          "type": "text"
         },
         "gitUrl": {
           "type": "string"
@@ -39,17 +39,17 @@
           "type": "date"
         },
         "mode": {
-          "type": "string"
+          "type": "text"
         },
         "name": {
-          "type": "string"
+          "type": "text"
         },
         "namespace": {
           "type": "keyword"
 
         },
         "path": {
-          "type": "string"
+          "type": "text"
         },
         "private_access": {
           "type": "boolean"
@@ -71,7 +71,7 @@
               "type": "boolean"
             },
             "cwl_path": {
-              "type": "string"
+              "type": "text"
             },
             "verifiedSource": {
               "index": "not_analyzed",
@@ -81,7 +81,7 @@
               "type": "boolean"
             },
             "dockerfile_path": {
-              "type": "string"
+              "type": "text"
             },
             "hidden": {
               "type": "boolean"
@@ -130,36 +130,36 @@
               "type": "boolean"
             },
             "wdl_path": {
-              "type": "string"
+              "type": "text"
             },
             "workingDirectory": {
-              "type": "string"
+              "type": "text"
             }
           },
           "type": "nested"
         },
         "tool_maintainer_email": {
-          "type": "string"
+          "type": "text"
         },
         "tool_path": {
-          "type": "string"
+          "type": "text"
         },
         "toolname": {
-          "type": "string"
+          "type": "text"
         },
         "users": {
           "properties": {
             "avatarUrl": {
-              "type": "string"
+              "type": "text"
             },
             "bio": {
-              "type": "string"
+              "type": "text"
             },
             "company": {
-              "type": "string"
+              "type": "text"
             },
             "email": {
-              "type": "string"
+              "type": "text"
             },
             "id": {
               "type": "long"
@@ -168,13 +168,13 @@
               "type": "boolean"
             },
             "location": {
-              "type": "string"
+              "type": "text"
             },
             "name": {
-              "type": "string"
+              "type": "text"
             },
             "username": {
-              "type": "string"
+              "type": "text"
             }
           }
         }
@@ -187,19 +187,19 @@
           "index": "not_analyzed"
         },
         "defaultVersion": {
-          "type": "string"
+          "type": "keyword"
         },
         "description": {
-          "type": "string"
+          "type": "text"
         },
         "descriptorType": {
-          "type": "string"
+          "type": "keyword"
         },
         "email": {
-          "type": "string"
+          "type": "text"
         },
         "gitUrl": {
-          "type": "string"
+          "type": "text"
         },
         "id": {
           "type": "long"
@@ -212,22 +212,22 @@
           "type": "date"
         },
         "mode": {
-          "type": "string"
+          "type": "text"
         },
         "organization": {
-          "type": "string"
+          "type": "keyword"
         },
         "path": {
-          "type": "string"
+          "type": "text"
         },
         "repository": {
-          "type": "string"
+          "type": "keyword"
         },
         "workflowName": {
-          "type": "string"
+          "type": "keyword"
         },
         "workflow_path": {
-          "type": "string"
+          "type": "keyword"
         }
       }
     }
