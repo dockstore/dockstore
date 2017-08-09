@@ -729,7 +729,7 @@ public class LauncherCWL {
                             String path = getPathOrLocation(lhm);
                             // notice I'm putting key:path together so they are unique in the hash
                             if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
-                                doProcessFile(stringObjectEntry.getKey() + ":" + path, path, cwlInputFileID, fileMap, secondaryFiles, true);
+                                doProcessFile(stringObjectEntry.getKey() + ":" + path, path, cwlInputFileID, fileMap, secondaryFiles);
                             }
                         }
                     } else if (entry instanceof ArrayList) {
@@ -741,9 +741,8 @@ public class LauncherCWL {
                 Map param = (HashMap)stringObjectEntry.getValue();
                 String path = getPathOrLocation(param);
                 if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
-                    doProcessFile(stringObjectEntry.getKey(), path, cwlInputFileID, fileMap, secondaryFiles, true);
+                    doProcessFile(stringObjectEntry.getKey(), path, cwlInputFileID, fileMap, secondaryFiles);
                 }
-
             }
         }
     }
@@ -757,10 +756,8 @@ public class LauncherCWL {
                 if ((lhm.containsKey("path") && lhm.get("path") instanceof String) || (lhm.containsKey("location") && lhm.get("location") instanceof String)) {
                     String path = getPathOrLocation(lhm);
                     // notice I'm putting key:path together so they are unique in the hash
-                    boolean getSecondaryFiles = file.containsKey("secondaryFiles");
-//                    boolean getSecondaryFiles = true;
                     if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
-                        doProcessFile(stringObjectEntry.getKey() + ":" + path, path, cwlInputFileID, fileMap, secondaryFiles, getSecondaryFiles);
+                        doProcessFile(stringObjectEntry.getKey() + ":" + path, path, cwlInputFileID, fileMap, secondaryFiles);
                     }
                 }
             }
@@ -781,10 +778,9 @@ public class LauncherCWL {
      * @param cwlInputFileID looks like the descriptor for a particular path+class pair in the parameter json file, starts with a hash in the CWL file
      * @param fileMap        store information on each added file as a return type
      * @param secondaryFiles secondary files that also need to be transferred
-     * @param getSecondaryFiles  whether to get the secondary file or not
      */
     private void doProcessFile(final String key, final String path, final String cwlInputFileID,
-            Map<String, FileProvisioning.FileInfo> fileMap, List<String> secondaryFiles, boolean getSecondaryFiles) {
+            Map<String, FileProvisioning.FileInfo> fileMap, List<String> secondaryFiles) {
 
         // key is unique for that key:download URL, cwlInputFileID is just the key
 
@@ -799,7 +795,7 @@ public class LauncherCWL {
         copyIndividualFile(key, path, fileMap, downloadDirFileObj, true);
 
         // also handle secondary files if specified
-        if (secondaryFiles != null && getSecondaryFiles) {
+        if (secondaryFiles != null) {
             for (String sFile : secondaryFiles) {
                 String sPath = path;
                 while (sFile.startsWith("^")) {
