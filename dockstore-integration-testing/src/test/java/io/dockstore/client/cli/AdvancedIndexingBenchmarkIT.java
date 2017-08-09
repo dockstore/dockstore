@@ -31,6 +31,8 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import io.dockstore.common.BenchmarkTest;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -43,6 +45,7 @@ import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit.DropwizardAppRule;
+import io.swagger.api.JacksonJsonProvider;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
@@ -79,7 +82,7 @@ public class AdvancedIndexingBenchmarkIT {
     private ArrayList<String> fixedStringLabels;
     private ArrayList<String> fixedAuthors;
     private ArrayList<String> fixedOrganization;
-    private ArrayList<Long> indexTimes;
+    private List<Long> indexTimes;
     private SessionFactory sessionFactory;
     private javax.ws.rs.client.Client client;
 
@@ -99,14 +102,16 @@ public class AdvancedIndexingBenchmarkIT {
 
     @Before
     public void setUp() throws Exception {
+        com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider jacksonJsonProvider = new JacksonJaxbJsonProvider().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         client = ClientBuilder.newClient();
+        client.register(jacksonJsonProvider);
         application = RULE.getApplication();
         this.session = application.getHibernate().getSessionFactory().openSession();
         ManagedSessionContext.bind(session);
         fixedStringLabels = randomlyGenerateFixedAuthors();
         fixedAuthors = randomlyGenerateFixedAuthors();
         fixedOrganization = randomlyGenerateFixedAuthors();
-        indexTimes = new ArrayList<>();
+        indexTimes = new ArrayList<Long>();
     }
 
     @After
@@ -198,6 +203,7 @@ public class AdvancedIndexingBenchmarkIT {
         Response registerManualResponse = client.target("http://localhost:" + RULE.getLocalPort() + "/containers/registerManual").request()
                 .header(HttpHeaders.AUTHORIZATION, "Bearer iamafakedockstoretoken")
                 .post(Entity.entity(tool, MediaType.APPLICATION_JSON_TYPE));
+
         Tool registeredTool = registerManualResponse.readEntity(Tool.class);
         assertTrue(registeredTool.getName().equals(tool.getName()));
         refreshAndBuildIndex(registeredTool.getId());
