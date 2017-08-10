@@ -87,6 +87,7 @@ public class LauncherCWL {
     private final Yaml yaml = new Yaml(new SafeConstructor());
     private final Gson gson;
     private final FileProvisioning fileProvisioning;
+    private final String originalTestParameterFilePath;
 
     /**
      * Constructor for shell-based launch
@@ -101,6 +102,7 @@ public class LauncherCWL {
         configFilePath = line.getOptionValue("config");
         imageDescriptorPath = line.getOptionValue("descriptor");
         runtimeDescriptorPath = line.getOptionValue("job");
+        originalTestParameterFilePath = "";
         this.stdoutStream = null;
         this.stderrStream = null;
         gson = CWL.getTypeSafeCWLToolDocument();
@@ -117,10 +119,11 @@ public class LauncherCWL {
      * @param stderrStream          pass a stream in order to capture stderr from the run tool
      */
     public LauncherCWL(String configFilePath, String imageDescriptorPath, String runtimeDescriptorPath, OutputStream stdoutStream,
-            OutputStream stderrStream) {
+            OutputStream stderrStream, String originalTestParameterFilePath) {
         this.configFilePath = configFilePath;
         this.imageDescriptorPath = imageDescriptorPath;
         this.runtimeDescriptorPath = runtimeDescriptorPath;
+        this.originalTestParameterFilePath = originalTestParameterFilePath;
         fileProvisioning = new FileProvisioning(configFilePath);
         this.stdoutStream = stdoutStream;
         this.stderrStream = stderrStream;
@@ -824,7 +827,7 @@ public class LauncherCWL {
             boolean record) {
         String shortfileName = Paths.get(path).getFileName().toString();
         final Path targetFilePath = Paths.get(downloadDirFileObj.getAbsolutePath(), shortfileName);
-        fileProvisioning.provisionInputFile(imageDescriptorPath, path, targetFilePath);
+        fileProvisioning.provisionInputFile(this.originalTestParameterFilePath, path, targetFilePath);
         // now add this info to a hash so I can later reconstruct a docker -v command
         FileProvisioning.FileInfo info = new FileProvisioning.FileInfo();
         info.setLocalPath(targetFilePath.toFile().getAbsolutePath());
