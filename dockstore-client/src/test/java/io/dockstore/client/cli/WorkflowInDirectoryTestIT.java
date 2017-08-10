@@ -22,7 +22,11 @@ public class WorkflowInDirectoryTestIT {
         configFile = new File(ResourceHelpers.resourceFilePath("config"));
     }
 
+
     @Test
+    /**
+     * This tests if the workflow could be ran with the client in a much different directory than the descriptor
+     */
     public void testWorkflowRunInDirectory() {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("testDirectory2/1st-workflow.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("testDirectory2/1st-workflow-job.yml"));
@@ -39,12 +43,14 @@ public class WorkflowInDirectoryTestIT {
         client.main(args.toArray(new String[args.size()]));
     }
 
+
+    /**
+     * This tests if using --script will ignore the missing test files when copying
+     */
     @Test
-    public void testWorkflowRunInDirectory2() {
+    public void testWorkflowMissingFilesToCopy() {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("directory/1st-workflow.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("directory/1st-workflow-job.json"));
-        String synapseCWLFile = "/home/gluu/synapse/NA12878-platinum-chr20-workflow/main-NA12878-platinum-chr20.cwl";
-        String synapseJSONFile = "/home/gluu/synapse/NA12878-platinum-chr20-workflow/main-NA12878-platinum-chr20-samples.json";
         ArrayList<String> args = new ArrayList<String>() {{
             add("--config");
             add(configFile.getAbsolutePath());
@@ -52,14 +58,17 @@ public class WorkflowInDirectoryTestIT {
             add("launch");
             add("--local-entry");
             add(cwlFile.getAbsolutePath());
-            //            add(synapseCWLFile);
             add("--yaml");
             add(cwlJSON.getAbsolutePath());
-            //            add(synapseJSONFile);
+            add("--script");
         }};
         client.main(args.toArray(new String[args.size()]));
     }
 
+
+    /**
+     *  This tests if the workflow could be ran with an input that is an array of array of files
+     */
     @Test
     public void testArrayOfArrayOfInputs() {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("arrayOfArrays/arrays.cwl"));
