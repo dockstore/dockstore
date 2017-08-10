@@ -54,6 +54,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ro.fortsoft.pf4j.PluginManager;
 import ro.fortsoft.pf4j.PluginWrapper;
+import static io.dockstore.client.cli.Client.SCRIPT;
 
 /**
  * The purpose of this class is to provide general functions to deal with workflow file provisioning.
@@ -139,7 +140,7 @@ public class FileProvisioning {
 
     /**
      * This method downloads both local and remote files into the working directory
-     *
+     * @param imageDescriptorPath path of the descriptor
      * @param targetPath path for target file
      * @param localPath  the absolute path where we will download files to
      */
@@ -235,7 +236,10 @@ public class FileProvisioning {
                         }
                     } catch (IOException e1) {
                         LOG.error("Could not copy " + targetPath + " to " + localPath, e);
-                        throw new RuntimeException("Could not copy " + targetPath + " to " + localPath, e1);
+                        if (!SCRIPT.get()) {
+                            throw new RuntimeException("Could not copy " + targetPath + " to " + localPath, e1);
+                        }
+                        LOG.error("Could not copy " + targetPath + " to " + localPath, e1);
                     }
                 }
             }
