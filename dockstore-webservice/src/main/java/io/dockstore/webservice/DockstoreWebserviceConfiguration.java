@@ -70,7 +70,6 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     private List<String> githubClientSecret;
 
     @NotEmpty
-
     private String gitlabRedirectURI;
 
     @NotEmpty
@@ -87,6 +86,8 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     @NotEmpty
     private String port;
+
+    private String uiPort = null;
 
     @JsonProperty("database")
     public DataSourceFactory getDataSourceFactory() {
@@ -301,6 +302,14 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     public void setEsConfiguration(ElasticSearchConfig esConfiguration) {
         this.esConfiguration = esConfiguration;
+    }
+
+    public String getUiPort() {
+        return uiPort;
+    }
+
+    public void setUiPort(String uiPort) {
+        this.uiPort = uiPort;
     }
 
     public class ElasticSearchConfig {
