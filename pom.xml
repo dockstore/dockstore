@@ -1092,7 +1092,7 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <excludeGroups>io.dockstore.common.ConfidentialTest,io.dockstore.common.SlowTest</excludeGroups>
+                <excludeGroups>io.dockstore.common.ConfidentialTest,io.dockstore.common.SlowTest, io.dockstore.common.BenchmarkTest</excludeGroups>
             </properties>
         </profile>
         <profile>
