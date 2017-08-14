@@ -26,8 +26,6 @@ inputs:
       type: array
     type: array
 - id: reference__fasta__base
-  secondaryFiles:
-  - .fai
   type:
     items:
       items: File
@@ -65,7 +63,7 @@ steps:
     source: reference__genome_context
   out:
   - id: prep_samples_rec
-  run: steps/prep_samples_to_rec.cwl
+  run: steps/prep_samples_to_rec-no-secondary-in-workflow.cwl
 - id: untar
   in:
     - id: tarfile

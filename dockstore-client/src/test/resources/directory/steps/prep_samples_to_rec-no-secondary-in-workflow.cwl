@@ -25,6 +25,7 @@ inputs:
     type: array
 - id: un_reference__fasta__base
   secondaryFiles:
+  - .fai
   - ^.dict
   type:
     items:

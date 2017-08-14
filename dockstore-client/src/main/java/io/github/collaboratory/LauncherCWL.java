@@ -49,6 +49,7 @@ import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.CommandOutputParameter;
 import io.cwl.avro.Workflow;
 import io.cwl.avro.WorkflowOutputParameter;
+import io.dockstore.client.cli.nested.SecondaryFilesUtility;
 import io.dockstore.client.cwlrunner.CWLRunnerFactory;
 import io.dockstore.client.cwlrunner.CWLRunnerInterface;
 import io.dockstore.common.FileProvisioning;
@@ -79,6 +80,7 @@ public class LauncherCWL {
     private static final Logger LOG = LoggerFactory.getLogger(LauncherCWL.class);
 
     private static final String WORKING_DIRECTORY = "working-directory";
+    private static CWL cwlUtil;
     private final String configFilePath;
     private final String imageDescriptorPath;
     private final String runtimeDescriptorPath;
@@ -162,11 +164,12 @@ public class LauncherCWL {
         // parse the CWL tool definition without validation
         CWLRunnerFactory.setConfig(config);
         String cwlRunner = CWLRunnerFactory.getCWLRunner();
-        CWL cwlUtil = new CWL(cwlRunner.equalsIgnoreCase(CWLRunnerFactory.CWLRunner.BUNNY.toString()));
+        cwlUtil = new CWL(cwlRunner.equalsIgnoreCase(CWLRunnerFactory.CWLRunner.BUNNY.toString()));
         final String imageDescriptorContent = cwlUtil.parseCWL(imageDescriptorPath).getLeft();
         Object cwlObject;
         try {
             cwlObject = gson.fromJson(imageDescriptorContent, cwlClassTarget);
+
         } catch (JsonParseException ex) {
             LOG.error("The JSON file provided is invalid.");
             return;
@@ -194,6 +197,10 @@ public class LauncherCWL {
         System.out.println("Provisioning your input files to your local machine");
         if (cwlObject instanceof Workflow) {
             Workflow workflow = (Workflow)cwlObject;
+            if (!"bunny".equals(cwlRunner)) {
+                SecondaryFilesUtility secondaryFilesUtility = new SecondaryFilesUtility(this.cwlUtil, this.gson);
+                secondaryFilesUtility.modifyWorkflowToIncludeToolSecondaryFiles(workflow);
+            }
             // pull input files
             inputsId2dockerMountMap = pullFiles(workflow, inputsAndOutputsJson);
 
@@ -775,7 +782,8 @@ public class LauncherCWL {
             ArrayList<Map> filesArray = (ArrayList)entry;
             for (Map file : filesArray) {
                 Map lhm = file;
-                if ((lhm.containsKey("path") && lhm.get("path") instanceof String) || (lhm.containsKey("location") && lhm.get("location") instanceof String)) {
+                if ((lhm.containsKey("path") && lhm.get("path") instanceof String) || (lhm.containsKey("location") && lhm
+                        .get("location") instanceof String)) {
                     String path = getPathOrLocation(lhm);
                     // notice I'm putting key:path together so they are unique in the hash
                     if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
