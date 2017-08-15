@@ -86,13 +86,13 @@ public class SecondaryFilesUtility {
                             }
                         }
                     } catch (ClassCastException e) {
-                        LOG.error(e.getMessage());
+                        throw new RuntimeException("Unexpected secondary files format in " + descriptor, e);
                     }
                 });
 
             }
         } catch (JsonParseException ex) {
-            LOG.error("The JSON file provided is invalid.");
+            throw new RuntimeException("The JSON file provided is invalid.", ex);
         }
     }
 
