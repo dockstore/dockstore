@@ -35,18 +35,18 @@ import org.slf4j.LoggerFactory;
  * @author gluu
  * @since 14/08/17
  */
-public class SecondaryFilesUtility {
+class SecondaryFilesUtility {
     private static final Logger LOG = LoggerFactory.getLogger(SecondaryFilesUtility.class);
     private CWL cwlUtil;
     private Gson gson;
 
-    public SecondaryFilesUtility(CWL cwlUtil, Gson gson) {
+    SecondaryFilesUtility(CWL cwlUtil, Gson gson) {
         this.cwlUtil = cwlUtil;
         this.gson = gson;
     }
 
     /**
-     * This retrieves a workflow input file ids
+     * This retrieves a workflow's input file ids
      *
      * @param workflow The workflow to retrieve
      * @return The list of input file ids
@@ -58,17 +58,24 @@ public class SecondaryFilesUtility {
         return inputFileIds;
     }
 
-    private void loopThroughSource(String id, String fileId, LinkedTreeMap mapStep, List<Map<String, List<String>>> idAndSecondaryFiles) {
-        String toolIDFromWorkflow = extractID(id);
-
-        String descriptor = mapStep.get("run").toString();
-        final String toolDescriptor = this.cwlUtil.parseCWL(descriptor).getLeft();
-        Object toolDescriptorObject;
+    /**
+     * This parses the CWL tool descriptor to find the which file IDs has secondary files referencing a file ID in the root workflow
+     * It then adds the file ID and the secondary files to the idAndSecondaryFiles map
+     *
+     * @param toolFileIdPath      The ID that is mentioned in workflow descriptor's step
+     * @param workflowFileId      The ID that is mentioned in the workflow descriptor and test parameter file
+     * @param descriptorPath      The descriptor path of the current descriptor (source)
+     * @param idAndSecondaryFiles A map containing a list of file IDs and secondary files that need to be added to it
+     */
+    private void loopThroughSource(String toolFileIdPath, String workflowFileId, String descriptorPath,
+            List<Map<String, List<String>>> idAndSecondaryFiles) {
+        String toolIDFromWorkflow = extractID(toolFileIdPath);
+        final String toolDescriptor = this.cwlUtil.parseCWL(descriptorPath).getLeft();
+        CommandLineTool toolDescriptorObject;
         try {
             toolDescriptorObject = this.gson.fromJson(toolDescriptor, CommandLineTool.class);
             if (toolDescriptorObject != null) {
-                CommandLineTool commandLineTool = (CommandLineTool)toolDescriptorObject;
-                List<CommandInputParameter> inputs = commandLineTool.getInputs();
+                List<CommandInputParameter> inputs = toolDescriptorObject.getInputs();
                 inputs.forEach(input -> {
 
                     try {
@@ -79,14 +86,13 @@ public class SecondaryFilesUtility {
                             String toolFileId = extractID(toolId);
                             // Check if the tool descriptor has secondary files and if the id matches the workflow id
                             if (toolFileId.equals(toolIDFromWorkflow)) {
-                                //                            if (toolFileId.equals(workflowFileId)) {
                                 Map<String, List<String>> hashMap = new HashMap<>();
-                                hashMap.put(fileId, secondaryFiles);
+                                hashMap.put(workflowFileId, secondaryFiles);
                                 idAndSecondaryFiles.add(hashMap);
                             }
                         }
                     } catch (ClassCastException e) {
-                        throw new RuntimeException("Unexpected secondary files format in " + descriptor, e);
+                        throw new RuntimeException("Unexpected secondary files format in " + descriptorPath, e);
                     }
                 });
 
@@ -113,6 +119,7 @@ public class SecondaryFilesUtility {
             stepsList.forEach((Object step) -> {
                 if (step instanceof Map) {
                     LinkedTreeMap mapStep = (LinkedTreeMap)step;
+                    String descriptorPath = mapStep.get("run").toString();
                     if (mapStep.get("in") instanceof List) {
                         @SuppressWarnings("unchecked")
                         ArrayList<Map> in = (ArrayList)mapStep.get("in");
@@ -127,7 +134,7 @@ public class SecondaryFilesUtility {
                                     if (sourceObject instanceof String) {
                                         String id = (String)inn.get("source");
                                         if (id.equals(fileId)) {
-                                            loopThroughSource(idString, fileId, mapStep, idAndSecondaryFiles);
+                                            loopThroughSource(idString, fileId, descriptorPath, idAndSecondaryFiles);
                                         }
                                     } else if (sourceObject instanceof List) {
                                         @SuppressWarnings("unchecked")
@@ -136,7 +143,7 @@ public class SecondaryFilesUtility {
                                             if (source instanceof String) {
                                                 String sourceString = (String)source;
                                                 if (sourceString.equals(fileId)) {
-                                                    loopThroughSource(idString, fileId, mapStep, idAndSecondaryFiles);
+                                                    loopThroughSource(idString, fileId, descriptorPath, idAndSecondaryFiles);
                                                 }
                                             } else {
                                                 throwUnhandledTypeException(source);
@@ -147,9 +154,8 @@ public class SecondaryFilesUtility {
                                     }
                                 }
                             } else {
-                                LOG.error("Unknown id type");
+                                throwUnhandledTypeException(idObject);
                             }
-
                         }
                     }
                 } else {
@@ -164,14 +170,20 @@ public class SecondaryFilesUtility {
     /**
      * If parsing the CWL with cwltool, the id may look something like file:///home/gluu/dockstore/dockstore-client/target/test-classes/testDirectory3/workflow.cwl#mutect/ncpus
      * we are trying to extract ncpus from it, so using the below string split to retrieve it
-     * @param idWithPath
-     * @return
+     *
+     * @param idWithPath Full path of the file ID
+     * @return Just the file ID without the path
      */
     private String extractID(String idWithPath) {
         String[] temp = idWithPath.split("[#/]");
         return temp[temp.length - 1];
     }
 
+    /**
+     * Throw exception when there's an unhandled type
+     *
+     * @param object The object whose type is not handled
+     */
     private void throwUnhandledTypeException(Object object) {
         throw new RuntimeException("Unhandled type" + object.getClass());
     }
@@ -211,7 +223,7 @@ public class SecondaryFilesUtility {
      *
      * @param workflow The workflow object
      */
-    public void modifyWorkflowToIncludeToolSecondaryFiles(Workflow workflow) {
+    void modifyWorkflowToIncludeToolSecondaryFiles(Workflow workflow) {
         // Contains a list of descriptor files that uses the files in the root workflow
         List<Map<String, List<String>>> descriptorsWithFiles = new ArrayList<>();
         List<String> inputFileIds = this.getInputFileIds(workflow);
