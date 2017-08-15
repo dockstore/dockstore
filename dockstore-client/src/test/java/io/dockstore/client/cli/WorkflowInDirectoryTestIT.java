@@ -21,7 +21,7 @@ public class WorkflowInDirectoryTestIT {
     }
 
     /**
-     * This tests if the workflow could be ran with the client in a much different directory than the descriptor
+     * This tests if the workflow could be ran with the client in a much different directory than the descriptor (not in the same directory as the descriptor)
      */
     @Test
     public void testWorkflowRunInDirectory() {
@@ -83,7 +83,6 @@ public class WorkflowInDirectoryTestIT {
     }
 
     private void baseWorkflowTest(File descriptor, File testParameter, boolean script, String entryType) {
-        Client client = new Client();
         ArrayList<String> args = new ArrayList<String>() {{
             add("--config");
             add(configFile.getAbsolutePath());
@@ -97,6 +96,6 @@ public class WorkflowInDirectoryTestIT {
                 add("--script");
             }
         }};
-        client.main(args.toArray(new String[args.size()]));
+        Client.main(args.toArray(new String[args.size()]));
     }
 }
