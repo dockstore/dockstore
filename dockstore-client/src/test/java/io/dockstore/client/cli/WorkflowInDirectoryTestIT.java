@@ -13,12 +13,10 @@ import org.junit.Test;
  */
 public class WorkflowInDirectoryTestIT {
 
-    private static Client client;
     private static File configFile;
 
     @BeforeClass
     public static void setup() {
-        client = new Client();
         configFile = new File(ResourceHelpers.resourceFilePath("config"));
     }
 
@@ -29,17 +27,7 @@ public class WorkflowInDirectoryTestIT {
     public void testWorkflowRunInDirectory() {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("testDirectory2/1st-workflow.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("testDirectory2/1st-workflow-job.yml"));
-        ArrayList<String> args = new ArrayList<String>() {{
-            add("--config");
-            add(configFile.getAbsolutePath());
-            add("workflow");
-            add("launch");
-            add("--local-entry");
-            add(cwlFile.getAbsolutePath());
-            add("--yaml");
-            add(cwlJSON.getAbsolutePath());
-        }};
-        this.client.main(args.toArray(new String[args.size()]));
+        this.baseWorkflowTest(cwlFile, cwlJSON, false);
     }
 
     /**
@@ -54,18 +42,7 @@ public class WorkflowInDirectoryTestIT {
     public void testWorkflowMissingFilesToCopy() {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("directory/1st-workflow.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("directory/1st-workflow-job.json"));
-        ArrayList<String> args = new ArrayList<String>() {{
-            add("--config");
-            add(configFile.getAbsolutePath());
-            add("workflow");
-            add("launch");
-            add("--local-entry");
-            add(cwlFile.getAbsolutePath());
-            add("--yaml");
-            add(cwlJSON.getAbsolutePath());
-            add("--script");
-        }};
-        client.main(args.toArray(new String[args.size()]));
+        this.baseWorkflowTest(cwlFile, cwlJSON, true);
     }
 
     /**
@@ -75,18 +52,14 @@ public class WorkflowInDirectoryTestIT {
     public void testNullCase() {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("directory/1st-workflow-no-secondary-in-workflow.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("directory/1st-workflow-job.json"));
-        ArrayList<String> args = new ArrayList<String>() {{
-            add("--config");
-            add(configFile.getAbsolutePath());
-            add("workflow");
-            add("launch");
-            add("--local-entry");
-            add(cwlFile.getAbsolutePath());
-            add("--yaml");
-            add(cwlJSON.getAbsolutePath());
-            add("--script");
-        }};
-        client.main(args.toArray(new String[args.size()]));
+        this.baseWorkflowTest(cwlFile, cwlJSON, true);
+    }
+
+    @Test
+    public void testJeltjeWorkflow() {
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("testDirectory3/workflow.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("testDirectory3/workflow.json"));
+        this.baseWorkflowTest(cwlFile, cwlJSON, false);
     }
 
     /**
@@ -94,6 +67,7 @@ public class WorkflowInDirectoryTestIT {
      */
     @Test
     public void testArrayOfArrayOfInputs() {
+        Client client = new Client();
         File cwlFile = new File(ResourceHelpers.resourceFilePath("arrayOfArrays/arrays.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("arrayOfArrays/testArrayLocalInputLocalOutput.json"));
         ArrayList<String> args = new ArrayList<String>() {{
@@ -105,6 +79,24 @@ public class WorkflowInDirectoryTestIT {
             add(cwlFile.getAbsolutePath());
             add("--yaml");
             add(cwlJSON.getAbsolutePath());
+        }};
+        client.main(args.toArray(new String[args.size()]));
+    }
+
+    private void baseWorkflowTest(File descriptor, File testParameter, boolean script) {
+        Client client = new Client();
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("--config");
+            add(configFile.getAbsolutePath());
+            add("workflow");
+            add("launch");
+            add("--local-entry");
+            add(descriptor.getAbsolutePath());
+            add("--yaml");
+            add(testParameter.getAbsolutePath());
+            if (script) {
+                add("--script");
+            }
         }};
         client.main(args.toArray(new String[args.size()]));
     }
