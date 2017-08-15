@@ -27,7 +27,7 @@ public class WorkflowInDirectoryTestIT {
     public void testWorkflowRunInDirectory() {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("testDirectory2/1st-workflow.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("testDirectory2/1st-workflow-job.yml"));
-        this.baseWorkflowTest(cwlFile, cwlJSON, false);
+        this.baseWorkflowTest(cwlFile, cwlJSON, false, "workflow");
     }
 
     /**
@@ -42,7 +42,7 @@ public class WorkflowInDirectoryTestIT {
     public void testWorkflowMissingFilesToCopy() {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("directory/1st-workflow.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("directory/1st-workflow-job.json"));
-        this.baseWorkflowTest(cwlFile, cwlJSON, true);
+        this.baseWorkflowTest(cwlFile, cwlJSON, true, "workflow");
     }
 
     /**
@@ -52,14 +52,14 @@ public class WorkflowInDirectoryTestIT {
     public void testNullCase() {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("directory/1st-workflow-no-secondary-in-workflow.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("directory/1st-workflow-job.json"));
-        this.baseWorkflowTest(cwlFile, cwlJSON, true);
+        this.baseWorkflowTest(cwlFile, cwlJSON, true, "workflow");
     }
 
     @Test
     public void testJeltjeWorkflow() {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("testDirectory3/workflow.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("testDirectory3/workflow.json"));
-        this.baseWorkflowTest(cwlFile, cwlJSON, false);
+        this.baseWorkflowTest(cwlFile, cwlJSON, false, "workflow");
     }
 
     /**
@@ -67,28 +67,27 @@ public class WorkflowInDirectoryTestIT {
      */
     @Test
     public void testArrayOfArrayOfInputs() {
-        Client client = new Client();
         File cwlFile = new File(ResourceHelpers.resourceFilePath("arrayOfArrays/arrays.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("arrayOfArrays/testArrayLocalInputLocalOutput.json"));
-        ArrayList<String> args = new ArrayList<String>() {{
-            add("--config");
-            add(configFile.getAbsolutePath());
-            add("tool");
-            add("launch");
-            add("--local-entry");
-            add(cwlFile.getAbsolutePath());
-            add("--yaml");
-            add(cwlJSON.getAbsolutePath());
-        }};
-        client.main(args.toArray(new String[args.size()]));
+        this.baseWorkflowTest(cwlFile, cwlJSON, false, "tool");
     }
 
-    private void baseWorkflowTest(File descriptor, File testParameter, boolean script) {
+    /**
+     * This tests if the workflow could be ran with an input that is an array of array of files
+     */
+    @Test
+    public void testArrayOfArrayOfInputsv1() {
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("arrayOfArrays/arraysv1.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("arrayOfArrays/testArrayLocalInputLocalOutput.json"));
+        this.baseWorkflowTest(cwlFile, cwlJSON, false, "tool");
+    }
+
+    private void baseWorkflowTest(File descriptor, File testParameter, boolean script, String entryType) {
         Client client = new Client();
         ArrayList<String> args = new ArrayList<String>() {{
             add("--config");
             add(configFile.getAbsolutePath());
-            add("workflow");
+            add(entryType);
             add("launch");
             add("--local-entry");
             add(descriptor.getAbsolutePath());
