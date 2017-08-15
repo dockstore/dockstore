@@ -355,6 +355,26 @@ public class LauncherCWL {
     }
 
     /**
+     * This function modifies the current parameter object's secondary files to use absolute paths instead of relative paths
+     * @param param         The current parameter object than contains the class, path, and secondary files
+     * @param fileMap       The map that contains the absolute paths
+     * @param paramName     The parameter name
+     */
+    private void modifySecondaryFiles(Map<String, Object> param, Map<String, FileProvisioning.FileInfo> fileMap, String paramName) {
+        Gson googleJson = new Gson();
+        Object secondaryFiles = param.get("secondaryFiles");
+        if (secondaryFiles != null) {
+            String json = googleJson.toJson(secondaryFiles);
+            ArrayList<Map<String, String>> data = googleJson.fromJson(json, ArrayList.class);
+            for (Map<String, String> currentFileMap : data) {
+                final String localPath = fileMap.get(paramName + ":" + currentFileMap.get("path")).getLocalPath();
+                currentFileMap.put("path", localPath);
+            }
+            param.put("secondaryFiles", data);
+        }
+    }
+
+    /**
      * fudge
      *
      * @param fileMap
@@ -389,24 +409,13 @@ public class LauncherCWL {
                 newJSON.put(paramName, currentParam);
             } else if (currentParam instanceof List) {
                 // this code kinda assumes that if a list exists, its a list of files which is not correct
-                Gson googleJson = new Gson();
                 List currentParamList = (List)currentParam;
                 for (Object entry2 : currentParamList) {
                     if (entry2 instanceof Map) {
 
                         Map<String, Object> param = (Map<String, Object>)entry2;
                         String path = (String)param.get("path");
-
-                        Object secondaryFiles = param.get("secondaryFiles");
-                        if (secondaryFiles != null) {
-                            String json = googleJson.toJson(secondaryFiles);
-                            ArrayList<Map<String, String>> data = googleJson.fromJson(json, ArrayList.class);
-                            for (Map<String, String> thing : data) {
-                                final String localPath = fileMap.get(paramName + ":" + thing.get("path")).getLocalPath();
-                                thing.put("path", localPath);
-                            }
-                            param.put("secondaryFiles", data);
-                        }
+                        this.modifySecondaryFiles(param, fileMap, paramName);
 
                         LOG.info("PATH: {} PARAM_NAME: {}", path, paramName);
                         // will be null for output, only dealing with inputs currently
@@ -437,16 +446,7 @@ public class LauncherCWL {
                                 Map<String, Object> param = linkedHashMap;
                                 String path = (String)param.get("path");
 
-                                Object secondaryFiles = param.get("secondaryFiles");
-                                if (secondaryFiles != null) {
-                                    String json = googleJson.toJson(secondaryFiles);
-                                    ArrayList<Map<String, String>> data = googleJson.fromJson(json, ArrayList.class);
-                                    for (Map<String, String> thing : data) {
-                                        final String localPath = fileMap.get(paramName + ":" + thing.get("path")).getLocalPath();
-                                        thing.put("path", localPath);
-                                    }
-                                    param.put("secondaryFiles", data);
-                                }
+                                this.modifySecondaryFiles(param, fileMap, paramName);
 
                                 if (fileMap.get(paramName + ":" + path) != null) {
                                     final String localPath = fileMap.get(paramName + ":" + path).getLocalPath();
