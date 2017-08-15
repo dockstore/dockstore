@@ -54,7 +54,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ro.fortsoft.pf4j.PluginManager;
 import ro.fortsoft.pf4j.PluginWrapper;
-import static io.dockstore.client.cli.Client.SCRIPT;
 
 /**
  * The purpose of this class is to provide general functions to deal with workflow file provisioning.
@@ -236,9 +235,10 @@ public class FileProvisioning {
                         }
                     } catch (IOException e1) {
                         LOG.error("Could not copy " + targetPath + " to " + localPath, e);
-                        if (!SCRIPT.get()) {
-                            throw new RuntimeException("Could not copy " + targetPath + " to " + localPath, e1);
-                        }
+                        // TODO ... hook this up properly in develop
+                        // if (!SCRIPT.get()) {
+                        //     throw new RuntimeException("Could not copy " + targetPath + " to " + localPath, e1);
+                        // }
                         LOG.error("Could not copy " + targetPath + " to " + localPath, e1);
                     }
                 }

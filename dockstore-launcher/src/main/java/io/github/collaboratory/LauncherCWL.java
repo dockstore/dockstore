@@ -49,7 +49,6 @@ import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.CommandOutputParameter;
 import io.cwl.avro.Workflow;
 import io.cwl.avro.WorkflowOutputParameter;
-import io.dockstore.client.cli.nested.SecondaryFilesUtility;
 import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.Utilities;
 import org.apache.commons.cli.CommandLine;
@@ -78,7 +77,6 @@ public class LauncherCWL {
     private static final Logger LOG = LoggerFactory.getLogger(LauncherCWL.class);
 
     private static final String WORKING_DIRECTORY = "working-directory";
-    private static CWL cwlUtil;
     private final String configFilePath;
     private final String imageDescriptorPath;
     private final String runtimeDescriptorPath;
@@ -193,10 +191,8 @@ public class LauncherCWL {
         System.out.println("Provisioning your input files to your local machine");
         if (cwlObject instanceof Workflow) {
             Workflow workflow = (Workflow)cwlObject;
-            if (!"bunny".equals(cwlRunner)) {
-                SecondaryFilesUtility secondaryFilesUtility = new SecondaryFilesUtility(this.cwlUtil, this.gson);
-                secondaryFilesUtility.modifyWorkflowToIncludeToolSecondaryFiles(workflow);
-            }
+            SecondaryFilesUtility secondaryFilesUtility = new SecondaryFilesUtility(cwlUtil, this.gson);
+            secondaryFilesUtility.modifyWorkflowToIncludeToolSecondaryFiles(workflow);
             // pull input files
             inputsId2dockerMountMap = pullFiles(workflow, inputsAndOutputsJson);
 
