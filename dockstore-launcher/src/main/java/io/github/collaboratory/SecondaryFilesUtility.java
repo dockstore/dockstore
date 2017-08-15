@@ -105,7 +105,7 @@ public class SecondaryFilesUtility {
      */
     private void getDescriptorsWithFileInput(Workflow workflow, String fileId, List<Map<String, List<String>>> idAndSecondaryFiles) {
         Object steps = workflow.getSteps();
-        if (steps instanceof ArrayList) {
+        if (steps instanceof List) {
             @SuppressWarnings("unchecked")
             ArrayList<Object> stepsList = (ArrayList<Object>)steps;
 
@@ -113,7 +113,7 @@ public class SecondaryFilesUtility {
             stepsList.forEach((Object step) -> {
                 if (step instanceof Map) {
                     LinkedTreeMap mapStep = (LinkedTreeMap)step;
-                    if (mapStep.get("in") instanceof ArrayList) {
+                    if (mapStep.get("in") instanceof List) {
                         @SuppressWarnings("unchecked")
                         ArrayList<Map> in = (ArrayList)mapStep.get("in");
 
@@ -129,7 +129,7 @@ public class SecondaryFilesUtility {
                                         if (id.equals(fileId)) {
                                             loopThroughSource(idString, fileId, mapStep, idAndSecondaryFiles);
                                         }
-                                    } else if (sourceObject instanceof ArrayList) {
+                                    } else if (sourceObject instanceof List) {
                                         @SuppressWarnings("unchecked")
                                         ArrayList<Object> sourceArrayList = (ArrayList)sourceObject;
                                         sourceArrayList.forEach(source -> {
@@ -188,7 +188,7 @@ public class SecondaryFilesUtility {
         if (workflowSecondaryFiles == null) {
             LOG.info("Copying the secondary files to " + workflowId);
             input.setSecondaryFiles(toolSecondaryFiles);
-        } else if (workflowSecondaryFiles instanceof ArrayList) {
+        } else if (workflowSecondaryFiles instanceof List) {
             LOG.info("Copying the secondary files to " + workflowId);
             @SuppressWarnings("unchecked")
             ArrayList<String> arrayListWorkflowSecondaryFiles = (ArrayList<String>)workflowSecondaryFiles;
