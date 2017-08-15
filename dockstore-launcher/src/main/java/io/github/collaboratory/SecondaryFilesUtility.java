@@ -59,10 +59,7 @@ public class SecondaryFilesUtility {
     }
 
     private void loopThroughSource(String id, String fileId, LinkedTreeMap mapStep, List<Map<String, List<String>>> idAndSecondaryFiles) {
-        String[] temp = id.split("#");
-        String temp3 = temp[temp.length - 1];
-        String[] split = temp3.split("/");
-        String toolIDFromWorkflow = split[split.length - 1];
+        String toolIDFromWorkflow = extractID(id);
 
         String descriptor = mapStep.get("run").toString();
         final String toolDescriptor = this.cwlUtil.parseCWL(descriptor).getLeft();
@@ -79,8 +76,7 @@ public class SecondaryFilesUtility {
                         List<String> secondaryFiles = (List<String>)input.get("secondaryFiles");
                         if (secondaryFiles != null) {
                             String toolId = input.getId().toString();
-                            String[] temp2 = toolId.split("#");
-                            String toolFileId = temp2[1];
+                            String toolFileId = extractID(toolId);
                             // Check if the tool descriptor has secondary files and if the id matches the workflow id
                             if (toolFileId.equals(toolIDFromWorkflow)) {
                                 //                            if (toolFileId.equals(workflowFileId)) {
@@ -163,6 +159,17 @@ public class SecondaryFilesUtility {
         } else {
             throwUnhandledTypeException(steps);
         }
+    }
+
+    /**
+     * If parsing the CWL with cwltool, the id may look something like file:///home/gluu/dockstore/dockstore-client/target/test-classes/testDirectory3/workflow.cwl#mutect/ncpus
+     * we are trying to extract ncpus from it, so using the below string split to retrieve it
+     * @param idWithPath
+     * @return
+     */
+    private String extractID(String idWithPath) {
+        String[] temp = idWithPath.split("[#/]");
+        return temp[temp.length - 1];
     }
 
     private void throwUnhandledTypeException(Object object) {
