@@ -1194,12 +1194,9 @@ public abstract class AbstractEntryClient {
      * @return
      */
     private String getOriginalTestParameterFilePath(String yamlRun, String jsonRun, String csvRun) {
-        if (yamlRun != null) {
-            return yamlRun;
-        } else if (jsonRun != null) {
-            return jsonRun;
-        } else if (csvRun != null) {
-            return csvRun;
+        java.util.Optional<String> s = Arrays.asList(yamlRun, jsonRun, csvRun).stream().filter(o -> o != null).findFirst();
+        if (s.isPresent()) {
+            return s.get();
         } else {
             return "";
         }
