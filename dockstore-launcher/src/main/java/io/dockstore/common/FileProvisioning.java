@@ -352,14 +352,29 @@ public class FileProvisioning {
 
                 File destinationFile = new File(destPath);
                 // if it is a URL, we need to treat it differently
+                String resolvedDestinationPath;
                 try {
                     URI uri = URI.create(destPath);
-                    destinationFile = new File(uri);
+                    String[] schemes = fsManager.getSchemes();
+                    String scheme = uri.getScheme();
+                    // if there is a scheme involved, check to see if vfs can handle it
+                    if (scheme != null) {
+                        boolean matchingScheme = Stream.of(schemes).anyMatch(s -> s.equals(scheme));
+                        if (!matchingScheme) {
+                            System.out.println("No matching provision method for " + destPath + " , skipping");
+                            return;
+                        }
+                        resolvedDestinationPath = destPath;
+                    } else {
+                        // there is no scheme, this is just a local file
+                        resolvedDestinationPath = destinationFile.getAbsolutePath();
+                    }
                 } catch (IllegalArgumentException e) {
                     // do nothing
                     LOG.debug(destPath + " not a uri");
+                    resolvedDestinationPath = destinationFile.getAbsolutePath();
                 }
-                try (FileObject dest = fsManager.resolveFile(destinationFile.getAbsolutePath());
+                try (FileObject dest = fsManager.resolveFile(resolvedDestinationPath);
                         FileObject src = fsManager.resolveFile(sourceFile.getAbsolutePath())) {
                     System.out.println("Provisioning from " + srcPath + " to " + destPath);
                     if (src.isFolder()) {
