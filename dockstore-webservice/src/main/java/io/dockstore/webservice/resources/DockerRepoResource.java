@@ -35,6 +35,7 @@ import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.EntryLabelHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.Helper;
@@ -99,6 +100,7 @@ public class DockerRepoResource {
     private final String bitbucketClientSecret;
     private final EntryVersionHelper<Tool> entryVersionHelper;
     private final ObjectMapper objectMapper;
+    private final ElasticManager elasticManager;
 
     @SuppressWarnings("checkstyle:parameternumber")
     public DockerRepoResource(ObjectMapper mapper, HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ToolDAO toolDAO, TagDAO tagDAO,
@@ -116,6 +118,7 @@ public class DockerRepoResource {
 
         this.toolDAO = toolDAO;
         entryVersionHelper = new EntryVersionHelper<>(toolDAO);
+        elasticManager = new ElasticManager();
     }
 
     @GET
@@ -125,13 +128,11 @@ public class DockerRepoResource {
     @RolesAllowed("admin")
     @ApiOperation(value = "Refresh all repos", notes = "Updates some metadata. ADMIN ONLY", response = Tool.class, responseContainer = "List")
     public List<Tool> refreshAll(@ApiParam(hidden = true) @Auth User authUser) {
-
         List<Tool> tools;
         List<User> users = userDAO.findAll();
         for (User user : users) {
             refreshToolsForUser(user.getId());
         }
-
         tools = toolDAO.findAll();
 
         return tools;
@@ -139,12 +140,10 @@ public class DockerRepoResource {
 
     List<Tool> refreshToolsForUser(Long userId) {
         List<Token> tokens = tokenDAO.findBitbucketByUserId(userId);
-
         if (!tokens.isEmpty()) {
             Token bitbucketToken = tokens.get(0);
             Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
         }
-
         return Helper.refresh(userId, client, objectMapper, userDAO, toolDAO, tokenDAO, tagDAO, fileDAO);
     }
 
@@ -168,9 +167,9 @@ public class DockerRepoResource {
             Token bitbucketToken = tokens.get(0);
             Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
         }
-
-        return Helper.refreshContainer(containerId, user.getId(), client, objectMapper, userDAO, toolDAO, tokenDAO, tagDAO, fileDAO);
-
+        Tool tool = Helper.refreshContainer(containerId, user.getId(), client, objectMapper, userDAO, toolDAO, tokenDAO, tagDAO, fileDAO);
+        elasticManager.updateDocument(tool);
+        return tool;
     }
 
     @GET
@@ -193,7 +192,7 @@ public class DockerRepoResource {
         Helper.checkEntry(c);
 
         Helper.checkUser(user, c);
-
+        elasticManager.updateDocument(c);
         return c;
     }
 
@@ -210,7 +209,9 @@ public class DockerRepoResource {
         Helper.checkEntry(c);
 
         EntryLabelHelper<Tool> labeller = new EntryLabelHelper<>(labelDAO);
-        return labeller.updateLabels(c, labelStrings);
+        Tool tool = labeller.updateLabels(c, labelStrings);
+        elasticManager.updateDocument(tool);
+        return tool;
     }
 
     @PUT
@@ -237,7 +238,7 @@ public class DockerRepoResource {
 
         Tool result = toolDAO.findById(containerId);
         Helper.checkEntry(result);
-
+        elasticManager.updateDocument(result);
         return result;
 
     }
@@ -266,7 +267,7 @@ public class DockerRepoResource {
                 tag.setDockerfilePath(tool.getDefaultDockerfilePath());
             }
         }
-
+        elasticManager.updateDocument(c);
         return c;
     }
 
@@ -281,7 +282,6 @@ public class DockerRepoResource {
         Helper.checkEntry(c);
 
         Helper.checkUser(user, c);
-
         return new ArrayList(c.getUsers());
     }
 
@@ -814,7 +814,7 @@ public class DockerRepoResource {
                 tag.addSourceFile(sourceFileWithId);
             }
         }
-
+        elasticManager.updateDocument(tool);
         return tag.getSourceFiles();
     }
 
@@ -864,6 +864,7 @@ public class DockerRepoResource {
             @ApiParam(value = "StarRequest to star a repo for a user", required = true) StarRequest request) {
         Tool tool = toolDAO.findById(containerId);
         Helper.starEntryHelper(tool, user, "tool", tool.getPath());
+        elasticManager.updateDocument(tool);
     }
 
     @DELETE
