@@ -69,7 +69,8 @@ public class EntryLabelHelper<T extends Entry> {
             }
             entry.setLabels(labels);
         }
-
+        ElasticManager elasticManager = new ElasticManager();
+        elasticManager.updateDocument(entry);
         return entry;
     }
 }
