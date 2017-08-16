@@ -16,6 +16,28 @@
 
 package io.dockstore.client.cli.nested;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
@@ -53,28 +75,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static io.dockstore.client.cli.ArgumentUtility.CONVERT;
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
@@ -557,9 +557,9 @@ public abstract class AbstractEntryClient {
             }
         } else {
             final String cwlPath = reqVal(args, "--cwl");
-          
+
             final ImmutablePair<String, String> output = CWL_UTIL.parseCWL(cwlPath);
-          
+
             // do not continue to convert to json if cwl is invalid
             if (!validateCWL(cwlPath)) {
                 return;
@@ -618,12 +618,13 @@ public abstract class AbstractEntryClient {
     /**
      * this function will validate CWL file
      * using this command: cwltool --non-strict --validate <file_path>
+     *
      * @param cwlFilePath
      */
     private boolean validateCWL(String cwlFilePath) {
         final String[] s = { "cwltool", "--non-strict", "--validate", cwlFilePath };
         try {
-            io.cwl.avro.Utilities.executeCommand(Joiner.on(" ").join(Arrays.asList(s)), false,  Optional.absent(), Optional.absent());
+            io.cwl.avro.Utilities.executeCommand(Joiner.on(" ").join(Arrays.asList(s)), false, Optional.absent(), Optional.absent());
             return true;
         } catch (RuntimeException e) {
             // when invalid, executeCommand will throw a RuntimeException
@@ -1075,7 +1076,7 @@ public abstract class AbstractEntryClient {
      */
     void handleCWLLaunch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns, OutputStream stdoutStream,
             OutputStream stderrStream) throws IOException, ApiException {
-
+        String originalTestParameterFilePath = getOriginalTestParameterFilePath(yamlRun, jsonRun, csvRuns);
         if (!SCRIPT.get()) {
             Client.checkForCWLDependencies();
         }
@@ -1113,7 +1114,7 @@ public abstract class AbstractEntryClient {
                         final File tempJson = File.createTempFile("parameter", ".json", Files.createTempDir());
                         FileUtils.write(tempJson, finalString, StandardCharsets.UTF_8);
                         final LauncherCWL cwlLauncher = new LauncherCWL(getConfigFile(), tempCWL.getAbsolutePath(),
-                                tempJson.getAbsolutePath(), stdoutStream, stderrStream);
+                                tempJson.getAbsolutePath(), stdoutStream, stderrStream, originalTestParameterFilePath);
                         if (this instanceof WorkflowClient) {
                             cwlLauncher.run(Workflow.class);
                         } else {
@@ -1122,7 +1123,7 @@ public abstract class AbstractEntryClient {
                     }
                 } else {
                     final LauncherCWL cwlLauncher = new LauncherCWL(getConfigFile(), tempCWL.getAbsolutePath(), jsonRun, stdoutStream,
-                            stderrStream);
+                            stderrStream, originalTestParameterFilePath);
                     if (this instanceof WorkflowClient) {
                         cwlLauncher.run(Workflow.class);
                     } else {
@@ -1166,7 +1167,7 @@ public abstract class AbstractEntryClient {
                         // final String stringMapAsString = gson.toJson(stringMap);
                         // Files.write(stringMapAsString, tempJson, StandardCharsets.UTF_8);
                         final LauncherCWL cwlLauncher = new LauncherCWL(this.getConfigFile(), tempCWL.getAbsolutePath(),
-                                tempJson.getAbsolutePath(), stdoutStream, stderrStream);
+                                tempJson.getAbsolutePath(), stdoutStream, stderrStream, originalTestParameterFilePath);
                         if (this instanceof WorkflowClient) {
                             cwlLauncher.run(Workflow.class);
                         } else {
@@ -1181,6 +1182,23 @@ public abstract class AbstractEntryClient {
             exceptionMessage(ex, "There was an error creating the CWL GSON instance.", API_ERROR);
         } catch (JsonParseException ex) {
             exceptionMessage(ex, "The JSON file provided is invalid.", API_ERROR);
+        }
+    }
+
+    /**
+     * Returns the first path that is not null
+     *
+     * @param yamlRun The yaml file path
+     * @param jsonRun The json file path
+     * @param csvRun  The csv file path
+     * @return
+     */
+    private String getOriginalTestParameterFilePath(String yamlRun, String jsonRun, String csvRun) {
+        java.util.Optional<String> s = Arrays.asList(yamlRun, jsonRun, csvRun).stream().filter(o -> o != null).findFirst();
+        if (s.isPresent()) {
+            return s.get();
+        } else {
+            return "";
         }
     }
 
@@ -1461,7 +1479,6 @@ public abstract class AbstractEntryClient {
     }
 
     /**
-     *
      * @param entry
      * @param descriptor
      * @param tempDir

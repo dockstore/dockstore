@@ -1,0 +1,17 @@
+{
+  "OUTVCF": "mutect3.vcf",
+  "NORMAL_BAM": {
+    "path": "inputFiles/normal.bam",
+    "class": "File"
+  },
+  "TUMOR_BAM": {
+    "path": "inputFiles/tumor.bam",
+    "class": "File"
+  },
+  "NCPUS": 15,
+  "INDEX": {
+    "path": "inputFiles/mutect_smallindex.tgz",
+    "class": "File"
+  }
+}
+

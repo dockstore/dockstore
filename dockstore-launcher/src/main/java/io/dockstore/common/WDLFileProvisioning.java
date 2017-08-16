@@ -125,7 +125,7 @@ public class WDLFileProvisioning {
             // If directory we will create a copy of it, but not of the content
             Utilities.executeCommand("mkdir -p " + targetFilePath.toString());
         } else {
-            fileProvisioning.provisionInputFile(path, targetFilePath);
+            fileProvisioning.provisionInputFile("", path, targetFilePath);
         }
 
         jsonEntry.put(key, targetFilePath);
