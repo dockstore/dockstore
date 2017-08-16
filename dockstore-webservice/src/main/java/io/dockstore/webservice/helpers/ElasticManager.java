@@ -99,20 +99,21 @@ public class ElasticManager {
     }
 
     public void updateDocument(Entry entry) {
-        String json = getDocumentValueFromEntry(entry);
-        LOGGER.error(json);
-        if (!this.hostname.isEmpty()) {
-            try (RestClient restClient = RestClient.builder(new HttpHost(this.hostname, this.port, "http")).build()) {
-                String entryType = entry instanceof Tool ? "tool" : "workflow";
-                HttpEntity entity = new NStringEntity(json, ContentType.APPLICATION_JSON);
-                org.elasticsearch.client.Response post = restClient
-                        .performRequest("POST", "/entry/" + entryType + "/" + entry.getId() + "/_update", Collections.emptyMap(), entity);
-                if (post.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-                    throw new CustomWebApplicationException("Could not submit index to elastic search",
-                            HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        if (entry.getIsPublished()) {
+            String json = getDocumentValueFromEntry(entry);
+            LOGGER.error(json);
+            if (!this.hostname.isEmpty()) {
+                try (RestClient restClient = RestClient.builder(new HttpHost(this.hostname, this.port, "http")).build()) {
+                    String entryType = entry instanceof Tool ? "tool" : "workflow";
+                    HttpEntity entity = new NStringEntity(json, ContentType.APPLICATION_JSON);
+                    org.elasticsearch.client.Response post = restClient
+                            .performRequest("POST", "/entry/" + entryType + "/" + entry.getId() + "/_update", Collections.emptyMap(), entity);
+                    if (post.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+                        throw new CustomWebApplicationException("Could not submit index to elastic search", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                    }
+                } catch (IOException e) {
+                    throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
                 }
-            } catch (IOException e) {
-                throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
         }
     }
