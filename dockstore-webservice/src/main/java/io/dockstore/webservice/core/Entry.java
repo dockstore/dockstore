@@ -200,13 +200,6 @@ public abstract class Entry<S extends Entry, T extends Version> {
         this.lastModified = lastModified;
     }
 
-    /**
-     * @return the isPublished
-     */
-    public boolean isIsPublished() {
-        return isPublished;
-    }
-
     public void setGitUrl(String gitUrl) {
         this.gitUrl = gitUrl;
     }
