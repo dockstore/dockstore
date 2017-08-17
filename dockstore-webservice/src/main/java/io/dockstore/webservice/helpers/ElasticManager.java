@@ -1,5 +1,13 @@
 package io.dockstore.webservice.helpers;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
@@ -20,31 +28,27 @@ import org.elasticsearch.client.RestClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 /**
  * @author gluu
  * @since 26/07/17
  */
 public class ElasticManager {
-    public static String hostname;
-    public static int port;
     public static DockstoreWebserviceConfiguration config;
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticManager.class);
     private static ToolDAO toolDAO = null;
     private static WorkflowDAO workflowDAO = null;
     private List<Long> toolIds;
     private List<Long> workflowIds;
-
     public ElasticManager() {
-        this.hostname = config.getEsConfiguration().getHostname();
-        this.port = config.getEsConfiguration().getPort();
+
+    }
+
+    public static DockstoreWebserviceConfiguration getConfig() {
+        return config;
+    }
+
+    public static void setConfig(DockstoreWebserviceConfiguration config) {
+        ElasticManager.config = config;
     }
 
     public List<Long> getToolIds() {
@@ -95,11 +99,13 @@ public class ElasticManager {
     }
 
     public void updateDocument(Entry entry) {
+        String hostname = config.getEsConfiguration().getHostname();
+        int port = config.getEsConfiguration().getPort();
         if (entry.getIsPublished()) {
             String json = getDocumentValueFromEntry(entry);
             LOGGER.error(json);
-            if (!this.hostname.isEmpty()) {
-                try (RestClient restClient = RestClient.builder(new HttpHost(this.hostname, this.port, "http")).build()) {
+            if (!hostname.isEmpty()) {
+                try (RestClient restClient = RestClient.builder(new HttpHost(hostname, port, "http")).build()) {
                     String entryType = entry instanceof Tool ? "tool" : "workflow";
                     HttpEntity entity = new NStringEntity(json, ContentType.APPLICATION_JSON);
                     org.elasticsearch.client.Response post = restClient

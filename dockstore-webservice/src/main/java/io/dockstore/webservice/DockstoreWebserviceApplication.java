@@ -180,7 +180,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         beanConfig.setBasePath("/");
         beanConfig.setResourcePackage("io.dockstore.webservice.resources,io.swagger.api");
         beanConfig.setScan(true);
-        ElasticManager.config = configuration;
+        ElasticManager.setConfig(configuration);
         final QuayIOAuthenticationResource resource2 = new QuayIOAuthenticationResource(configuration.getQuayClientID(),
                 configuration.getQuayRedirectURI());
         environment.jersey().register(resource2);
