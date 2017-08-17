@@ -1,13 +1,5 @@
 package io.dockstore.webservice.helpers;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
@@ -28,19 +20,27 @@ import org.elasticsearch.client.RestClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 /**
  * @author gluu
  * @since 26/07/17
  */
 public class ElasticManager {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ElasticManager.class);
     public static String hostname;
     public static int port;
     public static DockstoreWebserviceConfiguration config;
+    private static final Logger LOGGER = LoggerFactory.getLogger(ElasticManager.class);
     private static ToolDAO toolDAO = null;
     private static WorkflowDAO workflowDAO = null;
-    List<Long> toolIds;
-    List<Long> workflowIds;
+    private List<Long> toolIds;
+    private List<Long> workflowIds;
 
     public ElasticManager() {
         this.hostname = config.getEsConfiguration().getHostname();
@@ -65,16 +65,12 @@ public class ElasticManager {
 
     private String getNDJSONFromIDs() {
         List<Entry> entries = new ArrayList<>();
-        toolIds.forEach(id -> {
-            entries.add(toolDAO.findPublishedById(id));
-        });
-        workflowIds.forEach(id -> {
-            entries.add(workflowDAO.findPublishedById(id));
-        });
+        toolIds.forEach(id -> entries.add(toolDAO.findPublishedById(id)));
+        workflowIds.forEach(id -> entries.add(workflowDAO.findPublishedById(id)));
         return getNDJSON(entries);
     }
 
-    public String getDocumentValueFromEntry(Entry entry) {
+    private String getDocumentValueFromEntry(Entry entry) {
         ObjectMapper mapper = Jackson.newObjectMapper();
         StringBuilder builder = new StringBuilder();
         Map<String, Object> doc = new HashMap<>();
@@ -107,9 +103,11 @@ public class ElasticManager {
                     String entryType = entry instanceof Tool ? "tool" : "workflow";
                     HttpEntity entity = new NStringEntity(json, ContentType.APPLICATION_JSON);
                     org.elasticsearch.client.Response post = restClient
-                            .performRequest("POST", "/entry/" + entryType + "/" + entry.getId() + "/_update", Collections.emptyMap(), entity);
+                            .performRequest("POST", "/entry/" + entryType + "/" + entry.getId() + "/_update", Collections.emptyMap(),
+                                    entity);
                     if (post.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-                        throw new CustomWebApplicationException("Could not submit index to elastic search", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                        throw new CustomWebApplicationException("Could not submit index to elastic search",
+                                HttpStatus.SC_INTERNAL_SERVER_ERROR);
                     }
                 } catch (IOException e) {
                     throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
