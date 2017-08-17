@@ -34,11 +34,14 @@ import org.slf4j.LoggerFactory;
  */
 public class ElasticManager {
     public static DockstoreWebserviceConfiguration config;
+    public static String hostname;
+    public static int port;
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticManager.class);
     private static ToolDAO toolDAO = null;
     private static WorkflowDAO workflowDAO = null;
     private List<Long> toolIds;
     private List<Long> workflowIds;
+
     public ElasticManager() {
 
     }
@@ -49,6 +52,8 @@ public class ElasticManager {
 
     public static void setConfig(DockstoreWebserviceConfiguration config) {
         ElasticManager.config = config;
+        ElasticManager.hostname = config.getEsConfiguration().getHostname();
+        ElasticManager.port = config.getEsConfiguration().getPort();
     }
 
     public List<Long> getToolIds() {
@@ -74,6 +79,11 @@ public class ElasticManager {
         return getNDJSON(entries);
     }
 
+    /**
+     * This converts the entry into a document for elastic search to use
+     * @param entry     The entry that needs updating
+     * @return
+     */
     private String getDocumentValueFromEntry(Entry entry) {
         ObjectMapper mapper = Jackson.newObjectMapper();
         StringBuilder builder = new StringBuilder();
@@ -87,6 +97,68 @@ public class ElasticManager {
         return builder.toString();
     }
 
+    /**
+     * This handles the index for elastic search
+     * @param entry         The entry to be converted into a document
+     * @param command       The command to perform for the document, either "update", "add", or "delete" document
+     */
+    public void handleIndexUpdate(Entry entry, String command) {
+        if (!checkValid(entry, command) || ElasticManager.hostname.isEmpty()) {
+            return;
+        }
+        String json = getDocumentValueFromEntry(entry);
+        try (RestClient restClient = RestClient.builder(new HttpHost(ElasticManager.hostname, ElasticManager.port, "http")).build()) {
+            String entryType = entry instanceof Tool ? "tool" : "workflow";
+            HttpEntity entity = new NStringEntity(json, ContentType.APPLICATION_JSON);
+            org.elasticsearch.client.Response post;
+            switch (command) {
+            case "update":
+                post = restClient
+                        .performRequest("POST", "/entry/" + entryType + "/" + entry.getId() + "/_update", Collections.emptyMap(), entity);
+                LOGGER.info("Document updated.");
+                break;
+            case "add":
+                post = restClient.performRequest("PUT", "/entry/" + entryType + "/" + entry.getId(), Collections.emptyMap(), entity);
+                LOGGER.info("Document added.");
+                break;
+            case "delete":
+                post = restClient.performRequest("DELETE", "/entry/" + entryType + "/" + entry.getId(), Collections.emptyMap(), entity);
+                LOGGER.info("Document deleted.");
+                break;
+            default:
+                throw new RuntimeException("Unknown index command: " + command);
+            }
+            if (post.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+                throw new CustomWebApplicationException("Could not submit index to elastic search", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            }
+        } catch (IOException e) {
+            throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private boolean checkValid(Entry entry, String command) {
+        boolean published = entry.getIsPublished();
+        switch (command) {
+        case "update":
+            if (published) {
+                return true;
+            }
+        case "add":
+            if (published) {
+                return true;
+            }
+            break;
+        case "delete":
+            if (!published) {
+                return true;
+            }
+            break;
+        default:
+            return false;
+        }
+        return false;
+    }
+
     public String updateDocumentValueFromLabels(Entry entry) {
         Gson gson = new GsonBuilder().create();
         StringBuilder builder = new StringBuilder();
@@ -96,30 +168,6 @@ public class ElasticManager {
         doc.put("doc", labelsMap);
         builder.append(gson.toJson(doc, Map.class));
         return builder.toString();
-    }
-
-    public void updateDocument(Entry entry) {
-        String hostname = config.getEsConfiguration().getHostname();
-        int port = config.getEsConfiguration().getPort();
-        if (entry.getIsPublished()) {
-            String json = getDocumentValueFromEntry(entry);
-            LOGGER.error(json);
-            if (!hostname.isEmpty()) {
-                try (RestClient restClient = RestClient.builder(new HttpHost(hostname, port, "http")).build()) {
-                    String entryType = entry instanceof Tool ? "tool" : "workflow";
-                    HttpEntity entity = new NStringEntity(json, ContentType.APPLICATION_JSON);
-                    org.elasticsearch.client.Response post = restClient
-                            .performRequest("POST", "/entry/" + entryType + "/" + entry.getId() + "/_update", Collections.emptyMap(),
-                                    entity);
-                    if (post.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-                        throw new CustomWebApplicationException("Could not submit index to elastic search",
-                                HttpStatus.SC_INTERNAL_SERVER_ERROR);
-                    }
-                } catch (IOException e) {
-                    throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
-                }
-            }
-        }
     }
 
     public String getNDJSON(List<Entry> published) {

@@ -168,7 +168,7 @@ public class DockerRepoResource {
             Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
         }
         Tool tool = Helper.refreshContainer(containerId, user.getId(), client, objectMapper, userDAO, toolDAO, tokenDAO, tagDAO, fileDAO);
-        elasticManager.updateDocument(tool);
+        elasticManager.handleIndexUpdate(tool, "update");
         return tool;
     }
 
@@ -192,7 +192,7 @@ public class DockerRepoResource {
         Helper.checkEntry(c);
 
         Helper.checkUser(user, c);
-        elasticManager.updateDocument(c);
+        elasticManager.handleIndexUpdate(c, "update");
         return c;
     }
 
@@ -210,7 +210,7 @@ public class DockerRepoResource {
 
         EntryLabelHelper<Tool> labeller = new EntryLabelHelper<>(labelDAO);
         Tool tool = labeller.updateLabels(c, labelStrings);
-        elasticManager.updateDocument(tool);
+        elasticManager.handleIndexUpdate(tool, "update");
         return tool;
     }
 
@@ -238,7 +238,7 @@ public class DockerRepoResource {
 
         Tool result = toolDAO.findById(containerId);
         Helper.checkEntry(result);
-        elasticManager.updateDocument(result);
+        elasticManager.handleIndexUpdate(result, "update");
         return result;
 
     }
@@ -267,7 +267,7 @@ public class DockerRepoResource {
                 tag.setDockerfilePath(tool.getDefaultDockerfilePath());
             }
         }
-        elasticManager.updateDocument(c);
+        elasticManager.handleIndexUpdate(c, "update");
         return c;
     }
 
@@ -392,6 +392,7 @@ public class DockerRepoResource {
 
             tool = toolDAO.findById(containerId);
             if (tool == null) {
+                elasticManager.handleIndexUpdate(tool, "delete");
                 return Response.ok().build();
             } else {
                 return Response.serverError().build();
@@ -446,6 +447,11 @@ public class DockerRepoResource {
 
         long id = toolDAO.create(c);
         c = toolDAO.findById(id);
+        if (c.getIsPublished()) {
+            elasticManager.handleIndexUpdate(c, "add");
+        } else {
+            elasticManager.handleIndexUpdate(c, "delete");
+        }
         return c;
     }
 
@@ -814,7 +820,7 @@ public class DockerRepoResource {
                 tag.addSourceFile(sourceFileWithId);
             }
         }
-        elasticManager.updateDocument(tool);
+        elasticManager.handleIndexUpdate(tool, "update");
         return tag.getSourceFiles();
     }
 
@@ -864,7 +870,7 @@ public class DockerRepoResource {
             @ApiParam(value = "StarRequest to star a repo for a user", required = true) StarRequest request) {
         Tool tool = toolDAO.findById(containerId);
         Helper.starEntryHelper(tool, user, "tool", tool.getPath());
-        elasticManager.updateDocument(tool);
+        elasticManager.handleIndexUpdate(tool, "update");
     }
 
     @DELETE
@@ -876,7 +882,7 @@ public class DockerRepoResource {
             @ApiParam(value = "Tool to unstar.", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
         Helper.unstarEntryHelper(tool, user, "tool", tool.getPath());
-        elasticManager.updateDocument(tool);
+        elasticManager.handleIndexUpdate(tool, "update");
     }
 
     @GET

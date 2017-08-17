@@ -125,7 +125,7 @@ public class DockerRepoTagResource {
         }
         Tool result = toolDAO.findById(containerId);
         Helper.checkEntry(result);
-        elasticManager.updateDocument(result);
+        elasticManager.handleIndexUpdate(result, "update");
         return result.getTags();
     }
 
@@ -155,7 +155,7 @@ public class DockerRepoTagResource {
 
         Tool result = toolDAO.findById(containerId);
         Helper.checkEntry(result);
-        elasticManager.updateDocument(result);
+        elasticManager.handleIndexUpdate(result, "update");
         return result.getTags();
     }
 
@@ -185,7 +185,7 @@ public class DockerRepoTagResource {
             tag.getSourceFiles().clear();
 
             if (c.getTags().remove(tag)) {
-                elasticManager.updateDocument(c);
+                elasticManager.handleIndexUpdate(c, "update");
                 return Response.ok().build();
             } else {
                 return Response.serverError().build();
@@ -227,7 +227,7 @@ public class DockerRepoTagResource {
 
         Tool result = toolDAO.findById(containerId);
         Helper.checkEntry(result);
-        elasticManager.updateDocument(result);
+        elasticManager.handleIndexUpdate(result, "update");
         return result.getTags();
     }
 }
