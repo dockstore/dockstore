@@ -876,6 +876,7 @@ public class DockerRepoResource {
             @ApiParam(value = "Tool to unstar.", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
         Helper.unstarEntryHelper(tool, user, "tool", tool.getPath());
+        elasticManager.updateDocument(tool);
     }
 
     @GET

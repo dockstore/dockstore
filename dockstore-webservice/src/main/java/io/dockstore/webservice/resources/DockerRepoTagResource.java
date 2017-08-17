@@ -39,6 +39,7 @@ import io.dockstore.webservice.api.VerifyRequest;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.Helper;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -60,14 +61,14 @@ import org.slf4j.LoggerFactory;
 @Produces(MediaType.APPLICATION_JSON)
 public class DockerRepoTagResource {
     private static final Logger LOG = LoggerFactory.getLogger(DockerRepoTagResource.class);
-
+    private final ElasticManager elasticManager;
     private final ToolDAO toolDAO;
     private final TagDAO tagDAO;
 
     public DockerRepoTagResource(ToolDAO toolDAO, TagDAO tagDAO) {
         this.tagDAO = tagDAO;
-
         this.toolDAO = toolDAO;
+        elasticManager = new ElasticManager();
     }
 
     @GET
@@ -124,6 +125,7 @@ public class DockerRepoTagResource {
         }
         Tool result = toolDAO.findById(containerId);
         Helper.checkEntry(result);
+        elasticManager.updateDocument(result);
         return result.getTags();
     }
 
@@ -153,6 +155,7 @@ public class DockerRepoTagResource {
 
         Tool result = toolDAO.findById(containerId);
         Helper.checkEntry(result);
+        elasticManager.updateDocument(result);
         return result.getTags();
     }
 
@@ -182,6 +185,7 @@ public class DockerRepoTagResource {
             tag.getSourceFiles().clear();
 
             if (c.getTags().remove(tag)) {
+                elasticManager.updateDocument(c);
                 return Response.ok().build();
             } else {
                 return Response.serverError().build();
@@ -223,6 +227,7 @@ public class DockerRepoTagResource {
 
         Tool result = toolDAO.findById(containerId);
         Helper.checkEntry(result);
+        elasticManager.updateDocument(result);
         return result.getTags();
     }
 }
