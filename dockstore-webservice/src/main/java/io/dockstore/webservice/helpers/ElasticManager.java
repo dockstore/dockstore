@@ -106,7 +106,11 @@ public class ElasticManager {
      */
     public void handleIndexUpdate(Entry entry, String command) {
         LOGGER.info("Performing index update with " + command + ".");
-        if (!checkValid(entry, command) || ElasticManager.hostname.isEmpty()) {
+        if (ElasticManager.hostname == null || ElasticManager.hostname.isEmpty()) {
+            LOGGER.error("No elastic search host found.");
+            return;
+        }
+        if (!checkValid(entry, command)) {
             LOGGER.error("Could not perform the elastic search index update.");
             return;
         }
