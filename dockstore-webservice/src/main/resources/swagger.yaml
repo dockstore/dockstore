@@ -1574,6 +1574,18 @@ paths:
           schema: {$ref: '#/definitions/QuayIOView'}
       summary: Display an authorization link for quay.io
       tags: [integration.quay.io]
+  /metadata/sitemap:
+    get:
+      description: NO authentication
+      operationId: sitemap
+      parameters: []
+      produces: [text/html]
+      responses:
+        200:
+          description: successful operation
+          schema: {type: string}
+      summary: List all workflow and tool paths.
+      tags: [containers]
   /users:
     get:
       description: List all users. Admin only.
@@ -2571,3 +2583,4 @@ tags:
   name: tokens}
 - {description: List and register workflows in the dockstore (CWL or WDL), name: workflows}
 - {description: 'List, modify, and manage end users of the dockstore', name: users}
+- {name: metadata}
