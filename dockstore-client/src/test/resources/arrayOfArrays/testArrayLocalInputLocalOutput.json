@@ -1,5 +1,5 @@
 {
-  "arrayed_input": [
+  "arrayed_input": [[
     {
       "path": "example.bedGraph",
       "class": "File"
@@ -12,7 +12,7 @@
       "path": "example.bedGraph",
       "class": "File"
     }
-  ],
+  ]],
   "hello_input": {
     "path": "example.bedGraph",
     "class": "File"
