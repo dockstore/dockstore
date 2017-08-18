@@ -13,7 +13,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.dockstore.common;
+package io.github.collaboratory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
  * @author gluu
  * @since 14/08/17
  */
-public class SecondaryFilesUtility {
+class SecondaryFilesUtility {
     private static final Logger LOG = LoggerFactory.getLogger(SecondaryFilesUtility.class);
     private CWL cwlUtil;
     private Gson gson;
@@ -223,7 +223,7 @@ public class SecondaryFilesUtility {
      *
      * @param workflow The workflow object
      */
-    public void modifyWorkflowToIncludeToolSecondaryFiles(Workflow workflow) {
+    void modifyWorkflowToIncludeToolSecondaryFiles(Workflow workflow) {
         // Contains a list of descriptor files that uses the files in the root workflow
         List<Map<String, List<String>>> descriptorsWithFiles = new ArrayList<>();
         List<String> inputFileIds = this.getInputFileIds(workflow);

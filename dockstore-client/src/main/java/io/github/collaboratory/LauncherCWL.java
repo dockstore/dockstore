@@ -195,8 +195,10 @@ public class LauncherCWL {
         System.out.println("Provisioning your input files to your local machine");
         if (cwlObject instanceof Workflow) {
             Workflow workflow = (Workflow)cwlObject;
-            SecondaryFilesUtility secondaryFilesUtility = new SecondaryFilesUtility(cwlUtil, this.gson);
-            secondaryFilesUtility.modifyWorkflowToIncludeToolSecondaryFiles(workflow);
+            if (!"bunny".equals(cwlRunner)) {
+                SecondaryFilesUtility secondaryFilesUtility = new SecondaryFilesUtility(cwlUtil, this.gson);
+                secondaryFilesUtility.modifyWorkflowToIncludeToolSecondaryFiles(workflow);
+            }
             // pull input files
             inputsId2dockerMountMap = pullFiles(workflow, inputsAndOutputsJson);
 
@@ -651,6 +653,13 @@ public class LauncherCWL {
         }
 
         String cwlOutputPath = (String)fileMapDataStructure.get("path");
+        Path path = Paths.get(cwlOutputPath);
+        if (!path.isAbsolute()) {
+            // changing the cwlOutput path to an absolute path (bunny uses absolute, cwltool uses relative)
+            Path currentRelativePath = Paths.get("");
+            cwlOutputPath = currentRelativePath.toAbsolutePath().toString() + cwlOutputPath;
+        }
+
         LOG.info("NAME: {} URL: {} FILENAME: {} CWL OUTPUT PATH: {}", file.getLocalPath(), file.getUrl(), key, cwlOutputPath);
         System.out.println("Registering: #" + key + " to provision from " + cwlOutputPath + " to : " + file.getUrl());
         fileProvisioning.registerOutputFile(cwlOutputPath, file);
