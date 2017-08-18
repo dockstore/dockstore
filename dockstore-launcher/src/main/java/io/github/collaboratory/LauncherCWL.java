@@ -634,8 +634,8 @@ public class LauncherCWL {
 
         String cwlOutputPath = (String)fileMapDataStructure.get("path");
         Path path = Paths.get(cwlOutputPath);
-        if (!path.isAbsolute()) {
-            // changing the cwlOutput path to an absolute path (bunny uses absolute, cwltool uses relative)
+        if (!path.isAbsolute() || !Files.exists(path)) {
+            // changing the cwlOutput path to an absolute path (bunny uses absolute, cwltool uses relative, but can change?!)
             Path currentRelativePath = Paths.get("");
             cwlOutputPath = currentRelativePath.toAbsolutePath().toString() + cwlOutputPath;
         }
