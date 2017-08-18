@@ -48,65 +48,65 @@
 
 <module name="Checker">
 
-    <!--
+
+    <module name="TreeWalker">
+        <module name="SuppressWarningsHolder"/>
+        <!--
 
      SUPPRESSION FILTERS
 
  -->
 
-    <!-- Toggle Checkstyle on/off
+        <!-- Toggle Checkstyle on/off
 
-        // @Checkstyle:off
-        ... ignored
-        // @Checkstyle:on
+            // @Checkstyle:off
+            ... ignored
+            // @Checkstyle:on
 
-    -->
-    <module name="SuppressionCommentFilter">
-        <property name="offCommentFormat" value="@Checkstyle:off"/>
-        <property name="onCommentFormat" value="@Checkstyle:on"/>
-    </module>
+        -->
+        <module name="SuppressionCommentFilter">
+            <property name="offCommentFormat" value="@Checkstyle:off"/>
+            <property name="onCommentFormat" value="@Checkstyle:on"/>
+        </module>
 
-    <!--  Instruct Checkstyle to ignore a specific check for a whole file
+        <!--  Instruct Checkstyle to ignore a specific check for a whole file
 
-        // @Checkstyle:ignore AvoidNestedBlocks
+            // @Checkstyle:ignore AvoidNestedBlocks
 
-    -->
-    <module name="SuppressWithNearbyCommentFilter">
-        <property name="commentFormat" value="@Checkstyle:ignore ([\w\|]+)"/>
-        <property name="checkFormat" value="$1"/>
-        <property name="influenceFormat" value="1000000"/>
-    </module>
+        -->
+        <module name="SuppressWithNearbyCommentFilter">
+            <property name="commentFormat" value="@Checkstyle:ignore ([\w\|]+)"/>
+            <property name="checkFormat" value="$1"/>
+            <property name="influenceFormat" value="1000000"/>
+        </module>
 
-    <!--  Instruct Checkstyle to ignore next line
+        <!--  Instruct Checkstyle to ignore next line
 
-        // @Checkstyle:ignore
-        ... ignored
-        ... checked
+            // @Checkstyle:ignore
+            ... ignored
+            ... checked
 
-    -->
-    <module name="SuppressWithNearbyCommentFilter">
-        <property name="commentFormat" value="@Checkstyle:ignore"/>
-        <property name="influenceFormat" value="1"/>
-    </module>
+        -->
+        <module name="SuppressWithNearbyCommentFilter">
+            <property name="commentFormat" value="@Checkstyle:ignore"/>
+            <property name="influenceFormat" value="1"/>
+        </module>
 
-    <!--  Instruct Checkstyle to ignore next N lines (-ve means previous lines)
+        <!--  Instruct Checkstyle to ignore next N lines (-ve means previous lines)
 
-        // @Checkstyle:ignoreFor 2
-        ... ignored
-        ... ignored
-        ... checked
+            // @Checkstyle:ignoreFor 2
+            ... ignored
+            ... ignored
+            ... checked
 
-    -->
-    <module name="SuppressWithNearbyCommentFilter">
-        <property name="commentFormat" value="@Checkstyle:ignoreFor (\d+)"/>
-        <property name="influenceFormat" value="$1"/>
+        -->
+        <module name="SuppressWithNearbyCommentFilter">
+            <property name="commentFormat" value="@Checkstyle:ignoreFor (\d+)"/>
+            <property name="influenceFormat" value="$1"/>
+        </module>
     </module>
 
     <module name="SuppressWarningsFilter"/>
-    <module name="TreeWalker">
-        <module name="SuppressWarningsHolder"/>
-    </module>
-
 
     <!--
         If you set the basedir property below, then all reported file

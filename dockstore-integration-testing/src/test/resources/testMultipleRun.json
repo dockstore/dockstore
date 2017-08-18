@@ -2,7 +2,7 @@
   {
     "input": [
       {
-        "path": "src/test/resources/example.bedGraph",
+        "path": "example.bedGraph",
         "class": "File"
       }
     ],
@@ -19,7 +19,7 @@
   {
     "input": [
       {
-        "path": "src/test/resources/example.bedGraph",
+        "path": "example.bedGraph",
         "class": "File"
       }
     ],
@@ -36,7 +36,7 @@
   {
     "input": [
       {
-        "path": "src/test/resources/example.bedGraph",
+        "path": "example.bedGraph",
         "class": "File"
       }
     ],
