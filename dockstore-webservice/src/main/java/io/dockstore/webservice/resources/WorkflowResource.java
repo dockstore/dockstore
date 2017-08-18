@@ -577,8 +577,8 @@ public class WorkflowResource {
 
         long id = workflowDAO.create(c);
         c = workflowDAO.findById(id);
-        if (c.getIsPublished()) {
-            elasticManager.handleIndexUpdate(c, "add");
+        if (request.getPublish()) {
+            elasticManager.handleIndexUpdate(c, "update");
         } else {
             elasticManager.handleIndexUpdate(c, "delete");
         }
@@ -927,7 +927,6 @@ public class WorkflowResource {
         workflowFromDB.getUsers().add(user);
         updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow);
         Workflow finalWorkflow = workflowDAO.findById(workflowID);
-        elasticManager.handleIndexUpdate(finalWorkflow, "add");
         return finalWorkflow;
 
     }

@@ -190,9 +190,7 @@ public class DockerRepoResource {
             @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
         Tool c = toolDAO.findById(containerId);
         Helper.checkEntry(c);
-
         Helper.checkUser(user, c);
-        elasticManager.handleIndexUpdate(c, "update");
         return c;
     }
 
@@ -384,7 +382,8 @@ public class DockerRepoResource {
             @ApiParam(value = "Tool id to delete", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
         Helper.checkUser(user, tool);
-
+        Tool deleteTool = new Tool();
+        deleteTool.setId(tool.getId());
         // only allow users to delete manually added images
         if (tool.getMode() == ToolMode.MANUAL_IMAGE_PATH) {
             tool.getTags().clear();
@@ -392,7 +391,7 @@ public class DockerRepoResource {
 
             tool = toolDAO.findById(containerId);
             if (tool == null) {
-                elasticManager.handleIndexUpdate(tool, "delete");
+                elasticManager.handleIndexUpdate(deleteTool, "delete");
                 return Response.ok().build();
             } else {
                 return Response.serverError().build();
@@ -447,8 +446,8 @@ public class DockerRepoResource {
 
         long id = toolDAO.create(c);
         c = toolDAO.findById(id);
-        if (c.getIsPublished()) {
-            elasticManager.handleIndexUpdate(c, "add");
+        if (request.getPublish()) {
+            elasticManager.handleIndexUpdate(c, "update");
         } else {
             elasticManager.handleIndexUpdate(c, "delete");
         }

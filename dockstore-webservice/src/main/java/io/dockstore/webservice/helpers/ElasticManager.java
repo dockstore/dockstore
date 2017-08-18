@@ -12,7 +12,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Tool;
@@ -81,14 +80,16 @@ public class ElasticManager {
 
     /**
      * This converts the entry into a document for elastic search to use
-     * @param entry     The entry that needs updating
-     * @return
+     *
+     * @param entry The entry that needs updating
+     * @return The entry converted into a json string
      */
     private String getDocumentValueFromEntry(Entry entry) {
         ObjectMapper mapper = Jackson.newObjectMapper();
         StringBuilder builder = new StringBuilder();
         Map<String, Object> doc = new HashMap<>();
         doc.put("doc", entry);
+        doc.put("doc_as_upsert", true);
         try {
             builder.append(mapper.writeValueAsString(doc));
         } catch (JsonProcessingException e) {
@@ -99,11 +100,14 @@ public class ElasticManager {
 
     /**
      * This handles the index for elastic search
-     * @param entry         The entry to be converted into a document
-     * @param command       The command to perform for the document, either "update", "add", or "delete" document
+     *
+     * @param entry   The entry to be converted into a document
+     * @param command The command to perform for the document, either "update" or "delete" document
      */
     public void handleIndexUpdate(Entry entry, String command) {
+        LOGGER.info("Performing index update with " + command + ".");
         if (!checkValid(entry, command) || ElasticManager.hostname.isEmpty()) {
+            LOGGER.error("Could not perform the elastic search index update.");
             return;
         }
         String json = getDocumentValueFromEntry(entry);
@@ -115,27 +119,31 @@ public class ElasticManager {
             case "update":
                 post = restClient
                         .performRequest("POST", "/entry/" + entryType + "/" + entry.getId() + "/_update", Collections.emptyMap(), entity);
-                LOGGER.info("Document updated.");
-                break;
-            case "add":
-                post = restClient.performRequest("PUT", "/entry/" + entryType + "/" + entry.getId(), Collections.emptyMap(), entity);
-                LOGGER.info("Document added.");
                 break;
             case "delete":
                 post = restClient.performRequest("DELETE", "/entry/" + entryType + "/" + entry.getId(), Collections.emptyMap(), entity);
-                LOGGER.info("Document deleted.");
                 break;
             default:
                 throw new RuntimeException("Unknown index command: " + command);
             }
-            if (post.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-                throw new CustomWebApplicationException("Could not submit index to elastic search", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            int statusCode = post.getStatusLine().getStatusCode();
+            if (statusCode == HttpStatus.SC_OK || statusCode == HttpStatus.SC_CREATED) {
+                LOGGER.info("Successful " + command + ".");
+            } else {
+                LOGGER.info("Could not submit index to elastic search. " + post.getStatusLine().getReasonPhrase());
             }
         } catch (IOException e) {
-            throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            LOGGER.error("Could not submit index to elastic search. " + e.getMessage());
         }
     }
 
+    /**
+     * Check if the entry is valid to perform the elastic operation
+     *
+     * @param entry   The entry to check
+     * @param command The command that will be used
+     * @return Whether or not the entry is valid
+     */
     private boolean checkValid(Entry entry, String command) {
         boolean published = entry.getIsPublished();
         switch (command) {
@@ -143,22 +151,23 @@ public class ElasticManager {
             if (published) {
                 return true;
             }
-        case "add":
-            if (published) {
-                return true;
-            }
             break;
         case "delete":
-            if (!published) {
-                return true;
-            }
-            break;
+            // Try deleting no matter what
+            return true;
         default:
+            LOGGER.error("Unrecognized Elasticsearch command.");
             return false;
         }
         return false;
     }
 
+    /**
+     * Gets the json used to update labels
+     *
+     * @param entry The entry whose labels have been updated
+     * @return The json used to update labels
+     */
     public String updateDocumentValueFromLabels(Entry entry) {
         Gson gson = new GsonBuilder().create();
         StringBuilder builder = new StringBuilder();
@@ -170,11 +179,17 @@ public class ElasticManager {
         return builder.toString();
     }
 
-    public String getNDJSON(List<Entry> published) {
+    /**
+     * Gets the json used for bulk insert
+     *
+     * @param publishedEntries A list of published entries
+     * @return The json used for bulk insert
+     */
+    public String getNDJSON(List<Entry> publishedEntries) {
         ObjectMapper mapper = Jackson.newObjectMapper();
         Gson gson = new GsonBuilder().create();
         StringBuilder builder = new StringBuilder();
-        published.forEach(entry -> {
+        publishedEntries.forEach(entry -> {
             Map<String, Map<String, String>> index = new HashMap<>();
             Map<String, String> internal = new HashMap<>();
             internal.put("_id", String.valueOf(entry.getId()));
