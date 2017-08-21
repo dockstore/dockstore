@@ -40,6 +40,7 @@ import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.helpers.ElasticManager;
+import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.Helper;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -125,7 +126,7 @@ public class DockerRepoTagResource {
         }
         Tool result = toolDAO.findById(containerId);
         Helper.checkEntry(result);
-        elasticManager.handleIndexUpdate(result, "update");
+        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
         return result.getTags();
     }
 
@@ -155,7 +156,7 @@ public class DockerRepoTagResource {
 
         Tool result = toolDAO.findById(containerId);
         Helper.checkEntry(result);
-        elasticManager.handleIndexUpdate(result, "update");
+        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
         return result.getTags();
     }
 
@@ -185,7 +186,7 @@ public class DockerRepoTagResource {
             tag.getSourceFiles().clear();
 
             if (c.getTags().remove(tag)) {
-                elasticManager.handleIndexUpdate(c, "update");
+                elasticManager.handleIndexUpdate(c, ElasticMode.UPDATE);
                 return Response.ok().build();
             } else {
                 return Response.serverError().build();
@@ -227,7 +228,7 @@ public class DockerRepoTagResource {
 
         Tool result = toolDAO.findById(containerId);
         Helper.checkEntry(result);
-        elasticManager.handleIndexUpdate(result, "update");
+        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
         return result.getTags();
     }
 }

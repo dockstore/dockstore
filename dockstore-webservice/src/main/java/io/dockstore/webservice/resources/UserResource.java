@@ -47,6 +47,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.ElasticManager;
+import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.Helper;
 import io.dockstore.webservice.jdbi.GroupDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -388,7 +389,7 @@ public class UserResource {
 
         // TODO: Turn this into bulk index upsert
         List<Tool> tools = dockerRepoResource.refreshToolsForUser(userId);
-        tools.forEach(tool -> elasticManager.handleIndexUpdate(tool, "update"));
+        tools.forEach(tool -> elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE));
         return tools;
     }
 
@@ -414,7 +415,7 @@ public class UserResource {
                 .collect(Collectors.toList());
 
         // TODO: Turn this into bulk index upsert
-        finalWorkflows.forEach(workflow -> elasticManager.handleIndexUpdate(workflow, "update"));
+        finalWorkflows.forEach(workflow -> elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE));
         return finalWorkflows;
     }
 

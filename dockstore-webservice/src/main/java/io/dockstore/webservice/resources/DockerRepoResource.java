@@ -36,6 +36,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.helpers.ElasticManager;
+import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.EntryLabelHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.Helper;
@@ -168,7 +169,7 @@ public class DockerRepoResource {
             Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
         }
         Tool tool = Helper.refreshContainer(containerId, user.getId(), client, objectMapper, userDAO, toolDAO, tokenDAO, tagDAO, fileDAO);
-        elasticManager.handleIndexUpdate(tool, "update");
+        elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
         return tool;
     }
 
@@ -208,7 +209,7 @@ public class DockerRepoResource {
 
         EntryLabelHelper<Tool> labeller = new EntryLabelHelper<>(labelDAO);
         Tool tool = labeller.updateLabels(c, labelStrings);
-        elasticManager.handleIndexUpdate(tool, "update");
+        elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
         return tool;
     }
 
@@ -236,7 +237,7 @@ public class DockerRepoResource {
 
         Tool result = toolDAO.findById(containerId);
         Helper.checkEntry(result);
-        elasticManager.handleIndexUpdate(result, "update");
+        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
         return result;
 
     }
@@ -265,7 +266,7 @@ public class DockerRepoResource {
                 tag.setDockerfilePath(tool.getDefaultDockerfilePath());
             }
         }
-        elasticManager.handleIndexUpdate(c, "update");
+        elasticManager.handleIndexUpdate(c, ElasticMode.UPDATE);
         return c;
     }
 
@@ -391,7 +392,7 @@ public class DockerRepoResource {
 
             tool = toolDAO.findById(containerId);
             if (tool == null) {
-                elasticManager.handleIndexUpdate(deleteTool, "delete");
+                elasticManager.handleIndexUpdate(deleteTool, ElasticMode.DELETE);
                 return Response.ok().build();
             } else {
                 return Response.serverError().build();
@@ -447,9 +448,9 @@ public class DockerRepoResource {
         long id = toolDAO.create(c);
         c = toolDAO.findById(id);
         if (request.getPublish()) {
-            elasticManager.handleIndexUpdate(c, "update");
+            elasticManager.handleIndexUpdate(c, ElasticMode.UPDATE);
         } else {
-            elasticManager.handleIndexUpdate(c, "delete");
+            elasticManager.handleIndexUpdate(c, ElasticMode.DELETE);
         }
         return c;
     }
@@ -819,7 +820,7 @@ public class DockerRepoResource {
                 tag.addSourceFile(sourceFileWithId);
             }
         }
-        elasticManager.handleIndexUpdate(tool, "update");
+        elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
         return tag.getSourceFiles();
     }
 
@@ -869,7 +870,7 @@ public class DockerRepoResource {
             @ApiParam(value = "StarRequest to star a repo for a user", required = true) StarRequest request) {
         Tool tool = toolDAO.findById(containerId);
         Helper.starEntryHelper(tool, user, "tool", tool.getPath());
-        elasticManager.handleIndexUpdate(tool, "update");
+        elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
     }
 
     @DELETE
@@ -881,7 +882,7 @@ public class DockerRepoResource {
             @ApiParam(value = "Tool to unstar.", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
         Helper.unstarEntryHelper(tool, user, "tool", tool.getPath());
-        elasticManager.handleIndexUpdate(tool, "update");
+        elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
     }
 
     @GET

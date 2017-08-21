@@ -100,11 +100,10 @@ public class ElasticManager {
 
     /**
      * This handles the index for elastic search
-     *
-     * @param entry   The entry to be converted into a document
+     *  @param entry   The entry to be converted into a document
      * @param command The command to perform for the document, either "update" or "delete" document
      */
-    public void handleIndexUpdate(Entry entry, String command) {
+    public void handleIndexUpdate(Entry entry, ElasticMode command) {
         LOGGER.info("Performing index update with " + command + ".");
         if (ElasticManager.hostname == null || ElasticManager.hostname.isEmpty()) {
             LOGGER.error("No elastic search host found.");
@@ -120,11 +119,11 @@ public class ElasticManager {
             HttpEntity entity = new NStringEntity(json, ContentType.APPLICATION_JSON);
             org.elasticsearch.client.Response post;
             switch (command) {
-            case "update":
+            case UPDATE:
                 post = restClient
                         .performRequest("POST", "/entry/" + entryType + "/" + entry.getId() + "/_update", Collections.emptyMap(), entity);
                 break;
-            case "delete":
+            case DELETE:
                 post = restClient.performRequest("DELETE", "/entry/" + entryType + "/" + entry.getId(), Collections.emptyMap(), entity);
                 break;
             default:
@@ -148,15 +147,15 @@ public class ElasticManager {
      * @param command The command that will be used
      * @return Whether or not the entry is valid
      */
-    private boolean checkValid(Entry entry, String command) {
+    private boolean checkValid(Entry entry, ElasticMode command) {
         boolean published = entry.getIsPublished();
         switch (command) {
-        case "update":
+        case UPDATE:
             if (published) {
                 return true;
             }
             break;
-        case "delete":
+        case DELETE:
             // Try deleting no matter what
             return true;
         default:
