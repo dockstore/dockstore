@@ -85,13 +85,13 @@ public class WorkflowInDirectoryTestIT {
     private void baseWorkflowTest(File descriptor, File testParameter, boolean script, String entryType) {
         ArrayList<String> args = new ArrayList<String>() {{
             add("--config");
-            add(configFile.getAbsolutePath());
+            add(configFile.getPath());
             add(entryType);
             add("launch");
             add("--local-entry");
-            add(descriptor.getAbsolutePath());
+            add(descriptor.getPath());
             add("--yaml");
-            add(testParameter.getAbsolutePath());
+            add(testParameter.getPath());
             if (script) {
                 add("--script");
             }
