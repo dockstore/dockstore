@@ -387,7 +387,7 @@ public class UserResource {
         // Update user data
         Helper.updateUserHelper(authUser, userDAO, tokenDAO);
 
-        // TODO: Turn this into bulk index upsert
+        // TODO: Turn this into bulk index upsert and only update the ones that have changed
         List<Tool> tools = dockerRepoResource.refreshToolsForUser(userId);
         tools.forEach(tool -> elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE));
         return tools;
@@ -414,7 +414,7 @@ public class UserResource {
         List<Workflow> finalWorkflows = authUser.getEntries().stream().filter(Workflow.class::isInstance).map(Workflow.class::cast)
                 .collect(Collectors.toList());
 
-        // TODO: Turn this into bulk index upsert
+        // TODO: Turn this into bulk index upsert and only update the ones that have changed
         finalWorkflows.forEach(workflow -> elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE));
         return finalWorkflows;
     }
