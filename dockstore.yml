@@ -1,11 +1,11 @@
 template: Hello, %s!
-quayClientID: <fill me in>
+quayClientID: HVOYCL8Y0JMZ06EV0LX2
 # port should match the port where the UI is being hosted, 9000 by default
-quayRedirectURI: http://<fill me in>:9000/accounts
-githubClientID: <fill me in>
-githubClientSecret: <fill me in>
+quayRedirectURI: http://10.11.9.73:4200/accounts
+githubClientID: 4e52429e7506af0a634c
+githubClientSecret: 3778716b18352ae55012a5f18a926fd45e63af8d
 # port should match the port where the UI is being hosted, 9000 by default
-githubRedirectURI: http://<fill me in>:9000/login
+githubRedirectURI: http://10.11.9.73:4200/
 bitbucketClientID: <fill me in>
 bitbucketClientSecret:  <fill me in>
 
@@ -16,7 +16,7 @@ gitlabRedirectURI: <fill me in>
 
         
 # the following values describe where the webservice is being run (and on what port and using what scheme) to configure swagger
-hostname: <fill me in>
+hostname: 10.11.9.73
 scheme: http
 port: 8080
 
@@ -37,20 +37,20 @@ database:
   driverClass: org.postgresql.Driver
 
   # the username
-  user: webservice
+  user: dockstore
 
   # the password
-  password: iAMs00perSecrEET
+  password: dockstore
 
   # the JDBC URL
-  url: jdbc:postgresql://localhost:5432/webservice
+  url: jdbc:postgresql://localhost:5432/webservice_test
 
   # any properties specific to your JDBC driver:
   properties:
     charSet: UTF-8
     hibernate.dialect: org.hibernate.dialect.PostgreSQLDialect
     # create database as needed, disable in production
-    hibernate.hbm2ddl.auto: create
+    hibernate.hbm2ddl.auto: update
 
   # the maximum amount of time to wait on an empty pool before throwing an exception
   maxWaitForConnection: 1s
