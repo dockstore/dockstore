@@ -71,7 +71,6 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
-import io.swagger.annotations.AuthorizationScope;
 import io.swagger.model.ToolDescriptor;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;

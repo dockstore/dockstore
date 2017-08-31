@@ -28,6 +28,7 @@
       background: #fafafa;
     }
 
+
     </style>
 </head>
 
@@ -72,26 +73,37 @@
 <script src="./swagger-ui-bundle.js"></script>
 <script src="./swagger-ui-standalone-preset.js"></script>
 <script>
-window.onload = function() {
+  window.onload = function () {
+    function requestInterceptor(request) {
+      var prefix = 'Bearer ';
+      if (!request.headers['Authorization']) {
+        return request;
+      }
+      if (!request.headers['Authorization'].startsWith(prefix)) {
+        request.headers['Authorization'] = prefix + request.headers['Authorization'];
+      }
+      return request;
+    };
     var url = window.location.origin + '/swagger.json';
-  // Build a system
-  const ui = SwaggerUIBundle({
-    url: url,
-    dom_id: '#swagger-ui',
-    deepLinking: true,
-    presets: [
-      SwaggerUIBundle.presets.apis,
-      SwaggerUIStandalonePreset
-    ],
-    plugins: [
-      SwaggerUIBundle.plugins.DownloadUrl
-    ],
-    layout: "StandaloneLayout"
-  })
-
-  window.ui = ui
-}
-
+    // Build a system
+    const ui = SwaggerUIBundle({
+      url: url,
+      dom_id: '#swagger-ui',
+      deepLinking: true,
+      requestInterceptor: requestInterceptor,
+      showMutatedRequest: true,
+      filter: true,
+      presets: [
+        SwaggerUIBundle.presets.apis,
+        SwaggerUIStandalonePreset
+      ],
+      plugins: [
+        SwaggerUIBundle.plugins.DownloadUrl
+      ],
+      layout: "StandaloneLayout"
+    })
+    window.ui = ui
+  }
 </script>
 </body>
 
