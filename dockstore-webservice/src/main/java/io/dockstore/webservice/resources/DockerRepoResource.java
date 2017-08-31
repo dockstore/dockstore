@@ -125,7 +125,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @RolesAllowed("admin")
-    @ApiOperation(value = "Refresh all repos", notes = "Updates some metadata. ADMIN ONLY", response = Tool.class, responseContainer = "List")
+    @ApiOperation(value = "Refresh all repos", authorizations = { @Authorization(value = "BEARER") }, notes = "Updates some metadata. ADMIN ONLY", response = Tool.class, responseContainer = "List")
     public List<Tool> refreshAll(@ApiParam(hidden = true) @Auth User authUser) {
 
         List<Tool> tools;
@@ -179,7 +179,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @RolesAllowed("admin")
-    @ApiOperation(value = "List all docker containers cached in database", notes = "List docker container repos currently known. Admin Only", response = Tool.class, responseContainer = "List")
+    @ApiOperation(value = "List all docker containers cached in database", authorizations = { @Authorization(value = "BEARER") }, notes = "List docker container repos currently known. Admin Only", response = Tool.class, responseContainer = "List")
     public List<Tool> allContainers(@ApiParam(hidden = true) @Auth User user) {
         return toolDAO.findAll();
     }
@@ -188,7 +188,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}")
-    @ApiOperation(value = "Get a registered repo", response = Tool.class)
+    @ApiOperation(value = "Get a registered repo", authorizations = { @Authorization(value = "BEARER") }, response = Tool.class)
     public Tool getContainer(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
         Tool c = toolDAO.findById(containerId);
@@ -203,7 +203,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/labels")
-    @ApiOperation(value = "Update the labels linked to a container.", notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Tool.class)
+    @ApiOperation(value = "Update the labels linked to a container.", authorizations = { @Authorization(value = "BEARER") }, notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Tool.class)
     public Tool updateLabels(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings,
@@ -219,7 +219,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}")
-    @ApiOperation(value = "Update the tool with the given tool.", response = Tool.class)
+    @ApiOperation(value = "Update the tool with the given tool.", authorizations = { @Authorization(value = "BEARER") }, response = Tool.class)
     public Tool updateContainer(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "Tool with updated information", required = true) Tool tool) {
@@ -248,7 +248,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/updateTagPaths")
-    @ApiOperation(value = "Change the workflow paths", notes = "Tag correspond to each row of the versions table listing all information for a docker repo tag", response = Tool.class)
+    @ApiOperation(value = "Change the workflow paths", authorizations = { @Authorization(value = "BEARER") }, notes = "Tag correspond to each row of the versions table listing all information for a docker repo tag", response = Tool.class)
     public Tool updateTagContainerPath(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "Tool with updated information", required = true) Tool tool) {
@@ -276,7 +276,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/users")
-    @ApiOperation(value = "Get users of a container", response = User.class, responseContainer = "List")
+    @ApiOperation(value = "Get users of a container", authorizations = { @Authorization(value = "BEARER") }, response = User.class, responseContainer = "List")
     public List<User> getUsers(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
         Tool c = toolDAO.findById(containerId);
@@ -323,7 +323,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/registerManual")
-    @ApiOperation(value = "Register an image manually, along with tags", notes = "Register an image manually.", response = Tool.class)
+    @ApiOperation(value = "Register an image manually, along with tags", authorizations = { @Authorization(value = "BEARER") }, notes = "Register an image manually.", response = Tool.class)
     public Tool registerManual(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to be registered", required = true) Tool tool) {
         // populate user in tool
@@ -381,7 +381,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}")
-    @ApiOperation(value = "Delete manually registered image")
+    @ApiOperation(value = "Delete manually registered image", authorizations = { @Authorization(value = "BEARER") })
     @ApiResponses(@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid "))
     public Response deleteContainer(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool id to delete", required = true) @PathParam("containerId") Long containerId) {
@@ -408,7 +408,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/publish")
-    @ApiOperation(value = "Publish or unpublish a container", notes = "publish a container (public or private). Assumes that user is using quay.io and github.", response = Tool.class)
+    @ApiOperation(value = "Publish or unpublish a container", authorizations = { @Authorization(value = "BEARER") }, notes = "publish a container (public or private). Assumes that user is using quay.io and github.", response = Tool.class)
     public Tool publish(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool id to publish", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) PublishRequest request) {
@@ -481,7 +481,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/path/{repository}")
-    @ApiOperation(value = "Get a list of containers by path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Tool.class, responseContainer = "List")
+    @ApiOperation(value = "Get a list of containers by path", authorizations = { @Authorization(value = "BEARER") }, notes = "Lists info of container. Enter full path (include quay.io in path).", response = Tool.class, responseContainer = "List")
     public List<Tool> getContainerByPath(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         List<Tool> tool = toolDAO.findByPath(path);
@@ -497,7 +497,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/path/tool/{repository}")
-    @ApiOperation(value = "Get a container by tool path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Tool.class)
+    @ApiOperation(value = "Get a container by tool path", authorizations = { @Authorization(value = "BEARER") }, notes = "Lists info of container. Enter full path (include quay.io in path).", response = Tool.class)
     public Tool getContainerByToolPath(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         final String[] split = path.split("/");
@@ -563,7 +563,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/builds")
-    @ApiOperation(value = "Get the list of repository builds.", notes = "For TESTING purposes. Also useful for getting more information about the repository.\n Enter full path without quay.io", response = String.class, hidden = true)
+    @ApiOperation(value = "Get the list of repository builds.", authorizations = { @Authorization(value = "BEARER") }, notes = "For TESTING purposes. Also useful for getting more information about the repository.\n Enter full path without quay.io", response = String.class, hidden = true)
     public String builds(@ApiParam(hidden = true) @Auth User user, @QueryParam("repository") String repo,
             @QueryParam("userId") long userId) {
         Helper.checkUser(user, userId);
@@ -620,7 +620,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/tags")
-    @ApiOperation(value = "List the tags for a registered container", response = Tag.class, responseContainer = "List", hidden = true)
+    @ApiOperation(value = "List the tags for a registered container", authorizations = { @Authorization(value = "BEARER") }, response = Tag.class, responseContainer = "List", hidden = true)
     public List<Tag> tags(@ApiParam(hidden = true) @Auth User user, @QueryParam("containerId") long containerId) {
         Tool repository = toolDAO.findById(containerId);
         Helper.checkEntry(repository);
@@ -780,7 +780,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/testParameterFiles")
-    @ApiOperation(value = "Add test parameter files for a given tag.", response = SourceFile.class, responseContainer = "Set")
+    @ApiOperation(value = "Add test parameter files for a given tag.", authorizations = { @Authorization(value = "BEARER") }, response = SourceFile.class, responseContainer = "Set")
     public Set<SourceFile> addTestParameterFiles(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
@@ -824,7 +824,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/testParameterFiles")
-    @ApiOperation(value = "Delete test parameter files for a given tag.", response = SourceFile.class, responseContainer = "Set")
+    @ApiOperation(value = "Delete test parameter files for a given tag.", authorizations = { @Authorization(value = "BEARER") }, response = SourceFile.class, responseContainer = "Set")
     public Set<SourceFile> deleteTestParameterFiles(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
@@ -860,7 +860,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/star")
-    @ApiOperation(value = "Stars a tool.")
+    @ApiOperation(value = "Stars a tool.", authorizations = { @Authorization(value = "BEARER") })
     public void starEntry(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to star.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "StarRequest to star a repo for a user", required = true) StarRequest request) {
@@ -872,7 +872,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/unstar")
-    @ApiOperation(value = "Unstars a tool.")
+    @ApiOperation(value = "Unstars a tool.", authorizations = { @Authorization(value = "BEARER") })
     public void unstarEntry(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to unstar.", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
