@@ -24,6 +24,7 @@ import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -191,10 +192,8 @@ public class LauncherCWL {
         System.out.println("Provisioning your input files to your local machine");
         if (cwlObject instanceof Workflow) {
             Workflow workflow = (Workflow)cwlObject;
-            if (!"bunny".equals(cwlRunner)) {
-                SecondaryFilesUtility secondaryFilesUtility = new SecondaryFilesUtility(cwlUtil, this.gson);
-                secondaryFilesUtility.modifyWorkflowToIncludeToolSecondaryFiles(workflow);
-            }
+            SecondaryFilesUtility secondaryFilesUtility = new SecondaryFilesUtility(cwlUtil, this.gson);
+            secondaryFilesUtility.modifyWorkflowToIncludeToolSecondaryFiles(workflow);
             // pull input files
             inputsId2dockerMountMap = pullFiles(workflow, inputsAndOutputsJson);
 

@@ -36,7 +36,6 @@ import java.util.stream.Stream;
 import com.github.zafarkhaja.semver.UnexpectedCharacterException;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
-import io.dockstore.client.cli.Client;
 import io.dockstore.provision.ProvisionInterface;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.configuration2.INIConfiguration;
@@ -236,9 +235,9 @@ public class FileProvisioning {
                         }
                     } catch (IOException e1) {
                         LOG.error("Could not copy " + targetPath + " to " + localPath, e);
-                        if (!Client.SCRIPT.get()) {
-                            throw new RuntimeException("Could not copy " + targetPath + " to " + localPath, e1);
-                        }
+//                        if (!Client.SCRIPT.get()) {
+//                            throw new RuntimeException("Could not copy " + targetPath + " to " + localPath, e1);
+//                        }
                         LOG.error("Could not copy " + targetPath + " to " + localPath, e1);
                     }
                 }
