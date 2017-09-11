@@ -139,11 +139,11 @@ public class FileProvisioning {
 
     /**
      * This method downloads both local and remote files into the working directory
-     *
+     * @param parameterFilePath path of the parameter file
      * @param targetPath path for target file
      * @param localPath  the absolute path where we will download files to
      */
-    public void provisionInputFile(String targetPath, Path localPath) {
+    public void provisionInputFile(String parameterFilePath, String targetPath, Path localPath) {
 
         Path potentialCachedFile = null;
         final boolean useCache = isCacheOn(config);
@@ -206,6 +206,10 @@ public class FileProvisioning {
                 Path actualTargetPath = null;
                 try {
                     String workingDir = System.getProperty("user.dir");
+                    // TODO: this is basically, if not WDL then try to find out the parent directory
+                    if (!"".equals(parameterFilePath)) {
+                        workingDir = Paths.get(parameterFilePath).toAbsolutePath().getParent().toString();
+                    }
                     if (targetPath.startsWith("/")) {
                         // absolute path
                         actualTargetPath = Paths.get(targetPath);
@@ -231,7 +235,10 @@ public class FileProvisioning {
                         }
                     } catch (IOException e1) {
                         LOG.error("Could not copy " + targetPath + " to " + localPath, e);
-                        throw new RuntimeException("Could not copy " + targetPath + " to " + localPath, e1);
+//                        if (!Client.SCRIPT.get()) {
+//                            throw new RuntimeException("Could not copy " + targetPath + " to " + localPath, e1);
+//                        }
+                        LOG.error("Could not copy " + targetPath + " to " + localPath, e1);
                     }
                 }
             }
@@ -344,14 +351,29 @@ public class FileProvisioning {
 
                 File destinationFile = new File(destPath);
                 // if it is a URL, we need to treat it differently
+                String resolvedDestinationPath;
                 try {
                     URI uri = URI.create(destPath);
-                    destinationFile = new File(uri);
+                    String[] schemes = fsManager.getSchemes();
+                    String scheme = uri.getScheme();
+                    // if there is a scheme involved, check to see if vfs can handle it
+                    if (scheme != null) {
+                        boolean matchingScheme = Stream.of(schemes).anyMatch(s -> s.equals(scheme));
+                        if (!matchingScheme) {
+                            System.out.println("No matching provision method for " + destPath + " , skipping");
+                            return;
+                        }
+                        resolvedDestinationPath = destPath;
+                    } else {
+                        // there is no scheme, this is just a local file
+                        resolvedDestinationPath = destinationFile.getAbsolutePath();
+                    }
                 } catch (IllegalArgumentException e) {
                     // do nothing
                     LOG.debug(destPath + " not a uri");
+                    resolvedDestinationPath = destinationFile.getAbsolutePath();
                 }
-                try (FileObject dest = fsManager.resolveFile(destinationFile.getAbsolutePath());
+                try (FileObject dest = fsManager.resolveFile(resolvedDestinationPath);
                         FileObject src = fsManager.resolveFile(sourceFile.getAbsolutePath())) {
                     System.out.println("Provisioning from " + srcPath + " to " + destPath);
                     if (src.isFolder()) {

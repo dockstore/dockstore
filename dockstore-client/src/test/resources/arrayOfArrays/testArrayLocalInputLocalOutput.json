@@ -1,0 +1,32 @@
+{
+  "arrayed_input": [[
+    {
+      "path": "example.bedGraph",
+      "class": "File"
+    },
+    {
+      "path": "example.bedGraph",
+      "class": "File"
+    },
+    {
+      "path": "example.bedGraph",
+      "class": "File"
+    }
+  ]],
+  "hello_input": {
+    "path": "example.bedGraph",
+    "class": "File"
+  },
+  "hello_output": {
+    "path": "file:///tmp/example.bedGraph",
+    "class": "File"
+  },
+  "ref_file_1": {
+    "path": "example.bedGraph",
+    "class": "File"
+  },
+  "ref_file_2": {
+    "path": "example.bedGraph",
+    "class": "File"
+  }
+}

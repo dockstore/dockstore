@@ -81,7 +81,7 @@ public class LauncherTest {
             expectedEx.expectMessage("plugin threw an exception");
         }
         final LauncherCWL launcherCWL = new LauncherCWL(iniFile.getAbsolutePath(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath(),
-                stdout, stderr);
+                stdout, stderr, jobFile.getAbsolutePath());
         launcherCWL.run(CommandLineTool.class);
 
         assertTrue(!stdout.toString().isEmpty());
@@ -99,7 +99,7 @@ public class LauncherTest {
             expectedEx.expectMessage("plugin threw an exception");
         }
         final LauncherCWL launcherCWL = new LauncherCWL(iniFile.getAbsolutePath(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath(),
-                stdout, stderr);
+                stdout, stderr, jobFile.getAbsolutePath());
         launcherCWL.run(Workflow.class);
 
         assertTrue(!stdout.toString().isEmpty());

@@ -235,6 +235,7 @@ definitions:
         type: boolean}
       verifiedSource: {description: Verified source for the version, type: string}
       wdl_path: {description: Path for the WDL document, type: string}
+      workingDirectory: {type: string}
     required: [image_id, name, reference]
     type: object
   Token:
@@ -356,11 +357,6 @@ definitions:
         type: boolean}
       location: {description: Location of user, type: string}
       name: {type: string}
-      starredEntries:
-        description: Entries in the dockstore that this user starred
-        items: {$ref: '#/definitions/Entry'}
-        type: array
-        uniqueItems: true
       username: {description: Username on dockstore, type: string}
     required: [isAdmin]
     type: object
@@ -448,6 +444,7 @@ definitions:
         type: boolean}
       verifiedSource: {description: Verified source for the version, type: string}
       workflow_path: {description: Path for the workflow, type: string}
+      workingDirectory: {type: string}
     required: [name, reference]
     type: object
 externalDocs: {description: Dockstore documentation, url: 'https://www.dockstore.org/docs/getting-started'}
@@ -1577,6 +1574,18 @@ paths:
           schema: {$ref: '#/definitions/QuayIOView'}
       summary: Display an authorization link for quay.io
       tags: [integration.quay.io]
+  /metadata/sitemap:
+    get:
+      description: NO authentication
+      operationId: sitemap
+      parameters: []
+      produces: [text/html]
+      responses:
+        200:
+          description: successful operation
+          schema: {type: string}
+      summary: List all workflow and tool paths.
+      tags: [containers]
   /users:
     get:
       description: List all users. Admin only.
@@ -2574,3 +2583,4 @@ tags:
   name: tokens}
 - {description: List and register workflows in the dockstore (CWL or WDL), name: workflows}
 - {description: 'List, modify, and manage end users of the dockstore', name: users}
+- {name: metadata}

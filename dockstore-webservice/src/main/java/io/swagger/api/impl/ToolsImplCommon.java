@@ -1,6 +1,7 @@
 package io.swagger.api.impl;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Strings;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
@@ -163,7 +164,7 @@ public final class ToolsImplCommon {
         final List<String> collect = ((Set<Version>)inputVersions).stream().filter(Version::isVerified).map(Version::getVerifiedSource)
                 .collect(Collectors.toList());
         Gson gson = new Gson();
-        tool.setVerifiedSource(gson.toJson(collect));
+        tool.setVerifiedSource(Strings.nullToEmpty(gson.toJson(collect)));
 
         for (Version inputVersion : (Set<Version>)inputVersions) {
 
@@ -192,7 +193,7 @@ public final class ToolsImplCommon {
             version.setName(inputVersion.getName());
 
             version.setVerified(inputVersion.isVerified());
-            version.setVerifiedSource(inputVersion.getVerifiedSource());
+            version.setVerifiedSource(Strings.nullToEmpty(inputVersion.getVerifiedSource()));
             version.setDockerfile(false);
 
             String urlBuilt;

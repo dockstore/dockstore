@@ -1,7 +1,7 @@
 {
   "inp": {
     "class": "File",
-    "path": "src/test/resources/hello.tar"
+    "path": "hello.tar"
   },
   "ex": "Hello.java"
 }
