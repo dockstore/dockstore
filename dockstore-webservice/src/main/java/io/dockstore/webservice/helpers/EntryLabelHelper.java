@@ -69,7 +69,6 @@ public class EntryLabelHelper<T extends Entry> {
             }
             entry.setLabels(labels);
         }
-
         return entry;
     }
 }
