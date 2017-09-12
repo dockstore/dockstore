@@ -386,10 +386,16 @@ public class UserResource {
 
         // Update user data
         Helper.updateUserHelper(authUser, userDAO, tokenDAO);
-
-        // TODO: Turn this into bulk index upsert and only update the ones that have changed
         List<Tool> tools = dockerRepoResource.refreshToolsForUser(userId);
-        tools.forEach(tool -> elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE));
+
+        // TODO: Only update the ones that have changed
+        authUser = userDAO.findById(authUser.getId());
+        Set<Entry> allEntries = authUser.getEntries();
+        List<Entry> toolEntries = allEntries.parallelStream().filter(entry -> entry instanceof Tool && entry.getIsPublished()).collect(
+                Collectors.toList());
+        if (!toolEntries.isEmpty()) {
+            elasticManager.bulkUpsert(toolEntries);
+        }
         return tools;
     }
 
@@ -411,11 +417,16 @@ public class UserResource {
 
         // Refresh the user
         authUser = userDAO.findById(authUser.getId());
-        List<Workflow> finalWorkflows = authUser.getEntries().stream().filter(Workflow.class::isInstance).map(Workflow.class::cast)
+        Set<Entry> allEntries = authUser.getEntries();
+        List<Workflow> finalWorkflows = allEntries.parallelStream().filter(Workflow.class::isInstance).map(Workflow.class::cast)
                 .collect(Collectors.toList());
 
-        // TODO: Turn this into bulk index upsert and only update the ones that have changed
-        finalWorkflows.forEach(workflow -> elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE));
+        // TODO: Only update the ones that have changed
+        List<Entry> workflowEntries = allEntries.parallelStream().filter(entry -> entry instanceof Workflow && entry.getIsPublished()).collect(
+                Collectors.toList());
+        if (!workflowEntries.isEmpty()) {
+            elasticManager.bulkUpsert(workflowEntries);
+        }
         return finalWorkflows;
     }
 
