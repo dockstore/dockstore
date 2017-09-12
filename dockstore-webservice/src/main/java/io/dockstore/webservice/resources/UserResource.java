@@ -57,6 +57,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.Authorization;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
@@ -93,7 +94,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/groups")
-    @ApiOperation(value = "Create user group", response = Group.class)
+    @ApiOperation(value = "Create user group", authorizations = { @Authorization(value = "BEARER") }, response = Group.class)
     public Group createGroup(@ApiParam(hidden = true) @Auth User user, @QueryParam("group_name") String name) {
         Group group = new Group();
         group.setName(name);
@@ -106,7 +107,7 @@ public class UserResource {
     @UnitOfWork
     @Path("/groups/{groupId}")
     @RolesAllowed("admin")
-    @ApiOperation(value = "Deletes a group, admin only", response = Response.class)
+    @ApiOperation(value = "Deletes a group, admin only", authorizations = { @Authorization(value = "BEARER") }, response = Response.class)
     @ApiResponses(@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid groupId value"))
     public Response deleteGroup(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Group id to delete", required = true) @PathParam("groupId") Long groupId) {
@@ -126,7 +127,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @RolesAllowed("admin")
-    @ApiOperation(value = "List all known users", notes = "List all users. Admin only.", response = User.class, responseContainer = "List")
+    @ApiOperation(value = "List all known users", authorizations = { @Authorization(value = "BEARER") }, notes = "List all users. Admin only.", response = User.class, responseContainer = "List")
     public List<User> listUsers(@ApiParam(hidden = true) @Auth User user) {
         return userDAO.findAll();
     }
@@ -135,7 +136,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/username/{username}")
-    @ApiOperation(value = "Get user", response = User.class)
+    @ApiOperation(value = "Get user", authorizations = { @Authorization(value = "BEARER") }, response = User.class)
     public User listUser(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam("Username of user to return") @PathParam("username") String username) {
         User user = userDAO.findByUsername(username);
@@ -148,7 +149,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}")
-    @ApiOperation(value = "Get user with id", response = User.class)
+    @ApiOperation(value = "Get user with id", authorizations = { @Authorization(value = "BEARER") }, response = User.class)
     public User getUser(@ApiParam(hidden = true) @Auth User authUser, @ApiParam("User to return") @PathParam("userId") long userId) {
         Helper.checkUser(authUser, userId);
 
@@ -163,7 +164,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/user")
-    @ApiOperation(value = "Get the logged-in user", response = User.class)
+    @ApiOperation(value = "Get the logged-in user", authorizations = { @Authorization(value = "BEARER") }, response = User.class)
     public User getUser(@ApiParam(hidden = true) @Auth User user) {
         return userDAO.findById(user.getId());
     }
@@ -172,7 +173,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/tokens")
-    @ApiOperation(value = "Get tokens with user id", response = Token.class, responseContainer = "List")
+    @ApiOperation(value = "Get tokens with user id", authorizations = { @Authorization(value = "BEARER") }, response = Token.class, responseContainer = "List")
     public List<Token> getUserTokens(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
         Helper.checkUser(user, userId);
@@ -184,7 +185,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/tokens/github.com")
-    @ApiOperation(value = "Get Github tokens with user id", response = Token.class, responseContainer = "List")
+    @ApiOperation(value = "Get Github tokens with user id", authorizations = { @Authorization(value = "BEARER") }, response = Token.class, responseContainer = "List")
     public List<Token> getGithubUserTokens(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
         Helper.checkUser(user, userId);
@@ -196,7 +197,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/tokens/gitlab.com")
-    @ApiOperation(value = "Get Gitlab tokens with user id", response = Token.class, responseContainer = "List")
+    @ApiOperation(value = "Get Gitlab tokens with user id", authorizations = { @Authorization(value = "BEARER") }, response = Token.class, responseContainer = "List")
     public List<Token> getGitlabUserTokens(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
         Helper.checkUser(user, userId);
@@ -208,7 +209,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/tokens/quay.io")
-    @ApiOperation(value = "Get Quay tokens with user id", response = Token.class, responseContainer = "List")
+    @ApiOperation(value = "Get Quay tokens with user id", authorizations = { @Authorization(value = "BEARER") }, response = Token.class, responseContainer = "List")
     public List<Token> getQuayUserTokens(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
         Helper.checkUser(user, userId);
@@ -220,7 +221,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/tokens/dockstore")
-    @ApiOperation(value = "Get Dockstore tokens with user id", response = Token.class, responseContainer = "List")
+    @ApiOperation(value = "Get Dockstore tokens with user id", authorizations = { @Authorization(value = "BEARER") }, response = Token.class, responseContainer = "List")
     public List<Token> getDockstoreUserTokens(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
         Helper.checkUser(user, userId);
@@ -232,7 +233,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/groups")
-    @ApiOperation(value = "Get groups that the user belongs to", response = Group.class, responseContainer = "List")
+    @ApiOperation(value = "Get groups that the user belongs to", authorizations = { @Authorization(value = "BEARER") }, response = Group.class, responseContainer = "List")
     public List<Group> getGroupsFromUser(@ApiParam(hidden = true) @Auth User authUser, @ApiParam("User") @PathParam("userId") long userId) {
         Helper.checkUser(authUser, userId);
 
@@ -248,7 +249,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/groups/{groupId}/users")
-    @ApiOperation(value = "Get users that belongs to a group", response = User.class, responseContainer = "List")
+    @ApiOperation(value = "Get users that belongs to a group", authorizations = { @Authorization(value = "BEARER") }, response = User.class, responseContainer = "List")
     public List<User> getUsersFromGroup(@ApiParam(hidden = true) @Auth User user, @ApiParam("Group") @PathParam("groupId") long groupId) {
         Group group = groupDAO.findById(groupId);
         if (group == null) {
@@ -262,7 +263,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/groups")
-    @ApiOperation(value = "List all groups", response = Group.class, responseContainer = "List")
+    @ApiOperation(value = "List all groups", authorizations = { @Authorization(value = "BEARER") }, response = Group.class, responseContainer = "List")
     public List<Group> allGroups(@ApiParam(hidden = true) @Auth User user) {
         return groupDAO.findAll();
     }
@@ -271,7 +272,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/groups/{groupId}")
-    @ApiOperation(value = "List a group", response = Group.class)
+    @ApiOperation(value = "List a group", authorizations = { @Authorization(value = "BEARER") }, response = Group.class)
     public Group getGroup(@ApiParam(hidden = true) @Auth User user, @ApiParam("Group") @PathParam("groupId") long groupId) {
         return groupDAO.findById(groupId);
     }
@@ -280,7 +281,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/groups")
-    @ApiOperation(value = "Add a group to a user", response = User.class)
+    @ApiOperation(value = "Add a group to a user", authorizations = { @Authorization(value = "BEARER") }, response = User.class)
     public User addGroupToUser(@ApiParam(hidden = true) @Auth User authUser, @ApiParam("User ID of user") @PathParam("userId") long userId,
             @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) Group groupParam) {
         Helper.checkUser(authUser, userId);
@@ -304,7 +305,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/groups/{groupId}")
-    @ApiOperation(value = "Remove a user from a group", response = User.class)
+    @ApiOperation(value = "Remove a user from a group", authorizations = { @Authorization(value = "BEARER") }, response = User.class)
     @ApiResponses(@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid user or group value"))
     public User removeUserFromGroup(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam("User ID of user") @PathParam("userId") long userId,
@@ -327,7 +328,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/containers/published")
-    @ApiOperation(value = "List all published containers from a user", notes = "Get user's published containers only", response = Tool.class, responseContainer = "List")
+    @ApiOperation(value = "List all published containers from a user", authorizations = { @Authorization(value = "BEARER") }, notes = "Get user's published containers only", response = Tool.class, responseContainer = "List")
     public List<Tool> userPublishedContainers(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         Helper.checkUser(user, userId);
@@ -352,7 +353,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/workflows/published")
-    @ApiOperation(value = "List all published workflows from a user", notes = "Get user's published workflows only", response = Workflow.class, responseContainer = "List")
+    @ApiOperation(value = "List all published workflows from a user", authorizations = { @Authorization(value = "BEARER") }, notes = "Get user's published workflows only", response = Workflow.class, responseContainer = "List")
     public List<Workflow> userPublishedWorkflows(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         Helper.checkUser(user, userId);
@@ -377,7 +378,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/containers/refresh")
-    @ApiOperation(value = "Refresh repos owned by the logged-in user", notes = "Updates some metadata", response = Tool.class, responseContainer = "List")
+    @ApiOperation(value = "Refresh repos owned by the logged-in user", authorizations = { @Authorization(value = "BEARER") }, notes = "Updates some metadata", response = Tool.class, responseContainer = "List")
     public List<Tool> refresh(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
 
@@ -393,7 +394,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/workflows/refresh")
-    @ApiOperation(value = "Refresh workflows owned by the logged-in user", notes = "Updates some metadata", response = Workflow.class, responseContainer = "List")
+    @ApiOperation(value = "Refresh workflows owned by the logged-in user", authorizations = { @Authorization(value = "BEARER") }, notes = "Updates some metadata", response = Workflow.class, responseContainer = "List")
     public List<Workflow> refreshWorkflows(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
 
@@ -414,7 +415,7 @@ public class UserResource {
     @Path("/{userId}/workflows")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "List workflows owned by the logged-in user", notes = "Lists all registered and unregistered workflows owned by the user", response = Workflow.class, responseContainer = "List")
+    @ApiOperation(value = "List workflows owned by the logged-in user", authorizations = { @Authorization(value = "BEARER") }, notes = "Lists all registered and unregistered workflows owned by the user", response = Workflow.class, responseContainer = "List")
     public List<Workflow> userWorkflows(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         Helper.checkUser(user, userId);
@@ -427,7 +428,7 @@ public class UserResource {
     @Path("/{userId}/containers")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "List repos owned by the logged-in user", notes = "Lists all registered and unregistered containers owned by the user", response = Tool.class, responseContainer = "List")
+    @ApiOperation(value = "List repos owned by the logged-in user", authorizations = { @Authorization(value = "BEARER") }, notes = "Lists all registered and unregistered containers owned by the user", response = Tool.class, responseContainer = "List")
     public List<Tool> userContainers(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         Helper.checkUser(user, userId);
@@ -440,7 +441,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/starredTools")
-    @ApiOperation(value = "Get the logged-in user's starred tools", response = Entry.class, responseContainer = "List")
+    @ApiOperation(value = "Get the logged-in user's starred tools", authorizations = { @Authorization(value = "BEARER") }, response = Entry.class, responseContainer = "List")
     public Set<Entry> getStarredTools(@ApiParam(hidden = true) @Auth User user) {
         User u = userDAO.findById(user.getId());
         return u.getStarredEntries().stream().filter(element -> element instanceof Tool)
@@ -451,7 +452,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/starredWorkflows")
-    @ApiOperation(value = "Get the logged-in user's starred workflows", response = Entry.class, responseContainer = "List")
+    @ApiOperation(value = "Get the logged-in user's starred workflows", authorizations = { @Authorization(value = "BEARER") }, response = Entry.class, responseContainer = "List")
     public Set<Entry> getStarredWorkflows(@ApiParam(hidden = true) @Auth User user) {
         User u = userDAO.findById(user.getId());
         return u.getStarredEntries().stream().filter(element -> element instanceof Workflow)
@@ -463,7 +464,7 @@ public class UserResource {
     @UnitOfWork
     @RolesAllowed("admin")
     @Path("/updateUserMetadata")
-    @ApiOperation(value = "Update metadata of all users", notes = "Update all users metadata. Admin only.", response = User.class, responseContainer = "List")
+    @ApiOperation(value = "Update metadata of all users", authorizations = { @Authorization(value = "BEARER") }, notes = "Update all users metadata. Admin only.", response = User.class, responseContainer = "List")
     public List<User> updateUserMetadata(@ApiParam(hidden = true) @Auth User user) {
         List<User> users = userDAO.findAll();
         for (User u : users) {
@@ -477,7 +478,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/user/updateUserMetadata")
-    @ApiOperation(value = "Update metadata for logged in user", notes = "Update metadata for logged in user.", response = User.class)
+    @ApiOperation(value = "Update metadata for logged in user", authorizations = { @Authorization(value = "BEARER") }, notes = "Update metadata for logged in user.", response = User.class)
     public User updateLoggedInUserMetadata(@ApiParam(hidden = true) @Auth User user) {
         Helper.updateUserHelper(user, userDAO, tokenDAO);
         return userDAO.findById(user.getId());
