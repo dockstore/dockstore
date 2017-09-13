@@ -40,6 +40,9 @@ class SecondaryFilesUtility {
     private CWL cwlUtil;
     private Gson gson;
 
+    // This contains a map of the CommandLineTool paths and objects that were already parsed.
+    private Map<String, CommandLineTool> descriptorMap = new HashMap<>();
+
     SecondaryFilesUtility(CWL cwlUtil, Gson gson) {
         this.cwlUtil = cwlUtil;
         this.gson = gson;
@@ -70,14 +73,20 @@ class SecondaryFilesUtility {
     private void loopThroughSource(String toolFileIdPath, String workflowFileId, String descriptorPath,
             List<Map<String, List<String>>> idAndSecondaryFiles) {
         String toolIDFromWorkflow = extractID(toolFileIdPath);
-        final String toolDescriptor = this.cwlUtil.parseCWL(descriptorPath).getLeft();
         CommandLineTool toolDescriptorObject;
         try {
-            toolDescriptorObject = this.gson.fromJson(toolDescriptor, CommandLineTool.class);
+            // Check if the descriptor was already parsed
+            if (descriptorMap.containsKey(descriptorPath)) {
+                toolDescriptorObject = descriptorMap.get(descriptorPath);
+            } else {
+                System.out.println("Parsed " + descriptorPath);
+                final String toolDescriptor = this.cwlUtil.parseCWL(descriptorPath).getLeft();
+                toolDescriptorObject = this.gson.fromJson(toolDescriptor, CommandLineTool.class);
+                descriptorMap.put(descriptorPath, toolDescriptorObject);
+            }
             if (toolDescriptorObject != null) {
                 List<CommandInputParameter> inputs = toolDescriptorObject.getInputs();
-                inputs.forEach(input -> {
-
+                inputs.parallelStream().forEach(input -> {
                     try {
                         @SuppressWarnings("unchecked")
                         List<String> secondaryFiles = (List<String>)input.get("secondaryFiles");
@@ -229,9 +238,9 @@ class SecondaryFilesUtility {
         List<String> inputFileIds = this.getInputFileIds(workflow);
         inputFileIds.forEach(inputFileId -> getDescriptorsWithFileInput(workflow, inputFileId, descriptorsWithFiles));
         List<InputParameter> inputs = workflow.getInputs();
-        inputs.forEach(input -> {
+        inputs.parallelStream().forEach(input -> {
             String workflowId = input.getId().toString();
-            descriptorsWithFiles.forEach(file -> {
+            descriptorsWithFiles.parallelStream().forEach(file -> {
                 if (file.containsKey(workflowId)) {
                     ArrayList<String> arrayListToolSecondaryFiles = (ArrayList<String>)file.get(workflowId);
                     setInputFile(input, arrayListToolSecondaryFiles, workflowId);

@@ -19,7 +19,7 @@
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>1.2.7-SNAPSHOT</version>
+    <version>1.2.9-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
@@ -45,7 +45,7 @@
         <aws.version>1.11.86</aws.version>
         <powermock.version>1.6.5</powermock.version>
         <mockito.version>1.10.19</mockito.version>
-        <cwlavro.version>1.0.8</cwlavro.version>
+        <cwlavro.version>1.0.9</cwlavro.version>
         <okhttp.version>3.2.0</okhttp.version>
         <slf4j.version>1.7.21</slf4j.version>
         <swagger-ui.version>2.1.4</swagger-ui.version>
