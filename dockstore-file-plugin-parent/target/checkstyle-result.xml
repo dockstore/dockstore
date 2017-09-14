@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<checkstyle version="7.3">
-<file name="/home/j2wu/Desktop/dockstore/dockstore-file-plugin-parent/src/main/java/io/dockstore/provision/package-info.java">
-</file>
-<file name="/home/j2wu/Desktop/dockstore/dockstore-file-plugin-parent/src/main/java/io/dockstore/provision/ProgressPrinter.java">
-</file>
-<file name="/home/j2wu/Desktop/dockstore/dockstore-file-plugin-parent/src/main/java/io/dockstore/provision/ProvisionInterface.java">
-</file>
-</checkstyle>
