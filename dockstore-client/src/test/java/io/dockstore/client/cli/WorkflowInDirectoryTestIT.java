@@ -31,6 +31,26 @@ public class WorkflowInDirectoryTestIT {
     }
 
     /**
+     * This tests secondary files that are denoted as a list of extensions (doesn't actually work, but we're at not dying horribly)
+     */
+    @Test
+    public void testWorkflowRunInDirectorySecondaryFileExtensions() {
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("testDirectory2/1st-workflowArrayedOutput.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("testDirectory2/1st-workflow-jobArrayedOutput.json"));
+        this.baseWorkflowTest(cwlFile, cwlJSON, false, "workflow");
+    }
+
+    /**
+     * This tests secondary files that are denoted as a list of paths (doesn't actually work, but we're at not dying horribly)
+     */
+    @Test
+    public void testWorkflowRunInDirectorySecondaryFileByPaths() {
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("testDirectory2/1st-workflowArrayedOutput.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("testDirectory2/1st-workflow-jobArrayedOutput2.json"));
+        this.baseWorkflowTest(cwlFile, cwlJSON, false, "workflow");
+    }
+
+    /**
      * This tests 3 situations:
      * if using --script will ignore the missing test files when copying
      * if the workflow descriptor can successfully run if the tool descriptor has the secondary files instead of the workflow descriptor
