@@ -5,19 +5,8 @@
   },
   "ex": "Hello.java",
   "classout": [
-    {
-      "class": "File",
-      "path": "Hello.java",
-      "secondaryFiles": [
-        {
-          "class": "File",
-          "path": "../biodata/collections/hg38/seq/hg38.fa.fai"
-        },
-        {
-          "class": "File",
-          "path": "../biodata/collections/hg38/seq/hg38.dict"
-        }
-      ]
-    }
+    [
+      "null"
+    ]
   ]
 }

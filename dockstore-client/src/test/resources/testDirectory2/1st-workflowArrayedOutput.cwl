@@ -6,12 +6,17 @@ inputs:
 
 outputs:
   classout:
-    type: File
     outputSource: untar/example_out
+    type:
+      items:
+      - File
+      - 'null'
+      type: array
+
 
 steps:
   untar:
-    run: tar-param.cwl
+    run: tar-paramArrayed.cwl
     in:
       tarfile: inp
       extractfile: ex
