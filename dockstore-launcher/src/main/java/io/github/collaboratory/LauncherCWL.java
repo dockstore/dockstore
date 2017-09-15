@@ -628,7 +628,7 @@ public class LauncherCWL {
             provisionOutputFile(key, file, map);
         } else if (currentEntry instanceof List) {
             // unwrap a list if it happens to be inside a list (as in bcbio)
-            for(Object listEntry : (List)currentEntry) {
+            for (Object listEntry : (List)currentEntry) {
                 handleOutputFileEntry(key, file, listEntry);
             }
         } else {
