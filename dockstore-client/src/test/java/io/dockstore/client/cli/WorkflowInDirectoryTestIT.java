@@ -24,8 +24,12 @@ public class WorkflowInDirectoryTestIT {
         configFile = new File(ResourceHelpers.resourceFilePath("config"));
     }
 
+    /**
+     * Guard against failing tests killing VM
+     */
     @Rule
     public final ExpectedSystemExit exit = ExpectedSystemExit.none();
+
 
     /**
      * This tests if the workflow could be ran with the client in a much different directory than the descriptor (not in the same directory as the descriptor)
@@ -67,7 +71,6 @@ public class WorkflowInDirectoryTestIT {
      */
     @Test
     public void testWorkflowMissingFilesToCopy() {
-        exit.expectSystemExit();
         File cwlFile = new File(ResourceHelpers.resourceFilePath("directory/1st-workflow.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("directory/1st-workflow-job.json"));
         this.baseWorkflowTest(cwlFile, cwlJSON, true, "workflow");
@@ -78,7 +81,6 @@ public class WorkflowInDirectoryTestIT {
      */
     @Test
     public void testNullCase() {
-        exit.expectSystemExit();
         File cwlFile = new File(ResourceHelpers.resourceFilePath("directory/1st-workflow-no-secondary-in-workflow.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("directory/1st-workflow-job.json"));
         this.baseWorkflowTest(cwlFile, cwlJSON, true, "workflow");

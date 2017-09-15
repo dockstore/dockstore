@@ -367,15 +367,17 @@ public class LauncherCWL {
         if (secondaryFiles != null) {
             String json = googleJson.toJson(secondaryFiles);
             ArrayList<Map<String, String>> data = googleJson.fromJson(json, ArrayList.class);
-            if (data instanceof Map) {
-                for (Map<String, String> currentFileMap : data) {
+            for (Object suspectedFileMap : data) {
+                if (suspectedFileMap instanceof Map) {
+                    Map<String, String> currentFileMap = (Map)suspectedFileMap;
                     final String localPath = fileMap.get(paramName + ":" + currentFileMap.get("path")).getLocalPath();
                     currentFileMap.put("path", localPath);
+                } else {
+                    System.err.println("WARNING: We did not understand secondary files for \"" + paramName + "\" , skipping");
                 }
-                param.put("secondaryFiles", data);
-            } else {
-                System.err.println("WARNING: We did not understand secondary files for \"" + paramName + "\" , skipping");
             }
+            param.put("secondaryFiles", data);
+
         }
     }
 
