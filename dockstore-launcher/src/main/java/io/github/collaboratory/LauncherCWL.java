@@ -587,7 +587,7 @@ public class LauncherCWL {
      * @param fileMap      indicates which output files need to be provisioned where
      * @param outputObject provides information on the output files from cwltool
      */
-    private void registerOutputFiles(Map<String, List<FileProvisioning.FileInfo>> fileMap, Map<String, Object> outputObject) {
+    protected void registerOutputFiles(Map<String, List<FileProvisioning.FileInfo>> fileMap, Map<String, Object> outputObject) {
 
         LOG.info("UPLOADING FILES...");
 
@@ -599,9 +599,9 @@ public class LauncherCWL {
                 List<Map<String, Object>> cwltoolOutput = (List)outputObject.get(key);
                 FileProvisioning.FileInfo file = files.get(0);
                 if (files.size() == 1 && file.isDirectory()) {
-                    // we're provisoning a number of files into a directory
-                    for (Map<String, Object> map : cwltoolOutput) {
-                        provisionOutputFile(key, file, map);
+                    // we're provisioning a number of files into a directory
+                    for (Object currentEntry : cwltoolOutput) {
+                        handleOutputFileEntry(key, file, currentEntry);
                     }
                 } else {
                     // lengths should be the same when not dealing with directories
@@ -619,6 +619,22 @@ public class LauncherCWL {
                 final Map<String, Object> fileMapDataStructure = (Map)(outputObject).get(key);
                 provisionOutputFile(key, file, fileMapDataStructure);
             }
+        }
+    }
+
+    private void handleOutputFileEntry(String key, FileProvisioning.FileInfo file, Object currentEntry) {
+        if (currentEntry instanceof Map) {
+            Map<String, Object> map = (Map)currentEntry;
+            provisionOutputFile(key, file, map);
+        } else if (currentEntry instanceof List) {
+            // unwrap a list if it happens to be inside a list (as in bcbio)
+            for(Object listEntry : (List)currentEntry) {
+                handleOutputFileEntry(key, file, listEntry);
+            }
+        } else {
+            // output a warning if there is some other odd output structure we don't understand
+            LOG.error("We don't understand provision out structure for: " + key + " ,skipping");
+            System.out.println("Ignoring odd provision out structure for: " + key + " ,skipping");
         }
     }
 
