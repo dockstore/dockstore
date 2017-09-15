@@ -2,10 +2,14 @@ package io.dockstore.client.cli;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.dropwizard.testing.ResourceHelpers;
+import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 
 /**
  * @author gluu
@@ -19,6 +23,9 @@ public class WorkflowInDirectoryTestIT {
     public static void setup() {
         configFile = new File(ResourceHelpers.resourceFilePath("config"));
     }
+
+    @Rule
+    public final ExpectedSystemExit exit = ExpectedSystemExit.none();
 
     /**
      * This tests if the workflow could be ran with the client in a much different directory than the descriptor (not in the same directory as the descriptor)
@@ -60,6 +67,7 @@ public class WorkflowInDirectoryTestIT {
      */
     @Test
     public void testWorkflowMissingFilesToCopy() {
+        exit.expectSystemExit();
         File cwlFile = new File(ResourceHelpers.resourceFilePath("directory/1st-workflow.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("directory/1st-workflow-job.json"));
         this.baseWorkflowTest(cwlFile, cwlJSON, true, "workflow");
@@ -70,6 +78,7 @@ public class WorkflowInDirectoryTestIT {
      */
     @Test
     public void testNullCase() {
+        exit.expectSystemExit();
         File cwlFile = new File(ResourceHelpers.resourceFilePath("directory/1st-workflow-no-secondary-in-workflow.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("directory/1st-workflow-job.json"));
         this.baseWorkflowTest(cwlFile, cwlJSON, true, "workflow");
