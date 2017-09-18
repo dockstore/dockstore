@@ -238,7 +238,7 @@ class SecondaryFilesUtility {
         List<String> inputFileIds = this.getInputFileIds(workflow);
         inputFileIds.forEach(inputFileId -> getDescriptorsWithFileInput(workflow, inputFileId, descriptorsWithFiles));
         List<InputParameter> inputs = workflow.getInputs();
-        inputs.stream().forEach(input -> {
+        inputs.parallelStream().forEach(input -> {
             String workflowId = input.getId().toString();
             descriptorsWithFiles.stream().forEach(file -> {
                 if (file.containsKey(workflowId)) {
