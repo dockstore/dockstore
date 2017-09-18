@@ -5,7 +5,7 @@ import java.util.stream.IntStream;
 import com.google.gson.Gson;
 import io.cwl.avro.CWL;
 import io.cwl.avro.Workflow;
-import io.dropwizard.testing.ResourceHelpers;
+import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 
 /**
@@ -14,7 +14,8 @@ import org.junit.Test;
  */
 public class SecondaryFilesUtilityTest {
 
-    private static final String imageDescriptorPath = ResourceHelpers.resourceFilePath("gdc/cwl/workflows/dnaseq/transform.cwl");
+    private static final String imageDescriptorPath = FileUtils
+            .getFile("src", "test", "resources", "gdc/cwl/workflows/dnaseq/transform.cwl").getAbsolutePath();
     private static final CWL cwlUtil = new CWL();
     private static final String imageDescriptorContent = cwlUtil.parseCWL(imageDescriptorPath).getLeft();
     private static final Gson gson = CWL.getTypeSafeCWLToolDocument();
