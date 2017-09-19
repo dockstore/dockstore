@@ -36,7 +36,9 @@ public class CWLToolWrapper implements CWLRunnerInterface {
         final ImmutablePair<String, String> pair2 = io.cwl.avro.Utilities
                 .executeCommand(Joiner.on(" ").join(Arrays.asList(s2)), false, com.google.common.base.Optional.absent(),
                         com.google.common.base.Optional.absent());
-        final String schemaSaladVersion = pair2.getKey().split(" ")[1].trim();
+        // schema salad new version changes to a different format, looks like the last value still works
+        String[] split = pair2.getKey().split(" ");
+        final String schemaSaladVersion = split[split.length-1].trim();
 
         final String expectedCwltoolVersion = "1.0.20170828135420";
         if (!cwlToolVersion.equals(expectedCwltoolVersion)) {
