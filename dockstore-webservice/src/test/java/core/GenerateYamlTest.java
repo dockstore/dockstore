@@ -53,9 +53,9 @@ public class GenerateYamlTest {
     @Test
     public void generateYAML() throws IOException {
         final int localPort = RULE.getLocalPort();
-        final String swagger_filename = "/swagger.yaml";
+        final String swaggerFilename = "/swagger.yaml";
         File destination = new File(System.getProperty("baseDir") + "/src/main/resources/", "swagger.yaml");
-        final URL url = new URL("http", "localhost", localPort, swagger_filename);
+        final URL url = new URL("http", "localhost", localPort, swaggerFilename);
         System.out.println(url.toString());
         FileUtils.copyURLToFile(url, destination);
 
@@ -81,7 +81,7 @@ public class GenerateYamlTest {
 
             private Object sortMapByKey(Object object) {
                 if (object instanceof Map) {
-                    TreeMap sortedMap = new TreeMap(Ordering.natural());
+                    Map sortedMap = new TreeMap(Ordering.natural());
                     // not sure if we actually need to go recursive, it seems to mess up parameter order
                     //                    Set<Map.Entry> entrySet = ((Map)object).entrySet();
                     //                    for (Map.Entry entry : entrySet) {
