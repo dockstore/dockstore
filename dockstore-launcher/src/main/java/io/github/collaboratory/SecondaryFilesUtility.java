@@ -240,7 +240,7 @@ class SecondaryFilesUtility {
         List<InputParameter> inputs = workflow.getInputs();
         inputs.parallelStream().forEach(input -> {
             String workflowId = input.getId().toString();
-            descriptorsWithFiles.parallelStream().forEach(file -> {
+            descriptorsWithFiles.stream().forEach(file -> {
                 if (file.containsKey(workflowId)) {
                     ArrayList<String> arrayListToolSecondaryFiles = (ArrayList<String>)file.get(workflowId);
                     setInputFile(input, arrayListToolSecondaryFiles, workflowId);
