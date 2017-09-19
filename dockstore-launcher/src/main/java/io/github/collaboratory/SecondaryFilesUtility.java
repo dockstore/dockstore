@@ -17,8 +17,10 @@ package io.github.collaboratory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
@@ -213,9 +215,10 @@ class SecondaryFilesUtility {
             LOG.info("Copying the secondary files to " + workflowId);
             @SuppressWarnings("unchecked")
             ArrayList<String> arrayListWorkflowSecondaryFiles = (ArrayList<String>)workflowSecondaryFiles;
-            arrayListWorkflowSecondaryFiles.removeAll(toolSecondaryFiles);
-            toolSecondaryFiles.addAll(arrayListWorkflowSecondaryFiles);
-            input.setSecondaryFiles(toolSecondaryFiles);
+            Set secondaryFiles = new HashSet(arrayListWorkflowSecondaryFiles);
+            secondaryFiles.addAll(toolSecondaryFiles);
+            List mergedSecondaryFiles = new ArrayList(secondaryFiles);
+            input.setSecondaryFiles(mergedSecondaryFiles);
         } else if (workflowSecondaryFiles instanceof String) {
             // Not sure if this case ever occurs
             if (!toolSecondaryFiles.contains(workflowSecondaryFiles)) {
@@ -238,9 +241,9 @@ class SecondaryFilesUtility {
         List<String> inputFileIds = this.getInputFileIds(workflow);
         inputFileIds.forEach(inputFileId -> getDescriptorsWithFileInput(workflow, inputFileId, descriptorsWithFiles));
         List<InputParameter> inputs = workflow.getInputs();
-        inputs.parallelStream().forEach(input -> {
+        inputs.forEach(input -> {
             String workflowId = input.getId().toString();
-            descriptorsWithFiles.stream().forEach(file -> {
+            descriptorsWithFiles.forEach(file -> {
                 if (file.containsKey(workflowId)) {
                     ArrayList<String> arrayListToolSecondaryFiles = (ArrayList<String>)file.get(workflowId);
                     setInputFile(input, arrayListToolSecondaryFiles, workflowId);
