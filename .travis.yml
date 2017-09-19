@@ -20,8 +20,8 @@ jdk:
 - oraclejdk8
 install:
 - docker version
-- pip2.7 install --user setuptools==34.2.0
-- pip2.7 install --user cwl-runner cwltool==1.0.20170217172322 schema-salad==2.2.20170222151604 avro==1.8.1 ruamel.yaml==0.12.4 requests==2.18.4
+- pip2.7 install --user setuptools==36.5.0
+- pip2.7 install --user cwl-runner cwltool==1.0.20170828135420 schema-salad==2.6.20170806163416 avro==1.8.1 ruamel.yaml==0.14.12 requests==2.18.4
 before_script:
 - psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
 - psql -c "ALTER USER dockstore WITH superuser;" -U postgres

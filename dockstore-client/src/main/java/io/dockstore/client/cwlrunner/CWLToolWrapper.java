@@ -38,12 +38,12 @@ public class CWLToolWrapper implements CWLRunnerInterface {
                         com.google.common.base.Optional.absent());
         final String schemaSaladVersion = pair2.getKey().split(" ")[1].trim();
 
-        final String expectedCwltoolVersion = "1.0.20170217172322";
+        final String expectedCwltoolVersion = "1.0.20170828135420";
         if (!cwlToolVersion.equals(expectedCwltoolVersion)) {
             ArgumentUtility.errorMessage("cwltool version is " + cwlToolVersion + " , Dockstore is tested with " + expectedCwltoolVersion
                     + "\nOverride and run with `--script`", Client.COMMAND_ERROR);
         }
-        final String expectedSchemaSaladVersion = "2.2.20170222151604";
+        final String expectedSchemaSaladVersion = "2.6.20170806163416";
         if (!schemaSaladVersion.equals(expectedSchemaSaladVersion)) {
             ArgumentUtility.errorMessage("schema-salad version is " + schemaSaladVersion + " , Dockstore is tested with " + expectedSchemaSaladVersion
                     + "\nOverride and run with `--script`", Client.COMMAND_ERROR);
