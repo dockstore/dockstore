@@ -113,7 +113,7 @@ import static io.dockstore.client.cli.Client.SCRIPT;
  * @author dyuen
  */
 public abstract class AbstractEntryClient {
-    private static final String CROMWELL_LOCATION = "https://github.com/broadinstitute/cromwell/releases/download/0.21/cromwell-0.21.jar";
+    private static final String CROMWELL_LOCATION = "https://github.com/broadinstitute/cromwell/releases/download/29/cromwell-29.jar";
     private static final Logger LOG = LoggerFactory.getLogger(AbstractEntryClient.class);
     boolean isAdmin = false;
 
