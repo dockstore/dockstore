@@ -38,7 +38,7 @@ public class CWLToolWrapper implements CWLRunnerInterface {
                         com.google.common.base.Optional.absent());
         // schema salad new version changes to a different format, looks like the last value still works
         String[] split = pair2.getKey().split(" ");
-        final String schemaSaladVersion = split[split.length-1].trim();
+        final String schemaSaladVersion = split[split.length - 1].trim();
 
         final String expectedCwltoolVersion = "1.0.20170828135420";
         if (!cwlToolVersion.equals(expectedCwltoolVersion)) {
