@@ -248,7 +248,7 @@ public final class Helper {
      */
     @SuppressWarnings("checkstyle:parameternumber")
     public static List<Tool> refresh(final Long userId, final HttpClient client, final ObjectMapper objectMapper, final UserDAO userDAO,
-            final ToolDAO toolDAO, final TokenDAO tokenDAO, final TagDAO tagDAO, final FileDAO fileDAO) {
+            final ToolDAO toolDAO, final TokenDAO tokenDAO, final TagDAO tagDAO, final FileDAO fileDAO, String organization) {
         // Get user's quay and git tokens
         List<Token> tokens = tokenDAO.findByUserId(userId);
         Token quayToken = extractToken(tokens, TokenType.QUAY_IO.toString());
@@ -270,7 +270,7 @@ public final class Helper {
             LOG.info("Grabbing " + registry.getFriendlyName() + " repos");
 
             updatedTools.addAll(abstractImageRegistry
-                    .refreshTools(userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken, bitbucketToken, gitlabToken));
+                    .refreshTools(userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken, bitbucketToken, gitlabToken, organization));
         }
         return updatedTools;
     }

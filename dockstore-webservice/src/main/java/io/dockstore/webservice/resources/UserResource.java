@@ -377,6 +377,25 @@ public class UserResource {
     @GET
     @Timed
     @UnitOfWork
+    @Path("/{userId}/containers/{organization}/refresh")
+    @ApiOperation(value = "Refresh repos owned by the logged-in user", notes = "Refresh all tools in an organization", response = Tool.class, responseContainer = "List")
+    public List<Tool> refreshToolsByOrganization(@ApiParam(hidden = true) @Auth User authUser,
+            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
+            @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization) {
+
+        Helper.checkUser(authUser, userId);
+
+        // Update user data
+        Helper.updateUserHelper(authUser, userDAO, tokenDAO);
+        List<Tool> tools = dockerRepoResource.refreshToolsForUser(userId, organization);
+        // TODO: Turn this into bulk index upsert and only update the ones that have changed
+        tools.forEach(tool -> elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE));
+        return tools;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
     @Path("/{userId}/containers/refresh")
     @ApiOperation(value = "Refresh repos owned by the logged-in user", notes = "Updates some metadata", response = Tool.class, responseContainer = "List")
     public List<Tool> refresh(@ApiParam(hidden = true) @Auth User authUser,
@@ -386,9 +405,8 @@ public class UserResource {
 
         // Update user data
         Helper.updateUserHelper(authUser, userDAO, tokenDAO);
-
+        List<Tool> tools = dockerRepoResource.refreshToolsForUser(userId, null);
         // TODO: Turn this into bulk index upsert and only update the ones that have changed
-        List<Tool> tools = dockerRepoResource.refreshToolsForUser(userId);
         tools.forEach(tool -> elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE));
         return tools;
     }
@@ -413,7 +431,6 @@ public class UserResource {
         authUser = userDAO.findById(authUser.getId());
         List<Workflow> finalWorkflows = authUser.getEntries().stream().filter(Workflow.class::isInstance).map(Workflow.class::cast)
                 .collect(Collectors.toList());
-
         // TODO: Turn this into bulk index upsert and only update the ones that have changed
         finalWorkflows.forEach(workflow -> elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE));
         return finalWorkflows;
