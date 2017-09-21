@@ -990,6 +990,9 @@ public class ToolClient extends AbstractEntryClient {
         SourceFile file = new SourceFile();
         // simply getting published descriptors does not require permissions
         DockstoreTool container = containersApi.getPublishedContainerByToolPath(path);
+        if (tag == null && container.getDefaultVersion() != null) {
+            tag = container.getDefaultVersion();
+        }
 
         if (container != null) {
             try {

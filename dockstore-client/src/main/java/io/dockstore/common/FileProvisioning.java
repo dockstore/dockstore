@@ -138,13 +138,53 @@ public class FileProvisioning {
         }
     }
 
+    static void retryWrapper(ProvisionInterface provisionInterface, String targetPath, Path destinationPath, int maxRetries,
+            boolean download) {
+        retryWrapper(provisionInterface, targetPath, destinationPath, maxRetries, download, null);
+    }
+
+    static void retryWrapper(ProvisionInterface provisionInterface, String targetPath, Path destinationPath, int maxRetries,
+            boolean download, String metadata) {
+        if (provisionInterface == null) {
+            provisionInterface = new FileProvisionUtilPluginWrapper();
+        }
+        boolean success;
+        int retries = 0;
+        do {
+            if (retries > 0) {
+                long waitTime = getWaitTimeExp(retries);
+                System.err.print("Waiting for " + waitTime + " milliseconds due to failure\n");
+                // Wait for the result.
+                try {
+                    Thread.sleep(waitTime);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException("Could not wait for retry");
+                }
+            }
+            if (download) {
+                success = provisionInterface.downloadFrom(targetPath, destinationPath);
+            } else {
+                // note that this is reversed
+                success = provisionInterface.uploadTo(targetPath, destinationPath, Optional.ofNullable(metadata));
+            }
+
+            if (!success) {
+                LOG.error("Could not provision " + targetPath + " to " + destinationPath + " , for retry " + retries);
+            }
+        } while (!success && retries++ < maxRetries);
+        if (!success) {
+            throw new RuntimeException("Could not provision: " + targetPath + " to " + destinationPath);
+        }
+    }
+
     /**
      * This method downloads both local and remote files into the working directory
-     * @param imageDescriptorPath path of the descriptor
-     * @param targetPath path for target file
-     * @param localPath  the absolute path where we will download files to
+     *
+     * @param parameterFilePath path of the parameter file
+     * @param targetPath        path for target file
+     * @param localPath         the absolute path where we will download files to
      */
-    public void provisionInputFile(String imageDescriptorPath, String targetPath, Path localPath) {
+    public void provisionInputFile(String parameterFilePath, String targetPath, Path localPath) {
 
         Path potentialCachedFile = null;
         final boolean useCache = isCacheOn(config);
@@ -197,7 +237,7 @@ public class FileProvisioning {
             }
         }
         // if a file does not exist yet, get it
-        if (!Files.exists(localPath)) {
+        if (!Files.exists(localPath) || "./".equals(targetPath)) {
             // check if we can use a plugin
             boolean localFileType = objectIdentifier.getScheme() == null;
             if (!localFileType) {
@@ -207,9 +247,9 @@ public class FileProvisioning {
                 Path actualTargetPath = null;
                 try {
                     String workingDir = System.getProperty("user.dir");
-                    // If the descriptor path is not empty and not in a temporary location (when downloaded from Dockstore)
-                    if (!"".equals(imageDescriptorPath) && !imageDescriptorPath.startsWith("/tmp")) {
-                        workingDir = Paths.get(imageDescriptorPath).getParent().toString();
+                    // TODO: this is basically, if not WDL then try to find out the parent directory
+                    if (!"".equals(parameterFilePath)) {
+                        workingDir = Paths.get(parameterFilePath).toAbsolutePath().getParent().toString();
                     }
                     if (targetPath.startsWith("/")) {
                         // absolute path
@@ -230,7 +270,10 @@ public class FileProvisioning {
                     LOG.info("Could not link " + targetPath + " to " + localPath + " , copying instead", e);
                     try {
                         if (actualTargetPath.toFile().isDirectory()) {
-                            FileUtils.copyDirectory(actualTargetPath.toFile(), localPath.toFile());
+                            FileUtils.copyDirectory(actualTargetPath.toFile(), localPath.toFile(), file -> {
+                                String name = file.getName();
+                                return !("datastore".equals(name));
+                            });
                         } else {
                             Files.copy(actualTargetPath, localPath);
                         }
@@ -278,43 +321,6 @@ public class FileProvisioning {
         retryWrapper(provision, targetPath, localPath, maxRetries, false);
     }
 
-    static void retryWrapper(ProvisionInterface provisionInterface, String targetPath, Path destinationPath, int maxRetries, boolean download) {
-        retryWrapper(provisionInterface, targetPath, destinationPath, maxRetries, download, null);
-    }
-
-    static void retryWrapper(ProvisionInterface provisionInterface, String targetPath, Path destinationPath, int maxRetries, boolean download, String metadata) {
-        if (provisionInterface == null) {
-            provisionInterface = new FileProvisionUtilPluginWrapper();
-        }
-        boolean success;
-        int retries = 0;
-        do {
-            if (retries > 0) {
-                long waitTime = getWaitTimeExp(retries);
-                System.err.print("Waiting for " + waitTime + " milliseconds due to failure\n");
-                // Wait for the result.
-                try {
-                    Thread.sleep(waitTime);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException("Could not wait for retry");
-                }
-            }
-            if (download) {
-                success = provisionInterface.downloadFrom(targetPath, destinationPath);
-            } else {
-                // note that this is reversed
-                success = provisionInterface.uploadTo(targetPath, destinationPath, Optional.ofNullable(metadata));
-            }
-
-            if (!success) {
-                LOG.error("Could not provision " + targetPath + " to " + destinationPath + " , for retry " + retries);
-            }
-        } while (!success && retries++ < maxRetries);
-        if (!success) {
-            throw new RuntimeException("Could not provision: " + targetPath + " to " + destinationPath);
-        }
-    }
-
     /**
      * Copies files from srcPath to destPath
      *
@@ -341,7 +347,8 @@ public class FileProvisioning {
                 // file provisioning plugins do not really support directories
                 return;
             }
-            System.out.println("Calling on plugin " + provisionInterface.getClass().getName() + " to provision from " + srcPath + " to " + destPath);
+            System.out.println(
+                    "Calling on plugin " + provisionInterface.getClass().getName() + " to provision from " + srcPath + " to " + destPath);
             handleUploadProvisionWithRetries(destPath, Paths.get(srcPath), provisionInterface, metadata);
             // finalize output from the printer
             System.out.println();

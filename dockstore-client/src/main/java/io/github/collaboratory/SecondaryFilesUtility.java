@@ -17,8 +17,10 @@ package io.github.collaboratory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
@@ -39,6 +41,9 @@ class SecondaryFilesUtility {
     private static final Logger LOG = LoggerFactory.getLogger(SecondaryFilesUtility.class);
     private CWL cwlUtil;
     private Gson gson;
+
+    // This contains a map of the CommandLineTool paths and objects that were already parsed.
+    private Map<String, CommandLineTool> descriptorMap = new HashMap<>();
 
     SecondaryFilesUtility(CWL cwlUtil, Gson gson) {
         this.cwlUtil = cwlUtil;
@@ -70,14 +75,20 @@ class SecondaryFilesUtility {
     private void loopThroughSource(String toolFileIdPath, String workflowFileId, String descriptorPath,
             List<Map<String, List<String>>> idAndSecondaryFiles) {
         String toolIDFromWorkflow = extractID(toolFileIdPath);
-        final String toolDescriptor = this.cwlUtil.parseCWL(descriptorPath).getLeft();
         CommandLineTool toolDescriptorObject;
         try {
-            toolDescriptorObject = this.gson.fromJson(toolDescriptor, CommandLineTool.class);
+            // Check if the descriptor was already parsed
+            if (descriptorMap.containsKey(descriptorPath)) {
+                toolDescriptorObject = descriptorMap.get(descriptorPath);
+            } else {
+                System.out.println("Parsed " + descriptorPath);
+                final String toolDescriptor = this.cwlUtil.parseCWL(descriptorPath).getLeft();
+                toolDescriptorObject = this.gson.fromJson(toolDescriptor, CommandLineTool.class);
+                descriptorMap.put(descriptorPath, toolDescriptorObject);
+            }
             if (toolDescriptorObject != null) {
                 List<CommandInputParameter> inputs = toolDescriptorObject.getInputs();
-                inputs.forEach(input -> {
-
+                inputs.parallelStream().forEach(input -> {
                     try {
                         @SuppressWarnings("unchecked")
                         List<String> secondaryFiles = (List<String>)input.get("secondaryFiles");
@@ -204,9 +215,10 @@ class SecondaryFilesUtility {
             LOG.info("Copying the secondary files to " + workflowId);
             @SuppressWarnings("unchecked")
             ArrayList<String> arrayListWorkflowSecondaryFiles = (ArrayList<String>)workflowSecondaryFiles;
-            arrayListWorkflowSecondaryFiles.removeAll(toolSecondaryFiles);
-            toolSecondaryFiles.addAll(arrayListWorkflowSecondaryFiles);
-            input.setSecondaryFiles(toolSecondaryFiles);
+            Set secondaryFiles = new HashSet(arrayListWorkflowSecondaryFiles);
+            secondaryFiles.addAll(toolSecondaryFiles);
+            List mergedSecondaryFiles = new ArrayList(secondaryFiles);
+            input.setSecondaryFiles(mergedSecondaryFiles);
         } else if (workflowSecondaryFiles instanceof String) {
             // Not sure if this case ever occurs
             if (!toolSecondaryFiles.contains(workflowSecondaryFiles)) {

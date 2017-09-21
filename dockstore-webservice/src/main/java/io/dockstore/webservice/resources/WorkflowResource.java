@@ -35,6 +35,8 @@ import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.BitBucketSourceCodeRepo;
 import io.dockstore.webservice.helpers.DAGHelper;
+import io.dockstore.webservice.helpers.ElasticManager;
+import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.EntryLabelHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
@@ -94,7 +96,7 @@ import java.util.SortedSet;
 public class WorkflowResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
-
+    private final ElasticManager elasticManager;
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
     private final WorkflowDAO workflowDAO;
@@ -129,6 +131,7 @@ public class WorkflowResource {
 
         this.workflowDAO = workflowDAO;
         entryVersionHelper = new EntryVersionHelper<>(workflowDAO);
+        elasticManager = new ElasticManager();
     }
 
     @GET
@@ -183,6 +186,7 @@ public class WorkflowResource {
         long id = workflowDAO.create(newWorkflow);
         newWorkflow.addUser(user);
         newWorkflow = workflowDAO.findById(id);
+        elasticManager.handleIndexUpdate(newWorkflow, ElasticMode.DELETE);
         return newWorkflow;
 
     }
@@ -314,8 +318,9 @@ public class WorkflowResource {
                 .getWorkflow(workflow.getOrganization() + '/' + workflow.getRepository(), Optional.of(workflow));
         workflow.getUsers().add(user);
         updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow);
-
-        return workflowDAO.findById(workflowId);
+        Workflow finalWorkflow = workflowDAO.findById(workflowId);
+        elasticManager.handleIndexUpdate(newWorkflow, ElasticMode.UPDATE);
+        return finalWorkflow;
     }
 
     /**
@@ -388,7 +393,6 @@ public class WorkflowResource {
         Helper.checkEntry(c);
 
         Helper.checkUser(user, c);
-
         return c;
     }
 
@@ -405,7 +409,10 @@ public class WorkflowResource {
         Helper.checkEntry(c);
 
         EntryLabelHelper<Workflow> labeller = new EntryLabelHelper<>(labelDAO);
-        return labeller.updateLabels(c, labelStrings);
+
+        Workflow workflow = labeller.updateLabels(c, labelStrings);
+        elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
+        return workflow;
     }
 
     @PUT
@@ -431,7 +438,7 @@ public class WorkflowResource {
         c.updateInfo(workflow);
         Workflow result = workflowDAO.findById(workflowId);
         Helper.checkEntry(result);
-
+        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
         return result;
 
     }
@@ -470,6 +477,7 @@ public class WorkflowResource {
 
         Workflow result = workflowDAO.findById(workflowId);
         Helper.checkEntry(result);
+        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
         return result.getWorkflowVersions();
 
     }
@@ -496,7 +504,7 @@ public class WorkflowResource {
                 version.setWorkflowPath(workflow.getDefaultWorkflowPath());
             }
         }
-
+        elasticManager.handleIndexUpdate(c, ElasticMode.UPDATE);
         return c;
     }
 
@@ -571,6 +579,11 @@ public class WorkflowResource {
 
         long id = workflowDAO.create(c);
         c = workflowDAO.findById(id);
+        if (request.getPublish()) {
+            elasticManager.handleIndexUpdate(c, ElasticMode.UPDATE);
+        } else {
+            elasticManager.handleIndexUpdate(c, ElasticMode.DELETE);
+        }
         return c;
     }
 
@@ -806,7 +819,7 @@ public class WorkflowResource {
                 workflowVersion.addSourceFile(sourceFileWithId);
             }
         }
-
+        elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
         return workflowVersion.getSourceFiles();
     }
 
@@ -851,7 +864,7 @@ public class WorkflowResource {
                 sourceFiles.remove(toRemove);
             }
         }
-
+        elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
         return workflowVersion.getSourceFiles();
     }
 
@@ -915,7 +928,8 @@ public class WorkflowResource {
         final Workflow workflowFromDB = workflowDAO.findById(workflowID);
         workflowFromDB.getUsers().add(user);
         updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow);
-        return workflowDAO.findById(workflowID);
+        Workflow finalWorkflow = workflowDAO.findById(workflowID);
+        return finalWorkflow;
 
     }
 
@@ -972,6 +986,7 @@ public class WorkflowResource {
         }
         Workflow result = workflowDAO.findById(workflowId);
         Helper.checkEntry(result);
+        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
         return result.getVersions();
     }
 
@@ -1127,7 +1142,7 @@ public class WorkflowResource {
         Workflow workflow = workflowDAO.findById(workflowId);
 
         Helper.starEntryHelper(workflow, user, "workflow", workflow.getPath());
-
+        elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
     }
 
     @DELETE
@@ -1139,6 +1154,7 @@ public class WorkflowResource {
             @ApiParam(value = "Workflow to unstar.", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         Helper.unstarEntryHelper(workflow, user, "workflow", workflow.getPath());
+        elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
     }
 
     @GET
