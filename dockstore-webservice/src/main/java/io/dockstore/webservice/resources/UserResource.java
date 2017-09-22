@@ -390,7 +390,11 @@ public class UserResource {
         List<Tool> tools = dockerRepoResource.refreshToolsForUser(userId, organization);
         // TODO: Turn this into bulk index upsert and only update the ones that have changed
         tools.forEach(tool -> elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE));
-        return tools;
+        authUser = userDAO.findById(authUser.getId());
+        List<Tool> finalTools = authUser.getEntries().stream().filter(Tool.class::isInstance).map(Tool.class::cast)
+                .collect(Collectors.toList());
+        // TODO: Turn this into bulk index upsert and only update the ones that have changed
+        return finalTools;
     }
 
     @GET
