@@ -28,6 +28,8 @@ import io.swagger.models.Swagger;
 import io.swagger.models.auth.ApiKeyAuthDefinition;
 import io.swagger.models.auth.In;
 
+import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
+
 /**
  * This is a dummy class used to describe the swagger API as a whole
  *
@@ -56,6 +58,6 @@ public class Description implements ReaderListener {
 
     @Override
     public void afterScan(Reader reader, Swagger swagger) {
-        swagger.addSecurityDefinition("BEARER", new ApiKeyAuthDefinition("Authorization", In.HEADER));
+        swagger.addSecurityDefinition(JWT_SECURITY_DEFINITION_NAME, new ApiKeyAuthDefinition("Authorization", In.HEADER));
     }
 }
