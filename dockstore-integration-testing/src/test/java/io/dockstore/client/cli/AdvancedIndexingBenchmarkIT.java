@@ -45,9 +45,9 @@ import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit.DropwizardAppRule;
-import io.swagger.api.JacksonJsonProvider;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.After;
 import org.junit.Before;
@@ -74,9 +74,9 @@ public class AdvancedIndexingBenchmarkIT {
     @ClassRule
     public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
             DockstoreWebserviceApplication.class, CONFIG_PATH);
-    private static final String lexicon = "ABCDEFGHIJKLMNOPQRSTUVWXYZ12345674890";
-    private static final java.util.Random rand = new java.util.Random();
-    private static final Set<String> identifiers = new HashSet<>();
+    private static final String LEXICON = "ABCDEFGHIJKLMNOPQRSTUVWXYZ12345674890";
+    private static final java.util.Random RAND = new java.util.Random();
+    private static final Set<String> IDENTIFIERS = new HashSet<>();
     private DockstoreWebserviceApplication application;
     private Session session;
     private ArrayList<String> fixedStringLabels;
@@ -89,11 +89,11 @@ public class AdvancedIndexingBenchmarkIT {
     public String randomIdentifier() {
         StringBuilder builder = new StringBuilder();
         while (builder.toString().length() == 0) {
-            int length = rand.nextInt(5) + 5;
+            int length = RAND.nextInt(5) + 5;
             for (int i = 0; i < length; i++) {
-                builder.append(lexicon.charAt(rand.nextInt(lexicon.length())));
+                builder.append(LEXICON.charAt(RAND.nextInt(LEXICON.length())));
             }
-            if (identifiers.contains(builder.toString())) {
+            if (IDENTIFIERS.contains(builder.toString())) {
                 builder = new StringBuilder();
             }
         }
@@ -111,7 +111,7 @@ public class AdvancedIndexingBenchmarkIT {
         fixedStringLabels = randomlyGenerateFixedAuthors();
         fixedAuthors = randomlyGenerateFixedAuthors();
         fixedOrganization = randomlyGenerateFixedAuthors();
-        indexTimes = new ArrayList<Long>();
+        indexTimes = new ArrayList<>();
     }
 
     @After
@@ -119,49 +119,54 @@ public class AdvancedIndexingBenchmarkIT {
         client.close();
     }
 
-    private void flushSession() {
-        session.flush();
-        session.close();
-        session = application.getHibernate().getSessionFactory().openSession();
-        ManagedSessionContext.bind(session);
-    }
-
     @Test
     public void testCreate10000Tools() throws Exception {
         this.sessionFactory = application.getHibernate().getSessionFactory();
-        TokenDAO tokenDAO = new TokenDAO(sessionFactory);
-        User user = new User();
-        user.setIsAdmin(true);
-        user.setAvatarUrl("https://avatars3.githubusercontent.com/u/24548904?v=4");
-        user.setCompany("OICR");
-        user.setUsername("travistest");
-        Token token = new Token();
-        token.setUserId(1);
-        token.setUsername("travistest");
-        token.setContent("iamafakedockstoretoken");
-        token.setTokenSource("dockstore");
-        tokenDAO.create(token);
-        Token token2 = new Token();
-        token2.setUserId(1);
-        token2.setUsername("travistest");
-        token2.setContent("iamafakegithubtoken");
-        token2.setTokenSource("github.com");
-        tokenDAO.create(token2);
-        UserDAO userDAO = new UserDAO(sessionFactory);
-        userDAO.create(user);
-        flushSession();
-        for (int i = 0; i < this.TOOL_COUNT; i++) {
+        try {
+            Transaction transaction = this.sessionFactory.openSession().getTransaction();
+            transaction.begin();
+
+            TokenDAO tokenDAO = new TokenDAO(sessionFactory);
+            User user = new User();
+            user.setIsAdmin(true);
+            user.setAvatarUrl("https://avatars3.githubusercontent.com/u/24548904?v=4");
+            user.setCompany("OICR");
+            user.setUsername("travistest");
+            Token token = new Token();
+            token.setUserId(1);
+            token.setUsername("travistest");
+            token.setContent("iamafakedockstoretoken");
+            token.setTokenSource("dockstore");
+            tokenDAO.create(token);
+            Token token2 = new Token();
+            token2.setUserId(1);
+            token2.setUsername("travistest");
+            token2.setContent("iamafakegithubtoken");
+            token2.setTokenSource("github.com");
+            tokenDAO.create(token2);
+            UserDAO userDAO = new UserDAO(sessionFactory);
+            userDAO.create(user);
+
+            transaction.commit();
+        } finally {
+            session.close();
+        }
+
+        session = application.getHibernate().getSessionFactory().openSession();
+        ManagedSessionContext.bind(session);
+
+        for (int i = 0; i < TOOL_COUNT; i++) {
             createTool();
         }
         Response response = client.target("http://localhost:" + RULE.getLocalPort() + "/containers/published").request().get();
         List<Tool> tools = response.readEntity(new GenericType<List<Tool>>() {
         });
         int actualToolCount = tools.size();
-                assertTrue("Supposed to have " + this.TOOL_COUNT
-                        + " tools.  Instead got " + actualToolCount + " tools.", actualToolCount == this.TOOL_COUNT);
+                assertTrue("Supposed to have " + TOOL_COUNT
+                        + " tools.  Instead got " + actualToolCount + " tools.", actualToolCount == TOOL_COUNT);
                 LOGGER.error("Amount of tools created: " + String.valueOf(actualToolCount));
-        for (int i = 0; i < indexTimes.size(); i++) {
-            LOGGER.error(String.valueOf((indexTimes.get(i))));
+        for (Long indexTime : indexTimes) {
+            LOGGER.error(String.valueOf(indexTime));
         }
     }
 
@@ -212,7 +217,7 @@ public class AdvancedIndexingBenchmarkIT {
     private String randomlyGeneratedQueryLabels() {
         String labels;
         SortedSet<String> setLabels = new TreeSet<>();
-        for (int i = 0; i < rand.nextInt(MAX_LABELS_PER_TOOL); i++) {
+        for (int i = 0; i < RAND.nextInt(MAX_LABELS_PER_TOOL); i++) {
             setLabels.add(randomLabel());
         }
         String[] arrayLabels = setLabels.toArray(new String[setLabels.size()]);
@@ -231,17 +236,17 @@ public class AdvancedIndexingBenchmarkIT {
     }
 
     private String randomLabel() {
-        String label = fixedStringLabels.get(rand.nextInt(fixedStringLabels.size()));
+        String label = fixedStringLabels.get(RAND.nextInt(fixedStringLabels.size()));
         return label;
     }
 
     private String randomAuthor() {
-        String author = fixedAuthors.get(rand.nextInt(fixedAuthors.size()));
+        String author = fixedAuthors.get(RAND.nextInt(fixedAuthors.size()));
         return author;
     }
 
     private String randomOrganization() {
-        String organization = fixedOrganization.get(rand.nextInt(fixedOrganization.size()));
+        String organization = fixedOrganization.get(RAND.nextInt(fixedOrganization.size()));
         return organization;
     }
 
@@ -263,7 +268,7 @@ public class AdvancedIndexingBenchmarkIT {
         tool.setDefaultDockerfilePath(randomIdentifier());
         tool.setDefaultCwlPath(randomIdentifier());
         tool.setDefaultWdlPath(randomIdentifier());
-        tool.setPrivateAccess(rand.nextBoolean());
+        tool.setPrivateAccess(RAND.nextBoolean());
         tool.setPath(randomIdentifier());
         tool.setToolname(randomIdentifier());
         return tool;
@@ -273,7 +278,7 @@ public class AdvancedIndexingBenchmarkIT {
         // Can't use Quay.io or else tool creation will fail
         Registry[] registries = { Registry.AMAZON_ECR, Registry.DOCKER_HUB, Registry.GITLAB };
         int length = registries.length;
-        int random = rand.nextInt(length);
+        int random = RAND.nextInt(length);
         assertTrue(random >= 0 && random < length);
         return registries[random];
     }
