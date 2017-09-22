@@ -1,0 +1,203 @@
+{
+  "variants__calls": [
+    [
+      {
+        "checksum": "sha1$e94a18ed923bf26dbdacf91814b0811a23d1e5db",
+        "basename": "NA12878-chr20-platypus.vcf.gz",
+        "location": "file:///home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/NA12878-chr20-platypus.vcf.gz",
+        "path": "/home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/NA12878-chr20-platypus.vcf.gz",
+        "secondaryFiles": [
+          {
+            "checksum": "sha1$8ec19f3a45bd12021d7056f4e4ba11d6265d6dcb",
+            "basename": "NA12878-chr20-platypus.vcf.gz.tbi",
+            "location": "file:///home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/NA12878-chr20-platypus.vcf.gz.tbi",
+            "path": "/home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/NA12878-chr20-platypus.vcf.gz.tbi",
+            "class": "File",
+            "size": 41982
+          }
+        ],
+        "class": "File",
+        "size": 12013802
+      },
+      {
+        "checksum": "sha1$9dafa97647d1b219c7e1ebd967b237b0704b1ad1",
+        "basename": "NA12878-chr20-gatk-haplotype.vcf.gz",
+        "location": "file:///home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/NA12878-chr20-gatk-haplotype.vcf.gz",
+        "path": "/home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/NA12878-chr20-gatk-haplotype.vcf.gz",
+        "secondaryFiles": [
+          {
+            "checksum": "sha1$0fef185d126e49ba354a7e35c192888a951a66f2",
+            "basename": "NA12878-chr20-gatk-haplotype.vcf.gz.tbi",
+            "location": "file:///home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/NA12878-chr20-gatk-haplotype.vcf.gz.tbi",
+            "path": "/home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/NA12878-chr20-gatk-haplotype.vcf.gz.tbi",
+            "class": "File",
+            "size": 41059
+          }
+        ],
+        "class": "File",
+        "size": 9310165
+      },
+      {
+        "checksum": "sha1$0691f3199ebbb7f81e639c6145637f16e14df999",
+        "basename": "NA12878-chr20-freebayes.vcf.gz",
+        "location": "file:///home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/NA12878-chr20-freebayes.vcf.gz",
+        "path": "/home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/NA12878-chr20-freebayes.vcf.gz",
+        "secondaryFiles": [
+          {
+            "checksum": "sha1$93f4494735a113488c8527ed062050f0d65b4ea6",
+            "basename": "NA12878-chr20-freebayes.vcf.gz.tbi",
+            "location": "file:///home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/NA12878-chr20-freebayes.vcf.gz.tbi",
+            "path": "/home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/NA12878-chr20-freebayes.vcf.gz.tbi",
+            "class": "File",
+            "size": 47096
+          }
+        ],
+        "class": "File",
+        "size": 14959973
+      },
+      {
+        "checksum": "sha1$12d47b9552f59e6e8e6abf7010876d47c8e1ec59",
+        "basename": "NA12878-chr20-samtools.vcf.gz",
+        "location": "file:///home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/NA12878-chr20-samtools.vcf.gz",
+        "path": "/home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/NA12878-chr20-samtools.vcf.gz",
+        "secondaryFiles": [
+          {
+            "checksum": "sha1$8afb0a038f88dec6cc941e048e259e2706d9285b",
+            "basename": "NA12878-chr20-samtools.vcf.gz.tbi",
+            "location": "file:///home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/NA12878-chr20-samtools.vcf.gz.tbi",
+            "path": "/home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/NA12878-chr20-samtools.vcf.gz.tbi",
+            "class": "File",
+            "size": 42767
+          }
+        ],
+        "class": "File",
+        "size": 9121909
+      }
+    ]
+  ],
+  "summary__multiqc": [
+    {
+      "checksum": "sha1$e01de8e6783721183c16982bad82a5ca1cfb787f",
+      "basename": "multiqc_report.html",
+      "location": "file:///home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/multiqc_report.html",
+      "path": "/home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/multiqc_report.html",
+      "secondaryFiles": [
+        {
+          "checksum": "sha1$ce200716f65cb44584bc8423b82cc3ad2fb13e3f",
+          "basename": "seqbuster_mirs.txt",
+          "location": "file:///home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/seqbuster_mirs.txt",
+          "path": "/home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/seqbuster_mirs.txt",
+          "class": "File",
+          "size": 7
+        },
+        {
+          "checksum": "sha1$95b7e4efcb1a7014e4db6dab3ac0949163874e03",
+          "basename": "multiqc_bcbio_metrics.txt",
+          "location": "file:///home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/multiqc_bcbio_metrics.txt",
+          "path": "/home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/multiqc_bcbio_metrics.txt",
+          "class": "File",
+          "size": 475
+        },
+        {
+          "checksum": "sha1$69d1f5e3f8e90bc5be207949a4f37bcd629175b9",
+          "basename": "multiqc_samtools_stats.txt",
+          "location": "file:///home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/multiqc_samtools_stats.txt",
+          "path": "/home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/multiqc_samtools_stats.txt",
+          "class": "File",
+          "size": 1132
+        },
+        {
+          "checksum": "sha1$1a0cf7da58691d76a7ac606df4d20e0707ea437e",
+          "basename": "multiqc_general_stats.txt",
+          "location": "file:///home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/multiqc_general_stats.txt",
+          "path": "/home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/multiqc_general_stats.txt",
+          "class": "File",
+          "size": 704
+        },
+        {
+          "checksum": "sha1$78feca919eff7a18e3668741038fbe4d93bf7421",
+          "basename": "multiqc_sources.txt",
+          "location": "file:///home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/multiqc_sources.txt",
+          "path": "/home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/multiqc_sources.txt",
+          "class": "File",
+          "size": 335
+        },
+        {
+          "checksum": "sha1$ce200716f65cb44584bc8423b82cc3ad2fb13e3f",
+          "basename": "seqbuster_isomirs.txt",
+          "location": "file:///home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/seqbuster_isomirs.txt",
+          "path": "/home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/seqbuster_isomirs.txt",
+          "class": "File",
+          "size": 7
+        },
+        {
+          "checksum": "sha1$3cbe8505d4911e6d9820110fc8a59d8cf5f692b3",
+          "basename": "multiqc_fastqc.txt",
+          "location": "file:///home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/multiqc_fastqc.txt",
+          "path": "/home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/multiqc_fastqc.txt",
+          "class": "File",
+          "size": 591
+        },
+        {
+          "checksum": "sha1$78f565089d85539cb7fcb9557c5fe719647d7640",
+          "basename": "NA12878-chr20_bcbio.txt",
+          "location": "file:///home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/NA12878-chr20_bcbio.txt",
+          "path": "/home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/NA12878-chr20_bcbio.txt",
+          "class": "File",
+          "size": 561
+        },
+        {
+          "checksum": "sha1$4c7f9eb18bf1751dc506eb6ea8f889cd6dfa2f81",
+          "basename": "multiqc_config.yaml",
+          "location": "file:///home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/multiqc_config.yaml",
+          "path": "/home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/multiqc_config.yaml",
+          "class": "File",
+          "size": 26
+        },
+        {
+          "checksum": "sha1$a284752429fd8a7c7de558c15691ec5e75129ac4",
+          "basename": "list_files.txt",
+          "location": "file:///home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/list_files.txt",
+          "path": "/home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/list_files.txt",
+          "class": "File",
+          "size": 1083
+        }
+      ],
+      "class": "File",
+      "size": 1136108
+    }
+  ],
+  "variants__gvcf": [
+    []
+  ],
+  "align_bam": [
+    {
+      "checksum": "sha1$5403afdede460f627acaeac11f542d001c254dca",
+      "basename": "NA12878-chr20-sort.bam",
+      "location": "file:///home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/NA12878-chr20-sort.bam",
+      "path": "/home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/NA12878-chr20-sort.bam",
+      "secondaryFiles": [
+        {
+          "checksum": "sha1$2e247a5fbd10ba712c8ed48eb1af8924bdd9756d",
+          "basename": "NA12878-chr20-sort.bam.bai",
+          "location": "file:///home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/NA12878-chr20-sort.bam.bai",
+          "path": "/home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/NA12878-chr20-sort.bam.bai",
+          "class": "File",
+          "size": 2335432
+        }
+      ],
+      "class": "File",
+      "size": 2938656653
+    }
+  ],
+  "validate__grading_summary": [
+    {
+      "checksum": "sha1$fa374d9e63531a4b1e3d43f9a16d3512b38b3b99",
+      "basename": "grading-summary-NA12878-chr20.csv",
+      "location": "file:///home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/grading-summary-NA12878-chr20.csv",
+      "path": "/home/ubuntu/bcbio/datastore/launcher-7090d5b6-f542-45ca-91a6-49b768922892/outputs/grading-summary-NA12878-chr20.csv",
+      "class": "File",
+      "size": 956
+    }
+  ]
+}

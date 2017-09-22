@@ -18,10 +18,17 @@ package io.github.collaboratory;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
+import com.google.gson.Gson;
 import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.Workflow;
 import io.dockstore.common.FileProvisionUtil;
+import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.Utilities;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.configuration2.ex.ConfigurationException;
@@ -103,5 +110,33 @@ public abstract class LauncherTest {
         assertTrue(!stdout.toString().isEmpty());
     }
 
+    @Test
+    public void testBCBIOOutput() throws Exception {
+        // these files are not actually used in this test, but only satisfy the constructor
+        File iniFile = FileUtils.getFile("src", "test", "resources", "launcher.ini");
+        File cwlFile = FileUtils.getFile("src", "test", "resources", "collab.cwl");
+        File jobFile = FileUtils.getFile("src", "test", "resources", "collab-cwl-job-pre.json");
+
+        final LauncherCWL launcherCWL = new LauncherCWL(
+            new String[] { "--config", iniFile.getAbsolutePath(), "--descriptor", cwlFile.getAbsolutePath(), "--job",
+                jobFile.getAbsolutePath() });
+
+        // mimicking the bcbio provision out process to replicate a bug
+        Gson gson = new Gson();
+        String outputObjectString = FileUtils.readFileToString(FileUtils.getFile("src", "test", "resources", "bcbio.output.json"), StandardCharsets.UTF_8);
+        Map<String, Object> outputObject = gson.fromJson(outputObjectString, Map.class);
+
+        Map<String, List<FileProvisioning.FileInfo>> fileMap = new HashMap<>();
+        List<FileProvisioning.FileInfo> simulatedList = new ArrayList<>();
+        FileProvisioning.FileInfo fileInfo = new FileProvisioning.FileInfo();
+        fileInfo.setDirectory(true);
+        fileInfo.setUrl("http://foobar.com");
+        simulatedList.add(fileInfo);
+        fileMap.put("align_bam", simulatedList);
+        fileMap.put("summary__multiqc", simulatedList);
+        fileMap.put("variants__calls", simulatedList);
+        fileMap.put("variants__gvcf", simulatedList);
+        launcherCWL.registerOutputFiles(fileMap, outputObject);
+    }
 
 }

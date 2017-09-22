@@ -2,10 +2,14 @@ package io.dockstore.client.cli;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.dropwizard.testing.ResourceHelpers;
+import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 
 /**
  * @author gluu
@@ -21,12 +25,39 @@ public class WorkflowInDirectoryTestIT {
     }
 
     /**
+     * Guard against failing tests killing VM
+     */
+    @Rule
+    public final ExpectedSystemExit exit = ExpectedSystemExit.none();
+
+
+    /**
      * This tests if the workflow could be ran with the client in a much different directory than the descriptor (not in the same directory as the descriptor)
      */
     @Test
     public void testWorkflowRunInDirectory() {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("testDirectory2/1st-workflow.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("testDirectory2/1st-workflow-job.yml"));
+        this.baseWorkflowTest(cwlFile, cwlJSON, false, "workflow");
+    }
+
+    /**
+     * This tests secondary files that are denoted as a list of extensions (doesn't actually work, but we're at not dying horribly)
+     */
+    @Test
+    public void testWorkflowRunInDirectorySecondaryFileExtensions() {
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("testDirectory2/1st-workflowArrayedOutput.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("testDirectory2/1st-workflow-jobArrayedOutput.json"));
+        this.baseWorkflowTest(cwlFile, cwlJSON, false, "workflow");
+    }
+
+    /**
+     * This tests secondary files that are denoted as a list of paths (doesn't actually work, but we're at not dying horribly)
+     */
+    @Test
+    public void testWorkflowRunInDirectorySecondaryFileByPaths() {
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("testDirectory2/1st-workflowArrayedOutput.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("testDirectory2/1st-workflow-jobArrayedOutput2.json"));
         this.baseWorkflowTest(cwlFile, cwlJSON, false, "workflow");
     }
 
@@ -85,13 +116,13 @@ public class WorkflowInDirectoryTestIT {
     private void baseWorkflowTest(File descriptor, File testParameter, boolean script, String entryType) {
         ArrayList<String> args = new ArrayList<String>() {{
             add("--config");
-            add(configFile.getAbsolutePath());
+            add(configFile.getPath());
             add(entryType);
             add("launch");
             add("--local-entry");
-            add(descriptor.getAbsolutePath());
+            add(descriptor.getPath());
             add("--yaml");
-            add(testParameter.getAbsolutePath());
+            add(testParameter.getPath());
             if (script) {
                 add("--script");
             }

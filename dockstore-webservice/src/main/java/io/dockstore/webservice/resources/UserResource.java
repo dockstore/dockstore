@@ -46,6 +46,8 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.helpers.ElasticManager;
+import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.Helper;
 import io.dockstore.webservice.jdbi.GroupDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -70,7 +72,7 @@ import org.slf4j.LoggerFactory;
 @Produces(MediaType.APPLICATION_JSON)
 public class UserResource {
     private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
-
+    private final ElasticManager elasticManager;
     private final HttpClient client;
     private final UserDAO userDAO;
     private final GroupDAO groupDAO;
@@ -87,6 +89,7 @@ public class UserResource {
         this.tokenDAO = tokenDAO;
         this.workflowResource = workflowResource;
         this.dockerRepoResource = dockerRepoResource;
+        elasticManager = new ElasticManager();
     }
 
     @POST
@@ -140,7 +143,6 @@ public class UserResource {
             @ApiParam("Username of user to return") @PathParam("username") String username) {
         User user = userDAO.findByUsername(username);
         Helper.checkUser(authUser, user.getId());
-
         return user;
     }
 
@@ -151,7 +153,6 @@ public class UserResource {
     @ApiOperation(value = "Get user with id", response = User.class)
     public User getUser(@ApiParam(hidden = true) @Auth User authUser, @ApiParam("User to return") @PathParam("userId") long userId) {
         Helper.checkUser(authUser, userId);
-
         User user = userDAO.findById(userId);
         if (user == null) {
             throw new CustomWebApplicationException("User not found.", HttpStatus.SC_BAD_REQUEST);
@@ -386,7 +387,10 @@ public class UserResource {
         // Update user data
         Helper.updateUserHelper(authUser, userDAO, tokenDAO);
 
-        return dockerRepoResource.refreshToolsForUser(userId);
+        // TODO: Turn this into bulk index upsert and only update the ones that have changed
+        List<Tool> tools = dockerRepoResource.refreshToolsForUser(userId);
+        tools.forEach(tool -> elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE));
+        return tools;
     }
 
     @GET
@@ -407,7 +411,12 @@ public class UserResource {
 
         // Refresh the user
         authUser = userDAO.findById(authUser.getId());
-        return FluentIterable.from(authUser.getEntries()).filter(Workflow.class).toList();
+        List<Workflow> finalWorkflows = authUser.getEntries().stream().filter(Workflow.class::isInstance).map(Workflow.class::cast)
+                .collect(Collectors.toList());
+
+        // TODO: Turn this into bulk index upsert and only update the ones that have changed
+        finalWorkflows.forEach(workflow -> elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE));
+        return finalWorkflows;
     }
 
     @GET
