@@ -152,7 +152,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                 workflowPath += "/" + parsedID.getToolName();
                 entry = workflowDAO.findPublishedByWorkflowPath(workflowPath, workflowName);
             } else {
-                entry = workflowDAO.findPublishedByWorkflowPathNullWorfklowName(workflowPath);
+                entry = workflowDAO.findPublishedByWorkflowPathNullWorkflowName(workflowPath);
             }
 
         }

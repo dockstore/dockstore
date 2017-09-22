@@ -42,8 +42,8 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
                 .setParameter("name", name));
     }
 
-    public Workflow findPublishedByWorkflowPathNullWorfklowName(String path) {
-        return uniqueResult(namedQuery("io.dockstore.webservice.core.Workflow.findPublishedByWorkflowPathNullWorfklowName")
+    public Workflow findPublishedByWorkflowPathNullWorkflowName(String path) {
+        return uniqueResult(namedQuery("io.dockstore.webservice.core.Workflow.findPublishedByWorkflowPathNullWorkflowName")
                 .setParameter("path", path));
     }
 
