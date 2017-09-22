@@ -342,7 +342,6 @@
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>${postgresql.version}</version>
-            <!--<version>9.4-1201-jdbc41</version>-->
             <scope>runtime</scope>
         </dependency>
         <dependency>
