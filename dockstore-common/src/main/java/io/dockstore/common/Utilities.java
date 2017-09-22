@@ -75,7 +75,7 @@ public final class Utilities {
         try {
             return MAP.get(configFile).getConfiguration();
         } catch (ConfigurationException ex) {
-            throw new RuntimeException("Could not read ~/.dockstore/config");
+            throw new RuntimeException("Could not read " + configFile);
         }
     }
 

@@ -22,6 +22,7 @@ import java.util.List;
 
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Workflow;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 /**
  * Organizes all methods that have to do with parsing of input and creation of output.
@@ -68,11 +69,7 @@ public final class ArgumentUtility {
         if (!"".equals(message)) {
             err(message);
         }
-        if (Client.DEBUG.get()) {
-            exception.printStackTrace();
-        } else {
-            err(exception.toString());
-        }
+        err(ExceptionUtils.getStackTrace(exception));
 
         System.exit(exitCode);
     }

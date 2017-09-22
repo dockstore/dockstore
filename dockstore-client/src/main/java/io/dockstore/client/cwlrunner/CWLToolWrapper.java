@@ -45,7 +45,7 @@ public class CWLToolWrapper implements CWLRunnerInterface {
         }
         final String expectedSchemaSaladVersion = "2.2.20170222151604";
         if (!schemaSaladVersion.equals(expectedSchemaSaladVersion)) {
-            ArgumentUtility.errorMessage("schema-salad version is " + cwlToolVersion + " , Dockstore is tested with " + expectedSchemaSaladVersion
+            ArgumentUtility.errorMessage("schema-salad version is " + schemaSaladVersion + " , Dockstore is tested with " + expectedSchemaSaladVersion
                     + "\nOverride and run with `--script`", Client.COMMAND_ERROR);
         }
     }
