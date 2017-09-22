@@ -414,6 +414,32 @@ public class UserResource {
     @GET
     @Timed
     @UnitOfWork
+    @Path("/{userId}/workflows/{organization}/refresh")
+    @ApiOperation(value = "Refresh workflows owned by the logged-in user", notes = "Refresh all workflows in an organization", response = Workflow.class, responseContainer = "List")
+    public List<Workflow> refreshWorkflowsByOrganization(@ApiParam(hidden = true) @Auth User authUser,
+            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
+            @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization) {
+
+        Helper.checkUser(authUser, userId);
+
+        // Update user data
+        Helper.updateUserHelper(authUser, userDAO, tokenDAO);
+
+        // Refresh all workflows, including full workflows
+        workflowResource.refreshStubWorkflowsForUser(authUser, organization);
+
+        // Refresh the user
+        authUser = userDAO.findById(authUser.getId());
+        List<Workflow> finalWorkflows = authUser.getEntries().stream().filter(Workflow.class::isInstance).map(Workflow.class::cast)
+                .collect(Collectors.toList());
+        // TODO: Turn this into bulk index upsert and only update the ones that have changed
+        finalWorkflows.forEach(workflow -> elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE));
+        return finalWorkflows;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
     @Path("/{userId}/workflows/refresh")
     @ApiOperation(value = "Refresh workflows owned by the logged-in user", notes = "Updates some metadata", response = Workflow.class, responseContainer = "List")
     public List<Workflow> refreshWorkflows(@ApiParam(hidden = true) @Auth User authUser,
@@ -425,7 +451,7 @@ public class UserResource {
         Helper.updateUserHelper(authUser, userDAO, tokenDAO);
 
         // Refresh all workflows, including full workflows
-        workflowResource.refreshStubWorkflowsForUser(authUser);
+        workflowResource.refreshStubWorkflowsForUser(authUser, null);
 
         // Refresh the user
         authUser = userDAO.findById(authUser.getId());
