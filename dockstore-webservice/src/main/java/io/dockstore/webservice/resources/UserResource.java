@@ -47,7 +47,6 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.ElasticManager;
-import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.Helper;
 import io.dockstore.webservice.jdbi.GroupDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -391,8 +390,8 @@ public class UserResource {
         // TODO: Only update the ones that have changed
         authUser = userDAO.findById(authUser.getId());
         Set<Entry> allEntries = authUser.getEntries();
-        List<Entry> toolEntries = allEntries.parallelStream().filter(entry -> entry instanceof Tool && entry.getIsPublished()).collect(
-                Collectors.toList());
+        List<Entry> toolEntries = allEntries.parallelStream().filter(entry -> entry instanceof Tool && entry.getIsPublished())
+                .collect(Collectors.toList());
         if (!toolEntries.isEmpty()) {
             elasticManager.bulkUpsert(toolEntries);
         }
@@ -422,8 +421,8 @@ public class UserResource {
                 .collect(Collectors.toList());
 
         // TODO: Only update the ones that have changed
-        List<Entry> workflowEntries = allEntries.parallelStream().filter(entry -> entry instanceof Workflow && entry.getIsPublished()).collect(
-                Collectors.toList());
+        List<Entry> workflowEntries = allEntries.parallelStream().filter(entry -> entry instanceof Workflow && entry.getIsPublished())
+                .collect(Collectors.toList());
         if (!workflowEntries.isEmpty()) {
             elasticManager.bulkUpsert(workflowEntries);
         }
