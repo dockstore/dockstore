@@ -87,7 +87,17 @@ public abstract class AbstractImageRegistry {
     /**
      * Updates/Adds/Deletes tools and their associated tags
      *
-     * @return
+     * @param userId         The ID of the user
+     * @param userDAO        ...
+     * @param toolDAO        ...
+     * @param tagDAO         ...
+     * @param fileDAO        ...
+     * @param client         An HttpClient used by source code repositories
+     * @param githubToken    The user's GitHub token
+     * @param bitbucketToken The user's Bitbucket token
+     * @param gitlabToken    The user's GitLab token
+     * @param organization   If not null, only refresh tools belonging to the specific organization. Otherwise, refresh all.
+     * @return The list of tools that have been updated
      */
     @SuppressWarnings("checkstyle:parameternumber")
     public List<Tool> refreshTools(final long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
