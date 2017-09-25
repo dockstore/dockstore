@@ -48,11 +48,6 @@ import org.slf4j.LoggerFactory;
 public abstract class AbstractImageRegistry {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractImageRegistry.class);
 
-    public static void printTools(List<Tool> tools) {
-        LOG.error("Printing tools");
-        tools.forEach(tool -> LOG.error(tool.getPath()));
-    }
-
     /**
      * Get the list of namespaces and organizations that the user is associated to on Quay.io.
      *
