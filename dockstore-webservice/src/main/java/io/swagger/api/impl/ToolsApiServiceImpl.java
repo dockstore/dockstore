@@ -147,10 +147,14 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             entry = toolDAO.findPublishedByToolPath(parsedID.getPath(), parsedID.getToolName());
         } else {
             String workflowPath = parsedID.getPath();
-            if (parsedID.getToolName() != null) {
+            String workflowName = parsedID.getToolName().isEmpty() ? null : parsedID.getToolName();
+            if (workflowName != null) {
                 workflowPath += "/" + parsedID.getToolName();
+                entry = workflowDAO.findPublishedByWorkflowPath(workflowPath, workflowName);
+            } else {
+                entry = workflowDAO.findPublishedByWorkflowPathNullWorkflowName(workflowPath);
             }
-            entry = workflowDAO.findPublishedByWorkflowPath(workflowPath, parsedID.getToolName());
+
         }
         return entry;
     }

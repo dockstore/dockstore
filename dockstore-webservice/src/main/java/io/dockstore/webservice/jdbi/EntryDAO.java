@@ -61,7 +61,7 @@ public class EntryDAO<T extends Entry> extends AbstractDAO<T> {
     }
 
     public T findPublishedById(long id) {
-        return uniqueResult(
+        return (T)uniqueResult(
                 namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findPublishedById").setParameter("id", id));
     }
 

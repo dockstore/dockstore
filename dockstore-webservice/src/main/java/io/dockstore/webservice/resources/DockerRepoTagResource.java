@@ -49,10 +49,13 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.Authorization;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
 /**
  * @author dyuen
@@ -76,7 +79,7 @@ public class DockerRepoTagResource {
     @Timed
     @UnitOfWork
     @Path("/path/{containerId}/tags")
-    @ApiOperation(value = "Get tags  for a container by id", notes = "Lists tags for a container. Enter full path (include quay.io in path).", response = Tag.class, responseContainer = "Set")
+    @ApiOperation(value = "Get tags  for a container by id", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Lists tags for a container. Enter full path (include quay.io in path).", response = Tag.class, responseContainer = "Set")
     public Set<Tag> getTagsByPath(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId) {
         Tool c = toolDAO.findById(containerId);
@@ -91,7 +94,7 @@ public class DockerRepoTagResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/tags")
-    @ApiOperation(value = "Update the tags linked to a container", notes = "Tag correspond to each row of the versions table listing all information for a docker repo tag", response = Tag.class, responseContainer = "List")
+    @ApiOperation(value = "Update the tags linked to a container", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Tag correspond to each row of the versions table listing all information for a docker repo tag", response = Tag.class, responseContainer = "List")
     public Set<Tag> updateTags(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "List of modified tags", required = true) List<Tag> tags) {
@@ -134,7 +137,7 @@ public class DockerRepoTagResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/tags")
-    @ApiOperation(value = "Add new tags linked to a container", notes = "Tag correspond to each row of the versions table listing all information for a docker repo tag", response = Tag.class, responseContainer = "List")
+    @ApiOperation(value = "Add new tags linked to a container", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Tag correspond to each row of the versions table listing all information for a docker repo tag", response = Tag.class, responseContainer = "List")
     public Set<Tag> addTags(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "List of new tags", required = true) List<Tag> tags) {
@@ -164,7 +167,7 @@ public class DockerRepoTagResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}/tags/{tagId}")
-    @ApiOperation(value = "Delete tag linked to a container", notes = "Tag correspond to each row of the versions table listing all information for a docker repo tag")
+    @ApiOperation(value = "Delete tag linked to a container", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Tag correspond to each row of the versions table listing all information for a docker repo tag")
     public Response deleteTags(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "Tag to delete", required = true) @PathParam("tagId") Long tagId) {
@@ -187,7 +190,7 @@ public class DockerRepoTagResource {
 
             if (c.getTags().remove(tag)) {
                 elasticManager.handleIndexUpdate(c, ElasticMode.UPDATE);
-                return Response.ok().build();
+                return Response.noContent().build();
             } else {
                 return Response.serverError().build();
             }
@@ -202,7 +205,7 @@ public class DockerRepoTagResource {
     @UnitOfWork
     @Path("/{containerId}/verify/{tagId}")
     @RolesAllowed("admin")
-    @ApiOperation(value = "Verify or unverify a version . ADMIN ONLY", response = Tag.class, responseContainer = "List")
+    @ApiOperation(value = "Verify or unverify a version . ADMIN ONLY", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "List")
     public Set<Tag> verifyToolTag(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "Tag to verify.", required = true) @PathParam("tagId") Long tagId,
