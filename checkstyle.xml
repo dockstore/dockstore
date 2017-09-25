@@ -150,8 +150,6 @@
 
     <module name="TreeWalker">
         <property name="tabWidth" value="4"/>
-        <module name="FileContentsHolder"/>
-
 
         <!-- Checks identation.                               -->
         <module name="Indentation">
