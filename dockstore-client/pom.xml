@@ -138,6 +138,7 @@
         <dependency>
             <groupId>org.broadinstitute</groupId>
             <artifactId>wdl4s_2.11</artifactId>
+            <version>0.14</version>
         </dependency>
         <dependency>
             <groupId>io.spray</groupId>
