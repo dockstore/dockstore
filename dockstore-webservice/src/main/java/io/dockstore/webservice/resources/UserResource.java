@@ -381,7 +381,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/containers/{organization}/refresh")
-    @ApiOperation(value = "Refresh repos owned by the logged-in user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Refresh all tools in an organization", response = Tool.class, responseContainer = "List")
+    @ApiOperation(value = "Refresh repos owned by the logged-in user with specified organization", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Refresh all tools in an organization", response = Tool.class, responseContainer = "List")
     public List<Tool> refreshToolsByOrganization(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
             @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization) {
@@ -421,7 +421,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/workflows/{organization}/refresh")
-    @ApiOperation(value = "Refresh workflows owned by the logged-in user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Refresh all workflows in an organization", response = Workflow.class, responseContainer = "List")
+    @ApiOperation(value = "Refresh workflows owned by the logged-in user with specified organization", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Refresh all workflows in an organization", response = Workflow.class, responseContainer = "List")
     public List<Workflow> refreshWorkflowsByOrganization(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
             @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization) {
