@@ -16,6 +16,30 @@
 
 package io.dockstore.webservice.resources;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+
+import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
+
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Optional;
 import com.google.common.base.Strings;
@@ -64,29 +88,6 @@ import org.json.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
-
 /**
  * @author dyuen
  */
@@ -109,10 +110,6 @@ public class WorkflowResource {
     private final String bitbucketClientID;
     private final String bitbucketClientSecret;
     private final EntryVersionHelper<Workflow> entryVersionHelper;
-
-    public enum Type {
-        DAG, TOOLS
-    }
 
     @SuppressWarnings("checkstyle:parameternumber")
     public WorkflowResource(HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ToolDAO toolDAO, WorkflowDAO workflowDAO,
@@ -208,7 +205,8 @@ public class WorkflowResource {
             // Update bitbucket workflows if token exists
             if (bitbucketToken != null && bitbucketToken.getContent() != null) {
                 // get workflows from bitbucket for a user and updates db
-                refreshHelper(new BitBucketSourceCodeRepo(bitbucketToken.getUsername(), client, bitbucketToken.getContent(), null), user, organization);
+                refreshHelper(new BitBucketSourceCodeRepo(bitbucketToken.getUsername(), client, bitbucketToken.getContent(), null), user,
+                        organization);
             }
 
             // Refresh Github
@@ -240,15 +238,15 @@ public class WorkflowResource {
      *
      * @param sourceCodeRepoInterface
      * @param user
-     * @param organization if specified, only refresh if workflow belongs to the organization
+     * @param organization            if specified, only refresh if workflow belongs to the organization
      */
     private void refreshHelper(final SourceCodeRepoInterface sourceCodeRepoInterface, User user, String organization) {
         // Mapping of git url to repository name (owner/repo)
         final Map<String, String> workflowGitUrl2Name = sourceCodeRepoInterface.getWorkflowGitUrl2RepositoryId();
-            LOG.error(Arrays.toString(workflowGitUrl2Name.entrySet().toArray()));
-            if (organization != null) {
-                workflowGitUrl2Name.entrySet().removeIf(thing -> !(thing.getValue().split("/"))[0].equals(organization));
-            }
+        LOG.error(Arrays.toString(workflowGitUrl2Name.entrySet().toArray()));
+        if (organization != null) {
+            workflowGitUrl2Name.entrySet().removeIf(thing -> !(thing.getValue().split("/"))[0].equals(organization));
+        }
         // For each entry found of the associated git hosting service
         for (Map.Entry<String, String> entry : workflowGitUrl2Name.entrySet()) {
             // Get all workflows with the same giturl)
@@ -542,7 +540,8 @@ public class WorkflowResource {
     @UnitOfWork
     @Path("/organization/{organization}/published")
     @ApiOperation(value = "List all published workflows belonging to the specified namespace", notes = "NO authentication", response = Workflow.class, responseContainer = "List")
-    public List<Workflow> getPublishedWorkflowsByOrganization(@ApiParam(value = "organization", required = true) @PathParam("organization") String organization) {
+    public List<Workflow> getPublishedWorkflowsByOrganization(
+            @ApiParam(value = "organization", required = true) @PathParam("organization") String organization) {
         List<Workflow> workflows = workflowDAO.findPublishedByOrganization(organization);
         entryVersionHelper.filterContainersForHiddenTags(workflows);
         return workflows;
@@ -1133,7 +1132,6 @@ public class WorkflowResource {
         return mainDescriptor;
     }
 
-
     @PUT
     @Timed
     @UnitOfWork
@@ -1165,10 +1163,15 @@ public class WorkflowResource {
     @Timed
     @UnitOfWork
     @ApiOperation(value = "Returns list of users who starred the given Workflow", response = User.class, responseContainer = "List")
-    public Set<User> getStarredUsers(@ApiParam(value = "Workflow to grab starred users for.", required = true) @PathParam("workflowId") Long workflowId) {
+    public Set<User> getStarredUsers(
+            @ApiParam(value = "Workflow to grab starred users for.", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         Helper.checkEntry(workflow);
 
         return workflow.getStarredUsers();
+    }
+
+    public enum Type {
+        DAG, TOOLS
     }
 }
