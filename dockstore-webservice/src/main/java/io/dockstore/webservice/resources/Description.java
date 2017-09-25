@@ -22,6 +22,13 @@ import io.swagger.annotations.Info;
 import io.swagger.annotations.License;
 import io.swagger.annotations.SwaggerDefinition;
 import io.swagger.annotations.Tag;
+import io.swagger.jaxrs.Reader;
+import io.swagger.jaxrs.config.ReaderListener;
+import io.swagger.models.Swagger;
+import io.swagger.models.auth.ApiKeyAuthDefinition;
+import io.swagger.models.auth.In;
+
+import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
 /**
  * This is a dummy class used to describe the swagger API as a whole
@@ -43,5 +50,14 @@ import io.swagger.annotations.Tag;
         @Tag(name = "tokens", description = "List, modify, refresh, and delete tokens for external services"),
         @Tag(name = "workflows", description = "List and register workflows in the dockstore (CWL or WDL)"),
         @Tag(name = "users", description = "List, modify, and manage end users of the dockstore") }, externalDocs = @ExternalDocs(value = "Dockstore documentation", url = "https://www.dockstore.org/docs/getting-started"))
-public class Description {
+public class Description implements ReaderListener {
+    @Override
+    public void beforeScan(Reader reader, Swagger swagger) {
+
+    }
+
+    @Override
+    public void afterScan(Reader reader, Swagger swagger) {
+        swagger.addSecurityDefinition(JWT_SECURITY_DEFINITION_NAME, new ApiKeyAuthDefinition("Authorization", In.HEADER));
+    }
 }
