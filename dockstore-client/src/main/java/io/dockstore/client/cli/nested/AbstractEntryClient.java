@@ -1302,7 +1302,7 @@ public abstract class AbstractEntryClient {
             // Make new json file
             String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
 
-            final List<String> wdlRun = Lists.newArrayList(tmp.getAbsolutePath(), newJsonPath);
+            final List<String> wdlRun = Lists.newArrayList(tmp.getAbsolutePath(), "--inputs", newJsonPath);
 
             // run a workflow
             System.out.println("Calling out to Cromwell to run your workflow");
