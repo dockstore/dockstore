@@ -1,6 +1,5 @@
 #!/usr/bin/env cwl-runner
 #
-# Authors: Thomas Yu, Ryan Spangler, Kyle Ellrott
 
 class: Workflow
 cwlVersion: v1.0
@@ -10,19 +9,14 @@ doc: "INTEGRATE workflow: untar, tophat align, samtools index, Integrate fusion"
 requirements:
   - class: MultipleInputFeatureRequirement
 
-hints:
-  - class: synData
-    input: index
-    entity: syn7058443
-
-inputs: 
+inputs:
 
   index: File
 
   TUMOR_FASTQ_1: File
 
   TUMOR_FASTQ_2: File
-    
+
 outputs:
 
   OUTPUT:
@@ -40,14 +34,16 @@ steps:
   tophat:
     run: tophat/cwl/tophat.cwl
     in:
-      p: { default: 5 }
+      p: { default: 15 }
+      r: { default: 0 }
       bowtie1: { default: true }
+      no-novel-junc: { default: true }
       o: { default: tophat_out }
       bowtie_index: tar/output
       fastq1: TUMOR_FASTQ_1
       fastq2: TUMOR_FASTQ_2
     out: [tophatOut_accepted_hits,tophatOut_unmapped]
-  
+
   samtools_accepted:
     run: integrate/cwl/samtools_index.cwl
     in:
