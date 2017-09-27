@@ -195,7 +195,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
             //TODO: is there a case-insensitive endsWith?
             String calculatedExtension = FilenameUtils.getExtension(calculatedPath);
-            boolean validWorkflow = false;
+            boolean validWorkflow;
 
             // Grab workflow file from github
             try {
@@ -223,8 +223,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                         file.setContent(content);
                         file.setPath(calculatedPath);
                         file.setType(identifiedType);
-
+                        version.setValid(true);
                         workflow.addWorkflowVersion(combineVersionAndSourcefile(file, workflow, identifiedType, version, existingDefaults));
+                        continue;
                     }
 
                 }
@@ -235,10 +236,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 LOG.info(gitUsername + ": " + workflow.getDefaultWorkflowPath() + " on " + ref + " was not valid workflow");
             }
 
-            if (!validWorkflow) {
-                workflow.addWorkflowVersion(version);
-            }
-
+            workflow.addWorkflowVersion(version);
         }
         return workflow;
     }
