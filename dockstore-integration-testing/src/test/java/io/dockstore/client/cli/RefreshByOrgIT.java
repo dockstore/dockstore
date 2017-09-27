@@ -53,7 +53,7 @@ public class RefreshByOrgIT {
         id = testingPostgres.runSelectStatement("select id from enduser where username='DockstoreTestUser2';", new ScalarHandler<>());
         Environment environment = RULE.getEnvironment();
         token = testingPostgres.runSelectStatement("select content from token where tokensource='dockstore';", new ScalarHandler<>());
-        client = new JerseyClientBuilder(environment).build("test client").property(ClientProperties.READ_TIMEOUT, 19001);
+        client = new JerseyClientBuilder(environment).build("test client").property(ClientProperties.READ_TIMEOUT, 60000);
         objectMapper = environment.getObjectMapper();
     }
 
