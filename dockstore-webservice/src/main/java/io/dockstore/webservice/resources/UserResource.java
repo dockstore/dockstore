@@ -393,6 +393,7 @@ public class UserResource {
         List<Tool> tools = dockerRepoResource.refreshToolsForUser(userId, organization);
         // TODO: Turn this into bulk index upsert and only update the ones that have changed
         tools.forEach(tool -> elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE));
+        userDAO.clearCache();
         authUser = userDAO.findById(authUser.getId());
         List<Tool> finalTools = authUser.getEntries().stream().filter(Tool.class::isInstance).map(Tool.class::cast)
                 .collect(Collectors.toList());
@@ -433,11 +434,10 @@ public class UserResource {
 
         // Refresh all workflows, including full workflows
         workflowResource.refreshStubWorkflowsForUser(authUser, organization);
-
+        userDAO.clearCache();
         // Refresh the user
         authUser = userDAO.findById(authUser.getId());
-        List<Workflow> finalWorkflows = authUser.getEntries().stream().filter(Workflow.class::isInstance).map(Workflow.class::cast)
-                .collect(Collectors.toList());
+        List<Workflow> finalWorkflows = getWorkflows(authUser);
         // TODO: Turn this into bulk index upsert and only update the ones that have changed
         finalWorkflows.forEach(workflow -> elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE));
         return finalWorkflows;
@@ -458,11 +458,9 @@ public class UserResource {
 
         // Refresh all workflows, including full workflows
         workflowResource.refreshStubWorkflowsForUser(authUser, null);
-
         // Refresh the user
         authUser = userDAO.findById(authUser.getId());
-        List<Workflow> finalWorkflows = authUser.getEntries().stream().filter(Workflow.class::isInstance).map(Workflow.class::cast)
-                .collect(Collectors.toList());
+        List<Workflow> finalWorkflows = getWorkflows(authUser);
         // TODO: Turn this into bulk index upsert and only update the ones that have changed
         finalWorkflows.forEach(workflow -> elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE));
         return finalWorkflows;
@@ -477,8 +475,12 @@ public class UserResource {
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         Helper.checkUser(user, userId);
         // need to avoid lazy initialize error
-        final User byId = this.userDAO.findById(userId);
-        return FluentIterable.from(byId.getEntries()).filter(Workflow.class).toList();
+        final User authUser = this.userDAO.findById(userId);
+        return getWorkflows(authUser);
+    }
+
+    private List<Workflow> getWorkflows(User user) {
+        return user.getEntries().stream().filter(Workflow.class::isInstance).map(Workflow.class::cast).collect(Collectors.toList());
     }
 
     @GET
