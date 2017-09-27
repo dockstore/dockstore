@@ -19,6 +19,7 @@ package io.dockstore.webservice.resources;
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Optional;
 import com.google.common.base.Strings;
+import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
@@ -335,6 +336,15 @@ public class WorkflowResource {
         // update workflow versions
         Map<String, WorkflowVersion> existingVersionMap = new HashMap<>();
         workflow.getWorkflowVersions().forEach(version -> existingVersionMap.put(version.getName(), version));
+        // delete versions that exist in old workflow but do not exist in newWorkflow
+        Map<String, WorkflowVersion> newVersionMap = new HashMap<>();
+        newWorkflow.getWorkflowVersions().forEach(version -> newVersionMap.put(version.getName(), version));
+        Sets.SetView<String> removedVersions = Sets.difference(existingVersionMap.keySet(), newVersionMap.keySet());
+        for (String version : removedVersions) {
+            workflow.removeWorkflowVersion(existingVersionMap.get(version));
+        }
+
+        // then copy over content that changed
         for (WorkflowVersion version : newWorkflow.getVersions()) {
             WorkflowVersion workflowVersionFromDB = existingVersionMap.get(version.getName());
             if (existingVersionMap.containsKey(version.getName())) {
@@ -370,8 +380,6 @@ public class WorkflowResource {
                     workflowVersionFromDB.getSourceFiles().remove(entry.getValue());
                 }
             }
-
-            //TODO: this needs a strategy for dealing with content on our side that has since been deleted
         }
     }
 
