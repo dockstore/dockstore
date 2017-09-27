@@ -181,7 +181,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             service.getBranches(id).forEach(branch -> references.add(branch.getName()));
             service.getTags(id).forEach(tag -> references.add(tag.getName()));
         } catch (IOException e) {
-            LOG.info(gitUsername + ": Cannot branches or tags for workflow {}");
+            LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}");
             throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
 
@@ -224,10 +224,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                         file.setPath(calculatedPath);
                         file.setType(identifiedType);
                         version.setValid(true);
-                        workflow.addWorkflowVersion(combineVersionAndSourcefile(file, workflow, identifiedType, version, existingDefaults));
-                        continue;
+                        version = combineVersionAndSourcefile(file, workflow, identifiedType, version, existingDefaults);
                     }
-
                 }
 
             } catch (IOException ex) {
