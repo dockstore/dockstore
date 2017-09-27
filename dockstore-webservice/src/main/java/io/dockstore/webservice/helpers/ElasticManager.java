@@ -193,7 +193,7 @@ public class ElasticManager {
                 throw new CustomWebApplicationException("Could not submit index to elastic search", HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
         } catch (IOException e) {
-            throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            LOGGER.error("Could not submit index to elastic search. " + e.getMessage());
         }
     }
 
