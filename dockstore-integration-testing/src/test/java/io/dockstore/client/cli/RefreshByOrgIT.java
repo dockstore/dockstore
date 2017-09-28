@@ -1,8 +1,10 @@
 package io.dockstore.client.cli;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.core.HttpHeaders;
@@ -40,11 +42,22 @@ public class RefreshByOrgIT {
     @ClassRule
     public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
             DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstoreTest.yml"));
+    // Travis is slow, need to wait up to 1 min for webservice to return
+    private static final int WAIT_TIME = 60000;
+    private static final List<String> newDockstoreTestUser2Tools = Arrays.asList("dockstore-tool-imports");
+    private static final List<String> newDockstoreTestUser2Workflows = Arrays
+            .asList("dockerhubandgithub", "dockstore_empty_repo", "dockstore-whalesay-imports", "parameter_test_workflow",
+                    "quayandgithubalternate", "OxoG-Dockstore-Tools", "test_workflow_cwl", "hello-dockstore-workflow", "quayandgithub",
+                    "dockstore_workflow_cnv", "test_workflow_wdl", "quayandgithubwdl", "test_lastmodified", "dockstore-tool-imports");
+    private static final List<String> newDockstoreDotTestDotUser2Workflows = Arrays.asList("dockstore-workflow-example");
+    private static final List<String> newDockstore_TestUser2Workflows = Arrays.asList("dockstore-workflow");
     private static Client client;
     private static String token;
     private static String usersURLPrefix;
     private static ObjectMapper objectMapper;
     private static Long id;
+    private static List<Tool> previousTools;
+    private static List<Workflow> previousWorkflows;
 
     @BeforeClass
     public static void clearDBandSetup() throws IOException, TimeoutException, ApiException {
@@ -53,7 +66,7 @@ public class RefreshByOrgIT {
         id = testingPostgres.runSelectStatement("select id from enduser where username='DockstoreTestUser2';", new ScalarHandler<>());
         Environment environment = RULE.getEnvironment();
         token = testingPostgres.runSelectStatement("select content from token where tokensource='dockstore';", new ScalarHandler<>());
-        client = new JerseyClientBuilder(environment).build("test client").property(ClientProperties.READ_TIMEOUT, 60000);
+        client = new JerseyClientBuilder(environment).build("test client").property(ClientProperties.READ_TIMEOUT, WAIT_TIME);
         objectMapper = environment.getObjectMapper();
     }
 
@@ -64,9 +77,22 @@ public class RefreshByOrgIT {
 
     private void checkInitialDB() throws IOException {
         // The DB initially has no workflows
-        assertThat(getWorkflows().size()).isGreaterThanOrEqualTo(0);
+        List<Workflow> currentWorkflows = getWorkflows();
+        // Leaving this in here so we don't forget to change this when there is a workflow in the test DB
+        assertThat(currentWorkflows.size()).isGreaterThanOrEqualTo(0);
+
         // The DB initially has 4 tools, 1 from dockstore2 and 3 from dockstoretestuser2
-        assertThat(getTools().size()).isGreaterThanOrEqualTo(4);
+        List<Tool> currentTools = getTools();
+        List<Tool> dockstore2Tools = currentTools.parallelStream().filter(tool -> tool.getNamespace().equals("dockstore2"))
+                .collect(Collectors.toList());
+        List<Tool> dockstoretestuser2Tools = currentTools.parallelStream().filter(tool -> tool.getNamespace().equals("dockstoretestuser2"))
+                .collect(Collectors.toList());
+
+        assertThat(dockstore2Tools.size()).isGreaterThanOrEqualTo(1);
+        assertThat(dockstoretestuser2Tools.size()).isGreaterThanOrEqualTo(3);
+        assertThat(currentTools.size()).isGreaterThanOrEqualTo(4);
+        previousTools = currentTools;
+        previousWorkflows = currentWorkflows;
     }
 
     @Test
@@ -74,11 +100,16 @@ public class RefreshByOrgIT {
         usersURLPrefix = "http://localhost:%d/users/" + id;
         checkInitialDB();
         testRefreshToolsByOrg1();
-        assertThat(getTools().size()).isGreaterThanOrEqualTo(4);
+        List<Tool> currentTools = getTools();
+        assertThat(currentTools.size() - previousTools.size()).isEqualTo(0);
+        previousTools = currentTools;
         testRefreshToolsByOrg2();
-        assertThat(getTools().size()).isGreaterThanOrEqualTo(5);
+        currentTools = getTools();
+        assertThat(currentTools.size() - previousTools.size()).isGreaterThanOrEqualTo(newDockstoreTestUser2Tools.size());
+        previousTools = currentTools;
         testRefreshToolsByOrg3();
-        assertThat(getTools().size()).isGreaterThanOrEqualTo(5);
+        currentTools = getTools();
+        assertThat(currentTools.size() - previousTools.size()).isEqualTo(0);
     }
 
     /**
@@ -87,16 +118,25 @@ public class RefreshByOrgIT {
     private void testRefreshToolsByOrg1() throws IOException {
         String url = usersURLPrefix + "/containers/dockstore2/refresh";
         List<Tool> tools = clientHelperTool(url);
-        assertThat(tools.size()).isGreaterThanOrEqualTo(4);
+        assertThat(tools.size() - previousTools.size()).isEqualTo(0);
+        // Remove all the tools that have the same name as the previous ones
+        tools.removeIf(tool -> previousToolsHaveName(tool.getName()));
+        // Ensure that there are no new tools
+        assertThat(tools.size()).isEqualTo(0);
     }
 
     /**
-     * This tests if refreshing dockstorestestuser2 adds 1 additional repo
+     * This tests if refreshing dockstorestestuser2 adds at least 1 additional repo (dockstore-tool-imports)
      */
     private void testRefreshToolsByOrg2() throws IOException {
         String url = usersURLPrefix + "/containers/dockstoretestuser2/refresh";
         List<Tool> tools = clientHelperTool(url);
-        assertThat(tools.size()).isGreaterThanOrEqualTo(5);
+        assertThat(tools.size() - previousTools.size()).isGreaterThanOrEqualTo(newDockstoreTestUser2Tools.size());
+        // Remove all the tools that have the same name as the previous ones
+        tools.removeIf(tool -> previousToolsHaveName(tool.getName()));
+        // Ensure that one of the new tools added is "dockstore-tool-imports"
+        newDockstoreTestUser2Tools
+                .forEach(newTool -> assertThat(tools.parallelStream().anyMatch(tool -> tool.getName().equals(newTool))).isTrue());
 
     }
 
@@ -106,7 +146,11 @@ public class RefreshByOrgIT {
     private void testRefreshToolsByOrg3() throws IOException {
         String url = usersURLPrefix + "/containers/mmmrrrggglll/refresh";
         List<Tool> tools = clientHelperTool(url);
-        assertThat(tools.size()).isGreaterThanOrEqualTo(5);
+        assertThat(tools.size() - previousTools.size()).isEqualTo(0);
+        // Remove all the tools that have the same name as the previous ones
+        tools.removeIf(tool -> previousToolsHaveName(tool.getName()));
+        // Ensure that there are no new tools
+        assertThat(tools.size()).isEqualTo(0);
     }
 
     private List<Tool> clientHelperTool(String url) throws IOException {
@@ -121,27 +165,44 @@ public class RefreshByOrgIT {
     public void testRefreshWorkflowsByOrg() throws IOException {
         usersURLPrefix = "http://localhost:%d/users/" + id;
         checkInitialDB();
+
         testRefreshWorkflowsByOrg1();
-        assertThat(getWorkflows().size()).isGreaterThanOrEqualTo(14);
+        List<Workflow> currentWorkflows = getWorkflows();
+        assertThat(currentWorkflows.size() - previousWorkflows.size()).isGreaterThanOrEqualTo(newDockstoreTestUser2Workflows.size());
+        previousWorkflows = currentWorkflows;
+
         testRefreshWorkflowsByOrg2();
-        assertThat(getWorkflows().size()).isGreaterThanOrEqualTo(14);
+        currentWorkflows = getWorkflows();
+        assertThat(currentWorkflows.size() - previousWorkflows.size()).isEqualTo(0);
+        previousWorkflows = currentWorkflows;
+
         testRefreshWorkflowsByOrg3();
-        assertThat(getWorkflows().size()).isGreaterThanOrEqualTo(14);
+        currentWorkflows = getWorkflows();
+        assertThat(currentWorkflows.size() - previousWorkflows.size()).isEqualTo(0);
+        previousWorkflows = currentWorkflows;
+
         testRefreshWorkflowsByOrg4();
-        assertThat(getWorkflows().size()).isGreaterThanOrEqualTo(15);
+        currentWorkflows = getWorkflows();
+        assertThat(currentWorkflows.size() - previousWorkflows.size()).isGreaterThanOrEqualTo(newDockstore_TestUser2Workflows.size());
+        previousWorkflows = currentWorkflows;
+
         testRefreshWorkflowsByOrg5();
-        assertThat(getWorkflows().size()).isGreaterThanOrEqualTo(16);
+        currentWorkflows = getWorkflows();
+        assertThat(currentWorkflows.size() - previousWorkflows.size()).isGreaterThanOrEqualTo(newDockstoreDotTestDotUser2Workflows.size());
     }
 
     /**
-     * This tests if the webservice's refresh adds the 4 DockstoreTestUser2 repositories
+     * This tests if the webservice's refresh adds the 14 DockstoreTestUser2 repositories
      */
     private void testRefreshWorkflowsByOrg1() throws IOException {
         String url = usersURLPrefix + "/workflows/DockstoreTestUser2/refresh";
         List<Workflow> workflows = clientHelperWorkflow(url);
-        assert workflows != null;
-        assertThat(workflows.size()).isGreaterThanOrEqualTo(14);
-
+        // Remove all the tools that have the same name as the previous ones
+        workflows.removeIf(workflow -> previousWorkflowsHaveName(workflow.getRepository()));
+        // Ensure that there are at least 14 new tools
+        assertThat(workflows.size()).isGreaterThanOrEqualTo(newDockstoreTestUser2Workflows.size());
+        newDockstoreTestUser2Workflows.forEach(
+                newTool -> assertThat(workflows.parallelStream().anyMatch(workflow -> workflow.getRepository().equals(newTool))).isTrue());
     }
 
     /**
@@ -151,7 +212,59 @@ public class RefreshByOrgIT {
     private void testRefreshWorkflowsByOrg2() throws IOException {
         String url = usersURLPrefix + "/workflows/dockstore/refresh";
         List<Workflow> workflows = clientHelperWorkflow(url);
-        assertThat(workflows.size()).isGreaterThanOrEqualTo(14);
+        // Remove all the tools that have the same name as the previous ones
+        workflows.removeIf(workflow -> previousWorkflowsHaveName(workflow.getRepository()));
+        // Ensure that there are at least 14 new tools
+        assertThat(workflows.size()).isEqualTo(0);
+    }
+
+    /**
+     * This tests if the webservice's refresh adds retains the previous 14 repositories while trying to add
+     * repositories from an organization that does not exist.
+     */
+    private void testRefreshWorkflowsByOrg3() throws IOException {
+        String url = usersURLPrefix + "/workflows/mmmrrrggglll/refresh";
+        List<Workflow> workflows = clientHelperWorkflow(url);
+        // Remove all the tools that have the same name as the previous ones
+        workflows.removeIf(workflow -> previousWorkflowsHaveName(workflow.getRepository()));
+        // Ensure that there are at least 14 new tools
+        assertThat(workflows.size()).isEqualTo(0);
+    }
+
+    /**
+     * This tests if the webservice's refresh can add the dockstore_testuser2 bitbucket organization
+     */
+    private void testRefreshWorkflowsByOrg4() throws IOException {
+        String url = usersURLPrefix + "/workflows/dockstore_testuser2/refresh";
+        List<Workflow> workflows = clientHelperWorkflow(url);
+        // Remove all the tools that have the same name as the previous ones
+        workflows.removeIf(workflow -> previousWorkflowsHaveName(workflow.getRepository()));
+        // Ensure that there are at least 14 new tools
+        assertThat(workflows.size()).isGreaterThanOrEqualTo(newDockstore_TestUser2Workflows.size());
+        newDockstore_TestUser2Workflows.forEach(workflowRepository -> assertThat(
+                workflows.parallelStream().anyMatch(workflow -> workflow.getRepository().equals(workflowRepository))).isTrue());
+    }
+
+    /**
+     * This tests if the webservice's refresh can add the dockstore.test.user2 GitLab organization
+     */
+    private void testRefreshWorkflowsByOrg5() throws IOException {
+        String url = usersURLPrefix + "/workflows/dockstore.test.user2/refresh";
+        List<Workflow> workflows = clientHelperWorkflow(url);
+        // Remove all the tools that have the same name as the previous ones
+        workflows.removeIf(workflow -> previousWorkflowsHaveName(workflow.getRepository()));
+        // Ensure that there are at least 14 new tools
+        assertThat(workflows.size()).isGreaterThanOrEqualTo(newDockstoreDotTestDotUser2Workflows.size());
+        newDockstoreDotTestDotUser2Workflows.forEach(workflowRepository -> assertThat(
+                workflows.parallelStream().anyMatch(workflow -> workflow.getRepository().equals(workflowRepository))).isTrue());
+    }
+
+    private List<Workflow> clientHelperWorkflow(String url) throws IOException {
+        Response response = client.target(String.format(url, RULE.getLocalPort())).request()
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token).get();
+        String entity = response.readEntity(String.class);
+        return objectMapper.readValue(entity, new TypeReference<List<Workflow>>() {
+        });
     }
 
     private List<Workflow> getWorkflows() throws IOException {
@@ -164,40 +277,11 @@ public class RefreshByOrgIT {
         return clientHelperTool(url);
     }
 
-    /**
-     * This tests if the webservice's refresh adds retains the previous 14 repositories while trying to add
-     * repositories from an organization that does not exist.
-     */
-    private void testRefreshWorkflowsByOrg3() throws IOException {
-        String url = usersURLPrefix + "/workflows/mmmrrrggglll/refresh";
-        List<Workflow> workflows = clientHelperWorkflow(url);
-        assertThat(workflows.size()).isGreaterThanOrEqualTo(14);
+    private boolean previousToolsHaveName(String name) {
+        return previousTools.parallelStream().anyMatch(previousTool -> previousTool.getName().equals(name));
     }
 
-    /**
-     * This tests if the webservice's refresh can add the dockstore_testuser2 bitbucket organization
-     */
-    private void testRefreshWorkflowsByOrg4() throws IOException {
-        String url = usersURLPrefix + "/workflows/dockstore_testuser2/refresh";
-        List<Workflow> workflows = clientHelperWorkflow(url);
-        assertThat(workflows.size()).isGreaterThanOrEqualTo(15);
-    }
-
-    /**
-     * This tests if the webservice's refresh can add the dockstore.test.user2 GitLab organization
-     */
-    private void testRefreshWorkflowsByOrg5() throws IOException {
-        String url = usersURLPrefix + "/workflows/dockstore.test.user2/refresh";
-        List<Workflow> workflows = clientHelperWorkflow(url);
-        assertThat(workflows.size()).isGreaterThanOrEqualTo(16);
-    }
-
-    private List<Workflow> clientHelperWorkflow(String url) throws IOException {
-        Response response = client.target(String.format(url, RULE.getLocalPort())).request()
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token).get();
-        String entity = response.readEntity(String.class);
-        return objectMapper.readValue(entity, new TypeReference<List<Workflow>>() {
-        });
-
+    private boolean previousWorkflowsHaveName(String name) {
+        return previousWorkflows.parallelStream().anyMatch(previousTool -> previousTool.getRepository().equals(name));
     }
 }
