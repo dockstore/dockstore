@@ -168,14 +168,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                 // Populate index
 
                 ElasticManager elasticManager = new ElasticManager();
-                String newlineDJSON = elasticManager.getNDJSON(published);
-                HttpEntity bulkEntity = new NStringEntity(newlineDJSON, ContentType.APPLICATION_JSON);
-                org.elasticsearch.client.Response post = restClient
-                        .performRequest("POST", "/entry/_bulk", Collections.emptyMap(), bulkEntity);
-                if (post.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-                    throw new CustomWebApplicationException("Could not submit index to elastic search",
-                            HttpStatus.SC_INTERNAL_SERVER_ERROR);
-                }
+                elasticManager.bulkUpsert(published);
             } catch (IOException e) {
                 throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
