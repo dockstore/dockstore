@@ -272,4 +272,19 @@ public abstract class Entry<S extends Entry, T extends Version> {
      */
     @JsonIgnore
     public abstract Set<T> getVersions();
+
+    /**
+     *
+     * @param newDefaultVersion
+     * @return true if defaultVersion is a valid Docker tag
+     */
+    public boolean checkAndSetDefaultVersion(String newDefaultVersion) {
+        for (Version version : this.getVersions()) {
+            if (newDefaultVersion.equals(version.getName())) {
+                this.setDefaultVersion(newDefaultVersion);
+                return true;
+            }
+        }
+        return false;
+    }
 }
