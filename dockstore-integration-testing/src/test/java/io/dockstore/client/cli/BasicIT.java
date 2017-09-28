@@ -35,6 +35,7 @@ import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.Assertion;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.experimental.categories.Category;
 
@@ -83,6 +84,48 @@ public class BasicIT {
         // should not delete tools
         final long thirdToolCount = testingPostgres.runSelectStatement("select count(*) from tool", new ScalarHandler<>());
         Assert.assertTrue("there should be no change in count of tools", secondToolCount == thirdToolCount);
+    }
+
+    /**
+     * Tests that refresh workflows works, also that refreshing without a github token should not destroy workflows or their existing versions
+     */
+    @Test
+    public void testRefreshWorkflow() {
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "workflow", "refresh"});
+        // should have a certain number of tools based on github contents
+        final long secondWorkflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", new ScalarHandler<>());
+        Assert.assertTrue("should find non-zero number of workflows", secondWorkflowCount > 0);
+
+        // refresh a specific workflow
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "workflow", "refresh", "--entry", "DockstoreTestUser/dockstore-whalesay-wdl"});
+
+        // artificially create an invalid version
+        testingPostgres.runUpdateStatement("update workflowversion set name = 'test'");
+        testingPostgres.runUpdateStatement("update workflowversion set reference = 'test'");
+
+        // refresh
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "workflow", "refresh", "--entry", "DockstoreTestUser/dockstore-whalesay-wdl"});
+
+        // check that the version was deleted
+        final long updatedWorkflowVersionCount = testingPostgres.runSelectStatement("select count(*) from workflowversion", new ScalarHandler<>());
+        final long updatedWorkflowVersionName = testingPostgres.runSelectStatement("select count(*) from workflowversion where name='master'", new ScalarHandler<>());
+        Assert.assertTrue("there should be only one version", updatedWorkflowVersionCount == 1 && updatedWorkflowVersionName == 1);
+
+        // delete quay.io token
+        testingPostgres.runUpdateStatement("delete from token where tokensource = 'github.com'");
+
+        systemExit.checkAssertionAfterwards(() -> {
+            // should not delete workflows
+            final long thirdWorkflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", new ScalarHandler<>());
+            Assert.assertTrue("there should be no change in count of workflows", secondWorkflowCount == thirdWorkflowCount);
+        });
+        // refresh
+        systemExit.expectSystemExit();
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "workflow", "refresh", "--entry",
+            "DockstoreTestUser/dockstore-whalesay-wdl" });
+
+
     }
 
     /**

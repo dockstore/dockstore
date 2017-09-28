@@ -12,6 +12,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Tool;
@@ -100,7 +101,8 @@ public class ElasticManager {
 
     /**
      * This handles the index for elastic search
-     *  @param entry   The entry to be converted into a document
+     *
+     * @param entry   The entry to be converted into a document
      * @param command The command to perform for the document, either "update" or "delete" document
      */
     public void handleIndexUpdate(Entry entry, ElasticMode command) {
@@ -180,6 +182,19 @@ public class ElasticManager {
         doc.put("doc", labelsMap);
         builder.append(gson.toJson(doc, Map.class));
         return builder.toString();
+    }
+
+    public void bulkUpsert(List<Entry> entries) {
+        try (RestClient restClient = RestClient.builder(new HttpHost(ElasticManager.hostname, ElasticManager.port, "http")).build()) {
+            String newlineDJSON = getNDJSON(entries);
+            HttpEntity bulkEntity = new NStringEntity(newlineDJSON, ContentType.APPLICATION_JSON);
+            org.elasticsearch.client.Response post = restClient.performRequest("POST", "/entry/_bulk", Collections.emptyMap(), bulkEntity);
+            if (post.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
+                throw new CustomWebApplicationException("Could not submit index to elastic search", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            }
+        } catch (IOException e) {
+            LOGGER.error("Could not submit index to elastic search. " + e.getMessage());
+        }
     }
 
     /**

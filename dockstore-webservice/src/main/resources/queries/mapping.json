@@ -16,7 +16,10 @@
           "type": "text"
         },
         "description": {
-          "type": "text"
+          "type": "text",
+          "index": true,
+          "fielddata": true,
+          "analyzer": "text_analyzer"
         },
         "email": {
           "type": "text"
@@ -109,7 +112,8 @@
               "include_in_root": true,
               "properties": {
                 "content": {
-                  "type": "string"
+                  "type": "text",
+                  "analyzer": "text_analyzer"
                 },
                 "id": {
                   "type": "long"
@@ -190,7 +194,10 @@
           "type": "keyword"
         },
         "description": {
-          "type": "text"
+          "type": "text",
+          "fielddata": true,
+          "index": true,
+          "analyzer": "text_analyzer"
         },
         "descriptorType": {
           "type": "keyword"
@@ -228,6 +235,52 @@
         },
         "workflow_path": {
           "type": "keyword"
+        }
+      }
+    }
+  },
+  "settings": {
+    "index": {
+      "analysis": {
+        "filter": {
+          "english_stop": {
+            "type": "stop",
+            "stopwords": "_english_"
+          },
+          "unique_stem": {
+            "type": "unique",
+            "only_on_same_position": true
+          },
+          "dockstore_stop": {
+            "type": "stop",
+            "stopwords": [ "https", "http", "see", "from", "use", "usage", "more", "can", "reads", "website", "count" ]
+          }
+        },
+        "analyzer": {
+          "didYouMean": {
+            "filter": [
+              "lowercase"
+            ],
+            "char_filter": [
+              "html_strip"
+            ],
+            "type": "custom",
+            "tokenizer": "standard"
+          },
+          "text_analyzer":{
+            "type":"custom",
+            "tokenizer":"standard",
+            "filter": [
+              "lowercase",
+              "english_stop",
+              "dockstore_stop",
+              "keyword_repeat",
+              "unique_stem"
+            ],
+            "char_filter": [
+              "html_strip"
+            ]
+          }
         }
       }
     }

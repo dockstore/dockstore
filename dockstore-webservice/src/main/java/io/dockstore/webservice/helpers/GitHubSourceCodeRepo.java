@@ -181,7 +181,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             service.getBranches(id).forEach(branch -> references.add(branch.getName()));
             service.getTags(id).forEach(tag -> references.add(tag.getName()));
         } catch (IOException e) {
-            LOG.info(gitUsername + ": Cannot branches or tags for workflow {}");
+            LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}");
             throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
 
@@ -195,7 +195,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
             //TODO: is there a case-insensitive endsWith?
             String calculatedExtension = FilenameUtils.getExtension(calculatedPath);
-            boolean validWorkflow = false;
+            boolean validWorkflow;
 
             // Grab workflow file from github
             try {
@@ -223,10 +223,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                         file.setContent(content);
                         file.setPath(calculatedPath);
                         file.setType(identifiedType);
-
-                        workflow.addWorkflowVersion(combineVersionAndSourcefile(file, workflow, identifiedType, version, existingDefaults));
+                        version.setValid(true);
+                        version = combineVersionAndSourcefile(file, workflow, identifiedType, version, existingDefaults);
                     }
-
                 }
 
             } catch (IOException ex) {
@@ -235,10 +234,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 LOG.info(gitUsername + ": " + workflow.getDefaultWorkflowPath() + " on " + ref + " was not valid workflow");
             }
 
-            if (!validWorkflow) {
-                workflow.addWorkflowVersion(version);
-            }
-
+            workflow.addWorkflowVersion(version);
         }
         return workflow;
     }

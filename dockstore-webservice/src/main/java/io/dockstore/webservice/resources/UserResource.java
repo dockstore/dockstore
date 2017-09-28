@@ -47,7 +47,6 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.ElasticManager;
-import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.Helper;
 import io.dockstore.webservice.jdbi.GroupDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -413,8 +412,15 @@ public class UserResource {
         // Update user data
         Helper.updateUserHelper(authUser, userDAO, tokenDAO);
         List<Tool> tools = dockerRepoResource.refreshToolsForUser(userId, null);
-        // TODO: Turn this into bulk index upsert and only update the ones that have changed
-        tools.forEach(tool -> elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE));
+
+        // TODO: Only update the ones that have changed
+        authUser = userDAO.findById(authUser.getId());
+        Set<Entry> allEntries = authUser.getEntries();
+        List<Entry> toolEntries = allEntries.parallelStream().filter(entry -> entry instanceof Tool && entry.getIsPublished())
+                .collect(Collectors.toList());
+        if (!toolEntries.isEmpty()) {
+            elasticManager.bulkUpsert(toolEntries);
+        }
         return tools;
     }
 
@@ -461,8 +467,14 @@ public class UserResource {
         // Refresh the user
         authUser = userDAO.findById(authUser.getId());
         List<Workflow> finalWorkflows = getWorkflows(authUser);
-        // TODO: Turn this into bulk index upsert and only update the ones that have changed
-        finalWorkflows.forEach(workflow -> elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE));
+        Set<Entry> allEntries = authUser.getEntries();
+
+        // TODO: Only update the ones that have changed
+        List<Entry> workflowEntries = allEntries.parallelStream().filter(entry -> entry instanceof Workflow && entry.getIsPublished())
+                .collect(Collectors.toList());
+        if (!workflowEntries.isEmpty()) {
+            elasticManager.bulkUpsert(workflowEntries);
+        }
         return finalWorkflows;
     }
 
