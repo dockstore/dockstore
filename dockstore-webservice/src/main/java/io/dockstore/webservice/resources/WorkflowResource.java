@@ -456,8 +456,10 @@ public class WorkflowResource {
         oldWorkflow.setPath(newWorkflow.getPath());
         oldWorkflow.setDescriptorType(newWorkflow.getDescriptorType());
         oldWorkflow.setDefaultWorkflowPath(newWorkflow.getDefaultWorkflowPath());
-        if (!oldWorkflow.checkAndSetDefaultVersion(newWorkflow.getDefaultVersion())) {
-            throw new CustomWebApplicationException("Workflow version does not exist.", HttpStatus.SC_BAD_REQUEST);
+        if (newWorkflow.getDefaultVersion() != null) {
+            if (!oldWorkflow.checkAndSetDefaultVersion(newWorkflow.getDefaultVersion())) {
+                throw new CustomWebApplicationException("Workflow version does not exist.", HttpStatus.SC_BAD_REQUEST);
+            }
         }
     }
 

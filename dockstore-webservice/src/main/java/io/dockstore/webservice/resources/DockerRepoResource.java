@@ -260,8 +260,10 @@ public class DockerRepoResource {
         originalTool.setDefaultWdlPath(newTool.getDefaultWdlPath());
         originalTool.setDefaultDockerfilePath(newTool.getDefaultDockerfilePath());
 
-        if (!originalTool.checkAndSetDefaultVersion(newTool.getDefaultVersion())) {
-            throw new CustomWebApplicationException("Tool version does not exist.", HttpStatus.SC_BAD_REQUEST);
+        if (newTool.getDefaultVersion() != null) {
+            if (!originalTool.checkAndSetDefaultVersion(newTool.getDefaultVersion())) {
+                throw new CustomWebApplicationException("Tool version does not exist.", HttpStatus.SC_BAD_REQUEST);
+            }
         }
 
         originalTool.setToolname(newTool.getToolname());
