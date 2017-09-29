@@ -136,20 +136,20 @@ public class DockerRepoResource {
         List<Tool> tools;
         List<User> users = userDAO.findAll();
         for (User user : users) {
-            refreshToolsForUser(user.getId());
+            refreshToolsForUser(user.getId(), null);
         }
         tools = toolDAO.findAll();
 
         return tools;
     }
 
-    List<Tool> refreshToolsForUser(Long userId) {
+    List<Tool> refreshToolsForUser(Long userId, String organization) {
         List<Token> tokens = tokenDAO.findBitbucketByUserId(userId);
         if (!tokens.isEmpty()) {
             Token bitbucketToken = tokens.get(0);
             Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
         }
-        return Helper.refresh(userId, client, objectMapper, userDAO, toolDAO, tokenDAO, tagDAO, fileDAO);
+        return Helper.refresh(userId, client, objectMapper, userDAO, toolDAO, tokenDAO, tagDAO, fileDAO, organization);
     }
 
     @GET

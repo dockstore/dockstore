@@ -217,7 +217,7 @@ public class TokenResource {
 
         token = tokenDAO.findById(tokenId);
         if (token == null) {
-            return Response.ok().build();
+            return Response.noContent().build();
         } else {
             return Response.serverError().build();
         }

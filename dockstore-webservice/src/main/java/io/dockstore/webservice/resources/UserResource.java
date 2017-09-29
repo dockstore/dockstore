@@ -379,6 +379,49 @@ public class UserResource {
     @GET
     @Timed
     @UnitOfWork
+    @Path("/{userId}/containers/{organization}/refresh")
+    @ApiOperation(value = "Refresh repos owned by the logged-in user with specified organization", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Refresh all tools in an organization", response = Tool.class, responseContainer = "List")
+    public List<Tool> refreshToolsByOrganization(@ApiParam(hidden = true) @Auth User authUser,
+            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
+            @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization) {
+
+        Helper.checkUser(authUser, userId);
+
+        // Update user data
+        Helper.updateUserHelper(authUser, userDAO, tokenDAO);
+        List<Tool> tools = dockerRepoResource.refreshToolsForUser(userId, organization);
+
+        userDAO.clearCache();
+        authUser = userDAO.findById(authUser.getId());
+        bulkUpsertTools(authUser);
+        List<Tool> finalTools = authUser.getEntries().stream().filter(Tool.class::isInstance).map(Tool.class::cast)
+                .collect(Collectors.toList());
+        return finalTools;
+    }
+
+    // TODO: Only update the ones that have changed
+    private void bulkUpsertTools(User authUser) {
+        Set<Entry> allEntries = authUser.getEntries();
+        List<Entry> toolEntries = allEntries.parallelStream().filter(entry -> entry instanceof Tool && entry.getIsPublished())
+                .collect(Collectors.toList());
+        if (!toolEntries.isEmpty()) {
+            elasticManager.bulkUpsert(toolEntries);
+        }
+    }
+
+    // TODO: Only update the ones that have changed
+    private void bulkUpsertWorkflows(User authUser) {
+        Set<Entry> allEntries = authUser.getEntries();
+        List<Entry> toolEntries = allEntries.parallelStream().filter(entry -> entry instanceof Workflow && entry.getIsPublished())
+                .collect(Collectors.toList());
+        if (!toolEntries.isEmpty()) {
+            elasticManager.bulkUpsert(toolEntries);
+        }
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
     @Path("/{userId}/containers/refresh")
     @ApiOperation(value = "Refresh repos owned by the logged-in user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Updates some metadata", response = Tool.class, responseContainer = "List")
     public List<Tool> refresh(@ApiParam(hidden = true) @Auth User authUser,
@@ -388,17 +431,36 @@ public class UserResource {
 
         // Update user data
         Helper.updateUserHelper(authUser, userDAO, tokenDAO);
-        List<Tool> tools = dockerRepoResource.refreshToolsForUser(userId);
+        List<Tool> tools = dockerRepoResource.refreshToolsForUser(userId, null);
 
         // TODO: Only update the ones that have changed
         authUser = userDAO.findById(authUser.getId());
-        Set<Entry> allEntries = authUser.getEntries();
-        List<Entry> toolEntries = allEntries.parallelStream().filter(entry -> entry instanceof Tool && entry.getIsPublished())
-                .collect(Collectors.toList());
-        if (!toolEntries.isEmpty()) {
-            elasticManager.bulkUpsert(toolEntries);
-        }
+        bulkUpsertTools(authUser);
         return tools;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{userId}/workflows/{organization}/refresh")
+    @ApiOperation(value = "Refresh workflows owned by the logged-in user with specified organization", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Refresh all workflows in an organization", response = Workflow.class, responseContainer = "List")
+    public List<Workflow> refreshWorkflowsByOrganization(@ApiParam(hidden = true) @Auth User authUser,
+            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
+            @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization) {
+
+        Helper.checkUser(authUser, userId);
+
+        // Update user data
+        Helper.updateUserHelper(authUser, userDAO, tokenDAO);
+
+        // Refresh all workflows, including full workflows
+        workflowResource.refreshStubWorkflowsForUser(authUser, organization);
+        userDAO.clearCache();
+        // Refresh the user
+        authUser = userDAO.findById(authUser.getId());
+        List<Workflow> finalWorkflows = getWorkflows(authUser);
+        bulkUpsertWorkflows(authUser);
+        return finalWorkflows;
     }
 
     @GET
@@ -415,20 +477,11 @@ public class UserResource {
         Helper.updateUserHelper(authUser, userDAO, tokenDAO);
 
         // Refresh all workflows, including full workflows
-        workflowResource.refreshStubWorkflowsForUser(authUser);
-
+        workflowResource.refreshStubWorkflowsForUser(authUser, null);
         // Refresh the user
         authUser = userDAO.findById(authUser.getId());
-        Set<Entry> allEntries = authUser.getEntries();
-        List<Workflow> finalWorkflows = allEntries.parallelStream().filter(Workflow.class::isInstance).map(Workflow.class::cast)
-                .collect(Collectors.toList());
-
-        // TODO: Only update the ones that have changed
-        List<Entry> workflowEntries = allEntries.parallelStream().filter(entry -> entry instanceof Workflow && entry.getIsPublished())
-                .collect(Collectors.toList());
-        if (!workflowEntries.isEmpty()) {
-            elasticManager.bulkUpsert(workflowEntries);
-        }
+        List<Workflow> finalWorkflows = getWorkflows(authUser);
+        bulkUpsertWorkflows(authUser);
         return finalWorkflows;
     }
 
@@ -441,8 +494,12 @@ public class UserResource {
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         Helper.checkUser(user, userId);
         // need to avoid lazy initialize error
-        final User byId = this.userDAO.findById(userId);
-        return FluentIterable.from(byId.getEntries()).filter(Workflow.class).toList();
+        final User authUser = this.userDAO.findById(userId);
+        return getWorkflows(authUser);
+    }
+
+    private List<Workflow> getWorkflows(User user) {
+        return user.getEntries().stream().filter(Workflow.class::isInstance).map(Workflow.class::cast).collect(Collectors.toList());
     }
 
     @GET

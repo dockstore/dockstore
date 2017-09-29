@@ -17,6 +17,7 @@
 package io.dockstore.webservice.helpers;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -78,6 +79,7 @@ public abstract class AbstractImageRegistry {
 
     /**
      * Returns the registry associated with the current class
+     *
      * @return registry associated with class
      */
     public abstract Registry getRegistry();
@@ -85,13 +87,29 @@ public abstract class AbstractImageRegistry {
     /**
      * Updates/Adds/Deletes tools and their associated tags
      *
-     * @return
+     * @param userId         The ID of the user
+     * @param userDAO        ...
+     * @param toolDAO        ...
+     * @param tagDAO         ...
+     * @param fileDAO        ...
+     * @param client         An HttpClient used by source code repositories
+     * @param githubToken    The user's GitHub token
+     * @param bitbucketToken The user's Bitbucket token
+     * @param gitlabToken    The user's GitLab token
+     * @param organization   If not null, only refresh tools belonging to the specific organization. Otherwise, refresh all.
+     * @return The list of tools that have been updated
      */
     @SuppressWarnings("checkstyle:parameternumber")
     public List<Tool> refreshTools(final long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
-            final FileDAO fileDAO, final HttpClient client, final Token githubToken, final Token bitbucketToken, final Token gitlabToken) {
+            final FileDAO fileDAO, final HttpClient client, final Token githubToken, final Token bitbucketToken, final Token gitlabToken,
+            String organization) {
         // Get all the namespaces for the given registry
-        List<String> namespaces = getNamespaces();
+        List<String> namespaces;
+        if (organization != null) {
+            namespaces = Arrays.asList(organization);
+        } else {
+            namespaces = getNamespaces();
+        }
 
         // Get all the tools based on the found namespaces
         List<Tool> apiTools = getToolsFromNamespace(namespaces);
@@ -105,12 +123,14 @@ public abstract class AbstractImageRegistry {
 
         // Filter DB tools and API tools to only include relevant tools
         manualTools.removeIf(test -> !test.getUsers().contains(user) || !test.getRegistry().equals(getRegistry()));
+
         dbTools.removeIf(test -> !test.getRegistry().equals(getRegistry()));
         apiTools.addAll(manualTools);
 
         // Remove tools that can't be updated (Manual tools)
         dbTools.removeIf(tool1 -> tool1.getMode() == ToolMode.MANUAL_IMAGE_PATH);
-
+        apiTools.removeIf(tool -> !namespaces.contains(tool.getNamespace()));
+        dbTools.removeIf(tool -> !namespaces.contains(tool.getNamespace()));
         // Update api tools with build information
         updateAPIToolsWithBuildInformation(apiTools);
 
@@ -151,8 +171,8 @@ public abstract class AbstractImageRegistry {
         }
 
         // If exists, check conditions to see if it should be changed to auto (in sync with quay tags and git repo)
-        if (tool.getMode() == ToolMode.MANUAL_IMAGE_PATH && duplicatePath != null  && tool.getRegistry().name().equals(
-                Registry.QUAY_IO.name()) && duplicatePath.getGitUrl().equals(tool.getGitUrl())) {
+        if (tool.getMode() == ToolMode.MANUAL_IMAGE_PATH && duplicatePath != null && tool.getRegistry().name()
+                .equals(Registry.QUAY_IO.name()) && duplicatePath.getGitUrl().equals(tool.getGitUrl())) {
             tool.setMode(duplicatePath.getMode());
         }
 

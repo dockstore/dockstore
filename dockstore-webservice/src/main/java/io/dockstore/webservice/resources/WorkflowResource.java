@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -142,7 +143,7 @@ public class WorkflowResource {
     @ApiOperation(value = "Refresh all workflows", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Updates some metadata. ADMIN ONLY", response = Workflow.class, responseContainer = "List")
     public List<Workflow> refreshAll(@ApiParam(hidden = true) @Auth User authUser) {
         List<User> users = userDAO.findAll();
-        users.forEach(this::refreshStubWorkflowsForUser);
+        users.forEach(user -> refreshStubWorkflowsForUser(user, null));
         return workflowDAO.findAll();
     }
 
@@ -196,7 +197,7 @@ public class WorkflowResource {
      *
      * @param user a user to refresh workflows for
      */
-    public void refreshStubWorkflowsForUser(User user) {
+    public void refreshStubWorkflowsForUser(User user, String organization) {
         try {
             List<Token> tokens = checkOnBitbucketToken(user);
 
@@ -208,7 +209,8 @@ public class WorkflowResource {
             // Update bitbucket workflows if token exists
             if (bitbucketToken != null && bitbucketToken.getContent() != null) {
                 // get workflows from bitbucket for a user and updates db
-                refreshHelper(new BitBucketSourceCodeRepo(bitbucketToken.getUsername(), client, bitbucketToken.getContent(), null), user);
+                refreshHelper(new BitBucketSourceCodeRepo(bitbucketToken.getUsername(), client, bitbucketToken.getContent(), null), user,
+                        organization);
             }
 
             // Refresh Github
@@ -217,7 +219,7 @@ public class WorkflowResource {
             // Update github workflows if token exists
             if (githubToken != null && githubToken.getContent() != null) {
                 // get workflows from github for a user and updates db
-                refreshHelper(new GitHubSourceCodeRepo(user.getUsername(), githubToken.getContent(), null), user);
+                refreshHelper(new GitHubSourceCodeRepo(user.getUsername(), githubToken.getContent(), null), user, organization);
             }
 
             // Refresh Gitlab
@@ -226,7 +228,7 @@ public class WorkflowResource {
             // Update gitlab workflows if token exists
             if (gitlabToken != null && gitlabToken.getContent() != null) {
                 // get workflows from gitlab for a user and updates db
-                refreshHelper(new GitLabSourceCodeRepo(user.getUsername(), client, gitlabToken.getContent(), null), user);
+                refreshHelper(new GitLabSourceCodeRepo(user.getUsername(), client, gitlabToken.getContent(), null), user, organization);
             }
 
             // when 3) no data is found for a workflow in the db, we may want to create a warning, note, or label
@@ -240,16 +242,19 @@ public class WorkflowResource {
      *
      * @param sourceCodeRepoInterface
      * @param user
+     * @param organization            if specified, only refresh if workflow belongs to the organization
      */
-    private void refreshHelper(final SourceCodeRepoInterface sourceCodeRepoInterface, User user) {
+    private void refreshHelper(final SourceCodeRepoInterface sourceCodeRepoInterface, User user, String organization) {
         // Mapping of git url to repository name (owner/repo)
         final Map<String, String> workflowGitUrl2Name = sourceCodeRepoInterface.getWorkflowGitUrl2RepositoryId();
-
+        LOG.error(Arrays.toString(workflowGitUrl2Name.entrySet().toArray()));
+        if (organization != null) {
+            workflowGitUrl2Name.entrySet().removeIf(thing -> !(thing.getValue().split("/"))[0].equals(organization));
+        }
         // For each entry found of the associated git hosting service
         for (Map.Entry<String, String> entry : workflowGitUrl2Name.entrySet()) {
-            // Get all workflows with the same giturl
+            // Get all workflows with the same giturl)
             final List<Workflow> byGitUrl = workflowDAO.findByGitUrl(entry.getKey());
-
             if (byGitUrl.size() > 0) {
                 // Workflows exist with the given git url
                 for (Workflow workflow : byGitUrl) {
