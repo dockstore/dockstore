@@ -23,7 +23,7 @@ public class RSSHeader {
     private String copyright = "";
     private String author = "";
     private String guid = "";
-    private String pubdate ="";
+    private String pubdate = "";
 
     public String getTitle() {
         return title;
@@ -70,7 +70,7 @@ public class RSSHeader {
     public String getPubDate() {
         return pubdate;
     }
-    public void setPubDate(String pubdate) {
-        this.pubdate = pubdate;
+    public void setPubDate(String pubDate) {
+        this.pubdate = pubDate;
     }
 }

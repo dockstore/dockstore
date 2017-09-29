@@ -24,11 +24,11 @@ public class RSSFeed {
     private RSSHeader header;
     private List<RSSEntry> entries;
 
-    public void setHeader(RSSHeader header){
+    public void setHeader(RSSHeader header) {
         this.header = header;
     }
 
-    public void setEntries(List entries){
+    public void setEntries(List entries) {
         this.entries = entries;
     }
 
