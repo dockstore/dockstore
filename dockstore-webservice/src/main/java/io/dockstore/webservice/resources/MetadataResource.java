@@ -17,6 +17,7 @@
 package io.dockstore.webservice.resources;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Comparator;
@@ -153,9 +154,9 @@ public class MetadataResource {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         try {
             RSSWriter.write(feed, byteArrayOutputStream);
+            return byteArrayOutputStream.toString(StandardCharsets.UTF_8.name());
         } catch (Exception e) {
             throw new CustomWebApplicationException("Could not write RSS feed.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
-        return byteArrayOutputStream.toString();
     }
 }
