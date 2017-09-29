@@ -298,25 +298,4 @@ public class Tool extends Entry<Tool, Tag> {
     public void setPrivateAccess(boolean privateAccess) {
         this.privateAccess = privateAccess;
     }
-
-    /**
-     * Updates information from given tool based on the new tool
-     *
-     * @param tool
-     */
-    public void updateInfo(Tool tool) {
-        // Add descriptor type default paths here
-        defaultCwlPath = tool.getDefaultCwlPath();
-        defaultWdlPath = tool.getDefaultWdlPath();
-        defaultDockerfilePath = tool.getDefaultDockerfilePath();
-        this.setDefaultVersion(tool.getDefaultVersion());
-
-        toolname = tool.getToolname();
-        this.setGitUrl(tool.getGitUrl());
-
-        if (mode == ToolMode.MANUAL_IMAGE_PATH) {
-            toolMaintainerEmail = tool.getToolMaintainerEmail();
-            privateAccess = tool.isPrivateAccess();
-        }
-    }
 }

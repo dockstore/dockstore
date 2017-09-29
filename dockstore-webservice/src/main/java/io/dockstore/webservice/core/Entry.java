@@ -18,6 +18,7 @@ package io.dockstore.webservice.core;
 
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -272,4 +273,18 @@ public abstract class Entry<S extends Entry, T extends Version> {
      */
     @JsonIgnore
     public abstract Set<T> getVersions();
+
+    /**
+     * @param newDefaultVersion
+     * @return true if defaultVersion is a valid Docker tag
+     */
+    public boolean checkAndSetDefaultVersion(String newDefaultVersion) {
+        for (Version version : this.getVersions()) {
+            if (Objects.equals(newDefaultVersion, version.getName())) {
+                this.setDefaultVersion(newDefaultVersion);
+                return true;
+            }
+        }
+        return false;
+    }
 }

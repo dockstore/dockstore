@@ -237,13 +237,42 @@ public class DockerRepoResource {
             throw new CustomWebApplicationException("Tool " + tool.getToolPath() + " already exists.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        c.updateInfo(tool);
+        updateInfo(c, tool);
 
         Tool result = toolDAO.findById(containerId);
         Helper.checkEntry(result);
         elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
         return result;
 
+    }
+
+    /**
+     * Updates information from given tool based on the new tool
+     *
+     * @param originalTool the original tool from the database
+     * @param newTool the new tool from the webservice
+     */
+    private void updateInfo(Tool originalTool, Tool newTool) {
+        // to do, this could probably be better handled better
+
+        // Add descriptor type default paths here
+        originalTool.setDefaultCwlPath(newTool.getDefaultCwlPath());
+        originalTool.setDefaultWdlPath(newTool.getDefaultWdlPath());
+        originalTool.setDefaultDockerfilePath(newTool.getDefaultDockerfilePath());
+
+        if (newTool.getDefaultVersion() != null) {
+            if (!originalTool.checkAndSetDefaultVersion(newTool.getDefaultVersion())) {
+                throw new CustomWebApplicationException("Tool version does not exist.", HttpStatus.SC_BAD_REQUEST);
+            }
+        }
+
+        originalTool.setToolname(newTool.getToolname());
+        originalTool.setGitUrl(newTool.getGitUrl());
+
+        if (originalTool.getMode() == ToolMode.MANUAL_IMAGE_PATH) {
+            originalTool.setToolMaintainerEmail(newTool.getToolMaintainerEmail());
+            originalTool.setPrivateAccess(newTool.isPrivateAccess());
+        }
     }
 
     @PUT

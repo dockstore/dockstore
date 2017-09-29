@@ -447,12 +447,25 @@ public class WorkflowResource {
             throw new CustomWebApplicationException("Workflow " + workflow.getPath() + " already exists.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        c.updateInfo(workflow);
+        updateInfo(c, workflow);
         Workflow result = workflowDAO.findById(workflowId);
         Helper.checkEntry(result);
         elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
         return result;
 
+    }
+
+    // Used to update workflow manually (not refresh)
+    private void updateInfo(Workflow oldWorkflow, Workflow newWorkflow) {
+        oldWorkflow.setWorkflowName(newWorkflow.getWorkflowName());
+        oldWorkflow.setPath(newWorkflow.getPath());
+        oldWorkflow.setDescriptorType(newWorkflow.getDescriptorType());
+        oldWorkflow.setDefaultWorkflowPath(newWorkflow.getDefaultWorkflowPath());
+        if (newWorkflow.getDefaultVersion() != null) {
+            if (!oldWorkflow.checkAndSetDefaultVersion(newWorkflow.getDefaultVersion())) {
+                throw new CustomWebApplicationException("Workflow version does not exist.", HttpStatus.SC_BAD_REQUEST);
+            }
+        }
     }
 
     @PUT
