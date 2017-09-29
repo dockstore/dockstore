@@ -391,10 +391,9 @@ public class UserResource {
         Helper.updateUserHelper(authUser, userDAO, tokenDAO);
         List<Tool> tools = dockerRepoResource.refreshToolsForUser(userId, organization);
 
-        bulkUpsertTools(authUser);
-
         userDAO.clearCache();
         authUser = userDAO.findById(authUser.getId());
+        bulkUpsertTools(authUser);
         List<Tool> finalTools = authUser.getEntries().stream().filter(Tool.class::isInstance).map(Tool.class::cast)
                 .collect(Collectors.toList());
         return finalTools;
