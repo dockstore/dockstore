@@ -19,8 +19,8 @@ package io.dockstore.client.cli.nested;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
@@ -435,7 +435,7 @@ public class WorkflowClient extends AbstractEntryClient {
             if (workflow == null || !workflow.getIsPublished()) {
                 errorMessage("This workflow is not published.", COMMAND_ERROR);
             } else {
-                OffsetDateTime lastUpdated = workflow.getLastUpdated();
+                Date lastUpdated = Date.from(workflow.getLastUpdated().toInstant());
 
                 String description = workflow.getDescription();
                 if (description == null) {

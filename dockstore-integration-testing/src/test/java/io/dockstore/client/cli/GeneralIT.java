@@ -18,6 +18,9 @@ package io.dockstore.client.cli;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 
 import io.dockstore.client.cli.nested.ToolClient;
@@ -132,13 +135,17 @@ public class GeneralIT {
         fileCWL.setContent("cwlstuff");
         fileCWL.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         fileCWL.setPath("/Dockstore.cwl");
-        tag.getSourceFiles().add(fileCWL);
+        List<SourceFile> list = new ArrayList<>();
+        list.add(fileCWL);
+        tag.setSourceFiles(list);
         SourceFile fileDockerFile = new SourceFile();
         fileDockerFile.setContent("dockerstuff");
         fileDockerFile.setType(SourceFile.TypeEnum.DOCKERFILE);
         fileDockerFile.setPath("/Dockerfile");
         tag.getSourceFiles().add(fileDockerFile);
-        c.getTags().add(tag);
+        List<Tag> tags = new ArrayList<>();
+        tags.add(tag);
+        c.setTags(tags);
         return c;
     }
 

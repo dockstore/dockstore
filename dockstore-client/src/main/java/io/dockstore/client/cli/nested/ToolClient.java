@@ -19,10 +19,10 @@ package io.dockstore.client.cli.nested;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
@@ -483,7 +483,7 @@ public class ToolClient extends AbstractEntryClient {
                 tag.setCwlPath(cwlPath);
                 tag.setWdlPath(wdlPath);
                 tag.setName(versionName);
-                tool.getTags().add(tag);
+                Optional.ofNullable(tool.getTags()).orElse(new ArrayList<>()).add(tag);
             }
 
             // Register new tool
@@ -617,7 +617,7 @@ public class ToolClient extends AbstractEntryClient {
 
         try {
             DockstoreTool tool = containersApi.getContainerByToolPath(entry);
-            List<Tag> tags = tool.getTags();
+            List<Tag> tags = Optional.ofNullable(tool.getTags()).orElse(new ArrayList<>());
             final Optional<Tag> first = tags.stream().filter((Tag u) -> u.getName().equals(versionName)).findFirst();
 
             if (!first.isPresent()) {
@@ -666,7 +666,7 @@ public class ToolClient extends AbstractEntryClient {
                 errorMessage("This container is not published.", Client.COMMAND_ERROR);
             } else {
 
-                OffsetDateTime dateUploaded = container.getLastBuild();
+                Date dateUploaded = Date.from(container.getLastBuild().toInstant());
 
                 String description = container.getDescription();
                 if (description == null) {
@@ -784,7 +784,7 @@ public class ToolClient extends AbstractEntryClient {
                         versionTagUpdateHelp();
                     } else {
                         final String tagName = reqVal(args, "--name");
-                        List<Tag> tags = container.getTags();
+                        List<Tag> tags = Optional.ofNullable(container.getTags()).orElse(new ArrayList<>());
                         Boolean updated = false;
 
                         for (Tag tag : tags) {
@@ -949,7 +949,7 @@ public class ToolClient extends AbstractEntryClient {
                 // if valid version
                 boolean updateVersionSuccess = false;
 
-                for (Tag tag : tool.getTags()) {
+                for (Tag tag : Optional.ofNullable(tool.getTags()).orElse(new ArrayList<>())) {
                     if (tag.getName().equals(defaultTag)) {
                         tool.setDefaultVersion(defaultTag);
                         updateVersionSuccess = true;
@@ -960,7 +960,7 @@ public class ToolClient extends AbstractEntryClient {
                 if (!updateVersionSuccess && defaultTag != null) {
                     out("Not a valid version.");
                     out("Valid versions include:");
-                    for (Tag tag : tool.getTags()) {
+                    for (Tag tag : Optional.ofNullable(tool.getTags()).orElse(new ArrayList<>())) {
                         out(tag.getReference());
                     }
                     errorMessage("Please enter a valid version.", Client.CLIENT_ERROR);
