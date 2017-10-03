@@ -1744,12 +1744,24 @@ paths:
           schema: {$ref: '#/definitions/QuayIOView'}
       summary: Display an authorization link for quay.io
       tags: [integration.quay.io]
+  /metadata/rss:
+    get:
+      description: NO authentication
+      operationId: rssFeed
+      parameters: []
+      produces: [text/xml]
+      responses:
+        200:
+          description: successful operation
+          schema: {type: string}
+      summary: List all tools and workflows in creation order
+      tags: [metadata]
   /metadata/sitemap:
     get:
       description: NO authentication
       operationId: sitemap
       parameters: []
-      produces: [text/html]
+      produces: [text/html, text/xml]
       responses:
         200:
           description: successful operation
