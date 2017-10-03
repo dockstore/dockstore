@@ -122,7 +122,6 @@ public class GeneralIT {
         c.setNamespace("testPath");
         c.setToolname("test5");
         c.setPath("quay.io/dockstoretestuser2/dockstore-tool-imports");
-        c.setToolPath("registry.hub.docker.com/seqware/seqware/test5");
         Tag tag = new Tag();
         tag.setName("master");
         tag.setReference("refs/heads/master");
@@ -162,8 +161,7 @@ public class GeneralIT {
         ContainersApi toolsApi = new ContainersApi(client);
 
         // Make publish request (true)
-        final PublishRequest publishRequest = new PublishRequest();
-        publishRequest.setPublish(true);
+        final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
 
         return toolsApi;
     }

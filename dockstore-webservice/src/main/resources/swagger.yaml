@@ -55,7 +55,7 @@ definitions:
       namespace: {description: 'This is a docker namespace for the container, required:
           GA4GH', type: string}
       path: {description: 'This is a generated full docker path including registry
-          and namespace, used for docker pull commands', readOnly: true, type: string}
+          and namespace, used for docker pull commands', type: string}
       private_access: {default: false, description: Is the docker image private or
           not., type: boolean}
       registry:
@@ -421,7 +421,7 @@ definitions:
         type: string
       organization: {description: This is a git organization for the workflow, type: string}
       path: {description: 'This is a generated full workflow path including organization,
-          repository name, and workflow name', readOnly: true, type: string}
+          repository name, and workflow name', type: string}
       repository: {description: This is a git repository name, type: string}
       starredUsers:
         description: This indicates the users that have starred this entry, dockstore
