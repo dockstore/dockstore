@@ -228,7 +228,7 @@ public class ToolClient extends AbstractEntryClient {
                     newContainer.setDefaultWdlPath(container.getDefaultWdlPath());
                     newContainer.setIsPublished(false);
                     newContainer.setGitUrl(container.getGitUrl());
-//                    newContainer.setPath(container.getPath());
+                    newContainer.setPath(container.getPath());
                     newContainer.setToolname(newName);
 
                     newContainer = containersApi.registerManual(newContainer);
@@ -459,7 +459,7 @@ public class ToolClient extends AbstractEntryClient {
                 }
             }
 
-//            tool.setPath(Joiner.on("/").skipNulls().join(registryPath.get(), namespace, name));
+            tool.setPath(Joiner.on("/").skipNulls().join(registryPath.get(), namespace, name));
 
             tool.setDefaultDockerfilePath(dockerfilePath);
             tool.setDefaultCwlPath(cwlPath);

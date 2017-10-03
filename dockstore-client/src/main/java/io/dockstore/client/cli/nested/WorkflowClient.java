@@ -853,7 +853,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
                 String path = Joiner.on("/").skipNulls()
                         .join(workflow.getOrganization(), workflow.getRepository(), workflow.getWorkflowName());
-//                workflow.setPath(path);
+                workflow.setPath(path);
 
                 // If valid version
                 boolean updateVersionSuccess = false;
