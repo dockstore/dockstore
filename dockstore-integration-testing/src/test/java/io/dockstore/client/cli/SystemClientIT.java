@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
@@ -36,9 +37,10 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
-import io.swagger.client.api.GAGHApi;
+import io.swagger.client.api.GA4GHApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
+import io.swagger.client.auth.ApiKeyAuth;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Entry;
 import io.swagger.client.model.Group;
@@ -55,6 +57,7 @@ import io.swagger.client.model.ToolVersion;
 import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
 import io.swagger.client.model.Workflow;
+import io.swagger.models.Swagger;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
@@ -97,9 +100,11 @@ public class SystemClientIT {
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
         INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         ApiClient client = new ApiClient();
+        ApiKeyAuth bearer = (ApiKeyAuth)client.getAuthentication("BEARER");
+        bearer.setApiKeyPrefix("BEARER");
+        bearer.setApiKey((correctUser ? parseConfig
+            .getString(admin ? Constants.WEBSERVICE_TOKEN_USER_1 : Constants.WEBSERVICE_TOKEN_USER_2) : "foobar"));
         client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
-        client.addDefaultHeader("Authorization", "Bearer " + (correctUser ? parseConfig
-                .getString(admin ? Constants.WEBSERVICE_TOKEN_USER_1 : Constants.WEBSERVICE_TOKEN_USER_2) : "foobar"));
         return client;
     }
 
@@ -167,8 +172,7 @@ public class SystemClientIT {
 
         long containerId = container.getId();
 
-        PublishRequest pub = new PublishRequest();
-        pub.setPublish(true);
+        PublishRequest pub = SwaggerUtility.createPublishRequest(true);
 
         containersApi.publish(containerId, pub);
     }
@@ -210,7 +214,9 @@ public class SystemClientIT {
         fileCWL.setContent("cwlstuff");
         fileCWL.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         fileCWL.setPath("/Dockstore.cwl");
-        tag.getSourceFiles().add(fileCWL);
+        List<SourceFile> files = new ArrayList<>();
+        files.add(fileCWL);
+        tag.setSourceFiles(files);
         SourceFile fileDockerFile = new SourceFile();
         fileDockerFile.setContent("dockerstuff");
         fileDockerFile.setType(SourceFile.TypeEnum.DOCKERFILE);
@@ -226,7 +232,9 @@ public class SystemClientIT {
         testParameterFile2.setType(SourceFile.TypeEnum.CWL_TEST_JSON);
         testParameterFile2.setPath("/test2.json");
         tag.getSourceFiles().add(testParameterFile2);
-        c.getTags().add(tag);
+        List<Tag> tags = new ArrayList<>();
+        tags.add(tag);
+        c.setTags(tags);
 
         return c;
     }
@@ -260,7 +268,7 @@ public class SystemClientIT {
     @Test
     public void testGA4GHMetadata() throws IOException, TimeoutException, ApiException {
         ApiClient client = getAdminWebClient();
-        GAGHApi toolApi = new GAGHApi(client);
+        GA4GHApi toolApi = new GA4GHApi(client);
         final Metadata metadata = toolApi.metadataGet();
         assertTrue(metadata.getFriendlyName().contains("Dockstore"));
     }
@@ -268,7 +276,7 @@ public class SystemClientIT {
     @Test
     public void testGA4GHListContainers() throws IOException, TimeoutException, ApiException {
         ApiClient client = getAdminWebClient();
-        GAGHApi toolApi = new GAGHApi(client);
+        GA4GHApi toolApi = new GA4GHApi(client);
         ContainersApi containersApi = new ContainersApi(client);
         // register one more to give us something to look at
         DockstoreTool c = getContainer();
@@ -289,7 +297,7 @@ public class SystemClientIT {
     @Test
     public void testGetSpecificTool() throws IOException, TimeoutException, ApiException {
         ApiClient client = getAdminWebClient();
-        GAGHApi toolApi = new GAGHApi(client);
+        GA4GHApi toolApi = new GA4GHApi(client);
         ContainersApi containersApi = new ContainersApi(client);
         // register one more to give us something to look at
         DockstoreTool c = getContainer();
@@ -315,7 +323,7 @@ public class SystemClientIT {
     @Test
     public void testGetVerifiedSpecificTool() throws ApiException, IOException, TimeoutException {
         ApiClient client = getAdminWebClient();
-        GAGHApi toolApi = new GAGHApi(client);
+        GA4GHApi toolApi = new GA4GHApi(client);
         ContainersApi containersApi = new ContainersApi(client);
         ContainertagsApi containertagsApi = new ContainertagsApi(client);
         // register one more to give us something to look at
@@ -332,9 +340,7 @@ public class SystemClientIT {
         // verify master branch
         assertTrue(!tag.getVerified());
         assertTrue(tag.getVerifiedSource() == null);
-        VerifyRequest request = new VerifyRequest();
-        request.setVerify(true);
-        request.setVerifiedSource("test-source");
+        VerifyRequest request = SwaggerUtility.createVerifyRequest(true, "test-source");
         containertagsApi.verifyToolTag(dockstoreTool.getId(), tag.getId(), request);
 
         // check again
@@ -347,7 +353,7 @@ public class SystemClientIT {
     @Test
     public void testGetFiles() throws IOException, TimeoutException, ApiException {
         ApiClient client = getAdminWebClient();
-        GAGHApi toolApi = new GAGHApi(client);
+        GA4GHApi toolApi = new GA4GHApi(client);
         ContainersApi containersApi = new ContainersApi(client);
         // register one more to give us something to look at
         DockstoreTool c = getContainer();
@@ -442,8 +448,7 @@ public class SystemClientIT {
 
         long containerId = container.getId();
 
-        PublishRequest pub = new PublishRequest();
-        pub.setPublish(true);
+        PublishRequest pub = SwaggerUtility.createPublishRequest(true);
 
         container = containersApi.publish(containerId, pub);
         assertTrue(container.getIsPublished());
@@ -451,7 +456,7 @@ public class SystemClientIT {
         containers = containersApi.allPublishedContainers();
         assertTrue(containers.size() == 2);
 
-        pub.setPublish(false);
+        pub = SwaggerUtility.createPublishRequest(false);
 
         container = containersApi.publish(containerId, pub);
         assertFalse(container.getIsPublished());
@@ -550,8 +555,7 @@ public class SystemClientIT {
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
         long containerId = container.getId();
         assertTrue(containerId == 2);
-        StarRequest request = new StarRequest();
-        request.setStar(true);
+        StarRequest request = SwaggerUtility.createStarRequest(true);
         containersApi.starEntry(containerId, request);
         containersApi.starEntry(containerId, request);
     }
@@ -589,8 +593,7 @@ public class SystemClientIT {
         Workflow workflow = workflowsApi.getPublishedWorkflowByPath("A/l");
         long workflowId = workflow.getId();
         assertTrue(workflowId == 11);
-        StarRequest request = new StarRequest();
-        request.setStar(true);
+        StarRequest request = SwaggerUtility.createStarRequest(true);
         workflowsApi.starEntry(workflowId, request);
         workflowsApi.starEntry(workflowId, request);
     }
@@ -638,8 +641,7 @@ public class SystemClientIT {
 
     private void starring(List<Long> containerIds, ContainersApi containersApi, UsersApi usersApi)
             throws ApiException, IOException, TimeoutException {
-        StarRequest request = new StarRequest();
-        request.setStar(true);
+        StarRequest request = SwaggerUtility.createStarRequest(true);
         containerIds.forEach(containerId -> {
             try {
                 containersApi.starEntry(containerId, request);

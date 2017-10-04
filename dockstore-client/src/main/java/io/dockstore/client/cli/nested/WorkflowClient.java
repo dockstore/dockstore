@@ -34,11 +34,10 @@ import com.google.common.base.Joiner;
 import com.google.common.io.Files;
 import io.dockstore.client.cli.Client;
 import io.dockstore.client.cli.JCommanderUtility;
+import io.dockstore.client.cli.SwaggerUtility;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.Body4;
-import io.swagger.client.model.Body5;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
@@ -194,7 +193,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
             String combinedLabelString = generateLabelString(addsSet, removesSet, existingLabels);
 
-            Workflow updatedWorkflow = workflowsApi.updateLabels(workflowId, combinedLabelString, new Body4());
+            Workflow updatedWorkflow = workflowsApi.updateLabels(workflowId, combinedLabelString, "");
 
             List<Label> newLabels = updatedWorkflow.getLabels();
             if (!newLabels.isEmpty()) {
@@ -436,7 +435,7 @@ public class WorkflowClient extends AbstractEntryClient {
             if (workflow == null || !workflow.getIsPublished()) {
                 errorMessage("This workflow is not published.", COMMAND_ERROR);
             } else {
-                Date dateUploaded = workflow.getLastUpdated();
+                Date lastUpdated = Date.from(workflow.getLastUpdated().toInstant());
 
                 String description = workflow.getDescription();
                 if (description == null) {
@@ -449,8 +448,8 @@ public class WorkflowClient extends AbstractEntryClient {
                 }
 
                 String date = "";
-                if (dateUploaded != null) {
-                    date = dateUploaded.toString();
+                if (lastUpdated != null) {
+                    date = lastUpdated.toString();
                 }
 
                 out(workflow.getPath());
@@ -584,8 +583,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
             VerifyRequest verifyRequest = new VerifyRequest();
             if (unverifyRequest) {
-                verifyRequest.setVerify(false);
-                verifyRequest.setVerifiedSource(null);
+                verifyRequest = SwaggerUtility.createVerifyRequest(false, null);
             } else {
                 // Check if already has been verified
                 if (versionToUpdate.getVerified() && !isScript) {
@@ -594,14 +592,12 @@ public class WorkflowClient extends AbstractEntryClient {
                     out("Would you like to overwrite this with \'" + verifySource + "\'? (y/n)");
                     String overwrite = scanner.nextLine();
                     if (overwrite.toLowerCase().equals("y")) {
-                        verifyRequest.setVerify(true);
-                        verifyRequest.setVerifiedSource(verifySource);
+                        verifyRequest = SwaggerUtility.createVerifyRequest(true, verifySource);
                     } else {
                         toOverwrite = false;
                     }
                 } else {
-                    verifyRequest.setVerify(true);
-                    verifyRequest.setVerifiedSource(verifySource);
+                    verifyRequest = SwaggerUtility.createVerifyRequest(true, verifySource);
                 }
             }
 
@@ -657,8 +653,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
         try {
             Workflow workflow = workflowsApi.getWorkflowByPath(entry);
-            PublishRequest pub = new PublishRequest();
-            pub.setPublish(publish);
+            PublishRequest pub = SwaggerUtility.createPublishRequest(publish);
             workflow = workflowsApi.publish(workflow.getId(), pub);
 
             if (workflow != null) {
@@ -686,8 +681,7 @@ public class WorkflowClient extends AbstractEntryClient {
         try {
             Workflow workflow = workflowsApi.getPublishedWorkflowByPath(entry);
             if (star) {
-                StarRequest request = new StarRequest();
-                request.setStar(star);
+                StarRequest request = SwaggerUtility.createStarRequest(true);
                 workflowsApi.starEntry(workflow.getId(), request);
             } else {
                 workflowsApi.unstarEntry(workflow.getId());
@@ -805,8 +799,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
                 if (valid) {
                     // Valid so try and publish
-                    PublishRequest pub = new PublishRequest();
-                    pub.setPublish(true);
+                    PublishRequest pub = SwaggerUtility.createPublishRequest(true);
                     try {
                         workflowsApi.publish(workflow.getId(), pub);
                         out("Successfully registered and published the given workflow.");
@@ -897,7 +890,7 @@ public class WorkflowClient extends AbstractEntryClient {
             long workflowId = workflow.getId();
 
             if (adds.size() > 0) {
-                workflowsApi.addTestParameterFiles(workflowId, adds, new Body5(), versionName);
+                workflowsApi.addTestParameterFiles(workflowId, adds, "", versionName);
             }
 
             if (removes.size() > 0) {

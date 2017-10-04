@@ -55,7 +55,7 @@ import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
-import io.swagger.client.api.GAGHApi;
+import io.swagger.client.api.GA4GHApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Metadata;
@@ -104,7 +104,7 @@ public class Client {
     private String configFile = null;
     private ContainersApi containersApi;
     private UsersApi usersApi;
-    private GAGHApi ga4ghApi;
+    private GA4GHApi ga4ghApi;
 
     private boolean isAdmin = false;
     private ToolClient toolClient;
@@ -761,7 +761,7 @@ public class Client {
         defaultApiClient.setApiKey("Bearer " + token);
         this.containersApi = new ContainersApi(defaultApiClient);
         this.usersApi = new UsersApi(defaultApiClient);
-        this.ga4ghApi = new GAGHApi(defaultApiClient);
+        this.ga4ghApi = new GA4GHApi(defaultApiClient);
 
         try {
             if (this.usersApi.getApiClient() != null) {

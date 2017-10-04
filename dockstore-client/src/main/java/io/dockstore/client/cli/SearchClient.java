@@ -26,8 +26,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
 import io.dockstore.common.ToolWorkflowDeserializer;
 import io.swagger.client.ApiException;
-import io.swagger.client.api.GAGHApi;
-import io.swagger.client.model.Body;
+import io.swagger.client.api.GA4GHApi;
 import io.swagger.client.model.Tool;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.slf4j.Logger;
@@ -64,7 +63,7 @@ public final class SearchClient {
      * @param args
      * @param configFile
      */
-    public static boolean handleCommand(List<String> args, INIConfiguration configFile, GAGHApi api) {
+    public static boolean handleCommand(List<String> args, INIConfiguration configFile, GA4GHApi api) {
         String[] argv = args.toArray(new String[args.size()]);
         JCommander jc = new JCommander();
 
@@ -108,14 +107,9 @@ public final class SearchClient {
 
     }
 
-    private static boolean search(GAGHApi api) {
+    private static boolean search(GA4GHApi api) {
         // this needs to be improved, obviously a hardcoded search query is not what we'll want in the future
-        Body body = new Body() {
-            @Override
-            public String toString()  {
-                return "{\"aggs\":{\"registry_0\":{\"terms\":{\"field\":\"registry\",\"size\":5}},\"author_1\":{\"terms\":{\"field\":\"author\",\"size\":10}}},\"query\":{\"match_all\":{}}}";
-            }
-        };
+        String body = "{\"aggs\":{\"registry_0\":{\"terms\":{\"field\":\"registry\",\"size\":5}},\"author_1\":{\"terms\":{\"field\":\"author\",\"size\":10}}},\"query\":{\"match_all\":{}}}";
         try {
             String s = api.toolsIndexSearch(body);
             Gson gson = new GsonBuilder().registerTypeAdapter(ElasticSearchObject.HitsInternal.class, new ToolWorkflowDeserializer()).create();
@@ -134,7 +128,7 @@ public final class SearchClient {
         return true;
     }
 
-    private static boolean index(GAGHApi api) {
+    private static boolean index(GA4GHApi api) {
         try {
             api.toolsIndexGet();
         } catch (ApiException e) {

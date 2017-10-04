@@ -197,8 +197,7 @@ public class WorkflowIT {
         workflowApi.refresh(workflowByPath.getId());
 
         // publish one
-        final PublishRequest publishRequest = new PublishRequest();
-        publishRequest.setPublish(true);
+        final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
         workflowApi.publish(workflowByPath.getId(), publishRequest);
         assertTrue("should have one published, found  " + workflowApi.allPublishedWorkflows().size(),
                 workflowApi.allPublishedWorkflows().size() == 1);
@@ -224,8 +223,7 @@ public class WorkflowIT {
         final Long userId = usersApi.getUser().getId();
 
         // Make publish request (true)
-        final PublishRequest publishRequest = new PublishRequest();
-        publishRequest.setPublish(true);
+        final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
 
         // Set up postgres
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();

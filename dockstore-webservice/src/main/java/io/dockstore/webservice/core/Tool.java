@@ -118,7 +118,7 @@ public class Tool extends Entry<Tool, Tag> {
     @ApiModelProperty(value = "This is a specific docker provider like quay.io or dockerhub or n/a?, required: GA4GH", required = true)
     private Registry registry;
     @Column
-    @ApiModelProperty(value = "This is a generated full docker path including registry and namespace, used for docker pull commands", readOnly = true)
+    @ApiModelProperty(value = "This is a generated full docker path including registry and namespace, used for docker pull commands")
     private String path;
 
     @Column
