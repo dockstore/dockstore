@@ -483,7 +483,9 @@ public class ToolClient extends AbstractEntryClient {
                 tag.setCwlPath(cwlPath);
                 tag.setWdlPath(wdlPath);
                 tag.setName(versionName);
-                Optional.ofNullable(tool.getTags()).orElse(new ArrayList<>()).add(tag);
+                List<Tag> tagList = new ArrayList<>();
+                tagList.add(tag);
+                tool.setTags(tagList);
             }
 
             // Register new tool
