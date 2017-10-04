@@ -58,6 +58,7 @@ import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.GA4GHApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
+import io.swagger.client.auth.ApiKeyAuth;
 import io.swagger.client.model.Metadata;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.configuration2.ex.ConfigurationException;
@@ -742,7 +743,7 @@ public class Client {
     }
 
     /**
-     * Setup method called by Consonance
+     * Setup method called by client and by consonance to setup a Dockstore client
      *
      * @param args
      * @throws ConfigurationException
@@ -753,12 +754,14 @@ public class Client {
         // pull out the variables from the config
         String token = config.getString("token", "");
         String serverUrl = config.getString("server-url", "https://www.dockstore.org:8443");
-
         ApiClient defaultApiClient;
         defaultApiClient = Configuration.getDefaultApiClient();
-        defaultApiClient.addDefaultHeader("Authorization", "Bearer " + token);
+
+        ApiKeyAuth bearer = (ApiKeyAuth)defaultApiClient.getAuthentication("BEARER");
+        bearer.setApiKeyPrefix("BEARER");
+        bearer.setApiKey(token);
         defaultApiClient.setBasePath(serverUrl);
-        defaultApiClient.setApiKey("Bearer " + token);
+
         this.containersApi = new ContainersApi(defaultApiClient);
         this.usersApi = new UsersApi(defaultApiClient);
         this.ga4ghApi = new GA4GHApi(defaultApiClient);
