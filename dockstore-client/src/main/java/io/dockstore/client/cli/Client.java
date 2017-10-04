@@ -758,7 +758,7 @@ public class Client {
         defaultApiClient = Configuration.getDefaultApiClient();
         defaultApiClient.addDefaultHeader("Authorization", "Bearer " + token);
         defaultApiClient.setBasePath(serverUrl);
-
+        defaultApiClient.setApiKey("Bearer " + token);
         this.containersApi = new ContainersApi(defaultApiClient);
         this.usersApi = new UsersApi(defaultApiClient);
         this.ga4ghApi = new GAGHApi(defaultApiClient);
