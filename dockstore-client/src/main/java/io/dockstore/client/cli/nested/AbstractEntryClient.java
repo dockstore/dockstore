@@ -1025,6 +1025,9 @@ public abstract class AbstractEntryClient {
                 final String localFilePath = reqVal(args, "--local-entry");
                 checkEntryFile(localFilePath, args, descriptor);
             } else {
+                if (!args.contains("--entry")) {
+                    errorMessage("dockstore: missing required flag --entry or --local-entry", CLIENT_ERROR);
+                }
                 final String descriptor = optVal(args, "--descriptor", CWL_STRING);
                 if (descriptor.equals(CWL_STRING)) {
                     try {
