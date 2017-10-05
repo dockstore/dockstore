@@ -33,13 +33,12 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.io.Files;
 import io.dockstore.client.cli.Client;
+import io.dockstore.client.cli.SwaggerUtility;
 import io.dockstore.common.Registry;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.UsersApi;
-import io.swagger.client.model.Body2;
-import io.swagger.client.model.Body3;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.PublishRequest;
@@ -255,7 +254,7 @@ public class ToolClient extends AbstractEntryClient {
             long containerId = container.getId();
 
             if (adds.size() > 0) {
-                containersApi.addTestParameterFiles(containerId, adds, new Body3(), versionName, descriptorType);
+                containersApi.addTestParameterFiles(containerId, adds, "", versionName, descriptorType);
             }
 
             if (removes.size() > 0) {
@@ -312,8 +311,8 @@ public class ToolClient extends AbstractEntryClient {
 
         try {
             DockstoreTool container = containersApi.getContainerByToolPath(entry);
-            PublishRequest pub = new PublishRequest();
-            pub.setPublish(publish);
+            //TODO where did the setter for PublishRequest go?
+            PublishRequest pub = SwaggerUtility.createPublishRequest(publish);
             container = containersApi.publish(container.getId(), pub);
 
             if (container != null) {
@@ -340,8 +339,7 @@ public class ToolClient extends AbstractEntryClient {
         try {
             DockstoreTool container = containersApi.getPublishedContainerByToolPath(entry);
             if (star) {
-                StarRequest request = new StarRequest();
-                request.setStar(true);
+                StarRequest request = SwaggerUtility.createStarRequest(true);
                 containersApi.starEntry(container.getId(), request);
             } else {
                 containersApi.unstarEntry(container.getId());
@@ -485,7 +483,9 @@ public class ToolClient extends AbstractEntryClient {
                 tag.setCwlPath(cwlPath);
                 tag.setWdlPath(wdlPath);
                 tag.setName(versionName);
-                tool.getTags().add(tag);
+                List<Tag> tagList = new ArrayList<>();
+                tagList.add(tag);
+                tool.setTags(tagList);
             }
 
             // Register new tool
@@ -504,8 +504,7 @@ public class ToolClient extends AbstractEntryClient {
 
             // If registration is successful then attempt to publish it
             if (tool != null) {
-                PublishRequest pub = new PublishRequest();
-                pub.setPublish(true);
+                PublishRequest pub = SwaggerUtility.createPublishRequest(true);
                 DockstoreTool publishedTool;
                 try {
                     publishedTool = containersApi.publish(tool.getId(), pub);
@@ -597,7 +596,7 @@ public class ToolClient extends AbstractEntryClient {
 
             String combinedLabelString = generateLabelString(addsSet, removesSet, existingLabels);
 
-            DockstoreTool updatedContainer = containersApi.updateLabels(containerId, combinedLabelString, new Body2());
+            DockstoreTool updatedContainer = containersApi.updateLabels(containerId, combinedLabelString, "");
 
             List<Label> newLabels = updatedContainer.getLabels();
             if (!newLabels.isEmpty()) {
@@ -620,7 +619,7 @@ public class ToolClient extends AbstractEntryClient {
 
         try {
             DockstoreTool tool = containersApi.getContainerByToolPath(entry);
-            List<Tag> tags = tool.getTags();
+            List<Tag> tags = Optional.ofNullable(tool.getTags()).orElse(new ArrayList<>());
             final Optional<Tag> first = tags.stream().filter((Tag u) -> u.getName().equals(versionName)).findFirst();
 
             if (!first.isPresent()) {
@@ -630,8 +629,7 @@ public class ToolClient extends AbstractEntryClient {
 
             VerifyRequest verifyRequest = new VerifyRequest();
             if (unverifyRequest) {
-                verifyRequest.setVerify(false);
-                verifyRequest.setVerifiedSource(null);
+                verifyRequest = SwaggerUtility.createVerifyRequest(false, null);
             } else {
                 // Check if already has been verified
                 if (tagToUpdate.getVerified() && !isScript) {
@@ -640,14 +638,12 @@ public class ToolClient extends AbstractEntryClient {
                     out("Would you like to overwrite this with \'" + verifySource + "\'? (y/n)");
                     String overwrite = scanner.nextLine();
                     if (overwrite.toLowerCase().equals("y")) {
-                        verifyRequest.setVerify(true);
-                        verifyRequest.setVerifiedSource(verifySource);
+                        verifyRequest = SwaggerUtility.createVerifyRequest(true, verifySource);
                     } else {
                         toOverwrite = false;
                     }
                 } else {
-                    verifyRequest.setVerify(true);
-                    verifyRequest.setVerifiedSource(verifySource);
+                    verifyRequest = SwaggerUtility.createVerifyRequest(true, verifySource);
                 }
             }
 
@@ -672,7 +668,7 @@ public class ToolClient extends AbstractEntryClient {
                 errorMessage("This container is not published.", Client.COMMAND_ERROR);
             } else {
 
-                Date dateUploaded = container.getLastBuild();
+                Date dateUploaded = Date.from(container.getLastBuild().toInstant());
 
                 String description = container.getDescription();
                 if (description == null) {
@@ -790,7 +786,7 @@ public class ToolClient extends AbstractEntryClient {
                         versionTagUpdateHelp();
                     } else {
                         final String tagName = reqVal(args, "--name");
-                        List<Tag> tags = container.getTags();
+                        List<Tag> tags = Optional.ofNullable(container.getTags()).orElse(new ArrayList<>());
                         Boolean updated = false;
 
                         for (Tag tag : tags) {
@@ -955,7 +951,7 @@ public class ToolClient extends AbstractEntryClient {
                 // if valid version
                 boolean updateVersionSuccess = false;
 
-                for (Tag tag : tool.getTags()) {
+                for (Tag tag : Optional.ofNullable(tool.getTags()).orElse(new ArrayList<>())) {
                     if (tag.getName().equals(defaultTag)) {
                         tool.setDefaultVersion(defaultTag);
                         updateVersionSuccess = true;
@@ -966,7 +962,7 @@ public class ToolClient extends AbstractEntryClient {
                 if (!updateVersionSuccess && defaultTag != null) {
                     out("Not a valid version.");
                     out("Valid versions include:");
-                    for (Tag tag : tool.getTags()) {
+                    for (Tag tag : Optional.ofNullable(tool.getTags()).orElse(new ArrayList<>())) {
                         out(tag.getReference());
                     }
                     errorMessage("Please enter a valid version.", Client.CLIENT_ERROR);

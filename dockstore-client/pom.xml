@@ -125,6 +125,11 @@
             <version>${jackson.version}</version>
         </dependency>
         <dependency>
+            <groupId>com.fasterxml.jackson.jaxrs</groupId>
+            <artifactId>jackson-jaxrs-base</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
             <groupId>io.cwl</groupId>
             <artifactId>cwlavro-tools</artifactId>
         </dependency>
@@ -301,6 +306,7 @@
                                 <usedDependency>org.apache.httpcomponents:httpcore</usedDependency>
                                 <usedDependency>javax.annotation:javax.annotation-api</usedDependency>
                                 <usedDependency>commons-httpclient:commons-httpclient</usedDependency>
+                                <usedDependency>com.fasterxml.jackson.jaxrs:jackson-jaxrs-base</usedDependency>
                             </usedDependencies>
 
                         </configuration>

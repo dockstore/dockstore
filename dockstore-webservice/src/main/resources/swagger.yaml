@@ -31,21 +31,23 @@ definitions:
           required GA4GH', type: string}
       id: {description: Implementation specific ID for the container in this web service,
         format: int64, type: integer}
-      is_published: {default: false, description: Implementation specific visibility in this web service,
-        type: boolean}
+      is_published: {default: false, description: Implementation specific visibility
+          in this web service, type: boolean}
       labels:
-        description: Labels (i.e. meta tags) for describing the purpose and contents of containers
+        description: Labels (i.e. meta tags) for describing the purpose and contents
+          of containers
         items: {$ref: '#/definitions/Label'}
         type: array
         uniqueItems: true
       lastBuild: {description: Implementation specific timestamp for last built, format: date-time,
         type: string}
-      lastUpdated: {description: Implementation specific timestamp for last updated on webservice,
-        format: date-time, type: string}
+      lastUpdated: {description: Implementation specific timestamp for last updated
+          on webservice, format: date-time, type: string}
       last_modified: {description: Implementation specific timestamp for last modified,
         format: int32, type: integer}
       mode:
-        description: This indicates what mode this is in which informs how we do things like refresh, dockstore specific
+        description: This indicates what mode this is in which informs how we do things
+          like refresh, dockstore specific
         enum: [AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS, AUTO_DETECT_QUAY_TAGS_WITH_MIXED,
           MANUAL_IMAGE_PATH]
         type: string
@@ -53,26 +55,28 @@ definitions:
       namespace: {description: 'This is a docker namespace for the container, required:
           GA4GH', type: string}
       path: {description: 'This is a generated full docker path including registry
-          and namespace, used for docker pull commands', readOnly: true, type: string}
-      private_access: {default: false, description: Is the docker image private or not.,
-        type: boolean}
+          and namespace, used for docker pull commands', type: string}
+      private_access: {default: false, description: Is the docker image private or
+          not., type: boolean}
       registry:
         description: 'This is a specific docker provider like quay.io or dockerhub
           or n/a?, required: GA4GH'
         enum: [QUAY_IO, DOCKER_HUB, GITLAB, AMAZON_ECR]
         type: string
       starredUsers:
-        description: This indicates the users that have starred this entry, dockstore specific
+        description: This indicates the users that have starred this entry, dockstore
+          specific
         items: {$ref: '#/definitions/User'}
         type: array
         uniqueItems: true
       tags:
-        description: Implementation specific tracking of valid build tags for the docker container
+        description: Implementation specific tracking of valid build tags for the
+          docker container
         items: {$ref: '#/definitions/Tag'}
         type: array
         uniqueItems: true
-      tool_maintainer_email: {description: The email address of the tool maintainer. Required for private repositories,
-        type: string}
+      tool_maintainer_email: {description: The email address of the tool maintainer.
+          Required for private repositories, type: string}
       tool_path: {readOnly: true, type: string}
       toolname: {description: 'This is the tool name of the container, when not-present
           this will function just like 0.1 dockstorewhen present, this can be used
@@ -83,7 +87,8 @@ definitions:
           to edit tags, and only the same insofar as they would "docker pull" the
           same image, required: GA4GH', type: string}
       users:
-        description: This indicates the users that have control over this entry, dockstore specific
+        description: This indicates the users that have control over this entry, dockstore
+          specific
         items: {$ref: '#/definitions/User'}
         type: array
         uniqueItems: true
@@ -102,24 +107,27 @@ definitions:
           required GA4GH', type: string}
       id: {description: Implementation specific ID for the container in this web service,
         format: int64, type: integer}
-      is_published: {default: false, description: Implementation specific visibility in this web service,
-        type: boolean}
+      is_published: {default: false, description: Implementation specific visibility
+          in this web service, type: boolean}
       labels:
-        description: Labels (i.e. meta tags) for describing the purpose and contents of containers
+        description: Labels (i.e. meta tags) for describing the purpose and contents
+          of containers
         items: {$ref: '#/definitions/Label'}
         type: array
         uniqueItems: true
-      lastUpdated: {description: Implementation specific timestamp for last updated on webservice,
-        format: date-time, type: string}
+      lastUpdated: {description: Implementation specific timestamp for last updated
+          on webservice, format: date-time, type: string}
       last_modified: {description: Implementation specific timestamp for last modified,
         format: int32, type: integer}
       starredUsers:
-        description: This indicates the users that have starred this entry, dockstore specific
+        description: This indicates the users that have starred this entry, dockstore
+          specific
         items: {$ref: '#/definitions/User'}
         type: array
         uniqueItems: true
       users:
-        description: This indicates the users that have control over this entry, dockstore specific
+        description: This indicates the users that have control over this entry, dockstore
+          specific
         items: {$ref: '#/definitions/User'}
         type: array
         uniqueItems: true
@@ -146,7 +154,8 @@ definitions:
       parent: {$ref: '#/definitions/GitLabComAuthenticationResource'}
     type: object
   Group:
-    description: This describes a grouping of end-users for the purposes of managing sharing. Implementation-specific.
+    description: This describes a grouping of end-users for the purposes of managing
+      sharing. Implementation-specific.
     properties:
       id: {format: int64, readOnly: true, type: integer}
       name: {type: string}
@@ -156,7 +165,8 @@ definitions:
         uniqueItems: true
     type: object
   Label:
-    description: This describes a descriptive label that can be placed on an entry in the dockstore
+    description: This describes a descriptive label that can be placed on an entry
+      in the dockstore
     properties:
       id: {description: Implementation specific ID for the container in this web service,
         format: int64, readOnly: true, type: integer}
@@ -166,12 +176,12 @@ definitions:
   Metadata:
     description: Describes this registry to better allow for mirroring and indexing.
     properties:
-      api-version: {description: The version of the GA4GH tool-registry API supported by this registry,
-        type: string}
+      api-version: {description: The version of the GA4GH tool-registry API supported
+          by this registry, type: string}
       country: {description: A country code for the registry (ISO 3166-1 alpha-3),
         type: string}
-      friendly-name: {description: A friendly name that can be used in addition to the hostname to describe a registry,
-        type: string}
+      friendly-name: {description: A friendly name that can be used in addition to
+          the hostname to describe a registry, type: string}
       version: {description: The version of this registry, type: string}
     required: [api-version, version]
     type: object
@@ -192,8 +202,8 @@ definitions:
   SourceFile:
     properties:
       content: {description: Cache for the contents of the target file, type: string}
-      id: {description: Implementation specific ID for the source file in this web service,
-        format: int64, type: integer}
+      id: {description: Implementation specific ID for the source file in this web
+          service, format: int64, type: integer}
       path: {description: Path to source file in git repo, type: string}
       type:
         description: Enumerates the type of file
@@ -218,28 +228,30 @@ definitions:
       id: {description: Implementation specific ID for the tag in this web service,
         format: int64, readOnly: true, type: integer}
       image_id: {description: Tag for this image in quay.ui/docker hub, type: string}
-      last_modified: {description: The last time this image was modified in the image registry,
-        format: date-time, type: string}
+      last_modified: {description: The last time this image was modified in the image
+          registry, format: date-time, type: string}
       name: {description: 'Implementation specific, can be a quay.io or docker hub
           tag name', type: string}
       reference: {description: git commit/tag/branch, type: string}
       size: {description: Size of the image, format: int64, type: integer}
       sourceFiles:
-        description: Cached files for each version. Includes Dockerfile and Descriptor files
+        description: Cached files for each version. Includes Dockerfile and Descriptor
+          files
         items: {$ref: '#/definitions/SourceFile'}
         type: array
         uniqueItems: true
       valid: {default: false, description: 'Implementation specific, whether this
           tag has valid files from source code repo', type: boolean}
-      verified: {default: false, description: Whether this version has been verified or not,
-        type: boolean}
+      verified: {default: false, description: Whether this version has been verified
+          or not, type: boolean}
       verifiedSource: {description: Verified source for the version, type: string}
       wdl_path: {description: Path for the WDL document, type: string}
       workingDirectory: {type: string}
     required: [image_id, name, reference]
     type: object
   Token:
-    description: Access tokens for this web service and integrated services like quay.io and github
+    description: Access tokens for this web service and integrated services like quay.io
+      and github
     properties:
       content: {description: Contents of the access token, type: string}
       id: {description: Implementation specific ID for the token in this web service,
@@ -252,12 +264,16 @@ definitions:
           we store it', type: string}
     type: object
   Tool:
-    description: A tool (or described tool) describes one pairing of a tool as described in a descriptor file (which potentially describes multiple tools) and a Docker image.
+    description: A tool (or described tool) describes one pairing of a tool as described
+      in a descriptor file (which potentially describes multiple tools) and a Docker
+      image.
     properties:
-      author: {description: Contact information for the author of this tool entry in the registry. (More complex authorship information is handled by the descriptor),
-        type: string}
+      author: {description: Contact information for the author of this tool entry
+          in the registry. (More complex authorship information is handled by the
+          descriptor), type: string}
       contains:
-        description: An array of IDs for the applications that are stored inside this tool (for example `https://bio.tools/tool/mytum.de/SNAP2/1`)
+        description: An array of IDs for the applications that are stored inside this
+          tool (for example `https://bio.tools/tool/mytum.de/SNAP2/1`)
         items: {type: string}
         type: array
       description: {description: The description of the tool., type: string}
@@ -272,8 +288,8 @@ definitions:
       toolname: {description: The name of the tool., type: string}
       url: {description: 'The URL for this tool in this registry, for example `http://agora.broadinstitute.org/tools/123456`',
         type: string}
-      verified: {default: false, description: Reports whether this tool has been verified by a specific organization or individual,
-        type: boolean}
+      verified: {default: false, description: Reports whether this tool has been verified
+          by a specific organization or individual, type: boolean}
       verified-source: {description: 'Source of metadata that can support a verified
           tool, such as an email or URL', type: string}
       versions:
@@ -283,18 +299,20 @@ definitions:
     required: [author, id, meta-version, organization, toolclass, url, versions]
     type: object
   ToolClass:
-    description: Describes a class (type) of tool allowing us to categorize workflows, tools, and maybe even other entities (such as services) separately
+    description: Describes a class (type) of tool allowing us to categorize workflows,
+      tools, and maybe even other entities (such as services) separately
     properties:
-      description: {description: A longer explanation of what this class is and what it can accomplish,
-        type: string}
+      description: {description: A longer explanation of what this class is and what
+          it can accomplish, type: string}
       id: {description: The unique identifier for the class, type: string}
       name: {description: A short friendly name for the class, type: string}
     type: object
   ToolDescriptor:
-    description: A tool descriptor is a metadata document that describes one or more tools.
+    description: A tool descriptor is a metadata document that describes one or more
+      tools.
     properties:
-      descriptor: {description: The descriptor that represents this version of the tool. (CWL or WDL),
-        type: string}
+      descriptor: {description: The descriptor that represents this version of the
+          tool. (CWL or WDL), type: string}
       type:
         enum: [CWL, WDL]
         type: string
@@ -304,7 +322,8 @@ definitions:
     required: [descriptor, type]
     type: object
   ToolDockerfile:
-    description: A tool dockerfile is a document that describes how to build a particular Docker image.
+    description: A tool dockerfile is a document that describes how to build a particular
+      Docker image.
     properties:
       dockerfile: {description: The dockerfile content for this tool., type: string}
       url: {description: 'Optional url to the dockerfile used to build this image,
@@ -313,14 +332,16 @@ definitions:
     required: [dockerfile]
     type: object
   ToolTests:
-    description: A tool document that describes how to test with one or more sample test JSON.
+    description: A tool document that describes how to test with one or more sample
+      test JSON.
     properties:
       test: {description: The test JSON content for this tool., type: string}
       url: {description: Optional url to the test JSON used to test this tool, type: string}
     required: [test]
     type: object
   ToolVersion:
-    description: A tool version describes a particular iteration of a tool as described by a reference to a specific image and dockerfile.
+    description: A tool version describes a particular iteration of a tool as described
+      by a reference to a specific image and dockerfile.
     properties:
       descriptor-type:
         description: The type (or types) of descriptors available.
@@ -328,19 +349,19 @@ definitions:
           enum: [CWL, WDL]
           type: string
         type: array
-      dockerfile: {default: false, description: Reports if this tool has a dockerfile available.,
-        type: boolean}
+      dockerfile: {default: false, description: Reports if this tool has a dockerfile
+          available., type: boolean}
       id: {description: 'An identifier of the version of this tool for this particular
           tool registry, for example `v1`', type: string}
-      image: {description: The docker path to the image (and version) for this tool. (e.g. quay.io/seqware/seqware_full/1.1),
-        type: string}
+      image: {description: The docker path to the image (and version) for this tool.
+          (e.g. quay.io/seqware/seqware_full/1.1), type: string}
       meta-version: {description: 'The version of this tool version in the registry.
           Iterates when fields like the description, author, etc. are updated.', type: string}
       name: {description: The name of the version., type: string}
       url: {description: 'The URL for this tool in this registry, for example `http://agora.broadinstitute.org/tools/123456/1`',
         type: string}
-      verified: {default: false, description: Reports whether this tool has been verified by a specific organization or individual,
-        type: boolean}
+      verified: {default: false, description: Reports whether this tool has been verified
+          by a specific organization or individual, type: boolean}
       verified-source: {description: 'Source of metadata that can support a verified
           tool, such as an email or URL', type: string}
     required: [id, meta-version, url]
@@ -381,39 +402,44 @@ definitions:
           required GA4GH', type: string}
       id: {description: Implementation specific ID for the container in this web service,
         format: int64, type: integer}
-      is_published: {default: false, description: Implementation specific visibility in this web service,
-        type: boolean}
+      is_published: {default: false, description: Implementation specific visibility
+          in this web service, type: boolean}
       labels:
-        description: Labels (i.e. meta tags) for describing the purpose and contents of containers
+        description: Labels (i.e. meta tags) for describing the purpose and contents
+          of containers
         items: {$ref: '#/definitions/Label'}
         type: array
         uniqueItems: true
-      lastUpdated: {description: Implementation specific timestamp for last updated on webservice,
-        format: date-time, type: string}
+      lastUpdated: {description: Implementation specific timestamp for last updated
+          on webservice, format: date-time, type: string}
       last_modified: {description: Implementation specific timestamp for last modified,
         format: int32, type: integer}
       mode:
-        description: This indicates what mode this is in which informs how we do things like refresh, dockstore specific
+        description: This indicates what mode this is in which informs how we do things
+          like refresh, dockstore specific
         enum: [FULL, STUB]
         type: string
       organization: {description: This is a git organization for the workflow, type: string}
       path: {description: 'This is a generated full workflow path including organization,
-          repository name, and workflow name', readOnly: true, type: string}
+          repository name, and workflow name', type: string}
       repository: {description: This is a git repository name, type: string}
       starredUsers:
-        description: This indicates the users that have starred this entry, dockstore specific
+        description: This indicates the users that have starred this entry, dockstore
+          specific
         items: {$ref: '#/definitions/User'}
         type: array
         uniqueItems: true
       users:
-        description: This indicates the users that have control over this entry, dockstore specific
+        description: This indicates the users that have control over this entry, dockstore
+          specific
         items: {$ref: '#/definitions/User'}
         type: array
         uniqueItems: true
       workflowName: {description: 'This is the name of the workflow, not needed when
           only one workflow in a repo', type: string}
       workflowVersions:
-        description: Implementation specific tracking of valid build workflowVersions for the docker container
+        description: Implementation specific tracking of valid build workflowVersions
+          for the docker container
         items: {$ref: '#/definitions/WorkflowVersion'}
         type: array
         uniqueItems: true
@@ -429,20 +455,21 @@ definitions:
           row is visible to other users aside from the owner', type: boolean}
       id: {description: Implementation specific ID for the tag in this web service,
         format: int64, readOnly: true, type: integer}
-      last_modified: {description: The last time this image was modified in the image registry,
-        format: date-time, type: string}
+      last_modified: {description: The last time this image was modified in the image
+          registry, format: date-time, type: string}
       name: {description: 'Implementation specific, can be a quay.io or docker hub
           tag name', type: string}
       reference: {description: git commit/tag/branch, type: string}
       sourceFiles:
-        description: Cached files for each version. Includes Dockerfile and Descriptor files
+        description: Cached files for each version. Includes Dockerfile and Descriptor
+          files
         items: {$ref: '#/definitions/SourceFile'}
         type: array
         uniqueItems: true
       valid: {default: false, description: 'Implementation specific, whether this
           tag has valid files from source code repo', type: boolean}
-      verified: {default: false, description: Whether this version has been verified or not,
-        type: boolean}
+      verified: {default: false, description: Whether this version has been verified
+          or not, type: boolean}
       verifiedSource: {description: Verified source for the version, type: string}
       workflow_path: {description: Path for the workflow, type: string}
       workingDirectory: {type: string}
@@ -453,7 +480,9 @@ host: localhost:8080
 info:
   contact: {email: ' theglobalalliance@genomicsandhealth.org', name: Dockstore@ga4gh,
     url: 'https://github.com/ga4gh/dockstore'}
-  description: This describes the dockstore API, a webservice that manages pairs of Docker images and associated metadata such as CWL documents and Dockerfiles used to build those images
+  description: This describes the dockstore API, a webservice that manages pairs of
+    Docker images and associated metadata such as CWL documents and Dockerfiles used
+    to build those images
   license: {name: ' GNU Lesser General Public License', url: 'https://www.gnu.org/licenses/lgpl-3.0.en.html'}
   title: Dockstore API
   version: 1.0.2
@@ -490,7 +519,8 @@ paths:
       tags: [GA4GH]
   /api/ga4gh/v1/extended/tools/entry/_search:
     post:
-      description: This endpoint searches the index for all published tools and workflows. Used by utilities that expect to talk to an elastic search endpoint
+      description: This endpoint searches the index for all published tools and workflows.
+        Used by utilities that expect to talk to an elastic search endpoint
       operationId: toolsIndexSearch
       parameters:
       - description: elastic search query
@@ -599,8 +629,8 @@ paths:
           If this exceeds the current result set return an empty set.  If not specified
           in the request this will start at the beginning of the results.', in: query,
         name: offset, required: false, type: string}
-      - {description: Amount of records to return in a given page.  By default it is 1000.,
-        format: int32, in: query, name: limit, required: false, type: integer}
+      - {description: Amount of records to return in a given page.  By default it
+          is 1000., format: int32, in: query, name: limit, required: false, type: integer}
       produces: [application/json, text/plain]
       responses:
         200:
@@ -612,7 +642,8 @@ paths:
       tags: [GA4GH]
   /api/ga4gh/v1/tools/{id}:
     get:
-      description: This endpoint returns one specific tool (which has ToolVersions nested inside it)
+      description: This endpoint returns one specific tool (which has ToolVersions
+        nested inside it)
       operationId: toolsIdGet
       parameters:
       - {description: 'A unique identifier of the tool, scoped to this registry, for
@@ -681,7 +712,10 @@ paths:
       description: Returns the CWL or WDL descriptor for the specified tool.
       operationId: toolsIdVersionsVersionIdTypeDescriptorGet
       parameters:
-      - description: The output type of the descriptor. If not specified it is up to the underlying implementation to determine which output type to return. Plain types return the bare descriptor while the "non-plain" types return a descriptor wrapped with metadata
+      - description: The output type of the descriptor. If not specified it is up
+          to the underlying implementation to determine which output type to return.
+          Plain types return the bare descriptor while the "non-plain" types return
+          a descriptor wrapped with metadata
         enum: [CWL, WDL, plain-CWL, plain-WDL]
         in: path
         name: type
@@ -704,10 +738,14 @@ paths:
       tags: [GA4GH]
   /api/ga4gh/v1/tools/{id}/versions/{version-id}/{type}/descriptor/{relative-path}:
     get:
-      description: Returns additional CWL or WDL descriptors for the specified tool in the same or subdirectories
+      description: Returns additional CWL or WDL descriptors for the specified tool
+        in the same or subdirectories
       operationId: toolsIdVersionsVersionIdTypeDescriptorRelativePathGet
       parameters:
-      - description: The output type of the descriptor. If not specified it is up to the underlying implementation to determine which output type to return.  Plain types return the bare descriptor while the "non-plain" types return a descriptor wrapped with metadata
+      - description: The output type of the descriptor. If not specified it is up
+          to the underlying implementation to determine which output type to return.  Plain
+          types return the bare descriptor while the "non-plain" types return a descriptor
+          wrapped with metadata
         enum: [CWL, WDL, plain-CWL, plain-WDL]
         in: path
         name: type
@@ -730,14 +768,18 @@ paths:
         404:
           description: The tool can not be output in the specified type.
           schema: {$ref: '#/definitions/ToolDescriptor'}
-      summary: Get additional tool descriptor files (CWL/WDL) relative to the main file
+      summary: Get additional tool descriptor files (CWL/WDL) relative to the main
+        file
       tags: [GA4GH]
   /api/ga4gh/v1/tools/{id}/versions/{version-id}/{type}/tests:
     get:
       description: ''
       operationId: toolsIdVersionsVersionIdTypeTestsGet
       parameters:
-      - description: The output type of the descriptor. If not specified it is up to the underlying implementation to determine which output type to return. Plain types return the bare descriptor while the "non-plain" types return a descriptor wrapped with metadata
+      - description: The output type of the descriptor. If not specified it is up
+          to the underlying implementation to determine which output type to return.
+          Plain types return the bare descriptor while the "non-plain" types return
+          a descriptor wrapped with metadata
         enum: [CWL, WDL, plain-CWL, plain-WDL]
         in: path
         name: type
@@ -774,11 +816,15 @@ paths:
           schema:
             items: {$ref: '#/definitions/Token'}
             type: array
+      security:
+      - BEARER: []
       summary: List all known tokens
       tags: [tokens]
   /auth/tokens/bitbucket.org:
     get:
-      description: This is used as part of the OAuth 2 web flow. Once a user has approved permissions for CollaboratoryTheir browser will load the redirect URI which should resolve here
+      description: This is used as part of the OAuth 2 web flow. Once a user has approved
+        permissions for CollaboratoryTheir browser will load the redirect URI which
+        should resolve here
       operationId: addBitbucketToken
       parameters:
       - {in: query, name: code, required: false, type: string}
@@ -787,11 +833,14 @@ paths:
         200:
           description: successful operation
           schema: {$ref: '#/definitions/Token'}
+      security:
+      - BEARER: []
       summary: Add a new bitbucket.org token, used by quay.io redirect
       tags: [tokens]
   /auth/tokens/bitbucket.org/refresh:
     get:
-      description: The Bitbucket token expire in one hour. When this happens you'll get 401 responses
+      description: The Bitbucket token expire in one hour. When this happens you'll
+        get 401 responses
       operationId: refreshBitbucketToken
       parameters: []
       produces: [application/json]
@@ -799,6 +848,8 @@ paths:
         200:
           description: successful operation
           schema: {$ref: '#/definitions/Token'}
+      security:
+      - BEARER: []
       summary: Refresh Bitbucket token
       tags: [tokens]
   /auth/tokens/github:
@@ -816,11 +867,15 @@ paths:
         200:
           description: successful operation
           schema: {$ref: '#/definitions/Token'}
+      security:
+      - BEARER: []
       summary: Allow satellizer to post a new GitHub token to dockstore
       tags: [tokens]
   /auth/tokens/github.com:
     get:
-      description: This is used as part of the OAuth 2 web flow. Once a user has approved permissions for CollaboratoryTheir browser will load the redirect URI which should resolve here
+      description: This is used as part of the OAuth 2 web flow. Once a user has approved
+        permissions for CollaboratoryTheir browser will load the redirect URI which
+        should resolve here
       operationId: addGithubToken
       parameters:
       - {in: query, name: code, required: false, type: string}
@@ -829,11 +884,15 @@ paths:
         200:
           description: successful operation
           schema: {$ref: '#/definitions/Token'}
+      security:
+      - BEARER: []
       summary: Add a new github.com token, used by quay.io redirect
       tags: [tokens]
   /auth/tokens/gitlab.com:
     get:
-      description: This is used as part of the OAuth 2 web flow. Once a user has approved permissions for CollaboratoryTheir browser will load the redirect URI which should resolve here
+      description: This is used as part of the OAuth 2 web flow. Once a user has approved
+        permissions for CollaboratoryTheir browser will load the redirect URI which
+        should resolve here
       operationId: addGitlabToken
       parameters:
       - {in: query, name: code, required: false, type: string}
@@ -842,11 +901,15 @@ paths:
         200:
           description: successful operation
           schema: {$ref: '#/definitions/Token'}
+      security:
+      - BEARER: []
       summary: Add a new gitlab.com token
       tags: [tokens]
   /auth/tokens/quay.io:
     get:
-      description: This is used as part of the OAuth 2 web flow. Once a user has approved permissions for CollaboratoryTheir browser will load the redirect URI which should resolve here
+      description: This is used as part of the OAuth 2 web flow. Once a user has approved
+        permissions for CollaboratoryTheir browser will load the redirect URI which
+        should resolve here
       operationId: addQuayToken
       parameters:
       - {in: query, name: access_token, required: false, type: string}
@@ -855,6 +918,8 @@ paths:
         200:
           description: successful operation
           schema: {$ref: '#/definitions/Token'}
+      security:
+      - BEARER: []
       summary: Add a new quay IO token
       tags: [tokens]
   /auth/tokens/{tokenId}:
@@ -867,6 +932,8 @@ paths:
       produces: [application/json]
       responses:
         400: {description: Invalid token value}
+      security:
+      - BEARER: []
       summary: Deletes a token
       tags: [tokens]
     get:
@@ -882,6 +949,8 @@ paths:
           schema: {$ref: '#/definitions/Token'}
         400: {description: Invalid ID supplied}
         404: {description: Token not found}
+      security:
+      - BEARER: []
       summary: Get a specific token by id
       tags: [tokens]
   /containers:
@@ -896,6 +965,8 @@ paths:
           schema:
             items: {$ref: '#/definitions/DockstoreTool'}
             type: array
+      security:
+      - BEARER: []
       summary: List all docker containers cached in database
       tags: [containers]
   /containers/dockerRegistryList:
@@ -941,6 +1012,8 @@ paths:
         200:
           description: successful operation
           schema: {$ref: '#/definitions/DockstoreTool'}
+      security:
+      - BEARER: []
       summary: Get a container by tool path
       tags: [containers]
   /containers/path/tool/{repository}/published:
@@ -959,7 +1032,8 @@ paths:
       tags: [containers]
   /containers/path/{containerId}/tags:
     get:
-      description: Lists tags for a container. Enter full path (include quay.io in path).
+      description: Lists tags for a container. Enter full path (include quay.io in
+        path).
       operationId: getTagsByPath
       parameters:
       - {description: Tool to modify., format: int64, in: path, name: containerId,
@@ -972,6 +1046,8 @@ paths:
             items: {$ref: '#/definitions/Tag'}
             type: array
             uniqueItems: true
+      security:
+      - BEARER: []
       summary: Get tags  for a container by id
       tags: [containertags]
   /containers/path/{repository}:
@@ -988,6 +1064,8 @@ paths:
           schema:
             items: {$ref: '#/definitions/DockstoreTool'}
             type: array
+      security:
+      - BEARER: []
       summary: Get a list of containers by path
       tags: [containers]
   /containers/path/{repository}/published:
@@ -1046,6 +1124,8 @@ paths:
           schema:
             items: {$ref: '#/definitions/DockstoreTool'}
             type: array
+      security:
+      - BEARER: []
       summary: Refresh all repos
       tags: [containers]
   /containers/registerManual:
@@ -1063,6 +1143,8 @@ paths:
         200:
           description: successful operation
           schema: {$ref: '#/definitions/DockstoreTool'}
+      security:
+      - BEARER: []
       summary: Register an image manually, along with tags
       tags: [containers]
   /containers/schema/{containerId}/published:
@@ -1108,6 +1190,8 @@ paths:
       produces: [application/json]
       responses:
         400: {description: 'Invalid '}
+      security:
+      - BEARER: []
       summary: Delete manually registered image
       tags: [containers]
     get:
@@ -1121,6 +1205,8 @@ paths:
         200:
           description: successful operation
           schema: {$ref: '#/definitions/DockstoreTool'}
+      security:
+      - BEARER: []
       summary: Get a registered repo
       tags: [containers]
     put:
@@ -1139,6 +1225,8 @@ paths:
         200:
           description: successful operation
           schema: {$ref: '#/definitions/DockstoreTool'}
+      security:
+      - BEARER: []
       summary: Update the tool with the given tool.
       tags: [containers]
   /containers/{containerId}/cwl:
@@ -1189,14 +1277,16 @@ paths:
       tags: [containers]
   /containers/{containerId}/labels:
     put:
-      description: Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.
+      description: Labels are alphanumerical (case-insensitive and may contain internal
+        hyphens), given in a comma-delimited list.
       operationId: updateLabels
       parameters:
       - {description: Tool to modify., format: int64, in: path, name: containerId,
         required: true, type: integer}
       - {description: Comma-delimited list of labels., in: query, name: labels, required: true,
         type: string}
-      - description: This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.
+      - description: This is here to appease Swagger. It requires PUT methods to have
+          a body, even if it is empty. Please leave it empty.
         in: body
         name: body
         required: false
@@ -1206,11 +1296,14 @@ paths:
         200:
           description: successful operation
           schema: {$ref: '#/definitions/DockstoreTool'}
+      security:
+      - BEARER: []
       summary: Update the labels linked to a container.
       tags: [containers]
   /containers/{containerId}/publish:
     post:
-      description: publish a container (public or private). Assumes that user is using quay.io and github.
+      description: publish a container (public or private). Assumes that user is using
+        quay.io and github.
       operationId: publish
       parameters:
       - {description: Tool id to publish, format: int64, in: path, name: containerId,
@@ -1225,6 +1318,8 @@ paths:
         200:
           description: successful operation
           schema: {$ref: '#/definitions/DockstoreTool'}
+      security:
+      - BEARER: []
       summary: Publish or unpublish a container
       tags: [containers]
   /containers/{containerId}/refresh:
@@ -1239,6 +1334,8 @@ paths:
         200:
           description: successful operation
           schema: {$ref: '#/definitions/DockstoreTool'}
+      security:
+      - BEARER: []
       summary: Refresh one particular repo
       tags: [containers]
   /containers/{containerId}/secondaryCwl:
@@ -1290,6 +1387,8 @@ paths:
       produces: [application/json]
       responses:
         default: {description: successful operation}
+      security:
+      - BEARER: []
       summary: Stars a tool.
       tags: [containers]
   /containers/{containerId}/starredUsers:
@@ -1310,7 +1409,8 @@ paths:
       tags: [containers]
   /containers/{containerId}/tags:
     post:
-      description: Tag correspond to each row of the versions table listing all information for a docker repo tag
+      description: Tag correspond to each row of the versions table listing all information
+        for a docker repo tag
       operationId: addTags
       parameters:
       - {description: Tool to modify., format: int64, in: path, name: containerId,
@@ -1329,10 +1429,13 @@ paths:
           schema:
             items: {$ref: '#/definitions/Tag'}
             type: array
+      security:
+      - BEARER: []
       summary: Add new tags linked to a container
       tags: [containertags]
     put:
-      description: Tag correspond to each row of the versions table listing all information for a docker repo tag
+      description: Tag correspond to each row of the versions table listing all information
+        for a docker repo tag
       operationId: updateTags
       parameters:
       - {description: Tool to modify., format: int64, in: path, name: containerId,
@@ -1351,11 +1454,14 @@ paths:
           schema:
             items: {$ref: '#/definitions/Tag'}
             type: array
+      security:
+      - BEARER: []
       summary: Update the tags linked to a container
       tags: [containertags]
   /containers/{containerId}/tags/{tagId}:
     delete:
-      description: Tag correspond to each row of the versions table listing all information for a docker repo tag
+      description: Tag correspond to each row of the versions table listing all information
+        for a docker repo tag
       operationId: deleteTags
       parameters:
       - {description: Tool to modify., format: int64, in: path, name: containerId,
@@ -1365,6 +1471,8 @@ paths:
       produces: [application/json]
       responses:
         default: {description: successful operation}
+      security:
+      - BEARER: []
       summary: Delete tag linked to a container
       tags: [containertags]
   /containers/{containerId}/testParameterFiles:
@@ -1391,6 +1499,8 @@ paths:
             items: {$ref: '#/definitions/SourceFile'}
             type: array
             uniqueItems: true
+      security:
+      - BEARER: []
       summary: Delete test parameter files for a given tag.
       tags: [containers]
     get:
@@ -1423,7 +1533,8 @@ paths:
         name: testParameterPaths
         required: true
         type: array
-      - description: This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.
+      - description: This is here to appease Swagger. It requires PUT methods to have
+          a body, even if it is empty. Please leave it empty.
         in: body
         name: body
         required: false
@@ -1438,6 +1549,8 @@ paths:
             items: {$ref: '#/definitions/SourceFile'}
             type: array
             uniqueItems: true
+      security:
+      - BEARER: []
       summary: Add test parameter files for a given tag.
       tags: [containers]
   /containers/{containerId}/unstar:
@@ -1450,11 +1563,14 @@ paths:
       produces: [application/json]
       responses:
         default: {description: successful operation}
+      security:
+      - BEARER: []
       summary: Unstars a tool.
       tags: [containers]
   /containers/{containerId}/updateTagPaths:
     put:
-      description: Tag correspond to each row of the versions table listing all information for a docker repo tag
+      description: Tag correspond to each row of the versions table listing all information
+        for a docker repo tag
       operationId: updateTagContainerPath
       parameters:
       - {description: Tool to modify., format: int64, in: path, name: containerId,
@@ -1469,6 +1585,8 @@ paths:
         200:
           description: successful operation
           schema: {$ref: '#/definitions/DockstoreTool'}
+      security:
+      - BEARER: []
       summary: Change the workflow paths
       tags: [containers]
   /containers/{containerId}/users:
@@ -1485,6 +1603,8 @@ paths:
           schema:
             items: {$ref: '#/definitions/User'}
             type: array
+      security:
+      - BEARER: []
       summary: Get users of a container
       tags: [containers]
   /containers/{containerId}/verifiedSources:
@@ -1522,6 +1642,8 @@ paths:
           schema:
             items: {$ref: '#/definitions/Tag'}
             type: array
+      security:
+      - BEARER: []
       summary: Verify or unverify a version . ADMIN ONLY
       tags: [containertags]
   /containers/{containerId}/wdl:
@@ -1573,7 +1695,8 @@ paths:
       tags: [github.repo]
   /integration.bitbucket.org:
     get:
-      description: This is a stop-gap GUI for displaying a link that allows a user to start the OAuth 2 web flow
+      description: This is a stop-gap GUI for displaying a link that allows a user
+        to start the OAuth 2 web flow
       operationId: getView
       parameters: []
       produces: [text/html]
@@ -1585,7 +1708,8 @@ paths:
       tags: [integration.bitbucket.org]
   /integration.github.com:
     get:
-      description: This is a stop-gap GUI for displaying a link that allows a user to start the OAuth 2 web flow
+      description: This is a stop-gap GUI for displaying a link that allows a user
+        to start the OAuth 2 web flow
       operationId: getView
       parameters: []
       produces: [text/html]
@@ -1597,7 +1721,8 @@ paths:
       tags: [integration.github.com]
   /integration.gitlab.com:
     get:
-      description: This is a stop-gap GUI for displaying a link that allows a user to start the OAuth 2 web flow
+      description: This is a stop-gap GUI for displaying a link that allows a user
+        to start the OAuth 2 web flow
       operationId: getView
       parameters: []
       produces: [text/html]
@@ -1619,12 +1744,24 @@ paths:
           schema: {$ref: '#/definitions/QuayIOView'}
       summary: Display an authorization link for quay.io
       tags: [integration.quay.io]
+  /metadata/rss:
+    get:
+      description: NO authentication
+      operationId: rssFeed
+      parameters: []
+      produces: [text/xml]
+      responses:
+        200:
+          description: successful operation
+          schema: {type: string}
+      summary: List all tools and workflows in creation order
+      tags: [metadata]
   /metadata/sitemap:
     get:
       description: NO authentication
       operationId: sitemap
       parameters: []
-      produces: [text/html]
+      produces: [text/html, text/xml]
       responses:
         200:
           description: successful operation
@@ -1643,6 +1780,8 @@ paths:
           schema:
             items: {$ref: '#/definitions/User'}
             type: array
+      security:
+      - BEARER: []
       summary: List all known users
       tags: [users]
   /users/groups:
@@ -1657,6 +1796,8 @@ paths:
           schema:
             items: {$ref: '#/definitions/Group'}
             type: array
+      security:
+      - BEARER: []
       summary: List all groups
       tags: [users]
     post:
@@ -1669,6 +1810,8 @@ paths:
         200:
           description: successful operation
           schema: {$ref: '#/definitions/Group'}
+      security:
+      - BEARER: []
       summary: Create user group
       tags: [users]
   /users/groups/{groupId}:
@@ -1681,6 +1824,8 @@ paths:
       produces: [application/json]
       responses:
         400: {description: Invalid groupId value}
+      security:
+      - BEARER: []
       summary: Deletes a group, admin only
       tags: [users]
     get:
@@ -1694,6 +1839,8 @@ paths:
         200:
           description: successful operation
           schema: {$ref: '#/definitions/Group'}
+      security:
+      - BEARER: []
       summary: List a group
       tags: [users]
   /users/groups/{groupId}/users:
@@ -1710,6 +1857,8 @@ paths:
           schema:
             items: {$ref: '#/definitions/User'}
             type: array
+      security:
+      - BEARER: []
       summary: Get users that belongs to a group
       tags: [users]
   /users/starredTools:
@@ -1724,6 +1873,8 @@ paths:
           schema:
             items: {$ref: '#/definitions/Entry'}
             type: array
+      security:
+      - BEARER: []
       summary: Get the logged-in user's starred tools
       tags: [users]
   /users/starredWorkflows:
@@ -1738,6 +1889,8 @@ paths:
           schema:
             items: {$ref: '#/definitions/Entry'}
             type: array
+      security:
+      - BEARER: []
       summary: Get the logged-in user's starred workflows
       tags: [users]
   /users/updateUserMetadata:
@@ -1752,6 +1905,8 @@ paths:
           schema:
             items: {$ref: '#/definitions/User'}
             type: array
+      security:
+      - BEARER: []
       summary: Update metadata of all users
       tags: [users]
   /users/user:
@@ -1764,6 +1919,8 @@ paths:
         200:
           description: successful operation
           schema: {$ref: '#/definitions/User'}
+      security:
+      - BEARER: []
       summary: Get the logged-in user
       tags: [users]
   /users/user/updateUserMetadata:
@@ -1776,6 +1933,8 @@ paths:
         200:
           description: successful operation
           schema: {$ref: '#/definitions/User'}
+      security:
+      - BEARER: []
       summary: Update metadata for logged in user
       tags: [users]
   /users/username/{username}:
@@ -1790,6 +1949,8 @@ paths:
         200:
           description: successful operation
           schema: {$ref: '#/definitions/User'}
+      security:
+      - BEARER: []
       summary: Get user
       tags: [users]
   /users/{userId}:
@@ -1804,6 +1965,8 @@ paths:
         200:
           description: successful operation
           schema: {$ref: '#/definitions/User'}
+      security:
+      - BEARER: []
       summary: Get user with id
       tags: [users]
   /users/{userId}/containers:
@@ -1820,6 +1983,8 @@ paths:
           schema:
             items: {$ref: '#/definitions/DockstoreTool'}
             type: array
+      security:
+      - BEARER: []
       summary: List repos owned by the logged-in user
       tags: [users]
   /users/{userId}/containers/published:
@@ -1836,6 +2001,8 @@ paths:
           schema:
             items: {$ref: '#/definitions/DockstoreTool'}
             type: array
+      security:
+      - BEARER: []
       summary: List all published containers from a user
       tags: [users]
   /users/{userId}/containers/refresh:
@@ -1852,7 +2019,29 @@ paths:
           schema:
             items: {$ref: '#/definitions/DockstoreTool'}
             type: array
+      security:
+      - BEARER: []
       summary: Refresh repos owned by the logged-in user
+      tags: [users]
+  /users/{userId}/containers/{organization}/refresh:
+    get:
+      description: Refresh all tools in an organization
+      operationId: refreshToolsByOrganization
+      parameters:
+      - {description: User ID, format: int64, in: path, name: userId, required: true,
+        type: integer}
+      - {description: Organization, in: path, name: organization, required: true,
+        type: string}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema:
+            items: {$ref: '#/definitions/DockstoreTool'}
+            type: array
+      security:
+      - BEARER: []
+      summary: Refresh repos owned by the logged-in user with specified organization
       tags: [users]
   /users/{userId}/groups:
     get:
@@ -1868,6 +2057,8 @@ paths:
           schema:
             items: {$ref: '#/definitions/Group'}
             type: array
+      security:
+      - BEARER: []
       summary: Get groups that the user belongs to
       tags: [users]
     put:
@@ -1886,6 +2077,8 @@ paths:
         200:
           description: successful operation
           schema: {$ref: '#/definitions/User'}
+      security:
+      - BEARER: []
       summary: Add a group to a user
       tags: [users]
   /users/{userId}/groups/{groupId}:
@@ -1903,6 +2096,8 @@ paths:
           description: successful operation
           schema: {$ref: '#/definitions/User'}
         400: {description: Invalid user or group value}
+      security:
+      - BEARER: []
       summary: Remove a user from a group
       tags: [users]
   /users/{userId}/tokens:
@@ -1919,6 +2114,8 @@ paths:
           schema:
             items: {$ref: '#/definitions/Token'}
             type: array
+      security:
+      - BEARER: []
       summary: Get tokens with user id
       tags: [users]
   /users/{userId}/tokens/dockstore:
@@ -1935,6 +2132,8 @@ paths:
           schema:
             items: {$ref: '#/definitions/Token'}
             type: array
+      security:
+      - BEARER: []
       summary: Get Dockstore tokens with user id
       tags: [users]
   /users/{userId}/tokens/github.com:
@@ -1951,6 +2150,8 @@ paths:
           schema:
             items: {$ref: '#/definitions/Token'}
             type: array
+      security:
+      - BEARER: []
       summary: Get Github tokens with user id
       tags: [users]
   /users/{userId}/tokens/gitlab.com:
@@ -1967,6 +2168,8 @@ paths:
           schema:
             items: {$ref: '#/definitions/Token'}
             type: array
+      security:
+      - BEARER: []
       summary: Get Gitlab tokens with user id
       tags: [users]
   /users/{userId}/tokens/quay.io:
@@ -1983,6 +2186,8 @@ paths:
           schema:
             items: {$ref: '#/definitions/Token'}
             type: array
+      security:
+      - BEARER: []
       summary: Get Quay tokens with user id
       tags: [users]
   /users/{userId}/workflows:
@@ -1999,6 +2204,8 @@ paths:
           schema:
             items: {$ref: '#/definitions/Workflow'}
             type: array
+      security:
+      - BEARER: []
       summary: List workflows owned by the logged-in user
       tags: [users]
   /users/{userId}/workflows/published:
@@ -2015,6 +2222,8 @@ paths:
           schema:
             items: {$ref: '#/definitions/Workflow'}
             type: array
+      security:
+      - BEARER: []
       summary: List all published workflows from a user
       tags: [users]
   /users/{userId}/workflows/refresh:
@@ -2031,7 +2240,29 @@ paths:
           schema:
             items: {$ref: '#/definitions/Workflow'}
             type: array
+      security:
+      - BEARER: []
       summary: Refresh workflows owned by the logged-in user
+      tags: [users]
+  /users/{userId}/workflows/{organization}/refresh:
+    get:
+      description: Refresh all workflows in an organization
+      operationId: refreshWorkflowsByOrganization
+      parameters:
+      - {description: User ID, format: int64, in: path, name: userId, required: true,
+        type: integer}
+      - {description: Organization, in: path, name: organization, required: true,
+        type: string}
+      produces: [application/json]
+      responses:
+        200:
+          description: successful operation
+          schema:
+            items: {$ref: '#/definitions/Workflow'}
+            type: array
+      security:
+      - BEARER: []
+      summary: Refresh workflows owned by the logged-in user with specified organization
       tags: [users]
   /workflows:
     get:
@@ -2045,6 +2276,8 @@ paths:
           schema:
             items: {$ref: '#/definitions/Workflow'}
             type: array
+      security:
+      - BEARER: []
       summary: List all workflows cached in database
       tags: [workflows]
   /workflows/manualRegister:
@@ -2067,6 +2300,8 @@ paths:
         200:
           description: successful operation
           schema: {$ref: '#/definitions/Workflow'}
+      security:
+      - BEARER: []
       summary: Manually register a workflow
       tags: [workflows]
   /workflows/organization/{organization}/published:
@@ -2097,6 +2332,8 @@ paths:
         200:
           description: successful operation
           schema: {$ref: '#/definitions/Workflow'}
+      security:
+      - BEARER: []
       summary: Get a workflow by path
       tags: [workflows]
   /workflows/path/workflow/{repository}/published:
@@ -2153,6 +2390,8 @@ paths:
           schema:
             items: {$ref: '#/definitions/Workflow'}
             type: array
+      security:
+      - BEARER: []
       summary: Refresh all workflows
       tags: [workflows]
   /workflows/search:
@@ -2182,6 +2421,8 @@ paths:
         200:
           description: successful operation
           schema: {$ref: '#/definitions/Workflow'}
+      security:
+      - BEARER: []
       summary: Get a registered workflow
       tags: [workflows]
     put:
@@ -2200,6 +2441,8 @@ paths:
         200:
           description: successful operation
           schema: {$ref: '#/definitions/Workflow'}
+      security:
+      - BEARER: []
       summary: Update the workflow with the given workflow.
       tags: [workflows]
   /workflows/{workflowId}/cwl:
@@ -2251,14 +2494,16 @@ paths:
       tags: [workflows]
   /workflows/{workflowId}/labels:
     put:
-      description: Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.
+      description: Labels are alphanumerical (case-insensitive and may contain internal
+        hyphens), given in a comma-delimited list.
       operationId: updateLabels
       parameters:
       - {description: Tool to modify., format: int64, in: path, name: workflowId,
         required: true, type: integer}
       - {description: Comma-delimited list of labels., in: query, name: labels, required: true,
         type: string}
-      - description: This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.
+      - description: This is here to appease Swagger. It requires PUT methods to have
+          a body, even if it is empty. Please leave it empty.
         in: body
         name: body
         required: false
@@ -2268,6 +2513,8 @@ paths:
         200:
           description: successful operation
           schema: {$ref: '#/definitions/Workflow'}
+      security:
+      - BEARER: []
       summary: Update the labels linked to a workflow.
       tags: [workflows]
   /workflows/{workflowId}/publish:
@@ -2287,6 +2534,8 @@ paths:
         200:
           description: successful operation
           schema: {$ref: '#/definitions/Workflow'}
+      security:
+      - BEARER: []
       summary: Publish or unpublish a workflow
       tags: [workflows]
   /workflows/{workflowId}/refresh:
@@ -2301,11 +2550,14 @@ paths:
         200:
           description: successful operation
           schema: {$ref: '#/definitions/Workflow'}
+      security:
+      - BEARER: []
       summary: Refresh one particular workflow. Always do a full refresh when targetted
       tags: [workflows]
   /workflows/{workflowId}/resetVersionPaths:
     put:
-      description: Workflow version correspond to each row of the versions table listing all information for a workflow
+      description: Workflow version correspond to each row of the versions table listing
+        all information for a workflow
       operationId: updateWorkflowPath
       parameters:
       - {description: Workflow to modify., format: int64, in: path, name: workflowId,
@@ -2320,6 +2572,8 @@ paths:
         200:
           description: successful operation
           schema: {$ref: '#/definitions/Workflow'}
+      security:
+      - BEARER: []
       summary: Change the workflow paths
       tags: [workflows]
   /workflows/{workflowId}/restub:
@@ -2334,6 +2588,8 @@ paths:
         200:
           description: successful operation
           schema: {$ref: '#/definitions/Workflow'}
+      security:
+      - BEARER: []
       summary: Restub a workflow
       tags: [workflows]
   /workflows/{workflowId}/secondaryCwl:
@@ -2385,6 +2641,8 @@ paths:
       produces: [application/json]
       responses:
         default: {description: successful operation}
+      security:
+      - BEARER: []
       summary: Stars a workflow.
       tags: [workflows]
   /workflows/{workflowId}/starredUsers:
@@ -2426,6 +2684,8 @@ paths:
             items: {$ref: '#/definitions/SourceFile'}
             type: array
             uniqueItems: true
+      security:
+      - BEARER: []
       summary: Delete test parameter files for a given version.
       tags: [workflows]
     get:
@@ -2457,7 +2717,8 @@ paths:
         name: testParameterPaths
         required: true
         type: array
-      - description: This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.
+      - description: This is here to appease Swagger. It requires PUT methods to have
+          a body, even if it is empty. Please leave it empty.
         in: body
         name: body
         required: false
@@ -2471,6 +2732,8 @@ paths:
             items: {$ref: '#/definitions/SourceFile'}
             type: array
             uniqueItems: true
+      security:
+      - BEARER: []
       summary: Add test parameter files for a given version.
       tags: [workflows]
   /workflows/{workflowId}/tools/{workflowVersionId}:
@@ -2499,6 +2762,8 @@ paths:
       produces: [application/json]
       responses:
         default: {description: successful operation}
+      security:
+      - BEARER: []
       summary: Unstars a workflow.
       tags: [workflows]
   /workflows/{workflowId}/users:
@@ -2515,6 +2780,8 @@ paths:
           schema:
             items: {$ref: '#/definitions/User'}
             type: array
+      security:
+      - BEARER: []
       summary: Get users of a workflow
       tags: [workflows]
   /workflows/{workflowId}/verifiedSources:
@@ -2552,6 +2819,8 @@ paths:
           schema:
             items: {$ref: '#/definitions/WorkflowVersion'}
             type: array
+      security:
+      - BEARER: []
       summary: Verify or unverify a workflow. ADMIN ONLY
       tags: [workflows]
   /workflows/{workflowId}/wdl:
@@ -2587,7 +2856,8 @@ paths:
       tags: [workflows]
   /workflows/{workflowId}/workflowVersions:
     put:
-      description: Workflow version correspond to each row of the versions table listing all information for a workflow
+      description: Workflow version correspond to each row of the versions table listing
+        all information for a workflow
       operationId: updateWorkflowVersion
       parameters:
       - {description: Workflow to modify., format: int64, in: path, name: workflowId,
@@ -2606,17 +2876,21 @@ paths:
           schema:
             items: {$ref: '#/definitions/WorkflowVersion'}
             type: array
+      security:
+      - BEARER: []
       summary: Update the workflow versions linked to a workflow
       tags: [workflows]
 produces: [application/json]
 schemes: [http]
+securityDefinitions:
+  BEARER: {in: header, name: Authorization, type: apiKey}
 swagger: '2.0'
 tags:
-- {description: List and register entries in the dockstore (pairs of images + metadata (CWL and Dockerfile)),
-  name: containers}
+- {description: List and register entries in the dockstore (pairs of images + metadata
+    (CWL and Dockerfile)), name: containers}
 - {description: List and modify tags for containers, name: containertags}
-- {description: A curated subset of resources proposed as a common standard for tool repositories,
-  name: GA4GH}
+- {description: A curated subset of resources proposed as a common standard for tool
+    repositories, name: GA4GH}
 - {description: An extension of GA4GH, name: extendedGA4GH}
 - {description: List source code repositories (should be generalized from github),
   name: github.repo}
