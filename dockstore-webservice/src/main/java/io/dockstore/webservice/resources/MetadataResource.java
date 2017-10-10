@@ -71,7 +71,7 @@ public class MetadataResource {
     @Timed
     @UnitOfWork
     @Path("sitemap")
-    @ApiOperation(value = "List all workflow and tool paths.", tags = { "containers" }, notes = "NO authentication")
+    @ApiOperation(value = "List all workflow and tool paths.", notes = "NO authentication")
     public String sitemap() {
         List<Tool> tools = toolDAO.findAllPublished();
         List<Workflow> workflows = workflowDAO.findAllPublished();
