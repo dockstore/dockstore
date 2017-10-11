@@ -40,7 +40,7 @@ import org.apache.http.HttpStatus;
  * GET methods for organization related information on path: /api/ga4gh/v1/tools
  */
 @Path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/extended")
-@Api("GA4GH")
+@Api("extendedGA4GH")
 @Produces({ "application/json", "text/plain" })
 public class ToolsExtendedApi {
     private final ToolsExtendedApiService delegate = ToolsApiExtendedServiceFactory.getToolsExtendedApi();
@@ -49,8 +49,7 @@ public class ToolsExtendedApi {
     @Path("/tools/{organization}")
     @UnitOfWork
     @Produces({ "application/json", "text/plain" })
-    @ApiOperation(value = "List tools of an organization", notes = "This endpoint returns tools of an organization. ", response = Tool.class, responseContainer = "List", tags = {
-            "GA4GH", })
+    @ApiOperation(value = "List tools of an organization", notes = "This endpoint returns tools of an organization. ", response = Tool.class, responseContainer = "List")
     @ApiResponses(value = {
             @ApiResponse(code = HttpStatus.SC_OK, message = "An array of Tools of the input organization.", response = Tool.class, responseContainer = "List") })
     public Response toolsOrgGet(
@@ -63,7 +62,7 @@ public class ToolsExtendedApi {
     @Path("/tools/entry/_search")
     @UnitOfWork
     @Produces({ "application/json" })
-    @ApiOperation(value = "Search the index of tools", notes = "This endpoint searches the index for all published tools and workflows. Used by utilities that expect to talk to an elastic search endpoint", tags = { "GA4GH", }, response = String.class)
+    @ApiOperation(value = "Search the index of tools", notes = "This endpoint searches the index for all published tools and workflows. Used by utilities that expect to talk to an elastic search endpoint", response = String.class)
     @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_OK, message = "An elastic search result.", response = String.class) })
     public Response toolsIndexSearch(@ApiParam(value = "elastic search query", required = true) String query, @Context UriInfo uriInfo, @Context SecurityContext securityContext) throws NotFoundException {
         return delegate.toolsIndexSearch(query, uriInfo.getQueryParameters(), securityContext);
@@ -74,7 +73,7 @@ public class ToolsExtendedApi {
     @Path("/tools/index")
     @UnitOfWork
     @Produces({ "text/plain" })
-    @ApiOperation(value = "Update the index of tools", notes = "This endpoint updates the index for all published tools and workflows. ", response = Integer.class, tags = { "GA4GH", })
+    @ApiOperation(value = "Update the index of tools", notes = "This endpoint updates the index for all published tools and workflows. ", response = Integer.class)
     @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_OK, message = "An array of Tools of the input organization.") })
     public Response toolsIndexGet(@Context SecurityContext securityContext) throws NotFoundException {
         return delegate.toolsIndexGet(securityContext);
@@ -84,8 +83,7 @@ public class ToolsExtendedApi {
     @Path("/workflows/{organization}")
     @UnitOfWork
     @Produces({ "application/json", "text/plain" })
-    @ApiOperation(value = "List workflows of an organization", notes = "This endpoint returns workflows of an organization. ", response = Tool.class, responseContainer = "List", tags = {
-            "GA4GH", })
+    @ApiOperation(value = "List workflows of an organization", notes = "This endpoint returns workflows of an organization. ", response = Tool.class, responseContainer = "List")
     @ApiResponses(value = {
             @ApiResponse(code = HttpStatus.SC_OK, message = "An array of Tools of the input organization.", response = Tool.class, responseContainer = "List") })
     public Response workflowsOrgGet(
@@ -98,8 +96,7 @@ public class ToolsExtendedApi {
     @Path("/containers/{organization}")
     @UnitOfWork
     @Produces({ "application/json", "text/plain" })
-    @ApiOperation(value = "List entries of an organization", notes = "This endpoint returns entries of an organization. ", response = Tool.class, responseContainer = "List", tags = {
-            "GA4GH", })
+    @ApiOperation(value = "List entries of an organization", notes = "This endpoint returns entries of an organization. ", response = Tool.class, responseContainer = "List")
     @ApiResponses(value = {
             @ApiResponse(code = HttpStatus.SC_OK, message = "An array of Tools of the input organization.", response = Tool.class, responseContainer = "List") })
     public Response entriesOrgGet(
@@ -112,8 +109,7 @@ public class ToolsExtendedApi {
     @Path("/organizations")
     @UnitOfWork
     @Produces({ "application/json", "text/plain" })
-    @ApiOperation(value = "List all organizations", notes = "This endpoint returns list of all organizations. ", response = String.class, responseContainer = "List", tags = {
-            "GA4GH", })
+    @ApiOperation(value = "List all organizations", notes = "This endpoint returns list of all organizations. ", response = String.class, responseContainer = "List")
     @ApiResponses(value = {
             @ApiResponse(code = HttpStatus.SC_OK, message = "An array of organizations' names.", response = String.class, responseContainer = "List") })
     public Response entriesOrgGet(
