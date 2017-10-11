@@ -52,7 +52,10 @@ import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.SystemErrRule;
+import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,6 +69,13 @@ import static junit.framework.TestCase.assertTrue;
  */
 @Category(BenchmarkTest.class)
 public class AdvancedIndexingBenchmarkIT {
+
+    @Rule
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+
+    @Rule
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+
     private static final int TOOL_COUNT = 10;
     private static final int MAX_LABELS_PER_TOOL = 5;
     private static final int MAX_AUTHORS = 10;
