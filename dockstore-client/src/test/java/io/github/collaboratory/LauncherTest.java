@@ -36,6 +36,8 @@ import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.SystemErrRule;
+import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.rules.ExpectedException;
 
 import static io.dockstore.common.FileProvisioning.getCacheDirectory;
@@ -45,6 +47,12 @@ import static org.junit.Assert.assertTrue;
  * @author dyuen
  */
 public abstract class LauncherTest {
+
+    @Rule
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+
+    @Rule
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
 
     @Rule
     public ExpectedException expectedEx = ExpectedException.none();

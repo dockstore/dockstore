@@ -48,11 +48,13 @@ public class LaunchTestIT {
     //create tests that will call client.checkEntryFile for workflow launch with different files and descriptor
 
     @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+
+    @Rule
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+
     @Rule
     public final ExpectedSystemExit exit = ExpectedSystemExit.none();
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog();
 
     private static AbstractEntryClient entryClient = new ToolClient(null, true);
 
