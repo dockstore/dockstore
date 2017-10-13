@@ -886,7 +886,8 @@ public abstract class AbstractEntryClient {
      * Type.NONE if file extension is neither WDL nor CWL, could be no extension or some other random extension(e.g .txt)
      */
     Type checkFileExtension(String path) {
-        if (FilenameUtils.getExtension(path).toLowerCase().equals(CWL_STRING)) {
+        if (FilenameUtils.getExtension(path).toLowerCase().equals(CWL_STRING) || FilenameUtils.getExtension(path).toLowerCase().equals("yaml")
+            || FilenameUtils.getExtension(path).toLowerCase().equals("yml")) {
             return Type.CWL;
         } else if (FilenameUtils.getExtension(path).toLowerCase().equals(WDL_STRING)) {
             return Type.WDL;

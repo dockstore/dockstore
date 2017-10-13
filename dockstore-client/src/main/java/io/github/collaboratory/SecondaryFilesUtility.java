@@ -196,7 +196,7 @@ class SecondaryFilesUtility {
      * @param object The object whose type is not handled
      */
     private void throwUnhandledTypeException(Object object) {
-        throw new RuntimeException("Unhandled type" + object.getClass());
+        throw new RuntimeException("Unhandled type" + (object != null ? object.getClass() : ""));
     }
 
     /**
