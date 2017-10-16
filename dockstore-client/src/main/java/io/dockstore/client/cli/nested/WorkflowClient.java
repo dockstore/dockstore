@@ -368,43 +368,16 @@ public class WorkflowClient extends AbstractEntryClient {
                     ENTRY_NOT_FOUND);
         }
 
-        Type content = checkFileContent(file);             //check the file content (wdl,cwl or "")
-
         try {
             switch (ext) {
             case CWL:
-                switch (content) {
-                case CWL:
-                    handleCWLLaunch(entry, true, yamlRun, jsonRun, tsvRuns, null, null);
-                    break;
-                case WDL:
-                    out("This is a WDL file.. Please put an extension to the entry file name.");
-                    out("Launching entry file as a WDL file..");
-                    launchWdlInternal(entry, true, jsonRun, wdlOutputTarget);
-                    break;
-                default:
-                    errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.",
-                            CLIENT_ERROR);
-                    break;
-                }
+                handleCWLLaunch(entry, true, yamlRun, jsonRun, tsvRuns, null, null);
                 break;
             case WDL:
-                switch (content) {
-                case WDL:
-                    launchWdlInternal(entry, true, jsonRun, wdlOutputTarget);
-                    break;
-                case CWL:
-                    out("This is a WDL file.. Please put an extension to the entry file name.");
-                    out("Launching entry file as a WDL file..");
-                    handleCWLLaunch(entry, true, yamlRun, jsonRun, tsvRuns, null, null);
-                    break;
-                default:
-                    errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.",
-                            CLIENT_ERROR);
-                    break;
-                }
+                launchWdlInternal(entry, true, jsonRun, wdlOutputTarget);
                 break;
             default:
+                Type content = checkFileContent(file);             //check the file content (wdl,cwl or "")
                 switch (content) {
                 case CWL:
                     out("This is a CWL file.. Please put an extension to the entry file name.");
