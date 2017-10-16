@@ -303,7 +303,7 @@ public class WorkflowClient extends AbstractEntryClient {
         String wdlOutputTarget = commandLaunch.wdlOutputTarget;
 
         // trim the final slash on output if it is present, probably an error ( https://github.com/aws/aws-cli/issues/421 ) causes a double slash which can fail
-        wdlOutputTarget = wdlOutputTarget.replaceAll("/$", "");
+        wdlOutputTarget = wdlOutputTarget != null ? wdlOutputTarget.replaceAll("/$", "") : null;
 
         if (this.commandLaunch.help) {
             JCommanderUtility.printJCommanderHelpLaunch(jCommander, "dockstore workflow", commandName);
