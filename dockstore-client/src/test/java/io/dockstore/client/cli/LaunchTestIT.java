@@ -832,7 +832,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    @Ignore("Detection code is not robust enough for biowardrobe wdl")
+    @Ignore("Detection code is not robust enough for biowardrobe wdl using --local-entry")
     public void toolAsWorkflow() {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("dir6.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("dir6.cwl.json"));
