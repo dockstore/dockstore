@@ -305,6 +305,10 @@ public final class Helper {
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
         final AbstractImageRegistry abstractImageRegistry = factory.createImageRegistry(tool.getRegistry());
 
+        if (abstractImageRegistry == null) {
+            throw new CustomWebApplicationException("unable to establish connection to registry, check that you have linked your accounts",
+                HttpStatus.SC_NOT_FOUND);
+        }
         return abstractImageRegistry
                 .refreshTool(containerId, userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken, bitbucketToken, gitlabToken);
 
