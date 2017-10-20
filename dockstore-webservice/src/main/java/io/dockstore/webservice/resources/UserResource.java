@@ -392,14 +392,16 @@ public class UserResource {
 
         // Update user data
         Helper.updateUserHelper(authUser, userDAO, tokenDAO);
+
+        // Checks if the user has the tokens for their current tools
+        checkToolTokens(authUser, userId);
+
         List<Tool> tools = dockerRepoResource.refreshToolsForUser(userId, organization);
 
         userDAO.clearCache();
         authUser = userDAO.findById(authUser.getId());
         bulkUpsertTools(authUser);
-        List<Tool> finalTools = authUser.getEntries().stream().filter(Tool.class::isInstance).map(Tool.class::cast)
-                .collect(Collectors.toList());
-        return finalTools;
+        return getTools(authUser);
     }
 
     // TODO: Only update the ones that have changed
@@ -462,7 +464,7 @@ public class UserResource {
         // TODO: Only update the ones that have changed
         authUser = userDAO.findById(authUser.getId());
         bulkUpsertTools(authUser);
-        return tools;
+        return getTools(authUser);
     }
 
     @GET
@@ -484,9 +486,8 @@ public class UserResource {
         userDAO.clearCache();
         // Refresh the user
         authUser = userDAO.findById(authUser.getId());
-        List<Workflow> finalWorkflows = getWorkflows(authUser);
         bulkUpsertWorkflows(authUser);
-        return finalWorkflows;
+        return getWorkflows(authUser);
     }
 
     @GET
@@ -506,9 +507,8 @@ public class UserResource {
         workflowResource.refreshStubWorkflowsForUser(authUser, null);
         // Refresh the user
         authUser = userDAO.findById(authUser.getId());
-        List<Workflow> finalWorkflows = getWorkflows(authUser);
         bulkUpsertWorkflows(authUser);
-        return finalWorkflows;
+        return getWorkflows(authUser);
     }
 
     @GET
@@ -528,6 +528,10 @@ public class UserResource {
         return user.getEntries().stream().filter(Workflow.class::isInstance).map(Workflow.class::cast).collect(Collectors.toList());
     }
 
+    private List<Tool> getTools(User user) {
+        return user.getEntries().stream().filter(Tool.class::isInstance).map(Tool.class::cast).collect(Collectors.toList());
+    }
+
     @GET
     @Path("/{userId}/containers")
     @Timed
@@ -538,7 +542,7 @@ public class UserResource {
         Helper.checkUser(user, userId);
         // need to avoid lazy initialize error
         final User byId = this.userDAO.findById(userId);
-        return FluentIterable.from(byId.getEntries()).filter(Tool.class).toList();
+        return getTools(user);
     }
 
     @GET
