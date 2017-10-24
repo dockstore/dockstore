@@ -90,6 +90,7 @@ public abstract class SourceCodeRepoInterface {
         targetWorkflow.setGitUrl(sourceWorkflow.getGitUrl());
         targetWorkflow.setDescriptorType(sourceWorkflow.getDescriptorType());
         targetWorkflow.setDefaultVersion(sourceWorkflow.getDefaultVersion());
+        targetWorkflow.setDefaultTestParameterFilePath(sourceWorkflow.getDefaultTestParameterFilePath());
     }
 
     /**
@@ -411,9 +412,7 @@ public abstract class SourceCodeRepoInterface {
         version.setValid(false);
 
         // Determine workflow version from previous
-
         String calculatedPath;
-        String testJsonPath;
 
         // Set to false if new version
         if (existingDefaults.get(branch) == null) {

@@ -203,17 +203,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 final List<RepositoryContents> descriptorContents = cService.getContents(id, calculatedPath, ref);
                 if (descriptorContents != null && descriptorContents.size() > 0) {
                     String content = extractGitHubContents(descriptorContents);
-                    SourceFile testJson = new SourceFile();
 
                     // TODO: Is this the best way to determine file type? I don't think so
                     // Should be workflow.getDescriptorType().equals("cwl") - though enum is better!
                     if ("cwl".equalsIgnoreCase(calculatedExtension) || "yml".equalsIgnoreCase(calculatedExtension) || "yaml"
                             .equalsIgnoreCase(calculatedExtension)) {
                         validWorkflow = checkValidCWLWorkflow(content);
-                        testJson.setType(SourceFile.FileType.CWL_TEST_JSON);
                     } else {
                         validWorkflow = checkValidWDLWorkflow(content);
-                        testJson.setType(SourceFile.FileType.WDL_TEST_JSON);
                     }
 
                     if (validWorkflow) {
@@ -226,6 +223,26 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                         version.setValid(true);
                         version = combineVersionAndSourcefile(file, workflow, identifiedType, version, existingDefaults);
                     }
+
+                    // Use default test parameter file if either new version or existing version that hasn't been edited
+                    if (!version.isDirtyBit() && workflow.getDefaultTestParameterFilePath() != null) {
+                        final List<RepositoryContents> testJsonFile = cService.getContents(id, workflow.getDefaultTestParameterFilePath(), ref);
+                        String testJsonContent = extractGitHubContents(testJsonFile);
+
+                        SourceFile testJson = new SourceFile();
+                        SourceFile.FileType identifiedType = getFileType(calculatedPath);
+
+                        // Set Filetype
+                        if (identifiedType.equals(SourceFile.FileType.DOCKSTORE_CWL)) {
+                            testJson.setType(SourceFile.FileType.CWL_TEST_JSON);
+                        } else if (identifiedType.equals(SourceFile.FileType.DOCKSTORE_WDL)) {
+                            testJson.setType(SourceFile.FileType.WDL_TEST_JSON);
+                        }
+
+                        testJson.setPath(workflow.getDefaultTestParameterFilePath());
+                        testJson.setContent(testJsonContent);
+                        version.getSourceFiles().add(testJson);
+                    }
                 }
 
             } catch (IOException ex) {
@@ -233,6 +250,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             } catch (Exception ex) {
                 LOG.info(gitUsername + ": " + workflow.getDefaultWorkflowPath() + " on " + ref + " was not valid workflow");
             }
+
 
             workflow.addWorkflowVersion(version);
         }

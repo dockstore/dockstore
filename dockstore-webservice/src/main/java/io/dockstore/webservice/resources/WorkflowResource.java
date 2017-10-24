@@ -167,6 +167,7 @@ public class WorkflowResource {
         Workflow newWorkflow = new Workflow();
         newWorkflow.setMode(WorkflowMode.STUB);
         newWorkflow.setDefaultWorkflowPath(workflow.getDefaultWorkflowPath());
+        newWorkflow.setDefaultTestParameterFilePath(workflow.getDefaultTestParameterFilePath());
         newWorkflow.setOrganization(workflow.getOrganization());
         newWorkflow.setRepository(workflow.getRepository());
         newWorkflow.setPath(workflow.getPath());
@@ -461,6 +462,7 @@ public class WorkflowResource {
         oldWorkflow.setPath(newWorkflow.getPath());
         oldWorkflow.setDescriptorType(newWorkflow.getDescriptorType());
         oldWorkflow.setDefaultWorkflowPath(newWorkflow.getDefaultWorkflowPath());
+        oldWorkflow.setDefaultTestParameterFilePath(newWorkflow.getDefaultTestParameterFilePath());
         if (newWorkflow.getDefaultVersion() != null) {
             if (!oldWorkflow.checkAndSetDefaultVersion(newWorkflow.getDefaultVersion())) {
                 throw new CustomWebApplicationException("Workflow version does not exist.", HttpStatus.SC_BAD_REQUEST);

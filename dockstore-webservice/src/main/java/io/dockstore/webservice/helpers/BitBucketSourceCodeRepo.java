@@ -184,8 +184,11 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
             if (type == SourceFile.FileType.DOCKSTORE_CWL) {
                 validWorkflow = checkValidCWLWorkflow(content);
-            } else {
+            } else if (type == SourceFile.FileType.DOCKSTORE_WDL) {
                 validWorkflow = checkValidWDLWorkflow(content);
+            } else {
+                // Must be a testjson file
+                validWorkflow = true;
             }
 
             if (validWorkflow) {
@@ -249,6 +252,19 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
                     // TODO: No exceptions are caught here in the event of a failed call
                     sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, identifiedType);
+
+                    // Use default test parameter file if either new version or existing version that hasn't been edited
+                    if (!version.isDirtyBit() && workflow.getDefaultTestParameterFilePath() != null) {
+                        SourceFile.FileType testJsonType = null;
+                        // Set Filetype
+                        if (identifiedType.equals(SourceFile.FileType.DOCKSTORE_CWL)) {
+                            testJsonType = SourceFile.FileType.CWL_TEST_JSON;
+                        } else if (identifiedType.equals(SourceFile.FileType.DOCKSTORE_WDL)) {
+                            testJsonType = SourceFile.FileType.WDL_TEST_JSON;
+                        }
+
+                        version.getSourceFiles().add(getSourceFile(workflow.getDefaultTestParameterFilePath(), repositoryId, branchName, testJsonType));
+                    }
 
                     workflow.addWorkflowVersion(
                             combineVersionAndSourcefile(sourceFile, workflow, identifiedType, version, existingDefaults));
