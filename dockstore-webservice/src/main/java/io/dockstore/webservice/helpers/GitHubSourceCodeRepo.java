@@ -91,7 +91,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 contents = cService.getContents(repo, fileName.toLowerCase(), reference);
             }
 
-            if (!(contents == null || contents.isEmpty())) {
+            if (!(contents == null || contents.isEmpty() || contents.get(0).getContent() == null)) {
                 return extractGitHubContents(contents);
             } else {
                 return null;

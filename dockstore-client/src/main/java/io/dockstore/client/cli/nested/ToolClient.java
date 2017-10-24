@@ -226,6 +226,8 @@ public class ToolClient extends AbstractEntryClient {
                     newContainer.setDefaultDockerfilePath(container.getDefaultDockerfilePath());
                     newContainer.setDefaultCwlPath(container.getDefaultCwlPath());
                     newContainer.setDefaultWdlPath(container.getDefaultWdlPath());
+                    newContainer.setDefaultCWLTestParameterFile(container.getDefaultCWLTestParameterFile());
+                    newContainer.setDefaultWDLTestParameterFile(container.getDefaultWDLTestParameterFile());
                     newContainer.setIsPublished(false);
                     newContainer.setGitUrl(container.getGitUrl());
                     newContainer.setPath(container.getPath());
