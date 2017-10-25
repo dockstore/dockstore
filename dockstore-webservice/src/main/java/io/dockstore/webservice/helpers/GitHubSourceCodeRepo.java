@@ -226,6 +226,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
                     // Use default test parameter file if either new version or existing version that hasn't been edited
                     if (!version.isDirtyBit() && workflow.getDefaultTestParameterFilePath() != null) {
+
                         final List<RepositoryContents> testJsonFile = cService.getContents(id, workflow.getDefaultTestParameterFilePath(), ref);
                         String testJsonContent = extractGitHubContents(testJsonFile);
 
@@ -241,7 +242,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
                         testJson.setPath(workflow.getDefaultTestParameterFilePath());
                         testJson.setContent(testJsonContent);
-                        version.getSourceFiles().add(testJson);
+
+                        // Check if test parameter file has already been added
+                        long duplicateCount = version.getSourceFiles().stream().filter((SourceFile v) -> v.getPath().equals(workflow.getDefaultTestParameterFilePath()) && v.getType() == testJson.getType()).count();
+                        if (duplicateCount == 0) {
+                            version.getSourceFiles().add(testJson);
+                        }
                     }
                 }
 

@@ -203,7 +203,12 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
                             testJsonType = SourceFile.FileType.WDL_TEST_JSON;
                         }
 
-                        version.getSourceFiles().add(getSourceFile(workflow.getDefaultTestParameterFilePath(), repositoryId, branchName, testJsonType));
+                        // Check if test parameter file has already been added
+                        final SourceFile.FileType finalFileType = testJsonType;
+                        long duplicateCount = version.getSourceFiles().stream().filter((SourceFile v) -> v.getPath().equals(workflow.getDefaultTestParameterFilePath()) && v.getType() == finalFileType).count();
+                        if (duplicateCount == 0) {
+                            version.getSourceFiles().add(getSourceFile(workflow.getDefaultTestParameterFilePath(), repositoryId, branchName, testJsonType));
+                        }
                     }
 
                     workflow.addWorkflowVersion(
