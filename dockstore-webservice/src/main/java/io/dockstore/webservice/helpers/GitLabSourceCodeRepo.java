@@ -193,10 +193,15 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
                     // TODO: No exceptions are caught here in the event of a failed call
                     sourceFile = getSourceFile(calculatedPath, id, branchName, identifiedType);
 
+                    // Non-null sourcefile means that the sourcefile is valid
+                    if (sourceFile != null) {
+                        version.setValid(true);
+                    }
+
                     // Use default test parameter file if either new version or existing version that hasn't been edited
                     if (!version.isDirtyBit() && workflow.getDefaultTestParameterFilePath() != null) {
-                        SourceFile.FileType testJsonType = null;
                         // Set Filetype
+                        SourceFile.FileType testJsonType = null;
                         if (identifiedType.equals(SourceFile.FileType.DOCKSTORE_CWL)) {
                             testJsonType = SourceFile.FileType.CWL_TEST_JSON;
                         } else if (identifiedType.equals(SourceFile.FileType.DOCKSTORE_WDL)) {
@@ -207,7 +212,10 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
                         final SourceFile.FileType finalFileType = testJsonType;
                         long duplicateCount = version.getSourceFiles().stream().filter((SourceFile v) -> v.getPath().equals(workflow.getDefaultTestParameterFilePath()) && v.getType() == finalFileType).count();
                         if (duplicateCount == 0) {
-                            version.getSourceFiles().add(getSourceFile(workflow.getDefaultTestParameterFilePath(), repositoryId, branchName, testJsonType));
+                            SourceFile testJsonSourceFile = getSourceFile(workflow.getDefaultTestParameterFilePath(), id, branchName, testJsonType);
+                            if (testJsonSourceFile != null) {
+                                version.getSourceFiles().add(testJsonSourceFile);
+                            }
                         }
                     }
 
@@ -302,7 +310,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     /**
-     * Uses Gitlab API to grab a raw source file and return it
+     * Uses Gitlab API to grab a raw source file and return it; Return null if nothing found
      *
      * @param path
      * @param id
@@ -313,12 +321,13 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
     private SourceFile getSourceFile(String path, String id, String branch, SourceFile.FileType type) {
         // TODO: should we even be creating a sourcefile before checking that it is valid?
         // I think it is fine since in the next part we just check that source file has content or not (no content is like null)
-        SourceFile file = new SourceFile();
+        SourceFile file = null;
         String content = getFileContentsFromIdV4(id, branch, path);
 
         if (content != null) {
             // Is workflow descriptor valid?
             boolean validWorkflow;
+            file = new SourceFile();
 
             if (type == SourceFile.FileType.DOCKSTORE_CWL) {
                 validWorkflow = checkValidCWLWorkflow(content);

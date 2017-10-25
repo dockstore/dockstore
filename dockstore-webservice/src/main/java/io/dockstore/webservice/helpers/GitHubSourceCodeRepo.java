@@ -226,27 +226,27 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
                     // Use default test parameter file if either new version or existing version that hasn't been edited
                     if (!version.isDirtyBit() && workflow.getDefaultTestParameterFilePath() != null) {
-
                         final List<RepositoryContents> testJsonFile = cService.getContents(id, workflow.getDefaultTestParameterFilePath(), ref);
-                        String testJsonContent = extractGitHubContents(testJsonFile);
+                        if (testJsonFile != null && testJsonFile.size() > 0) {
+                            String testJsonContent = extractGitHubContents(testJsonFile);
+                            SourceFile testJson = new SourceFile();
 
-                        SourceFile testJson = new SourceFile();
-                        SourceFile.FileType identifiedType = getFileType(calculatedPath);
+                            // Set Filetype
+                            SourceFile.FileType identifiedType = getFileType(calculatedPath);
+                            if (identifiedType.equals(SourceFile.FileType.DOCKSTORE_CWL)) {
+                                testJson.setType(SourceFile.FileType.CWL_TEST_JSON);
+                            } else if (identifiedType.equals(SourceFile.FileType.DOCKSTORE_WDL)) {
+                                testJson.setType(SourceFile.FileType.WDL_TEST_JSON);
+                            }
 
-                        // Set Filetype
-                        if (identifiedType.equals(SourceFile.FileType.DOCKSTORE_CWL)) {
-                            testJson.setType(SourceFile.FileType.CWL_TEST_JSON);
-                        } else if (identifiedType.equals(SourceFile.FileType.DOCKSTORE_WDL)) {
-                            testJson.setType(SourceFile.FileType.WDL_TEST_JSON);
-                        }
+                            testJson.setPath(workflow.getDefaultTestParameterFilePath());
+                            testJson.setContent(testJsonContent);
 
-                        testJson.setPath(workflow.getDefaultTestParameterFilePath());
-                        testJson.setContent(testJsonContent);
-
-                        // Check if test parameter file has already been added
-                        long duplicateCount = version.getSourceFiles().stream().filter((SourceFile v) -> v.getPath().equals(workflow.getDefaultTestParameterFilePath()) && v.getType() == testJson.getType()).count();
-                        if (duplicateCount == 0) {
-                            version.getSourceFiles().add(testJson);
+                            // Check if test parameter file has already been added
+                            long duplicateCount = version.getSourceFiles().stream().filter((SourceFile v) -> v.getPath().equals(workflow.getDefaultTestParameterFilePath()) && v.getType() == testJson.getType()).count();
+                            if (duplicateCount == 0) {
+                                version.getSourceFiles().add(testJson);
+                            }
                         }
                     }
                 }

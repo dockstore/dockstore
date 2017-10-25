@@ -500,11 +500,6 @@ public abstract class SourceCodeRepoInterface {
             version.getSourceFiles().add(sourceFile);
         }
 
-        // The version is valid if source files are found
-        if (version.getSourceFiles().size() > 0) {
-            version.setValid(true);
-        }
-
         // add extra source files here (dependencies from "main" descriptor)
         if (sourceFileSet.size() > 0) {
             version.getSourceFiles().addAll(sourceFileSet);
