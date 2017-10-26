@@ -465,7 +465,7 @@ public abstract class SourceCodeRepoInterface {
         Set<SourceFile> sourceFileSet = new HashSet<>();
 
         // try to use the FileImporter to re-use code for handling imports
-        if (sourceFile.getContent() != null) {
+        if (sourceFile != null && sourceFile.getContent() != null) {
             FileImporter importer = new FileImporter(this);
             final Map<String, SourceFile> stringSourceFileMap = importer
                     .resolveImports(sourceFile.getContent(), workflow, identifiedType, version);
@@ -496,7 +496,7 @@ public abstract class SourceCodeRepoInterface {
         }
 
         // If source file is found and valid then add it
-        if (sourceFile.getContent() != null) {
+        if (sourceFile != null && sourceFile.getContent() != null) {
             version.getSourceFiles().add(sourceFile);
         }
 
