@@ -17,6 +17,7 @@
 package io.dockstore.webservice.resources;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -39,10 +40,12 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
@@ -389,14 +392,16 @@ public class UserResource {
 
         // Update user data
         Helper.updateUserHelper(authUser, userDAO, tokenDAO);
+
+        // Checks if the user has the tokens for their current tools
+        checkToolTokens(authUser, userId);
+
         List<Tool> tools = dockerRepoResource.refreshToolsForUser(userId, organization);
 
         userDAO.clearCache();
         authUser = userDAO.findById(authUser.getId());
         bulkUpsertTools(authUser);
-        List<Tool> finalTools = authUser.getEntries().stream().filter(Tool.class::isInstance).map(Tool.class::cast)
-                .collect(Collectors.toList());
-        return finalTools;
+        return getTools(authUser);
     }
 
     // TODO: Only update the ones that have changed
@@ -419,6 +424,24 @@ public class UserResource {
         }
     }
 
+    private void checkToolTokens(User authUser, Long userId) {
+        List<Token> tokens = tokenDAO.findByUserId(userId);
+        List<Tool> tools = userContainers(authUser, userId);
+        Token gitLabToken = Helper.extractToken(tokens, TokenType.GITLAB_COM.toString());
+        Token quayioToken = Helper.extractToken(tokens, TokenType.QUAY_IO.toString());
+        Set<Registry> uniqueRegistry = new HashSet<>();
+        tools.forEach(tool -> uniqueRegistry.add(tool.getRegistry()));
+        if (uniqueRegistry.size() == 0 && quayioToken == null) {
+            throw new CustomWebApplicationException("Please add a Quay.io token", HttpStatus.SC_BAD_REQUEST);
+        }
+        if (uniqueRegistry.contains(Registry.QUAY_IO) && quayioToken == null) {
+            throw new CustomWebApplicationException("Have Quay.io tools but no Quay.io token", HttpStatus.SC_BAD_REQUEST);
+        }
+        if (uniqueRegistry.contains(Registry.GITLAB) && gitLabToken == null) {
+            throw new CustomWebApplicationException("Have GitLab tools but no GitLab token", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
     @GET
     @Timed
     @UnitOfWork
@@ -431,12 +454,17 @@ public class UserResource {
 
         // Update user data
         Helper.updateUserHelper(authUser, userDAO, tokenDAO);
+
+
+        // Checks if the user has the tokens for their current tools
+        checkToolTokens(authUser, userId);
+
         List<Tool> tools = dockerRepoResource.refreshToolsForUser(userId, null);
 
         // TODO: Only update the ones that have changed
         authUser = userDAO.findById(authUser.getId());
         bulkUpsertTools(authUser);
-        return tools;
+        return getTools(authUser);
     }
 
     @GET
@@ -458,9 +486,8 @@ public class UserResource {
         userDAO.clearCache();
         // Refresh the user
         authUser = userDAO.findById(authUser.getId());
-        List<Workflow> finalWorkflows = getWorkflows(authUser);
         bulkUpsertWorkflows(authUser);
-        return finalWorkflows;
+        return getWorkflows(authUser);
     }
 
     @GET
@@ -480,9 +507,8 @@ public class UserResource {
         workflowResource.refreshStubWorkflowsForUser(authUser, null);
         // Refresh the user
         authUser = userDAO.findById(authUser.getId());
-        List<Workflow> finalWorkflows = getWorkflows(authUser);
         bulkUpsertWorkflows(authUser);
-        return finalWorkflows;
+        return getWorkflows(authUser);
     }
 
     @GET
@@ -502,6 +528,10 @@ public class UserResource {
         return user.getEntries().stream().filter(Workflow.class::isInstance).map(Workflow.class::cast).collect(Collectors.toList());
     }
 
+    private List<Tool> getTools(User user) {
+        return user.getEntries().stream().filter(Tool.class::isInstance).map(Tool.class::cast).collect(Collectors.toList());
+    }
+
     @GET
     @Path("/{userId}/containers")
     @Timed
@@ -512,7 +542,7 @@ public class UserResource {
         Helper.checkUser(user, userId);
         // need to avoid lazy initialize error
         final User byId = this.userDAO.findById(userId);
-        return FluentIterable.from(byId.getEntries()).filter(Tool.class).toList();
+        return getTools(user);
     }
 
     @GET
