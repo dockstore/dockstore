@@ -26,6 +26,7 @@ import java.util.Set;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
@@ -255,7 +256,7 @@ public abstract class AbstractImageRegistry {
             for (Tag newTag : newTags) {
                 boolean exists = false;
 
-                // Find if user already has the tool
+                // Find if user already has the tag
                 for (Tag oldTag : existingTags) {
                     if (newTag.getName().equals(oldTag.getName())) {
                         exists = true;
@@ -268,6 +269,8 @@ public abstract class AbstractImageRegistry {
                             oldTag.setCwlPath(tool.getDefaultCwlPath());
                             oldTag.setWdlPath(tool.getDefaultWdlPath());
                             oldTag.setDockerfilePath(tool.getDefaultDockerfilePath());
+                            oldTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestCwlParameterFile(), SourceFile.FileType.CWL_TEST_JSON));
+                            oldTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestWdlParameterFile(), SourceFile.FileType.WDL_TEST_JSON));
                         }
 
                         break;
@@ -279,9 +282,10 @@ public abstract class AbstractImageRegistry {
                     // this could result in the same tag being added to multiple containers with the same path, need to clone
                     Tag clonedTag = new Tag();
                     clonedTag.clone(newTag);
+                    clonedTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestCwlParameterFile(), SourceFile.FileType.CWL_TEST_JSON));
+                    clonedTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestWdlParameterFile(), SourceFile.FileType.WDL_TEST_JSON));
                     existingTags.add(clonedTag);
                 }
-
             }
 
             boolean allAutomated = true;
@@ -342,10 +346,16 @@ public abstract class AbstractImageRegistry {
                 LOG.info(githubToken.getUsername() + " : Parsing WDL...");
                 sourceCodeRepo.updateEntryMetadata(tool, AbstractEntryClient.Type.WDL);
             }
-
         }
         toolDAO.create(tool);
 
+    }
+
+    private SourceFile createSourceFile(String path, SourceFile.FileType type) {
+        SourceFile sourcefile = new SourceFile();
+        sourcefile.setPath(path);
+        sourcefile.setType(type);
+        return sourcefile;
     }
 
     /**

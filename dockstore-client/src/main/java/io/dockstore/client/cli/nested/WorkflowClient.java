@@ -136,7 +136,8 @@ public class WorkflowClient extends AbstractEntryClient {
         out("Optional parameters:");
         out("  --workflow-path <workflow-path>                      Path for the descriptor file, defaults to /Dockstore.cwl");
         out("  --workflow-name <workflow-name>                      Workflow name, defaults to null");
-        out("  --descriptor-type <workflow-name>                    Descriptor type, defaults to cwl");
+        out("  --descriptor-type <descriptor-type>                  Descriptor type, defaults to cwl");
+        out("  --test-parameter-path <test-parameter-path>          Path to default test parameter file, defaults to /test.json");
 
         printHelpFooter();
     }
@@ -150,13 +151,14 @@ public class WorkflowClient extends AbstractEntryClient {
         out("  Update certain fields for a given workflow.");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>                                          Complete workflow path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
+        out("  --entry <entry>                                              Complete workflow path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
         out("");
         out("Optional Parameters");
-        out("  --workflow-name <workflow-name>                          Name for the given workflow");
-        out("  --descriptor-type <descriptor-type>                      Descriptor type of the given workflow.  Can only be altered if workflow is a STUB.");
-        out("  --workflow-path <workflow-path>                          Path to default workflow descriptor location");
-        out("  --default-version <default-version>                      Default branch name");
+        out("  --workflow-name <workflow-name>                              Name for the given workflow");
+        out("  --descriptor-type <descriptor-type>                          Descriptor type of the given workflow.  Can only be altered if workflow is a STUB.");
+        out("  --workflow-path <workflow-path>                              Path to default workflow descriptor location");
+        out("  --default-version <default-version>                          Default branch name");
+        out("  --default-test-parameter-path <default-test-parameter-path>  Default test parameter file path");
         printHelpFooter();
     }
 
@@ -524,7 +526,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
                     newWorkflow = workflowsApi
                             .manualRegister(registry, workflow.getPath(), workflow.getWorkflowPath(), newWorkflow.getWorkflowName(),
-                                    workflow.getDescriptorType());
+                                    workflow.getDescriptorType(), workflow.getDefaultTestParameterFilePath());
 
                     if (newWorkflow != null) {
                         out("Successfully registered " + entryPath + "/" + newName);
@@ -728,6 +730,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
             final String workflowPath = optVal(args, "--workflow-path", "/Dockstore.cwl");
             final String descriptorType = optVal(args, "--descriptor-type", "cwl");
+            final String testParameterFile = optVal(args, "--test-parameter-path", "/test.json");
 
             // Check if valid input
             if (!descriptorType.toLowerCase().equals("cwl") && !descriptorType.toLowerCase().equals("wdl")) {
@@ -753,7 +756,7 @@ public class WorkflowClient extends AbstractEntryClient {
             // Try and register
             try {
                 workflow = workflowsApi
-                        .manualRegister(gitVersionControl, organization + "/" + repository, workflowPath, workflowname, descriptorType);
+                        .manualRegister(gitVersionControl, organization + "/" + repository, workflowPath, workflowname, descriptorType, testParameterFile);
                 if (workflow != null) {
                     workflow = workflowsApi.refresh(workflow.getId());
                 } else {
@@ -805,6 +808,7 @@ public class WorkflowClient extends AbstractEntryClient {
                 String descriptorType = optVal(args, "--descriptor-type", workflow.getDescriptorType());
                 String workflowDescriptorPath = optVal(args, "--workflow-path", workflow.getWorkflowPath());
                 String defaultVersion = optVal(args, "--default-version", workflow.getDefaultVersion());
+                String defaultTestJsonPath = optVal(args, "--default-test-parameter-path", workflow.getDefaultTestParameterFilePath());
 
                 if (workflow.getMode() == io.swagger.client.model.Workflow.ModeEnum.STUB) {
 
@@ -826,6 +830,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
                 workflow.setWorkflowName(workflowName);
                 workflow.setWorkflowPath(workflowDescriptorPath);
+                workflow.setDefaultTestParameterFilePath(defaultTestJsonPath);
 
                 String path = Joiner.on("/").skipNulls()
                         .join(workflow.getOrganization(), workflow.getRepository(), workflow.getWorkflowName());

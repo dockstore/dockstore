@@ -259,6 +259,8 @@ public class DockerRepoResource {
         originalTool.setDefaultCwlPath(newTool.getDefaultCwlPath());
         originalTool.setDefaultWdlPath(newTool.getDefaultWdlPath());
         originalTool.setDefaultDockerfilePath(newTool.getDefaultDockerfilePath());
+        originalTool.setDefaultTestCwlParameterFile(newTool.getDefaultTestCwlParameterFile());
+        originalTool.setDefaultTestWdlParameterFile(newTool.getDefaultTestWdlParameterFile());
 
         if (newTool.getDefaultVersion() != null) {
             if (!originalTool.checkAndSetDefaultVersion(newTool.getDefaultVersion())) {

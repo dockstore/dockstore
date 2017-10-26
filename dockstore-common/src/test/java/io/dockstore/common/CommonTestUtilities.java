@@ -60,7 +60,7 @@ public class CommonTestUtilities {
             runInsertStatement(
                     "insert into tool(id, name, namespace, registry, path, ispublished,toolname, privateaccess) VALUES (2, 'test2', 'test_org', 'QUAY_IO', 'quay.io/test_org/test2', false,'', false);",
                     new KeyedHandler<>("id"));
-            runInsertStatement("INSERT INTO workflow VALUES (11, NULL, NULL, NULL, NULL, 'git@github.com:A/l.git', true, NULL, '2016-11-28 15:00:57.688', '/1st-workflow.cwl', 'cwl', 'FULL', 'A', 'A/l', 'l', NULL);", new KeyedHandler<>("id"));
+            runInsertStatement("INSERT INTO workflow VALUES (11, NULL, NULL, NULL, NULL, 'git@github.com:A/l.git', true, NULL, '2016-11-28 15:00:57.688', '', '/1st-workflow.cwl', 'cwl', 'FULL', 'A', 'A/l', 'l', NULL);", new KeyedHandler<>("id"));
             runInsertStatement("insert into user_entry(userid, entryid) VALUES (2, 2);", new KeyedHandler<>("entryid"));
             runInsertStatement(
                     "insert into tool(id, name, namespace, registry, path, ispublished,toolname, privateaccess) VALUES (3, 'test3', 'test_org', 'QUAY_IO', 'quay.io/test_org/test3', false,'', false);",

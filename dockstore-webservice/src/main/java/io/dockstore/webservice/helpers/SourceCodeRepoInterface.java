@@ -90,6 +90,7 @@ public abstract class SourceCodeRepoInterface {
         targetWorkflow.setGitUrl(sourceWorkflow.getGitUrl());
         targetWorkflow.setDescriptorType(sourceWorkflow.getDescriptorType());
         targetWorkflow.setDefaultVersion(sourceWorkflow.getDefaultVersion());
+        targetWorkflow.setDefaultTestParameterFilePath(sourceWorkflow.getDefaultTestParameterFilePath());
     }
 
     /**
@@ -411,9 +412,7 @@ public abstract class SourceCodeRepoInterface {
         version.setValid(false);
 
         // Determine workflow version from previous
-
         String calculatedPath;
-        String testJsonPath;
 
         // Set to false if new version
         if (existingDefaults.get(branch) == null) {
@@ -466,7 +465,7 @@ public abstract class SourceCodeRepoInterface {
         Set<SourceFile> sourceFileSet = new HashSet<>();
 
         // try to use the FileImporter to re-use code for handling imports
-        if (sourceFile.getContent() != null) {
+        if (sourceFile != null && sourceFile.getContent() != null) {
             FileImporter importer = new FileImporter(this);
             final Map<String, SourceFile> stringSourceFileMap = importer
                     .resolveImports(sourceFile.getContent(), workflow, identifiedType, version);
@@ -497,13 +496,8 @@ public abstract class SourceCodeRepoInterface {
         }
 
         // If source file is found and valid then add it
-        if (sourceFile.getContent() != null) {
+        if (sourceFile != null && sourceFile.getContent() != null) {
             version.getSourceFiles().add(sourceFile);
-        }
-
-        // The version is valid if source files are found
-        if (version.getSourceFiles().size() > 0) {
-            version.setValid(true);
         }
 
         // add extra source files here (dependencies from "main" descriptor)

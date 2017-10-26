@@ -202,5 +202,4 @@ public class Tag extends Version<Tag> {
     public int hashCode() {
         return (int)getId();
     }
-
 }

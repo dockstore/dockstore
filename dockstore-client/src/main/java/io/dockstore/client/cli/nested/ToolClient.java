@@ -226,6 +226,8 @@ public class ToolClient extends AbstractEntryClient {
                     newContainer.setDefaultDockerfilePath(container.getDefaultDockerfilePath());
                     newContainer.setDefaultCwlPath(container.getDefaultCwlPath());
                     newContainer.setDefaultWdlPath(container.getDefaultWdlPath());
+                    newContainer.setDefaultCWLTestParameterFile(container.getDefaultCWLTestParameterFile());
+                    newContainer.setDefaultWDLTestParameterFile(container.getDefaultWDLTestParameterFile());
                     newContainer.setIsPublished(false);
                     newContainer.setGitUrl(container.getGitUrl());
                     newContainer.setPath(container.getPath());
@@ -366,6 +368,8 @@ public class ToolClient extends AbstractEntryClient {
             final String dockerfilePath = optVal(args, "--dockerfile-path", "/Dockerfile");
             final String cwlPath = optVal(args, "--cwl-path", "/Dockstore.cwl");
             final String wdlPath = optVal(args, "--wdl-path", "/Dockstore.wdl");
+            final String testCwlPath = optVal(args, "--test-cwl-path", "/test.cwl.json");
+            final String testWdlPath = optVal(args, "--test-wdl-path", "/test.wdl.json");
             final String gitReference = reqVal(args, "--git-reference");
             final String toolname = optVal(args, "--toolname", null);
             final String toolMaintainerEmail = optVal(args, "--tool-maintainer-email", null);
@@ -464,6 +468,8 @@ public class ToolClient extends AbstractEntryClient {
             tool.setDefaultDockerfilePath(dockerfilePath);
             tool.setDefaultCwlPath(cwlPath);
             tool.setDefaultWdlPath(wdlPath);
+            tool.setDefaultCWLTestParameterFile(testCwlPath);
+            tool.setDefaultWDLTestParameterFile(testWdlPath);
             tool.setIsPublished(false);
             tool.setGitUrl(gitURL);
             tool.setToolname(toolname);
@@ -872,6 +878,8 @@ public class ToolClient extends AbstractEntryClient {
                 final String cwlPath = optVal(args, "--cwl-path", tool.getDefaultCwlPath());
                 final String wdlPath = optVal(args, "--wdl-path", tool.getDefaultWdlPath());
                 final String dockerfilePath = optVal(args, "--dockerfile-path", tool.getDefaultDockerfilePath());
+                final String testCwlPath = optVal(args, "--test-cwl-path", tool.getDefaultCWLTestParameterFile());
+                final String testWdlPath = optVal(args, "--test-wdl-path", tool.getDefaultWDLTestParameterFile());
                 final String toolname = optVal(args, "--toolname", tool.getToolname());
                 final String gitUrl = optVal(args, "--git-url", tool.getGitUrl());
                 final String defaultTag = optVal(args, "--default-version", tool.getDefaultVersion());
@@ -902,6 +910,8 @@ public class ToolClient extends AbstractEntryClient {
                 tool.setDefaultCwlPath(cwlPath);
                 tool.setDefaultWdlPath(wdlPath);
                 tool.setDefaultDockerfilePath(dockerfilePath);
+                tool.setDefaultCWLTestParameterFile(testCwlPath);
+                tool.setDefaultWDLTestParameterFile(testWdlPath);
                 tool.setToolname(toolname);
                 tool.setGitUrl(gitUrl);
 
@@ -1086,6 +1096,8 @@ public class ToolClient extends AbstractEntryClient {
         out("Optional Parameters");
         out("  --cwl-path <cwl-path>                                        Path to default cwl location");
         out("  --wdl-path <wdl-path>                                        Path to default wdl location");
+        out("  --test-cwl-path <test-cwl-path>                              Path to default test cwl location");
+        out("  --test-wdl-path <test-wdl-path>                              Path to default test wdl location");
         out("  --dockerfile-path <dockerfile-path>                          Path to default dockerfile location");
         out("  --toolname <toolname>                                        Toolname for the given tool");
         out("  --git-url <git-url>                                          Git url");
@@ -1189,6 +1201,8 @@ public class ToolClient extends AbstractEntryClient {
         out("  --dockerfile-path <file>                                 Path for the dockerfile, defaults to /Dockerfile");
         out("  --cwl-path <file>                                        Path for the CWL document, defaults to /Dockstore.cwl");
         out("  --wdl-path <file>                                        Path for the WDL document, defaults to /Dockstore.wdl");
+        out("  --test-cwl-path <test-cwl-path>                          Path to default test cwl location, defaults to /test.cwl.json");
+        out("  --test-wdl-path <test-wdl-path>                          Path to default test wdl location, defaults to /test.wdl.json");
         out("  --toolname <toolname>                                    Name of the tool, can be omitted, defaults to null");
         out("  --registry <registry>                                    Docker registry, can be omitted, defaults to DOCKER_HUB. Run command with no parameters to see available registries.");
         out("  --version-name <version>                                 Version tag name for Dockerhub containers only, defaults to latest.");

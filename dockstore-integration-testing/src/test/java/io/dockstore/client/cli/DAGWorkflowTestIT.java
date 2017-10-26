@@ -88,7 +88,7 @@ public class DAGWorkflowTestIT {
     private List<String> getJSON(String repo, String fileName, String descType, String branch)
             throws IOException, TimeoutException, ApiException {
         WorkflowsApi workflowApi = setupWebService();
-        Workflow githubWorkflow = workflowApi.manualRegister("github", repo, fileName, "test-workflow", descType);
+        Workflow githubWorkflow = workflowApi.manualRegister("github", repo, fileName, "test-workflow", descType, "/test.json");
 
         // Publish github workflow
         Workflow refresh = workflowApi.refresh(githubWorkflow.getId());

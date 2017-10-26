@@ -167,6 +167,7 @@ public class WorkflowResource {
         Workflow newWorkflow = new Workflow();
         newWorkflow.setMode(WorkflowMode.STUB);
         newWorkflow.setDefaultWorkflowPath(workflow.getDefaultWorkflowPath());
+        newWorkflow.setDefaultTestParameterFilePath(workflow.getDefaultTestParameterFilePath());
         newWorkflow.setOrganization(workflow.getOrganization());
         newWorkflow.setRepository(workflow.getRepository());
         newWorkflow.setPath(workflow.getPath());
@@ -461,6 +462,7 @@ public class WorkflowResource {
         oldWorkflow.setPath(newWorkflow.getPath());
         oldWorkflow.setDescriptorType(newWorkflow.getDescriptorType());
         oldWorkflow.setDefaultWorkflowPath(newWorkflow.getDefaultWorkflowPath());
+        oldWorkflow.setDefaultTestParameterFilePath(newWorkflow.getDefaultTestParameterFilePath());
         if (newWorkflow.getDefaultVersion() != null) {
             if (!oldWorkflow.checkAndSetDefaultVersion(newWorkflow.getDefaultVersion())) {
                 throw new CustomWebApplicationException("Workflow version does not exist.", HttpStatus.SC_BAD_REQUEST);
@@ -531,6 +533,13 @@ public class WorkflowResource {
         }
         elasticManager.handleIndexUpdate(c, ElasticMode.UPDATE);
         return c;
+    }
+
+    private SourceFile createSourceFile(String path, SourceFile.FileType type) {
+        SourceFile sourcefile = new SourceFile();
+        sourcefile.setPath(path);
+        sourcefile.setType(type);
+        return sourcefile;
     }
 
     @GET
@@ -904,7 +913,8 @@ public class WorkflowResource {
             @ApiParam(value = "Workflow repository", required = true) @QueryParam("workflowPath") String workflowPath,
             @ApiParam(value = "Workflow container new descriptor path (CWL or WDL) and/or name", required = true) @QueryParam("defaultWorkflowPath") String defaultWorkflowPath,
             @ApiParam(value = "Workflow name", required = true) @QueryParam("workflowName") String workflowName,
-            @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType) {
+            @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType,
+            @ApiParam(value = "Default test parameter file path") @QueryParam("defaultTestParameterFilePath") String defaultTestParameterFilePath) {
 
         String completeWorkflowPath = workflowPath;
         // Check that no duplicate workflow (same WorkflowPath) exists
@@ -948,6 +958,7 @@ public class WorkflowResource {
         newWorkflow.setWorkflowName(workflowName);
         newWorkflow.setPath(completeWorkflowPath);
         newWorkflow.setDescriptorType(descriptorType);
+        newWorkflow.setDefaultTestParameterFilePath(defaultTestParameterFilePath);
 
         final long workflowID = workflowDAO.create(newWorkflow);
         // need to create nested data models

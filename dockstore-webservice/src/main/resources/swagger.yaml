@@ -17,7 +17,11 @@ definitions:
     properties:
       author: {description: This is the name of the author stated in the Dockstore.cwl,
         type: string}
+      defaultCWLTestParameterFile: {description: 'This indicates for the associated
+          git repository, the default path to the CWL test parameter file', type: string}
       defaultVersion: {description: This is the default version of the entry, type: string}
+      defaultWDLTestParameterFile: {description: 'This indicates for the associated
+          git repository, the default path to the WDL test parameter file', type: string}
       default_cwl_path: {description: 'This indicates for the associated git repository,
           the default path to the CWL document, required: GA4GH', type: string}
       default_dockerfile_path: {description: 'This indicates for the associated git
@@ -92,8 +96,9 @@ definitions:
         items: {$ref: '#/definitions/User'}
         type: array
         uniqueItems: true
-    required: [default_cwl_path, default_dockerfile_path, default_wdl_path, gitUrl,
-      mode, name, namespace, private_access, registry, toolname]
+    required: [defaultCWLTestParameterFile, defaultWDLTestParameterFile, default_cwl_path,
+      default_dockerfile_path, default_wdl_path, gitUrl, mode, name, namespace, private_access,
+      registry, toolname]
     type: object
   Entry:
     properties:
@@ -392,6 +397,8 @@ definitions:
     properties:
       author: {description: This is the name of the author stated in the Dockstore.cwl,
         type: string}
+      defaultTestParameterFilePath: {description: 'This indicates for the associated
+          git repository, the default path to the test parameter file', type: string}
       defaultVersion: {description: This is the default version of the entry, type: string}
       description: {description: 'This is a human-readable description of this container
           and what it is trying to accomplish, required GA4GH', type: string}
@@ -445,7 +452,8 @@ definitions:
         uniqueItems: true
       workflow_path: {description: 'This indicates for the associated git repository,
           the default path to the CWL document', type: string}
-    required: [descriptorType, gitUrl, mode, organization, repository, workflow_path]
+    required: [defaultTestParameterFilePath, descriptorType, gitUrl, mode, organization,
+      repository, workflow_path]
     type: object
   WorkflowVersion:
     description: This describes one workflow version associated with a workflow.
@@ -485,7 +493,7 @@ info:
     to build those images
   license: {name: ' GNU Lesser General Public License', url: 'https://www.gnu.org/licenses/lgpl-3.0.en.html'}
   title: Dockstore API
-  version: 1.0.2
+  version: 1.3.0
 paths:
   /api/ga4gh/v1/extended/containers/{organization}:
     get:
@@ -502,7 +510,7 @@ paths:
             items: {$ref: '#/definitions/Tool'}
             type: array
       summary: List entries of an organization
-      tags: [GA4GH]
+      tags: [extendedGA4GH]
   /api/ga4gh/v1/extended/organizations:
     get:
       description: 'This endpoint returns list of all organizations. '
@@ -516,7 +524,7 @@ paths:
             items: {type: string}
             type: array
       summary: List all organizations
-      tags: [GA4GH]
+      tags: [extendedGA4GH]
   /api/ga4gh/v1/extended/tools/entry/_search:
     post:
       description: This endpoint searches the index for all published tools and workflows.
@@ -534,7 +542,7 @@ paths:
           description: An elastic search result.
           schema: {type: string}
       summary: Search the index of tools
-      tags: [GA4GH]
+      tags: [extendedGA4GH]
   /api/ga4gh/v1/extended/tools/index:
     post:
       description: 'This endpoint updates the index for all published tools and workflows. '
@@ -544,7 +552,7 @@ paths:
       responses:
         200: {description: An array of Tools of the input organization.}
       summary: Update the index of tools
-      tags: [GA4GH]
+      tags: [extendedGA4GH]
   /api/ga4gh/v1/extended/tools/{organization}:
     get:
       description: 'This endpoint returns tools of an organization. '
@@ -560,7 +568,7 @@ paths:
             items: {$ref: '#/definitions/Tool'}
             type: array
       summary: List tools of an organization
-      tags: [GA4GH]
+      tags: [extendedGA4GH]
   /api/ga4gh/v1/extended/workflows/{organization}:
     get:
       description: 'This endpoint returns workflows of an organization. '
@@ -576,7 +584,7 @@ paths:
             items: {$ref: '#/definitions/Tool'}
             type: array
       summary: List workflows of an organization
-      tags: [GA4GH]
+      tags: [extendedGA4GH]
   /api/ga4gh/v1/metadata:
     get:
       description: Return some metadata that is useful for describing this registry
@@ -1691,6 +1699,8 @@ paths:
         200:
           description: successful operation
           schema: {type: string}
+      security:
+      - BEARER: []
       summary: List all repos known via all registered tokens
       tags: [github.repo]
   /integration.bitbucket.org:
@@ -1767,7 +1777,7 @@ paths:
           description: successful operation
           schema: {type: string}
       summary: List all workflow and tool paths.
-      tags: [containers]
+      tags: [metadata]
   /users:
     get:
       description: List all users. Admin only.
@@ -2295,6 +2305,8 @@ paths:
         type: string}
       - {description: Descriptor type, in: query, name: descriptorType, required: true,
         type: string}
+      - {description: Default test parameter file path, in: query, name: defaultTestParameterFilePath,
+        required: false, type: string}
       produces: [application/json]
       responses:
         200:
@@ -2891,7 +2903,7 @@ tags:
 - {description: List and modify tags for containers, name: containertags}
 - {description: A curated subset of resources proposed as a common standard for tool
     repositories, name: GA4GH}
-- {description: An extension of GA4GH, name: extendedGA4GH}
+- {description: Optional experimental extensions of the GA4GH API, name: extendedGA4GH}
 - {description: List source code repositories (should be generalized from github),
   name: github.repo}
 - {description: stop-gap allowing developers to associate with bitbucket, name: integration.bitbucket.org}
