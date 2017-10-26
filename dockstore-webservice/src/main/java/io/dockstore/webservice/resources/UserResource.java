@@ -393,9 +393,8 @@ public class UserResource {
 
         userDAO.clearCache();
         authUser = userDAO.findById(authUser.getId());
+        List<Tool> finalTools = getTools(authUser);
         bulkUpsertTools(authUser);
-        List<Tool> finalTools = authUser.getEntries().stream().filter(Tool.class::isInstance).map(Tool.class::cast)
-                .collect(Collectors.toList());
         return finalTools;
     }
 
@@ -435,8 +434,9 @@ public class UserResource {
 
         // TODO: Only update the ones that have changed
         authUser = userDAO.findById(authUser.getId());
+        List<Tool> finalTools = getTools(authUser);
         bulkUpsertTools(authUser);
-        return tools;
+        return finalTools;
     }
 
     @GET
@@ -502,6 +502,10 @@ public class UserResource {
         return user.getEntries().stream().filter(Workflow.class::isInstance).map(Workflow.class::cast).collect(Collectors.toList());
     }
 
+    private List<Tool> getTools(User user) {
+        return user.getEntries().stream().filter(Tool.class::isInstance).map(Tool.class::cast).collect(Collectors.toList());
+    }
+
     @GET
     @Path("/{userId}/containers")
     @Timed
@@ -512,7 +516,7 @@ public class UserResource {
         Helper.checkUser(user, userId);
         // need to avoid lazy initialize error
         final User byId = this.userDAO.findById(userId);
-        return FluentIterable.from(byId.getEntries()).filter(Tool.class).toList();
+        return getTools(byId);
     }
 
     @GET
