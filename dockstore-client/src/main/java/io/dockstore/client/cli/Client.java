@@ -55,6 +55,7 @@ import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
+import io.swagger.client.api.ExtendedGA4GHApi;
 import io.swagger.client.api.GA4GHApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
@@ -106,6 +107,7 @@ public class Client {
     private ContainersApi containersApi;
     private UsersApi usersApi;
     private GA4GHApi ga4ghApi;
+    private ExtendedGA4GHApi extendedGA4GHApi;
 
     private boolean isAdmin = false;
     private ToolClient toolClient;
@@ -676,7 +678,7 @@ public class Client {
                     } else if ("plugin".equals(mode)) {
                         handled = PluginClient.handleCommand(args, Utilities.parseConfig(configFile));
                     } else if ("search".equals(mode)) {
-                        handled = SearchClient.handleCommand(args, Utilities.parseConfig(configFile), this.ga4ghApi);
+                        handled = SearchClient.handleCommand(args, Utilities.parseConfig(configFile), this.extendedGA4GHApi);
                     }
 
                     if (targetClient != null) {
@@ -765,6 +767,8 @@ public class Client {
         this.containersApi = new ContainersApi(defaultApiClient);
         this.usersApi = new UsersApi(defaultApiClient);
         this.ga4ghApi = new GA4GHApi(defaultApiClient);
+        this.extendedGA4GHApi = new ExtendedGA4GHApi(defaultApiClient);
+
 
         try {
             if (this.usersApi.getApiClient() != null) {
