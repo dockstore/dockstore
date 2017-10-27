@@ -392,6 +392,9 @@ public class UserResource {
 
         // Update user data
         Helper.updateUserHelper(authUser, userDAO, tokenDAO);
+
+        // Check if the user has tokens for the organization they're refreshing
+        checkToolTokens(authUser, userId, organization);
         List<Tool> tools = dockerRepoResource.refreshToolsForUser(userId, organization);
 
         userDAO.clearCache();
@@ -421,9 +424,12 @@ public class UserResource {
         }
     }
 
-    private void checkToolTokens(User authUser, Long userId) {
+    private void checkToolTokens(User authUser, Long userId, String organization) {
         List<Token> tokens = tokenDAO.findByUserId(userId);
         List<Tool> tools = userContainers(authUser, userId);
+        if (organization != null && !organization.isEmpty()) {
+            tools.removeIf(tool -> !tool.getNamespace().equals(organization));
+        }
         Token gitLabToken = Helper.extractToken(tokens, TokenType.GITLAB_COM.toString());
         Token quayioToken = Helper.extractToken(tokens, TokenType.QUAY_IO.toString());
         Set<Registry> uniqueRegistry = new HashSet<>();
@@ -454,7 +460,7 @@ public class UserResource {
 
 
         // Checks if the user has the tokens for their current tools
-        checkToolTokens(authUser, userId);
+        checkToolTokens(authUser, userId, null);
 
         List<Tool> tools = dockerRepoResource.refreshToolsForUser(userId, null);
 
