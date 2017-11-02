@@ -1,5 +1,5 @@
 /*
- *    Copyright 2016 OICR
+ *    Copyright 2017 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -236,19 +236,20 @@ public final class Helper {
     /**
      * Refreshes user's containers
      *
-     * @param userId
-     * @param client
-     * @param objectMapper
-     * @param userDAO
-     * @param toolDAO
-     * @param tokenDAO
-     * @param tagDAO
-     * @param fileDAO
-     * @return list of updated containers
+     * @param userId       The ID of the user
+     * @param client       An HttpClient used by source code repositories
+     * @param objectMapper ...
+     * @param userDAO      ...
+     * @param toolDAO      ...
+     * @param tokenDAO     ...
+     * @param tagDAO       ...
+     * @param fileDAO      ...
+     * @param organization If not null, only refresh tools belonging to the specific organization.  Otherwise, refresh all.
+     * @return The list of tools that have been updated
      */
     @SuppressWarnings("checkstyle:parameternumber")
     public static List<Tool> refresh(final Long userId, final HttpClient client, final ObjectMapper objectMapper, final UserDAO userDAO,
-            final ToolDAO toolDAO, final TokenDAO tokenDAO, final TagDAO tagDAO, final FileDAO fileDAO) {
+            final ToolDAO toolDAO, final TokenDAO tokenDAO, final TagDAO tagDAO, final FileDAO fileDAO, String organization) {
         // Get user's quay and git tokens
         List<Token> tokens = tokenDAO.findByUserId(userId);
         Token quayToken = extractToken(tokens, TokenType.QUAY_IO.toString());
@@ -270,7 +271,8 @@ public final class Helper {
             LOG.info("Grabbing " + registry.getFriendlyName() + " repos");
 
             updatedTools.addAll(abstractImageRegistry
-                    .refreshTools(userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken, bitbucketToken, gitlabToken));
+                    .refreshTools(userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken, bitbucketToken, gitlabToken,
+                            organization));
         }
         return updatedTools;
     }
@@ -303,6 +305,10 @@ public final class Helper {
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
         final AbstractImageRegistry abstractImageRegistry = factory.createImageRegistry(tool.getRegistry());
 
+        if (abstractImageRegistry == null) {
+            throw new CustomWebApplicationException("unable to establish connection to registry, check that you have linked your accounts",
+                HttpStatus.SC_NOT_FOUND);
+        }
         return abstractImageRegistry
                 .refreshTool(containerId, userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken, bitbucketToken, gitlabToken);
 
@@ -533,7 +539,9 @@ public final class Helper {
         if (!starredUsers.contains(user)) {
             entry.addStarredUser(user);
         } else {
-            throw new CustomWebApplicationException("You cannot star the " + entryType + " " + entryPath + " because you have already starred it.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(
+                    "You cannot star the " + entryType + " " + entryPath + " because you have already starred it.",
+                    HttpStatus.SC_BAD_REQUEST);
         }
     }
 
@@ -552,12 +560,15 @@ public final class Helper {
         if (starredUsers.contains(user)) {
             entry.removeStarredUser(user);
         } else {
-            throw new CustomWebApplicationException("You cannot unstar the " + entryType + " " + entryPath + " because you have not starred it.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(
+                    "You cannot unstar the " + entryType + " " + entryPath + " because you have not starred it.",
+                    HttpStatus.SC_BAD_REQUEST);
         }
     }
 
     /**
      * Updates the given user with metadata from Github
+     *
      * @param user
      * @param userDAO
      * @param tokenDAO
@@ -575,12 +586,12 @@ public final class Helper {
 
         private List<Tool> repositories;
 
-        public void setRepositories(List<Tool> repositories) {
-            this.repositories = repositories;
-        }
-
         public List<Tool> getRepositories() {
             return repositories;
+        }
+
+        public void setRepositories(List<Tool> repositories) {
+            this.repositories = repositories;
         }
     }
 }

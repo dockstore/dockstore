@@ -1,5 +1,5 @@
 /*
- *    Copyright 2016 OICR
+ *    Copyright 2017 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.Authorization;
 import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.RepositoryContents;
 import org.eclipse.egit.github.core.User;
@@ -47,6 +48,8 @@ import org.eclipse.egit.github.core.service.RepositoryService;
 import org.eclipse.egit.github.core.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
 /**
  * @author dyuen
@@ -87,9 +90,10 @@ public class GitHubRepoResource {
     @UnitOfWork
     @RolesAllowed("admin")
     @ApiOperation(value = "List all repos known via all registered tokens", notes = "List docker container repos currently known. "
-            + "Right now, tokens are used to synchronously talk to the quay.io API to list repos. "
-            + "Ultimately, we should cache this information and refresh either by user request or by time "
-            + "TODO: This should be a properly defined list of objects, it also needs admin authentication", response = String.class)
+        + "Right now, tokens are used to synchronously talk to the quay.io API to list repos. "
+        + "Ultimately, we should cache this information and refresh either by user request or by time "
+        + "TODO: This should be a properly defined list of objects, it also needs admin authentication", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = String.class)
     public String getRepos(@ApiParam(hidden = true) @Auth io.dockstore.webservice.core.User authUser) {
 
         List<Token> findAll = dao.findAll();

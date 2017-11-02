@@ -1,5 +1,5 @@
 /*
- *    Copyright 2016 OICR
+ *    Copyright 2017 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -77,8 +77,7 @@ public class DAGWorkflowTestIT {
         final Long userId = usersApi.getUser().getId();
 
         // Make publish request (true)
-        final PublishRequest publishRequest = new PublishRequest();
-        publishRequest.setPublish(true);
+        final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
 
         // Get workflows
         usersApi.refreshWorkflows(userId);
@@ -89,7 +88,7 @@ public class DAGWorkflowTestIT {
     private List<String> getJSON(String repo, String fileName, String descType, String branch)
             throws IOException, TimeoutException, ApiException {
         WorkflowsApi workflowApi = setupWebService();
-        Workflow githubWorkflow = workflowApi.manualRegister("github", repo, fileName, "test-workflow", descType);
+        Workflow githubWorkflow = workflowApi.manualRegister("github", repo, fileName, "test-workflow", descType, "/test.json");
 
         // Publish github workflow
         Workflow refresh = workflowApi.refresh(githubWorkflow.getId());

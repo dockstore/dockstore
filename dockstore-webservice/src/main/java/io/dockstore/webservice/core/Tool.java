@@ -1,5 +1,5 @@
 /*
- *    Copyright 2016 OICR
+ *    Copyright 2017 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 package io.dockstore.webservice.core;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.dockstore.common.Registry;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import java.util.Date;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -34,10 +34,11 @@ import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
-import java.util.Date;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.dockstore.common.Registry;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 /**
  * This describes one tool in the dockstore, extending entry with fields necessary to describe bioinformatics tools.
@@ -56,7 +57,7 @@ import java.util.TreeSet;
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByNameAndNamespaceAndRegistry", query = "SELECT c FROM Tool c WHERE c.name = :name AND c.namespace = :namespace AND c.registry = :registry"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedById", query = "SELECT c FROM Tool c WHERE c.id = :id AND c.isPublished = true"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findAllPublished", query = "SELECT c FROM Tool c WHERE c.isPublished = true"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findAllPublished", query = "SELECT c FROM Tool c WHERE c.isPublished = true ORDER BY size(c.starredUsers) DESC"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findAll", query = "SELECT c FROM Tool c"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByPath", query = "SELECT c FROM Tool c WHERE c.path = :path"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByToolPath", query = "SELECT c FROM Tool c WHERE c.path = :path AND c.toolname = :toolname"),
@@ -92,6 +93,16 @@ public class Tool extends Entry<Tool, Tag> {
     @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the WDL document", required = true)
     private String defaultWdlPath = "/Dockstore.wdl";
 
+    @Column(columnDefinition = "text")
+    @JsonProperty("defaultCWLTestParameterFile")
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL test parameter file", required = true)
+    private String defaultTestCwlParameterFile = "/test.json";
+
+    @Column(columnDefinition = "text")
+    @JsonProperty("defaultWDLTestParameterFile")
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the WDL test parameter file", required = true)
+    private String defaultTestWdlParameterFile = "/test.json";
+
     @Column
     @JsonProperty("tool_maintainer_email")
     @ApiModelProperty(value = "The email address of the tool maintainer. Required for private repositories", required = false)
@@ -118,7 +129,7 @@ public class Tool extends Entry<Tool, Tag> {
     @ApiModelProperty(value = "This is a specific docker provider like quay.io or dockerhub or n/a?, required: GA4GH", required = true)
     private Registry registry;
     @Column
-    @ApiModelProperty(value = "This is a generated full docker path including registry and namespace, used for docker pull commands", readOnly = true)
+    @ApiModelProperty(value = "This is a generated full docker path including registry and namespace, used for docker pull commands")
     private String path;
 
     @Column
@@ -165,14 +176,32 @@ public class Tool extends Entry<Tool, Tag> {
         return name;
     }
 
+    /**
+     * @param name the repo name to set
+     */
+    public void setName(String name) {
+        this.name = name;
+    }
+
     @JsonProperty
     public String getNamespace() {
         return namespace;
     }
 
+    /**
+     * @param namespace the repo name to set
+     */
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
+    }
+
     @JsonProperty
     public Registry getRegistry() {
         return registry;
+    }
+
+    public void setRegistry(Registry registry) {
+        this.registry = registry;
     }
 
     @JsonProperty("path")
@@ -189,9 +218,17 @@ public class Tool extends Entry<Tool, Tag> {
         return repositoryPath;
     }
 
+    public void setPath(String path) {
+        this.path = path;
+    }
+
     @JsonProperty
     public Date getLastBuild() {
         return lastBuild;
+    }
+
+    public void setLastBuild(Date lastBuild) {
+        this.lastBuild = lastBuild;
     }
 
     public Set<Tag> getTags() {
@@ -204,32 +241,6 @@ public class Tool extends Entry<Tool, Tag> {
 
     public boolean removeTag(Tag tag) {
         return tags.remove(tag);
-    }
-
-    /**
-     * @param name the repo name to set
-     */
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    /**
-     * @param namespace the repo name to set
-     */
-    public void setNamespace(String namespace) {
-        this.namespace = namespace;
-    }
-
-    public void setRegistry(Registry registry) {
-        this.registry = registry;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
-    }
-
-    public void setLastBuild(Date lastBuild) {
-        this.lastBuild = lastBuild;
     }
 
     @JsonProperty
@@ -299,24 +310,19 @@ public class Tool extends Entry<Tool, Tag> {
         this.privateAccess = privateAccess;
     }
 
-    /**
-     * Updates information from given tool based on the new tool
-     *
-     * @param tool
-     */
-    public void updateInfo(Tool tool) {
-        // Add descriptor type default paths here
-        defaultCwlPath = tool.getDefaultCwlPath();
-        defaultWdlPath = tool.getDefaultWdlPath();
-        defaultDockerfilePath = tool.getDefaultDockerfilePath();
-        this.setDefaultVersion(tool.getDefaultVersion());
+    public String getDefaultTestWdlParameterFile() {
+        return defaultTestWdlParameterFile;
+    }
 
-        toolname = tool.getToolname();
-        this.setGitUrl(tool.getGitUrl());
+    public void setDefaultTestWdlParameterFile(String defaultTestWdlParameterFile) {
+        this.defaultTestWdlParameterFile = defaultTestWdlParameterFile;
+    }
 
-        if (mode == ToolMode.MANUAL_IMAGE_PATH) {
-            toolMaintainerEmail = tool.getToolMaintainerEmail();
-            privateAccess = tool.isPrivateAccess();
-        }
+    public String getDefaultTestCwlParameterFile() {
+        return defaultTestCwlParameterFile;
+    }
+
+    public void setDefaultTestCwlParameterFile(String defaultTestCwlParameterFile) {
+        this.defaultTestCwlParameterFile = defaultTestCwlParameterFile;
     }
 }

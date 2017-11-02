@@ -1,5 +1,5 @@
 /*
- *    Copyright 2016 OICR
+ *    Copyright 2017 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -15,6 +15,9 @@
  */
 package io.dockstore.client.cli;
 
+import io.dockstore.client.cwlrunner.CWLRunnerFactory;
+import io.dockstore.common.Utilities;
+import io.dropwizard.testing.ResourceHelpers;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -33,7 +36,8 @@ public class ClientTestIT {
 
     @Test
     public void testDependencies(){
-        Client.checkForCWLDependencies();
+        String config = ResourceHelpers.resourceFilePath("config");
+        CWLRunnerFactory.setConfig(Utilities.parseConfig(config));
         Assert.assertTrue(!systemErrRule.getLog().contains("Override and run with"));
         Assert.assertTrue(!systemOutRule.getLog().contains("Override and run with"));
     }

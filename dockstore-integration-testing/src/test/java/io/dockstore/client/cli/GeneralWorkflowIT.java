@@ -1,5 +1,5 @@
 /*
- *    Copyright 2016 OICR
+ *    Copyright 2017 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.Workflow;
+import io.swagger.models.Swagger;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.junit.Assert;
 import org.junit.Before;
@@ -40,6 +41,8 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
+import org.junit.contrib.java.lang.system.SystemErrRule;
+import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 
 import static io.dockstore.common.CommonTestUtilities.clearStateMakePrivate2;
@@ -57,6 +60,12 @@ public class GeneralWorkflowIT {
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
+
+    @Rule
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+
+    @Rule
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
 
     @Before
     public void clearDBandSetup() throws IOException, TimeoutException {
@@ -511,14 +520,13 @@ public class GeneralWorkflowIT {
         final Long userId = usersApi.getUser().getId();
 
         // Make publish request (true)
-        final PublishRequest publishRequest = new PublishRequest();
-        publishRequest.setPublish(true);
+        final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
 
         // Get workflows
         usersApi.refreshWorkflows(userId);
 
         Workflow githubWorkflow = workflowApi
-                .manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/Dockstore.cwl", "test-update-workflow", "cwl");
+                .manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/Dockstore.cwl", "test-update-workflow", "cwl", "/test.json");
 
         // Publish github workflow
         Workflow workflow = workflowApi.refresh(githubWorkflow.getId());

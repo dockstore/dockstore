@@ -1,5 +1,5 @@
 /*
- *    Copyright 2016 OICR
+ *    Copyright 2017 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -16,9 +16,34 @@
 
 package io.dockstore.webservice.resources;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+
+import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
+
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Optional;
 import com.google.common.base.Strings;
+import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
@@ -35,6 +60,8 @@ import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.BitBucketSourceCodeRepo;
 import io.dockstore.webservice.helpers.DAGHelper;
+import io.dockstore.webservice.helpers.ElasticManager;
+import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.EntryLabelHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
@@ -54,6 +81,7 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.Authorization;
 import io.swagger.model.ToolDescriptor;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -62,27 +90,7 @@ import org.json.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
+import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
 /**
  * @author dyuen
@@ -93,7 +101,7 @@ import java.util.SortedSet;
 public class WorkflowResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
-
+    private final ElasticManager elasticManager;
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
     private final WorkflowDAO workflowDAO;
@@ -106,10 +114,6 @@ public class WorkflowResource {
     private final String bitbucketClientID;
     private final String bitbucketClientSecret;
     private final EntryVersionHelper<Workflow> entryVersionHelper;
-
-    public enum Type {
-        DAG, TOOLS
-    }
 
     @SuppressWarnings("checkstyle:parameternumber")
     public WorkflowResource(HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ToolDAO toolDAO, WorkflowDAO workflowDAO,
@@ -128,6 +132,7 @@ public class WorkflowResource {
 
         this.workflowDAO = workflowDAO;
         entryVersionHelper = new EntryVersionHelper<>(workflowDAO);
+        elasticManager = new ElasticManager();
     }
 
     @GET
@@ -135,10 +140,10 @@ public class WorkflowResource {
     @Timed
     @UnitOfWork
     @RolesAllowed("admin")
-    @ApiOperation(value = "Refresh all workflows", notes = "Updates some metadata. ADMIN ONLY", response = Workflow.class, responseContainer = "List")
+    @ApiOperation(value = "Refresh all workflows", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Updates some metadata. ADMIN ONLY", response = Workflow.class, responseContainer = "List")
     public List<Workflow> refreshAll(@ApiParam(hidden = true) @Auth User authUser) {
         List<User> users = userDAO.findAll();
-        users.forEach(this::refreshStubWorkflowsForUser);
+        users.forEach(user -> refreshStubWorkflowsForUser(user, null));
         return workflowDAO.findAll();
     }
 
@@ -146,7 +151,7 @@ public class WorkflowResource {
     @Path("/{workflowId}/restub")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "Restub a workflow", notes = "Restubs a full, unpublished workflow.", response = Workflow.class)
+    @ApiOperation(value = "Restub a workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Restubs a full, unpublished workflow.", response = Workflow.class)
     public Workflow restub(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
@@ -162,6 +167,7 @@ public class WorkflowResource {
         Workflow newWorkflow = new Workflow();
         newWorkflow.setMode(WorkflowMode.STUB);
         newWorkflow.setDefaultWorkflowPath(workflow.getDefaultWorkflowPath());
+        newWorkflow.setDefaultTestParameterFilePath(workflow.getDefaultTestParameterFilePath());
         newWorkflow.setOrganization(workflow.getOrganization());
         newWorkflow.setRepository(workflow.getRepository());
         newWorkflow.setPath(workflow.getPath());
@@ -182,6 +188,7 @@ public class WorkflowResource {
         long id = workflowDAO.create(newWorkflow);
         newWorkflow.addUser(user);
         newWorkflow = workflowDAO.findById(id);
+        elasticManager.handleIndexUpdate(newWorkflow, ElasticMode.DELETE);
         return newWorkflow;
 
     }
@@ -191,7 +198,7 @@ public class WorkflowResource {
      *
      * @param user a user to refresh workflows for
      */
-    public void refreshStubWorkflowsForUser(User user) {
+    public void refreshStubWorkflowsForUser(User user, String organization) {
         try {
             List<Token> tokens = checkOnBitbucketToken(user);
 
@@ -203,7 +210,8 @@ public class WorkflowResource {
             // Update bitbucket workflows if token exists
             if (bitbucketToken != null && bitbucketToken.getContent() != null) {
                 // get workflows from bitbucket for a user and updates db
-                refreshHelper(new BitBucketSourceCodeRepo(bitbucketToken.getUsername(), client, bitbucketToken.getContent(), null), user);
+                refreshHelper(new BitBucketSourceCodeRepo(bitbucketToken.getUsername(), client, bitbucketToken.getContent(), null), user,
+                        organization);
             }
 
             // Refresh Github
@@ -212,7 +220,7 @@ public class WorkflowResource {
             // Update github workflows if token exists
             if (githubToken != null && githubToken.getContent() != null) {
                 // get workflows from github for a user and updates db
-                refreshHelper(new GitHubSourceCodeRepo(user.getUsername(), githubToken.getContent(), null), user);
+                refreshHelper(new GitHubSourceCodeRepo(user.getUsername(), githubToken.getContent(), null), user, organization);
             }
 
             // Refresh Gitlab
@@ -221,7 +229,7 @@ public class WorkflowResource {
             // Update gitlab workflows if token exists
             if (gitlabToken != null && gitlabToken.getContent() != null) {
                 // get workflows from gitlab for a user and updates db
-                refreshHelper(new GitLabSourceCodeRepo(user.getUsername(), client, gitlabToken.getContent(), null), user);
+                refreshHelper(new GitLabSourceCodeRepo(user.getUsername(), client, gitlabToken.getContent(), null), user, organization);
             }
 
             // when 3) no data is found for a workflow in the db, we may want to create a warning, note, or label
@@ -235,16 +243,19 @@ public class WorkflowResource {
      *
      * @param sourceCodeRepoInterface
      * @param user
+     * @param organization            if specified, only refresh if workflow belongs to the organization
      */
-    private void refreshHelper(final SourceCodeRepoInterface sourceCodeRepoInterface, User user) {
+    private void refreshHelper(final SourceCodeRepoInterface sourceCodeRepoInterface, User user, String organization) {
         // Mapping of git url to repository name (owner/repo)
         final Map<String, String> workflowGitUrl2Name = sourceCodeRepoInterface.getWorkflowGitUrl2RepositoryId();
-
+        LOG.error(Arrays.toString(workflowGitUrl2Name.entrySet().toArray()));
+        if (organization != null) {
+            workflowGitUrl2Name.entrySet().removeIf(thing -> !(thing.getValue().split("/"))[0].equals(organization));
+        }
         // For each entry found of the associated git hosting service
         for (Map.Entry<String, String> entry : workflowGitUrl2Name.entrySet()) {
-            // Get all workflows with the same giturl
+            // Get all workflows with the same giturl)
             final List<Workflow> byGitUrl = workflowDAO.findByGitUrl(entry.getKey());
-
             if (byGitUrl.size() > 0) {
                 // Workflows exist with the given git url
                 for (Workflow workflow : byGitUrl) {
@@ -292,7 +303,7 @@ public class WorkflowResource {
     @Path("/{workflowId}/refresh")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "Refresh one particular workflow. Always do a full refresh when targetted", response = Workflow.class)
+    @ApiOperation(value = "Refresh one particular workflow. Always do a full refresh when targetted", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow refresh(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
@@ -313,8 +324,9 @@ public class WorkflowResource {
                 .getWorkflow(workflow.getOrganization() + '/' + workflow.getRepository(), Optional.of(workflow));
         workflow.getUsers().add(user);
         updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow);
-
-        return workflowDAO.findById(workflowId);
+        Workflow finalWorkflow = workflowDAO.findById(workflowId);
+        elasticManager.handleIndexUpdate(newWorkflow, ElasticMode.UPDATE);
+        return finalWorkflow;
     }
 
     /**
@@ -327,6 +339,15 @@ public class WorkflowResource {
         // update workflow versions
         Map<String, WorkflowVersion> existingVersionMap = new HashMap<>();
         workflow.getWorkflowVersions().forEach(version -> existingVersionMap.put(version.getName(), version));
+        // delete versions that exist in old workflow but do not exist in newWorkflow
+        Map<String, WorkflowVersion> newVersionMap = new HashMap<>();
+        newWorkflow.getWorkflowVersions().forEach(version -> newVersionMap.put(version.getName(), version));
+        Sets.SetView<String> removedVersions = Sets.difference(existingVersionMap.keySet(), newVersionMap.keySet());
+        for (String version : removedVersions) {
+            workflow.removeWorkflowVersion(existingVersionMap.get(version));
+        }
+
+        // then copy over content that changed
         for (WorkflowVersion version : newWorkflow.getVersions()) {
             WorkflowVersion workflowVersionFromDB = existingVersionMap.get(version.getName());
             if (existingVersionMap.containsKey(version.getName())) {
@@ -362,8 +383,6 @@ public class WorkflowResource {
                     workflowVersionFromDB.getSourceFiles().remove(entry.getValue());
                 }
             }
-
-            //TODO: this needs a strategy for dealing with content on our side that has since been deleted
         }
     }
 
@@ -371,7 +390,7 @@ public class WorkflowResource {
     @Timed
     @UnitOfWork
     @RolesAllowed("admin")
-    @ApiOperation(value = "List all workflows cached in database", notes = "List workflows currently known. Admin Only", response = Workflow.class, responseContainer = "List")
+    @ApiOperation(value = "List all workflows cached in database", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "List workflows currently known. Admin Only", response = Workflow.class, responseContainer = "List")
     public List<Workflow> allWorkflows(@ApiParam(hidden = true) @Auth User user) {
         return workflowDAO.findAll();
     }
@@ -380,14 +399,13 @@ public class WorkflowResource {
     @Timed
     @UnitOfWork
     @Path("/{workflowId}")
-    @ApiOperation(value = "Get a registered workflow", response = Workflow.class)
+    @ApiOperation(value = "Get a registered workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow getWorkflow(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow c = workflowDAO.findById(workflowId);
         Helper.checkEntry(c);
 
         Helper.checkUser(user, c);
-
         return c;
     }
 
@@ -395,7 +413,7 @@ public class WorkflowResource {
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/labels")
-    @ApiOperation(value = "Update the labels linked to a workflow.", notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Workflow.class)
+    @ApiOperation(value = "Update the labels linked to a workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Workflow.class)
     public Workflow updateLabels(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("workflowId") Long workflowId,
             @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings,
@@ -404,14 +422,17 @@ public class WorkflowResource {
         Helper.checkEntry(c);
 
         EntryLabelHelper<Workflow> labeller = new EntryLabelHelper<>(labelDAO);
-        return labeller.updateLabels(c, labelStrings);
+
+        Workflow workflow = labeller.updateLabels(c, labelStrings);
+        elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
+        return workflow;
     }
 
     @PUT
     @Timed
     @UnitOfWork
     @Path("/{workflowId}")
-    @ApiOperation(value = "Update the workflow with the given workflow.", response = Workflow.class)
+    @ApiOperation(value = "Update the workflow with the given workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow updateWorkflow(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
             @ApiParam(value = "Workflow with updated information", required = true) Workflow workflow) {
@@ -427,12 +448,26 @@ public class WorkflowResource {
             throw new CustomWebApplicationException("Workflow " + workflow.getPath() + " already exists.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        c.updateInfo(workflow);
+        updateInfo(c, workflow);
         Workflow result = workflowDAO.findById(workflowId);
         Helper.checkEntry(result);
-
+        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
         return result;
 
+    }
+
+    // Used to update workflow manually (not refresh)
+    private void updateInfo(Workflow oldWorkflow, Workflow newWorkflow) {
+        oldWorkflow.setWorkflowName(newWorkflow.getWorkflowName());
+        oldWorkflow.setPath(newWorkflow.getPath());
+        oldWorkflow.setDescriptorType(newWorkflow.getDescriptorType());
+        oldWorkflow.setDefaultWorkflowPath(newWorkflow.getDefaultWorkflowPath());
+        oldWorkflow.setDefaultTestParameterFilePath(newWorkflow.getDefaultTestParameterFilePath());
+        if (newWorkflow.getDefaultVersion() != null) {
+            if (!oldWorkflow.checkAndSetDefaultVersion(newWorkflow.getDefaultVersion())) {
+                throw new CustomWebApplicationException("Workflow version does not exist.", HttpStatus.SC_BAD_REQUEST);
+            }
+        }
     }
 
     @PUT
@@ -440,7 +475,7 @@ public class WorkflowResource {
     @UnitOfWork
     @Path("/{workflowId}/verify/{workflowVersionId}")
     @RolesAllowed("admin")
-    @ApiOperation(value = "Verify or unverify a workflow. ADMIN ONLY", response = WorkflowVersion.class, responseContainer = "List")
+    @ApiOperation(value = "Verify or unverify a workflow. ADMIN ONLY", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowVersion.class, responseContainer = "List")
     public Set<WorkflowVersion> verifyWorkflowVersion(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
             @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId,
@@ -469,6 +504,7 @@ public class WorkflowResource {
 
         Workflow result = workflowDAO.findById(workflowId);
         Helper.checkEntry(result);
+        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
         return result.getWorkflowVersions();
 
     }
@@ -477,7 +513,7 @@ public class WorkflowResource {
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/resetVersionPaths")
-    @ApiOperation(value = "Change the workflow paths", notes = "Workflow version correspond to each row of the versions table listing all information for a workflow", response = Workflow.class)
+    @ApiOperation(value = "Change the workflow paths", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Workflow version correspond to each row of the versions table listing all information for a workflow", response = Workflow.class)
     public Workflow updateWorkflowPath(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
             @ApiParam(value = "Workflow with updated information", required = true) Workflow workflow) {
@@ -495,15 +531,22 @@ public class WorkflowResource {
                 version.setWorkflowPath(workflow.getDefaultWorkflowPath());
             }
         }
-
+        elasticManager.handleIndexUpdate(c, ElasticMode.UPDATE);
         return c;
+    }
+
+    private SourceFile createSourceFile(String path, SourceFile.FileType type) {
+        SourceFile sourcefile = new SourceFile();
+        sourcefile.setPath(path);
+        sourcefile.setType(type);
+        return sourcefile;
     }
 
     @GET
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/users")
-    @ApiOperation(value = "Get users of a workflow", response = User.class, responseContainer = "List")
+    @ApiOperation(value = "Get users of a workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class, responseContainer = "List")
     public List<User> getUsers(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow c = workflowDAO.findById(workflowId);
@@ -530,7 +573,8 @@ public class WorkflowResource {
     @UnitOfWork
     @Path("/organization/{organization}/published")
     @ApiOperation(value = "List all published workflows belonging to the specified namespace", notes = "NO authentication", response = Workflow.class, responseContainer = "List")
-    public List<Workflow> getPublishedWorkflowsByOrganization(@ApiParam(value = "organization", required = true) @PathParam("organization") String organization) {
+    public List<Workflow> getPublishedWorkflowsByOrganization(
+            @ApiParam(value = "organization", required = true) @PathParam("organization") String organization) {
         List<Workflow> workflows = workflowDAO.findPublishedByOrganization(organization);
         entryVersionHelper.filterContainersForHiddenTags(workflows);
         return workflows;
@@ -540,7 +584,7 @@ public class WorkflowResource {
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/publish")
-    @ApiOperation(value = "Publish or unpublish a workflow", notes = "Publish/publish a workflow (public or private).", response = Workflow.class)
+    @ApiOperation(value = "Publish or unpublish a workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Publish/publish a workflow (public or private).", response = Workflow.class)
     public Workflow publish(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool id to publish/unpublish", required = true) @PathParam("workflowId") Long workflowId,
             @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) PublishRequest request) {
@@ -570,6 +614,11 @@ public class WorkflowResource {
 
         long id = workflowDAO.create(c);
         c = workflowDAO.findById(id);
+        if (request.getPublish()) {
+            elasticManager.handleIndexUpdate(c, ElasticMode.UPDATE);
+        } else {
+            elasticManager.handleIndexUpdate(c, ElasticMode.DELETE);
+        }
         return c;
     }
 
@@ -589,7 +638,7 @@ public class WorkflowResource {
     @Timed
     @UnitOfWork
     @Path("/path/workflow/{repository}")
-    @ApiOperation(value = "Get a workflow by path", notes = "Lists info of workflow. Enter full path.", response = Workflow.class)
+    @ApiOperation(value = "Get a workflow by path", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Lists info of workflow. Enter full path.", response = Workflow.class)
     public Workflow getWorkflowByPath(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
 
@@ -624,7 +673,7 @@ public class WorkflowResource {
     @Timed
     @UnitOfWork
     @Path("/versions")
-    @ApiOperation(value = "List the versions for a published workflow", response = WorkflowVersion.class, responseContainer = "List", hidden = true)
+    @ApiOperation(value = "List the versions for a published workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowVersion.class, responseContainer = "List", hidden = true)
     public List<WorkflowVersion> tags(@ApiParam(hidden = true) @Auth User user, @QueryParam("workflowId") long workflowId) {
         Workflow repository = workflowDAO.findById(workflowId);
         Helper.checkEntry(repository);
@@ -753,7 +802,7 @@ public class WorkflowResource {
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/testParameterFiles")
-    @ApiOperation(value = "Add test parameter files for a given version.", response = SourceFile.class, responseContainer = "Set")
+    @ApiOperation(value = "Add test parameter files for a given version.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = SourceFile.class, responseContainer = "Set")
     public Set<SourceFile> addTestParameterFiles(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
             @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
@@ -805,7 +854,7 @@ public class WorkflowResource {
                 workflowVersion.addSourceFile(sourceFileWithId);
             }
         }
-
+        elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
         return workflowVersion.getSourceFiles();
     }
 
@@ -813,7 +862,7 @@ public class WorkflowResource {
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/testParameterFiles")
-    @ApiOperation(value = "Delete test parameter files for a given version.", response = SourceFile.class, responseContainer = "Set")
+    @ApiOperation(value = "Delete test parameter files for a given version.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = SourceFile.class, responseContainer = "Set")
     public Set<SourceFile> deleteTestParameterFiles(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
             @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
@@ -850,7 +899,7 @@ public class WorkflowResource {
                 sourceFiles.remove(toRemove);
             }
         }
-
+        elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
         return workflowVersion.getSourceFiles();
     }
 
@@ -858,13 +907,14 @@ public class WorkflowResource {
     @Timed
     @UnitOfWork
     @Path("/manualRegister")
-    @ApiOperation(value = "Manually register a workflow", notes = "Manually register workflow (public or private).", response = Workflow.class)
+    @ApiOperation(value = "Manually register a workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Manually register workflow (public or private).", response = Workflow.class)
     public Workflow manualRegister(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Workflow registry", required = true) @QueryParam("workflowRegistry") String workflowRegistry,
             @ApiParam(value = "Workflow repository", required = true) @QueryParam("workflowPath") String workflowPath,
             @ApiParam(value = "Workflow container new descriptor path (CWL or WDL) and/or name", required = true) @QueryParam("defaultWorkflowPath") String defaultWorkflowPath,
             @ApiParam(value = "Workflow name", required = true) @QueryParam("workflowName") String workflowName,
-            @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType) {
+            @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType,
+            @ApiParam(value = "Default test parameter file path") @QueryParam("defaultTestParameterFilePath") String defaultTestParameterFilePath) {
 
         String completeWorkflowPath = workflowPath;
         // Check that no duplicate workflow (same WorkflowPath) exists
@@ -908,13 +958,15 @@ public class WorkflowResource {
         newWorkflow.setWorkflowName(workflowName);
         newWorkflow.setPath(completeWorkflowPath);
         newWorkflow.setDescriptorType(descriptorType);
+        newWorkflow.setDefaultTestParameterFilePath(defaultTestParameterFilePath);
 
         final long workflowID = workflowDAO.create(newWorkflow);
         // need to create nested data models
         final Workflow workflowFromDB = workflowDAO.findById(workflowID);
         workflowFromDB.getUsers().add(user);
         updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow);
-        return workflowDAO.findById(workflowID);
+        Workflow finalWorkflow = workflowDAO.findById(workflowID);
+        return finalWorkflow;
 
     }
 
@@ -940,7 +992,7 @@ public class WorkflowResource {
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/workflowVersions")
-    @ApiOperation(value = "Update the workflow versions linked to a workflow", notes = "Workflow version correspond to each row of the versions table listing all information for a workflow", response = WorkflowVersion.class, responseContainer = "List")
+    @ApiOperation(value = "Update the workflow versions linked to a workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Workflow version correspond to each row of the versions table listing all information for a workflow", response = WorkflowVersion.class, responseContainer = "List")
     public Set<WorkflowVersion> updateWorkflowVersion(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
             @ApiParam(value = "List of modified workflow versions", required = true) List<WorkflowVersion> workflowVersions) {
@@ -971,6 +1023,7 @@ public class WorkflowResource {
         }
         Workflow result = workflowDAO.findById(workflowId);
         Helper.checkEntry(result);
+        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
         return result.getVersions();
     }
 
@@ -1114,30 +1167,30 @@ public class WorkflowResource {
         return mainDescriptor;
     }
 
-
     @PUT
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/star")
-    @ApiOperation(value = "Stars a workflow.")
+    @ApiOperation(value = "Stars a workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public void starEntry(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to star.", required = true) @PathParam("workflowId") Long workflowId,
             @ApiParam(value = "StarRequest to star a repo for a user", required = true) StarRequest request) {
         Workflow workflow = workflowDAO.findById(workflowId);
 
         Helper.starEntryHelper(workflow, user, "workflow", workflow.getPath());
-
+        elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
     }
 
     @DELETE
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/unstar")
-    @ApiOperation(value = "Unstars a workflow.")
+    @ApiOperation(value = "Unstars a workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public void unstarEntry(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Workflow to unstar.", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         Helper.unstarEntryHelper(workflow, user, "workflow", workflow.getPath());
+        elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
     }
 
     @GET
@@ -1145,10 +1198,15 @@ public class WorkflowResource {
     @Timed
     @UnitOfWork
     @ApiOperation(value = "Returns list of users who starred the given Workflow", response = User.class, responseContainer = "List")
-    public Set<User> getStarredUsers(@ApiParam(value = "Workflow to grab starred users for.", required = true) @PathParam("workflowId") Long workflowId) {
+    public Set<User> getStarredUsers(
+            @ApiParam(value = "Workflow to grab starred users for.", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         Helper.checkEntry(workflow);
 
         return workflow.getStarredUsers();
+    }
+
+    public enum Type {
+        DAG, TOOLS
     }
 }

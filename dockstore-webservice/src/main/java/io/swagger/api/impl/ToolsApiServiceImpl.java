@@ -1,5 +1,5 @@
 /*
- *    Copyright 2016 OICR
+ *    Copyright 2017 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -147,10 +147,14 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             entry = toolDAO.findPublishedByToolPath(parsedID.getPath(), parsedID.getToolName());
         } else {
             String workflowPath = parsedID.getPath();
-            if (parsedID.getToolName() != null) {
+            String workflowName = parsedID.getToolName().isEmpty() ? null : parsedID.getToolName();
+            if (workflowName != null) {
                 workflowPath += "/" + parsedID.getToolName();
+                entry = workflowDAO.findPublishedByWorkflowPath(workflowPath, workflowName);
+            } else {
+                entry = workflowDAO.findPublishedByWorkflowPathNullWorkflowName(workflowPath);
             }
-            entry = workflowDAO.findPublishedByWorkflowPath(workflowPath, parsedID.getToolName());
+
         }
         return entry;
     }

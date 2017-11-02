@@ -1,5 +1,5 @@
 /*
- *    Copyright 2016 OICR
+ *    Copyright 2017 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -40,6 +40,11 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         return uniqueResult(namedQuery("io.dockstore.webservice.core.Workflow.findPublishedByWorkflowPath")
                 .setParameter("path", path)
                 .setParameter("name", name));
+    }
+
+    public Workflow findPublishedByWorkflowPathNullWorkflowName(String path) {
+        return uniqueResult(namedQuery("io.dockstore.webservice.core.Workflow.findPublishedByWorkflowPathNullWorkflowName")
+                .setParameter("path", path));
     }
 
     public List<Workflow> findByGitUrl(String giturl) {

@@ -1,5 +1,5 @@
 /*
- *    Copyright 2016 OICR
+ *    Copyright 2017 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -18,6 +18,9 @@ package io.dockstore.client.cli;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 
 import io.dockstore.client.cli.nested.ToolClient;
@@ -50,6 +53,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
+import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
@@ -66,6 +70,13 @@ import static org.junit.Assert.assertTrue;
  */
 @Category(ConfidentialTest.class)
 public class GeneralIT {
+
+    @Rule
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+
+    @Rule
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+
     @ClassRule
     public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
             DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstoreTest.yml"));
@@ -79,12 +90,7 @@ public class GeneralIT {
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog();
-
-    @Rule
-    public final SystemErrRule systemOutRule = new SystemErrRule().enableLog();
+    
 
     @Before
     public void clearDBandSetup() throws IOException, TimeoutException {
@@ -122,7 +128,6 @@ public class GeneralIT {
         c.setNamespace("testPath");
         c.setToolname("test5");
         c.setPath("quay.io/dockstoretestuser2/dockstore-tool-imports");
-        c.setToolPath("registry.hub.docker.com/seqware/seqware/test5");
         Tag tag = new Tag();
         tag.setName("master");
         tag.setReference("refs/heads/master");
@@ -133,13 +138,17 @@ public class GeneralIT {
         fileCWL.setContent("cwlstuff");
         fileCWL.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         fileCWL.setPath("/Dockstore.cwl");
-        tag.getSourceFiles().add(fileCWL);
+        List<SourceFile> list = new ArrayList<>();
+        list.add(fileCWL);
+        tag.setSourceFiles(list);
         SourceFile fileDockerFile = new SourceFile();
         fileDockerFile.setContent("dockerstuff");
         fileDockerFile.setType(SourceFile.TypeEnum.DOCKERFILE);
         fileDockerFile.setPath("/Dockerfile");
         tag.getSourceFiles().add(fileDockerFile);
-        c.getTags().add(tag);
+        List<Tag> tags = new ArrayList<>();
+        tags.add(tag);
+        c.setTags(tags);
         return c;
     }
 
@@ -162,8 +171,7 @@ public class GeneralIT {
         ContainersApi toolsApi = new ContainersApi(client);
 
         // Make publish request (true)
-        final PublishRequest publishRequest = new PublishRequest();
-        publishRequest.setPublish(true);
+        final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
 
         return toolsApi;
     }

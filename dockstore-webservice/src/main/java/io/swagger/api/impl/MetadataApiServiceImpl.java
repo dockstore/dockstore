@@ -1,5 +1,5 @@
 /*
- *    Copyright 2016 OICR
+ *    Copyright 2017 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -31,7 +31,9 @@ public class MetadataApiServiceImpl extends MetadataApiService {
         metadata.setCountry("CAN");
         metadata.setApiVersion("1.0.0");
         metadata.setFriendlyName("Dockstore");
-        metadata.setVersion(ToolsApiServiceImpl.class.getPackage().getImplementationVersion());
+        String implVersion = ToolsApiServiceImpl.class.getPackage().getImplementationVersion();
+        implVersion = implVersion == null ? "development-build" : implVersion;
+        metadata.setVersion(implVersion);
         return Response.ok(metadata).build();
     }
 }

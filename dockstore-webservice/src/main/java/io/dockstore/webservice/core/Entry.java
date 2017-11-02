@@ -1,5 +1,5 @@
 /*
- *    Copyright 2016 OICR
+ *    Copyright 2017 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.dockstore.webservice.core;
 
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -200,13 +201,6 @@ public abstract class Entry<S extends Entry, T extends Version> {
         this.lastModified = lastModified;
     }
 
-    /**
-     * @return the isPublished
-     */
-    public boolean isIsPublished() {
-        return isPublished;
-    }
-
     public void setGitUrl(String gitUrl) {
         this.gitUrl = gitUrl;
     }
@@ -279,4 +273,18 @@ public abstract class Entry<S extends Entry, T extends Version> {
      */
     @JsonIgnore
     public abstract Set<T> getVersions();
+
+    /**
+     * @param newDefaultVersion
+     * @return true if defaultVersion is a valid Docker tag
+     */
+    public boolean checkAndSetDefaultVersion(String newDefaultVersion) {
+        for (Version version : this.getVersions()) {
+            if (Objects.equals(newDefaultVersion, version.getName())) {
+                this.setDefaultVersion(newDefaultVersion);
+                return true;
+            }
+        }
+        return false;
+    }
 }

@@ -1,5 +1,5 @@
 /*
- *    Copyright 2016 OICR
+ *    Copyright 2017 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.Random;
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -49,6 +50,8 @@ import com.google.common.base.Optional;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
@@ -65,12 +68,15 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.Authorization;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.eclipse.egit.github.core.client.GitHubClient;
 import org.eclipse.egit.github.core.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
 /**
  * The githubToken resource handles operations with tokens. Tokens are needed to talk with the quay.io and github APIs. In addition, they
@@ -100,8 +106,8 @@ public class TokenResource {
     private final TokenDAO tokenDAO;
     private final UserDAO userDAO;
 
-    private final String githubClientID;
-    private final String githubClientSecret;
+    private final List<String> githubClientID;
+    private final List<String> githubClientSecret;
     private final String bitbucketClientID;
     private final String bitbucketClientSecret;
     private final String gitlabClientID;
@@ -111,7 +117,7 @@ public class TokenResource {
     private final CachingAuthenticator<String, User> cachingAuthenticator;
 
     @SuppressWarnings("checkstyle:parameternumber")
-    public TokenResource(TokenDAO tokenDAO, UserDAO enduserDAO, String githubClientID, String githubClientSecret, String bitbucketClientID,
+    public TokenResource(TokenDAO tokenDAO, UserDAO enduserDAO, List<String> githubClientID, List<String> githubClientSecret, String bitbucketClientID,
             String bitbucketClientSecret, String gitlabClientID, String gitlabClientSecret, String gitlabRedirectUri, HttpClient client,
             CachingAuthenticator<String, User> cachingAuthenticator) {
         this.tokenDAO = tokenDAO;
@@ -131,7 +137,7 @@ public class TokenResource {
     @Timed
     @UnitOfWork
     @RolesAllowed("admin")
-    @ApiOperation(value = "List all known tokens", notes = "List all tokens. Admin Only.", response = Token.class, responseContainer = "List")
+    @ApiOperation(value = "List all known tokens", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "List all tokens. Admin Only.", response = Token.class, responseContainer = "List")
     public List<Token> listTokens(@ApiParam(hidden = true) @Auth User user) {
         return tokenDAO.findAll();
     }
@@ -140,7 +146,7 @@ public class TokenResource {
     @Path("/{tokenId}")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "Get a specific token by id", notes = "Get a specific token by id", response = Token.class)
+    @ApiOperation(value = "Get a specific token by id", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Get a specific token by id", response = Token.class)
     @ApiResponses({ @ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid ID supplied"),
             @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = "Token not found") })
     public Token listToken(@ApiParam(hidden = true) @Auth User user,
@@ -155,7 +161,7 @@ public class TokenResource {
     @Timed
     @UnitOfWork
     @Path("/quay.io")
-    @ApiOperation(value = "Add a new quay IO token", notes = "This is used as part of the OAuth 2 web flow. "
+    @ApiOperation(value = "Add a new quay IO token", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
             + "Once a user has approved permissions for Collaboratory"
             + "Their browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addQuayToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("access_token") String accessToken) {
@@ -197,7 +203,7 @@ public class TokenResource {
     @DELETE
     @Path("/{tokenId}")
     @UnitOfWork
-    @ApiOperation("Deletes a token")
+    @ApiOperation(value = "Deletes a token", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     @ApiResponses(@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid token value"))
     public Response deleteToken(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Token id to delete", required = true) @PathParam("tokenId") Long tokenId) {
@@ -211,7 +217,7 @@ public class TokenResource {
 
         token = tokenDAO.findById(tokenId);
         if (token == null) {
-            return Response.ok().build();
+            return Response.noContent().build();
         } else {
             return Response.serverError().build();
         }
@@ -221,7 +227,7 @@ public class TokenResource {
     @Timed
     @UnitOfWork
     @Path("/gitlab.com")
-    @ApiOperation(value = "Add a new gitlab.com token", notes = "This is used as part of the OAuth 2 web flow. "
+    @ApiOperation(value = "Add a new gitlab.com token", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
             + "Once a user has approved permissions for Collaboratory"
             + "Their browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addGitlabToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("code") String code) {
@@ -275,27 +281,46 @@ public class TokenResource {
 
     }
 
+    @POST
+    @Timed
+    @UnitOfWork
+    @Path("/github")
+    @ApiOperation(value = "Allow satellizer to post a new GitHub token to dockstore", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) },
+        notes = "A post method is required by saetillizer to send the GitHub token",
+        response = Token.class)
+    public Token addToken(@ApiParam("code") String satellizerJson) {
+        Gson gson = new Gson();
+        JsonElement element = gson.fromJson(satellizerJson, JsonElement.class);
+        JsonObject satellizerObject = element.getAsJsonObject();
+
+        final String code = satellizerObject.get("code").getAsString();
+
+        return addGithubToken(code);
+    }
+
     @GET
     @Timed
     @UnitOfWork
     @Path("/github.com")
-    @ApiOperation(value = "Add a new github.com token, used by quay.io redirect", notes = "This is used as part of the OAuth 2 web flow. "
+    @ApiOperation(value = "Add a new github.com token, used by quay.io redirect", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
             + "Once a user has approved permissions for Collaboratory"
             + "Their browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addGithubToken(@QueryParam("code") String code) {
-        final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
-                JSON_FACTORY, new GenericUrl("https://github.com/login/oauth/access_token"),
-                new ClientParametersAuthentication(githubClientID, githubClientSecret), githubClientID,
-                "https://github.com/login/oauth/authorize").build();
 
-        String accessToken;
-        try {
-            TokenResponse tokenResponse = flow.newTokenRequest(code)
-                    .setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
-            accessToken = tokenResponse.getAccessToken();
-        } catch (IOException e) {
-            LOG.error("Retrieving accessToken was unsuccessful");
-            throw new CustomWebApplicationException("Could not retrieve github.com token based on code", HttpStatus.SC_BAD_REQUEST);
+
+        String accessToken = null;
+        for (int i = 0; i < githubClientID.size() && accessToken == null; i++) {
+            final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
+                    JSON_FACTORY, new GenericUrl("https://github.com/login/oauth/access_token"),
+                    new ClientParametersAuthentication(githubClientID.get(i), githubClientSecret.get(i)), githubClientID.get(i),
+                    "https://github.com/login/oauth/authorize").build();
+            try {
+                TokenResponse tokenResponse = flow.newTokenRequest(code).setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
+                accessToken = tokenResponse.getAccessToken();
+            } catch (IOException e) {
+                LOG.error("Retrieving accessToken was unsuccessful");
+                throw new CustomWebApplicationException("Could not retrieve github.com token based on code", HttpStatus.SC_BAD_REQUEST);
+            }
         }
 
         GitHubClient githubClient = new GitHubClient();
@@ -382,7 +407,7 @@ public class TokenResource {
     @Timed
     @UnitOfWork
     @Path("/bitbucket.org")
-    @ApiOperation(value = "Add a new bitbucket.org token, used by quay.io redirect", notes =
+    @ApiOperation(value = "Add a new bitbucket.org token, used by quay.io redirect", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes =
             "This is used as part of the OAuth 2 web flow. " + "Once a user has approved permissions for Collaboratory"
                     + "Their browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addBitbucketToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("code") String code)
@@ -461,7 +486,7 @@ public class TokenResource {
     @Timed
     @UnitOfWork
     @Path("/bitbucket.org/refresh")
-    @ApiOperation(value = "Refresh Bitbucket token", notes = "The Bitbucket token expire in one hour. When this happens you'll get 401 responses", response = Token.class)
+    @ApiOperation(value = "Refresh Bitbucket token", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "The Bitbucket token expire in one hour. When this happens you'll get 401 responses", response = Token.class)
     public Token refreshBitbucketToken(@ApiParam(hidden = true) @Auth User user) {
         List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
 

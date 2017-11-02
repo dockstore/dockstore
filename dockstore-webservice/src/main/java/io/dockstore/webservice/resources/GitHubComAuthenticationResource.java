@@ -1,5 +1,5 @@
 /*
- *    Copyright 2016 OICR
+ *    Copyright 2017 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package io.dockstore.webservice.resources;
+
+import java.util.List;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -32,10 +34,10 @@ import io.swagger.annotations.ApiOperation;
 @Api("/integration.github.com")
 @Produces(MediaType.TEXT_HTML)
 public class GitHubComAuthenticationResource {
-    private final String clientID;
+    private final List<String> clientID;
     private final String redirectURI;
 
-    public GitHubComAuthenticationResource(String clientID, String redirectURI) {
+    public GitHubComAuthenticationResource(List<String> clientID, String redirectURI) {
         this.clientID = clientID;
         this.redirectURI = redirectURI;
     }
@@ -50,7 +52,7 @@ public class GitHubComAuthenticationResource {
      * @return the clientID
      */
     public String getClientID() {
-        return clientID;
+        return clientID.get(0);
     }
 
     /**

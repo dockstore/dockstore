@@ -1,5 +1,5 @@
 /*
- *    Copyright 2016 OICR
+ *    Copyright 2017 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.Helper;
 import io.dockstore.webservice.jdbi.GroupDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -57,10 +58,13 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.Authorization;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
 /**
  * @author xliu
@@ -70,7 +74,7 @@ import org.slf4j.LoggerFactory;
 @Produces(MediaType.APPLICATION_JSON)
 public class UserResource {
     private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
-
+    private final ElasticManager elasticManager;
     private final HttpClient client;
     private final UserDAO userDAO;
     private final GroupDAO groupDAO;
@@ -87,13 +91,14 @@ public class UserResource {
         this.tokenDAO = tokenDAO;
         this.workflowResource = workflowResource;
         this.dockerRepoResource = dockerRepoResource;
+        elasticManager = new ElasticManager();
     }
 
     @POST
     @Timed
     @UnitOfWork
     @Path("/groups")
-    @ApiOperation(value = "Create user group", response = Group.class)
+    @ApiOperation(value = "Create user group", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Group.class)
     public Group createGroup(@ApiParam(hidden = true) @Auth User user, @QueryParam("group_name") String name) {
         Group group = new Group();
         group.setName(name);
@@ -106,7 +111,7 @@ public class UserResource {
     @UnitOfWork
     @Path("/groups/{groupId}")
     @RolesAllowed("admin")
-    @ApiOperation(value = "Deletes a group, admin only", response = Response.class)
+    @ApiOperation(value = "Deletes a group, admin only", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Response.class)
     @ApiResponses(@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid groupId value"))
     public Response deleteGroup(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Group id to delete", required = true) @PathParam("groupId") Long groupId) {
@@ -126,7 +131,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @RolesAllowed("admin")
-    @ApiOperation(value = "List all known users", notes = "List all users. Admin only.", response = User.class, responseContainer = "List")
+    @ApiOperation(value = "List all known users", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "List all users. Admin only.", response = User.class, responseContainer = "List")
     public List<User> listUsers(@ApiParam(hidden = true) @Auth User user) {
         return userDAO.findAll();
     }
@@ -135,12 +140,11 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/username/{username}")
-    @ApiOperation(value = "Get user", response = User.class)
+    @ApiOperation(value = "Get user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User listUser(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam("Username of user to return") @PathParam("username") String username) {
         User user = userDAO.findByUsername(username);
         Helper.checkUser(authUser, user.getId());
-
         return user;
     }
 
@@ -148,10 +152,9 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}")
-    @ApiOperation(value = "Get user with id", response = User.class)
+    @ApiOperation(value = "Get user with id", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User getUser(@ApiParam(hidden = true) @Auth User authUser, @ApiParam("User to return") @PathParam("userId") long userId) {
         Helper.checkUser(authUser, userId);
-
         User user = userDAO.findById(userId);
         if (user == null) {
             throw new CustomWebApplicationException("User not found.", HttpStatus.SC_BAD_REQUEST);
@@ -163,7 +166,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/user")
-    @ApiOperation(value = "Get the logged-in user", response = User.class)
+    @ApiOperation(value = "Get the logged-in user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User getUser(@ApiParam(hidden = true) @Auth User user) {
         return userDAO.findById(user.getId());
     }
@@ -172,7 +175,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/tokens")
-    @ApiOperation(value = "Get tokens with user id", response = Token.class, responseContainer = "List")
+    @ApiOperation(value = "Get tokens with user id", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getUserTokens(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
         Helper.checkUser(user, userId);
@@ -184,7 +187,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/tokens/github.com")
-    @ApiOperation(value = "Get Github tokens with user id", response = Token.class, responseContainer = "List")
+    @ApiOperation(value = "Get Github tokens with user id", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getGithubUserTokens(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
         Helper.checkUser(user, userId);
@@ -196,7 +199,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/tokens/gitlab.com")
-    @ApiOperation(value = "Get Gitlab tokens with user id", response = Token.class, responseContainer = "List")
+    @ApiOperation(value = "Get Gitlab tokens with user id", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getGitlabUserTokens(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
         Helper.checkUser(user, userId);
@@ -208,7 +211,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/tokens/quay.io")
-    @ApiOperation(value = "Get Quay tokens with user id", response = Token.class, responseContainer = "List")
+    @ApiOperation(value = "Get Quay tokens with user id", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getQuayUserTokens(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
         Helper.checkUser(user, userId);
@@ -220,7 +223,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/tokens/dockstore")
-    @ApiOperation(value = "Get Dockstore tokens with user id", response = Token.class, responseContainer = "List")
+    @ApiOperation(value = "Get Dockstore tokens with user id", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getDockstoreUserTokens(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
         Helper.checkUser(user, userId);
@@ -232,7 +235,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/groups")
-    @ApiOperation(value = "Get groups that the user belongs to", response = Group.class, responseContainer = "List")
+    @ApiOperation(value = "Get groups that the user belongs to", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Group.class, responseContainer = "List")
     public List<Group> getGroupsFromUser(@ApiParam(hidden = true) @Auth User authUser, @ApiParam("User") @PathParam("userId") long userId) {
         Helper.checkUser(authUser, userId);
 
@@ -248,7 +251,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/groups/{groupId}/users")
-    @ApiOperation(value = "Get users that belongs to a group", response = User.class, responseContainer = "List")
+    @ApiOperation(value = "Get users that belongs to a group", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class, responseContainer = "List")
     public List<User> getUsersFromGroup(@ApiParam(hidden = true) @Auth User user, @ApiParam("Group") @PathParam("groupId") long groupId) {
         Group group = groupDAO.findById(groupId);
         if (group == null) {
@@ -262,7 +265,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/groups")
-    @ApiOperation(value = "List all groups", response = Group.class, responseContainer = "List")
+    @ApiOperation(value = "List all groups", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Group.class, responseContainer = "List")
     public List<Group> allGroups(@ApiParam(hidden = true) @Auth User user) {
         return groupDAO.findAll();
     }
@@ -271,7 +274,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/groups/{groupId}")
-    @ApiOperation(value = "List a group", response = Group.class)
+    @ApiOperation(value = "List a group", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Group.class)
     public Group getGroup(@ApiParam(hidden = true) @Auth User user, @ApiParam("Group") @PathParam("groupId") long groupId) {
         return groupDAO.findById(groupId);
     }
@@ -280,7 +283,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/groups")
-    @ApiOperation(value = "Add a group to a user", response = User.class)
+    @ApiOperation(value = "Add a group to a user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User addGroupToUser(@ApiParam(hidden = true) @Auth User authUser, @ApiParam("User ID of user") @PathParam("userId") long userId,
             @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) Group groupParam) {
         Helper.checkUser(authUser, userId);
@@ -304,7 +307,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/groups/{groupId}")
-    @ApiOperation(value = "Remove a user from a group", response = User.class)
+    @ApiOperation(value = "Remove a user from a group", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     @ApiResponses(@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid user or group value"))
     public User removeUserFromGroup(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam("User ID of user") @PathParam("userId") long userId,
@@ -327,7 +330,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/containers/published")
-    @ApiOperation(value = "List all published containers from a user", notes = "Get user's published containers only", response = Tool.class, responseContainer = "List")
+    @ApiOperation(value = "List all published containers from a user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Get user's published containers only", response = Tool.class, responseContainer = "List")
     public List<Tool> userPublishedContainers(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         Helper.checkUser(user, userId);
@@ -352,7 +355,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/{userId}/workflows/published")
-    @ApiOperation(value = "List all published workflows from a user", notes = "Get user's published workflows only", response = Workflow.class, responseContainer = "List")
+    @ApiOperation(value = "List all published workflows from a user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Get user's published workflows only", response = Workflow.class, responseContainer = "List")
     public List<Workflow> userPublishedWorkflows(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         Helper.checkUser(user, userId);
@@ -376,8 +379,50 @@ public class UserResource {
     @GET
     @Timed
     @UnitOfWork
+    @Path("/{userId}/containers/{organization}/refresh")
+    @ApiOperation(value = "Refresh repos owned by the logged-in user with specified organization", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Refresh all tools in an organization", response = Tool.class, responseContainer = "List")
+    public List<Tool> refreshToolsByOrganization(@ApiParam(hidden = true) @Auth User authUser,
+            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
+            @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization) {
+
+        Helper.checkUser(authUser, userId);
+
+        // Update user data
+        Helper.updateUserHelper(authUser, userDAO, tokenDAO);
+        List<Tool> tools = dockerRepoResource.refreshToolsForUser(userId, organization);
+
+        userDAO.clearCache();
+        authUser = userDAO.findById(authUser.getId());
+        List<Tool> finalTools = getTools(authUser);
+        bulkUpsertTools(authUser);
+        return finalTools;
+    }
+
+    // TODO: Only update the ones that have changed
+    private void bulkUpsertTools(User authUser) {
+        Set<Entry> allEntries = authUser.getEntries();
+        List<Entry> toolEntries = allEntries.parallelStream().filter(entry -> entry instanceof Tool && entry.getIsPublished())
+                .collect(Collectors.toList());
+        if (!toolEntries.isEmpty()) {
+            elasticManager.bulkUpsert(toolEntries);
+        }
+    }
+
+    // TODO: Only update the ones that have changed
+    private void bulkUpsertWorkflows(User authUser) {
+        Set<Entry> allEntries = authUser.getEntries();
+        List<Entry> toolEntries = allEntries.parallelStream().filter(entry -> entry instanceof Workflow && entry.getIsPublished())
+                .collect(Collectors.toList());
+        if (!toolEntries.isEmpty()) {
+            elasticManager.bulkUpsert(toolEntries);
+        }
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
     @Path("/{userId}/containers/refresh")
-    @ApiOperation(value = "Refresh repos owned by the logged-in user", notes = "Updates some metadata", response = Tool.class, responseContainer = "List")
+    @ApiOperation(value = "Refresh repos owned by the logged-in user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Updates some metadata", response = Tool.class, responseContainer = "List")
     public List<Tool> refresh(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
 
@@ -385,15 +430,44 @@ public class UserResource {
 
         // Update user data
         Helper.updateUserHelper(authUser, userDAO, tokenDAO);
+        List<Tool> tools = dockerRepoResource.refreshToolsForUser(userId, null);
 
-        return dockerRepoResource.refreshToolsForUser(userId);
+        // TODO: Only update the ones that have changed
+        authUser = userDAO.findById(authUser.getId());
+        List<Tool> finalTools = getTools(authUser);
+        bulkUpsertTools(authUser);
+        return finalTools;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{userId}/workflows/{organization}/refresh")
+    @ApiOperation(value = "Refresh workflows owned by the logged-in user with specified organization", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Refresh all workflows in an organization", response = Workflow.class, responseContainer = "List")
+    public List<Workflow> refreshWorkflowsByOrganization(@ApiParam(hidden = true) @Auth User authUser,
+            @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
+            @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization) {
+
+        Helper.checkUser(authUser, userId);
+
+        // Update user data
+        Helper.updateUserHelper(authUser, userDAO, tokenDAO);
+
+        // Refresh all workflows, including full workflows
+        workflowResource.refreshStubWorkflowsForUser(authUser, organization);
+        userDAO.clearCache();
+        // Refresh the user
+        authUser = userDAO.findById(authUser.getId());
+        List<Workflow> finalWorkflows = getWorkflows(authUser);
+        bulkUpsertWorkflows(authUser);
+        return finalWorkflows;
     }
 
     @GET
     @Timed
     @UnitOfWork
     @Path("/{userId}/workflows/refresh")
-    @ApiOperation(value = "Refresh workflows owned by the logged-in user", notes = "Updates some metadata", response = Workflow.class, responseContainer = "List")
+    @ApiOperation(value = "Refresh workflows owned by the logged-in user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Updates some metadata", response = Workflow.class, responseContainer = "List")
     public List<Workflow> refreshWorkflows(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
 
@@ -403,44 +477,53 @@ public class UserResource {
         Helper.updateUserHelper(authUser, userDAO, tokenDAO);
 
         // Refresh all workflows, including full workflows
-        workflowResource.refreshStubWorkflowsForUser(authUser);
-
+        workflowResource.refreshStubWorkflowsForUser(authUser, null);
         // Refresh the user
         authUser = userDAO.findById(authUser.getId());
-        return FluentIterable.from(authUser.getEntries()).filter(Workflow.class).toList();
+        List<Workflow> finalWorkflows = getWorkflows(authUser);
+        bulkUpsertWorkflows(authUser);
+        return finalWorkflows;
     }
 
     @GET
     @Path("/{userId}/workflows")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "List workflows owned by the logged-in user", notes = "Lists all registered and unregistered workflows owned by the user", response = Workflow.class, responseContainer = "List")
+    @ApiOperation(value = "List workflows owned by the logged-in user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Lists all registered and unregistered workflows owned by the user", response = Workflow.class, responseContainer = "List")
     public List<Workflow> userWorkflows(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         Helper.checkUser(user, userId);
         // need to avoid lazy initialize error
-        final User byId = this.userDAO.findById(userId);
-        return FluentIterable.from(byId.getEntries()).filter(Workflow.class).toList();
+        final User authUser = this.userDAO.findById(userId);
+        return getWorkflows(authUser);
+    }
+
+    private List<Workflow> getWorkflows(User user) {
+        return user.getEntries().stream().filter(Workflow.class::isInstance).map(Workflow.class::cast).collect(Collectors.toList());
+    }
+
+    private List<Tool> getTools(User user) {
+        return user.getEntries().stream().filter(Tool.class::isInstance).map(Tool.class::cast).collect(Collectors.toList());
     }
 
     @GET
     @Path("/{userId}/containers")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "List repos owned by the logged-in user", notes = "Lists all registered and unregistered containers owned by the user", response = Tool.class, responseContainer = "List")
+    @ApiOperation(value = "List repos owned by the logged-in user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Lists all registered and unregistered containers owned by the user", response = Tool.class, responseContainer = "List")
     public List<Tool> userContainers(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         Helper.checkUser(user, userId);
         // need to avoid lazy initialize error
         final User byId = this.userDAO.findById(userId);
-        return FluentIterable.from(byId.getEntries()).filter(Tool.class).toList();
+        return getTools(byId);
     }
 
     @GET
     @Timed
     @UnitOfWork
     @Path("/starredTools")
-    @ApiOperation(value = "Get the logged-in user's starred tools", response = Entry.class, responseContainer = "List")
+    @ApiOperation(value = "Get the logged-in user's starred tools", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class, responseContainer = "List")
     public Set<Entry> getStarredTools(@ApiParam(hidden = true) @Auth User user) {
         User u = userDAO.findById(user.getId());
         return u.getStarredEntries().stream().filter(element -> element instanceof Tool)
@@ -451,7 +534,7 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @Path("/starredWorkflows")
-    @ApiOperation(value = "Get the logged-in user's starred workflows", response = Entry.class, responseContainer = "List")
+    @ApiOperation(value = "Get the logged-in user's starred workflows", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class, responseContainer = "List")
     public Set<Entry> getStarredWorkflows(@ApiParam(hidden = true) @Auth User user) {
         User u = userDAO.findById(user.getId());
         return u.getStarredEntries().stream().filter(element -> element instanceof Workflow)
@@ -462,8 +545,8 @@ public class UserResource {
     @Timed
     @UnitOfWork
     @RolesAllowed("admin")
-    @Path("/updateUserMetatdata")
-    @ApiOperation(value = "Update metadata of all users", notes = "Update all users metadata. Admin only.", response = User.class, responseContainer = "List")
+    @Path("/updateUserMetadata")
+    @ApiOperation(value = "Update metadata of all users", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Update all users metadata. Admin only.", response = User.class, responseContainer = "List")
     public List<User> updateUserMetadata(@ApiParam(hidden = true) @Auth User user) {
         List<User> users = userDAO.findAll();
         for (User u : users) {
@@ -476,8 +559,8 @@ public class UserResource {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/user/updateUserMetatdata")
-    @ApiOperation(value = "Update metadata for logged in user", notes = "Update metadata for logged in user.", response = User.class)
+    @Path("/user/updateUserMetadata")
+    @ApiOperation(value = "Update metadata for logged in user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Update metadata for logged in user.", response = User.class)
     public User updateLoggedInUserMetadata(@ApiParam(hidden = true) @Auth User user) {
         Helper.updateUserHelper(user, userDAO, tokenDAO);
         return userDAO.findById(user.getId());

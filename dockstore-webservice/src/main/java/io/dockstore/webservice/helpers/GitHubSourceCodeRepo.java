@@ -1,5 +1,5 @@
 /*
- *    Copyright 2016 OICR
+ *    Copyright 2017 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -91,7 +91,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 contents = cService.getContents(repo, fileName.toLowerCase(), reference);
             }
 
-            if (!(contents == null || contents.isEmpty())) {
+            if (!(contents == null || contents.isEmpty() || contents.get(0).getContent() == null)) {
                 return extractGitHubContents(contents);
             } else {
                 return null;
@@ -181,7 +181,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             service.getBranches(id).forEach(branch -> references.add(branch.getName()));
             service.getTags(id).forEach(tag -> references.add(tag.getName()));
         } catch (IOException e) {
-            LOG.info(gitUsername + ": Cannot branches or tags for workflow {}");
+            LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}");
             throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
 
@@ -195,7 +195,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
             //TODO: is there a case-insensitive endsWith?
             String calculatedExtension = FilenameUtils.getExtension(calculatedPath);
-            boolean validWorkflow = false;
+            boolean validWorkflow;
 
             // Grab workflow file from github
             try {
@@ -203,17 +203,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 final List<RepositoryContents> descriptorContents = cService.getContents(id, calculatedPath, ref);
                 if (descriptorContents != null && descriptorContents.size() > 0) {
                     String content = extractGitHubContents(descriptorContents);
-                    SourceFile testJson = new SourceFile();
 
                     // TODO: Is this the best way to determine file type? I don't think so
                     // Should be workflow.getDescriptorType().equals("cwl") - though enum is better!
                     if ("cwl".equalsIgnoreCase(calculatedExtension) || "yml".equalsIgnoreCase(calculatedExtension) || "yaml"
                             .equalsIgnoreCase(calculatedExtension)) {
                         validWorkflow = checkValidCWLWorkflow(content);
-                        testJson.setType(SourceFile.FileType.CWL_TEST_JSON);
                     } else {
                         validWorkflow = checkValidWDLWorkflow(content);
-                        testJson.setType(SourceFile.FileType.WDL_TEST_JSON);
                     }
 
                     if (validWorkflow) {
@@ -223,10 +220,35 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                         file.setContent(content);
                         file.setPath(calculatedPath);
                         file.setType(identifiedType);
-
-                        workflow.addWorkflowVersion(combineVersionAndSourcefile(file, workflow, identifiedType, version, existingDefaults));
+                        version.setValid(true);
+                        version = combineVersionAndSourcefile(file, workflow, identifiedType, version, existingDefaults);
                     }
 
+                    // Use default test parameter file if either new version or existing version that hasn't been edited
+                    if (!version.isDirtyBit() && workflow.getDefaultTestParameterFilePath() != null) {
+                        final List<RepositoryContents> testJsonFile = cService.getContents(id, workflow.getDefaultTestParameterFilePath(), ref);
+                        if (testJsonFile != null && testJsonFile.size() > 0) {
+                            String testJsonContent = extractGitHubContents(testJsonFile);
+                            SourceFile testJson = new SourceFile();
+
+                            // Set Filetype
+                            SourceFile.FileType identifiedType = getFileType(calculatedPath);
+                            if (identifiedType.equals(SourceFile.FileType.DOCKSTORE_CWL)) {
+                                testJson.setType(SourceFile.FileType.CWL_TEST_JSON);
+                            } else if (identifiedType.equals(SourceFile.FileType.DOCKSTORE_WDL)) {
+                                testJson.setType(SourceFile.FileType.WDL_TEST_JSON);
+                            }
+
+                            testJson.setPath(workflow.getDefaultTestParameterFilePath());
+                            testJson.setContent(testJsonContent);
+
+                            // Check if test parameter file has already been added
+                            long duplicateCount = version.getSourceFiles().stream().filter((SourceFile v) -> v.getPath().equals(workflow.getDefaultTestParameterFilePath()) && v.getType() == testJson.getType()).count();
+                            if (duplicateCount == 0) {
+                                version.getSourceFiles().add(testJson);
+                            }
+                        }
+                    }
                 }
 
             } catch (IOException ex) {
@@ -235,10 +257,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 LOG.info(gitUsername + ": " + workflow.getDefaultWorkflowPath() + " on " + ref + " was not valid workflow");
             }
 
-            if (!validWorkflow) {
-                workflow.addWorkflowVersion(version);
-            }
 
+            workflow.addWorkflowVersion(version);
         }
         return workflow;
     }

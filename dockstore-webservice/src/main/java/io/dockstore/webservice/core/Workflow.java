@@ -1,5 +1,5 @@
 /*
- *    Copyright 2016 OICR
+ *    Copyright 2017 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -50,11 +50,12 @@ import java.util.TreeSet;
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = { "organization", "repository", "workflowName" }))
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedById", query = "SELECT c FROM Workflow c WHERE c.id = :id AND c.isPublished = true"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findAllPublished", query = "SELECT c FROM Workflow c WHERE c.isPublished = true"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findAllPublished", query = "SELECT c FROM Workflow c WHERE c.isPublished = true ORDER BY size(c.starredUsers) DESC"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findAll", query = "SELECT c FROM Workflow c"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByPath", query = "SELECT c FROM Workflow c WHERE c.path = :path"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByPath", query = "SELECT c FROM Workflow c WHERE c.path = :path AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByWorkflowPath", query = "SELECT c FROM Workflow c WHERE c.path = :path AND c.workflowName = :name AND c.isPublished = true"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByWorkflowPathNullWorkflowName", query = "SELECT c FROM Workflow c WHERE c.path = :path AND c.workflowName IS NULL AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByGitUrl", query = "SELECT c FROM Workflow c WHERE c.gitUrl = :gitUrl ORDER BY gitUrl"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByOrganization", query = "SELECT c FROM Workflow c WHERE lower(c.organization) = lower(:organization) AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.searchPattern", query = "SELECT c FROM Workflow c WHERE ((c.defaultWorkflowPath LIKE :pattern) OR (c.description LIKE :pattern) OR (c.path LIKE :pattern)) AND c.isPublished = true") })
@@ -77,7 +78,7 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     @ApiModelProperty(value = "This is a git repository name", required = true)
     private String repository;
     @Column
-    @ApiModelProperty(value = "This is a generated full workflow path including organization, repository name, and workflow name", readOnly = true)
+    @ApiModelProperty(value = "This is a generated full workflow path including organization, repository name, and workflow name")
     private String path;
     @Column(nullable = false)
     @ApiModelProperty(value = "This is a descriptor type for the workflow, either CWL or WDL (Defaults to CWL)", required = true)
@@ -88,6 +89,11 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     @JsonProperty("workflow_path")
     @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL document", required = true)
     private String defaultWorkflowPath = "/Dockstore.cwl";
+
+    @Column(columnDefinition = "text")
+    @JsonProperty("defaultTestParameterFilePath")
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the test parameter file", required = true)
+    private String defaultTestParameterFilePath = "/test.json";
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinTable(name = "workflow_workflowversion", joinColumns = @JoinColumn(name = "workflowid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "workflowversionid", referencedColumnName = "id"))
@@ -208,12 +214,11 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         return this.descriptorType;
     }
 
-    // Used to update workflow manually (not refresh)
-    public void updateInfo(Workflow workflow) {
-        workflowName = workflow.getWorkflowName();
-        path = workflow.getPath();
-        descriptorType = workflow.getDescriptorType();
-        defaultWorkflowPath = workflow.getDefaultWorkflowPath();
-        this.setDefaultVersion(workflow.getDefaultVersion());
+    public String getDefaultTestParameterFilePath() {
+        return defaultTestParameterFilePath;
+    }
+
+    public void setDefaultTestParameterFilePath(String defaultTestParameterFilePath) {
+        this.defaultTestParameterFilePath = defaultTestParameterFilePath;
     }
 }

@@ -1,5 +1,5 @@
 /*
- *    Copyright 2016 OICR
+ *    Copyright 2017 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -75,7 +75,7 @@ public final class Utilities {
         try {
             return MAP.get(configFile).getConfiguration();
         } catch (ConfigurationException ex) {
-            throw new RuntimeException("Could not read ~/.dockstore/config");
+            throw new RuntimeException("Could not read " + configFile);
         }
     }
 

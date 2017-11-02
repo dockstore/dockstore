@@ -1,5 +1,5 @@
 /*
- *    Copyright 2016 OICR
+ *    Copyright 2017 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -34,11 +34,10 @@ import com.google.common.base.Joiner;
 import com.google.common.io.Files;
 import io.dockstore.client.cli.Client;
 import io.dockstore.client.cli.JCommanderUtility;
+import io.dockstore.client.cli.SwaggerUtility;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.Body2;
-import io.swagger.client.model.Body3;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
@@ -137,7 +136,8 @@ public class WorkflowClient extends AbstractEntryClient {
         out("Optional parameters:");
         out("  --workflow-path <workflow-path>                      Path for the descriptor file, defaults to /Dockstore.cwl");
         out("  --workflow-name <workflow-name>                      Workflow name, defaults to null");
-        out("  --descriptor-type <workflow-name>                    Descriptor type, defaults to cwl");
+        out("  --descriptor-type <descriptor-type>                  Descriptor type, defaults to cwl");
+        out("  --test-parameter-path <test-parameter-path>          Path to default test parameter file, defaults to /test.json");
 
         printHelpFooter();
     }
@@ -151,13 +151,14 @@ public class WorkflowClient extends AbstractEntryClient {
         out("  Update certain fields for a given workflow.");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>                                          Complete workflow path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
+        out("  --entry <entry>                                              Complete workflow path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
         out("");
         out("Optional Parameters");
-        out("  --workflow-name <workflow-name>                          Name for the given workflow");
-        out("  --descriptor-type <descriptor-type>                      Descriptor type of the given workflow.  Can only be altered if workflow is a STUB.");
-        out("  --workflow-path <workflow-path>                          Path to default workflow descriptor location");
-        out("  --default-version <default-version>                      Default branch name");
+        out("  --workflow-name <workflow-name>                              Name for the given workflow");
+        out("  --descriptor-type <descriptor-type>                          Descriptor type of the given workflow.  Can only be altered if workflow is a STUB.");
+        out("  --workflow-path <workflow-path>                              Path to default workflow descriptor location");
+        out("  --default-version <default-version>                          Default branch name");
+        out("  --default-test-parameter-path <default-test-parameter-path>  Default test parameter file path");
         printHelpFooter();
     }
 
@@ -194,7 +195,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
             String combinedLabelString = generateLabelString(addsSet, removesSet, existingLabels);
 
-            Workflow updatedWorkflow = workflowsApi.updateLabels(workflowId, combinedLabelString, new Body2());
+            Workflow updatedWorkflow = workflowsApi.updateLabels(workflowId, combinedLabelString, "");
 
             List<Label> newLabels = updatedWorkflow.getLabels();
             if (!newLabels.isEmpty()) {
@@ -303,6 +304,9 @@ public class WorkflowClient extends AbstractEntryClient {
         String tsvRun = commandLaunch.tsv;
         String wdlOutputTarget = commandLaunch.wdlOutputTarget;
 
+        // trim the final slash on output if it is present, probably an error ( https://github.com/aws/aws-cli/issues/421 ) causes a double slash which can fail
+        wdlOutputTarget = wdlOutputTarget != null ? wdlOutputTarget.replaceAll("/$", "") : null;
+
         if (this.commandLaunch.help) {
             JCommanderUtility.printJCommanderHelpLaunch(jCommander, "dockstore workflow", commandName);
         } else {
@@ -348,6 +352,11 @@ public class WorkflowClient extends AbstractEntryClient {
         }
     }
 
+    @Override
+    public Client getClient() {
+        return this.client;
+    }
+
     /**
      * this function will check for the content and the extension of entry file
      *
@@ -364,43 +373,16 @@ public class WorkflowClient extends AbstractEntryClient {
                     ENTRY_NOT_FOUND);
         }
 
-        Type content = checkFileContent(file);             //check the file content (wdl,cwl or "")
-
         try {
             switch (ext) {
             case CWL:
-                switch (content) {
-                case CWL:
-                    handleCWLLaunch(entry, true, yamlRun, jsonRun, tsvRuns, null, null);
-                    break;
-                case WDL:
-                    out("This is a WDL file.. Please put an extension to the entry file name.");
-                    out("Launching entry file as a WDL file..");
-                    launchWdlInternal(entry, true, jsonRun, wdlOutputTarget);
-                    break;
-                default:
-                    errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.",
-                            CLIENT_ERROR);
-                    break;
-                }
+                handleCWLLaunch(entry, true, yamlRun, jsonRun, tsvRuns, null, null);
                 break;
             case WDL:
-                switch (content) {
-                case WDL:
-                    launchWdlInternal(entry, true, jsonRun, wdlOutputTarget);
-                    break;
-                case CWL:
-                    out("This is a WDL file.. Please put an extension to the entry file name.");
-                    out("Launching entry file as a WDL file..");
-                    handleCWLLaunch(entry, true, yamlRun, jsonRun, tsvRuns, null, null);
-                    break;
-                default:
-                    errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.",
-                            CLIENT_ERROR);
-                    break;
-                }
+                launchWdlInternal(entry, true, jsonRun, wdlOutputTarget);
                 break;
             default:
+                Type content = checkFileContent(file);             //check the file content (wdl,cwl or "")
                 switch (content) {
                 case CWL:
                     out("This is a CWL file.. Please put an extension to the entry file name.");
@@ -431,7 +413,7 @@ public class WorkflowClient extends AbstractEntryClient {
             if (workflow == null || !workflow.getIsPublished()) {
                 errorMessage("This workflow is not published.", COMMAND_ERROR);
             } else {
-                Date dateUploaded = workflow.getLastUpdated();
+                Date lastUpdated = Date.from(workflow.getLastUpdated().toInstant());
 
                 String description = workflow.getDescription();
                 if (description == null) {
@@ -444,8 +426,8 @@ public class WorkflowClient extends AbstractEntryClient {
                 }
 
                 String date = "";
-                if (dateUploaded != null) {
-                    date = dateUploaded.toString();
+                if (lastUpdated != null) {
+                    date = lastUpdated.toString();
                 }
 
                 out(workflow.getPath());
@@ -544,7 +526,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
                     newWorkflow = workflowsApi
                             .manualRegister(registry, workflow.getPath(), workflow.getWorkflowPath(), newWorkflow.getWorkflowName(),
-                                    workflow.getDescriptorType());
+                                    workflow.getDescriptorType(), workflow.getDefaultTestParameterFilePath());
 
                     if (newWorkflow != null) {
                         out("Successfully registered " + entryPath + "/" + newName);
@@ -579,8 +561,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
             VerifyRequest verifyRequest = new VerifyRequest();
             if (unverifyRequest) {
-                verifyRequest.setVerify(false);
-                verifyRequest.setVerifiedSource(null);
+                verifyRequest = SwaggerUtility.createVerifyRequest(false, null);
             } else {
                 // Check if already has been verified
                 if (versionToUpdate.getVerified() && !isScript) {
@@ -589,14 +570,12 @@ public class WorkflowClient extends AbstractEntryClient {
                     out("Would you like to overwrite this with \'" + verifySource + "\'? (y/n)");
                     String overwrite = scanner.nextLine();
                     if (overwrite.toLowerCase().equals("y")) {
-                        verifyRequest.setVerify(true);
-                        verifyRequest.setVerifiedSource(verifySource);
+                        verifyRequest = SwaggerUtility.createVerifyRequest(true, verifySource);
                     } else {
                         toOverwrite = false;
                     }
                 } else {
-                    verifyRequest.setVerify(true);
-                    verifyRequest.setVerifiedSource(verifySource);
+                    verifyRequest = SwaggerUtility.createVerifyRequest(true, verifySource);
                 }
             }
 
@@ -652,8 +631,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
         try {
             Workflow workflow = workflowsApi.getWorkflowByPath(entry);
-            PublishRequest pub = new PublishRequest();
-            pub.setPublish(publish);
+            PublishRequest pub = SwaggerUtility.createPublishRequest(publish);
             workflow = workflowsApi.publish(workflow.getId(), pub);
 
             if (workflow != null) {
@@ -681,8 +659,7 @@ public class WorkflowClient extends AbstractEntryClient {
         try {
             Workflow workflow = workflowsApi.getPublishedWorkflowByPath(entry);
             if (star) {
-                StarRequest request = new StarRequest();
-                request.setStar(star);
+                StarRequest request = SwaggerUtility.createStarRequest(true);
                 workflowsApi.starEntry(workflow.getId(), request);
             } else {
                 workflowsApi.unstarEntry(workflow.getId());
@@ -753,6 +730,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
             final String workflowPath = optVal(args, "--workflow-path", "/Dockstore.cwl");
             final String descriptorType = optVal(args, "--descriptor-type", "cwl");
+            final String testParameterFile = optVal(args, "--test-parameter-path", "/test.json");
 
             // Check if valid input
             if (!descriptorType.toLowerCase().equals("cwl") && !descriptorType.toLowerCase().equals("wdl")) {
@@ -778,7 +756,7 @@ public class WorkflowClient extends AbstractEntryClient {
             // Try and register
             try {
                 workflow = workflowsApi
-                        .manualRegister(gitVersionControl, organization + "/" + repository, workflowPath, workflowname, descriptorType);
+                        .manualRegister(gitVersionControl, organization + "/" + repository, workflowPath, workflowname, descriptorType, testParameterFile);
                 if (workflow != null) {
                     workflow = workflowsApi.refresh(workflow.getId());
                 } else {
@@ -800,8 +778,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
                 if (valid) {
                     // Valid so try and publish
-                    PublishRequest pub = new PublishRequest();
-                    pub.setPublish(true);
+                    PublishRequest pub = SwaggerUtility.createPublishRequest(true);
                     try {
                         workflowsApi.publish(workflow.getId(), pub);
                         out("Successfully registered and published the given workflow.");
@@ -831,6 +808,7 @@ public class WorkflowClient extends AbstractEntryClient {
                 String descriptorType = optVal(args, "--descriptor-type", workflow.getDescriptorType());
                 String workflowDescriptorPath = optVal(args, "--workflow-path", workflow.getWorkflowPath());
                 String defaultVersion = optVal(args, "--default-version", workflow.getDefaultVersion());
+                String defaultTestJsonPath = optVal(args, "--default-test-parameter-path", workflow.getDefaultTestParameterFilePath());
 
                 if (workflow.getMode() == io.swagger.client.model.Workflow.ModeEnum.STUB) {
 
@@ -852,6 +830,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
                 workflow.setWorkflowName(workflowName);
                 workflow.setWorkflowPath(workflowDescriptorPath);
+                workflow.setDefaultTestParameterFilePath(defaultTestJsonPath);
 
                 String path = Joiner.on("/").skipNulls()
                         .join(workflow.getOrganization(), workflow.getRepository(), workflow.getWorkflowName());
@@ -892,7 +871,7 @@ public class WorkflowClient extends AbstractEntryClient {
             long workflowId = workflow.getId();
 
             if (adds.size() > 0) {
-                workflowsApi.addTestParameterFiles(workflowId, adds, new Body3(), versionName);
+                workflowsApi.addTestParameterFiles(workflowId, adds, "", versionName);
             }
 
             if (removes.size() > 0) {

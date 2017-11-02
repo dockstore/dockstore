@@ -26,8 +26,6 @@ dependency-reduced-pom.xml
 hello-world.yml
 dockstore-webservice/target/
 dockstore-client/target/
-dockstore-launcher/target/
-dockstore-launcher/foo.json
 swagger-java-client/target/
 swagger-java-quay-client/target/
 dockstore-webservice/nbactions.xml

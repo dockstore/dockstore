@@ -1,5 +1,5 @@
 /*
- *    Copyright 2016 OICR
+ *    Copyright 2017 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -16,9 +16,12 @@
 
 package io.dockstore.webservice;
 
+import java.util.List;
+
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.cache.CacheBuilderSpec;
 import io.dropwizard.Configuration;
@@ -36,6 +39,9 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     @NotNull
     private HttpClientConfiguration httpClient = new HttpClientConfiguration();
 
+    @Valid
+    private ElasticSearchConfig esConfiguration = new ElasticSearchConfig();
+
     @NotEmpty
     private String template;
 
@@ -43,7 +49,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     private String quayClientID;
 
     @NotEmpty
-    private String githubClientID;
+    private List<String> githubClientID;
 
     @NotEmpty
     private String gitlabClientID;
@@ -61,10 +67,9 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     private String githubRedirectURI;
 
     @NotEmpty
-    private String githubClientSecret;
+    private List<String> githubClientSecret;
 
     @NotEmpty
-
     private String gitlabRedirectURI;
 
     @NotEmpty
@@ -81,6 +86,8 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     @NotEmpty
     private String port;
+
+    private String uiPort = null;
 
     @JsonProperty("database")
     public DataSourceFactory getDataSourceFactory() {
@@ -154,7 +161,8 @@ public class DockstoreWebserviceConfiguration extends Configuration {
      * @return the githubClientID
      */
     @JsonProperty
-    public String getGithubClientID() {
+    @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+    public List<String> getGithubClientID() {
         return githubClientID;
     }
 
@@ -162,7 +170,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
      * @param githubClientID the githubClientID to set
      */
     @JsonProperty
-    public void setGithubClientID(String githubClientID) {
+    public void setGithubClientID(List<String> githubClientID) {
         this.githubClientID = githubClientID;
     }
 
@@ -186,7 +194,8 @@ public class DockstoreWebserviceConfiguration extends Configuration {
      * @return the githubClientSecret
      */
     @JsonProperty
-    public String getGithubClientSecret() {
+    @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+    public List<String> getGithubClientSecret() {
         return githubClientSecret;
     }
 
@@ -194,7 +203,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
      * @param githubClientSecret the githubClientSecret to set
      */
     @JsonProperty
-    public void setGithubClientSecret(String githubClientSecret) {
+    public void setGithubClientSecret(List<String> githubClientSecret) {
         this.githubClientSecret = githubClientSecret;
     }
 
@@ -284,5 +293,43 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     public void setPort(String port) {
         this.port = port;
+    }
+
+    @JsonProperty("esconfiguration")
+    public ElasticSearchConfig getEsConfiguration() {
+        return esConfiguration;
+    }
+
+    public void setEsConfiguration(ElasticSearchConfig esConfiguration) {
+        this.esConfiguration = esConfiguration;
+    }
+
+    public String getUiPort() {
+        return uiPort;
+    }
+
+    public void setUiPort(String uiPort) {
+        this.uiPort = uiPort;
+    }
+
+    public class ElasticSearchConfig {
+        private String hostname;
+        private int port;
+
+        public String getHostname() {
+            return hostname;
+        }
+
+        public void setHostname(String hostname) {
+            this.hostname = hostname;
+        }
+
+        public int getPort() {
+            return port;
+        }
+
+        public void setPort(int port) {
+            this.port = port;
+        }
     }
 }

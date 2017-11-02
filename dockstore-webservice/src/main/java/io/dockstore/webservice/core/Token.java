@@ -1,5 +1,5 @@
 /*
- *    Copyright 2016 OICR
+ *    Copyright 2017 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -57,6 +57,7 @@ public class Token {
     @Column(nullable = false)
     @ApiModelProperty("Source website for this token")
     private String tokenSource;
+
     @Column(nullable = false)
     @ApiModelProperty("Contents of the access token")
     private String content;
@@ -84,6 +85,12 @@ public class Token {
     @JsonProperty
     public long getId() {
         return id;
+    }
+
+    @JsonProperty
+    @ApiModelProperty("Contents of the access token")
+    public String getToken() {
+        return content;
     }
 
     @JsonProperty

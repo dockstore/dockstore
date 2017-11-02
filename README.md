@@ -1,5 +1,4 @@
 [![Build Status](https://travis-ci.org/ga4gh/dockstore.svg?branch=develop)](https://travis-ci.org/ga4gh/dockstore) [![Coverage Status](https://coveralls.io/repos/github/ga4gh/dockstore/badge.svg?branch=develop)](https://coveralls.io/github/ga4gh/dockstore?branch=develop)
-[![Dependency Status](https://dependencyci.com/github/ga4gh/dockstore/badge)](https://dependencyci.com/github/ga4gh/dockstore)  
 [![Website](https://img.shields.io/website/https/dockstore.org.svg)](https://dockstore.org)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/ga4gh/dockstore?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)  
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.168593.svg)](https://doi.org/10.5281/zenodo.168593)
@@ -241,7 +240,7 @@ This is for pre-release versions that have not been released to production.
 
 Special note: If a test is failing during perform, but did not fail during prepare or Travis-CI builds, you may have a non-deterministic error. Skip tests during a release with `mvn release:perform -Darguments="-DskipTests"`
 
-After the release to Artifactory, document the release on GitHub via the Releases page. Take a look at commits since the last release and closed pull requests for information on what goes into the changelog. Also attach the newly created Dockstore script.
+After the release to Artifactory, document the release on GitHub via the Releases page. Take a look at commits since the last release and closed pull requests for information on what goes into the changelog. Also attach the newly created Dockstore script and shaded client jar.
 
 #### How to perform a Maven release for an Stable Release
 
@@ -252,6 +251,7 @@ This is for release versions that have been released to production.
 3. Prepare the release and the perform it (you may need permissions) `mvn release:prepare` and `mvn release:perform`
 3. Merge to master and develop `mvn hf hotfix finish`
 
+As with the unstable release, document the release and attach the new Dockstore script and shaded client jar. 
 
 ### Encrypted Documents for Travis-CI
 
@@ -294,3 +294,19 @@ Probably the best way to run this since it includes a bundled postgres.  Keep in
 You can also run with defaults using
 
 1. `docker run -P -ti --rm dockstore`
+
+### Search Demo
+
+To run the search demo, you will need the following components:
+
+1. A running elasticsearch instance, for development `docker run -p 9200:9200 -p 9300:9300  -d elasticsearch:5.5` is sufficient.
+2. A dockstore web service that includes the search and index endpoints (at least c291cfb471a575766194561934d5789b3882de1b )
+3. This web service will need to be aware of elastic search via the configuration yml file 
+```
+esconfiguration:
+  port: 9200
+  hostname: localhost
+```
+4. A ui2 instance that includes the search demo at. This will require at least commit version 81fa2f798f3980203b801200f5f73e7b6a4c9939 )
+5. While the webservice is running and with some relevant content, hit up http://localhost:8080/static/swagger-ui/index.html#!/GA4GH/toolsIndexGet to generate index data.
+6. Browse to [http://localhost:4200/admin-search](http://localhost:4200/admin-search) to view a Angular 2 prototype in progress.

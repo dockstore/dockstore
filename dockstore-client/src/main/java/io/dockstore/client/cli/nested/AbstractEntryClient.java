@@ -1,5 +1,5 @@
 /*
- *    Copyright 2016 OICR
+ *    Copyright 2017 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -54,6 +54,7 @@ import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.Workflow;
 import io.dockstore.client.Bridge;
 import io.dockstore.client.cli.Client;
+import io.dockstore.client.cwlrunner.CWLRunnerFactory;
 import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.Utilities;
 import io.dockstore.common.WDLFileProvisioning;
@@ -112,9 +113,8 @@ import static io.dockstore.client.cli.Client.SCRIPT;
  * @author dyuen
  */
 public abstract class AbstractEntryClient {
-    private static final String CROMWELL_LOCATION = "https://github.com/broadinstitute/cromwell/releases/download/0.21/cromwell-0.21.jar";
+    private static final String CROMWELL_LOCATION = "https://github.com/broadinstitute/cromwell/releases/download/29/cromwell-29.jar";
     private static final Logger LOG = LoggerFactory.getLogger(AbstractEntryClient.class);
-    private static final CWL CWL_UTIL = new CWL();
     boolean isAdmin = false;
 
     static String getCleanedDescription(String description) {
@@ -126,6 +126,11 @@ public abstract class AbstractEntryClient {
             }
         }
         return description;
+    }
+
+    private CWL getCwlUtil() {
+        String cwlrunner = CWLRunnerFactory.getCWLRunner();
+        return new CWL(cwlrunner.equalsIgnoreCase(CWLRunnerFactory.CWLRunner.BUNNY.toString()));
     }
 
     public abstract String getConfigFile();
@@ -558,7 +563,7 @@ public abstract class AbstractEntryClient {
         } else {
             final String cwlPath = reqVal(args, "--cwl");
 
-            final ImmutablePair<String, String> output = CWL_UTIL.parseCWL(cwlPath);
+            final ImmutablePair<String, String> output = getCwlUtil().parseCWL(cwlPath);
 
             // do not continue to convert to json if cwl is invalid
             if (!validateCWL(cwlPath)) {
@@ -566,7 +571,7 @@ public abstract class AbstractEntryClient {
             }
 
             try {
-                final Map<String, Object> runJson = CWL_UTIL.extractRunJson(output.getLeft());
+                final Map<String, Object> runJson = getCwlUtil().extractRunJson(output.getLeft());
                 if (json) {
                     final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
                     out(gson.toJson(runJson));
@@ -881,7 +886,8 @@ public abstract class AbstractEntryClient {
      * Type.NONE if file extension is neither WDL nor CWL, could be no extension or some other random extension(e.g .txt)
      */
     Type checkFileExtension(String path) {
-        if (FilenameUtils.getExtension(path).toLowerCase().equals(CWL_STRING)) {
+        if (FilenameUtils.getExtension(path).toLowerCase().equals(CWL_STRING) || FilenameUtils.getExtension(path).toLowerCase().equals("yaml")
+            || FilenameUtils.getExtension(path).toLowerCase().equals("yml")) {
             return Type.CWL;
         } else if (FilenameUtils.getExtension(path).toLowerCase().equals(WDL_STRING)) {
             return Type.WDL;
@@ -1020,6 +1026,9 @@ public abstract class AbstractEntryClient {
                 final String localFilePath = reqVal(args, "--local-entry");
                 checkEntryFile(localFilePath, args, descriptor);
             } else {
+                if (!args.contains("--entry")) {
+                    errorMessage("dockstore: missing required flag --entry or --local-entry", CLIENT_ERROR);
+                }
                 final String descriptor = optVal(args, "--descriptor", CWL_STRING);
                 if (descriptor.equals(CWL_STRING)) {
                     try {
@@ -1078,7 +1087,7 @@ public abstract class AbstractEntryClient {
             OutputStream stderrStream) throws IOException, ApiException {
         String originalTestParameterFilePath = getOriginalTestParameterFilePath(yamlRun, jsonRun, csvRuns);
         if (!SCRIPT.get()) {
-            Client.checkForCWLDependencies();
+            getClient().checkForCWLDependencies();
         }
 
         final File tempDir = Files.createTempDir();
@@ -1297,7 +1306,7 @@ public abstract class AbstractEntryClient {
             // Make new json file
             String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
 
-            final List<String> wdlRun = Lists.newArrayList(tmp.getAbsolutePath(), newJsonPath);
+            final List<String> wdlRun = Lists.newArrayList(tmp.getAbsolutePath(), "--inputs", newJsonPath);
 
             // run a workflow
             System.out.println("Calling out to Cromwell to run your workflow");
@@ -1422,8 +1431,8 @@ public abstract class AbstractEntryClient {
 
         if (descriptor.equals(CWL_STRING)) {
             // need to suppress output
-            final ImmutablePair<String, String> output = CWL_UTIL.parseCWL(primaryFile.getAbsolutePath());
-            final Map<String, Object> stringObjectMap = CWL_UTIL.extractRunJson(output.getLeft());
+            final ImmutablePair<String, String> output = getCwlUtil().parseCWL(primaryFile.getAbsolutePath());
+            final Map<String, Object> stringObjectMap = getCwlUtil().extractRunJson(output.getLeft());
             if (json) {
                 try {
                     final Gson gson = CWL.getTypeSafeCWLToolDocument();
@@ -1435,7 +1444,7 @@ public abstract class AbstractEntryClient {
                 }
             } else {
                 // re-arrange as rows and columns
-                final Map<String, String> typeMap = CWL_UTIL.extractCWLTypes(output.getLeft());
+                final Map<String, String> typeMap = getCwlUtil().extractCWLTypes(output.getLeft());
                 final List<String> headers = new ArrayList<>();
                 final List<String> types = new ArrayList<>();
                 final List<String> entries = new ArrayList<>();
@@ -1477,6 +1486,8 @@ public abstract class AbstractEntryClient {
         }
         return null;
     }
+
+    public abstract Client getClient();
 
     /**
      * @param entry
