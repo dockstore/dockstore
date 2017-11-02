@@ -435,13 +435,13 @@ public class UserResource {
         Set<Registry> uniqueRegistry = new HashSet<>();
         tools.forEach(tool -> uniqueRegistry.add(tool.getRegistry()));
         if (uniqueRegistry.size() == 0 && quayioToken == null) {
-            throw new CustomWebApplicationException("Please add a Quay.io token", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("You have no tools and no Quay.io token to automatically add tools. Please add a Quay.io token.", HttpStatus.SC_BAD_REQUEST);
         }
         if (uniqueRegistry.contains(Registry.QUAY_IO) && quayioToken == null) {
-            throw new CustomWebApplicationException("Have Quay.io tools but no Quay.io token", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("You have Quay.io tools but no Quay.io token to refresh the tools with. Please add a Quay.io token.", HttpStatus.SC_BAD_REQUEST);
         }
         if (uniqueRegistry.contains(Registry.GITLAB) && gitLabToken == null) {
-            throw new CustomWebApplicationException("Have GitLab tools but no GitLab token", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("You have GitLab tools but no GitLab token to refresh the tools with. Please add a GitLab token", HttpStatus.SC_BAD_REQUEST);
         }
     }
 
