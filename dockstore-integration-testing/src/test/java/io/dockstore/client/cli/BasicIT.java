@@ -88,6 +88,7 @@ public class BasicIT {
         // delete quay.io token
         testingPostgres.runUpdateStatement("delete from token where tokensource = 'quay.io'");
         // refresh
+        systemExit.expectSystemExitWithStatus(6);
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--script" });
         // should not delete tools
         final long thirdToolCount = testingPostgres.runSelectStatement("select count(*) from tool", new ScalarHandler<>());

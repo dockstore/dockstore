@@ -429,7 +429,7 @@ public class DockerRepoResource {
             tool = toolDAO.findById(containerId);
             if (tool == null) {
                 elasticManager.handleIndexUpdate(deleteTool, ElasticMode.DELETE);
-                return Response.ok().build();
+                return Response.noContent().build();
             } else {
                 return Response.serverError().build();
             }
