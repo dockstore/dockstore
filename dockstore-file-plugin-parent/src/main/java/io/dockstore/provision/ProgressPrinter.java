@@ -66,6 +66,7 @@ public class ProgressPrinter {
         builder.append(percentage.setScale(0, BigDecimal.ROUND_HALF_EVEN).toPlainString()).append("%");
 
         Console console = System.console();
+
         if (console != null || numerator.equals(denominator)) {
             System.out.print(builder);
         }

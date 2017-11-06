@@ -63,7 +63,7 @@ public final class FileProvisionUtil {
         // disable utility constructor
     }
 
-    static boolean downloadFromVFS2(String path, Path targetFilePath) {
+    static boolean downloadFromVFS2(String path, Path targetFilePath, int threads) {
         // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
         // https://commons.apache.org/proper/commons-vfs/filesystems.html
         try {
@@ -75,7 +75,7 @@ public final class FileProvisionUtil {
             FileSystemManager fsManager = VFS.getManager();
             try (FileObject src = fsManager.resolveFile(path, opts);
                     FileObject dest = fsManager.resolveFile(targetFilePath.toFile().getAbsolutePath())) {
-                copyFromInputStreamToOutputStream(src, dest);
+                copyFromInputStreamToOutputStream(src, dest, threads);
             }
             return true;
         } catch (IOException e) {
@@ -89,7 +89,7 @@ public final class FileProvisionUtil {
      *
      * @throws IOException throws an exception if unable to provision input files
      */
-    static void copyFromInputStreamToOutputStream(FileObject src, FileObject dest) throws IOException {
+    static void copyFromInputStreamToOutputStream(FileObject src, FileObject dest, int threads) throws IOException {
         CopyStreamListener listener = new CopyStreamListener() {
             ProgressPrinter printer = new ProgressPrinter();
 
@@ -110,7 +110,7 @@ public final class FileProvisionUtil {
             // a larger buffer improves copy performance
             // we can also split this (local file copy) out into a plugin later
             final int largeBuffer = 100;
-            Util.copyStream(inputStream, outputStream, Util.DEFAULT_COPY_BUFFER_SIZE * largeBuffer, src.getContent().getSize(), listener);
+            Util.copyStream(inputStream, outputStream, Util.DEFAULT_COPY_BUFFER_SIZE * largeBuffer, src.getContent().getSize(), threads == 1 ? listener : null);
         } finally {
             // finalize output from the printer
             System.out.println();
@@ -205,7 +205,7 @@ public final class FileProvisionUtil {
         } else {
             System.out.println("Downloading " + sourceLocation + " to " + destinationLocation);
             final int pluginDownloadAttempts = 1;
-            FileProvisioning.retryWrapper(null, sourceLocation, Paths.get(destinationLocation), pluginDownloadAttempts, true);
+            FileProvisioning.retryWrapper(null, sourceLocation, Paths.get(destinationLocation), pluginDownloadAttempts, true, 1);
             return true;
         }
     }
