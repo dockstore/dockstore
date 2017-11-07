@@ -1,0 +1,18 @@
+---
+layout: post
+title:  "Dockstore 1.2.10"
+date:   2017-09-21 09:00:00 -0400
+categories: dockstore update
+---
+
+We're hard at work on the next major version of Dockstore. 
+
+In the meantime, our hotfix release includes fixes for the following:
+* fixes for file provisioning with the [GA4GH/DREAM challenge](https://www.synapse.org/#!Synapse:syn8507133/wiki/415976) series of workflows
+* spelling and verbiage fixes, some contributed from our users
+* fixes for display of test files and registry locations
+* fixes for consistency with the GA4GH Tool Registry Schema
+
+Plus the following small features
+* browsing tools and workflows defaults to popularity order (starring), allowing popular tools and workflows to rise to the top
+* new documentation sections highlighting posters that mention Dockstore and software projects that use or integrate with Dockstore

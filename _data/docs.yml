@@ -1,0 +1,25 @@
+# Collection for each documentation page, grouped by tutorial type
+- title: Prerequisites
+  link: prereqs
+  docs:
+    - prereqs/getting-started-with-docker
+    - prereqs/getting-started-with-cwl
+
+- title: User Tutorials
+  link: user-tutorials
+  docs:
+    - user-tutorials/faceted-search
+    - user-tutorials/launch
+
+- title: Publisher Tutorials
+  link: publisher-tutorials
+  docs:
+    - publisher-tutorials/getting-started-with-dockstore
+    - publisher-tutorials/for-developers
+    - publisher-tutorials/docker-registries
+    - publisher-tutorials/public-and-private-tools
+    - publisher-tutorials/workflows
+    - publisher-tutorials/best-practices
+    - publisher-tutorials/advanced-features
+    - publisher-tutorials/aws-batch
+    - publisher-tutorials/azure-batch

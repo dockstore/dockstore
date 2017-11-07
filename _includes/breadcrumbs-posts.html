@@ -1,0 +1,8 @@
+<ol class="breadcrumb">
+  {% if include.title != '' %}
+    <li><a href="/news">News</a></li>
+    <li class="active">{{ include.title }}</li>
+  {% else %}
+    <li class="active">News</li>
+  {% endif %}
+</ol>

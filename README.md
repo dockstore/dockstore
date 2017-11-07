@@ -1,34 +1,31 @@
-# dockstore
+# Guide for Developers
+If you are new to Jekyll and plan on either adding documentation/news, or updating the code, you should check out the tutorials on their [website](https://jekyllrb.com/).
 
-This is the prototype web service for the dockstore. The usage of this is to enumerate the docker containers (from quay.io and hopefully docker hub) and the workflows (from github) that are available to users of Collaboratory.
+## Adding News Items
+News items exist as posts, which are stored in `_posts`. The filename of a post must be of the following format `yyyy-mm-dd-title.markdown`.
 
-## Usage
+To add a new news item, do the following:
+1. Create a file in `_posts` using the filename format mentioned above.
+2. Add to the front matter the layout, title, date and categories.
 
-### Starting Up
+  layout: post
 
-1. Fill in the template hello-world.yml and stash it somewhere outside the git repo (like ~/.stash)
-2. Start with java -jar target/dockstore-0.0.1-SNAPSHOT.jar server ~/.stash/hello-world.yml
+  title:  "First Workflow from the PCAWG Project released"
 
-### View Swagger UI
+  date:   2015-11-18 09:00:00 -0400
 
-1. Browse to [http://localhost:8080/static/swagger-ui/index.html](http://localhost:8080/static/swagger-ui/index.html)
+  categories: dockstore
+3. If your post has images, place them in `assets/images/news`
 
-### Demo Integration with Quay.io
+## Adding Documentation
+Documentation is currently split up into three sections: prerequisites, user tutorials, and developer tutorials. The organization of the documentation can be seen in `_data/docs.yml`. The actual documents are stored in `_docs`.
 
-1. Setup an application as described in [Creating a new Application](http://docs.quay.io/api/)
-2. Browse to [http://localhost:8080/integration.quay.io](http://localhost:8080/integration.quay.io)
-3. Authorize via quay.io using the provided link
-4. Browse to [http://localhost:8080/docker.repo](http://localhost:8080/docker.repo) to list repos that we have tokens for at quay.io
+To add a new document to an existing section, do the following:
+1. Create a file in the folder `_docs`
+2. In the front matter, put the title and permalink. Below is an example:
 
-### Demo Integration with Github.com
+  title: Advanced Features
 
-1. Setup a new OAuth application at [Register a new OAuth application](https://github.com/settings/applications/new)
-2. Browse to [http://localhost:8080/integration.github.com](http://localhost:8080/integration.github.com)
-3. Authorize via github.com using the provided link
-4. Browse to [http://localhost:8080/github.repo](http://localhost:8080/github.repo) to list repos along with their collab.json (if they exist)
-
-## TODO
-
-1. we need to define how this interacts with a single sign-on service
-   1. in general, users should be able to list their own information (such as tokens and repos)
-   2. only admin users (or our other services) should be able to list all information  
+  permalink: /docs/publisher-tutorials/advanced-features
+3. Add to the appropriate list in `_data/docs.yml` the filename (not including extension)
+4. If the doc has images, place them in `assets/images/docs`

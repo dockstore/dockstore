@@ -1,0 +1,250 @@
+// Site wide styles
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  font-family: Gotham !important;
+  font-weight: 400;
+  font-size: 14px;
+  // line-height: 2em!important;
+}
+
+@font-face {
+  font-family: Gotham;
+  src: url("/assets/fonts/Gotham-Book.otf") format("opentype");
+}
+
+@font-face {
+  font-family: Gotham;
+  font-weight: bold;
+  src: url("/assets/fonts/Gotham-Bold.otf") format("opentype");
+}
+
+@font-face {
+  font-family: Gotham;
+  font-style: italic;
+  src: url("/assets/fonts/Gotham-BookItalic.otf") format("opentype");
+}
+
+// Navbar Styles
+.main-menu {
+  background-color: #21335B;
+  position: relative;
+}
+
+.bs-docs-section img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.app-header .container-fluid {
+  background-color:#eef0f6;
+  box-shadow: 0px 3px 6px #cfd1d7;
+  position: relative;
+  z-index: 1;
+}
+
+.app-header-text {
+  font-size: 20px;
+  color: #21335B;
+  margin: 20px 0px 15px 0px;
+  display: inline;
+  line-height: 55px;
+}
+
+.header-row {
+  padding-bottom:8px;
+}
+
+.navbar-right {
+  margin-top:10px !important;
+}
+
+#navigation ul.navlist {
+  margin: 0;
+  padding: 0;
+  padding-top: 5px;
+}
+
+#navigation ul.navlist li a {
+  font-weight: bold;
+  text-decoration: none;
+  color: white;
+}
+
+#navigation ul.navlist li {
+  display: inline;
+  margin: 32px 16px 32px 16px;
+}
+#navigation ul.navlist li a {
+  font-weight: bold;
+  text-decoration: none;
+  color: white;
+}
+
+#navigation ul.navlist li a:hover {
+  text-decoration: underline;
+  background-color: #21335B;
+}
+
+#logo a:hover {
+  text-decoration: none !important;
+}
+
+// Footer Styles
+.footer {
+  bottom: 0;
+  width: 100%;
+  height: 80px;
+  background-color: #21335B;
+}
+
+.footer-list > li {
+  margin:0px !important;
+  list-style: none;
+}
+
+.footer-link:active {
+  color:white !important;
+}
+
+.footer-link:visited {
+  color:white !important;
+}
+
+.footer-link:link {
+  text-decoration: none;
+  color:white !important;
+}
+
+.footer-link:hover {
+  text-decoration: underline;
+  color:white !important;
+}
+
+.footer-content {
+  font-weight:400;
+  color:white !important;
+  padding-top:20px;
+}
+
+// Front page tutorial section styles
+.jumbo {
+  margin-top:30px;
+  margin-bottom:10px;
+}
+
+.tutorial-section {
+  background-color:#487980;
+  padding:15px;
+  color:white;
+  border-radius: 8px;
+  height:175px;
+  margin:15px;
+}
+
+.tutorial-section-text {
+  font-size:16px;
+}
+
+// General Styles
+.no-padding {
+  padding: 0px;
+}
+
+.no-margin {
+  margin: 0px;
+}
+
+.link-no-color {
+  color: inherit;
+}
+
+.link-no-color:hover {
+  color: inherit;
+}
+
+.header-text {
+  color:#21335b !important;
+}
+
+.site-content-container {
+  padding-top:25px;
+}
+
+.ls-hover:hover {
+  background-color: #f5f5f5;
+}
+
+// TOC
+.anchor-link {
+  opacity: 0;
+  position: absolute;
+  margin-left: -1em;
+  padding-right: 1em;
+  font-size: 0.8em;
+  line-height: 1.3em;
+  color: #999 !important;
+  transition: opacity 0.1s ease-in-out;
+}
+
+.anchor-link:hover {
+  text-decoration: none;
+}
+
+h1:hover .anchor-link,
+h2:hover .anchor-link,
+h3:hover .anchor-link,
+h4:hover .anchor-link,
+h5:hover .anchor-link {
+  opacity: 1;
+}
+
+.bs-docs-sidebar .nav > li > a {
+  font-size: 15px;
+}
+
+.bs-docs-sidebar .nav .nav > li > a {
+  font-size: 14px;
+}
+
+.bs-docs-sidebar .nav>li>a:hover, .bs-docs-sidebar .nav>li>a:focus, .bs-docs-sidebar .nav>.active>a {
+    color: #487980 !important;
+    border-left: 2px solid #487980 !important;
+}
+
+.back-to-top:hover {
+  color: #487980 !important;
+}
+
+// Pages
+.sponsor-img {
+  height: 65px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.sponsor-padding {
+  padding-bottom: 30px;
+}
+
+.sponsor-text {
+  color: #21335B;
+}
+
+.release-header {
+  margin-top: 10px;
+  margin-bottom:5px;
+}
+
+.news-header {
+  font-size: 22px !important;
+}
+
+.page-content {
+  margin-bottom: 20px !important;
+}

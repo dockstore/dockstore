@@ -1,0 +1,27 @@
+# Site information
+title: Dockstore
+repository: ga4gh/dockstore
+uirepository: dockstore/dockstore-ui2
+twitter: DockstoreOrg
+apiversion: 1.3.0
+uiversion: 2.0.0
+
+# Jekyll stuff
+markdown: kramdown
+plugins:
+  - jekyll-feed
+sass:
+    style: :compressed
+
+# Documentation stuff
+collections:
+  docs:
+    permalink: /:collection/:path/
+    output: true
+defaults:
+  -
+    scope:
+      path: "_docs"
+      type: "docs"
+    values:
+      layout: "docs"

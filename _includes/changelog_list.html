@@ -1,0 +1,16 @@
+<h1 id="releases_header">Changelog</h1>
+{% for release in site.github.releases %}
+  {% if release.prerelease == false %}
+      <div class="page-header release-header">
+        <h2 id="{{ release.id }}" class="no-margin">{{ release.tag_name }} <small>{{ release.published_at | date: "%B %e, %Y" }}</small></h2>
+      </div>
+      <div>
+        {% if release.body == '' %}
+          No description.
+        {% else %}
+          <!-- Ignore headers in release body -->
+          {{ release.body | remove: '#' | markdownify }}
+        {% endif %}
+      </div>
+  {% endif %}
+{% endfor %}

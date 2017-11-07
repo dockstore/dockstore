@@ -1,0 +1,7 @@
+<ul class="list-group">
+  {% for item in include.items %}
+    {% assign document_url = item | prepend:"/docs/" | append:"/" %}
+    {% assign document = site.docs | where:"url", document_url | first %}
+    <li class="list-group-item ls-hover"><a href="{{ document.url }}">{{ document.title }}</a></li>
+  {% endfor %}
+</ul>

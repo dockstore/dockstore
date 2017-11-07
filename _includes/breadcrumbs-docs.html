@@ -1,0 +1,32 @@
+<ol class="breadcrumb">
+  <!-- Split ID by / -->
+  {% assign components = include.path | remove_first:"/" | split: '/' %}
+  {% assign url = '' %}
+  {% assign title = '' %}
+  {% assign parentTitle = '' %}
+
+  <!-- Find pretty name of document -->
+  {% for item in site.docs %}
+    {% if item.id == include.path %}
+      {% assign title = item.title %}
+    {% endif %}
+  {% endfor %}
+
+  <!-- Find pretty name of parent group -->
+  {% for section in site.data.docs %}
+    {% if section.link == components[1] %}
+      {% assign parentTitle = section.title %}
+    {% endif %}
+  {% endfor %}
+
+  {% for component in components %}
+    {% assign url = url | append: '/' | append: component %}
+    {% if forloop.last == true %}
+      <li class="active">{{title}}</li>
+    {% elsif forloop.index0 == 1 %}
+      <li><a href="{{ url }}">{{parentTitle}}</a></li>
+    {% else %}
+      <li><a href="{{ url }}">Documentation</a></li>
+    {% endif %}
+  {% endfor %}
+</ol>

@@ -1,0 +1,20 @@
+---
+layout: post
+title:  "Dockstore 1.3.0"
+date:   2017-10-30 09:00:00 -0400
+categories: dockstore update
+---
+We've just released the next major version of Dockstore!
+
+Highlighted new features include a:
+* search interface for quickly locating tools by keyword, author, labels, organization, etc. 
+* search niceties such as search term autocomplete, an advanced search, and a tag cloud highlighting significant terms 
+* updates for our CLI development environment to use cwltool 1.0.20170828135420 and cromwell 29.
+* our deployment environment is now fully described by [Docker Compose](https://github.com/dockstore/compose_setup) allowing developers to spin up a private version of Dockstore including 1.3.0, 1.2.10, and search
+* integration with [https://discuss.dockstore.org/](https://discuss.dockstore.org/)
+* user requests such as the ability to allow for more exotic Dockerfile names and a reorganized tutorial for users of tools and workflows (as opposed to tool and workflow developers)
+* and a bit of inside baseball, we migrated from Angular 1 to Angular 4 as a foundation for future improvements
+
+See a full list of our changes on [GitHub](https://github.com/ga4gh/dockstore/milestone/9).
+
+Due to the number of changes, we'll continue to run the classic UI at [https://dockstore.org:9000/](https://dockstore.org:9000/).
