@@ -30,9 +30,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -65,7 +67,7 @@ import ro.fortsoft.pf4j.PluginWrapper;
  */
 public class FileProvisioning {
 
-    private static final int DEFAULT_THREADS = 5;
+    private static final int DEFAULT_THREADS = 1;
     private static final String FILE_PROVISION_THREADS = "file-provision-threads";
 
     private static final int DEFAULT_RETRIES = 3;
@@ -187,14 +189,21 @@ public class FileProvisioning {
     public void provisionInputFiles(String parameterFilePath, List<Pair<String, Path>> inputFiles) {
         ExecutorService executorService = Executors.newFixedThreadPool(threads);
 
+        List<Future> futures = new ArrayList<>();
         for (Pair<String, Path> inputFile : inputFiles) {
-            executorService.execute(() -> provisionInputFile(parameterFilePath, inputFile.getLeft(), inputFile.getRight()));
+            Future<Object> submit = executorService.submit((Callable<Object>)() -> {
+                provisionInputFile(parameterFilePath, inputFile.getLeft(), inputFile.getRight());
+                return true;
+            });
+            futures.add(submit);
         }
-        executorService.shutdown();
-        try {
-            executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-        } catch (InterruptedException e) {
-            throw new RuntimeException("did not wait for all downloads, interrupted", e);
+        for (Future future : futures) {
+            try {
+                future.get();
+            } catch (InterruptedException | ExecutionException e) {
+                System.err.println("Input file downloading interrupted");
+                throw new RuntimeException(e.getCause());
+            }
         }
     }
 
@@ -460,18 +469,19 @@ public class FileProvisioning {
 
                 ExecutorService executorService = Executors.newFixedThreadPool(threads);
 
+                List<Future> futures = new ArrayList<>();
                 for (int i = 0; i < pairs.length; i++) {
                     Pair<String, FileInfo> pair = pairs[i];
                     String dest = destList.get(i);
-                    executorService.execute(() -> provisionOutputFile(pair.getLeft(), dest, pair.getRight().getMetadata(), pInterface));
+                    Future<Object> submit = executorService.submit((Callable<Object>)() -> {
+                        provisionOutputFile(pair.getLeft(), dest, pair.getRight().getMetadata(), pInterface);
+                        return true;
+                    });
+                    futures.add(submit);
                 }
-                executorService.shutdown();
-                try {
-                    executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException("did not wait for all uploads, interrupted", e);
+                for (Future future : futures) {
+                    future.get();
                 }
-
 
                 if (pInterface != null) {
                     pInterface.finalizeFileSet(destList, srcList, metadataList);
