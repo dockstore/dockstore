@@ -611,7 +611,8 @@ public class LauncherCWL {
      * @param fileMap      indicates which output files need to be provisioned where
      * @param outputObject provides information on the output files from cwltool
      */
-    protected List<ImmutablePair<String, FileProvisioning.FileInfo>> registerOutputFiles(Map<String, List<FileProvisioning.FileInfo>> fileMap, Map<String, Object> outputObject) {
+    List<ImmutablePair<String, FileProvisioning.FileInfo>> registerOutputFiles(Map<String, List<FileProvisioning.FileInfo>> fileMap,
+        Map<String, Object> outputObject) {
 
         LOG.info("UPLOADING FILES...");
         List<ImmutablePair<String, FileProvisioning.FileInfo>> outputSet = new ArrayList<>();
@@ -626,7 +627,7 @@ public class LauncherCWL {
                 if (files.size() == 1 && file.isDirectory()) {
                     // we're provisioning a number of files into a directory
                     for (Object currentEntry : cwltoolOutput) {
-                        handleOutputFileEntry(key, file, currentEntry);
+                        outputSet.addAll(handleOutputFileEntry(key, file, currentEntry));
                     }
                 } else {
                     // lengths should be the same when not dealing with directories
@@ -648,20 +649,22 @@ public class LauncherCWL {
         return outputSet;
     }
 
-    private void handleOutputFileEntry(String key, FileProvisioning.FileInfo file, Object currentEntry) {
+    private List<ImmutablePair<String, FileProvisioning.FileInfo>> handleOutputFileEntry(String key, FileProvisioning.FileInfo file, Object currentEntry) {
+        List<ImmutablePair<String, FileProvisioning.FileInfo>> outputSet = new ArrayList<>();
         if (currentEntry instanceof Map) {
             Map<String, Object> map = (Map)currentEntry;
-            provisionOutputFile(key, file, map);
+            outputSet.addAll(provisionOutputFile(key, file, map));
         } else if (currentEntry instanceof List) {
             // unwrap a list if it happens to be inside a list (as in bcbio)
             for (Object listEntry : (List)currentEntry) {
-                handleOutputFileEntry(key, file, listEntry);
+                outputSet.addAll(handleOutputFileEntry(key, file, listEntry));
             }
         } else {
             // output a warning if there is some other odd output structure we don't understand
             LOG.error("We don't understand provision out structure for: " + key + " ,skipping");
             System.out.println("Ignoring odd provision out structure for: " + key + " ,skipping");
         }
+        return outputSet;
     }
 
     /**
