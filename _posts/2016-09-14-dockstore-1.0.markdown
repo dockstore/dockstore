@@ -1,0 +1,26 @@
+---
+layout: post
+title:  "Dockstore 1.0 Release"
+date:   2016-09-14 09:00:00 -0400
+categories: dockstore update
+---
+This date marks the launch of [Dockstore 1.0](https://github.com/ga4gh/dockstore/releases/tag/1.0). This release combines the release of several Pan-cancer workflows, tested as standardized [CWL 1.0](http://www.commonwl.org/) CommandLineTools along with several new features including support for CWL 1.0 in Dockstore itself and preliminary support for the GA4GH [tool-registry-schema](https://github.com/ga4gh/tool-registry-schemas).
+
+### New Content
+
+Three new workflows used to generate the [ICGC PanCancer Analysis of Whole Genomes (PCAWG)](https://dcc.icgc.org/icgc-in-the-cloud/aws) dataset have been released and validated with CWL 1.0.
+
+These are:
+* [DELLY](https://dockstore.org/containers/quay.io/pancancer/pcawg_delly_workflow) structural variation
+* [Sanger](https://dockstore.org/containers/quay.io/pancancer/pcawg-sanger-cgp-workflow) somatic calling
+* [DKFZ](https://dockstore.org/containers/quay.io/pancancer/pcawg-dkfz-workflow) SNVs, indels, copy number
+
+These workflows join the first workflow used to generate this dataset, [BWA-mem](https://dockstore.org/containers/quay.io/pancancer/pcawg-bwa-mem-workflow).
+
+### Highlighted New Features
+
+* Support for the preliminary GA4GH [tool-registry-schema 1.0](https://github.com/ga4gh/tool-registry-schemas) will allow Dockstore to share and exchange tools with other similar projects around the world
+* Upgraded support for CWL 1.0 (previously draft-3) allows Dockstore to display and launch tools
+* Dockstore launcher (which allows you to run tools locally on one host) supports file provisioning based on [CWL secondary files](http://www.commonwl.org/v1.0/CommandLineTool.html#CommandInputParameter). See [Sanger](https://github.com/ICGC-TCGA-PanCancer/CGP-Somatic-Docker/blob/develop/Dockstore.cwl) for an example
+* Default branch/tag support allows tool developers to pin a particular version of their tool to display to their users
+

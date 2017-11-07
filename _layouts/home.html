@@ -1,0 +1,47 @@
+---
+layout: default
+---
+
+<div class="container">
+  <div class="row">
+    <div class="jumbotron text-center jumbo">
+      <h1>Dockstore Documentation</h1>
+      <p>Dockstore is an open platform used by the GA4GH for sharing Docker-based tools
+        described with either the Common Workflow Language (CWL) or the Workflow Description
+        Language (WDL).</p>
+  </div>
+
+    {{ content }}
+
+  <div class="row">
+    <div class="col-md-4 col-sm-12 no-padding">
+      <div class="text-center tutorial-section">
+        <h2><a href="/docs/prereqs" class="link-no-color">Prerequisites</a></h2>
+        <p class="tutorial-section-text">Learn about Docker and the descriptor languages CWL and WDL.</p>
+      </div>
+    </div>
+    <div class="col-md-4 col-sm-12 no-padding">
+      <div class="text-center tutorial-section">
+        <h2><a href="/docs/user-tutorials" class="link-no-color">User Tutorials</a></h2>
+        <p class="tutorial-section-text">Learn how to use Dockstore from the perspective of a user who runs tools and workflows.</p>
+      </div>
+    </div>
+    <div class="col-md-4 col-sm-12 no-padding">
+      <div class="text-center tutorial-section">
+        <h2><a href="/docs/publisher-tutorials" class="link-no-color">Publisher Tutorials</a></h2>
+        <p class="tutorial-section-text">Learn how to use Dockstore from the perspective of a user who maintains tools and workflows.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="row text-center sponsor-padding">
+    <h4 class="sponsor-text">In Affiliation With</h4><br />
+    {% for sponsor in site.data.sponsors %}
+      <div class="col-md-3 col-sm-6 sponsor-padding">
+        <a href="{{ sponsor.link }}" target="_blank">
+          <img src="{{ sponsor.img }}" alt="{{ sponsor.title }}" class="img-responsive sponsor-img"/>
+        </a>
+      </div>
+    {%  endfor %}
+  </div>
+</div>

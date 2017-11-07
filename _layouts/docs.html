@@ -1,0 +1,47 @@
+---
+layout: default
+---
+<div class="app-header">
+  <div class="container-fluid">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <h3 class="app-header-text">
+            Documentation
+          </h3>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="container site-content-container bs-docs-section">
+    {% assign pathSize = page.id | remove_first: "/" | split: '/' | size %}
+    <!-- Path size < 3 => viewing the general docs page or a tutorial overview page -->
+    {% if pathSize < 3 %}
+    <div class="col-md-3">
+      <!-- Panels for each tutorial grouping -->
+      {% for section in site.data.docs %}
+      <div class="panel panel-default">
+        <div class="panel-heading header-text"><h4><a class="link-no-color" href="/docs/{{ section.link }}">{{ section.title }}</a></h4></div>
+        {% include docs_list.html items=section.docs parent=section.link %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <!-- Table of contents to be shown if viewing a specific documentation page -->
+    <div class="col-md-3 hidden-sm hidden-xs" role="complementary">
+      <div class="bs-docs-sidebar hidden-print">
+        <ul class="nav bs-docs-sidenav">
+        </ul>
+        <a class="back-to-top" href="#top">
+          <span class="glyphicon glyphicon-chevron-up" aria-hidden="true"></span> Back to top
+        </a>
+      </div>
+    </div>
+    {% endif %}
+    <!-- Main documentation section -->
+    <div class="col-md-9">
+      {% include breadcrumbs-docs.html path=page.id %}
+      {{ content }}
+    </div>
+
+  </div>
