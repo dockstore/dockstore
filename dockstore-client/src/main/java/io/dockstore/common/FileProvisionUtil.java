@@ -41,6 +41,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.net.io.CopyStreamEvent;
 import org.apache.commons.net.io.CopyStreamListener;
 import org.apache.commons.net.io.Util;
+import org.apache.commons.vfs2.FileContent;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemManager;
 import org.apache.commons.vfs2.FileSystemOptions;
@@ -74,7 +75,7 @@ public final class FileProvisionUtil {
             // trigger a copy from the URL to a local file path that's a UUID to avoid collision
             FileSystemManager fsManager = VFS.getManager();
             try (FileObject src = fsManager.resolveFile(path, opts);
-                    FileObject dest = fsManager.resolveFile(targetFilePath.toFile().getAbsolutePath())) {
+                FileObject dest = fsManager.resolveFile(targetFilePath.toFile().getAbsolutePath())) {
                 copyFromInputStreamToOutputStream(src, dest, threads);
             }
             return true;
@@ -91,7 +92,7 @@ public final class FileProvisionUtil {
      */
     static void copyFromInputStreamToOutputStream(FileObject src, FileObject dest, int threads) throws IOException {
         CopyStreamListener listener = new CopyStreamListener() {
-            ProgressPrinter printer = new ProgressPrinter();
+            ProgressPrinter printer = new ProgressPrinter(threads, threads > 1 ? src.toString() : "");
 
             @Override
             public void bytesTransferred(CopyStreamEvent event) {
@@ -105,12 +106,22 @@ public final class FileProvisionUtil {
                 }
             }
         };
-        try (InputStream inputStream = src.getContent().getInputStream();
-                OutputStream outputStream = dest.getContent().getOutputStream()) {
+        System.out.println("Downloading: " + src.toString() + " to " + dest.toString());
+
+        long size;
+        try (FileContent srcContent = src.getContent()) {
+            // odd concurrency issue
+            size = srcContent.getSize();
+        }
+
+        try (FileContent srcContent = src.getContent();
+            FileContent destContent = dest.getContent();
+            InputStream inputStream = srcContent.getInputStream();
+                OutputStream outputStream = destContent.getOutputStream()) {
             // a larger buffer improves copy performance
             // we can also split this (local file copy) out into a plugin later
             final int largeBuffer = 100;
-            Util.copyStream(inputStream, outputStream, Util.DEFAULT_COPY_BUFFER_SIZE * largeBuffer, src.getContent().getSize(), threads == 1 ? listener : null);
+            Util.copyStream(inputStream, outputStream, Util.DEFAULT_COPY_BUFFER_SIZE * largeBuffer, size, listener);
         } finally {
             // finalize output from the printer
             System.out.println();

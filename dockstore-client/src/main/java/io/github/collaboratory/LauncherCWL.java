@@ -865,7 +865,7 @@ public class LauncherCWL {
 
         // set up output paths
         String downloadDirectory = globalWorkingDir + "/inputs/" + UUID.randomUUID();
-        System.out.println("Downloading: #" + cwlInputFileID + " from " + path + " into directory: " + downloadDirectory);
+        System.out.println("Preparing download location for: #" + cwlInputFileID + " from " + path + " into directory: " + downloadDirectory);
         Utilities.executeCommand("mkdir -p " + downloadDirectory);
         File downloadDirFileObj = new File(downloadDirectory);
 

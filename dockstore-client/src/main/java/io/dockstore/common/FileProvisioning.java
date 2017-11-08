@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -191,7 +190,7 @@ public class FileProvisioning {
 
         List<Future> futures = new ArrayList<>();
         for (Pair<String, Path> inputFile : inputFiles) {
-            Future<Object> submit = executorService.submit((Callable<Object>)() -> {
+            Future<Object> submit = executorService.submit(() -> {
                 provisionInputFile(parameterFilePath, inputFile.getLeft(), inputFile.getRight());
                 return true;
             });
@@ -473,7 +472,7 @@ public class FileProvisioning {
                 for (int i = 0; i < pairs.length; i++) {
                     Pair<String, FileInfo> pair = pairs[i];
                     String dest = destList.get(i);
-                    Future<Object> submit = executorService.submit((Callable<Object>)() -> {
+                    Future<Object> submit = executorService.submit(() -> {
                         provisionOutputFile(pair.getLeft(), dest, pair.getRight().getMetadata(), pInterface);
                         return true;
                     });
