@@ -20,6 +20,8 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * A printer of the progress for file provisoning plugins.
  *
@@ -27,8 +29,26 @@ import java.math.RoundingMode;
  */
 public class ProgressPrinter {
     private static final int SIZE_OF_PROGRESS_BAR = 50;
+    private static final int MAX_HEADER_LENGTH = 30;
+    private static final int PROGRESS_INCREMENT = 1;
+    private final int threads;
+    private final String header;
     private boolean printedBefore = false;
-    private BigDecimal progress = new BigDecimal(0);
+    private int progress = 0;
+
+    public ProgressPrinter() {
+        this.threads = 1;
+        this.header = "";
+    }
+
+    public ProgressPrinter(int threads, String header) {
+        this.threads = threads;
+        if (header.length() > MAX_HEADER_LENGTH * 2) {
+            this.header = StringUtils.truncate(header, MAX_HEADER_LENGTH) + "..." + StringUtils.truncate(header, header.length() - MAX_HEADER_LENGTH, Integer.MAX_VALUE) + " ";
+        } else {
+            this.header = header;
+        }
+    }
 
     /**
      * Call to report on progress
@@ -41,16 +61,19 @@ public class ProgressPrinter {
         BigDecimal numerator = BigDecimal.valueOf(totalBytesTransferred);
         BigDecimal denominator = BigDecimal.valueOf(streamSize);
         BigDecimal fraction = numerator.divide(denominator, new MathContext(2, RoundingMode.HALF_EVEN));
-        if (fraction.equals(progress)) {
+        BigDecimal percentage = fraction.movePointRight(2);
+
+        if (percentage.intValue() == progress) {
             /* don't bother refreshing if no progress made */
             return;
         }
 
         BigDecimal outOfTwenty = fraction.multiply(new BigDecimal(SIZE_OF_PROGRESS_BAR));
-        BigDecimal percentage = fraction.movePointRight(2);
-        StringBuilder builder = new StringBuilder();
-        if (printedBefore) {
-            builder.append('\r');
+        StringBuilder builder = new StringBuilder(header);
+        if (threads == 1) {
+            if (printedBefore) {
+                builder.append('\r');
+            }
         }
 
         builder.append("[");
@@ -66,11 +89,21 @@ public class ProgressPrinter {
         builder.append(percentage.setScale(0, BigDecimal.ROUND_HALF_EVEN).toPlainString()).append("%");
 
         Console console = System.console();
+
         if (console != null || numerator.equals(denominator)) {
-            System.out.print(builder);
+            if (threads == 1) {
+                System.out.print(builder);
+            } else {
+                // do not refresh too often with multithreading
+                if (percentage.intValue() < progress + PROGRESS_INCREMENT) {
+                    return;
+                }
+
+                System.out.println(builder);
+            }
         }
         // track progress
         printedBefore = true;
-        progress = fraction;
+        progress = percentage.intValue();
     }
 }

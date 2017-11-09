@@ -30,6 +30,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -62,22 +66,26 @@ import ro.fortsoft.pf4j.PluginWrapper;
  */
 public class FileProvisioning {
 
+    private static final int DEFAULT_THREADS = 1;
+    private static final String FILE_PROVISION_THREADS = "file-provision-threads";
+
     private static final int DEFAULT_RETRIES = 3;
     private static final String FILE_PROVISION_RETRIES = "file-provision-retries";
     private static final Logger LOG = LoggerFactory.getLogger(FileProvisioning.class);
+    private final int threads;
+    private final boolean cache;
 
     private List<ProvisionInterface> plugins = new ArrayList<>();
 
     private INIConfiguration config;
-
-    // map from cwl emitted local file path to info object containing
-    private List<ImmutablePair<String, FileInfo>> registeredFiles = new ArrayList<>();
 
     /**
      * Constructor
      */
     public FileProvisioning(String configFile) {
         this.config = Utilities.parseConfig(configFile);
+        this.threads = config.getInt(FileProvisioning.FILE_PROVISION_THREADS, FileProvisioning.DEFAULT_THREADS);
+        this.cache = isCacheOn(config);
         try {
             PluginManager pluginManager = FileProvisionUtil.getPluginManager(config);
 
@@ -109,7 +117,7 @@ public class FileProvisioning {
      * Returns the next wait interval, in milliseconds, using an exponential
      * backoff algorithm.
     */
-    public static long getWaitTimeExp(int retryCount) {
+    private static long getWaitTimeExp(int retryCount) {
         final long retryMultiplier = 100L;
         return (long)Math.pow(2, retryCount) * retryMultiplier;
     }
@@ -139,14 +147,14 @@ public class FileProvisioning {
     }
 
     static void retryWrapper(ProvisionInterface provisionInterface, String targetPath, Path destinationPath, int maxRetries,
-            boolean download) {
-        retryWrapper(provisionInterface, targetPath, destinationPath, maxRetries, download, null);
+            boolean download, int threads) {
+        retryWrapper(provisionInterface, targetPath, destinationPath, maxRetries, download, null, threads);
     }
 
-    static void retryWrapper(ProvisionInterface provisionInterface, String targetPath, Path destinationPath, int maxRetries,
-            boolean download, String metadata) {
+    private static void retryWrapper(ProvisionInterface provisionInterface, String targetPath, Path destinationPath, int maxRetries,
+            boolean download, String metadata, int threads) {
         if (provisionInterface == null) {
-            provisionInterface = new FileProvisionUtilPluginWrapper();
+            provisionInterface = new FileProvisionUtilPluginWrapper(threads);
         }
         boolean success;
         int retries = 0;
@@ -177,50 +185,73 @@ public class FileProvisioning {
         }
     }
 
+    public void provisionInputFiles(String parameterFilePath, List<Pair<String, Path>> inputFiles) {
+        ExecutorService executorService = Executors.newFixedThreadPool(threads);
+
+        List<Future> futures = new ArrayList<>();
+        for (Pair<String, Path> inputFile : inputFiles) {
+            Future<Object> submit = executorService.submit(() -> {
+                provisionInputFile(parameterFilePath, inputFile.getLeft(), inputFile.getRight());
+                return true;
+            });
+            futures.add(submit);
+        }
+        for (Future future : futures) {
+            try {
+                future.get();
+            } catch (InterruptedException | ExecutionException e) {
+                System.err.println("Input file downloading interrupted");
+                throw new RuntimeException(e.getCause());
+            }
+        }
+    }
+
     /**
-     * This method downloads both local and remote files into the working directory
+     * This is an entry point from both WDL and CWL.
+     * This method downloads both local and remote files into the working directory.
      *
      * @param parameterFilePath path of the parameter file
      * @param targetPath        path for target file
      * @param localPath         the absolute path where we will download files to
      */
-    public void provisionInputFile(String parameterFilePath, String targetPath, Path localPath) {
+    private void provisionInputFile(String parameterFilePath, String targetPath, Path localPath) {
 
         Path potentialCachedFile = null;
-        final boolean useCache = isCacheOn(config);
         // check if a file exists in the cache and if it does, link/copy it into place
-        if (useCache) {
-            // check cache for cached files
-            final String cacheDirectory = getCacheDirectory(config);
-            // create cache directory
-            final Path cachePath = Paths.get(cacheDirectory);
-            if (Files.notExists(cachePath)) {
-                if (!cachePath.toFile().mkdirs()) {
-                    throw new RuntimeException("Could not create dockstore cache: " + cacheDirectory);
+        synchronized (LOG) {
+            if (cache) {
+                // check cache for cached files
+                final String cacheDirectory = getCacheDirectory(config);
+                // create cache directory
+                final Path cachePath = Paths.get(cacheDirectory);
+                if (Files.notExists(cachePath)) {
+                    if (!cachePath.toFile().mkdirs()) {
+                        throw new RuntimeException("Could not create dockstore cache: " + cacheDirectory);
+                    }
                 }
-            }
 
-            final String sha1 = DigestUtils.sha1Hex(targetPath);
-            final String sha1Prefix = sha1.substring(0, 2);
-            final String sha1Suffix = sha1.substring(2);
-            potentialCachedFile = Paths.get(cacheDirectory, sha1Prefix, sha1Suffix);
-            if (Files.exists(potentialCachedFile)) {
-                System.out.println("Found file " + targetPath + " in cache, hard-linking");
-                try {
-                    final Path parentPath = localPath.getParent();
-                    if (Files.notExists(parentPath)) {
-                        Files.createDirectory(parentPath);
-                    }
-                    Files.createLink(localPath, potentialCachedFile);
-                } catch (IOException e) {
-                    LOG.error("Cannot create hard link to cached file, you may want to move your cache", e.getMessage());
+                final String sha1 = DigestUtils.sha1Hex(targetPath);
+                final String sha1Prefix = sha1.substring(0, 2);
+                final String sha1Suffix = sha1.substring(2);
+                potentialCachedFile = Paths.get(cacheDirectory, sha1Prefix, sha1Suffix);
+                if (Files.exists(potentialCachedFile)) {
+                    System.out.println("Found file " + targetPath + " in cache, hard-linking");
                     try {
-                        Files.copy(potentialCachedFile, localPath);
-                    } catch (IOException e1) {
-                        LOG.error("Could not copy " + targetPath + " to " + localPath, e);
-                        throw new RuntimeException("Could not copy " + targetPath + " to " + localPath, e1);
+                        final Path parentPath = localPath.getParent();
+                        if (Files.notExists(parentPath)) {
+                            Files.createDirectory(parentPath);
+                        }
+                        Files.createLink(localPath, potentialCachedFile);
+                    } catch (IOException e) {
+                        LOG.error("Cannot create hard link to cached file, you may want to move your cache", e.getMessage());
+                        try {
+                            Files.copy(potentialCachedFile, localPath);
+                        } catch (IOException e1) {
+                            LOG.error("Could not copy " + targetPath + " to " + localPath, e);
+                            throw new RuntimeException("Could not copy " + targetPath + " to " + localPath, e1);
+                        }
+                        System.out.println("Found file " + targetPath + " in cache, copied");
                     }
-                    System.out.println("Found file " + targetPath + " in cache, copied");
                 }
             }
         }
@@ -288,24 +319,26 @@ public class FileProvisioning {
             }
         }
 
-        // cache the file if we got it successfully
-        if (useCache) {
-            // do not cache directories
-            if (localPath.toFile().isDirectory()) {
-                return;
-            }
-            // populate cache
-            if (Files.notExists(potentialCachedFile)) {
-                System.out.println("Caching file " + localPath + " in cache, hard-linking");
-                try {
-                    // create parent directory
-                    final Path parentPath = potentialCachedFile.getParent();
-                    if (Files.notExists(parentPath)) {
-                        Files.createDirectory(parentPath);
+        synchronized (LOG) {
+            // cache the file if we got it successfully
+            if (cache) {
+                // do not cache directories
+                if (localPath.toFile().isDirectory()) {
+                    return;
+                }
+                // populate cache
+                if (Files.notExists(potentialCachedFile)) {
+                    System.out.println("Caching file " + localPath + " in cache, hard-linking");
+                    try {
+                        // create parent directory
+                        final Path parentPath = potentialCachedFile.getParent();
+                        if (Files.notExists(parentPath)) {
+                            Files.createDirectory(parentPath);
+                        }
+                        Files.createLink(potentialCachedFile, localPath);
+                    } catch (IOException e) {
+                        LOG.error("Cannot create hard link for local file, skipping", e);
                     }
-                    Files.createLink(potentialCachedFile, localPath);
-                } catch (IOException e) {
-                    LOG.error("Cannot create hard link for local file, skipping", e);
                 }
             }
         }
@@ -313,22 +346,12 @@ public class FileProvisioning {
 
     private void handleDownloadProvisionWithRetries(String targetPath, Path localPath, ProvisionInterface provision) {
         int maxRetries = config.getInt(FILE_PROVISION_RETRIES, DEFAULT_RETRIES);
-        retryWrapper(provision, targetPath, localPath, maxRetries, true);
+        retryWrapper(provision, targetPath, localPath, maxRetries, true, threads);
     }
 
     private void handleUploadProvisionWithRetries(String targetPath, Path localPath, ProvisionInterface provision, String metadata) {
         int maxRetries = config.getInt(FILE_PROVISION_RETRIES, DEFAULT_RETRIES);
-        retryWrapper(provision, targetPath, localPath, maxRetries, false);
-    }
-
-    /**
-     * Copies files from srcPath to destPath
-     *
-     * @param srcPath source file
-     * @param info    destination and metddata associated with one file
-     */
-    public void registerOutputFile(String srcPath, FileInfo info) {
-        this.registeredFiles.add(ImmutablePair.of(srcPath, info));
+        retryWrapper(provision, targetPath, localPath, maxRetries, false, threads);
     }
 
     /**
@@ -397,12 +420,12 @@ public class FileProvisioning {
                             }
                             nestedFile.createFile();
                             System.out.println("Provisioning from nested file " + file + " to " + nestedFile);
-                            FileProvisionUtil.copyFromInputStreamToOutputStream(file, nestedFile);
+                            FileProvisionUtil.copyFromInputStreamToOutputStream(file, nestedFile, threads);
                         }
                     } else {
                         // trigger a copy from the URL to a local file path that's a UUID to avoid collision
                         // check for a local file path
-                        FileProvisionUtil.copyFromInputStreamToOutputStream(src, dest);
+                        FileProvisionUtil.copyFromInputStreamToOutputStream(src, dest, threads);
                     }
                 } catch (IOException e) {
                     throw new RuntimeException("Could not provision output files", e);
@@ -413,8 +436,12 @@ public class FileProvisioning {
         }
     }
 
-    public void uploadFiles() {
-        Multimap<ProvisionInterface, Pair<String, FileInfo>> map = identifyPlugins();
+    /**
+     * This is an entry point for both WDL and CWL, where registered files are provisioned out.
+     * @param outputSet pairs that describe files that we want to provision out
+     */
+    public void uploadFiles(List<ImmutablePair<String, FileInfo>> outputSet) {
+        Multimap<ProvisionInterface, Pair<String, FileInfo>> map = identifyPlugins(outputSet);
         Map<ProvisionInterface, Collection<Pair<String, FileInfo>>> provisionInterfaceCollectionMap = map.asMap();
         for (Map.Entry<ProvisionInterface, Collection<Pair<String, FileInfo>>> entry : provisionInterfaceCollectionMap.entrySet()) {
             ProvisionInterface pInterface = entry.getKey();
@@ -438,11 +465,23 @@ public class FileProvisioning {
                 if (pInterface != null) {
                     pInterface.prepareFileSet(destList, srcList, metadataList);
                 }
+
+                ExecutorService executorService = Executors.newFixedThreadPool(threads);
+
+                List<Future> futures = new ArrayList<>();
                 for (int i = 0; i < pairs.length; i++) {
                     Pair<String, FileInfo> pair = pairs[i];
                     String dest = destList.get(i);
-                    this.provisionOutputFile(pair.getLeft(), dest, pair.getRight().getMetadata(), pInterface);
+                    Future<Object> submit = executorService.submit(() -> {
+                        provisionOutputFile(pair.getLeft(), dest, pair.getRight().getMetadata(), pInterface);
+                        return true;
+                    });
+                    futures.add(submit);
                 }
+                for (Future future : futures) {
+                    future.get();
+                }
+
                 if (pInterface != null) {
                     pInterface.finalizeFileSet(destList, srcList, metadataList);
                 }
@@ -454,10 +493,10 @@ public class FileProvisioning {
 
     }
 
-    private Multimap<ProvisionInterface, Pair<String, FileInfo>> identifyPlugins() {
+    private Multimap<ProvisionInterface, Pair<String, FileInfo>> identifyPlugins(List<ImmutablePair<String, FileInfo>> outputSet) {
         Multimap<ProvisionInterface, Pair<String, FileInfo>> map = ArrayListMultimap.create();
 
-        for (ImmutablePair<String, FileInfo> pair : this.registeredFiles) {
+        for (ImmutablePair<String, FileInfo> pair : outputSet) {
             String destPath = pair.getRight().getUrl();
             URI objectIdentifier = URI.create(destPath);    // throws IllegalArgumentException if it isn't a valid URI
             boolean handled = false;
@@ -525,6 +564,12 @@ public class FileProvisioning {
      */
     public static class FileProvisionUtilPluginWrapper implements ProvisionInterface {
 
+        private final int threads;
+
+        FileProvisionUtilPluginWrapper(int threads) {
+            this.threads = threads;
+        }
+
         @Override
         public Set<String> schemesHandled() {
             return null;
@@ -532,7 +577,7 @@ public class FileProvisioning {
 
         @Override
         public boolean downloadFrom(String sourcePath, Path destination) {
-            return FileProvisionUtil.downloadFromVFS2(sourcePath, destination);
+            return FileProvisionUtil.downloadFromVFS2(sourcePath, destination, threads);
         }
 
         @Override
@@ -541,8 +586,8 @@ public class FileProvisioning {
         }
 
         @Override
-        public void setConfiguration(Map<String, String> config) {
-            /*** do nothing */
+        public void setConfiguration(Map<String, String> wrapperConfig) {
+            // do nothing
         }
     }
 }

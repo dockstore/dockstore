@@ -120,7 +120,7 @@ public abstract class AbstractEntryClient {
     static String getCleanedDescription(String description) {
         if (description != null) {
             // strip control characters
-            description = CharMatcher.JAVA_ISO_CONTROL.removeFrom(description);
+            description = CharMatcher.javaIsoControl().removeFrom(description);
             if (description.length() > MAX_DESCRIPTION) {
                 description = description.substring(0, MAX_DESCRIPTION - Client.PADDING) + "...";
             }
@@ -1358,6 +1358,7 @@ public abstract class AbstractEntryClient {
                 System.out.println("Provisioning your output files to their final destinations");
                 final List<String> outputFiles = bridge.getOutputFiles(tmp);
                 FileProvisioning fileProvisioning = new FileProvisioning(this.getConfigFile());
+                List<ImmutablePair<String, FileProvisioning.FileInfo>> outputList = new ArrayList<>();
                 for (String outFile : outputFiles) {
                     // find file path from output
                     final File resultFile = new File(outputJson.get(outFile));
@@ -1366,9 +1367,9 @@ public abstract class AbstractEntryClient {
                     new1.setUrl(wdlOutputTarget + "/" + outFile);
                     new1.setLocalPath(resultFile.getAbsolutePath());
                     System.out.println("Uploading: " + outFile + " from " + resultFile + " to : " + new1.getUrl());
-                    fileProvisioning.registerOutputFile(resultFile.getAbsolutePath(), new1);
+                    outputList.add(ImmutablePair.of(resultFile.getAbsolutePath(), new1));
                 }
-                fileProvisioning.uploadFiles();
+                fileProvisioning.uploadFiles(outputList);
             } else {
                 System.out.println("Output files left in place");
             }

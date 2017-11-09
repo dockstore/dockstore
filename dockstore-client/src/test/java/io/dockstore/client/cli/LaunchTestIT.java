@@ -16,8 +16,14 @@
 
 package io.dockstore.client.cli;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Map;
+
 import com.google.gson.Gson;
-import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.client.cli.nested.WorkflowClient;
 import io.dropwizard.testing.ResourceHelpers;
@@ -32,13 +38,6 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Map;
 
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
@@ -56,8 +55,6 @@ public class LaunchTestIT {
 
     @Rule
     public final ExpectedSystemExit exit = ExpectedSystemExit.none();
-
-    private static AbstractEntryClient entryClient = new ToolClient(null, true);
 
     @Test
     public void wdlCorrect() throws IOException {
@@ -141,6 +138,26 @@ public class LaunchTestIT {
     }
 
     @Test
+    public void runToolWithDirectoriesThreaded() throws IOException {
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("dir6.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("dir6.cwl.json"));
+
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("--local-entry");
+            add("--cwl");
+            add(cwlFile.getAbsolutePath());
+            add("--json");
+            add(cwlJSON.getAbsolutePath());
+        }};
+
+        ContainersApi api = mock(ContainersApi.class);
+        UsersApi usersApi = mock(UsersApi.class);
+        Client client = new Client();
+        // do not use a cache
+        runToolThreaded(cwlFile, args, api, usersApi, client);
+    }
+
+    @Test
     public void runToolWithSecondaryFilesOnOutput() throws IOException {
 
         FileUtils.deleteDirectory(new File("/tmp/provision_out_with_files"));
@@ -175,6 +192,24 @@ public class LaunchTestIT {
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("file_provision/split_to_directory.json"));
 
         runTool(cwlFile, cwlJSON);
+
+        final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
+        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
+        for (char y = 'a'; y <= 'f'; y++) {
+            String filename = "/tmp/provision_out_with_files/test.a" + y;
+            checkFileAndThenDeleteIt(filename);
+        }
+    }
+
+    @Test
+    public void runToolSecondaryFilesToDirectoryThreaded() throws IOException {
+
+        FileUtils.deleteDirectory(new File("/tmp/provision_out_with_files"));
+
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("file_provision/split.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("file_provision/split_to_directory.json"));
+
+        runTool(cwlFile, cwlJSON, true);
 
         final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
         assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
@@ -244,6 +279,10 @@ public class LaunchTestIT {
     }
 
     private void runTool(File cwlFile, File cwlJSON) {
+        runTool(cwlFile, cwlJSON, false);
+    }
+
+    private void runTool(File cwlFile, File cwlJSON, boolean threaded) {
         ArrayList<String> args = new ArrayList<String>() {{
             add("--local-entry");
             add("--cwl");
@@ -256,7 +295,11 @@ public class LaunchTestIT {
         UsersApi usersApi = mock(UsersApi.class);
         Client client = new Client();
         // do not use a cache
-        runTool(cwlFile, args, api, usersApi, client, true);
+        if (threaded) {
+            runToolThreaded(cwlFile, args, api, usersApi, client);
+        } else {
+            runTool(cwlFile, args, api, usersApi, client, true);
+        }
     }
 
     @Test
@@ -384,13 +427,23 @@ public class LaunchTestIT {
         Client.main(args.toArray(new String[args.size()]));
     }
 
-    private void runTool(File cwlFile, ArrayList<String> args, ContainersApi api, UsersApi usersApi, Client client, boolean useCache) {
-        client.setConfigFile(ResourceHelpers.resourceFilePath(useCache ? "config.withCache" : "config"));
+    private void runToolThreaded(File cwlFile, ArrayList<String> args, ContainersApi api, UsersApi usersApi, Client client) {
+        client.setConfigFile(ResourceHelpers.resourceFilePath("config.withThreads"));
 
+        runToolShared(cwlFile, args, api, usersApi, client);
+    }
+
+    private void runToolShared(File cwlFile, ArrayList<String> args, ContainersApi api, UsersApi usersApi, Client client) {
         ToolClient toolClient = new ToolClient(api, null, usersApi, client, false);
         toolClient.checkEntryFile(cwlFile.getAbsolutePath(), args, null);
 
         assertTrue("output should include a successful cwltool run", systemOutRule.getLog().contains("Final process status is success"));
+    }
+
+    private void runTool(File cwlFile, ArrayList<String> args, ContainersApi api, UsersApi usersApi, Client client, boolean useCache) {
+        client.setConfigFile(ResourceHelpers.resourceFilePath(useCache ? "config.withCache" : "config"));
+
+        runToolShared(cwlFile, args, api, usersApi, client);
     }
 
     private void runWorkflow(File cwlFile, ArrayList<String> args, WorkflowsApi api, UsersApi usersApi, Client client, boolean useCache) {
