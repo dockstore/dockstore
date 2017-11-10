@@ -23,3 +23,8 @@
     - publisher-tutorials/advanced-features
     - publisher-tutorials/aws-batch
     - publisher-tutorials/azure-batch
+
+- title: Extras
+  link: extras
+  docs:
+    - extras/user-created
