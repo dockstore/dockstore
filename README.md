@@ -23,9 +23,10 @@ Documentation is currently split up into three sections: prerequisites, user tut
 To add a new document to an existing section, do the following:
 1. Create a file in the folder `_docs`
 2. In the front matter, put the title and permalink. Below is an example:
-
+```
   title: Advanced Features
 
   permalink: /docs/publisher-tutorials/advanced-features
+```
 3. Add to the appropriate list in `_data/docs.yml` the filename (not including extension)
 4. If the doc has images, place them in `assets/images/docs`
