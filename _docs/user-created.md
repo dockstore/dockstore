@@ -27,7 +27,7 @@ for various conferences.  Feel free to create a fork and add yours.
 
 ### 2017
 #### BOSC
-* [CGP as a Service: From data submission to results using your web-browser](https://github.com/keiranmraine/dockstore-ui/raw/7b18a9ccf4a853088c677e463f8f9cd924b6533c/app/docs/markdown/user_posters/2017_BOSC_Sanger_keiranmraine.pdf)
+* [CGP as a Service: From data submission to results using your web-browser](/assets/files/2017_BOSC_Sanger_keiranmraine.pdf)
   * Wellcome Trust Sanger Institute, Keiran M Raine
 * [Screw: tools for building reproducible single-cell epigenomics workflows](https://github.com/Epigenomics-Screw/Bosc_2017_poster/raw/f83a07e4ab9acd982b4a27b41cfcd4d7a136e49e/bosc_poster.pdf)
   * BC Cancer Agency, Keiran O'Neill
