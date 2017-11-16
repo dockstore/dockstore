@@ -145,7 +145,7 @@ public final class ToolsImplCommon {
         }
 
         tool.setDescription(container.getDescription());
-        tool.setMetaVersion(container.getLastUpdated() != null ? container.getLastUpdated().toString() : new Date(0).toString());
+        tool.setMeta_version(container.getLastUpdated() != null ? container.getLastUpdated().toString() : new Date(0).toString());
         tool.setToolclass(type);
         tool.setId(newID);
         tool.setUrl(globalId);
@@ -208,7 +208,7 @@ public final class ToolsImplCommon {
             version.setName(inputVersion.getName());
 
             version.setVerified(inputVersion.isVerified());
-            version.setVerifiedSource(Strings.nullToEmpty(inputVersion.getVerifiedSource()));
+            version.setVerified_source(Strings.nullToEmpty(inputVersion.getVerifiedSource()));
             version.setDockerfile(false);
 
             String urlBuilt;
@@ -270,14 +270,14 @@ public final class ToolsImplCommon {
                 version.setImage(((io.dockstore.webservice.core.Tool)container).getPath() + ":" + inputVersion.getName());
             }
             // ensure that descriptor is non-null before adding to list
-            if (!version.getDescriptorType().isEmpty()) {
+            if (!version.getDescriptor_type().isEmpty()) {
                 // do some clean-up
-                version.setMetaVersion(
+                version.setMeta_version(
                         String.valueOf(inputVersion.getLastModified() != null ? inputVersion.getLastModified() : new Date(0)));
-                final List<ToolVersion.DescriptorTypeEnum> descriptorType = version.getDescriptorType();
+                final List<ToolVersion.DescriptorTypeEnum> descriptorType = version.getDescriptor_type();
                 if (!descriptorType.isEmpty()) {
                     EnumSet<ToolVersion.DescriptorTypeEnum> set = EnumSet.copyOf(descriptorType);
-                    version.setDescriptorType(Lists.newArrayList(set));
+                    version.setDescriptor_type(Lists.newArrayList(set));
                 }
                 tool.getVersions().add(version);
             }

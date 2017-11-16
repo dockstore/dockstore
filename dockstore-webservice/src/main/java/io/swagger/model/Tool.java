@@ -49,7 +49,7 @@ public class Tool {
 
     private String author = null;
 
-    private String metaVersion = null;
+    private String meta_version = null;
 
     private List<String> contains = new ArrayList<String>();
 
@@ -195,22 +195,22 @@ public class Tool {
     }
 
     public Tool metaVersion(String metaVersion) {
-        this.metaVersion = metaVersion;
+        this.meta_version = metaVersion;
         return this;
     }
 
     /**
      * The version of this tool in the registry. Iterates when fields like the description, author, etc. are updated.
      *
-     * @return metaVersion
+     * @return meta_version
      **/
     @ApiModelProperty(required = true, value = "The version of this tool in the registry. Iterates when fields like the description, author, etc. are updated.")
-    public String getMetaVersion() {
-        return metaVersion;
+    public String getMeta_version() {
+        return meta_version;
     }
 
-    public void setMetaVersion(String metaVersion) {
-        this.metaVersion = metaVersion;
+    public void setMeta_version(String meta_version) {
+        this.meta_version = meta_version;
     }
 
     public Tool contains(List<String> contains) {
@@ -330,7 +330,7 @@ public class Tool {
         return Objects.equals(this.url, tool.url) && Objects.equals(this.id, tool.id) && Objects
                 .equals(this.organization, tool.organization) && Objects.equals(this.toolname, tool.toolname) && Objects
                 .equals(this.toolclass, tool.toolclass) && Objects.equals(this.description, tool.description) && Objects
-                .equals(this.author, tool.author) && Objects.equals(this.metaVersion, tool.metaVersion) && Objects
+                .equals(this.author, tool.author) && Objects.equals(this.meta_version, tool.meta_version) && Objects
                 .equals(this.contains, tool.contains) && Objects.equals(this.verified, tool.verified) && Objects
                 .equals(this.verifiedSource, tool.verifiedSource) && Objects.equals(this.signed, tool.signed) && Objects
                 .equals(this.versions, tool.versions);
@@ -339,7 +339,7 @@ public class Tool {
     @Override
     public int hashCode() {
         return Objects
-                .hash(url, id, organization, toolname, toolclass, description, author, metaVersion, contains, verified, verifiedSource,
+                .hash(url, id, organization, toolname, toolclass, description, author, meta_version, contains, verified, verifiedSource,
                         signed, versions);
     }
 
@@ -355,7 +355,7 @@ public class Tool {
         sb.append("    toolclass: ").append(toIndentedString(toolclass)).append("\n");
         sb.append("    description: ").append(toIndentedString(description)).append("\n");
         sb.append("    author: ").append(toIndentedString(author)).append("\n");
-        sb.append("    metaVersion: ").append(toIndentedString(metaVersion)).append("\n");
+        sb.append("    meta_version: ").append(toIndentedString(meta_version)).append("\n");
         sb.append("    contains: ").append(toIndentedString(contains)).append("\n");
         sb.append("    verified: ").append(toIndentedString(verified)).append("\n");
         sb.append("    verifiedSource: ").append(toIndentedString(verifiedSource)).append("\n");

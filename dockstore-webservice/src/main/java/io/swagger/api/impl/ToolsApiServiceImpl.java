@@ -313,8 +313,8 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             results = pagedResults.get(offsetInteger);
         }
         final Response.ResponseBuilder responseBuilder = Response.ok(results);
-        responseBuilder.header("current-offset", offset);
-        responseBuilder.header("current-limit", limit);
+        responseBuilder.header("current_offset", offset);
+        responseBuilder.header("current_limit", limit);
         // construct links to other pages
         try {
             List<String> filters = new ArrayList<>();
@@ -330,11 +330,11 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             if (offsetInteger + 1 < pagedResults.size()) {
                 URI nextPageURI = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()),
                         "/api/ga4gh/v1/tools", Joiner.on('&').join(filters) + "&offset=" + (offsetInteger + 1), null);
-                responseBuilder.header("next-page", nextPageURI.toURL().toString());
+                responseBuilder.header("next_page", nextPageURI.toURL().toString());
             }
             URI lastPageURI = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()),
                     "/api/ga4gh/v1/tools", Joiner.on('&').join(filters) + "&offset=" + (pagedResults.size() - 1), null);
-            responseBuilder.header("last-page", lastPageURI.toURL().toString());
+            responseBuilder.header("last_page", lastPageURI.toURL().toString());
 
         } catch (URISyntaxException | MalformedURLException e) {
             throw new WebApplicationException("Could not construct page links", HttpStatus.SC_BAD_REQUEST);

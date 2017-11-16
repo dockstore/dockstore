@@ -93,7 +93,7 @@ public class ToolsApi {
     }
 
     @GET
-    @Path("/{id}/versions/{version-id}/dockerfile")
+    @Path("/{id}/versions/{version_id}/dockerfile")
     @UnitOfWork
     @Produces({ "application/json", "text/plain" })
     @io.swagger.annotations.ApiOperation(value = "Get the dockerfile for the specified image.", notes = "Returns the dockerfile for the specified image.", response = ToolDockerfile.class, tags = {
@@ -104,13 +104,13 @@ public class ToolsApi {
             @io.swagger.annotations.ApiResponse(code = 404, message = "The tool payload is not present in the service.", response = ToolDockerfile.class) })
     public Response toolsIdVersionsVersionIdDockerfileGet(
             @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
-            @ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`", required = true) @PathParam("version-id") String versionId,
+            @ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`", required = true) @PathParam("version_id") String versionId,
             @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
         return delegate.toolsIdVersionsVersionIdDockerfileGet(id, versionId, securityContext, value);
     }
 
     @GET
-    @Path("/{id}/versions/{version-id}")
+    @Path("/{id}/versions/{version_id}")
     @UnitOfWork
     @Produces({ "application/json", "text/plain" })
     @io.swagger.annotations.ApiOperation(value = "List one specific tool version, acts as an anchor for self references", notes = "This endpoint returns one specific tool version", response = ToolVersion.class, tags = {
@@ -119,13 +119,13 @@ public class ToolsApi {
             @io.swagger.annotations.ApiResponse(code = 200, message = "A tool version.", response = ToolVersion.class) })
     public Response toolsIdVersionsVersionIdGet(
             @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
-            @ApiParam(value = "An identifier of the tool version, scoped to this registry, for example `v1`", required = true) @PathParam("version-id") String versionId,
+            @ApiParam(value = "An identifier of the tool version, scoped to this registry, for example `v1`", required = true) @PathParam("version_id") String versionId,
             @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
         return delegate.toolsIdVersionsVersionIdGet(id, versionId, securityContext, value);
     }
 
     @GET
-    @Path("/{id}/versions/{version-id}/{type}/descriptor")
+    @Path("/{id}/versions/{version_id}/{type}/descriptor")
     @UnitOfWork
     @Produces({ "application/json", "text/plain" })
     @io.swagger.annotations.ApiOperation(value = "Get the tool descriptor (CWL/WDL) for the specified tool.", notes = "Returns the CWL or WDL descriptor for the specified tool.", response = ToolDescriptor.class, tags = {
@@ -137,13 +137,13 @@ public class ToolsApi {
     public Response toolsIdVersionsVersionIdTypeDescriptorGet(
             @ApiParam(value = "The output type of the descriptor. If not specified it is up to the underlying implementation to determine which output type to return. Plain types return the bare descriptor while the \"non-plain\" types return a descriptor wrapped with metadata", required = true, allowableValues = "CWL, WDL, plain-CWL, plain-WDL") @PathParam("type") String type,
             @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
-            @ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`", required = true) @PathParam("version-id") String versionId,
+            @ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`", required = true) @PathParam("version_id") String versionId,
             @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
         return delegate.toolsIdVersionsVersionIdTypeDescriptorGet(type, id, versionId, securityContext, value);
     }
 
     @GET
-    @Path("/{id}/versions/{version-id}/{type}/descriptor/{relative-path}")
+    @Path("/{id}/versions/{version_id}/{type}/descriptor/{relative_path}")
     @UnitOfWork
     @Produces({ "application/json", "text/plain" })
     @io.swagger.annotations.ApiOperation(value = "Get additional tool descriptor files (CWL/WDL) relative to the main file", notes = "Returns additional CWL or WDL descriptors for the specified tool in the same or subdirectories", response = ToolDescriptor.class, tags = {
@@ -155,14 +155,14 @@ public class ToolsApi {
     public Response toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(
             @ApiParam(value = "The output type of the descriptor. If not specified it is up to the underlying implementation to determine which output type to return.  Plain types return the bare descriptor while the \"non-plain\" types return a descriptor wrapped with metadata", required = true, allowableValues = "CWL, WDL, plain-CWL, plain-WDL") @PathParam("type") String type,
             @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
-            @ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`", required = true) @PathParam("version-id") String versionId,
-            @ApiParam(value = "A relative path to the additional file (same directory or subdirectories), for example 'foo.cwl' would return a 'foo.cwl' from the same directory as the main descriptor", required = true) @PathParam("relative-path") String relativePath,
+            @ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`", required = true) @PathParam("version_id") String versionId,
+            @ApiParam(value = "A relative path to the additional file (same directory or subdirectories), for example 'foo.cwl' would return a 'foo.cwl' from the same directory as the main descriptor", required = true) @PathParam("relative_path") String relativePath,
             @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
         return delegate.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(type, id, versionId, relativePath, securityContext, value);
     }
 
     @GET
-    @Path("/{id}/versions/{version-id}/{type}/tests")
+    @Path("/{id}/versions/{version_id}/{type}/tests")
     @UnitOfWork
     @Produces({ "application/json", "text/plain" })
     @io.swagger.annotations.ApiOperation(value = "Get an array of test JSONs suitable for use with this descriptor type.", notes = "", response = ToolTests.class, responseContainer = "List", tags = {
@@ -174,7 +174,7 @@ public class ToolsApi {
     public Response toolsIdVersionsVersionIdTypeTestsGet(
             @ApiParam(value = "The output type of the descriptor. If not specified it is up to the underlying implementation to determine which output type to return. Plain types return the bare descriptor while the \"non-plain\" types return a descriptor wrapped with metadata", required = true, allowableValues = "CWL, WDL, plain-CWL, plain-WDL") @PathParam("type") String type,
             @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
-            @ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`", required = true) @PathParam("version-id") String versionId,
+            @ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`", required = true) @PathParam("version_id") String versionId,
             @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
         return delegate.toolsIdVersionsVersionIdTypeTestsGet(type, id, versionId, securityContext, value);
     }
