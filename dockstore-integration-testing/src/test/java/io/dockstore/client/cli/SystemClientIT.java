@@ -57,7 +57,6 @@ import io.swagger.client.model.ToolVersion;
 import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
 import io.swagger.client.model.Workflow;
-import io.swagger.models.Swagger;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
@@ -102,8 +101,8 @@ public class SystemClientIT {
         ApiClient client = new ApiClient();
         ApiKeyAuth bearer = (ApiKeyAuth)client.getAuthentication("BEARER");
         bearer.setApiKeyPrefix("BEARER");
-        bearer.setApiKey((correctUser ? parseConfig
-            .getString(admin ? Constants.WEBSERVICE_TOKEN_USER_1 : Constants.WEBSERVICE_TOKEN_USER_2) : "foobar"));
+        bearer.setApiKey((correctUser ? parseConfig.getString(admin ? Constants.WEBSERVICE_TOKEN_USER_1 : Constants.WEBSERVICE_TOKEN_USER_2)
+                : "foobar"));
         client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
         return client;
     }
@@ -262,7 +261,7 @@ public class SystemClientIT {
         url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/metadata");
         final List<String> metadataStrings = Resources.readLines(url, Charset.forName("UTF-8"));
         assertTrue(strings.size() == 1 && strings.get(0).contains("CommandLineTool"));
-        assertTrue(metadataStrings.stream().anyMatch(s -> s.contains("friendly-name")));
+        assertTrue(metadataStrings.stream().anyMatch(s -> s.contains("friendly_name")));
     }
 
     @Test
@@ -408,7 +407,7 @@ public class SystemClientIT {
         URL url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID);
         List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
         // test root version
-        assertTrue(strings.size() == 1 && strings.get(0).contains("\"verified\":true,\"verified-source\":\"[\\\"funky source\\\"]\""));
+        assertTrue(strings.size() == 1 && strings.get(0).contains("\"verified\":true,\"verified_source\":\"[\\\"funky source\\\"]\""));
 
         // TODO: really, we should be using deserialized versions, but this is not currently working
         //        ObjectMapper mapper = new ObjectMapper();
@@ -424,7 +423,7 @@ public class SystemClientIT {
         url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master");
         strings = Resources.readLines(url, Charset.forName("UTF-8"));
         // test nested version
-        assertTrue(strings.size() == 1 && strings.get(0).contains("\"verified\":true,\"verified-source\":\"funky source\""));
+        assertTrue(strings.size() == 1 && strings.get(0).contains("\"verified\":true,\"verified_source\":\"funky source\""));
 
     }
 

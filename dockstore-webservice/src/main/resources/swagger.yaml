@@ -295,7 +295,7 @@ definitions:
         type: string}
       verified: {default: false, description: Reports whether this tool has been verified
           by a specific organization or individual, type: boolean}
-      verified-source: {description: 'Source of metadata that can support a verified
+      verified_source: {description: 'Source of metadata that can support a verified
           tool, such as an email or URL', type: string}
       versions:
         description: A list of versions for this tool

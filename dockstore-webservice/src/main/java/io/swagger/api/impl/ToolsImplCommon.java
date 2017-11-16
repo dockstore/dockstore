@@ -179,7 +179,7 @@ public final class ToolsImplCommon {
         final List<String> collect = ((Set<Version>)inputVersions).stream().filter(Version::isVerified).map(Version::getVerifiedSource)
                 .collect(Collectors.toList());
         Gson gson = new Gson();
-        tool.setVerifiedSource(Strings.nullToEmpty(gson.toJson(collect)));
+        tool.setVerified_source(Strings.nullToEmpty(gson.toJson(collect)));
 
         for (Version inputVersion : (Set<Version>)inputVersions) {
 

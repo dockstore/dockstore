@@ -55,7 +55,7 @@ public class Tool {
 
     private Boolean verified = null;
 
-    private String verifiedSource = null;
+    private String verified_source = null;
 
     private Boolean signed = null;
 
@@ -257,22 +257,22 @@ public class Tool {
     }
 
     public Tool verifiedSource(String verifiedSource) {
-        this.verifiedSource = verifiedSource;
+        this.verified_source = verifiedSource;
         return this;
     }
 
     /**
      * Source of metadata that can support a verified tool, such as an email or URL
      *
-     * @return verifiedSource
+     * @return verified_source
      **/
     @ApiModelProperty(value = "Source of metadata that can support a verified tool, such as an email or URL")
-    public String getVerifiedSource() {
-        return verifiedSource;
+    public String getVerified_source() {
+        return verified_source;
     }
 
-    public void setVerifiedSource(String verifiedSource) {
-        this.verifiedSource = verifiedSource;
+    public void setVerified_source(String verified_source) {
+        this.verified_source = verified_source;
     }
 
     public Tool signed(Boolean signed) {
@@ -332,14 +332,14 @@ public class Tool {
                 .equals(this.toolclass, tool.toolclass) && Objects.equals(this.description, tool.description) && Objects
                 .equals(this.author, tool.author) && Objects.equals(this.meta_version, tool.meta_version) && Objects
                 .equals(this.contains, tool.contains) && Objects.equals(this.verified, tool.verified) && Objects
-                .equals(this.verifiedSource, tool.verifiedSource) && Objects.equals(this.signed, tool.signed) && Objects
+                .equals(this.verified_source, tool.verified_source) && Objects.equals(this.signed, tool.signed) && Objects
                 .equals(this.versions, tool.versions);
     }
 
     @Override
     public int hashCode() {
         return Objects
-                .hash(url, id, organization, toolname, toolclass, description, author, meta_version, contains, verified, verifiedSource,
+                .hash(url, id, organization, toolname, toolclass, description, author, meta_version, contains, verified, verified_source,
                         signed, versions);
     }
 
@@ -358,7 +358,7 @@ public class Tool {
         sb.append("    meta_version: ").append(toIndentedString(meta_version)).append("\n");
         sb.append("    contains: ").append(toIndentedString(contains)).append("\n");
         sb.append("    verified: ").append(toIndentedString(verified)).append("\n");
-        sb.append("    verifiedSource: ").append(toIndentedString(verifiedSource)).append("\n");
+        sb.append("    verified_source: ").append(toIndentedString(verified_source)).append("\n");
         sb.append("    signed: ").append(toIndentedString(signed)).append("\n");
         sb.append("    versions: ").append(toIndentedString(versions)).append("\n");
         sb.append("}");
