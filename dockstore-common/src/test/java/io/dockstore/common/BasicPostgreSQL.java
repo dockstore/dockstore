@@ -123,6 +123,8 @@ public class BasicPostgreSQL {
         runUpdateStatement("delete from workflow;");
         runUpdateStatement("delete from tool;");
         runUpdateStatement("delete from usergroup;");
+        runUpdateStatement("delete from databasechangelog;");
+        runUpdateStatement("delete from databasechangeloglock;");
     }
 
     protected <T> T runSelectStatement(String query, ResultSetHandler<T> handler, Object... params) {
