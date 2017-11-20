@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.concurrent.TimeoutException;
 
 import com.google.common.collect.Lists;
+import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.CommonTestUtilities.TestingPostgres;
 import io.dockstore.common.Registry;
 import io.dockstore.common.TestUtility;
@@ -32,6 +33,7 @@ import io.swagger.client.ApiException;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -40,7 +42,6 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 
-import static io.dockstore.common.CommonTestUtilities.clearState;
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 
 /**
@@ -61,9 +62,14 @@ public class ClientIT {
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
 
+    @BeforeClass
+    public static void dumpDBAndCreateSchema() throws Exception {
+        CommonTestUtilities.dropAndRecreate(RULE);
+    }
+
     @Before
     public void clearDB() throws IOException, TimeoutException {
-        clearState();
+        CommonTestUtilities.getTestingPostgres().clearDatabase();
         Client.DEBUG.set(false);
     }
 

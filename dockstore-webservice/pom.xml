@@ -747,6 +747,36 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <!-- use this to check out the difference between webservice_test and webservice_test_old
+                     note that target/detected-migrations.xml will be redundantly appended to each time if not empty
+                -->
+                <groupId>org.liquibase</groupId>
+                <artifactId>liquibase-maven-plugin</artifactId>
+                <version>3.5.3</version>
+                <configuration>
+                    <driver>org.postgresql.Driver</driver>
+                    <referenceDriver>org.postgresql.Driver</referenceDriver>
+                    <username>dockstore</username>
+                    <referenceUsername>dockstore</referenceUsername>
+                    <password>dockstore</password>
+                    <referencePassword>dockstore</referencePassword>
+                    <url>jdbc:postgresql://localhost:5432/webservice_test_old</url>
+                    <referenceUrl>jdbc:postgresql://localhost:5432/webservice_test</referenceUrl>
+
+                    <changeLogFile>src/main/resources/migrations.xml</changeLogFile>
+                    <logging>info</logging>
+                    <diffChangeLogFile>target/detected-migrations.xml</diffChangeLogFile>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.postgresql</groupId>
+                        <artifactId>postgresql</artifactId>
+                        <version>${postgresql.version}</version>
+                        <scope>runtime</scope>
+                    </dependency>
+                </dependencies>
+            </plugin>
         </plugins>
     </build>
 

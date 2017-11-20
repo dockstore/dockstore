@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 
 import avro.shaded.com.google.common.collect.Lists;
 import io.dockstore.client.cli.nested.ToolClient;
+import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.TestUtility;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -36,6 +37,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -47,7 +49,6 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import static io.dockstore.common.CommonTestUtilities.clearState;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
@@ -81,9 +82,14 @@ public class MockedIT {
 
     private Client client;
 
+    @BeforeClass
+    public static void dumpDBAndCreateSchema() throws Exception {
+        CommonTestUtilities.dropAndRecreate(RULE);
+    }
+
     @Before
     public void clearDB() throws Exception {
-        clearState();
+        CommonTestUtilities.getTestingPostgres().clearDatabase();
         this.client = mock(Client.class);
         ToolClient toolClient = spy(new ToolClient(client, false));
 

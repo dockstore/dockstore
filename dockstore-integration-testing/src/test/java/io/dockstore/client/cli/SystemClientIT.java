@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.concurrent.TimeoutException;
 
 import com.google.common.io.Resources;
+import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.Constants;
 import io.dockstore.common.Registry;
 import io.dockstore.common.Utilities;
@@ -57,16 +58,15 @@ import io.swagger.client.model.ToolVersion;
 import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
 import io.swagger.client.model.Workflow;
-import io.swagger.models.Swagger;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import static io.dockstore.common.CommonTestUtilities.clearState;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -108,14 +108,14 @@ public class SystemClientIT {
         return client;
     }
 
-    @Before
-    public void clearDBandSetup() throws IOException, TimeoutException {
-        clearState();
+    @BeforeClass
+    public static void dumpDBAndCreateSchema() throws Exception {
+        CommonTestUtilities.dropAndRecreate(RULE);
     }
 
     @Before
-    public void cleanState() {
-        clearState();
+    public void clearDBandSetup() throws IOException, TimeoutException {
+        CommonTestUtilities.getTestingPostgres().clearDatabase();
     }
 
     @Test(expected = ApiException.class)

@@ -1,0 +1,451 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~    Copyright 2017 OICR
+  ~
+  ~    Licensed under the Apache License, Version 2.0 (the "License");
+  ~    you may not use this file except in compliance with the License.
+  ~    You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~    Unless required by applicable law or agreed to in writing, software
+  ~    distributed under the License is distributed on an "AS IS" BASIS,
+  ~    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~    See the License for the specific language governing permissions and
+  ~    limitations under the License.
+  -->
+
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
+        context="1.3.0.legacy">
+
+    <!--1-->
+    <changeSet id="1" author="agduncan">
+        <addNotNullConstraint tableName="container" columnName="defaultwdlpath" defaultNullValue="/Dockstore.wdl"></addNotNullConstraint>
+        <addNotNullConstraint tableName="container" columnName="defaultcwlpath" defaultNullValue="/Dockstore.cwl"></addNotNullConstraint>
+        <addNotNullConstraint tableName="container" columnName="defaultdockerfilepath"
+                              defaultNullValue="/Dockerfile"></addNotNullConstraint>
+        <addNotNullConstraint tableName="tag" columnName="wdlpath" defaultNullValue="/Dockstore.wdl"></addNotNullConstraint>
+        <addNotNullConstraint tableName="tag" columnName="cwlpath" defaultNullValue="/Dockstore.cwl"></addNotNullConstraint>
+        <addNotNullConstraint tableName="tag" columnName="dockerfilepath" defaultNullValue="/Dockerfile"></addNotNullConstraint>
+    </changeSet>
+
+    <!--2-->
+    <changeSet author="dyuen" id="renameTable-container">
+        <renameTable newTableName="tool"
+                     oldTableName="container"/>
+        <renameTable newTableName="entry_label"
+                     oldTableName="containerlabel"/>
+        <renameTable newTableName="version_sourcefile"
+                     oldTableName="tagsourcefile"/>
+        <renameTable newTableName="tool_tag"
+                     oldTableName="containertag"/>
+        <renameTable newTableName="user_entry"
+                     oldTableName="usercontainer"/>
+    </changeSet>
+
+    <!--3-->
+    <changeSet author="dyuen" id="renameColumns">
+        <renameColumn newColumnName="toolid"
+                      oldColumnName="containerid"
+                      tableName="tool_tag"/>
+        <renameColumn newColumnName="entryid"
+                      oldColumnName="containerid"
+                      tableName="entry_label"/>
+        <renameColumn newColumnName="versionid"
+                      oldColumnName="tagid"
+                      tableName="version_sourcefile"/>
+        <renameColumn newColumnName="entryid"
+                      oldColumnName="containerid"
+                      tableName="user_entry"/>
+    </changeSet>
+
+    <!--4-->
+    <changeSet author="dyuen (generated)" id="1456852002496-13">
+        <createTable tableName="workflow">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="author" type="VARCHAR(255)"/>
+            <column name="description" type="TEXT"/>
+            <column name="email" type="VARCHAR(255)"/>
+            <column name="giturl" type="VARCHAR(255)"/>
+            <column name="ispublished" type="BOOL"/>
+            <column name="lastmodified" type="INT4"/>
+            <column name="lastupdated" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="defaultworkflowpath" type="TEXT"/>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="organization" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="path" type="VARCHAR(255)"/>
+            <column name="repository" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="workflowname" type="TEXT"/>
+            <column defaultValue="'STUB'::text" name="mode" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+
+        </createTable>
+    </changeSet>
+
+    <!--5-->
+    <changeSet author="dyuen (generated)" id="1456852002496-14">
+        <createTable tableName="workflow_workflowversion">
+            <column name="workflowid" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="workflowversionid" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <!--6-->
+    <changeSet author="dyuen (generated)" id="1456852002496-15">
+        <createTable tableName="workflowversion">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="hidden" type="BOOL"/>
+            <column name="lastmodified" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="reference" type="VARCHAR(255)"/>
+            <column name="valid" type="BOOL"/>
+            <column name="workflowpath" type="TEXT"/>
+        </createTable>
+    </changeSet>
+
+    <!--7-->
+    <changeSet author="dyuen (generated)" id="1456852002496-21">
+        <addPrimaryKey columnNames="id" constraintName="workflow_pkey" tableName="workflow"/>
+    </changeSet>
+
+    <!--8-->
+    <changeSet author="dyuen (generated)" id="1456852002496-22">
+        <addPrimaryKey columnNames="workflowid, workflowversionid" constraintName="workflow_workflowversion_pkey"
+                       tableName="workflow_workflowversion"/>
+    </changeSet>
+
+    <!--9-->
+    <changeSet author="dyuen (generated)" id="1456852002496-23">
+        <addPrimaryKey columnNames="id" constraintName="workflowversion_pkey" tableName="workflowversion"/>
+    </changeSet>
+
+    <!--10-->
+    <changeSet author="dyuen (generated)" id="1456852002496-30">
+        <addUniqueConstraint columnNames="workflowversionid" constraintName="uk_encl8hnebnkcaxj9tlugr9cxh"
+                             deferrable="false" disabled="false" initiallyDeferred="false"
+                             tableName="workflow_workflowversion"/>
+    </changeSet>
+
+    <!--11-->
+    <changeSet author="dyuen (generated)" id="1456852285299-36">
+        <addForeignKeyConstraint baseColumnNames="workflowversionid"
+                                 baseTableName="workflow_workflowversion"
+                                 constraintName="fk_encl8hnebnkcaxj9tlugr9cxh" deferrable="false" initiallyDeferred="false"
+                                 onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id"
+                                 referencedTableName="workflowversion"
+        />
+    </changeSet>
+
+    <!--12-->
+    <changeSet author="dyuen (generated)" id="1456852285299-37">
+        <addForeignKeyConstraint baseColumnNames="workflowid"
+                                 baseTableName="workflow_workflowversion"
+                                 constraintName="fk_esgelvnqxrv53m71tdvwkxut3" deferrable="false" initiallyDeferred="false"
+                                 onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id"
+                                 referencedTableName="workflow"
+        />
+    </changeSet>
+
+    <!--13-->
+    <changeSet id="75426534536" author="agduncan">
+        <addColumn tableName="sourcefile">
+            <column name="path" type="varchar(255)"></column>
+        </addColumn>
+        <sql dbms="postgresql">
+            update sourcefile as s set path=(select tag.cwlpath from tag,version_sourcefile,sourcefile where
+            tag.id=version_sourcefile.versionid and version_sourcefile.sourcefileid=sourcefile.id and sourcefile.type='DOCKSTORE_CWL' and
+            s.id=sourcefile.id) where path is null
+        </sql>
+        <sql dbms="postgresql">
+            update sourcefile as s set path=(select tag.wdlpath from tag,version_sourcefile,sourcefile where
+            tag.id=version_sourcefile.versionid and version_sourcefile.sourcefileid=sourcefile.id and sourcefile.type='DOCKSTORE_WDL' and
+            s.id=sourcefile.id) where path is null
+        </sql>
+        <sql dbms="postgresql">
+            update sourcefile as s set path=(select tag.dockerfilepath from tag,version_sourcefile,sourcefile where
+            tag.id=version_sourcefile.versionid and version_sourcefile.sourcefileid=sourcefile.id and sourcefile.type='DOCKERFILE' and
+            s.id=sourcefile.id) where path is null
+        </sql>
+    </changeSet>
+
+    <!--14-->
+    <changeSet id="54375756377" author="agduncan">
+        <dropColumn tableName="tool" columnName="hascollab"></dropColumn>
+        <dropColumn tableName="tool" columnName="isstarred"></dropColumn>
+        <dropColumn tableName="workflow" columnName="name"></dropColumn>
+        <addColumn tableName="tool">
+            <column name="ispublished" type="boolean"/>
+        </addColumn>
+        <sql dbms="postgresql">
+            update tool set ispublished=isregistered;
+        </sql>
+        <dropColumn tableName="tool" columnName="ispublic"></dropColumn>
+        <dropColumn tableName="tool" columnName="isregistered"></dropColumn>
+    </changeSet>
+
+    <!--15-->
+    <changeSet author="agduncan" id="dropForeignKeyConstraintEntries">
+        <dropAllForeignKeyConstraints baseTableName="user_entry"/>
+        <dropPrimaryKey tableName="user_entry"/>
+        <addPrimaryKey
+                columnNames="entryid, userid"
+                constraintName="user_entry_pkey"
+                tableName="user_entry"/>
+        <addForeignKeyConstraint baseColumnNames="userid"
+                                 baseTableName="user_entry"
+                                 constraintName="fk_userid"
+                                 referencedColumnNames="id"
+                                 referencedTableName="enduser"/>
+        <dropAllForeignKeyConstraints baseTableName="entry_label"/>
+        <dropPrimaryKey tableName="entry_label"/>
+        <addPrimaryKey
+                columnNames="entryid, labelid"
+                constraintName="entry_label_pkey"
+                tableName="entry_label"/>
+        <addForeignKeyConstraint baseColumnNames="labelid"
+                                 baseTableName="entry_label"
+                                 constraintName="fk_labelid"
+                                 referencedColumnNames="id"
+                                 referencedTableName="label"/>
+        <dropAllForeignKeyConstraints baseTableName="version_sourcefile"/>
+        <dropPrimaryKey tableName="version_sourcefile"/>
+        <addPrimaryKey
+                columnNames="versionid, sourcefileid"
+                constraintName="version_sourcefile_pkey"
+                tableName="version_sourcefile"/>
+        <addForeignKeyConstraint baseColumnNames="sourcefileid"
+                                 baseTableName="version_sourcefile"
+                                 constraintName="fk_sourcefileid"
+                                 referencedColumnNames="id"
+                                 referencedTableName="sourcefile"/>
+        <dropPrimaryKey tableName="tool_tag"/>
+        <addPrimaryKey
+                columnNames="toolid, tagid"
+                constraintName="tool_tag_pkey"
+                tableName="tool_tag"/>
+        <alterSequence
+                incrementBy="50"
+                sequenceName="label_id_seq"/>
+        <alterSequence
+                incrementBy="50"
+                sequenceName="sourcefile_id_seq"/>
+        <alterSequence
+                incrementBy="50"
+                sequenceName="enduser_id_seq"/>
+        <alterSequence
+                incrementBy="50"
+                sequenceName="token_id_seq"/>
+        <alterSequence
+                incrementBy="50"
+                sequenceName="usergroup_id_seq"/>
+        <alterSequence
+                incrementBy="50"
+                sequenceName="container_id_seq"/>
+        <alterSequence
+                incrementBy="50"
+                sequenceName="tag_id_seq"/>
+        <sql dbms="postgresql">
+            delete from token where tokensource='bitbucket.org'
+        </sql>
+        <dropDefaultValue
+                columnName="id"
+                tableName="tag"/>
+        <dropDefaultValue
+                columnName="id"
+                tableName="tool"/>
+    </changeSet>
+
+    <!--16-->
+    <changeSet id="change_workflow_git_format" author="dyuen">
+        <sql dbms="postgresql">
+            update workflow set giturl = replace(giturl, 'git://github.com', 'git@github.com');
+        </sql>
+    </changeSet>
+
+    <!--17-->
+    <changeSet id="default_branch" author="agduncan">
+        <dropColumn tableName="tool" columnName="validtrigger"></dropColumn>
+        <addColumn tableName="tool">
+            <column name="defaultversion" type="varchar(255)"></column>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column name="defaultversion" type="varchar(255)"></column>
+        </addColumn>
+    </changeSet>
+
+    <!--18-->
+    <changeSet id="dirtybit" author="agduncan">
+        <addColumn tableName="tag">
+            <column name="dirtybit" type="boolean"></column>
+        </addColumn>
+        <addDefaultValue tableName="tag" columnName="dirtybit" defaultValueBoolean="false"/>
+        <sql dbms="postgresql">
+            update tag set dirtybit=false;
+        </sql>
+        <addColumn tableName="workflowversion">
+            <column name="dirtybit" type="boolean"></column>
+        </addColumn>
+        <addDefaultValue tableName="workflowversion" columnName="dirtybit" defaultValueBoolean="false"/>
+        <sql dbms="postgresql">
+            update workflowversion set dirtybit=false;
+        </sql>
+    </changeSet>
+
+    <!--19-->
+    <changeSet id="testjson" author="agduncan">
+        <addColumn tableName="tag">
+            <column name="cwltestparameterfile" type="varchar(255)"></column>
+        </addColumn>
+        <addDefaultValue tableName="tag" columnName="cwltestparameterfile" defaultValue="/test.cwl.json"/>
+        <addColumn tableName="tag">
+            <column name="wdltestparameterfile" type="varchar(255)"></column>
+        </addColumn>
+        <addDefaultValue tableName="tag" columnName="wdltestparameterfile" defaultValue="/test.wdl.json"/>
+        <addColumn tableName="tool">
+            <column name="defaultcwltestparameterfile" type="varchar(255)"></column>
+        </addColumn>
+        <addDefaultValue tableName="tool" columnName="defaultcwltestparameterfile" defaultValue="/test.cwl.json"/>
+        <addColumn tableName="tool">
+            <column name="defaultwdltestparameterfile" type="varchar(255)"></column>
+        </addColumn>
+        <addDefaultValue tableName="tool" columnName="defaultwdltestparameterfile" defaultValue="/test.wdl.json"/>
+
+        <addColumn tableName="workflowversion">
+            <column name="testparameterfile" type="varchar(255)"></column>
+        </addColumn>
+        <addDefaultValue tableName="workflowversion" columnName="testparameterfile" defaultValue="/test.json"/>
+        <addColumn tableName="workflow">
+            <column name="defaulttestparameterfile" type="varchar(255)"></column>
+        </addColumn>
+        <addDefaultValue tableName="workflow" columnName="defaulttestparameterfile" defaultValue="/test.json"/>
+    </changeSet>
+
+    <!--20-->
+    <changeSet id="verified_versions" author="agduncan">
+        <addColumn tableName="tag">
+            <column name="verified" type="boolean"></column>
+        </addColumn>
+        <addDefaultValue tableName="tag" columnName="verified" defaultValueBoolean="false"/>
+        <sql dbms="postgresql">
+            update tag set verified=false;
+        </sql>
+        <addColumn tableName="tag">
+            <column name="verifiedsource" type="varchar(255)"></column>
+        </addColumn>
+
+        <addColumn tableName="workflowversion">
+            <column name="verified" type="boolean"></column>
+        </addColumn>
+        <addDefaultValue tableName="workflowversion" columnName="verified" defaultValueBoolean="false"/>
+        <sql dbms="postgresql">
+            update workflowversion set verified=false;
+        </sql>
+        <addColumn tableName="workflowversion">
+            <column name="verifiedsource" type="varchar(255)"></column>
+        </addColumn>
+    </changeSet>
+
+    <!--21-->
+    <changeSet id="multitestjson" author="agduncan">
+        <dropColumn tableName="tag" columnName="cwltestparameterfile"></dropColumn>
+        <dropColumn tableName="tag" columnName="wdltestparameterfile"></dropColumn>
+        <dropColumn tableName="tool" columnName="defaultcwltestparameterfile"></dropColumn>
+        <dropColumn tableName="tool" columnName="defaultwdltestparameterfile"></dropColumn>
+        <dropColumn tableName="workflowversion" columnName="testparameterfile"></dropColumn>
+        <dropColumn tableName="workflow" columnName="defaulttestparameterfile"></dropColumn>
+    </changeSet>
+
+    <!--22-->
+    <changeSet id="removemailto" author="agduncan">
+        <sql dbms="postgresql">
+            update tool set email = replace(email, 'mailto:', '');
+        </sql>
+        <sql dbms="postgresql">
+            update workflow set email = replace(email, 'mailto:', '');
+        </sql>
+    </changeSet>
+
+    <!--23-->
+    <changeSet id="privatetools" author="agduncan">
+        <addColumn tableName="tool">
+            <column name="privateaccess" type="boolean"></column>
+        </addColumn>
+        <addDefaultValue tableName="tool" columnName="privateaccess" defaultValueBoolean="false"/>
+        <sql dbms="postgresql">
+            update tool set privateaccess=false;
+        </sql>
+        <addColumn tableName="tool">
+            <column name="toolmaintaineremail" type="varchar(255)"></column>
+        </addColumn>
+    </changeSet>
+
+    <!--This is where the db_dump.sql from dockstore-ui ends-->
+
+    <!--24-->
+    <changeSet id="starredentries" author="agduncan">
+        <addColumn tableName="enduser">
+            <column name="company" type="varchar(255)"></column>
+        </addColumn>
+        <addColumn tableName="enduser">
+            <column name="bio" type="varchar(255)"></column>
+        </addColumn>
+        <addColumn tableName="enduser">
+            <column name="location" type="varchar(255)"></column>
+        </addColumn>
+        <addColumn tableName="enduser">
+            <column name="email" type="varchar(255)"></column>
+        </addColumn>
+        <addColumn tableName="enduser">
+            <column name="avatarurl" type="varchar(255)"></column>
+        </addColumn>
+        
+        <createTable tableName="starred">
+            <column name="userid" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="entryid" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addPrimaryKey
+                columnNames="entryid, userid"
+                constraintName="starred_pkey"
+                tableName="starred"/>
+        <addForeignKeyConstraint baseColumnNames="userid"
+                                 baseTableName="starred"
+                                 constraintName="fk_userid"
+                                 referencedColumnNames="id"
+                                 referencedTableName="enduser"/>
+    </changeSet>
+
+    <!--25-->
+    <changeSet id="testFiles" author="gluu">
+        <addColumn tableName="tool">
+            <column name="defaulttestcwlparameterfile" type="varchar(255)"/>
+            <column name="defaulttestwdlparameterfile" type="varchar(255)"/>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column name="defaulttestparameterfilepath" type="varchar(255)"></column>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

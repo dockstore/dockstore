@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 
 import com.google.common.io.Resources;
+import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -38,6 +39,7 @@ import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -46,7 +48,6 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 
-import static io.dockstore.common.CommonTestUtilities.clearStateMakePrivate2;
 
 /**
  * Created by jpatricia on 24/06/16.
@@ -58,9 +59,14 @@ public class DAGWorkflowTestIT {
     public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
             DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstoreTest.yml"));
 
+    @BeforeClass
+    public static void dumpDBAndCreateSchema() throws Exception {
+        CommonTestUtilities.dropAndRecreate(RULE);
+    }
+
     @Before
-    public void clearDBandSetup() throws IOException, TimeoutException, ApiException {
-        clearStateMakePrivate2();
+    public void clearDBandSetup() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(RULE);
     }
 
     @Rule

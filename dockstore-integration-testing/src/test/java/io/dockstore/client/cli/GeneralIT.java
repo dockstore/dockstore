@@ -47,6 +47,7 @@ import org.apache.commons.io.FileUtils;
 import org.json.JSONException;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -59,7 +60,6 @@ import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
-import static io.dockstore.common.CommonTestUtilities.clearStateMakePrivate2;
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static org.junit.Assert.assertTrue;
 
@@ -77,9 +77,10 @@ public class GeneralIT {
     @Rule
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
 
+    public static final String CONFIG_PATH = ResourceHelpers.resourceFilePath("dockstoreTest.yml");
     @ClassRule
     public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
-            DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstoreTest.yml"));
+            DockstoreWebserviceApplication.class, CONFIG_PATH);
 
     @Rule
     public TestRule watcher = new TestWatcher() {
@@ -90,11 +91,15 @@ public class GeneralIT {
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-    
+
+    @BeforeClass
+    public static void dumpDBAndCreateSchema() throws Exception {
+        CommonTestUtilities.dropAndRecreate(RULE);
+    }
 
     @Before
-    public void clearDBandSetup() throws IOException, TimeoutException {
-        clearStateMakePrivate2();
+    public void clearDBandSetup() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(RULE);
     }
 
     private static ApiClient getWebClient() throws IOException, TimeoutException {

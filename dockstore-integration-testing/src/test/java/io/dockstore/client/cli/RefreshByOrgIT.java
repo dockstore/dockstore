@@ -18,7 +18,6 @@ package io.dockstore.client.cli;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.client.Client;
@@ -36,7 +35,6 @@ import io.dropwizard.client.JerseyClientBuilder;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit.DropwizardAppRule;
-import io.swagger.client.ApiException;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.glassfish.jersey.client.ClientProperties;
 import org.junit.Before;
@@ -44,8 +42,6 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
-import static io.dockstore.common.CommonTestUtilities.clearStateMakePrivate2;
-import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -54,9 +50,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class RefreshByOrgIT {
 
+    public static final String CONFIG_PATH = ResourceHelpers.resourceFilePath("dockstoreTest.yml");
     @ClassRule
     public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
-            DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstoreTest.yml"));
+            DockstoreWebserviceApplication.class, CONFIG_PATH);
     // Travis is slow, need to wait up to 1 min for webservice to return
     private static final int WAIT_TIME = 60000;
     private static final List<String> newDockstoreTestUser2Tools = Arrays.asList("dockstore-tool-imports");
@@ -75,9 +72,10 @@ public class RefreshByOrgIT {
     private static List<Workflow> previousWorkflows;
 
     @BeforeClass
-    public static void clearDBandSetup() throws IOException, TimeoutException, ApiException {
-        clearStateMakePrivate2();
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+    public static void clearDBandSetup() throws Exception {
+        CommonTestUtilities.dropAndRecreate(RULE);
+        CommonTestUtilities.cleanStatePrivate2(RULE);
+        final CommonTestUtilities.TestingPostgres testingPostgres = CommonTestUtilities.getTestingPostgres();
         id = testingPostgres.runSelectStatement("select id from enduser where username='DockstoreTestUser2';", new ScalarHandler<>());
         Environment environment = RULE.getEnvironment();
         token = testingPostgres.runSelectStatement("select content from token where tokensource='dockstore';", new ScalarHandler<>());
@@ -86,8 +84,8 @@ public class RefreshByOrgIT {
     }
 
     @Before
-    public void clearDB() throws IOException, TimeoutException, ApiException {
-        clearStateMakePrivate2();
+    public void clearDB() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(RULE);
     }
 
     private void checkInitialDB() throws IOException {

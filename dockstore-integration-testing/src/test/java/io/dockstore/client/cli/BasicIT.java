@@ -31,17 +31,16 @@ import io.dropwizard.testing.junit.DropwizardAppRule;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.contrib.java.lang.system.Assertion;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 
-import static io.dockstore.common.CommonTestUtilities.clearStateMakePrivate;
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 
 /**
@@ -54,7 +53,7 @@ import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 public class BasicIT {
     @ClassRule
     public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
-            DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstoreTest.yml"));
+            DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH);
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
@@ -65,9 +64,14 @@ public class BasicIT {
     @Rule
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
 
+    @BeforeClass
+    public static void dumpDBAndCreateSchema() throws Exception {
+        CommonTestUtilities.dropAndRecreate(RULE);
+    }
+
     @Before
-    public void clearDBandSetup() throws IOException, TimeoutException {
-        clearStateMakePrivate();
+    public void clearDBandSetup() throws Exception {
+        CommonTestUtilities.cleanStatePrivate1(RULE);
     }
 
         /*

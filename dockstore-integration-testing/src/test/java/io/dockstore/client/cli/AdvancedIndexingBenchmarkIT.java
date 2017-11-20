@@ -34,6 +34,7 @@ import javax.ws.rs.core.Response;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import io.dockstore.common.BenchmarkTest;
+import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -51,6 +52,7 @@ import org.hibernate.Transaction;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -69,6 +71,7 @@ import static junit.framework.TestCase.assertTrue;
  */
 @Category(BenchmarkTest.class)
 public class AdvancedIndexingBenchmarkIT {
+
 
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
@@ -95,6 +98,11 @@ public class AdvancedIndexingBenchmarkIT {
     private List<Long> indexTimes;
     private SessionFactory sessionFactory;
     private javax.ws.rs.client.Client client;
+
+    @BeforeClass
+    public static void dumpDBAndCreateSchema() throws Exception {
+        CommonTestUtilities.dropAndRecreate(RULE);
+    }
 
     public String randomIdentifier() {
         StringBuilder builder = new StringBuilder();

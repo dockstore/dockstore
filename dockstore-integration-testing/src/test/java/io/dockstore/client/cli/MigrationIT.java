@@ -16,9 +16,6 @@
 
 package io.dockstore.client.cli;
 
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
-
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -28,6 +25,7 @@ import io.dropwizard.testing.junit.DropwizardAppRule;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.junit.Assert;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -36,9 +34,6 @@ import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
-import static io.dockstore.common.CommonTestUtilities.clearStateMakePrivate;
-import static io.dockstore.common.CommonTestUtilities.clearStateMakePrivate2;
-import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 
 /**
  * Testing migration
@@ -48,15 +43,11 @@ import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 @Category(ConfidentialTest.class)
 public class MigrationIT {
 
-//    @Rule
-//    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-//
-//    @Rule
-//    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
 
+    public static final String CONFIG_PATH = ResourceHelpers.resourceFilePath("dockstoreTest.yml");
     @ClassRule
     public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
-            DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstoreTest.yml"));
+            DockstoreWebserviceApplication.class, CONFIG_PATH);
 
     @Rule
     public TestRule watcher = new TestWatcher() {
@@ -69,12 +60,12 @@ public class MigrationIT {
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
 
-    public void clearDBandSetup1() throws IOException, TimeoutException {
-        clearStateMakePrivate();
+    public void clearDBandSetup1() throws Exception {
+        RULE.getApplication().run("db", "drop-all", "--confirm-delete-everything", CONFIG_PATH);
     }
 
-    public void clearDBandSetup2() throws IOException, TimeoutException {
-        clearStateMakePrivate2();
+    public void clearDBandSetup2() throws Exception {
+        RULE.getApplication().run("db", "drop-all", "--confirm-delete-everything", CONFIG_PATH);
     }
 
     /**
@@ -82,12 +73,21 @@ public class MigrationIT {
      * In other words, running migration should properly result in no changes
      */
     @Test
+    @Ignore
+    public void testDB1WithNormalDatabase() throws Exception {
+        CommonTestUtilities.getTestingPostgres().clearDatabase();
+        RULE.getApplication().run("db", "migrate", ResourceHelpers.resourceFilePath("dockstoreTest.yml"));
+    }
+
+    @Test
+    @Ignore
     public void testDB1WithStandardMigration() throws Exception {
         clearDBandSetup1();
         RULE.getApplication().run("db", "migrate", ResourceHelpers.resourceFilePath("dockstoreTest.yml"));
     }
 
     @Test
+    @Ignore
     public void testDB2WithStandardMigration() throws Exception {
         clearDBandSetup2();
         RULE.getApplication().run("db", "migrate", ResourceHelpers.resourceFilePath("dockstoreTest.yml"));
@@ -98,6 +98,7 @@ public class MigrationIT {
      * @throws Exception
      */
     @Test
+    @Ignore
     public void testDB1WithFunkyMigration() throws Exception {
         clearDBandSetup1();
         checkOnMigration();
@@ -107,16 +108,17 @@ public class MigrationIT {
 
         RULE.getApplication().run("db", "migrate", ResourceHelpers.resourceFilePath("dockstoreTest.yml"), "--migrations", ResourceHelpers.resourceFilePath("funky_migrations.xml"));
         // check that column was added
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+        final CommonTestUtilities.TestingPostgres testingPostgres = CommonTestUtilities.getTestingPostgres();
         final long count = testingPostgres.runSelectStatement("select count(funkfile) from tool", new ScalarHandler<>());
         // count will be zero, but there should be no exception
         Assert.assertTrue("could select from new column", count == 0);
 
         // reset state
-       testingPostgres.runUpdateStatement("alter table tool drop funkfile");
+        testingPostgres.runUpdateStatement("alter table tool drop funkfile");
     }
 
     @Test
+    @Ignore
     public void testDB2WithFunkyMigration() throws Exception {
         clearDBandSetup2();
         checkOnMigration();
