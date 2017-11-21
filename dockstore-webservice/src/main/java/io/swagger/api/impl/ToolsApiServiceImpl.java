@@ -16,6 +16,26 @@
 
 package io.swagger.api.impl;
 
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
+
 import avro.shaded.com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
@@ -39,26 +59,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
-
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import static io.dockstore.webservice.core.SourceFile.FileType.CWL_TEST_JSON;
 import static io.dockstore.webservice.core.SourceFile.FileType.DOCKERFILE;
@@ -179,11 +179,32 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         if (fileType == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
+        boolean unwrap = value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || StringUtils.containsIgnoreCase(type, "plain");
+        Response fileByToolVersionID = getFileByToolVersionID(id, versionId, fileType, relativePath, unwrap);
+        if (!unwrap) {
+            SourceFile file = (SourceFile)fileByToolVersionID.getEntity();
+            ToolDescriptor toolDescriptor = new ToolDescriptor();
+            toolDescriptor.setType(stringToEnum(type));
+            toolDescriptor.setDescriptor(file.getContent());
+            toolDescriptor.setUrl(file.getPath());
+            return Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON)
+                    .entity(toolDescriptor).build();
+        } else {
+            return fileByToolVersionID;
+        }
 
-        return getFileByToolVersionID(id, versionId, fileType, relativePath, value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || StringUtils.containsIgnoreCase(type, "plain"));
     }
 
-
+    private ToolDescriptor.TypeEnum stringToEnum(String type) {
+        switch (type) {
+        case "CWL":
+            return ToolDescriptor.TypeEnum.CWL;
+        case "WDL":
+            return ToolDescriptor.TypeEnum.WDL;
+        default:
+            return null;
+        }
+    }
 
     @Override
     public Response toolsIdVersionsVersionIdTypeTestsGet(String type, String id, String versionId, SecurityContext securityContext, ContainerRequestContext value)
@@ -400,6 +421,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             switch (type) {
             case WDL_TEST_JSON:
             case CWL_TEST_JSON:
+                LOG.error("stuffy stuff");
                 final EntryVersionHelper<Tool> entryVersionHelper = new EntryVersionHelper<>(toolDAO);
                 List<SourceFile> sourceFile = entryVersionHelper.getAllSourceFiles(entry.getId(), versionId, type);
                 return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
