@@ -1200,7 +1200,7 @@ paths:
         400: {description: 'Invalid '}
       security:
       - BEARER: []
-      summary: Delete manually registered image
+      summary: Delete a tool
       tags: [containers]
     get:
       description: ''
