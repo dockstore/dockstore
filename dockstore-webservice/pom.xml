@@ -761,8 +761,8 @@
                     <referenceUsername>dockstore</referenceUsername>
                     <password>dockstore</password>
                     <referencePassword>dockstore</referencePassword>
-                    <url>jdbc:postgresql://localhost:5432/webservice_test_old</url>
-                    <referenceUrl>jdbc:postgresql://localhost:5432/webservice_test</referenceUrl>
+                    <url>jdbc:postgresql://localhost:5432/webservice_test</url>
+                    <referenceUrl>jdbc:postgresql://localhost:5432/webservice_test_proposed</referenceUrl>
 
                     <changeLogFile>src/main/resources/migrations.xml</changeLogFile>
                     <logging>info</logging>
