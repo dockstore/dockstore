@@ -791,10 +791,6 @@
                                 <location>io.dockstore.webservice.resources.rss</location>
                                 <location>io.dockstore.webservice.resources.proposedGA4GH</location>
                             </locations>
-                            <info>
-                                <title>Dockstore API</title>
-                                <version>1.3.0</version>
-                            </info>
                             <swaggerDirectory>${pom.basedir}/src/main/resources</swaggerDirectory>
                             <swaggerFileName>swagger</swaggerFileName>
                             <outputFormats>yaml</outputFormats>

@@ -24,11 +24,7 @@ import avro.shaded.com.google.common.collect.Lists;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.TestUtility;
-import io.dockstore.webservice.DockstoreWebserviceApplication;
-import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
-import io.dropwizard.testing.junit.DropwizardAppRule;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.SourceFile;
@@ -36,11 +32,8 @@ import io.swagger.client.model.User;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -80,24 +73,11 @@ public class MockedIT {
 
     private Client client;
 
-    public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
-        DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH);
-
-    @BeforeClass
-    public static void dumpDBAndCreateSchema() throws Exception {
-        CommonTestUtilities.dropAndRecreate(SUPPORT);
-        SUPPORT.before();
-    }
-
-    @AfterClass
-    public static void afterClass(){
-        SUPPORT.after();
-    }
-
-    @Before
-    public void clearDBandSetup() throws Exception {
-        CommonTestUtilities.cleanState(SUPPORT);
-    }
+//    @Before
+//    @Override
+//    public void resetDBBetweenTests() throws Exception {
+//        CommonTestUtilities.cleanState(SUPPORT);
+//    }
 
     @Before
     public void clearDB() throws Exception {

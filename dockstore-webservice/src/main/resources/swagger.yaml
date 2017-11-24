@@ -1,8 +1,19 @@
 ---
 swagger: "2.0"
 info:
+  description: "This describes the dockstore API, a webservice that manages pairs\
+    \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
+    \ used to build those images"
   version: "1.3.0"
   title: "Dockstore API"
+  termsOfService: ""
+  contact:
+    name: "Dockstore@ga4gh"
+    url: "https://github.com/ga4gh/dockstore"
+    email: " theglobalalliance@genomicsandhealth.org"
+  license:
+    name: " GNU Lesser General Public License"
+    url: "https://www.gnu.org/licenses/lgpl-3.0.en.html"
 host: ""
 basePath: "/"
 tags:
@@ -1040,7 +1051,6 @@ paths:
             $ref: "#/definitions/DockstoreTool"
       security:
       - BEARER: []
-<<<<<<< HEAD
     put:
       tags:
       - "containers"
@@ -1049,13 +1059,6 @@ paths:
       operationId: "updateContainer"
       produces:
       - "application/json"
-=======
-      summary: Delete a tool
-      tags: [containers]
-    get:
-      description: ''
-      operationId: getContainer
->>>>>>> dc190b6... can now delete auto tools (#1035)
       parameters:
       - name: "containerId"
         in: "path"
@@ -1079,7 +1082,7 @@ paths:
     delete:
       tags:
       - "containers"
-      summary: "Delete manually registered image"
+      summary: "Delete a tool"
       description: ""
       operationId: "deleteContainer"
       produces:
