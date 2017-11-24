@@ -26,6 +26,7 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.TestUtility;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit.DropwizardAppRule;
 import io.swagger.client.ApiException;
@@ -35,6 +36,7 @@ import io.swagger.client.model.User;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -67,10 +69,6 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 @PrepareForTest({ Client.class, ToolClient.class, UsersApi.class })
 public class MockedIT {
 
-    @ClassRule
-    public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
-            DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstore.yml"));
-
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
 
@@ -82,9 +80,23 @@ public class MockedIT {
 
     private Client client;
 
+    public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
+        DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH);
+
     @BeforeClass
     public static void dumpDBAndCreateSchema() throws Exception {
-        CommonTestUtilities.dropAndRecreate(RULE);
+        CommonTestUtilities.dropAndRecreate(SUPPORT);
+        SUPPORT.before();
+    }
+
+    @AfterClass
+    public static void afterClass(){
+        SUPPORT.after();
+    }
+
+    @Before
+    public void clearDBandSetup() throws Exception {
+        CommonTestUtilities.cleanState(SUPPORT);
     }
 
     @Before

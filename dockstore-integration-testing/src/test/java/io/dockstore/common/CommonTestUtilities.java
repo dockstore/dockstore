@@ -20,6 +20,8 @@ import java.io.File;
 
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dropwizard.Application;
+import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit.DropwizardAppRule;
 import org.apache.commons.configuration2.INIConfiguration;
@@ -41,28 +43,34 @@ public final class CommonTestUtilities {
 
     }
 
-    public static void dropAndRecreate(DropwizardAppRule<DockstoreWebserviceConfiguration> rule) throws Exception {
-        rule.getApplication().run("db", "drop-all", "--confirm-delete-everything", CONFIG_PATH);
-        rule.getApplication().run("db", "migrate", CONFIG_PATH, "--include", "1.3.0.generated");
+    public static void dropAndRecreate(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
+        Application<DockstoreWebserviceConfiguration> application = support.newApplication();
+        application.run("db", "drop-all", "--confirm-delete-everything", CONFIG_PATH);
+        application.run("db", "migrate", CONFIG_PATH, "--include", "1.3.0.generated");
     }
 
-    public static void cleanStatePrivate1(DropwizardAppRule<DockstoreWebserviceConfiguration> rule) throws Exception {
-        cleanStatePrivate1(rule, CONFIG_PATH);
+    public static void cleanState(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
+        getTestingPostgres().clearDatabase();
+        support.getApplication().run("db", "migrate", CONFIG_PATH, "--include", "test");
     }
 
-    public static void cleanStatePrivate1(DropwizardAppRule<DockstoreWebserviceConfiguration> rule, String configPath) throws Exception {
+    public static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
+        cleanStatePrivate1(support, CONFIG_PATH);
+    }
+
+    public static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath) throws Exception {
         clearState();
-        rule.getApplication().run("db", "migrate", configPath, "--include", "test.confidential1");
+        support.getApplication().run("db", "migrate", configPath, "--include", "test.confidential1");
     }
 
-    public static void cleanStatePrivate2(DropwizardAppRule<DockstoreWebserviceConfiguration> rule) throws Exception {
-        cleanStatePrivate2(rule, CONFIG_PATH);
+    public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
+        cleanStatePrivate2(support, CONFIG_PATH);
 
     }
 
-    public static void cleanStatePrivate2(DropwizardAppRule<DockstoreWebserviceConfiguration> rule, String configPath) throws Exception {
+    public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath) throws Exception {
         clearState();
-        rule.getApplication().run("db", "migrate", configPath, "--include", "test.confidential2");
+        support.getApplication().run("db", "migrate", configPath, "--include", "test.confidential2");
     }
 
     /**
@@ -85,6 +93,7 @@ public final class CommonTestUtilities {
         return new TestingPostgres(parseConfig);
     }
 
+
     public static class TestingPostgres extends BasicPostgreSQL {
 
         TestingPostgres(INIConfiguration config) {
@@ -93,14 +102,6 @@ public final class CommonTestUtilities {
 
         @Override
         public void clearDatabase() {
-            // need to load non-confidential data
-            DropwizardAppRule<DockstoreWebserviceConfiguration> rule = new DropwizardAppRule<>(
-                DockstoreWebserviceApplication.class, CONFIG_PATH);
-            try {
-                rule.getApplication().run("db", "migrate", CONFIG_PATH, "--include", "test");
-            } catch (Exception e) {
-                throw new RuntimeException("unable to reset database with normal test data");
-            }
             super.clearDatabase();
         }
 

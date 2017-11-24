@@ -777,6 +777,49 @@
                     </dependency>
                 </dependencies>
             </plugin>
+            <plugin>
+                <groupId>com.github.kongchen</groupId>
+                <artifactId>swagger-maven-plugin</artifactId>
+                <version>3.1.5</version>
+                <configuration>
+                    <apiSources>
+                        <apiSource>
+                            <springmvc>false</springmvc>
+                            <locations>
+                                <location>io.swagger.api</location>
+                                <location>io.dockstore.webservice.resources</location>
+                                <location>io.dockstore.webservice.resources.rss</location>
+                                <location>io.dockstore.webservice.resources.proposedGA4GH</location>
+                            </locations>
+                            <info>
+                                <title>Dockstore API</title>
+                                <version>1.3.0</version>
+                            </info>
+                            <swaggerDirectory>${pom.basedir}/src/main/resources</swaggerDirectory>
+                            <swaggerFileName>swagger</swaggerFileName>
+                            <outputFormats>yaml</outputFormats>
+                            <basePath>/</basePath>
+                            <!-- "can be used to strictly use the official Swagger reader in order to generate the exact same output as Swagger''s runtime generation (with all its bugs). "
+                            <swaggerApiReader>com.github.kongchen.swagger.docgen.reader.SwaggerReader</swaggerApiReader>
+                            -->
+                            <attachSwaggerArtifact>true</attachSwaggerArtifact>
+                            <securityDefinitions>
+                                <securityDefinition>
+                                    <json>/securityDefinition.json</json>
+                                </securityDefinition>
+                            </securityDefinitions>
+                        </apiSource>
+                    </apiSources>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 

@@ -42,7 +42,7 @@ public final class TestUtility {
         File tempDir = Files.createTempDir();
         final File tempFile = File.createTempFile("config", "config", tempDir);
         FileUtils.write(tempFile, "token: " + (correctUser ? DUMMY_TOKEN_1 : "foobar") + "\n", StandardCharsets.UTF_8);
-        FileUtils.write(tempFile, "server-url: http://localhost:" + (validPort ? "8000" : "9001") + "\n", StandardCharsets.UTF_8, true);
+        FileUtils.write(tempFile, "server-url: http://localhost:" + (validPort ? "8080" : "9001") + "\n", StandardCharsets.UTF_8, true);
         if (useCache){
             FileUtils.write(tempFile, "use-cache: true\n", StandardCharsets.UTF_8, true);
         }

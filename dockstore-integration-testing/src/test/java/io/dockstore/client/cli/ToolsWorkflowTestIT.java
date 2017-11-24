@@ -28,6 +28,7 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit.DropwizardAppRule;
 import io.swagger.client.ApiClient;
@@ -37,6 +38,7 @@ import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -55,19 +57,23 @@ import org.junit.experimental.categories.Category;
 @Category(ConfidentialTest.class)
 public class ToolsWorkflowTestIT {
 
-    public static final String CONFIG_PATH = ResourceHelpers.resourceFilePath("dockstoreTest.yml");
-    @ClassRule
-    public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
-            DockstoreWebserviceApplication.class, CONFIG_PATH);
+    public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
+        DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH);
 
     @BeforeClass
     public static void dumpDBAndCreateSchema() throws Exception {
-        CommonTestUtilities.dropAndRecreate(RULE);
+        CommonTestUtilities.dropAndRecreate(SUPPORT);
+        SUPPORT.before();
+    }
+
+    @AfterClass
+    public static void afterClass(){
+        SUPPORT.after();
     }
 
     @Before
     public void clearDBandSetup() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(RULE);
+        CommonTestUtilities.cleanStatePrivate1(SUPPORT);
     }
 
     @Rule

@@ -31,6 +31,7 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit.DropwizardAppRule;
 import io.swagger.client.ApiClient;
@@ -45,6 +46,7 @@ import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.commons.io.FileUtils;
 import org.json.JSONException;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -77,10 +79,24 @@ public class GeneralIT {
     @Rule
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
 
-    public static final String CONFIG_PATH = ResourceHelpers.resourceFilePath("dockstoreTest.yml");
-    @ClassRule
-    public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
-            DockstoreWebserviceApplication.class, CONFIG_PATH);
+    public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
+        DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH);
+
+    @BeforeClass
+    public static void dumpDBAndCreateSchema() throws Exception {
+        CommonTestUtilities.dropAndRecreate(SUPPORT);
+        SUPPORT.before();
+    }
+
+    @AfterClass
+    public static void afterClass(){
+        SUPPORT.after();
+    }
+
+    @Before
+    public void clearDBandSetup() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT);
+    }
 
     @Rule
     public TestRule watcher = new TestWatcher() {
@@ -92,15 +108,6 @@ public class GeneralIT {
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
 
-    @BeforeClass
-    public static void dumpDBAndCreateSchema() throws Exception {
-        CommonTestUtilities.dropAndRecreate(RULE);
-    }
-
-    @Before
-    public void clearDBandSetup() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(RULE);
-    }
 
     private static ApiClient getWebClient() throws IOException, TimeoutException {
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();

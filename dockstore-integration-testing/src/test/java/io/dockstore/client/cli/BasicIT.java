@@ -26,9 +26,11 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.SlowTest;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit.DropwizardAppRule;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -51,10 +53,6 @@ import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
  */
 @Category(ConfidentialTest.class)
 public class BasicIT {
-    @ClassRule
-    public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
-            DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH);
-
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
 
@@ -64,14 +62,24 @@ public class BasicIT {
     @Rule
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
 
+
+    public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
+        DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH);
+
     @BeforeClass
     public static void dumpDBAndCreateSchema() throws Exception {
-        CommonTestUtilities.dropAndRecreate(RULE);
+        CommonTestUtilities.dropAndRecreate(SUPPORT);
+        SUPPORT.before();
+    }
+
+    @AfterClass
+    public static void afterClass(){
+        SUPPORT.after();
     }
 
     @Before
     public void clearDBandSetup() throws Exception {
-        CommonTestUtilities.cleanStatePrivate1(RULE);
+        CommonTestUtilities.cleanStatePrivate1(SUPPORT);
     }
 
         /*

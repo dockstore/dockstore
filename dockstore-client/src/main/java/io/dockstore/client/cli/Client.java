@@ -539,7 +539,9 @@ public class Client {
         out("Dockstore version " + currentVersion);
         String latestVersion = getLatestVersion();
         if (latestVersion == null) {
-            errorMessage("Can't find the latest version. Something might be wrong with the connection to Github.", CLIENT_ERROR);
+            err("Can't find the latest version. Something might be wrong with the connection to Github.");
+            // do not crash when rate limited
+            return;
         }
 
         // skip upgrade check for development versions

@@ -20,12 +20,12 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
-import io.dropwizard.testing.junit.DropwizardAppRule;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
+import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Ignore;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -44,10 +44,19 @@ import org.junit.runner.Description;
 public class MigrationIT {
 
 
-    public static final String CONFIG_PATH = ResourceHelpers.resourceFilePath("dockstoreTest.yml");
-    @ClassRule
-    public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
-            DockstoreWebserviceApplication.class, CONFIG_PATH);
+    public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
+        DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH);
+
+    @BeforeClass
+    public static void dumpDBAndCreateSchema() throws Exception {
+        CommonTestUtilities.dropAndRecreate(SUPPORT);
+        SUPPORT.before();
+    }
+
+    @AfterClass
+    public static void afterClass(){
+        SUPPORT.after();
+    }
 
     @Rule
     public TestRule watcher = new TestWatcher() {
@@ -60,37 +69,26 @@ public class MigrationIT {
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
 
-    public void clearDBandSetup1() throws Exception {
-        RULE.getApplication().run("db", "drop-all", "--confirm-delete-everything", CONFIG_PATH);
-    }
-
-    public void clearDBandSetup2() throws Exception {
-        RULE.getApplication().run("db", "drop-all", "--confirm-delete-everything", CONFIG_PATH);
-    }
-
     /**
      * This test ensures that our testing databases remain compatible with the migrations.xml we provide
-     * In other words, running migration should properly result in no changes
+     * In other words, running migration again should be ok
      */
     @Test
-    @Ignore
     public void testDB1WithNormalDatabase() throws Exception {
-        CommonTestUtilities.getTestingPostgres().clearDatabase();
-        RULE.getApplication().run("db", "migrate", ResourceHelpers.resourceFilePath("dockstoreTest.yml"));
+        CommonTestUtilities.cleanState(SUPPORT);
+        SUPPORT.getApplication().run("db", "migrate", ResourceHelpers.resourceFilePath("dockstoreTest.yml"), "--include", "test");
     }
 
     @Test
-    @Ignore
     public void testDB1WithStandardMigration() throws Exception {
-        clearDBandSetup1();
-        RULE.getApplication().run("db", "migrate", ResourceHelpers.resourceFilePath("dockstoreTest.yml"));
+        CommonTestUtilities.cleanStatePrivate1(SUPPORT);
+        SUPPORT.getApplication().run("db", "migrate", ResourceHelpers.resourceFilePath("dockstoreTest.yml"), "--include", "test.confidential1");
     }
 
     @Test
-    @Ignore
     public void testDB2WithStandardMigration() throws Exception {
-        clearDBandSetup2();
-        RULE.getApplication().run("db", "migrate", ResourceHelpers.resourceFilePath("dockstoreTest.yml"));
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT);
+        SUPPORT.getApplication().run("db", "migrate", ResourceHelpers.resourceFilePath("dockstoreTest.yml"), "--include", "test.confidential2");
     }
 
     /**
@@ -98,15 +96,14 @@ public class MigrationIT {
      * @throws Exception
      */
     @Test
-    @Ignore
     public void testDB1WithFunkyMigration() throws Exception {
-        clearDBandSetup1();
+        CommonTestUtilities.cleanStatePrivate1(SUPPORT);
         checkOnMigration();
     }
 
     private void checkOnMigration() throws Exception {
 
-        RULE.getApplication().run("db", "migrate", ResourceHelpers.resourceFilePath("dockstoreTest.yml"), "--migrations", ResourceHelpers.resourceFilePath("funky_migrations.xml"));
+        SUPPORT.getApplication().run("db", "migrate", ResourceHelpers.resourceFilePath("dockstoreTest.yml"), "--migrations", ResourceHelpers.resourceFilePath("funky_migrations.xml"));
         // check that column was added
         final CommonTestUtilities.TestingPostgres testingPostgres = CommonTestUtilities.getTestingPostgres();
         final long count = testingPostgres.runSelectStatement("select count(funkfile) from tool", new ScalarHandler<>());
@@ -118,9 +115,8 @@ public class MigrationIT {
     }
 
     @Test
-    @Ignore
     public void testDB2WithFunkyMigration() throws Exception {
-        clearDBandSetup2();
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT);
         checkOnMigration();
     }
 }

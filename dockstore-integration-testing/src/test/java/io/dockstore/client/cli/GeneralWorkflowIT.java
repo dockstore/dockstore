@@ -24,6 +24,7 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.SlowTest;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit.DropwizardAppRule;
 import io.swagger.client.ApiClient;
@@ -34,6 +35,7 @@ import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.Workflow;
 import io.swagger.models.Swagger;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -54,9 +56,25 @@ import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
  */
 @Category(ConfidentialTest.class)
 public class GeneralWorkflowIT {
-    @ClassRule
-    public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
-            DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH);
+
+    public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
+        DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH);
+
+    @BeforeClass
+    public static void dumpDBAndCreateSchema() throws Exception {
+        CommonTestUtilities.dropAndRecreate(SUPPORT);
+        SUPPORT.before();
+    }
+
+    @AfterClass
+    public static void afterClass(){
+        SUPPORT.after();
+    }
+
+    @Before
+    public void clearDBandSetup() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT);
+    }
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
@@ -66,17 +84,6 @@ public class GeneralWorkflowIT {
 
     @Rule
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-
-    @BeforeClass
-    public static void dumpDBAndCreateSchema() throws Exception {
-        CommonTestUtilities.dropAndRecreate(RULE);
-    }
-
-    @Before
-    public void clearDBandSetup() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(RULE);
-
-    }
 
     /**
      * This test checks that refresh all workflows (with a mix of stub and full) and refresh individual.  It then tries to publish them
