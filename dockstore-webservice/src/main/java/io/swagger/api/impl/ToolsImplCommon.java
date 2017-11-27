@@ -153,16 +153,14 @@ public final class ToolsImplCommon {
         // tool specific
         if (container instanceof io.dockstore.webservice.core.Tool) {
             io.dockstore.webservice.core.Tool inputTool = (io.dockstore.webservice.core.Tool)container;
-            tool.setToolname(inputTool.getToolname());
+            tool.setToolname(Strings.isNullOrEmpty(inputTool.getToolname()) ? Strings.nullToEmpty(inputTool.getName()) : Strings.nullToEmpty(inputTool.getToolname()));
             tool.setOrganization(inputTool.getNamespace());
-            tool.setToolname(inputTool.getName());
         }
         // workflow specific
         if (container instanceof Workflow) {
             Workflow inputTool = (Workflow)container;
-            tool.setToolname(inputTool.getPath());
+            tool.setToolname(Strings.isNullOrEmpty(inputTool.getWorkflowName()) ? Strings.nullToEmpty(inputTool.getPath()) : Strings.nullToEmpty(inputTool.getWorkflowName()));
             tool.setOrganization(inputTool.getOrganization());
-            tool.setToolname(inputTool.getWorkflowName());
         }
 
         // TODO: contains has no counterpart in our DB
@@ -181,6 +179,9 @@ public final class ToolsImplCommon {
         Gson gson = new Gson();
         tool.setVerified_source(Strings.nullToEmpty(gson.toJson(collect)));
 
+        // Not sure how to get signed
+        tool.setSigned(false);
+        tool.setDescription(container.getDescription() != null ? container.getDescription() : "");
         for (Version inputVersion : (Set<Version>)inputVersions) {
 
             // tags with no names make no sense here
@@ -206,10 +207,16 @@ public final class ToolsImplCommon {
             version.setId(tool.getId() + ":" + inputVersion.getName());
 
             version.setName(inputVersion.getName());
-
             version.setVerified(inputVersion.isVerified());
             version.setVerified_source(Strings.nullToEmpty(inputVersion.getVerifiedSource()));
             version.setDockerfile(false);
+
+            if (inputVersion instanceof Tag) {
+                Tag tag = (Tag)inputVersion;
+                version.setImage(tag.getImageId());
+            } else {
+                version.setImage("");
+            }
 
             String urlBuilt;
             final String githubPrefix = "git@github.com:";
