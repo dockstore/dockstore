@@ -90,7 +90,7 @@ public enum Registry {
      */
     public static class RegistryBean {
 
-        @JsonProperty("enumValue")
+        @JsonProperty("enum")
         public String value;
 
         public String friendlyName;

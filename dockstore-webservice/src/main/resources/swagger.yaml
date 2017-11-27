@@ -3820,7 +3820,7 @@ definitions:
         type: "string"
       customDockerPath:
         type: "string"
-      enumValue:
+      enum:
         type: "string"
   SourceFile:
     type: "object"
