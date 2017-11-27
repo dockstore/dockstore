@@ -413,7 +413,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}")
-    @ApiOperation(value = "Delete manually registered image", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    @ApiOperation(value = "Delete a tool", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     @ApiResponses(@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid "))
     public Response deleteContainer(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool id to delete", required = true) @PathParam("containerId") Long containerId) {
@@ -421,20 +421,16 @@ public class DockerRepoResource {
         Helper.checkUser(user, tool);
         Tool deleteTool = new Tool();
         deleteTool.setId(tool.getId());
-        // only allow users to delete manually added images
-        if (tool.getMode() == ToolMode.MANUAL_IMAGE_PATH) {
-            tool.getTags().clear();
-            toolDAO.delete(tool);
 
-            tool = toolDAO.findById(containerId);
-            if (tool == null) {
-                elasticManager.handleIndexUpdate(deleteTool, ElasticMode.DELETE);
-                return Response.noContent().build();
-            } else {
-                return Response.serverError().build();
-            }
+        tool.getTags().clear();
+        toolDAO.delete(tool);
+
+        tool = toolDAO.findById(containerId);
+        if (tool == null) {
+            elasticManager.handleIndexUpdate(deleteTool, ElasticMode.DELETE);
+            return Response.noContent().build();
         } else {
-            return Response.status(Response.Status.BAD_REQUEST).build();
+            return Response.serverError().build();
         }
     }
 

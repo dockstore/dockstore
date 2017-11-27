@@ -1040,6 +1040,7 @@ paths:
             $ref: "#/definitions/DockstoreTool"
       security:
       - BEARER: []
+<<<<<<< HEAD
     put:
       tags:
       - "containers"
@@ -1048,6 +1049,13 @@ paths:
       operationId: "updateContainer"
       produces:
       - "application/json"
+=======
+      summary: Delete a tool
+      tags: [containers]
+    get:
+      description: ''
+      operationId: getContainer
+>>>>>>> dc190b6... can now delete auto tools (#1035)
       parameters:
       - name: "containerId"
         in: "path"
