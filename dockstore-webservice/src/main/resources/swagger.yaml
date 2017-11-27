@@ -762,9 +762,9 @@ paths:
         200:
           description: "successful operation"
           schema:
-            type: "object"
-            additionalProperties:
-              type: "object"
+            type: "array"
+            items:
+              $ref: "#/definitions/RegistryBean"
   /containers/namespace/{namespace}/published:
     get:
       tags:
@@ -3809,6 +3809,19 @@ definitions:
     properties:
       parent:
         $ref: "#/definitions/QuayIOAuthenticationResource"
+  RegistryBean:
+    type: "object"
+    properties:
+      friendlyName:
+        type: "string"
+      url:
+        type: "string"
+      privateOnly:
+        type: "string"
+      customDockerPath:
+        type: "string"
+      enumValue:
+        type: "string"
   SourceFile:
     type: "object"
     required:

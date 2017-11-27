@@ -118,7 +118,7 @@
         <dependency>
             <groupId>io.swagger</groupId>
             <artifactId>swagger-models</artifactId>
-            <version>1.5.9</version>
+            <version>${swagger-annotations-version}</version>
         </dependency>
 
         <dependency>

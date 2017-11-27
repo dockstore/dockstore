@@ -94,8 +94,10 @@
             <groupId>io.cwl</groupId>
             <artifactId>cwlavro-tools</artifactId>
         </dependency>
-
-
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
