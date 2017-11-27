@@ -704,10 +704,10 @@ paths:
           to the underlying implementation to determine which output type to return.
           Plain types return the bare descriptor while the "non-plain" types return
           a descriptor wrapped with metadata
-        enum: [CWL, WDL, plain-CWL, plain-WDL]
+        enum: [CWL, WDL, PLAIN_CWL, PLAIN_WDL]
         in: query
         name: type
-        required: true
+        required: false
         type: string
       - {description: 'A unique identifier of the tool, scoped to this registry, for
           example `123456`', in: path, name: id, required: true, type: string}
@@ -734,10 +734,10 @@ paths:
           to the underlying implementation to determine which output type to return.  Plain
           types return the bare descriptor while the "non-plain" types return a descriptor
           wrapped with metadata
-        enum: [CWL, WDL, plain-CWL, plain-WDL]
+        enum: [CWL, WDL, PLAIN_CWL, PLAIN_WDL]
         in: query
         name: type
-        required: true
+        required: false
         type: string
       - {description: 'A unique identifier of the tool, scoped to this registry, for
           example `123456`', in: path, name: id, required: true, type: string}
@@ -788,10 +788,10 @@ paths:
           to the underlying implementation to determine which output type to return.
           Plain types return the bare descriptor while the "non-plain" types return
           a descriptor wrapped with metadata
-        enum: [CWL, WDL, plain-CWL, plain-WDL]
+        enum: [CWL, WDL, PLAIN_CWL, PLAIN_WDL]
         in: query
         name: type
-        required: true
+        required: false
         type: string
       - {description: 'A unique identifier of the tool, scoped to this registry, for
           example `123456`', in: path, name: id, required: true, type: string}
