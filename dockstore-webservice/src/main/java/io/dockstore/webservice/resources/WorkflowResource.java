@@ -45,6 +45,7 @@ import com.google.common.base.Optional;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
+import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
@@ -1208,5 +1209,18 @@ public class WorkflowResource {
 
     public enum Type {
         DAG, TOOLS
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/sourceControlList")
+    @ApiOperation(value = "Get the list of source controls supported on Dockstore.", notes = "Does not need authentication", response = SourceControl.SourceControlBean.class, responseContainer = "List")
+    public List<SourceControl.SourceControlBean> getSourceControlList() {
+        List<SourceControl.SourceControlBean> sourceControlList = new ArrayList<>();
+        for (SourceControl r : SourceControl.values()) {
+            sourceControlList.add(new SourceControl.SourceControlBean(r));
+        }
+        return sourceControlList;
     }
 }

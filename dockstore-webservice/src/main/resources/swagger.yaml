@@ -2779,6 +2779,23 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Workflow"
+  /workflows/sourceControlList:
+    get:
+      tags:
+      - "workflows"
+      summary: "Get the list of source controls supported on Dockstore."
+      description: "Does not need authentication"
+      operationId: "getSourceControlList"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/SourceControlBean"
   /workflows/{workflowId}:
     get:
       tags:
@@ -3822,6 +3839,13 @@ definitions:
         type: "string"
       enum:
         type: "string"
+  SourceControlBean:
+    type: "object"
+    properties:
+      friendlyName:
+        type: "string"
+      enum:
+        type: "string"
   SourceFile:
     type: "object"
     required:
@@ -4176,6 +4200,7 @@ definitions:
     - "mode"
     - "organization"
     - "repository"
+    - "sourceControl"
     - "workflow_path"
     properties:
       id:
@@ -4241,6 +4266,14 @@ definitions:
       repository:
         type: "string"
         description: "This is a git repository name"
+      sourceControl:
+        type: "string"
+        description: "This is a specific source control provider like github or bitbucket\
+          \ or n/a?, required: GA4GH"
+        enum:
+        - "GITHUB"
+        - "BITBUCKET"
+        - "GITLAB"
       path:
         type: "string"
         description: "This is a generated full workflow path including organization,\
