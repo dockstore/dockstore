@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 
 import io.dockstore.client.cli.nested.ToolClient;
@@ -29,10 +28,7 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Constants;
 import io.dockstore.common.Registry;
 import io.dockstore.common.Utilities;
-import io.dockstore.webservice.DockstoreWebserviceApplication;
-import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.ResourceHelpers;
-import io.dropwizard.testing.junit.DropwizardAppRule;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
@@ -47,7 +43,6 @@ import org.apache.commons.io.FileUtils;
 import org.json.JSONException;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -59,7 +54,6 @@ import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
-import static io.dockstore.common.CommonTestUtilities.clearStateMakePrivate2;
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static org.junit.Assert.assertTrue;
 
@@ -69,7 +63,7 @@ import static org.junit.Assert.assertTrue;
  * @author aduncan
  */
 @Category(ConfidentialTest.class)
-public class GeneralIT {
+public class GeneralIT extends BaseIT {
 
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
@@ -77,9 +71,11 @@ public class GeneralIT {
     @Rule
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
 
-    @ClassRule
-    public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
-            DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstoreTest.yml"));
+    @Before
+    @Override
+    public void resetDBBetweenTests() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT);
+    }
 
     @Rule
     public TestRule watcher = new TestWatcher() {
@@ -90,12 +86,7 @@ public class GeneralIT {
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-    
 
-    @Before
-    public void clearDBandSetup() throws IOException, TimeoutException {
-        clearStateMakePrivate2();
-    }
 
     private static ApiClient getWebClient() throws IOException, TimeoutException {
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();

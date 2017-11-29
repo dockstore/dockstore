@@ -22,11 +22,9 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import com.google.common.io.Resources;
-import io.dockstore.common.CommonTestUtilities.TestingPostgres;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -56,16 +54,15 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 
-import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
-
 /**
  * @author dyuen
  */
 public class CRUDTesting {
 
+    private static final String CONFIG_PATH = ResourceHelpers.resourceFilePath("dockstore.yml");
     @ClassRule
     public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
-            DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstore.yml"));
+            DockstoreWebserviceApplication.class, CONFIG_PATH);
     private static final String DOCKERFILE_CONTENT = "This is the content of the Dockerfile";
     private static final String CWL_CONTENT = "This is the content of the CWL file";
     private static final String CWL_TEST_CONTENT = "This is the content of the CWL test file";
@@ -77,7 +74,7 @@ public class CRUDTesting {
     private Session session;
 
     @Before
-    public void clearDB() throws IOException, TimeoutException {
+    public void clearDB() throws Exception {
         clearState();
         application = RULE.getApplication();
 
@@ -95,9 +92,8 @@ public class CRUDTesting {
     /**
      * Clears database state and known queues for testing.
      **/
-    public static void clearState() {
-        final TestingPostgres postgres = getTestingPostgres();
-        postgres.clearDatabase();
+    private static void clearState() throws Exception {
+        RULE.getApplication().run("db", "drop-all", "--confirm-delete-everything", CONFIG_PATH);
     }
 
     @Test

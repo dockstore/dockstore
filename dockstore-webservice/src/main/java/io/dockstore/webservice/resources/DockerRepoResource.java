@@ -795,18 +795,11 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/dockerRegistryList")
-    @ApiOperation(value = "Get the list of docker registries supported on Dockstore.", notes = "Does not need authentication", response = Map.class, responseContainer = "List")
-    public List<Map<String, String>> getDockerRegistries() {
-        ArrayList<Map<String, String>> registryList = new ArrayList<>();
+    @ApiOperation(value = "Get the list of docker registries supported on Dockstore.", notes = "Does not need authentication", response = Registry.RegistryBean.class, responseContainer = "List")
+    public List<Registry.RegistryBean> getDockerRegistries() {
+        List<Registry.RegistryBean> registryList = new ArrayList<>();
         for (Registry r : Registry.values()) {
-            Map<String, String> registry = new HashMap<>();
-            registry.put("enum", r.name());
-            registry.put("friendlyName", r.getFriendlyName());
-            registry.put("dockerPath", r.toString());
-            registry.put("url", r.getUrl());
-            registry.put("privateOnly", Boolean.toString(r.isPrivateOnly()));
-            registry.put("customDockerPath", Boolean.toString(r.hasCustomDockerPath()));
-            registryList.add(registry);
+            registryList.add(new Registry.RegistryBean(r));
         }
         return registryList;
     }

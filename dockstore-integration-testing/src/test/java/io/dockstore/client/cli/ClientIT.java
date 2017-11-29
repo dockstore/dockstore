@@ -21,18 +21,15 @@ import java.util.ArrayList;
 import java.util.concurrent.TimeoutException;
 
 import com.google.common.collect.Lists;
+import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.CommonTestUtilities.TestingPostgres;
 import io.dockstore.common.Registry;
 import io.dockstore.common.TestUtility;
-import io.dockstore.webservice.DockstoreWebserviceApplication;
-import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.ResourceHelpers;
-import io.dropwizard.testing.junit.DropwizardAppRule;
 import io.swagger.client.ApiException;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -40,17 +37,12 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 
-import static io.dockstore.common.CommonTestUtilities.clearState;
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 
 /**
  * @author dyuen
  */
-public class ClientIT {
-
-    @ClassRule
-    public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
-            DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstore.yml"));
+public class ClientIT extends BaseIT{
 
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
@@ -62,8 +54,9 @@ public class ClientIT {
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
 
     @Before
-    public void clearDB() throws IOException, TimeoutException {
-        clearState();
+    @Override
+    public void resetDBBetweenTests() throws Exception {
+        CommonTestUtilities.cleanStatePrivate1(SUPPORT);
         Client.DEBUG.set(false);
     }
 

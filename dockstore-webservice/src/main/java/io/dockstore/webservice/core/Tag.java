@@ -59,7 +59,7 @@ public class Tag extends Version<Tag> {
     @ApiModelProperty("Path for the CWL document")
     private String cwlPath = "/Dockstore.cwl";
 
-    @Column(columnDefinition = "text", nullable = false)
+    @Column(columnDefinition = "text default '/Dockstore.wdl'", nullable = false)
     @JsonProperty("wdl_path")
     @ApiModelProperty("Path for the WDL document")
     private String wdlPath = "/Dockstore.wdl";

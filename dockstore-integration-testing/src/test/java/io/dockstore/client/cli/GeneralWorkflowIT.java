@@ -24,19 +24,17 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.SlowTest;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
-import io.dropwizard.testing.junit.DropwizardAppRule;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.Workflow;
-import io.swagger.models.Swagger;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -45,7 +43,6 @@ import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 
-import static io.dockstore.common.CommonTestUtilities.clearStateMakePrivate2;
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 
 /**
@@ -53,23 +50,21 @@ import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
  * Created by aduncan on 05/04/16.
  */
 @Category(ConfidentialTest.class)
-public class GeneralWorkflowIT {
-    @ClassRule
-    public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
-            DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstoreTest.yml"));
+public class GeneralWorkflowIT extends BaseIT {
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
 
     @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+    public final SystemOutRule systemOutRule = new SystemOutRule().muteForSuccessfulTests();
 
     @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+    public final SystemErrRule systemErrRule = new SystemErrRule().muteForSuccessfulTests();
 
     @Before
-    public void clearDBandSetup() throws IOException, TimeoutException {
-        clearStateMakePrivate2();
+    @Override
+    public void resetDBBetweenTests() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT);
     }
 
     /**
