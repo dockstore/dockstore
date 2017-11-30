@@ -1889,6 +1889,23 @@ paths:
           description: "successful operation"
           schema:
             type: "string"
+  /metadata/sourceControlList:
+    get:
+      tags:
+      - "metadata"
+      summary: "Get the list of source controls supported on Dockstore."
+      description: "Does not need authentication"
+      operationId: "getSourceControlList"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/SourceControlBean"
   /users:
     get:
       tags:
@@ -2779,23 +2796,6 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Workflow"
-  /workflows/sourceControlList:
-    get:
-      tags:
-      - "workflows"
-      summary: "Get the list of source controls supported on Dockstore."
-      description: "Does not need authentication"
-      operationId: "getSourceControlList"
-      produces:
-      - "application/json"
-      parameters: []
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/SourceControlBean"
   /workflows/{workflowId}:
     get:
       tags:

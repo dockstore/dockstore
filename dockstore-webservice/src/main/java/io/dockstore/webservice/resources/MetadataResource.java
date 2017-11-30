@@ -29,6 +29,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
+import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
@@ -158,5 +159,19 @@ public class MetadataResource {
         } catch (Exception e) {
             throw new CustomWebApplicationException("Could not write RSS feed.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/sourceControlList")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Get the list of source controls supported on Dockstore.", notes = "Does not need authentication", response = SourceControl.SourceControlBean.class, responseContainer = "List")
+    public List<SourceControl.SourceControlBean> getSourceControlList() {
+        List<SourceControl.SourceControlBean> sourceControlList = new ArrayList<>();
+        for (SourceControl sourceControl : SourceControl.values()) {
+            sourceControlList.add(new SourceControl.SourceControlBean(sourceControl));
+        }
+        return sourceControlList;
     }
 }

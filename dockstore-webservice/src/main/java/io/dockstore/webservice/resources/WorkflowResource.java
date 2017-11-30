@@ -1216,17 +1216,4 @@ public class WorkflowResource {
     public enum Type {
         DAG, TOOLS
     }
-
-    @GET
-    @Timed
-    @UnitOfWork
-    @Path("/sourceControlList")
-    @ApiOperation(value = "Get the list of source controls supported on Dockstore.", notes = "Does not need authentication", response = SourceControl.SourceControlBean.class, responseContainer = "List")
-    public List<SourceControl.SourceControlBean> getSourceControlList() {
-        List<SourceControl.SourceControlBean> sourceControlList = new ArrayList<>();
-        for (SourceControl r : SourceControl.values()) {
-            sourceControlList.add(new SourceControl.SourceControlBean(r));
-        }
-        return sourceControlList;
-    }
 }
