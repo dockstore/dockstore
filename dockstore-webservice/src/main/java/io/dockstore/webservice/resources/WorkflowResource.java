@@ -171,6 +171,7 @@ public class WorkflowResource {
         newWorkflow.setDefaultTestParameterFilePath(workflow.getDefaultTestParameterFilePath());
         newWorkflow.setOrganization(workflow.getOrganization());
         newWorkflow.setRepository(workflow.getRepository());
+        newWorkflow.setSourceControl(workflow.getSourceControl());
         newWorkflow.setPath(workflow.getPath());
         newWorkflow.setIsPublished(workflow.getIsPublished());
         newWorkflow.setGitUrl(workflow.getGitUrl());

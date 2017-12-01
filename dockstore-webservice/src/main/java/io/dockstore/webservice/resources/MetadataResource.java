@@ -29,6 +29,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
+import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -174,4 +175,19 @@ public class MetadataResource {
         }
         return sourceControlList;
     }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/dockerRegistryList")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Get the list of docker registries supported on Dockstore.", notes = "Does not need authentication", response = Registry.RegistryBean.class, responseContainer = "List")
+    public List<Registry.RegistryBean> getDockerRegistries() {
+        List<Registry.RegistryBean> registryList = new ArrayList<>();
+        for (Registry r : Registry.values()) {
+            registryList.add(new Registry.RegistryBean(r));
+        }
+        return registryList;
+    }
+
 }
