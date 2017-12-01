@@ -421,7 +421,6 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             switch (type) {
             case WDL_TEST_JSON:
             case CWL_TEST_JSON:
-                LOG.error("stuffy stuff");
                 final EntryVersionHelper<Tool> entryVersionHelper = new EntryVersionHelper<>(toolDAO);
                 List<SourceFile> sourceFile = entryVersionHelper.getAllSourceFiles(entry.getId(), versionId, type);
                 return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)

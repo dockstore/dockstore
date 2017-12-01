@@ -145,7 +145,7 @@ public final class ToolsImplCommon {
         }
 
         tool.setDescription(container.getDescription());
-        tool.setMeta_version(container.getLastUpdated() != null ? container.getLastUpdated().toString() : new Date(0).toString());
+        tool.setMetaVersion(container.getLastUpdated() != null ? container.getLastUpdated().toString() : new Date(0).toString());
         tool.setToolclass(type);
         tool.setId(newID);
         tool.setUrl(globalId);
@@ -177,7 +177,7 @@ public final class ToolsImplCommon {
         final List<String> collect = ((Set<Version>)inputVersions).stream().filter(Version::isVerified).map(Version::getVerifiedSource)
                 .collect(Collectors.toList());
         Gson gson = new Gson();
-        tool.setVerified_source(Strings.nullToEmpty(gson.toJson(collect)));
+        tool.setVerifiedSource(Strings.nullToEmpty(gson.toJson(collect)));
 
         // Not sure how to get signed
         tool.setSigned(false);
@@ -208,7 +208,7 @@ public final class ToolsImplCommon {
 
             version.setName(inputVersion.getName());
             version.setVerified(inputVersion.isVerified());
-            version.setVerified_source(Strings.nullToEmpty(inputVersion.getVerifiedSource()));
+            version.setVerifiedSource(Strings.nullToEmpty(inputVersion.getVerifiedSource()));
             version.setDockerfile(false);
 
             if (inputVersion instanceof Tag) {
@@ -277,14 +277,14 @@ public final class ToolsImplCommon {
                 version.setImage(((io.dockstore.webservice.core.Tool)container).getPath() + ":" + inputVersion.getName());
             }
             // ensure that descriptor is non-null before adding to list
-            if (!version.getDescriptor_type().isEmpty()) {
+            if (!version.getDescriptorType().isEmpty()) {
                 // do some clean-up
-                version.setMeta_version(
+                version.setMetaVersion(
                         String.valueOf(inputVersion.getLastModified() != null ? inputVersion.getLastModified() : new Date(0)));
-                final List<ToolVersion.DescriptorTypeEnum> descriptorType = version.getDescriptor_type();
+                final List<ToolVersion.DescriptorTypeEnum> descriptorType = version.getDescriptorType();
                 if (!descriptorType.isEmpty()) {
                     EnumSet<ToolVersion.DescriptorTypeEnum> set = EnumSet.copyOf(descriptorType);
-                    version.setDescriptor_type(Lists.newArrayList(set));
+                    version.setDescriptorType(Lists.newArrayList(set));
                 }
                 tool.getVersions().add(version);
             }

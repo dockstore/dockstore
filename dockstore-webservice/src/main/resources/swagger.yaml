@@ -3777,13 +3777,13 @@ definitions:
       version:
         type: "string"
         description: "The version of this registry"
+      country:
+        type: "string"
+        description: "A country code for the registry (ISO 3166-1 alpha-3)"
       api_version:
         type: "string"
         description: "The version of the GA4GH tool-registry API supported by this\
           \ registry"
-      country:
-        type: "string"
-        description: "A country code for the registry (ISO 3166-1 alpha-3)"
       friendly_name:
         type: "string"
         description: "A friendly name that can be used in addition to the hostname\
@@ -3985,10 +3985,6 @@ definitions:
         type: "string"
         description: "Contact information for the author of this tool entry in the\
           \ registry. (More complex authorship information is handled by the descriptor)"
-      meta_version:
-        type: "string"
-        description: "The version of this tool in the registry. Iterates when fields\
-          \ like the description, author, etc. are updated."
       contains:
         type: "array"
         description: "An array of IDs for the applications that are stored inside\
@@ -3999,10 +3995,6 @@ definitions:
         type: "boolean"
         description: "Reports whether this tool has been verified by a specific organization\
           \ or individual"
-      verified_source:
-        type: "string"
-        description: "Source of metadata that can support a verified tool, such as\
-          \ an email or URL"
       signed:
         type: "boolean"
         description: "Reports whether this tool has been signed."
@@ -4011,6 +4003,14 @@ definitions:
         description: "A list of versions for this tool"
         items:
           $ref: "#/definitions/ToolVersion"
+      meta_version:
+        type: "string"
+        description: "The version of this tool in the registry. Iterates when fields\
+          \ like the description, author, etc. are updated."
+      verified_source:
+        type: "string"
+        description: "Source of metadata that can support a verified tool, such as\
+          \ an email or URL"
     description: "A tool (or described tool) describes one pairing of a tool as described\
       \ in a descriptor file (which potentially describes multiple tools) and a Docker\
       \ image."
@@ -4099,6 +4099,17 @@ definitions:
         type: "string"
         description: "The docker path to the image (and version) for this tool. (e.g.\
           \ quay.io/seqware/seqware_full/1.1)"
+      dockerfile:
+        type: "boolean"
+        description: "Reports if this tool has a dockerfile available."
+      verified:
+        type: "boolean"
+        description: "Reports whether this tool has been verified by a specific organization\
+          \ or individual"
+      verified-source:
+        type: "string"
+        description: "Source of metadata that can support a verified tool, such as\
+          \ an email or URL"
       descriptor_type:
         type: "array"
         description: "The type (or types) of descriptors available."
@@ -4107,21 +4118,10 @@ definitions:
           enum:
           - "CWL"
           - "WDL"
-      dockerfile:
-        type: "boolean"
-        description: "Reports if this tool has a dockerfile available."
       meta_version:
         type: "string"
         description: "The version of this tool version in the registry. Iterates when\
           \ fields like the description, author, etc. are updated."
-      verified:
-        type: "boolean"
-        description: "Reports whether this tool has been verified by a specific organization\
-          \ or individual"
-      verified_source:
-        type: "string"
-        description: "Source of metadata that can support a verified tool, such as\
-          \ an email or URL"
     description: "A tool version describes a particular iteration of a tool as described\
       \ by a reference to a specific image and dockerfile."
   User:

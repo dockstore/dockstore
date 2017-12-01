@@ -17,6 +17,7 @@ package io.swagger.model;
 
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModel;
@@ -35,11 +36,11 @@ import io.swagger.annotations.ApiModelProperty;
 public class Metadata {
     private String version = null;
 
-    private String api_version = null;
+    private String apiVersion = null;
 
     private String country = null;
 
-    private String friendly_name = null;
+    private String friendlyName = null;
 
     public Metadata version(String version) {
         this.version = version;
@@ -61,22 +62,23 @@ public class Metadata {
     }
 
     public Metadata apiVersion(String apiVersion) {
-        this.api_version = apiVersion;
+        this.apiVersion = apiVersion;
         return this;
     }
 
     /**
      * The version of the GA4GH tool-registry API supported by this registry
      *
-     * @return api_version
+     * @return apiVersion
      **/
     @ApiModelProperty(required = true, value = "The version of the GA4GH tool-registry API supported by this registry")
-    public String getApi_version() {
-        return api_version;
+    public String getApiVersion() {
+        return apiVersion;
     }
 
-    public void setApi_version(String api_version) {
-        this.api_version = api_version;
+    @JsonProperty("api_version")
+    public void setApiVersion(String apiVersion) {
+        this.apiVersion = apiVersion;
     }
 
     public Metadata country(String country) {
@@ -98,23 +100,24 @@ public class Metadata {
         this.country = country;
     }
 
+    @JsonProperty("friendly_name")
     public Metadata friendlyName(String friendlyName) {
-        this.friendly_name = friendlyName;
+        this.friendlyName = friendlyName;
         return this;
     }
 
     /**
      * A friendly name that can be used in addition to the hostname to describe a registry
      *
-     * @return friendly_name
+     * @return friendlyName
      **/
     @ApiModelProperty(value = "A friendly name that can be used in addition to the hostname to describe a registry")
-    public String getFriendly_name() {
-        return friendly_name;
+    public String getFriendlyName() {
+        return friendlyName;
     }
 
-    public void setFriendly_name(String friendly_name) {
-        this.friendly_name = friendly_name;
+    public void setFriendlyName(String friendlyName) {
+        this.friendlyName = friendlyName;
     }
 
     @Override
@@ -126,13 +129,13 @@ public class Metadata {
             return false;
         }
         Metadata metadata = (Metadata)o;
-        return Objects.equals(this.version, metadata.version) && Objects.equals(this.api_version, metadata.api_version) && Objects
-                .equals(this.country, metadata.country) && Objects.equals(this.friendly_name, metadata.friendly_name);
+        return Objects.equals(this.version, metadata.version) && Objects.equals(this.apiVersion, metadata.apiVersion) && Objects
+                .equals(this.country, metadata.country) && Objects.equals(this.friendlyName, metadata.friendlyName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(version, api_version, country, friendly_name);
+        return Objects.hash(version, apiVersion, country, friendlyName);
     }
 
     @Override
@@ -141,9 +144,9 @@ public class Metadata {
         sb.append("class Metadata {\n");
 
         sb.append("    version: ").append(toIndentedString(version)).append("\n");
-        sb.append("    api_version: ").append(toIndentedString(api_version)).append("\n");
+        sb.append("    apiVersion: ").append(toIndentedString(apiVersion)).append("\n");
         sb.append("    country: ").append(toIndentedString(country)).append("\n");
-        sb.append("    friendly_name: ").append(toIndentedString(friendly_name)).append("\n");
+        sb.append("    friendlyName: ").append(toIndentedString(friendlyName)).append("\n");
         sb.append("}");
         return sb.toString();
     }

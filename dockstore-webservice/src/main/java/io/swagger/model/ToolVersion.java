@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModel;
@@ -43,7 +44,8 @@ public class ToolVersion {
 
     private String image = null;
 
-    private List<DescriptorTypeEnum> descriptor_type = new ArrayList<DescriptorTypeEnum>();
+    @JsonProperty("descriptor_type")
+    private List<DescriptorTypeEnum> descriptorType = new ArrayList<DescriptorTypeEnum>();
     private Boolean dockerfile = null;
 
     /**
@@ -56,11 +58,12 @@ public class ToolVersion {
         return name;
     }
 
-    private String meta_version = null;
+    @JsonProperty("meta_version")
+    private String metaVersion = null;
 
     private Boolean verified = null;
 
-    private String verified_source = null;
+    private String verifiedSource = null;
 
     public ToolVersion name(String name) {
         this.name = name;
@@ -125,7 +128,7 @@ public class ToolVersion {
     }
 
     public ToolVersion descriptorType(List<DescriptorTypeEnum> descriptorType) {
-        this.descriptor_type = descriptorType;
+        this.descriptorType = descriptorType;
         return this;
     }
 
@@ -134,22 +137,22 @@ public class ToolVersion {
     }
 
     public ToolVersion addDescriptorTypeItem(DescriptorTypeEnum descriptorTypeItem) {
-        this.descriptor_type.add(descriptorTypeItem);
+        this.descriptorType.add(descriptorTypeItem);
         return this;
     }
 
     /**
      * The type (or types) of descriptors available.
      *
-     * @return descriptor_type
+     * @return descriptorType
      **/
     @ApiModelProperty(value = "The type (or types) of descriptors available.")
-    public List<DescriptorTypeEnum> getDescriptor_type() {
-        return descriptor_type;
+    public List<DescriptorTypeEnum> getDescriptorType() {
+        return descriptorType;
     }
 
-    public void setDescriptor_type(List<DescriptorTypeEnum> descriptor_type) {
-        this.descriptor_type = descriptor_type;
+    public void setDescriptorType(List<DescriptorTypeEnum> descriptorType) {
+        this.descriptorType = descriptorType;
     }
 
     public ToolVersion dockerfile(Boolean dockerfile) {
@@ -174,15 +177,15 @@ public class ToolVersion {
     /**
      * The version of this tool version in the registry. Iterates when fields like the description, author, etc. are updated.
      *
-     * @return meta_version
+     * @return metaVersion
      **/
     @ApiModelProperty(required = true, value = "The version of this tool version in the registry. Iterates when fields like the description, author, etc. are updated.")
-    public String getMeta_version() {
-        return meta_version;
+    public String getMetaVersion() {
+        return metaVersion;
     }
 
     public ToolVersion metaVersion(String metaVersion) {
-        this.meta_version = metaVersion;
+        this.metaVersion = metaVersion;
         return this;
     }
 
@@ -196,8 +199,8 @@ public class ToolVersion {
         return verified;
     }
 
-    public void setMeta_version(String meta_version) {
-        this.meta_version = meta_version;
+    public void setMetaVersion(String metaVersion) {
+        this.metaVersion = metaVersion;
     }
 
     public ToolVersion verified(Boolean verified) {
@@ -208,11 +211,11 @@ public class ToolVersion {
     /**
      * Source of metadata that can support a verified tool, such as an email or URL
      *
-     * @return verified_source
+     * @return verifiedSource
      **/
     @ApiModelProperty(value = "Source of metadata that can support a verified tool, such as an email or URL")
-    public String getVerified_source() {
-        return verified_source;
+    public String getVerifiedSource() {
+        return verifiedSource;
     }
 
     public void setVerified(Boolean verified) {
@@ -220,7 +223,7 @@ public class ToolVersion {
     }
 
     public ToolVersion verifiedSource(String verifiedSource) {
-        this.verified_source = verifiedSource;
+        this.verifiedSource = verifiedSource;
         return this;
     }
 
@@ -235,18 +238,18 @@ public class ToolVersion {
         ToolVersion toolVersion = (ToolVersion)o;
         return Objects.equals(this.name, toolVersion.name) && Objects.equals(this.url, toolVersion.url) && Objects
                 .equals(this.id, toolVersion.id) && Objects.equals(this.image, toolVersion.image) && Objects
-                .equals(this.descriptor_type, toolVersion.descriptor_type) && Objects.equals(this.dockerfile, toolVersion.dockerfile)
-                && Objects.equals(this.meta_version, toolVersion.meta_version) && Objects.equals(this.verified, toolVersion.verified)
-                && Objects.equals(this.verified_source, toolVersion.verified_source);
+                .equals(this.descriptorType, toolVersion.descriptorType) && Objects.equals(this.dockerfile, toolVersion.dockerfile)
+                && Objects.equals(this.metaVersion, toolVersion.metaVersion) && Objects.equals(this.verified, toolVersion.verified)
+                && Objects.equals(this.verifiedSource, toolVersion.verifiedSource);
     }
 
-    public void setVerified_source(String verified_source) {
-        this.verified_source = verified_source;
+    public void setVerifiedSource(String verifiedSource) {
+        this.verifiedSource = verifiedSource;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, url, id, image, descriptor_type, dockerfile, meta_version, verified, verified_source);
+        return Objects.hash(name, url, id, image, descriptorType, dockerfile, metaVersion, verified, verifiedSource);
     }
 
     @Override
@@ -258,11 +261,11 @@ public class ToolVersion {
         sb.append("    url: ").append(toIndentedString(url)).append("\n");
         sb.append("    id: ").append(toIndentedString(id)).append("\n");
         sb.append("    image: ").append(toIndentedString(image)).append("\n");
-        sb.append("    descriptor_type: ").append(toIndentedString(descriptor_type)).append("\n");
+        sb.append("    descriptorType: ").append(toIndentedString(descriptorType)).append("\n");
         sb.append("    dockerfile: ").append(toIndentedString(dockerfile)).append("\n");
-        sb.append("    meta_version: ").append(toIndentedString(meta_version)).append("\n");
+        sb.append("    metaVersion: ").append(toIndentedString(metaVersion)).append("\n");
         sb.append("    verified: ").append(toIndentedString(verified)).append("\n");
-        sb.append("    verified_source: ").append(toIndentedString(verified_source)).append("\n");
+        sb.append("    verifiedSource: ").append(toIndentedString(verifiedSource)).append("\n");
         sb.append("}");
         return sb.toString();
     }
@@ -279,7 +282,7 @@ public class ToolVersion {
     }
 
     /**
-     * Gets or Sets descriptor_type
+     * Gets or Sets descriptorType
      */
     public enum DescriptorTypeEnum {
         CWL("CWL"),
